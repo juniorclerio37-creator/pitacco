@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['source/**', '.github/workflows/windows.yml']
+    paths: ['source/**', 'updates/**', '.github/workflows/windows.yml']
 permissions:
   contents: read
 jobs:
@@ -28,6 +28,10 @@ jobs:
           root = pathlib.Path('restored/Pitacco-v0.11')
           for name in ['web', 'android', 'docs']:
               shutil.copytree(root / name, name)
+          shutil.copytree('updates/0.11.1/web', 'web', dirs_exist_ok=True)
+          for file in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src-tauri/Cargo.toml','src-tauri/Cargo.lock']:
+              p = pathlib.Path('web') / file
+              p.write_text(p.read_text().replace('0.11.0', '0.11.1'))
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -44,6 +48,17 @@ jobs:
         run: npm test --prefix tests/backend
       - name: Testes fila nativa
         run: cargo test --locked --manifest-path native-tests/Cargo.toml
+      - name: Dependencia de teste visual
+        run: npm install --no-save --package-lock=false playwright@1.58.2
+      - name: Teste de navegacao e quadro
+        run: node tests/ui-smoke.mjs
+      - name: Evidencias de interface
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pitacco-Interface
+          path: web/ui-evidence/*.png
+          if-no-files-found: ignore
       - name: Instalador NSIS
         run: npm run desktop:build -- --bundles nsis
       - name: Hashes dos instaladores
