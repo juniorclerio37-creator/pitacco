@@ -300,7 +300,7 @@ class _CourierPageState extends State<CourierPage> {
     final total = deliveries.where((d) => d['status'] == 'entregue').fold<double>(0, (sum, d) => sum + (num.tryParse('${d['courier_payment']}')?.toDouble() ?? 0));
     return Scaffold(appBar: AppBar(title: const Text('Minhas entregas'), actions: [
       IconButton(onPressed: load, icon: const Icon(Icons.refresh), tooltip: 'Atualizar'),
-      IconButton(onPressed: () => api.auth.signOut(), icon: const Icon(Icons.logout), tooltip: 'Sair'),
+      IconButton(onPressed: () async { await setAvailable(false); await api.auth.signOut(); }, icon: const Icon(Icons.logout), tooltip: 'Sair'),
     ]), body: loading ? const Center(child: CircularProgressIndicator()) : RefreshIndicator(
       onRefresh: refreshDeliveries, child: ListView(padding: const EdgeInsets.all(16), children: [
         if (error != null) Card(child: Padding(padding: const EdgeInsets.all(16), child: Text(error!))),
