@@ -31,13 +31,23 @@ jobs:
           shutil.copytree('updates/0.11.1/web', 'web', dirs_exist_ok=True)
           for file in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src-tauri/Cargo.toml','src-tauri/Cargo.lock']:
               p = pathlib.Path('web') / file
-              p.write_text(p.read_text().replace('0.11.0', '0.11.1'))
+              text = p.read_text()
+              if file.endswith('Cargo.lock'):
+                  text = text.replace('name = "deliverygestor-desktop"\nversion = "0.11.0"', 'name = "deliverygestor-desktop"\nversion = "0.11.1"')
+              else:
+                  text = text.replace('0.11.0', '0.11.1')
+              p.write_text(text)
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: web/package-lock.json
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            web/src-tauri -> target
+            web/native-tests -> target
       - name: Dependências
         run: npm ci
       - name: Testes JavaScript
