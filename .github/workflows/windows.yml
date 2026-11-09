@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['source/**', 'updates/**', '.github/workflows/windows.yml']
+    paths: ['source/**', 'updates/**', 'revisions/**', '.github/workflows/windows.yml']
 permissions:
   contents: read
 jobs:
