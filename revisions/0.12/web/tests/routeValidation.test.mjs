@@ -1,0 +1,11 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {validateRoute} from '../server/routeValidation.mjs';
+const now=Date.now();
+const fixture=()=>({store:{id:'s',latitude:0,longitude:0,max_orders_per_trip:4},courier:{id:'c',store_id:'s',active:true,available:true,fleet_type:'propria'},gps:{latitude:0,longitude:0,observed_at:new Date(now).toISOString()},delivery:{id:'new',latitude:0,longitude:0.02,status:'pendente',logistics_provider:'loja',deliver_by:new Date(now+3600000).toISOString()},stops:[{id:'old',batch_id:'b',latitude:0,longitude:0.01,status:'aceita',deliver_by:new Date(now+3600000).toISOString()}]});
+const matrix=()=>({durations:[[0,0,600,1200],[0,0,600,1200],[600,600,0,600],[1200,1200,600,0]],distances:[[0,0,1000,2000],[0,0,1000,2000],[1000,1000,0,1000],[2000,2000,1000,0]]});
+test('compatible directed roads with capacity and deadlines',()=>assert.equal(validateRoute(fixture(),matrix(),now).compatible,true));
+test('opposite destinations rejected despite short matrix',()=>{const d=fixture();d.delivery.longitude=-0.02;assert.match(validateRoute(d,matrix(),now).reason,/opostas/)});
+test('offline, stale, invalid GPS fail closed',()=>{for(const change of [d=>d.courier.available=false,d=>d.gps.observed_at=new Date(now-100000).toISOString(),d=>d.gps.latitude=null,d=>d.gps.observed_at='invalid']){const d=fixture();change(d);assert.equal(validateRoute(d,matrix(),now).compatible,false)}});
+test('departed, marketplace and full route reject',()=>{for(const change of [d=>d.stops[0].departed_at=new Date(now).toISOString(),d=>d.delivery.logistics_provider='marketplace',d=>d.store.max_orders_per_trip=1]){const d=fixture();change(d);assert.equal(validateRoute(d,matrix(),now).compatible,false)}});
+test('missing maps, unreachable road and long directed detour reject',()=>{for(const m of [null,{durations:[]},(()=>{const m=matrix();m.durations[2][3]=null;return m})(),(()=>{const m=matrix();m.durations[2][3]=3000;return m})()])assert.equal(validateRoute(fixture(),m,now).compatible,false)});
+test('missing deadline and late arrival reject',()=>{for(const t of [null,new Date(now+300000).toISOString()]){const d=fixture();d.delivery.deliver_by=t;assert.equal(validateRoute(d,matrix(),now).compatible,false)}});
