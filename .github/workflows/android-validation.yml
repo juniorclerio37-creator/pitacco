@@ -1,0 +1,24 @@
+name: Pitacco Flutter validation
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/android-validation.yml']
+permissions:
+  contents: read
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: python revisions/0.12/restore.py
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.4'
+          channel: stable
+          cache: true
+      - run: flutter pub get
+        working-directory: android
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        working-directory: android
