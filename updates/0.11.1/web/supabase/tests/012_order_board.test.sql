@@ -1,0 +1,25 @@
+begin;
+insert into auth.users(id,email) values ('10000000-0000-0000-0000-000000000001','checkout@example.invalid');
+insert into public.stores(id,name) values ('20000000-0000-0000-0000-000000000001','Checkout Test');
+insert into public.store_members values ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','gestor');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+select public.save_public_menu_settings('20000000-0000-0000-0000-000000000001','teste',true,true,true,5,array['dinheiro','pix_manual'],'Confira com a loja');
+select public.save_menu_product('20000000-0000-0000-0000-000000000001',null,'Lanche',20,'Lanches','','',true);
+insert into public.print_sectors(store_id,sector,printer,width,copies) values ('20000000-0000-0000-0000-000000000001','cozinha','TEST',58,1);
+do $$ declare oid uuid; begin
+ oid:=public.create_operational_order('20000000-0000-0000-0000-000000000001',gen_random_uuid(),'Teste','Retirada','[{"name":"Acai","quantity":1,"unit_price":20}]',20,'','dinheiro','retirada');
+ begin perform public.set_order_preparation(oid,'ready'); raise exception 'TEST FAILURE ready before accept'; exception when others then if SQLERRM like 'TEST FAILURE%' then raise;end if;end;
+ perform public.accept_order(oid);
+ begin perform public.set_order_preparation(oid,'completed'); raise exception 'TEST FAILURE skipped ready'; exception when others then if SQLERRM like 'TEST FAILURE%' then raise;end if;end;
+ perform public.set_order_preparation(oid,'ready');perform public.set_order_preparation(oid,'ready');
+ assert(select count(*)=1 from public.operation_audit where order_id=oid and action='preparation_changed'),'Ready idempotent audit';
+ assert(select count(*)=1 from public.print_jobs where order_id=oid),'Stage does not reprint';
+ perform set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+ begin perform public.set_order_preparation(oid,'completed'); raise exception 'TEST FAILURE cross tenant'; exception when others then if SQLERRM like 'TEST FAILURE%' then raise;end if;end;
+ perform set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+ perform public.set_order_preparation(oid,'completed');
+ assert(select preparation_status='completed' from public.orders where id=oid),'Pickup completed';
+ begin perform public.set_order_preparation(oid,'ready'); raise exception 'TEST FAILURE rewind'; exception when others then if SQLERRM like 'TEST FAILURE%' then raise;end if;end;
+end $$;
+rollback;
