@@ -17,26 +17,20 @@ jobs:
       - uses: actions/checkout@v4
       - name: Restaurar codigo preservado
         working-directory: .
+        run: python revisions/0.12/restore.py
+      - name: Empacotar codigo completo
+        working-directory: .
         shell: python
         run: |
-          import base64, hashlib, pathlib, zipfile, io, shutil
-          encoded = ''.join(p.read_text() for p in sorted(pathlib.Path('source').glob('*.b64')))
-          data = base64.b64decode(encoded, validate=True)
-          assert hashlib.sha256(data).hexdigest() == 'bd8ad5b51edb6106d6f1b2a9cdecc916950411899a0c5311ce4be37d732ce504', 'Source integrity failure'
-          with zipfile.ZipFile(io.BytesIO(data)) as z:
-              z.extractall('restored')
-          root = pathlib.Path('restored/Pitacco-v0.11')
-          for name in ['web', 'android', 'docs']:
-              shutil.copytree(root / name, name)
-          shutil.copytree('updates/0.11.1/web', 'web', dirs_exist_ok=True)
-          for file in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src-tauri/Cargo.toml','src-tauri/Cargo.lock']:
-              p = pathlib.Path('web') / file
-              text = p.read_text()
-              if file.endswith('Cargo.lock'):
-                  text = text.replace('name = "deliverygestor-desktop"\nversion = "0.11.0"', 'name = "deliverygestor-desktop"\nversion = "0.11.1"')
-              else:
-                  text = text.replace('0.11.0', '0.11.1')
-              p.write_text(text)
+          import pathlib,zipfile
+          with zipfile.ZipFile('Pitacco-0.12-Codigo-Completo.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for folder in ['web','android','docs']:
+                  for p in pathlib.Path(folder).rglob('*'):
+                      if p.is_file() and not any(x in p.parts for x in ['node_modules','target','dist','.git']): z.write(p)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pitacco-Codigo-Completo
+          path: Pitacco-0.12-Codigo-Completo.zip
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -82,3 +76,31 @@ jobs:
             SHA256-WINDOWS.txt
           if-no-files-found: error
           retention-days: 30
+
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: isolated-ci-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:isolated-ci-password@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python revisions/0.12/restore.py
+      - run: npm ci --prefix web/tests/backend
+      - run: npm install --prefix web/tests/backend --no-save --package-lock=false pg@8.16.3
+      - run: node web/tests/backend/run.mjs
+      - run: node web/tests/backend/concurrency.mjs
