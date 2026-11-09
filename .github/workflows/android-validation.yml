@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['.github/workflows/android-validation.yml']
+    paths: ['.github/workflows/android-validation.yml', 'revisions/0.12/android/**']
 permissions:
   contents: read
 jobs:
