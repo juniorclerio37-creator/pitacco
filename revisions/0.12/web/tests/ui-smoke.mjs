@@ -1,0 +1,59 @@
+// Isolated browser fixtures: never contacts the production database.
+import {chromium} from 'playwright';
+import {createServer} from 'vite';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+process.env.VITE_SUPABASE_URL='https://pitacco-test.supabase.co';
+process.env.VITE_SUPABASE_ANON_KEY='sb_publishable_fixture_only_123456';
+const server=await createServer({server:{host:'127.0.0.1',port:4178},logLevel:'error'});await server.listen();
+const browser=await chromium.launch({channel:'chrome',headless:true});
+const page=await browser.newPage({viewport:{width:1600,height:1000}});
+const uid='10000000-0000-0000-0000-000000000001',sid='20000000-0000-0000-0000-000000000001';
+const cid='30000000-0000-0000-0000-000000000001';
+const store={id:sid,name:'Loja de demonstração',plan:'saas',platform:'',delivery_mode:'propria',max_orders_per_trip:4};
+const order=(i,status,preparation_status)=>({id:`40000000-0000-0000-0000-00000000000${i}`,store_id:sid,source:'proprio',status,preparation_status,gross:25,fees:0,created_at:new Date().toISOString(),receipt:{customer:['','Ana · exemplo','Bruno · exemplo','Carla · exemplo','Diego · exemplo'][i],items:[{name:'Açaí 500 ml',quantity:1,unit_price:25}],logistics:'loja'}});
+const orders=[order(1,'pending','preparing'),order(2,'accepted','preparing'),order(3,'accepted','ready'),order(4,'accepted','ready')];
+const deliveries=orders.slice(1).map((o,i)=>({id:`50000000-0000-0000-0000-00000000000${i}`,order_id:o.id,store_id:sid,customer_name:o.receipt.customer,address:'Endereço de teste',source:'proprio',logistics_provider:'loja',status:i===2?'retirada':'pendente'}));
+let assigned=null;let submittedStore=null;const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.route('https://pitacco-test.supabase.co/**',async route=>{
+ const request=route.request(),url=new URL(request.url());let result=[];
+ if(url.pathname==='/auth/v1/token')result={access_token:'fixture-access-token',refresh_token:'fixture-refresh',token_type:'bearer',expires_in:3600,user:{id:uid,email:'demo@example.invalid',aud:'authenticated'}};
+ else if(url.pathname.endsWith('/profiles'))result={id:uid,email:'demo@example.invalid',role:'admin'};
+ else if(url.pathname.endsWith('/stores')){if(request.method()==='POST'){submittedStore=request.postDataJSON();result=[]}else result=[store]}
+ else if(url.pathname.endsWith('/orders'))result=orders;
+ else if(url.pathname.endsWith('/deliveries'))result=deliveries;
+ else if(url.pathname.endsWith('/print_sectors'))result=[{sector:'Cozinha',printer:'Térmica de teste',width:80,copies:1,enabled:true}];
+ else if(url.pathname.endsWith('/couriers'))result=request.headers().accept?.includes('object')?null:[{id:cid,store_id:sid,name:'Entregador de teste',fleet_type:'propria',active:true,available:false}];
+ else if(url.pathname.includes('/rpc/assign_order_courier')){assigned=request.postDataJSON();const d=deliveries.find(d=>d.id===assigned.p_delivery);d.courier_id=assigned.p_courier;d.status='atribuida';d.batch_id='60000000-0000-0000-0000-000000000001';result=d.batch_id}
+ else if(url.pathname.includes('/rpc/set_order_preparation')){const args=request.postDataJSON();orders.find(o=>o.id===args.p_order).preparation_status=args.p_status;result=null}
+ else if(url.pathname.includes('/rpc/accept_order')){const args=request.postDataJSON();orders.find(o=>o.id===args.p_order).status='accepted';result=null}
+ await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(result)});
+});
+try{
+ await page.goto('http://127.0.0.1:4178');await page.getByPlaceholder('E-mail',{exact:true}).fill('demo@example.invalid');await page.getByPlaceholder('Senha (mínimo 6 caracteres)').fill('fixture-password');await page.getByRole('button',{name:'Entrar',exact:true}).click();
+ await page.getByText('Ana · exemplo',{exact:true}).waitFor();
+ for(const name of ['Em análise','Em preparo','Pronto','Em entrega'])assert.equal(await page.getByRole('heading',{name,exact:true}).count(),1);
+ await page.getByRole('button',{name:'+ Novo pedido',exact:true}).click();assert.ok(await page.getByPlaceholder('Cliente',{exact:true}).isVisible());
+ await page.getByRole('button',{name:'+ Novo pedido',exact:true}).click();
+ await page.getByRole('button',{name:'Configurações',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Criar pedido',exact:true}).count(),0);assert.ok(await page.getByRole('heading',{name:'Impressoras por setor'}).isVisible());
+ await page.getByRole('button',{name:'Lojas',exact:true}).click();assert.equal(await page.locator('select[name=platform]').count(),0);assert.equal(await page.locator('select[name=plan]').count(),0);
+ await page.getByLabel('Nome do estabelecimento').fill('Nova loja');await page.getByRole('button',{name:'Cadastrar loja',exact:true}).click();await page.getByText('Registro salvo.',{exact:true}).waitFor();assert.deepEqual(submittedStore,{name:'Nova loja',platform:'',plan:'saas'});
+ await page.getByRole('button',{name:'Pedidos',exact:true}).click();await page.getByRole('button',{name:'Aceitar pedido',exact:true}).click();await page.waitForTimeout(5500);assert.equal(await page.locator('.preparing .order-card').count(),2);
+ await page.locator('.preparing .order-card').filter({hasText:'Bruno · exemplo'}).getByRole('button',{name:'Marcar como pronto'}).click();await page.waitForTimeout(5500);assert.equal(await page.locator('.ready .order-card').count(),2);
+ await page.getByRole('textbox',{name:'Buscar pedido'}).fill('Carla');assert.equal(await page.locator('.order-card').count(),1);await page.getByRole('textbox',{name:'Buscar pedido'}).fill('');
+ await fs.mkdir('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/pedidos.png',fullPage:true});
+ await page.locator('.ready .order-card').filter({hasText:'Carla · exemplo'}).getByRole('button',{name:'Despachar',exact:true}).click();
+ await page.getByRole('dialog').getByText('Entregador de teste',{exact:true}).waitFor();
+ assert.equal(await page.getByRole('dialog').getByText('Alocação automática',{exact:true}).count(),0);
+ assert.ok(await page.getByText('Integrações não configuradas',{exact:true}).isVisible());
+ await page.getByRole('dialog').getByRole('radio').check();
+ await page.getByRole('button',{name:'Confirmar entregador',exact:true}).click();
+ await page.getByText('Entregador atribuído. A rota aguarda coleta e saída.',{exact:true}).waitFor();assert.equal(assigned.p_courier,cid);
+ await page.screenshot({path:'ui-evidence/entrega-modal.png',fullPage:true});
+ await page.getByRole('button',{name:'Fechar',exact:true}).click();
+ await page.getByRole('button',{name:'Minha Loja',exact:true}).click();assert.ok(await page.getByRole('heading',{name:'Alocação automática',exact:true}).isVisible());
+ await page.screenshot({path:'ui-evidence/minha-loja.png',fullPage:true});
+ await page.getByRole('button',{name:'Configurações',exact:true}).click();await page.screenshot({path:'ui-evidence/impressoras.png',fullPage:true});
+ await page.getByRole('button',{name:'Lojas',exact:true}).click();await page.screenshot({path:'ui-evidence/lojas.png',fullPage:true});
+ assert.deepEqual(errors,[]);console.log('PASS UI: board stages, create toggle, printer separation, neutral store payload, accept, ready, search; no page errors.');
+}finally{await browser.close();await server.close()}
