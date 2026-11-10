@@ -11,6 +11,10 @@ s=s.replace(needle,"['Atualizações',Settings,'Principal'],"+needle,1)
 needle="const primaryOf=t=>"
 assert s.count(needle)==1
 # Keep owner-only menu entry and do not show it to store managers.
+# Make the release center visible on both web and Windows for the platform owner.
+native_filter="'Visão Geral','Pedidos','Motoboys','Caixa','Administrar Loja','Financeiro','Fideliza+','Clientes'"
+assert s.count(native_filter)==1
+s=s.replace(native_filter,native_filter+",'Atualizações'",1)
 needle=".filter(([name])=>!isDriver||name==='Motoboys')"
 assert s.count(needle)==1
 s=s.replace(needle,".filter(([name])=>name!=='Atualizações'||admin)"+needle,1)
