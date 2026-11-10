@@ -1,0 +1,47 @@
+name: Validar site e cardápio
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'marketing/**'
+      - 'scripts/build-cloudflare.sh'
+      - 'revisions/0.12/**'
+      - 'web/**'
+      - '.github/workflows/site-validation.yml'
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Validar JavaScript dos cardápios e configurações
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          files=['marketing/cardapio.html','marketing/acompanhar.html','marketing/identidade.html','marketing/configuracao.html']
+          for f in files:
+              text=Path(f).read_text()
+              blocks=re.findall(r'<script\\b[^>]*>(.*?)</script>',text,re.S|re.I)
+              if not blocks: raise SystemExit(f'Sem script: {f}')
+              for i,block in enumerate(blocks):
+                  Path(f'/tmp/pitacco-{Path(f).stem}-{i}.mjs').write_text(block)
+          PY
+          for file in /tmp/pitacco-*.mjs; do node --check "$file"; done
+      - name: Construir site Cloudflare
+        run: bash scripts/build-cloudflare.sh
+      - name: Validar rotas e Service Worker
+        run: |
+          test -s web/dist/index.html
+          test -s web/dist/cardapio/index.html
+          test -s web/dist/acompanhar/index.html
+          test -s web/dist/identidade/index.html
+          test -s web/dist/configuracao/index.html
+          test -s web/dist/sw.js
