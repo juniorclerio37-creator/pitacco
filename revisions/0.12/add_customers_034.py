@@ -4,17 +4,20 @@ p=Path('web/src.jsx')
 s=p.read_text(encoding='utf-8')
 needle="function App(){"
 assert s.count(needle)==1
-component="""function CustomersFromOrders({orders=[]}){
+component="""function CustomersFromOrders({orders=[],storeId}){
  const [query,setQuery]=useState('');
  const customers=new Map();
  for(const order of orders){
+  if(!storeId||order.store_id!==storeId)continue;
   const name=String(order.customer_name||'').trim();
   if(!name)continue;
   const phone=String(order.customer_phone||'').trim();
-  const key=phone||name.toLocaleLowerCase('pt-BR');
+  // Without a phone, names alone are not reliable unique customer identifiers.
+  const key=phone?'phone:'+phone:'order:'+String(order.id);
   const row=customers.get(key)||{name,phone,count:0,total:0,last:''};
   row.count+=1;
-  row.total+=Number(order.gross||0);
+  const amount=Number(order.gross);
+  if(Number.isFinite(amount))row.total+=amount;
   const when=String(order.created_at||'');
   if(when>row.last)row.last=when;
   customers.set(key,row);
@@ -26,5 +29,5 @@ component="""function CustomersFromOrders({orders=[]}){
 s=s.replace(needle,component+needle,1)
 needle="{active&&!isDriver&&tab==='Caixa'&&<CashDesk"
 assert s.count(needle)==1
-s=s.replace(needle,"{active&&!isDriver&&manager&&tab==='Clientes'&&<CustomersFromOrders orders={orders}/> }\n{active&&!isDriver&&!manager&&tab==='Clientes'&&<section className=\"panel\"><p>O histórico de clientes está disponível somente para gestores autorizados.</p></section>}\n"+needle,1)
+s=s.replace(needle,"{active&&!isDriver&&manager&&tab==='Clientes'&&<CustomersFromOrders orders={orders} storeId={selected}/> }\n{active&&!isDriver&&!manager&&tab==='Clientes'&&<section className=\"panel\"><p>O histórico de clientes está disponível somente para gestores autorizados.</p></section>}\n"+needle,1)
 p.write_text(s,encoding='utf-8')
