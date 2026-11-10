@@ -39,7 +39,7 @@ jobs:
           checks = {
               'Clientes no menu': "['Clientes'," in src,
               'Fideliza+ no menu': "['Fideliza+'," in src,
-              'Clientes permitido no Windows': "'Fideliza+','Clientes'].includes(name)" in src,
+              'Clientes permitido no Windows': "'Fideliza+','Clientes','Atualizações'].includes(name)" in src,
               'Clientes com pagina propria': "tab==='Clientes'&&<CustomersFromOrders" in src,
               'Clientes isolados por loja': 'order.store_id!==storeId' in src,
               'Fideliza+ renderizado': "view==='Fideliza+'&&<Fideliza" in operations,
