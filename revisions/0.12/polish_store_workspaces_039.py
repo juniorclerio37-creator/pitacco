@@ -28,7 +28,7 @@ assert s.count(needle)==1
 s=s.replace(needle,"'Administrar Loja':[]",1)
 needle="{tab==='Minha Loja'&&active&&<StoreProfile"
 assert s.count(needle)==1
-s=s.replace(needle,"{['Minha Loja','Configurações'].includes(tab)&&active&&<div className=\\"store-settings-tabs\\" role=\\"group\\" aria-label=\\"Configurações da loja\\"><button className={tab==='Minha Loja'?'active':'secondary'} onClick={()=>setTab('Minha Loja')}>Identidade da loja</button><button className={tab==='Configurações'?'active':'secondary'} onClick={()=>setTab('Configurações')}>Impressão e aceite</button></div>}\\n"+needle,1)
+s=s.replace(needle,"{['Minha Loja','Configurações'].includes(tab)&&active&&<div className=\"store-settings-tabs\" role=\"group\" aria-label=\"Configurações da loja\"><button className={tab==='Minha Loja'?'active':'secondary'} onClick={()=>setTab('Minha Loja')}>Identidade da loja</button><button className={tab==='Configurações'?'active':'secondary'} onClick={()=>setTab('Configurações')}>Impressão e aceite</button></div>}\\n"+needle,1)
 # Avoid presenting a blank placeholder as an actual store logo.
 p.write_text(s,encoding='utf-8')
 
