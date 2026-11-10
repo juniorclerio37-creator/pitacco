@@ -87,6 +87,22 @@ jobs:
           }
           for label,ok in checks.items(): print(('OK' if ok else 'FALHOU')+': '+label,flush=True)
           if not all(checks.values()): raise SystemExit('Falha na central de atualizacoes.')
+      - name: Verificar separacao entre administrador e lojista
+        working-directory: .
+        shell: python
+        run: |
+          from pathlib import Path
+          src=Path('web/src.jsx').read_text(encoding='utf-8')
+          checks={
+              'Painel admin exclusivo': 'if(admin&&platformWorkspace)' in src,
+              'Navegacao admin separada': 'pitacco-admin-shell' in src,
+              'Acesso ao ambiente da loja': 'setPlatformWorkspace(false)' in src,
+              'Retorno ao painel admin': 'Voltar ao Pitacco Admin' in src,
+              'Marca da loja no ambiente operacional': 'storeBrand?.logo_url' in src,
+              'Marca Pitacco no painel admin': 'pitacco-platform-brand' in src,
+          }
+          for label,ok in checks.items(): print(('OK' if ok else 'FALHOU')+': '+label,flush=True)
+          if not all(checks.values()): raise SystemExit('Falha na separacao de ambientes.')
       - name: Diagnosticar controles de impressao 0.12
         working-directory: .
         shell: python
