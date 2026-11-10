@@ -32,8 +32,8 @@ await page.route('https://pitacco-test.supabase.co/**',async route=>{
 });
 try{
  await page.goto('http://127.0.0.1:4178');await page.getByPlaceholder('E-mail',{exact:true}).fill('demo@example.invalid');await page.getByPlaceholder('Senha (mínimo 6 caracteres)').fill('fixture-password');await page.getByRole('button',{name:'Entrar',exact:true}).click();
- await page.getByText('Ana · exemplo',{exact:true}).waitFor();
- const printer=page.getByRole('button',{name:'Reimprimir comanda do pedido 40000000'}).first();
+ try{await page.getByText('Ana · exemplo',{exact:true}).waitFor({timeout:12000})}catch(e){await fs.mkdir('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/login-diagnostic.png',fullPage:true});throw new Error('Pedido de demonstração não apareceu. URL='+page.url()+'; tela='+JSON.stringify((await page.locator('body').innerText()).slice(0,1600))+'; erros='+JSON.stringify(errors)+'; causa='+e.message)}
+ const printer=page.locator('.order-card').filter({hasText:'Bruno · exemplo'}).getByRole('button',{name:/Reimprimir comanda do pedido/});
  assert.ok(await printer.isVisible(),'O ícone de reimpressão deve estar visível no cartão de pedido aceito');
  await printer.click();await page.waitForTimeout(300);
  assert.equal(reprintCall?.p_order,orders[1].id,'O ícone deve solicitar a reimpressão do pedido correspondente');
