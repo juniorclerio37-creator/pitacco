@@ -101,6 +101,7 @@ jobs:
               'Marca da loja no ambiente operacional': 'storeBrand?.logo_url' in src,
               'Marca Pitacco no painel admin': 'pitacco-platform-brand' in src,
               'Troca de conta redefine ambiente': 'setPlatformWorkspace(true)},[session?.user?.id]' in src,
+              'Hook no componente App': src.index('function App(){') < src.index('useEffect(()=>{setPlatformWorkspace(true)}') < src.index('if(!supabase)return'),
               'Entrada na loja exige vinculo': 'disabled={!stores.length}' in src,
               'Selecao explicita de estabelecimento': 'setSelected(store.id);setPlatformWorkspace(false)' in src,
           }
