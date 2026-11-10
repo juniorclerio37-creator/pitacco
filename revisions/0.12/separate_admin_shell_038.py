@@ -13,7 +13,7 @@ needle="useEffect(()=>{if(!supabase)"
 assert s.count(needle)==1
 s=s.replace(needle,"useEffect(()=>{setPlatformWorkspace(true)},[session?.user?.id]);\n"+needle,1)
 
-needle="return <div className=\"app\"><aside>"
+needle='return <div className={"app pitacco-theme-"+theme}><aside>'
 assert s.count(needle)==1
 admin_shell="""if(admin&&platformWorkspace){
  const adminPages=[['Painel geral',LayoutDashboard],['Estabelecimentos',Store],['Assinaturas',CreditCard],['Atualizações',Settings]];
