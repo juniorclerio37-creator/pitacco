@@ -57,3 +57,5 @@
 .operational-overview article.attention strong{color:#bd4c16}
 @media(max-width:900px){.operational-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.operational-overview article{padding:12px}.operational-overview article strong{font-size:23px}}
+
+.payment-modal-backdrop{position:fixed;inset:0;background:#151b2799;display:flex;align-items:center;justify-content:center;padding:18px;z-index:1000}.payment-modal{width:min(480px,100%);max-height:90vh;overflow:auto;box-shadow:0 15px 50px #1115}.payment-modal .quick-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
