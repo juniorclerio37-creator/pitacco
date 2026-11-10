@@ -72,3 +72,13 @@ body{background:#f4f7fa;color:var(--pt-ink)}
 .release-center .panel p{line-height:1.65;max-width:850px}
 .release-center .panel a{display:inline-flex;margin-top:10px;color:#b5223a;font-weight:700;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:540px){.release-center .metrics{grid-template-columns:1fr}}
+
+/* Platform owner has a distinct shell; store workspace retains tenant branding. */
+.pitacco-admin-shell .pitacco-platform-brand{display:flex;align-items:center;gap:12px}
+.pitacco-admin-shell .pitacco-platform-brand img{width:112px;max-height:50px;object-fit:contain}
+.pitacco-admin-shell .pitacco-platform-brand span{display:flex;flex-direction:column;gap:2px}
+.pitacco-admin-shell .pitacco-platform-brand small{font-size:11px;opacity:.75}
+.pitacco-workspace--admin .panel{margin-top:18px}
+.pitacco-workspace--admin header{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
+.admin-return{margin-right:12px}
+@media(max-width:700px){.pitacco-admin-shell .pitacco-platform-brand img{width:90px}.admin-return{width:100%;margin-bottom:8px}}
