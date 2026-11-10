@@ -29,6 +29,19 @@ jobs:
       - name: Restaurar codigo preservado
         working-directory: .
         run: python -X utf8 revisions/0.12/restore.py
+      - name: Validar configuracao unica de impressoras 0.12
+        working-directory: .
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          operations = Path('web/Operations.jsx').read_text(encoding='utf-8')
+          assert 'editingPrinter' not in operations, 'Editor de impressoras duplicado'
+          assert 'editingSector' in operations, 'Editor de impressoras ausente'
+          assert 'pitacco_switch_print_device' in operations, 'Transferencia de computador ausente'
+          assert 'pitacco_unbind_print_device' in operations, 'Desvinculacao de computador ausente'
+          assert operations.count('Computador responsável pela impressão') == 1, 'Painel de computador duplicado'
+          print('Controles de impressao preservados na base 0.12')
       - name: Empacotar codigo completo
         working-directory: .
         shell: python
