@@ -1,6 +1,10 @@
 """Separate platform-owner desktop shell from tenant operations while keeping one installer."""
 from pathlib import Path
 p=Path('web/src.jsx');s=p.read_text(encoding='utf-8')
+# Reset workspace when the authenticated identity changes, avoiding role-view leakage.
+needle="useEffect(()=>{if(!supabase)"
+assert s.count(needle)==1
+s=s.replace(needle,"useEffect(()=>{setPlatformWorkspace(true)},[session?.user?.id]);\n"+needle,1)
 needle="function App(){const[storeBrand"
 assert s.count(needle)==1
 s=s.replace(needle,"function App(){const [platformWorkspace,setPlatformWorkspace]=useState(true);const[storeBrand",1)
