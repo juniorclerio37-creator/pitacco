@@ -14,7 +14,7 @@ const store={id:sid,name:'Loja de demonstração',plan:'saas',platform:'',delive
 const order=(i,status,preparation_status)=>({id:`40000000-0000-0000-0000-00000000000${i}`,store_id:sid,source:'proprio',status,preparation_status,gross:25,fees:0,created_at:new Date().toISOString(),receipt:{customer:['','Ana · exemplo','Bruno · exemplo','Carla · exemplo','Diego · exemplo'][i],items:[{name:'Açaí 500 ml',quantity:1,unit_price:25}],logistics:'loja'}});
 const orders=[order(1,'pending','preparing'),order(2,'accepted','preparing'),order(3,'accepted','ready'),order(4,'accepted','ready')];
 const deliveries=orders.slice(1).map((o,i)=>({id:`50000000-0000-0000-0000-00000000000${i}`,order_id:o.id,store_id:sid,customer_name:o.receipt.customer,address:'Endereço de teste',source:'proprio',logistics_provider:'loja',status:i===2?'retirada':'pendente'}));
-let assigned=null;let submittedStore=null;const errors=[];page.on('pageerror',e=>errors.push(e.message));
+let assigned=null;let submittedStore=null;let reprintCall=null;const errors=[];page.on('pageerror',e=>errors.push(e.message));
 await page.route('https://pitacco-test.supabase.co/**',async route=>{
  const request=route.request(),url=new URL(request.url());let result=[];
  if(url.pathname==='/auth/v1/token')result={access_token:'fixture-access-token',refresh_token:'fixture-refresh',token_type:'bearer',expires_in:3600,user:{id:uid,email:'demo@example.invalid',aud:'authenticated'}};
@@ -24,6 +24,7 @@ await page.route('https://pitacco-test.supabase.co/**',async route=>{
  else if(url.pathname.endsWith('/deliveries'))result=deliveries;
  else if(url.pathname.endsWith('/print_sectors'))result=[{sector:'Cozinha',printer:'Térmica de teste',width:80,copies:1,enabled:true}];
  else if(url.pathname.endsWith('/couriers'))result=request.headers().accept?.includes('object')?null:[{id:cid,store_id:sid,name:'Entregador de teste',fleet_type:'propria',active:true,available:false}];
+ else if(url.pathname.includes('/rpc/reprint_order')){reprintCall=request.postDataJSON();result=null}
  else if(url.pathname.includes('/rpc/assign_order_courier')){assigned=request.postDataJSON();const d=deliveries.find(d=>d.id===assigned.p_delivery);d.courier_id=assigned.p_courier;d.status='atribuida';d.batch_id='60000000-0000-0000-0000-000000000001';result=d.batch_id}
  else if(url.pathname.includes('/rpc/set_order_preparation')){const args=request.postDataJSON();orders.find(o=>o.id===args.p_order).preparation_status=args.p_status;result=null}
  else if(url.pathname.includes('/rpc/accept_order')){const args=request.postDataJSON();orders.find(o=>o.id===args.p_order).status='accepted';result=null}
@@ -32,6 +33,11 @@ await page.route('https://pitacco-test.supabase.co/**',async route=>{
 try{
  await page.goto('http://127.0.0.1:4178');await page.getByPlaceholder('E-mail',{exact:true}).fill('demo@example.invalid');await page.getByPlaceholder('Senha (mínimo 6 caracteres)').fill('fixture-password');await page.getByRole('button',{name:'Entrar',exact:true}).click();
  await page.getByText('Ana · exemplo',{exact:true}).waitFor();
+ const printer=page.getByRole('button',{name:'Reimprimir comanda do pedido 40000000'}).first();
+ assert.ok(await printer.isVisible(),'O ícone de reimpressão deve estar visível no cartão de pedido aceito');
+ await printer.click();await page.waitForTimeout(300);
+ assert.equal(reprintCall?.p_order,orders[1].id,'O ícone deve solicitar a reimpressão do pedido correspondente');
+ assert.ok(reprintCall?.p_reason?.length>=5,'A auditoria deve receber motivo automático sem pedir justificativa');
  for(const name of ['Em análise','Em preparo','Pronto','Em entrega'])assert.equal(await page.getByRole('heading',{name,exact:true}).count(),1);
  await page.getByRole('button',{name:'+ Novo pedido',exact:true}).click();assert.ok(await page.getByPlaceholder('Cliente',{exact:true}).isVisible());
  await page.getByRole('button',{name:'+ Novo pedido',exact:true}).click();
