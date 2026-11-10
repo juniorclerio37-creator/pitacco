@@ -19,3 +19,5 @@ for file in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src
 # Apply the Windows spooler buffer fix after all source overlays.
 import subprocess,sys
 subprocess.run([sys.executable,'revisions/0.12/fix_printer_122.py'],check=True)
+
+subprocess.run([sys.executable,'revisions/0.12/add_printer_ui_013.py'],check=True)
