@@ -1,7 +1,7 @@
 """Add per-sector source/category filters and five original receipt presets."""
 from pathlib import Path
 p=Path('web/Operations.jsx')
-s=p.read_text()
+s=p.read_text(encoding='utf-8')
 needle="import DeliveryDialog,"
 assert s.count(needle)==1
 s=s.replace(needle,"import {RECEIPT_TEMPLATES} from './receiptTemplates.mjs';\n"+needle,1)
@@ -20,4 +20,4 @@ s=s.replace(needle,"onClick={()=>{setEditingSector(s);setPrinterSources((s.sourc
 needle='<h3>Modelo HTML da comanda</h3>'
 assert s.count(needle)==1
 s=s.replace(needle,needle+'''<label className="field">Modelos prontos<select aria-label="Modelo de comprovante" defaultValue="" onChange={e=>{if(e.target.value)setTemplateHtml(RECEIPT_TEMPLATES[e.target.value])}}><option value="">Selecionar modelo</option><option value="simples">Simples</option><option value="completo">Completo</option><option value="cozinha">Cozinha</option><option value="expedicao">Expedição</option><option value="entregador">Entregador</option></select></label>''',1)
-p.write_text(s)
+p.write_text(s,encoding='utf-8')
