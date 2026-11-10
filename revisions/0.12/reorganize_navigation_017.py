@@ -4,9 +4,9 @@ p=Path('web/src.jsx')
 s=p.read_text(encoding='utf-8')
 start=s.index('const nav=[');end=s.index(';\nconst descriptions=',start)
 s=s[:start]+"""const nav=[['Visão Geral',LayoutDashboard,'Principal'],['Pedidos',ShoppingBag,'Principal'],['Motoboys',Bike,'Principal'],['Meu Cardápio',Package,'Principal'],['Integrações',Plug,'Principal'],['Fideliza+',CreditCard,'Principal'],['Administrar Loja',Settings,'Principal']];
-const secondaryTabs={'Motoboys':[['Entregas','Entregas e rotas'],['Entregadores','Equipe de motoboys'],['Entrega externa','Entrega parceira']],'Meu Cardápio':[['Produtos','Produtos'],['Importar cardápio','Importar cardápio']],'Administrar Loja':[['Minha Loja','Dados da loja'],['Configurações','Impressão e aceite'],['Equipe','Usuários'],['Lançamentos','Lançamentos'],['Despesas','Despesas'],['Lojas','Estabelecimentos'],['Assinaturas','Assinaturas']]};
+const secondaryTabs={'Pedidos':[['Pedidos','Gestor de pedidos'],['Cozinha e expedição','Cozinha e expedição']],'Motoboys':[['Entregas','Entregas e rotas'],['Entregadores','Equipe de motoboys'],['Entrega externa','Entrega parceira']],'Meu Cardápio':[['Produtos','Produtos e preços'],['Importar cardápio','Importar cardápio']],'Administrar Loja':[['Minha Loja','Dados da loja'],['Assinaturas','Assinatura · R$ 59,90'],['Configurações','Impressão e aceite'],['Equipe','Usuários'],['Lançamentos','Lançamentos'],['Despesas','Despesas'],['Lojas','Estabelecimentos']]};
 const primaryOf=t=>t==='Painel'?'Visão Geral':t==='Cozinha e expedição'?'Pedidos':t==='Entregas'||t==='Entregadores'||t==='Entrega externa'?'Motoboys':t==='Produtos'||t==='Importar cardápio'?'Meu Cardápio':['Minha Loja','Configurações','Equipe','Lançamentos','Despesas','Lojas','Assinaturas'].includes(t)?'Administrar Loja':t;
-const landing={'Visão Geral':'Painel','Motoboys':'Entregas','Meu Cardápio':'Produtos','Administrar Loja':'Minha Loja'};
+const landing={'Pedidos':'Pedidos','Visão Geral':'Painel','Motoboys':'Entregas','Meu Cardápio':'Produtos','Administrar Loja':'Minha Loja'};
 """+s[end+1:]
 s=s.replace("['Painel',LayoutDashboard,'Operação']","['Visão Geral',LayoutDashboard,'Principal']")
 needle="const isDriver=profile?.role==='entregador';"
