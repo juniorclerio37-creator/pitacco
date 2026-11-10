@@ -11,7 +11,7 @@ s=s.replace(needle,"const [printerSources,setPrinterSources]=useState(''),[print
 needle="enabled:true},{onConflict:'store_id,sector'}"
 assert s.count(needle)==1
 s=s.replace(needle,"enabled:true,sources:printerSources.split(',').map(x=>x.trim()).filter(Boolean),categories:printerCategories.split(',').map(x=>x.trim()).filter(Boolean)},{onConflict:'store_id,sector'}",1)
-needle='<form key={editingSector?.sector||'+"'new'"+'} onSubmit={savePrinter}>'
+needle="<form key={editingSector?.sector||'new'} onSubmit={savePrinter}>"
 assert s.count(needle)==1
 s=s.replace(needle,needle+'''<label className="field">Origens (separadas por vírgula, vazio = todas)<input value={printerSources} onChange={e=>setPrinterSources(e.target.value)} placeholder="proprio,ifood,99food,keeta"/></label><label className="field">Categorias dos produtos (separadas por vírgula, vazio = todas)<input value={printerCategories} onChange={e=>setPrinterCategories(e.target.value)} placeholder="Bebidas,Sobremesas"/></label>''',1)
 needle='onClick={()=>setEditingSector(s)}>Editar'
