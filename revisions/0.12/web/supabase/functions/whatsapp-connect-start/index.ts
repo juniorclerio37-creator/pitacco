@@ -16,7 +16,7 @@ Deno.serve(async req=>{
   if(authError||!user)return response({error:'Sessão inválida'},401);
   const {store_id}=await req.json();
   if(typeof store_id!=='string'||! /^[0-9a-f-]{36}$/i.test(store_id))return response({error:'Loja inválida'},400);
-  const {data:allowed,error:permissionError}=await userClient.rpc('is_store_manager',{p_store_id:store_id});
+  const {data:allowed,error:permissionError}=await userClient.rpc('pitacco_can_manage_store',{p_store_id:store_id});
   // Some existing installations expose is_store_manager as SQL helper, not RPC.
   // Fail closed until permission RPC is confirmed, never grant access on error.
   if(permissionError||allowed!==true)return response({error:'Sem permissão para esta loja'},403);
