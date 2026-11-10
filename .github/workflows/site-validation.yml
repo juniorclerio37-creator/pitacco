@@ -29,7 +29,7 @@ jobs:
           files=['marketing/cardapio.html','marketing/acompanhar.html','marketing/identidade.html','marketing/configuracao.html']
           for f in files:
               text=Path(f).read_text()
-              blocks=re.findall(r'<script\\b[^>]*>(.*?)</script>',text,re.S|re.I)
+              blocks=re.findall(r'<script[^>]*>(.*?)</script>',text,re.S|re.I)
               if not blocks: raise SystemExit(f'Sem script: {f}')
               for i,block in enumerate(blocks):
                   Path(f'/tmp/pitacco-{Path(f).stem}-{i}.mjs').write_text(block)
