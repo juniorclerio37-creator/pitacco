@@ -11,7 +11,7 @@ export function approvedReceipt(job,width=80,opts={}){
  const store=opts.storeName||r.store_name||r.company_name||r.store?.name||'';
  if(store)add(store.toUpperCase());
  if(opts.showWhatsapp&&opts.whatsapp)add('WhatsApp: '+opts.whatsapp);
- add(rule);add('PEDIDO '+clean(r.number||r.order_number||job.order_id?.slice(0,8)||''));
+ add(rule);add('PEDIDO '+clean(r.display_number||r.external_order_number||r.order_number||r.display_id||r.number||job.order_id?.slice(0,8)||''));
  add('Origem: '+clean(r.source||'Cardapio proprio'));
  add('Data: '+clean(r.created_at||r.date||''));
  heading('CLIENTE');
