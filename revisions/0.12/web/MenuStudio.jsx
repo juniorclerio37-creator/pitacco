@@ -1,4 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react';
+import {uploadStoreImage,mediaUrl} from './StoreProfile.jsx';
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const empty=()=>({name:'',description:'',category:'',price:'',cost:'',promotional_price:'',active:true,pdv_code:'',details:'',special_tags:'',availability:'',technical_sheet:'',complement_groups:[],gallery_paths:[]});
 const field={display:'grid',gap:5,marginBottom:13};
@@ -15,10 +16,10 @@ export default function MenuStudio({client,storeId,products=[],onRefresh}){
    const price=Number(draft.price),cost=Number(draft.cost||0),promo=draft.promotional_price===''?null:Number(draft.promotional_price);
    if(!draft.name.trim()||!Number.isFinite(price)||price<0||!Number.isFinite(cost)||cost<0||promo!==null&&(!Number.isFinite(promo)||promo<0||promo>price))throw Error('Confira nome, preço, custo e promoção.');
    const row={store_id:storeId,name:draft.name.trim(),price,cost,description:draft.description,category:draft.category,active:draft.active,promotional_price:promo,pdv_code:draft.pdv_code,details:JSON.parse(draft.details||'{}'),technical_sheet:JSON.parse(draft.technical_sheet||'{}'),availability:JSON.parse(draft.availability||'{}'),special_tags:draft.special_tags.split(',').map(s=>s.trim()).filter(Boolean),complement_groups:draft.complement_groups};
-   if(photo)throw Error('A foto já aparece na prévia, mas ainda não há upload autorizado configurado. Nenhum dado foi perdido; retire a foto para salvar os demais campos.');
+   if(photo)row.image_path=await uploadStoreImage(client,storeId,photo,'products');
    const query=editing?client.from('products').update(row).eq('id',editing).eq('store_id',storeId):client.from('products').insert(row);
    const {error}=await query;if(error)throw error;
-   setShowEditor(false);setDraft(empty());setEditing(null);setNotice('Produto salvo.');onRefresh?.();
+   setShowEditor(false);setDraft(empty());setPhoto(null);setEditing(null);setNotice('Produto salvo.');onRefresh?.();
   }catch(err){setNotice(err.message||String(err))}finally{setBusy(false)}
  }
  async function toggle(p){setBusy(true);const {error}=await client.from('products').update({active:!p.active}).eq('id',p.id).eq('store_id',storeId);setBusy(false);setNotice(error?.message||'Disponibilidade atualizada.');if(!error)onRefresh?.()}
@@ -53,10 +54,10 @@ export default function MenuStudio({client,storeId,products=[],onRefresh}){
  <details><summary>Tags de categorias especiais</summary><input value={draft.special_tags} onChange={e=>change('special_tags',e.target.value)} placeholder="Separe por vírgulas"/></details>
  <details><summary>Disponibilidade de dias e horários</summary><textarea value={draft.availability} onChange={e=>change('availability',e.target.value)} placeholder="{}"/></details>
  <details><summary>Galeria de fotos</summary><p className="hint">Galeria adicional: armazenamento pendente de configuração.</p></details>
- <p className="hint">A prévia é automática. O upload de imagens ainda requer armazenamento seguro configurado; a foto selecionada não é enviada ao salvar.</p>
+ <p className="hint">A prévia é automática. Você pode substituir a foto quando editar o produto; o novo arquivo será salvo somente na loja selecionada.</p>
  <div className="quick-actions"><button type="button" className="secondary" onClick={()=>setShowEditor(false)}>Cancelar</button><button disabled={busy} type="submit">Salvar produto</button></div>
  </form>
- <aside className="panel" style={{position:'sticky',top:0}}><span className="eyebrow">PRÉVIA AUTOMÁTICA · CLIENTE FINAL</span><div style={{border:'1px solid #ddd',borderRadius:18,overflow:'hidden',background:'white',color:'#222',marginTop:12}}>{previewUrl?<img src={previewUrl} alt="Foto selecionada" style={{width:'100%',height:170,objectFit:'cover'}}/>:<div style={{height:150,background:'#f0f1f3',display:'grid',placeItems:'center'}}>Foto do produto</div>}<div style={{padding:14}}><small>{draft.category||'Categoria'}</small><h3>{draft.name||'Nome do produto'}</h3><p>{draft.description||'Descrição do produto'}</p>{draft.promotional_price!==''&&<del>{brl(draft.price)}</del>}<h3>{brl(draft.promotional_price!==''?draft.promotional_price:draft.price)}</h3>{draft.complement_groups.map((g,i)=><div key={i} style={{borderTop:'1px solid #eee',paddingTop:10,marginTop:10}}><b>{g.name}</b><small style={{display:'block'}}>Escolha {g.min} a {g.max} · {g.required?'Obrigatório':'Opcional'}</small>{g.options.map((o,j)=><p key={j} style={{margin:'7px 0'}}>◯ {o.name} · {brl(o.price)}</p>)}</div>)}<button type="button" disabled style={{width:'100%',marginTop:12}}>Adicionar ao pedido</button></div></div><p className="hint">Prévia ilustrativa em tempo real, sem publicação automática.</p></aside>
+ <aside className="panel" style={{position:'sticky',top:0}}><span className="eyebrow">PRÉVIA AUTOMÁTICA · CLIENTE FINAL</span><div style={{border:'1px solid #ddd',borderRadius:18,overflow:'hidden',background:'white',color:'#222',marginTop:12}}>{(previewUrl||draft.image_path)?<img src={previewUrl||mediaUrl(client,draft.image_path)} alt="Foto selecionada" style={{width:'100%',height:170,objectFit:'cover'}}/>:<div style={{height:150,background:'#f0f1f3',display:'grid',placeItems:'center'}}>Foto do produto</div>}<div style={{padding:14}}><small>{draft.category||'Categoria'}</small><h3>{draft.name||'Nome do produto'}</h3><p>{draft.description||'Descrição do produto'}</p>{draft.promotional_price!==''&&<del>{brl(draft.price)}</del>}<h3>{brl(draft.promotional_price!==''?draft.promotional_price:draft.price)}</h3>{draft.complement_groups.map((g,i)=><div key={i} style={{borderTop:'1px solid #eee',paddingTop:10,marginTop:10}}><b>{g.name}</b><small style={{display:'block'}}>Escolha {g.min} a {g.max} · {g.required?'Obrigatório':'Opcional'}</small>{g.options.map((o,j)=><p key={j} style={{margin:'7px 0'}}>◯ {o.name} · {brl(o.price)}</p>)}</div>)}<button type="button" disabled style={{width:'100%',marginTop:12}}>Adicionar ao pedido</button></div></div><p className="hint">Prévia ilustrativa em tempo real, sem publicação automática.</p></aside>
  </div></div></div>}
  </>}
  </section>;
