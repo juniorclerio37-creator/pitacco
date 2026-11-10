@@ -19,6 +19,7 @@ needle='<div className="brand"><img src="/pitacco-logo.png" alt="Pitacco"/><span
 assert s.count(needle)==1
 replacement='<div className="brand store-identity">{storeBrand?.logo_url&&/^https:\\/\\//.test(storeBrand.logo_url)?<img src={storeBrand.logo_url} alt={"Logo de "+(active?.name||"loja")}/>:<span className="store-identity-placeholder" aria-hidden="true"><Store size={24}/></span>}<span className="store-identity-copy"><strong>{active?.name||"Seu estabelecimento"}</strong><small>Gestão de pedidos e vendas</small></span></div>'
 s=s.replace(needle,replacement,1)
+s=s.replace('src="/pitacco-logo.png" alt="Pitacco"','src="/pitacco-brand-013.svg" alt="Pitacco"')
 p.write_text(s,encoding='utf-8')
 p=Path('web/style.css')
 s=p.read_text(encoding='utf-8')
