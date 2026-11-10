@@ -6,9 +6,10 @@ needle="['Atualizações',Settings,'Principal'],"
 assert s.count(needle)==1
 s=s.replace(needle,"",1)
 # Reset workspace when the authenticated identity changes, avoiding role-view leakage.
-needle="function App(){const[storeBrand"
+# The theme overlay inserts its own hook before storeBrand; do not expect App and storeBrand to be adjacent.
+needle="const[storeBrand,setStoreBrand]=useState(null)"
 assert s.count(needle)==1
-s=s.replace(needle,"function App(){const [platformWorkspace,setPlatformWorkspace]=useState(true);const[storeBrand",1)
+s=s.replace(needle,"const [platformWorkspace,setPlatformWorkspace]=useState(true);"+needle,1)
 needle="useEffect(()=>{if(!supabase)"
 assert s.count(needle)==1
 s=s.replace(needle,"useEffect(()=>{setPlatformWorkspace(true)},[session?.user?.id]);\n"+needle,1)
