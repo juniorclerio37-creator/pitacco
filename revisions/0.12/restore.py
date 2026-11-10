@@ -60,3 +60,6 @@ subprocess.run([sys.executable,'revisions/0.12/add_release_center_036.py'],check
 
 # Native update-check feedback, no unsigned installer execution.
 subprocess.run([sys.executable,'revisions/0.12/add_update_check_037.py'],check=True)
+
+# Separate admin and store workspaces, shared Windows executable.
+subprocess.run([sys.executable,'revisions/0.12/separate_admin_shell_038.py'],check=True)
