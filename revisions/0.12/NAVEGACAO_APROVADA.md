@@ -5,6 +5,7 @@
 - Pedidos (operações e criação manual de pedidos)
 - Motoboys (aba exclusiva, nunca dentro de Administrar Loja)
 - Meu Cardápio (aba exclusiva)
+- Integrações (aba exclusiva, nunca dentro de Administrar Loja)
 - Administrar Loja (antiga área Configurações)
 
 ## Motoboys
@@ -18,6 +19,11 @@
 - Produtos, categorias, complementos, preços, disponibilidade
 - Banners, estoque e demais opções de catálogo
 
+## Integrações
+- iFood, 99Food, Keeta e outras origens externas
+- Plataformas de entrega parceiras e serviços externos
+- Conexões, autorizações, status e diagnósticos de integração
+
 ## Administrar Loja
 - Loja (identidade, dados, endereço)
 - Pedidos (preferências e regras de operação; não o quadro operacional)
@@ -26,7 +32,6 @@
 - Pagamento
 - Impressão (impressoras, setores, modelo padrão 80 mm e HTML personalizado)
 - Usuários e permissões
-- Integrações
 - Demais configurações administrativas
 
 ## Referências de UX fornecidas pelo usuário
