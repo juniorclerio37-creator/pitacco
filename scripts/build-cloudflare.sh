@@ -20,3 +20,4 @@ cp marketing/cardapio.html web/dist/cardapio/index.html
 cp marketing/pedidos.html web/dist/pedidos/index.html
 cp marketing/aceite.html web/dist/aceite/index.html
 cp marketing/acompanhar.html web/dist/acompanhar/index.html
+cp marketing/sw.js web/dist/sw.js
