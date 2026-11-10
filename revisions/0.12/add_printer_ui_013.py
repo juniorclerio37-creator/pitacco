@@ -1,7 +1,7 @@
 """Apply incremental 0.13 printer settings UI and receipt template changes."""
 from pathlib import Path
 p=Path('web/Operations.jsx')
-s=p.read_text()
+s=p.read_text(encoding='utf-8')
 s=s.replace("const [settingsTab,setSettingsTab]=useState('Impressoras')","const [editingSector,setEditingSector]=useState(null),[templateHtml,setTemplateHtml]=useState(''),[templatePreview,setTemplatePreview]=useState(false);\n const [settingsTab,setSettingsTab]=useState('Impressoras')",1)
 needle=" const rpc=async(name,args)=>"
 s=s.replace(needle," useEffect(()=>{if(!storeId)return;setTemplateHtml(localStorage.getItem('pitacco:receipt:'+storeId)||'<h2>PITACCO</h2><p>Pedido: {{pedido}}</p><p>Cliente: {{cliente}}</p><p>{{itens}}</p><p>Total: {{total}}</p><p>{{observacoes}}</p>');},[storeId]);\n"+needle,1)
@@ -17,8 +17,8 @@ marker="   {desktop&&<div className=\"panel\"><h3>Fila persistente"
 addition="""   <div className="panel"><h3>Modelo HTML da comanda</h3><p>Modelo independente por loja neste computador. Campos: {'{{pedido}}'}, {'{{cliente}}'}, {'{{itens}}'}, {'{{total}}'}, {'{{observacoes}}'}. O conteúdo é convertido para texto ESC/POS; imagens e estilos não são enviados como HTML à impressora.</p><label className="field">HTML do cupom<textarea rows={10} spellCheck={false} value={templateHtml} onChange={e=>setTemplateHtml(e.target.value)} /></label><div className="quick-actions"><button type="button" onClick={()=>{localStorage.setItem('pitacco:receipt:'+storeId,templateHtml);setStatus('Modelo salvo neste computador para esta loja')}}>Salvar modelo</button><button type="button" className="secondary" onClick={()=>setTemplatePreview(x=>!x)}>Pré-visualizar</button><button type="button" className="secondary" onClick={()=>{const original='<h2>PITACCO</h2><p>Pedido: {{pedido}}</p><p>Cliente: {{cliente}}</p><p>{{itens}}</p><p>Total: {{total}}</p><p>{{observacoes}}</p>';setTemplateHtml(original);localStorage.setItem('pitacco:receipt:'+storeId,original)}}>Restaurar padrão</button></div>{templatePreview&&<iframe title="Prévia do cupom" sandbox="" style={{width:'100%',maxWidth:340,height:330,background:'#fff',border:'1px solid #ddd'}} srcDoc={templateHtml.replace(/{{pedido}}/g,'123').replace(/{{cliente}}/g,'Cliente exemplo').replace(/{{itens}}/g,'1 x Açaí 500ml').replace(/{{total}}/g,'R$ 25,00').replace(/{{observacoes}}/g,'Sem observações')}/>}</div>
 """
 s=s.replace(marker,addition+marker,1)
-p.write_text(s)
-p=Path('web/printBridge.mjs');s=p.read_text()
+p.write_text(s,encoding='utf-8')
+p=Path('web/printBridge.mjs');s=p.read_text(encoding='utf-8')
 needle=" if(typeof job.receipt_text==='string')return job.receipt_text.split('\\n')"
 insertion=""" const html=typeof localStorage!=='undefined'&&job.store_id?localStorage.getItem('pitacco:receipt:'+job.store_id):null;
  if(html&&typeof DOMParser!=='undefined'&&!/<\\s*(script|iframe|object|embed|link|meta|img|svg|audio|video|form|base)\\b|\\bon\\w+\\s*=|(?:src|href)\\s*=|@import|url\\s*\\(/i.test(html)){
@@ -30,4 +30,4 @@ insertion=""" const html=typeof localStorage!=='undefined'&&job.store_id?localSt
   return text.split('\\n').flatMap(line=>{const out=[];for(let i=0;i<line.length;i+=columns)out.push(clean(line.slice(i,i+columns)));return out.length?out:[''];}).join('\\n')+'\\n\\n';
  }
 """
-s=s.replace(needle,insertion+needle,1);p.write_text(s)
+s=s.replace(needle,insertion+needle,1);p.write_text(s,encoding='utf-8')
