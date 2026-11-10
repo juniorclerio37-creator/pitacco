@@ -6,7 +6,10 @@ import {CUPOM_80MM_HTML} from '../cupom80mm.mjs';
 test('only the supplied standard 80mm receipt is offered',()=>{
  assert.ok(CUPOM_80MM_HTML.includes('CUPOM NÃO FISCAL'));
  assert.ok(CUPOM_80MM_HTML.includes('{{#ITEMS}}'));
- assert.ok(CUPOM_80MM_HTML.includes('Pitacco Delivery App'));
+ assert.ok(CUPOM_80MM_HTML.includes('Impresso por Pitacco Gestão de Delivery'));
+ assert.ok(CUPOM_80MM_HTML.includes('{{CHANGE_HTML}}'));
+ assert.ok(CUPOM_80MM_HTML.includes('{{PAYMENT_STATUS_HTML}}'));
+ assert.ok(!CUPOM_80MM_HTML.includes('Previsão de entrega'));
  assert.equal(validateReceiptTemplate(CUPOM_80MM_HTML),CUPOM_80MM_HTML);
 });
 test('unsafe HTML is rejected',()=>{
