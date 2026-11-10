@@ -46,3 +46,5 @@ subprocess.run([sys.executable,'revisions/0.12/apply_approved_receipt_027.py'],c
 
 subprocess.run([sys.executable,'revisions/0.12/add_courier_finance_029.py'],check=True)
 subprocess.run([sys.executable,'revisions/0.12/receipt_visibility_030.py'],check=True)
+
+subprocess.run([sys.executable,'revisions/0.12/printer_experience_031.py'],check=True)
