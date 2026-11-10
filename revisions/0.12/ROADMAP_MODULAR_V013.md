@@ -14,7 +14,7 @@
 2. Pedidos — abas Recebidos, Preparo, Entregas e Agendados. Despacho e rotas ficam aqui.
 3. Motoboys — Cadastro, Regras de pagamento, Acertos e Histórico. Sem despacho.
 4. Meu Cardápio — Produtos, Complementos, Estoque e Fichas técnicas.
-5. Clientes — Cadastro, Histórico e Segmentos.
+5. Clientes — Cadastro, Histórico, Segmentos e Bloqueios.
 6. Fideliza+ — Pontos, Cupons, Cashback, Campanhas, Indicações e Recompensas.
 7. Financeiro — Visão financeira, Lucro por pedido, Conciliação, Despesas e Relatórios.
 8. Integrações — Canais, credenciais autorizadas, status e erros.
@@ -31,6 +31,15 @@
 - Insumos: unidade, fator de conversão, estoque mínimo, custo, movimentações imutáveis e ajuste auditado.
 - Ficha técnica versionada por produto e complementos; baixa idempotente ao marco operacional definido; estorno em cancelamentos.
 - Cadastro e histórico de clientes apenas com dados disponíveis e uso permitido; consentimentos para marketing, retenção e controle de acesso.
+
+### Bloqueio de clientes do cardápio próprio
+- Somente pedidos originados no cardápio digital próprio; não bloquear pedidos de iFood, 99Food ou Keeta.
+- Bloqueio isolado por loja, com motivo, autor, data, expiração opcional e desbloqueio auditado.
+- Identificação por telefone normalizado com DDD, nome ou endereço completo; coincidências apenas por nome/endereço exigem confirmação adicional para evitar falsos positivos.
+- Verificar no backend durante o checkout, antes de criar o pedido; não confiar apenas em filtros na interface.
+- Mensagem ao cliente discreta, sem mencionar bloqueio; texto padrão editável pela loja.
+- Proteger dados pessoais com permissões e RLS, evitando exposição pública da lista de bloqueados.
+- Testar bloqueio, expiração, desbloqueio, isolamento entre lojas e não interferência em pedidos de marketplaces.
 
 ### Fase C: pedidos agendados
 - Disponibilidade por loja, horário, capacidade, antecedência, fuso e feriados.
