@@ -51,3 +51,6 @@ subprocess.run([sys.executable,'revisions/0.12/receipt_visibility_030.py'],check
 subprocess.run([sys.executable,'revisions/0.12/printer_experience_031.py'],check=True)
 
 subprocess.run([sys.executable,'revisions/0.12/print_device_controls_033.py'],check=True)
+
+# Pitacco 0.13: visual layout of four approved workspaces; preserves business logic.
+subprocess.run([sys.executable,'revisions/0.12/apply_four_workspaces_035.py'],check=True)
