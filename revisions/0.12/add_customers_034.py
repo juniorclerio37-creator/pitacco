@@ -38,7 +38,7 @@ component="""function CustomersFromOrders({orders=[],storeId}){
   if(!storeId||order.store_id!==storeId)continue;
   const name=String(order.receipt?.customer||order.customer_name||'').trim();
   if(!name)continue;
-  const phone=String(order.receipt?.customer_phone||order.receipt?.phone||order.customer_phone||'').replace(/\\D/g,'');
+  const phone=String(order.receipt?.customer_phone||order.receipt?.phone||order.customer_phone||'').replace(/\D/g,'');
   // Without a phone, names alone are not reliable unique customer identifiers.
   const key=phone?'phone:'+phone:'order:'+String(order.id);
   const row=customers.get(key)||{name,phone,count:0,total:0,last:''};
