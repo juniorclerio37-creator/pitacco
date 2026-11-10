@@ -50,3 +50,5 @@ subprocess.run([sys.executable,'revisions/0.12/receipt_visibility_030.py'],check
 subprocess.run([sys.executable,'revisions/0.12/printer_experience_031.py'],check=True)
 
 subprocess.run([sys.executable,'revisions/0.12/print_device_controls_033.py'],check=True)
+
+subprocess.run([sys.executable,'revisions/0.12/add_profit_report_036.py'],check=True)
