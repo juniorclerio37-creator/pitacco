@@ -14,7 +14,7 @@ export function loadMetaSdk(appId) {
   sdkPromise = new Promise((resolve, reject) => {
     const timeout = window.setTimeout(() => reject(new Error('Tempo esgotado ao carregar SDK Meta')), 15000);
     window.fbAsyncInit = () => {
-      window.FB.init({ appId: String(appId), autoLogAppEvents: false, xfbml: false, version: 'v24.0' });
+      window.FB.init({ appId: String(appId), autoLogAppEvents: false, xfbml: false, version: 'v27.0' });
       window.clearTimeout(timeout);
       resolve(window.FB);
     };
