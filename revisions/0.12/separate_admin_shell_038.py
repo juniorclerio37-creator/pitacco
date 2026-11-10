@@ -16,8 +16,10 @@ s=s.replace(needle,admin_shell+needle,1)
 needle="<main className={'pitacco-workspace"
 assert s.count(needle)==1
 s=s.replace(needle,"<main className={'pitacco-workspace",1)
+# The admin shell has its own header; target only the tenant header after its return.
 needle="<header><div><span className=\"eyebrow\""
-assert s.count(needle)==1
-# Place return control in store header; platform admin only.
-s=s.replace(needle,"<header>{admin&&<button className=\"secondary admin-return\" onClick={()=>{setPlatformWorkspace(true);setTab('Painel geral')}}>Voltar ao Pitacco Admin</button>}<div><span className=\"eyebrow\"",1)
+assert s.count(needle)==2
+# Last occurrence belongs to the store workspace.
+head,tail=s.rsplit(needle,1)
+s=head+"<header>{admin&&<button className=\"secondary admin-return\" onClick={()=>{setPlatformWorkspace(true);setTab('Painel geral')}}>Voltar ao Pitacco Admin</button>}<div><span className=\"eyebrow\""+tail
 p.write_text(s,encoding='utf-8')
