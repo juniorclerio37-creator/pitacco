@@ -25,6 +25,7 @@ begin
  if p_start is null or p_end is null or p_end<p_start or p_amount is null or p_amount<=0 then raise exception 'Pagamento invalido'; end if;
  if not exists(select 1 from public.couriers where id=p_courier and store_id=p_store) then raise exception 'Entregador nao pertence a loja'; end if;
  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_store::text||p_courier::text,0));
+ if exists(select 1 from public.pitacco_courier_payouts p where p.store_id=p_store and p.courier_id=p_courier and daterange(p.period_start,p.period_end,'[]') && daterange(p_start,p_end,'[]') and (p.period_start<>p_start or p.period_end<>p_end)) then raise exception 'Periodo sobreposto: conclua o acerto anterior antes de mudar o intervalo'; end if;
  select coalesce(sum(d.courier_payment),0) into v_due from public.deliveries d
  where d.store_id=p_store and d.courier_id=p_courier and d.status='entregue'
  and (d.updated_at at time zone 'America/Sao_Paulo')::date between p_start and p_end;
