@@ -23,4 +23,8 @@ new = ''' // Query the required size first; some drivers need a larger buffer ev
  };'''
 if source.count(old) != 1:
     raise RuntimeError("Original printer code changed; refusing to patch")
-path.write_text(source.replace(old, new), encoding="utf-8")
+updated = source.replace(old, new)
+# The preexisting EnumPrintersW allocation also used an unimported size_of symbol.
+updated = updated.replace("size_of::<usize>()", "std::mem::size_of::<usize>()")
+updated = updated.replace("std::mem::std::mem::size_of::<usize>()", "std::mem::size_of::<usize>()")
+path.write_text(updated, encoding="utf-8")
