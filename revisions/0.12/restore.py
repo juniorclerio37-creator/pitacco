@@ -35,3 +35,5 @@ subprocess.run([sys.executable,'revisions/0.12/reorganize_navigation_017.py'],ch
 subprocess.run([sys.executable,'revisions/0.12/improve_subscription_018.py'],check=True)
 
 subprocess.run([sys.executable,'revisions/0.12/add_menu_studio_019.py'],check=True)
+
+subprocess.run([sys.executable,'revisions/0.12/add_store_profile_020.py'],check=True)
