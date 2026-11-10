@@ -15,3 +15,7 @@ for file in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src
  else:
   for previous in ['0.11.0','0.11.1']:text=text.replace(previous,'0.12.0')
  p.write_text(text)
+
+# Apply the Windows spooler buffer fix after all source overlays.
+import subprocess,sys
+subprocess.run([sys.executable,'revisions/0.12/fix_printer_122.py'],check=True)
