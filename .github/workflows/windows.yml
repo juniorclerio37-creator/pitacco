@@ -79,8 +79,8 @@ jobs:
           operations=Path('web/Operations.jsx').read_text(encoding='utf-8')
           checks={
               'Central disponivel para administrador': "tab==='Atualizações'&&admin" in src,
-              'Central visivel no menu Windows': "'Clientes','Atualizações'" in src,
-              'Menu exclusivo do administrador': "name!=='Atualizações'||admin" in src,
+              'Central no painel admin': "['Atualizações',Settings]" in src,
+              'Menu da loja sem atualizacoes admin': "['Atualizações',Settings,'Principal']" not in src,
               'Verificacao nativa conectada': "invoke('check_update')" in operations,
               'Erros de verificacao exibidos': "setUpdateCheck({state:'error'" in operations,
               'Sem instalacao nao assinada': 'Esta verificação não instala arquivos.' in operations,
