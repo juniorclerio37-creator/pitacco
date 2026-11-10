@@ -4,7 +4,7 @@ p=Path('web/Operations.jsx')
 s=p.read_text(encoding='utf-8')
 needle="import DeliveryDialog,"
 assert s.count(needle)==1
-s=s.replace(needle,"import {RECEIPT_TEMPLATES} from './receiptTemplates.mjs';\n"+needle,1)
+s=s.replace(needle,"import {CUPOM_80MM_HTML} from './cupom80mm.mjs';\n"+needle,1)
 needle="const [editingSector,setEditingSector]=useState(null)"
 assert s.count(needle)==1
 s=s.replace(needle,"const [printerSources,setPrinterSources]=useState(''),[printerCategories,setPrinterCategories]=useState('');\n "+needle,1)
@@ -19,5 +19,5 @@ assert s.count(needle)==1
 s=s.replace(needle,"onClick={()=>{setEditingSector(s);setPrinterSources((s.sources||[]).join(','));setPrinterCategories((s.categories||[]).join(','))}}>Editar",1)
 needle='<h3>Modelo HTML da comanda</h3>'
 assert s.count(needle)==1
-s=s.replace(needle,needle+'''<label className="field">Modelos prontos<select aria-label="Modelo de comprovante" defaultValue="" onChange={e=>{if(e.target.value)setTemplateHtml(RECEIPT_TEMPLATES[e.target.value])}}><option value="">Selecionar modelo</option><option value="simples">Simples</option><option value="completo">Completo</option><option value="cozinha">Cozinha</option><option value="expedicao">Expedição</option><option value="entregador">Entregador</option></select></label>''',1)
+s=s.replace(needle,needle+'''<div className="quick-actions"><button type="button" className="secondary" onClick={()=>setTemplateHtml(CUPOM_80MM_HTML)}>Usar modelo padrão 80 mm</button><span>Ou personalize o HTML no editor abaixo.</span></div>''',1)
 p.write_text(s,encoding='utf-8')
