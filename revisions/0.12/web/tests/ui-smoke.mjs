@@ -30,27 +30,33 @@ await page.route('https://pitacco-test.supabase.co/**',async route=>{
  else if(url.pathname.includes('/rpc/accept_order')){const args=request.postDataJSON();orders.find(o=>o.id===args.p_order).status='accepted';result=null}
  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(result)});
 });
+let smokeStage='login';
 try{
  await page.goto('http://127.0.0.1:4178');await page.getByPlaceholder('E-mail',{exact:true}).fill('demo@example.invalid');await page.getByPlaceholder('Senha (mínimo 6 caracteres)').fill('fixture-password');await page.getByRole('button',{name:'Entrar',exact:true}).click();
  // The admin fixture must explicitly enter its linked store before testing orders.
  await page.getByRole('button',{name:'Entrar no ambiente da loja',exact:true}).waitFor({timeout:12000});
  await page.getByRole('button',{name:'Entrar no ambiente da loja',exact:true}).click();
  try{await page.getByText('Ana · exemplo',{exact:true}).waitFor({timeout:12000})}catch(e){await fs.mkdir('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/login-diagnostic.png',fullPage:true});throw new Error('Pedido de demonstração não apareceu. URL='+page.url()+'; tela='+JSON.stringify((await page.locator('body').innerText()).slice(0,1600))+'; erros='+JSON.stringify(errors)+'; causa='+e.message)}
+smokeStage='reprint';
  const printer=page.locator('.order-card').filter({hasText:'Bruno · exemplo'}).getByRole('button',{name:/Reimprimir comanda do pedido/});
  assert.ok(await printer.isVisible(),'O ícone de reimpressão deve estar visível no cartão de pedido aceito');
  await printer.click();await page.waitForTimeout(300);
  assert.equal(reprintCall?.p_order,orders[1].id,'O ícone deve solicitar a reimpressão do pedido correspondente');
  assert.ok(reprintCall?.p_reason?.length>=5,'A auditoria deve receber motivo automático sem pedir justificativa');
+smokeStage='board columns';
  for(const name of ['Em análise','Em preparo','Pronto','Em entrega'])assert.equal(await page.getByRole('heading',{name,exact:true}).count(),1);
  await page.getByRole('button',{name:'+ Nova venda',exact:true}).click();assert.ok(await page.getByPlaceholder('Cliente',{exact:true}).isVisible());
  await page.getByRole('button',{name:'+ Nova venda',exact:true}).click();
+smokeStage='store administration';
  await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();await page.getByRole('button',{name:'Impressão e aceite',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Criar pedido',exact:true}).count(),0);assert.ok(await page.getByRole('heading',{name:'Impressoras por setor'}).isVisible());
  await page.getByRole('button',{name:'Estabelecimentos',exact:true}).click();assert.equal(await page.locator('select[name=platform]').count(),0);assert.equal(await page.locator('select[name=plan]').count(),0);
  await page.getByLabel('Nome do estabelecimento').fill('Nova loja');await page.getByRole('button',{name:'Cadastrar loja',exact:true}).click();await page.getByText('Registro salvo.',{exact:true}).waitFor();assert.deepEqual(submittedStore,{name:'Nova loja',platform:'',plan:'saas'});
+smokeStage='order acceptance';
  await page.getByRole('button',{name:'Pedidos',exact:true}).click();await page.getByRole('button',{name:'Aceitar pedido',exact:true}).click();await page.waitForTimeout(5500);assert.equal(await page.locator('.preparing .order-card').count(),2);
  await page.locator('.preparing .order-card').filter({hasText:'Bruno · exemplo'}).getByRole('button',{name:'Marcar como pronto'}).click();await page.waitForTimeout(5500);assert.equal(await page.locator('.ready .order-card').count(),2);
  await page.getByRole('textbox',{name:'Buscar pedido'}).fill('Carla');assert.equal(await page.locator('.order-card').count(),1);await page.getByRole('textbox',{name:'Buscar pedido'}).fill('');
  await fs.mkdir('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/pedidos.png',fullPage:true});
+smokeStage='dispatch';
  await page.locator('.ready .order-card').filter({hasText:'Carla · exemplo'}).getByRole('button',{name:'Despachar entrega',exact:true}).click();
  await page.getByRole('dialog').getByText('Entregador de teste',{exact:true}).waitFor();assert.equal(await page.getByRole('dialog').getByText('Itens do pedido',{exact:true}).count(),0);assert.ok(await page.getByRole('dialog').getByText('Entrega sob demanda',{exact:true}).isVisible());
  assert.equal(await page.getByRole('dialog').getByText('Alocação automática',{exact:true}).count(),0);
@@ -65,4 +71,10 @@ try{
  await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();await page.getByRole('button',{name:'Impressão e aceite',exact:true}).click();await page.screenshot({path:'ui-evidence/impressoras.png',fullPage:true});
  await page.getByRole('button',{name:'Estabelecimentos',exact:true}).click();await page.screenshot({path:'ui-evidence/lojas.png',fullPage:true});
  assert.deepEqual(errors,[]);console.log('PASS UI: board stages, create toggle, printer separation, neutral store payload, accept, ready, search; no page errors.');
+}catch(error){
+ await fs.mkdir('ui-evidence',{recursive:true});
+ await page.screenshot({path:'ui-evidence/failure-diagnostic.png',fullPage:true}).catch(()=>{});
+ const body=await page.locator('body').innerText().catch(()=>'<unavailable>');
+ console.error('UI SMOKE FAILURE stage='+smokeStage+'; message='+error.message+'; url='+page.url()+'; visibleText='+JSON.stringify(body.slice(0,2200))+'; pageErrors='+JSON.stringify(errors));
+ throw error;
 }finally{await browser.close();await server.close()}
