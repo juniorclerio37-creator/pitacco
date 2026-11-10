@@ -16,19 +16,19 @@ export function approvedReceipt(job,width=80,opts={}){
  add('Data: '+clean(r.created_at||r.date||''));
  heading('CLIENTE');
  add(clean(r.customer_name||r.customer?.name||r.customer||'Nao informado'));
- if(r.phone||r.customer_phone)add('Telefone: '+clean(r.phone||r.customer_phone));
- if(r.address||r.delivery_address)add('Endereco: '+clean(typeof(r.address||r.delivery_address)==='string'?(r.address||r.delivery_address):JSON.stringify(r.address||r.delivery_address)));
- if(r.reference)add('Referencia: '+clean(r.reference));
+ if(opts.phone!==false&&(r.phone||r.customer_phone))add('Telefone: '+clean(r.phone||r.customer_phone));
+ if(opts.address!==false&&(r.address||r.delivery_address))add('Endereco: '+clean(typeof(r.address||r.delivery_address)==='string'?(r.address||r.delivery_address):JSON.stringify(r.address||r.delivery_address)));
+ if(opts.address!==false&&r.reference)add('Referencia: '+clean(r.reference));
  heading('ITENS');
  for(const item of Array.isArray(r.items)?r.items:[]){
   const qty=amount(item.quantity??item.qty??1);
   add(qty+' x '+clean(item.name||item.title||'Produto')+(item.total!=null?'  '+cash(item.total):''));
   const mods=[...(Array.isArray(item.options)?item.options:[]),...(Array.isArray(item.complements)?item.complements:[]),...(Array.isArray(item.additions)?item.additions:[])];
-  for(const m of mods)add('   '+amount(m.quantity??m.qty??1)+'x '+clean(m.name||m.title||m.label));
-  if(item.notes)add('Obs: '+clean(item.notes));
+  for(const m of opts.complements===false?[]:mods)add('   '+amount(m.quantity??m.qty??1)+'x '+clean(m.name||m.title||m.label));
+  if(opts.notes!==false&&item.notes)add('Obs: '+clean(item.notes));
   add();
  }
- if(r.notes){add('OBSERVACOES');add(r.notes);add()}
+ if(opts.notes!==false&&r.notes){add('OBSERVACOES');add(r.notes);add()}
  add(rule);
  if(r.subtotal!=null)add('Subtotal: '+cash(r.subtotal));
  if(r.delivery_fee!=null)add('Entrega: '+cash(r.delivery_fee));
