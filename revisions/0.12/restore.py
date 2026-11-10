@@ -39,3 +39,5 @@ subprocess.run([sys.executable,'revisions/0.12/add_menu_studio_019.py'],check=Tr
 subprocess.run([sys.executable,'revisions/0.12/add_store_profile_020.py'],check=True)
 
 subprocess.run([sys.executable,'revisions/0.12/add_theme_021.py'],check=True)
+
+subprocess.run([sys.executable,'revisions/0.12/add_whatsapp_022.py'],check=True)
