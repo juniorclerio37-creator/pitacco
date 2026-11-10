@@ -2,6 +2,7 @@ import React,{useCallback,useEffect,useState} from 'react';
 const money=cents=>(Number(cents||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const defaults={points_enabled:false,points_per_real:1,min_points_to_redeem:100,points_reward_cents:1000,orders_enabled:false,orders_required:10,orders_reward_cents:1000};
 export default function Fideliza({client,storeId,manager}){
+ const [section,setSection]=useState('Visão geral');
  const [program,setProgram]=useState(defaults),[coupons,setCoupons]=useState([]),[loading,setLoading]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
  const refresh=useCallback(async()=>{
   if(!storeId||!manager)return;
@@ -54,9 +55,9 @@ export default function Fideliza({client,storeId,manager}){
  }
  if(!manager)return <section className="panel"><h2>Fideliza+</h2><p>Somente gestores podem administrar programas de fidelidade.</p></section>;
  return <section aria-label="Fideliza+" className="loyalty-page">
-  <header><h2>Fideliza+</h2><p>Crie regras de pontos, recompensas por pedidos e cupons para os clientes da sua loja.</p></header>
+  <header><h2>Fideliza+</h2><p>Fidelização, cupons e recompensas da sua loja.</p></header><div className="quick-actions" role="tablist" aria-label="Seções do Fideliza+">{['Visão geral','Clientes e pontos','Cupons','Campanhas','Cashback','Indique e ganhe'].map(t=><button type="button" key={t} role="tab" aria-selected={section===t} className={section===t?'':'secondary'} onClick={()=>setSection(t)}>{t}</button>)}</div>
   {error&&<p role="alert" className="notice error">{error}</p>}{message&&<p role="status" className="notice">{message}</p>}
-  <form className="panel" onSubmit={saveProgram}><h3>Programa de pontos</h3>
+  {(section==='Visão geral'||section==='Clientes e pontos')&&<form className="panel" onSubmit={saveProgram}><h3>Programa de pontos</h3>
    <label className="toggle"><input type="checkbox" checked={program.points_enabled} onChange={e=>update('points_enabled',e.target.checked)}/>Ativar pontos</label>
    <label className="field">Pontos por R$ 1 gasto<input type="number" min="0" max="1000" step="0.01" required value={program.points_per_real} onChange={e=>update('points_per_real',e.target.value)}/></label>
    <label className="field">Pontos necessários para resgate<input type="number" min="1" required value={program.min_points_to_redeem} onChange={e=>update('min_points_to_redeem',e.target.value)}/></label>
@@ -67,8 +68,8 @@ export default function Fideliza({client,storeId,manager}){
    <label className="field">Quantidade de pedidos válidos<input type="number" min="1" max="1000" required value={program.orders_required} onChange={e=>update('orders_required',e.target.value)}/></label>
    <label className="field">Valor do benefício (centavos)<input type="number" min="1" required value={program.orders_reward_cents} onChange={e=>update('orders_reward_cents',e.target.value)}/></label>
    <button disabled={loading}>Salvar regras</button>
-  </form>
-  <form className="panel" onSubmit={createCoupon}><h3>Criar cupom</h3>
+  </form>}
+  {(section==='Visão geral'||section==='Cupons')&&<form className="panel" onSubmit={createCoupon}><h3>Criar cupom</h3>
    <label className="field">Código<input name="code" maxLength={32} required placeholder="VOLTE10"/></label>
    <label className="field">Tipo<select name="discount_type"><option value="percent">Porcentagem (%)</option><option value="fixed">Valor fixo (R$)</option></select></label>
    <label className="field">Desconto<input name="discount_value" type="number" step="0.01" min="0.01" required/></label>
@@ -76,8 +77,9 @@ export default function Fideliza({client,storeId,manager}){
    <label className="field">Limite de utilizações (opcional)<input name="max_uses" type="number" min="1"/></label>
    <label className="field">Validade (opcional)<input name="expires_at" type="date"/></label>
    <button disabled={loading}>Cadastrar cupom</button>
-  </form>
-  <div className="panel"><h3>Cupons cadastrados</h3>{coupons.map(c=><div className="line" key={c.id}><b>{c.code}</b><span>{c.discount_type==='percent'?c.discount_value+'%':money(c.discount_value*100)} · {c.uses} uso(s){c.max_uses?'/'+c.max_uses:''}</span><button disabled={loading} className="secondary" onClick={()=>toggleCoupon(c)}>{c.active?'Desativar':'Ativar'}</button><button disabled={loading||Number(c.uses)>0} className="secondary" title={Number(c.uses)>0?'Cupom utilizado: desative para manter o histórico':'Excluir cupom'} onClick={()=>deleteCoupon(c)}>Excluir</button></div>)}{!coupons.length&&<p>Nenhum cupom cadastrado.</p>}</div>
+  </form>}
+  {(section==='Visão geral'||section==='Cupons')&&<div className="panel"><h3>Cupons cadastrados</h3>{coupons.map(c=><div className="line" key={c.id}><b>{c.code}</b><span>{c.discount_type==='percent'?c.discount_value+'%':money(c.discount_value*100)} · {c.uses} uso(s){c.max_uses?'/'+c.max_uses:''}</span><button disabled={loading} className="secondary" onClick={()=>toggleCoupon(c)}>{c.active?'Desativar':'Ativar'}</button><button disabled={loading||Number(c.uses)>0} className="secondary" title={Number(c.uses)>0?'Cupom utilizado: desative para manter o histórico':'Excluir cupom'} onClick={()=>deleteCoupon(c)}>Excluir</button></div>)}{!coupons.length&&<p>Nenhum cupom cadastrado.</p>}</div>}
+  {['Campanhas','Cashback','Indique e ganhe'].includes(section)&&<div className="panel"><h3>{section}</h3><p>Esta modalidade ainda não está habilitada para uso real. A ativação depende de regras de crédito, validação do checkout e proteção contra resgates duplicados.</p></div>}
   <p className="hint">Os programas e cupons são cadastrados aqui. Pontuação, resgate e aplicação no checkout só devem ser ativados após a validação transacional no backend.</p>
  </section>;
 }
