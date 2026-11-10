@@ -13,9 +13,8 @@ s=s.replace(needle,"<p><b>Computador atual:</b> {device?'Identificado pelo Pitac
 needle="{sectors.map(s=><div className=\"line\""
 assert s.count(needle)==1
 s=s.replace(needle,"{printMessage&&<p role=\"status\">{printMessage}</p>}{sectors.map(s=><div className=\"line\"",1)
-needle="{s.enabled?'Desativar':'Ativar'}</button></div>)"
-assert s.count(needle)==1
-s=s.replace(needle,"{s.enabled?'Desativar':'Ativar'}</button><button type=\"button\" disabled={busy} onClick={()=>removePrinter(s.sector)}>Excluir impressora</button></div>)",1)
+# add_printer_ui_013.py already adds a guarded Excluir button and blocks deletion
+# while print jobs are pending. Do not append an unsafe duplicate delete button.
 start=s.index("   {desktop&&<div className=\"panel\"><h3>Fila persistente deste computador</h3>")
 end=s.index("\n </>}",start)
 s=s[:start]+"""   {desktop&&jobs.some(j=>['error','uncertain'].includes(j.state))&&<div className="panel"><h3>Atenção à impressão</h3><p>Há {jobs.filter(j=>['error','uncertain'].includes(j.state)).length} trabalho(s) com falha ou resultado incerto. Eles permanecem registrados para diagnóstico, mas não serão exibidos em uma fila de erros. Confira a impressora e use a reimpressão no pedido se necessário.</p></div>}"""+s[end:]
