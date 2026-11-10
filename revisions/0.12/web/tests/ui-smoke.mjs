@@ -48,8 +48,8 @@ try{
  await page.locator('.preparing .order-card').filter({hasText:'Bruno · exemplo'}).getByRole('button',{name:'Marcar como pronto'}).click();await page.waitForTimeout(5500);assert.equal(await page.locator('.ready .order-card').count(),2);
  await page.getByRole('textbox',{name:'Buscar pedido'}).fill('Carla');assert.equal(await page.locator('.order-card').count(),1);await page.getByRole('textbox',{name:'Buscar pedido'}).fill('');
  await fs.mkdir('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/pedidos.png',fullPage:true});
- await page.locator('.ready .order-card').filter({hasText:'Carla · exemplo'}).getByRole('button',{name:'Despachar',exact:true}).click();
- await page.getByRole('dialog').getByText('Entregador de teste',{exact:true}).waitFor();
+ await page.locator('.ready .order-card').filter({hasText:'Carla · exemplo'}).getByRole('button',{name:'Despachar entrega',exact:true}).click();
+ await page.getByRole('dialog').getByText('Entregador de teste',{exact:true}).waitFor();assert.equal(await page.getByRole('dialog').getByText('Itens do pedido',{exact:true}).count(),0);assert.ok(await page.getByRole('dialog').getByText('Entrega sob demanda',{exact:true}).isVisible());
  assert.equal(await page.getByRole('dialog').getByText('Alocação automática',{exact:true}).count(),0);
  assert.ok(await page.getByText('Integrações não configuradas',{exact:true}).isVisible());
  await page.getByRole('dialog').getByRole('radio').check();
