@@ -3,7 +3,7 @@ Run after add_printer_ui_013.py. Keep local fallback for stores not yet migrated
 """
 from pathlib import Path
 p=Path('web/Operations.jsx')
-s=p.read_text()
+s=p.read_text(encoding='utf-8')
 old="useEffect(()=>{if(!storeId)return;setTemplateHtml(localStorage.getItem('pitacco:receipt:'+storeId)||'<h2>PITACCO</h2><p>Pedido: {{pedido}}</p><p>Cliente: {{cliente}}</p><p>{{itens}}</p><p>Total: {{total}}</p><p>{{observacoes}}</p>');},[storeId]);"
 new="""useEffect(()=>{
   if(!storeId)return;
@@ -31,4 +31,4 @@ new="""onClick={()=>act(async()=>{
 assert s.count(old)==1,'Could not locate save action'
 s=s.replace(old,new)
 s=s.replace('Modelo independente por loja neste computador. Campos:', 'Modelo sincronizado por estabelecimento. Campos:',1)
-p.write_text(s)
+p.write_text(s,encoding='utf-8')
