@@ -70,6 +70,23 @@ jobs:
               print(('OK' if ok else 'FALHOU') + ': ' + label, flush=True)
           if not all(checks.values()):
               raise SystemExit('Layout ou identidade por loja incompletos.')
+      - name: Validar central de atualizacoes e verificacao Windows
+        working-directory: .
+        shell: python
+        run: |
+          from pathlib import Path
+          src=Path('web/src.jsx').read_text(encoding='utf-8')
+          operations=Path('web/Operations.jsx').read_text(encoding='utf-8')
+          checks={
+              'Central disponivel para administrador': "tab==='Atualizações'&&admin" in src,
+              'Central visivel no menu Windows': "'Clientes','Atualizações'" in src,
+              'Menu exclusivo do administrador': "name!=='Atualizações'||admin" in src,
+              'Verificacao nativa conectada': "invoke('check_update')" in operations,
+              'Erros de verificacao exibidos': "setUpdateCheck({state:'error'" in operations,
+              'Sem instalacao nao assinada': 'Esta verificação não instala arquivos.' in operations,
+          }
+          for label,ok in checks.items(): print(('OK' if ok else 'FALHOU')+': '+label,flush=True)
+          if not all(checks.values()): raise SystemExit('Falha na central de atualizacoes.')
       - name: Diagnosticar controles de impressao 0.12
         working-directory: .
         shell: python
