@@ -2,8 +2,7 @@ name: Pitacco Windows
 on:
   workflow_dispatch:
   push:
-    branches: [main]
-    paths: ['source/**', 'updates/**', 'revisions/**', '.github/workflows/windows.yml']
+    tags: ['v*']
 permissions:
   contents: read
 jobs:
