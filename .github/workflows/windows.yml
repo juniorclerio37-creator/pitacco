@@ -49,6 +49,27 @@ jobs:
               print(('OK' if ok else 'FALHOU') + ': ' + name, flush=True)
           if not all(checks.values()):
               raise SystemExit('Modulos de Clientes/Fideliza+ nao estao conectados corretamente.')
+      - name: Verificar identidade por loja e layout unificado
+        working-directory: .
+        shell: python
+        run: |
+          from pathlib import Path
+          src = Path('web/src.jsx').read_text(encoding='utf-8')
+          css = Path('web/style.css').read_text(encoding='utf-8')
+          checks = {
+              'Identidade da loja no menu': 'store-identity-copy' in src and 'storeBrand?.logo_url' in src,
+              'Logo Pitacco somente no login': 'src="/pitacco-brand-013.svg" alt="Pitacco"' in src and '<div className="brand"><img src="/pitacco-logo.png"' not in src,
+              'Identidade em web e Windows': "if(!session||!selected){setStoreBrand(null);return}" in src,
+              'Layout geral': 'pitacco-workspace--overview' in css or 'pitacco-workspace .metrics' in css,
+              'Layout de pedidos': 'pitacco-workspace--orders .orders-toolbar' in css,
+              'Layout de impressao': 'pitacco-workspace--settings .pitacco-operations--printing' in css,
+              'Layout de motoboys': 'pitacco-workspace--couriers .panel' in css,
+              'Demais telas': 'pitacco-workspace--other .page-intro' in css,
+          }
+          for label, ok in checks.items():
+              print(('OK' if ok else 'FALHOU') + ': ' + label, flush=True)
+          if not all(checks.values()):
+              raise SystemExit('Layout ou identidade por loja incompletos.')
       - name: Diagnosticar controles de impressao 0.12
         working-directory: .
         shell: python
