@@ -22,7 +22,7 @@ export function approvedReceipt(job,width=80,opts={}){
  heading('ITENS');
  for(const item of Array.isArray(r.items)?r.items:[]){
   const qty=amount(item.quantity??item.qty??1);
-  add(qty+'x '+clean(item.name||item.title||'Produto')+(item.total!=null?'  '+cash(item.total):''));
+  add(qty+' x '+clean(item.name||item.title||'Produto')+(item.total!=null?'  '+cash(item.total):''));
   const mods=[...(Array.isArray(item.options)?item.options:[]),...(Array.isArray(item.complements)?item.complements:[]),...(Array.isArray(item.additions)?item.additions:[])];
   for(const m of mods)add('   '+amount(m.quantity??m.qty??1)+'x '+clean(m.name||m.title||m.label));
   if(item.notes)add('Obs: '+clean(item.notes));
