@@ -69,3 +69,9 @@
 .order-card .order-print-button:hover:not(:disabled){background:#edf0f7;border-color:#b7c1d1}
 .order-card .order-print-button:focus-visible{outline:3px solid #eea45f;outline-offset:2px}
 .order-card .order-print-button:disabled{opacity:.45;cursor:wait}
+
+/* Operação: recebimento confirmado e despacho destacado */
+.order-card .card-payment .payment-paid{color:#16803c;font-weight:800}
+.order-card .dispatch-highlight{background:#e96b20;color:#fff;border:1px solid #c85512;font-weight:800;box-shadow:0 3px 9px #b94c1630}
+.order-card .dispatch-highlight:hover:not(:disabled){background:#c85512;color:#fff}
+.order-card .dispatch-highlight:focus-visible{outline:3px solid #ffba79;outline-offset:2px}
