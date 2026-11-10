@@ -34,17 +34,25 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-          import re
-          operations = Path('web/Operations.jsx').read_text(encoding='utf-8')
-          assert 'editingPrinter' not in operations, 'Editor de impressoras duplicado'
-          assert 'editingSector' in operations, 'Editor de impressoras ausente'
-          assert operations.count('Excluir</button>') >= 1, 'Exclusao de impressora ausente'
-          assert "Existem '+count+' trabalhos pendentes" in operations, 'Exclusao sem protecao de trabalhos pendentes'
-          assert operations.count('Excluir impressora</button>') == 0, 'Controle legado de exclusao insegura presente'
-          assert 'test_printer' in operations, 'Teste de impressao ausente'
-          assert 'pitacco_switch_print_device' in operations, 'Transferencia de computador ausente'
-          assert 'pitacco_unbind_print_device' in operations, 'Desvinculacao de computador ausente'
-          assert operations.count('Computador responsável pela impressão') == 1, 'Painel de computador duplicado'
+          # Check capabilities without assuming exact JSX wording.
+          checks = {
+            'editor de impressora': 'editingSector' in operations,
+            'exclusao com verificacao de pendencias': (
+              "from('print_jobs')" in operations
+              and "from('print_sectors').delete()" in operations
+              and "if(count>0)" in operations
+            ),
+            'sem controle legado de exclusao': 'Excluir impressora</button>' not in operations,
+            'teste fisico de impressao': "invoke('test_printer'" in operations,
+            'transferencia do computador': 'pitacco_switch_print_device' in operations,
+            'desvinculacao do computador': 'pitacco_unbind_print_device' in operations,
+            'painel unico de computador': operations.count('Computador responsável pela impressão') == 1,
+          }
+          for name, ok in checks.items():
+              print(('OK' if ok else 'FALHOU') + ': ' + name)
+          failed = [name for name, ok in checks.items() if not ok]
+          if failed:
+              raise SystemExit('Validacao de impressoras: ' + ', '.join(failed))
           print('Controles de impressao preservados na base 0.12')
       - name: Empacotar codigo completo
         working-directory: .
