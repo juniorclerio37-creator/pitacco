@@ -96,6 +96,8 @@ jobs:
           checks={
               'Painel admin exclusivo': 'if(admin&&platformWorkspace)' in src,
               'Navegacao admin separada': 'pitacco-admin-shell' in src,
+              'Tema preservado na loja': 'return <div className={"app pitacco-theme-"+theme}><aside>' in src,
+              'Tema preservado no admin': 'pitacco-platform-brand' in src,
               'Acesso ao ambiente da loja': 'setPlatformWorkspace(false)' in src,
               'Retorno ao painel admin': 'Voltar ao Pitacco Admin' in src,
               'Marca da loja no ambiente operacional': 'storeBrand?.logo_url' in src,
