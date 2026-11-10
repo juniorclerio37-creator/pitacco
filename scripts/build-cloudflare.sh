@@ -6,7 +6,7 @@ cd web
 npm ci
 npm run build
 cd ..
-mkdir -p web/dist/app web/dist/cadastro web/dist/privacidade web/dist/termos web/dist/sistema web/dist/configuracao web/dist/produtos web/dist/complementos web/dist/cardapio web/dist/pedidos web/dist/aceite web/dist/acompanhar
+mkdir -p web/dist/app web/dist/cadastro web/dist/privacidade web/dist/termos web/dist/sistema web/dist/configuracao web/dist/produtos web/dist/complementos web/dist/cardapio web/dist/pedidos web/dist/aceite web/dist/acompanhar web/dist/identidade
 cp web/dist/index.html web/dist/app/index.html
 cp marketing/index.html web/dist/index.html
 cp marketing/cadastro.html web/dist/cadastro/index.html
@@ -20,4 +20,5 @@ cp marketing/cardapio.html web/dist/cardapio/index.html
 cp marketing/pedidos.html web/dist/pedidos/index.html
 cp marketing/aceite.html web/dist/aceite/index.html
 cp marketing/acompanhar.html web/dist/acompanhar/index.html
+cp marketing/identidade.html web/dist/identidade/index.html
 cp marketing/sw.js web/dist/sw.js
