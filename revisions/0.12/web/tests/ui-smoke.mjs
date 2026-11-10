@@ -39,10 +39,10 @@ try{
  assert.equal(reprintCall?.p_order,orders[1].id,'O ícone deve solicitar a reimpressão do pedido correspondente');
  assert.ok(reprintCall?.p_reason?.length>=5,'A auditoria deve receber motivo automático sem pedir justificativa');
  for(const name of ['Em análise','Em preparo','Pronto','Em entrega'])assert.equal(await page.getByRole('heading',{name,exact:true}).count(),1);
- await page.getByRole('button',{name:'+ Novo pedido',exact:true}).click();assert.ok(await page.getByPlaceholder('Cliente',{exact:true}).isVisible());
- await page.getByRole('button',{name:'+ Novo pedido',exact:true}).click();
- await page.getByRole('button',{name:'Configurações',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Criar pedido',exact:true}).count(),0);assert.ok(await page.getByRole('heading',{name:'Impressoras por setor'}).isVisible());
- await page.getByRole('button',{name:'Lojas',exact:true}).click();assert.equal(await page.locator('select[name=platform]').count(),0);assert.equal(await page.locator('select[name=plan]').count(),0);
+ await page.getByRole('button',{name:'+ Nova venda',exact:true}).click();assert.ok(await page.getByPlaceholder('Cliente',{exact:true}).isVisible());
+ await page.getByRole('button',{name:'+ Nova venda',exact:true}).click();
+ await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();await page.getByRole('button',{name:'Impressão e aceite',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Criar pedido',exact:true}).count(),0);assert.ok(await page.getByRole('heading',{name:'Impressoras por setor'}).isVisible());
+ await page.getByRole('button',{name:'Estabelecimentos',exact:true}).click();assert.equal(await page.locator('select[name=platform]').count(),0);assert.equal(await page.locator('select[name=plan]').count(),0);
  await page.getByLabel('Nome do estabelecimento').fill('Nova loja');await page.getByRole('button',{name:'Cadastrar loja',exact:true}).click();await page.getByText('Registro salvo.',{exact:true}).waitFor();assert.deepEqual(submittedStore,{name:'Nova loja',platform:'',plan:'saas'});
  await page.getByRole('button',{name:'Pedidos',exact:true}).click();await page.getByRole('button',{name:'Aceitar pedido',exact:true}).click();await page.waitForTimeout(5500);assert.equal(await page.locator('.preparing .order-card').count(),2);
  await page.locator('.preparing .order-card').filter({hasText:'Bruno · exemplo'}).getByRole('button',{name:'Marcar como pronto'}).click();await page.waitForTimeout(5500);assert.equal(await page.locator('.ready .order-card').count(),2);
@@ -57,7 +57,7 @@ try{
  await page.getByText('Entregador atribuído. A rota aguarda coleta e saída.',{exact:true}).waitFor();assert.equal(assigned.p_courier,cid);
  await page.screenshot({path:'ui-evidence/entrega-modal.png',fullPage:true});
  await page.getByRole('button',{name:'Fechar',exact:true}).click();
- await page.getByRole('button',{name:'Minha Loja',exact:true}).click();assert.ok(await page.getByRole('heading',{name:'Alocação automática',exact:true}).isVisible());
+ await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();await page.getByRole('button',{name:'Dados da loja',exact:true}).click();assert.ok(await page.getByRole('heading',{name:'Alocação automática',exact:true}).isVisible());
  await page.screenshot({path:'ui-evidence/minha-loja.png',fullPage:true});
  await page.getByRole('button',{name:'Configurações',exact:true}).click();await page.screenshot({path:'ui-evidence/impressoras.png',fullPage:true});
  await page.getByRole('button',{name:'Lojas',exact:true}).click();await page.screenshot({path:'ui-evidence/lojas.png',fullPage:true});
