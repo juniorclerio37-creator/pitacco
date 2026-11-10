@@ -29,3 +29,5 @@ subprocess.run([sys.executable,'revisions/0.12/sync_receipt_templates_013.py'],c
 subprocess.run([sys.executable,'revisions/0.12/add_advanced_print_013.py'],check=True)
 
 subprocess.run([sys.executable,'revisions/0.12/add_fideliza_016.py'],check=True)
+
+subprocess.run([sys.executable,'revisions/0.12/reorganize_navigation_017.py'],check=True)
