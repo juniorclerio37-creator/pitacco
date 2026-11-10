@@ -63,3 +63,6 @@ subprocess.run([sys.executable,'revisions/0.12/add_update_check_037.py'],check=T
 
 # Separate admin and store workspaces, shared Windows executable.
 subprocess.run([sys.executable,'revisions/0.12/separate_admin_shell_038.py'],check=True)
+
+# Unified tenant workspaces and human-readable order references.
+subprocess.run([sys.executable,'revisions/0.12/polish_store_workspaces_039.py'],check=True)
