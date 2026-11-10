@@ -7,7 +7,7 @@ assert s.count(needle)==1
 s=s.replace(needle,"import {RECEIPT_TEMPLATES} from './receiptTemplates.mjs';\n"+needle,1)
 needle="const [editingSector,setEditingSector]=useState(null)"
 assert s.count(needle)==1
-s=s.replace(needle,"const [printerSources,setPrinterSources]=useState(''),[printerCategories,setPrinterCategories]=useState(''),"+needle,1)
+s=s.replace(needle,"const [printerSources,setPrinterSources]=useState(''),[printerCategories,setPrinterCategories]=useState('');\n "+needle,1)
 needle="enabled:true},{onConflict:'store_id,sector'}"
 assert s.count(needle)==1
 s=s.replace(needle,"enabled:true,sources:printerSources.split(',').map(x=>x.trim()).filter(Boolean),categories:printerCategories.split(',').map(x=>x.trim()).filter(Boolean)},{onConflict:'store_id,sector'}",1)
