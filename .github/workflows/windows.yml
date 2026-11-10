@@ -38,6 +38,10 @@ jobs:
           operations = Path('web/Operations.jsx').read_text(encoding='utf-8')
           assert 'editingPrinter' not in operations, 'Editor de impressoras duplicado'
           assert 'editingSector' in operations, 'Editor de impressoras ausente'
+          assert operations.count('Excluir</button>') >= 1, 'Exclusao de impressora ausente'
+          assert "Existem '+count+' trabalhos pendentes" in operations, 'Exclusao sem protecao de trabalhos pendentes'
+          assert operations.count('Excluir impressora</button>') == 0, 'Controle legado de exclusao insegura presente'
+          assert 'test_printer' in operations, 'Teste de impressao ausente'
           assert 'pitacco_switch_print_device' in operations, 'Transferencia de computador ausente'
           assert 'pitacco_unbind_print_device' in operations, 'Desvinculacao de computador ausente'
           assert operations.count('Computador responsável pela impressão') == 1, 'Painel de computador duplicado'
