@@ -100,6 +100,9 @@ jobs:
               'Retorno ao painel admin': 'Voltar ao Pitacco Admin' in src,
               'Marca da loja no ambiente operacional': 'storeBrand?.logo_url' in src,
               'Marca Pitacco no painel admin': 'pitacco-platform-brand' in src,
+              'Troca de conta redefine ambiente': 'setPlatformWorkspace(true)},[session?.user?.id]' in src,
+              'Entrada na loja exige vinculo': 'disabled={!stores.length}' in src,
+              'Selecao explicita de estabelecimento': 'setSelected(store.id);setPlatformWorkspace(false)' in src,
           }
           for label,ok in checks.items(): print(('OK' if ok else 'FALHOU')+': '+label,flush=True)
           if not all(checks.values()): raise SystemExit('Falha na separacao de ambientes.')
