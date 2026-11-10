@@ -1,6 +1,6 @@
 // Pure, auditable courier remuneration calculation. Distance is the road route from store to customer.
 const cents=n=>Math.round((Number(n)+Number.EPSILON)*100);
-const nonnegative=(n,label)=>{if(!Number.isFinite(Number(n))||Number(n)<0)throw Error(label+' inválido');return Number(n)};
+const nonnegative=(n,label)=>{if(n===null||n===undefined||n===''||!Number.isFinite(Number(n))||Number(n)<0)throw Error(label+' inválido');return Number(n)};
 export function courierEarnings(rule,delivery){
  if(!rule||!delivery)throw Error('Regra e entrega obrigatórias');
  const type=rule.type;
