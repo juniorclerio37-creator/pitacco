@@ -40,3 +40,27 @@ body{background:#f4f7fa;color:var(--pt-ink)}
 .pitacco-workspace input,.pitacco-workspace select{border-color:#dce4ee}
 @media(max-width:900px){.app aside{width:100%;min-width:0}.pitacco-workspace{padding:20px 16px 40px}.pitacco-workspace .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.pitacco-workspace--orders .operational-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:540px){.pitacco-workspace .metrics{grid-template-columns:1fr 1fr;gap:9px}.pitacco-workspace .metrics article{min-height:106px;padding:15px}.pitacco-workspace .metrics strong{font-size:20px}.pitacco-workspace--orders .orders-toolbar>*{width:100%}.pitacco-workspace--orders .operational-overview{grid-template-columns:1fr 1fr;gap:9px}}
+
+/* Shared design system across all remaining Pitacco pages. */
+.pitacco-workspace--other .panel,.pitacco-workspace--other .page-intro,.pitacco-workspace--other .setup-card{border-radius:16px}
+.pitacco-workspace--other .page-intro{padding:24px 28px;border:1px solid var(--pt-line);background:#fff;display:flex;justify-content:space-between;gap:18px;align-items:center}
+.pitacco-workspace--other .page-intro h3{font-size:22px;letter-spacing:-.025em;margin:7px 0}
+.pitacco-workspace--other .page-intro p{font-size:13px;line-height:1.6;max-width:680px}
+.pitacco-workspace--other .tabs,.pitacco-workspace--couriers .tabs{display:flex;gap:8px;flex-wrap:wrap;padding:8px 0 16px;border-bottom:1px solid var(--pt-line)}
+.pitacco-workspace--other .tabs button,.pitacco-workspace--couriers .tabs button{border-radius:10px}
+.pitacco-workspace .field{min-width:170px}
+.pitacco-workspace .field input,.pitacco-workspace .field select,.pitacco-workspace .field textarea{max-width:100%}
+.pitacco-workspace .quick-actions{display:flex;flex-wrap:wrap;gap:10px}
+.pitacco-workspace .notice{border-radius:12px;padding:14px 18px;margin:12px 0}
+.pitacco-workspace details{max-width:100%}
+.pitacco-workspace details>summary{cursor:pointer;font-weight:650}
+.pitacco-workspace .technical{margin-top:12px}
+.app .store-identity{display:flex;align-items:center;gap:12px;min-height:70px;padding:4px 5px 20px;margin-bottom:16px;border-bottom:1px solid #33465b}
+.app .store-identity img,.app .store-identity-placeholder{width:52px;height:52px;flex:none;border-radius:12px;object-fit:contain;background:#fff;padding:5px;display:flex;align-items:center;justify-content:center;color:#d73545}
+.app .store-identity-copy{display:flex;flex-direction:column;min-width:0;gap:5px}
+.app .store-identity-copy strong{font-size:15px;line-height:1.2;color:#fff;overflow-wrap:anywhere}
+.app .store-identity-copy small{font-size:11px;color:#aebed0;line-height:1.35;margin:0}
+.setup .auth-logo{width:min(250px,100%);height:auto;max-height:110px;object-fit:contain}
+.pitacco-theme-dark .pitacco-workspace .panel,.pitacco-theme-dark .pitacco-workspace .metrics article,.pitacco-theme-dark .pitacco-workspace--other .page-intro{background:#1d2939;color:#f0f4fa;border-color:#3a485b}
+.pitacco-theme-dark .pitacco-workspace td,.pitacco-theme-dark .pitacco-workspace th,.pitacco-theme-dark .pitacco-workspace>header{border-color:#3a485b}
+@media(max-width:800px){.app .store-identity{min-height:56px;padding-bottom:10px;margin-bottom:4px}.app .store-identity img,.app .store-identity-placeholder{width:42px;height:42px}.pitacco-workspace--other .page-intro{padding:18px;align-items:flex-start}.pitacco-workspace--other .page-intro svg{display:none}}
