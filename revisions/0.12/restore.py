@@ -54,3 +54,6 @@ subprocess.run([sys.executable,'revisions/0.12/print_device_controls_033.py'],ch
 
 # Pitacco 0.13: visual layout of four approved workspaces; preserves business logic.
 subprocess.run([sys.executable,'revisions/0.12/apply_four_workspaces_035.py'],check=True)
+
+# Owner-only release center, after navigation and theme overlays.
+subprocess.run([sys.executable,'revisions/0.12/add_release_center_036.py'],check=True)
