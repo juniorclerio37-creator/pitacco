@@ -5,6 +5,9 @@ on:
     paths:
       - 'revisions/0.12/web/*.mjs'
       - 'revisions/0.12/web/tests/**'
+      - 'revisions/0.12/*.py'
+      - 'revisions/0.12/web/*.jsx'
+      - 'revisions/0.12/restore.py'
       - '.github/workflows/test-v013.yml'
   workflow_dispatch:
 jobs:
@@ -17,3 +20,19 @@ jobs:
           node-version: '22'
       - name: Testar cálculos, recibos e deduplicação
         run: node --test revisions/0.12/web/tests/*.test.mjs
+  web-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restaurar fontes da aplicação
+        run: python3 revisions/0.12/restore.py
+      - name: Instalar dependências web
+        working-directory: web
+        run: npm ci
+      - name: Validar compilação web sem instalador Windows
+        working-directory: web
+        run: npm run build
