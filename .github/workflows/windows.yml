@@ -29,6 +29,26 @@ jobs:
       - name: Restaurar codigo preservado
         working-directory: .
         run: python -X utf8 revisions/0.12/restore.py
+      - name: Verificar navegacao e renderizacao de Clientes e Fideliza+
+        working-directory: .
+        shell: python
+        run: |
+          from pathlib import Path
+          src = Path('web/src.jsx').read_text(encoding='utf-8')
+          operations = Path('web/Operations.jsx').read_text(encoding='utf-8')
+          checks = {
+              'Clientes no menu': "['Clientes'," in src,
+              'Fideliza+ no menu': "['Fideliza+'," in src,
+              'Clientes permitido no Windows': "'Fideliza+','Clientes'].includes(name)" in src,
+              'Clientes com pagina propria': "tab==='Clientes'&&<CustomersFromOrders" in src,
+              'Clientes isolados por loja': 'order.store_id!==storeId' in src,
+              'Fideliza+ renderizado': "view==='Fideliza+'&&<Fideliza" in operations,
+              'Fideliza+ visivel no roteador': "view==='Fideliza+'" in operations,
+          }
+          for name, ok in checks.items():
+              print(('OK' if ok else 'FALHOU') + ': ' + name, flush=True)
+          if not all(checks.values()):
+              raise SystemExit('Modulos de Clientes/Fideliza+ nao estao conectados corretamente.')
       - name: Diagnosticar controles de impressao 0.12
         working-directory: .
         shell: python
