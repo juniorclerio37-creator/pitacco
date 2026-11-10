@@ -1,4 +1,4 @@
-"""Read-only customer history from already loaded store orders; no new database permissions."""
+"""Store-scoped customer history and individual block actions using audited Supabase RPCs."""
 from pathlib import Path
 p=Path('web/src.jsx')
 s=p.read_text(encoding='utf-8')
@@ -22,7 +22,7 @@ component="""function CustomersFromOrders({orders=[],storeId}){
   return()=>{live=false};
  },[storeId]);
  async function toggleBlock(c){
-  if(!c.phone){setBlockError('O cliente precisa ter telefone para bloqueio seguro.');return;}
+  if(!/^\d{10,13}$/.test(c.phone)){setBlockError('Informe um telefone válido com DDD para bloquear este cliente.');return;}
   setBlockBusy(true);setBlockError('');
   const blocked=!!blocks[c.phone];
   const result=blocked
@@ -51,7 +51,8 @@ component="""function CustomersFromOrders({orders=[],storeId}){
  }
  const list=[...customers.values()].sort((a,b)=>b.last.localeCompare(a.last)).filter(c=>(c.name+' '+c.phone).toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR')));
  return <section className="panel"><h3>Clientes e histórico de pedidos</h3><p>Histórico dos pedidos desta loja. Clientes sem telefone ficam separados por pedido; o bloqueio exige identificação confiável e configuração do servidor.</p><div className="quick-actions"><input aria-label="Buscar cliente" placeholder="Buscar nome ou telefone" value={query} onChange={e=>setQuery(e.target.value)}/><strong>{list.length} cliente(s)</strong></div><div style={{overflowX:'auto'}}><table style={{width:'100%',textAlign:'left',borderCollapse:'collapse'}}><thead><tr><th>Cliente</th><th>Telefone</th><th>Pedidos</th><th>Total registrado</th></tr></thead><tbody>{list.map((c,i)=><tr key={c.phone||c.name+i}><td><button type="button" className="secondary" onClick={()=>{setSelectedCustomer(c);setBlockError('')}}>{c.name}</button></td><td>{c.phone||'—'}</td><td>{c.count}</td><td>{money(c.total)}</td></tr>)}</tbody></table></div>{!list.length&&<p>Nenhum cliente encontrado nos pedidos carregados.</p>}
- {selectedCustomer&&<div className="panel" aria-label="Detalhes do cliente"><h3>{selectedCustomer.name}</h3><p>{selectedCustomer.phone||'Telefone não informado'} · {selectedCustomer.count} pedido(s) · {money(selectedCustomer.total)}</p><p>{blocks[selectedCustomer.phone]?'Cliente bloqueado nesta loja.':'Cliente não bloqueado nesta loja.'}</p><button type="button" disabled={blockBusy||!selectedCustomer.phone} onClick={()=>toggleBlock(selectedCustomer)}>{blocks[selectedCustomer.phone]?'Desbloquear':'Bloquear'}</button><button type="button" className="secondary" onClick={()=>setSelectedCustomer(null)}>Fechar</button>{blockError&&<p role="alert">{blockError}</p>}</div>}
+ {!selectedCustomer&&blockError&&<p role="alert">{blockError}</p>}
+ {selectedCustomer&&<div className="panel" aria-label="Detalhes do cliente"><h3>{selectedCustomer.name}</h3><p>{selectedCustomer.phone||'Telefone não informado'} · {selectedCustomer.count} pedido(s) · {money(selectedCustomer.total)}</p><p>{blocks[selectedCustomer.phone]?'Cliente bloqueado nesta loja.':'Cliente não bloqueado nesta loja.'}</p><button type="button" disabled={blockBusy||!/^\d{10,13}$/.test(selectedCustomer.phone)} onClick={()=>toggleBlock(selectedCustomer)}>{blocks[selectedCustomer.phone]?'Desbloquear':'Bloquear'}</button><button type="button" className="secondary" onClick={()=>setSelectedCustomer(null)}>Fechar</button>{blockError&&<p role="alert">{blockError}</p>}</div>}
 </section>
 }
 """
