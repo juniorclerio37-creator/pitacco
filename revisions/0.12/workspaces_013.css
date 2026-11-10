@@ -82,3 +82,10 @@ body{background:#f4f7fa;color:var(--pt-ink)}
 .pitacco-workspace--admin header{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
 .admin-return{margin-right:12px}
 @media(max-width:700px){.pitacco-admin-shell .pitacco-platform-brand img{width:90px}.admin-return{width:100%;margin-bottom:8px}}
+
+.admin-store-list{display:grid;gap:10px;margin:16px 0}
+.admin-store-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px;border:1px solid var(--border,rgba(128,128,128,.25));border-radius:12px}
+.admin-store-row>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.admin-store-row strong{overflow-wrap:anywhere}
+.admin-store-row small{opacity:.7}
+@media(max-width:540px){.admin-store-row{flex-direction:column;align-items:stretch}}
