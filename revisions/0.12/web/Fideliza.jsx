@@ -39,6 +39,19 @@ export default function Fideliza({client,storeId,manager}){
   setLoading(true);setError('');
   try{const {error}=await client.from('loyalty_coupons').update({active:!c.active}).eq('id',c.id).eq('store_id',storeId);if(error)throw error;await refresh()}catch(e){setError(e.message||String(e))}finally{setLoading(false)}
  }
+ async function deleteCoupon(c){
+  if(!window.confirm('Excluir o cupom '+c.code+'? Esta ação não pode ser desfeita.'))return;
+  setLoading(true);setError('');setMessage('');
+  try{
+   if(Number(c.uses)>0)throw Error('Este cupom já foi utilizado. Desative-o para preservar o histórico.');
+   const {count,error:countError}=await client.from('loyalty_coupon_redemptions').select('id',{count:'exact',head:true}).eq('store_id',storeId).eq('coupon_id',c.id);
+   if(countError)throw countError;
+   if(count>0)throw Error('Este cupom possui resgates registrados. Desative-o para preservar o histórico.');
+   const {error}=await client.from('loyalty_coupons').delete().eq('id',c.id).eq('store_id',storeId).eq('uses',0);
+   if(error)throw error;
+   setMessage('Cupom excluído.');await refresh();
+  }catch(e){setError(e.message||String(e))}finally{setLoading(false)}
+ }
  if(!manager)return <section className="panel"><h2>Fideliza+</h2><p>Somente gestores podem administrar programas de fidelidade.</p></section>;
  return <section aria-label="Fideliza+" className="loyalty-page">
   <header><h2>Fideliza+</h2><p>Crie regras de pontos, recompensas por pedidos e cupons para os clientes da sua loja.</p></header>
@@ -64,7 +77,7 @@ export default function Fideliza({client,storeId,manager}){
    <label className="field">Validade (opcional)<input name="expires_at" type="date"/></label>
    <button disabled={loading}>Cadastrar cupom</button>
   </form>
-  <div className="panel"><h3>Cupons cadastrados</h3>{coupons.map(c=><div className="line" key={c.id}><b>{c.code}</b><span>{c.discount_type==='percent'?c.discount_value+'%':money(c.discount_value*100)} · {c.uses} uso(s){c.max_uses?'/'+c.max_uses:''}</span><button disabled={loading} className="secondary" onClick={()=>toggleCoupon(c)}>{c.active?'Desativar':'Ativar'}</button></div>)}{!coupons.length&&<p>Nenhum cupom cadastrado.</p>}</div>
+  <div className="panel"><h3>Cupons cadastrados</h3>{coupons.map(c=><div className="line" key={c.id}><b>{c.code}</b><span>{c.discount_type==='percent'?c.discount_value+'%':money(c.discount_value*100)} · {c.uses} uso(s){c.max_uses?'/'+c.max_uses:''}</span><button disabled={loading} className="secondary" onClick={()=>toggleCoupon(c)}>{c.active?'Desativar':'Ativar'}</button><button disabled={loading||Number(c.uses)>0} className="secondary" title={Number(c.uses)>0?'Cupom utilizado: desative para manter o histórico':'Excluir cupom'} onClick={()=>deleteCoupon(c)}>Excluir</button></div>)}{!coupons.length&&<p>Nenhum cupom cadastrado.</p>}</div>
   <p className="hint">Os programas e cupons são cadastrados aqui. Pontuação, resgate e aplicação no checkout só devem ser ativados após a validação transacional no backend.</p>
  </section>;
 }
