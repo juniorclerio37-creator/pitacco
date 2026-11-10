@@ -8,9 +8,9 @@ old = ''' let(mut status,mut needed)=(0u32,0u32);
 new = ''' // Query the required size first; some drivers need a larger buffer even for level 6.
  let mut needed=0u32;
  GetPrinterW(h.0,6,ptr::null_mut(),0,&mut needed);
- let mut capacity=needed.max(size_of::<u32>() as u32) as usize;
+ let mut capacity=needed.max(std::mem::size_of::<u32>() as u32) as usize;
  let status=loop {
-  let mut buffer=vec![0usize;(capacity+size_of::<usize>()-1)/size_of::<usize>()];
+  let mut buffer=vec![0usize;(capacity+std::mem::size_of::<usize>()-1)/size_of::<usize>()];
   let mut required=0u32;
   if GetPrinterW(h.0,6,buffer.as_mut_ptr().cast(),capacity as u32,&mut required)!=0 {
    break *(buffer.as_ptr().cast::<u32>());
