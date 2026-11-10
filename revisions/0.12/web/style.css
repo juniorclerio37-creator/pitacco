@@ -61,3 +61,11 @@
 .payment-modal-backdrop{position:fixed;inset:0;background:#151b2799;display:flex;align-items:center;justify-content:center;padding:18px;z-index:1000}.payment-modal{width:min(480px,100%);max-height:90vh;overflow:auto;box-shadow:0 15px 50px #1115}.payment-modal .quick-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
 
 .cash-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}.cash-metrics article{background:#f6f7fa;padding:15px;border-radius:12px;display:grid;gap:7px}.cash-metrics span{font-size:12px;color:#687181}.cash-metrics strong{font-size:20px}.cash-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.cash-actions .panel{margin-top:0}.cash-desk form{display:grid;gap:12px}.cash-desk form .field{display:grid;gap:6px}@media(max-width:850px){.cash-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.cash-actions{grid-template-columns:1fr}}
+
+/* Opção A aprovada: ícone discreto de reimpressão no cabeçalho do pedido */
+.order-card .card-heading{display:flex;align-items:center;gap:9px}
+.order-card .card-heading .order-time{margin-left:auto}
+.order-card .order-print-button{display:inline-flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;height:36px;min-width:36px;padding:0;border:1px solid #dce1ea;border-radius:10px;background:#f8f9fc;color:#293344;cursor:pointer;box-shadow:none;transition:background .15s,border-color .15s}
+.order-card .order-print-button:hover:not(:disabled){background:#edf0f7;border-color:#b7c1d1}
+.order-card .order-print-button:focus-visible{outline:3px solid #eea45f;outline-offset:2px}
+.order-card .order-print-button:disabled{opacity:.45;cursor:wait}
