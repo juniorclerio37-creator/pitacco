@@ -7,4 +7,4 @@ export function orderStage(order,delivery){
  if(order.status==='accepted')return order.preparation_status==='ready'?'ready':'preparing';
  return 'historical';
 }
-export function matchesOrder(order,query){const q=query.trim().toLocaleLowerCase('pt-BR');return !q||[order.id,order.receipt?.customer,order.receipt?.phone].some(v=>String(v||'').toLocaleLowerCase('pt-BR').includes(q));}
+export function matchesOrder(order,query){const q=query.trim().toLocaleLowerCase('pt-BR');return !q||[order.id,order.receipt?.display_number,order.receipt?.external_order_number,order.receipt?.order_number,order.receipt?.display_id,order.receipt?.number,order.receipt?.customer,order.receipt?.phone].some(v=>String(v||'').toLocaleLowerCase('pt-BR').includes(q));}
