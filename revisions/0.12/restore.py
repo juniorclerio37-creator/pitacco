@@ -21,3 +21,5 @@ import subprocess,sys
 subprocess.run([sys.executable,'revisions/0.12/fix_printer_122.py'],check=True)
 
 subprocess.run([sys.executable,'revisions/0.12/add_printer_ui_013.py'],check=True)
+
+subprocess.run([sys.executable,'revisions/0.12/add_test_print_013.py'],check=True)
