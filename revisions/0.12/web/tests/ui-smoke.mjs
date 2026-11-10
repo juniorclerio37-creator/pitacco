@@ -60,6 +60,6 @@ try{
  await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();await page.getByRole('button',{name:'Dados da loja',exact:true}).click();assert.ok(await page.getByRole('heading',{name:'Alocação automática',exact:true}).isVisible());
  await page.screenshot({path:'ui-evidence/minha-loja.png',fullPage:true});
  await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();await page.getByRole('button',{name:'Impressão e aceite',exact:true}).click();await page.screenshot({path:'ui-evidence/impressoras.png',fullPage:true});
- await page.getByRole('button',{name:'Lojas',exact:true}).click();await page.screenshot({path:'ui-evidence/lojas.png',fullPage:true});
+ await page.getByRole('button',{name:'Estabelecimentos',exact:true}).click();await page.screenshot({path:'ui-evidence/lojas.png',fullPage:true});
  assert.deepEqual(errors,[]);console.log('PASS UI: board stages, create toggle, printer separation, neutral store payload, accept, ready, search; no page errors.');
 }finally{await browser.close();await server.close()}
