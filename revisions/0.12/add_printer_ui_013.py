@@ -19,11 +19,11 @@ addition="""   <div className="panel"><h3>Modelo HTML da comanda</h3><p>Modelo i
 s=s.replace(marker,addition+marker,1)
 p.write_text(s)
 p=Path('web/printBridge.mjs');s=p.read_text()
-needle=" const lines=['DELIVERYGESTOR'"
+needle=" if(typeof job.receipt_text==='string')return job.receipt_text.split('\\n')"
 insertion=""" const html=typeof localStorage!=='undefined'&&job.store_id?localStorage.getItem('pitacco:receipt:'+job.store_id):null;
- if(html&&typeof DOMParser!=='undefined'){
+ if(html&&typeof DOMParser!=='undefined'&&!/<\\s*(script|iframe|object|embed|link|meta|img|svg|audio|video|form|base)\\b|\\bon\\w+\\s*=|(?:src|href)\\s*=|@import|url\\s*\\(/i.test(html)){
   const fields={pedido:r.number||r.order_number||r.order_id||job.order_id,cliente:r.customer||r.customer_name,itens:(Array.isArray(r.items)?r.items:[]).map(x=>x.quantity+' x '+x.name).join(' | '),total:'R$ '+money(r.total),observacoes:r.notes||''};
-  const filled=html.replace(/{{(pedido|cliente|itens|total|observacoes)}}/g,(_,key)=>clean(fields[key]));
+  const escapeHtml=value=>clean(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;');\n  const filled=html.replace(/{{(pedido|cliente|itens|total|observacoes)}}/g,(_,key)=>escapeHtml(fields[key]));
   const doc=new DOMParser().parseFromString(filled,'text/html');
   doc.querySelectorAll('script,style,iframe,object,embed,svg,img').forEach(x=>x.remove());
   const text=doc.body.innerText||doc.body.textContent||'';
