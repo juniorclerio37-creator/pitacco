@@ -14,10 +14,10 @@ component="""function CustomersFromOrders({orders=[],storeId}){
   let live=true;
   setBlocks({});setSelectedCustomer(null);setBlockError('');
   if(!storeId)return;
-  supabase.from('customer_blocks').select('customer_phone').eq('store_id',storeId).then(({data,error})=>{
+  supabase.from('pitacco_customer_blocks').select('id,match_value').eq('store_id',storeId).eq('match_type','phone').eq('active',true).then(({data,error})=>{
    if(!live)return;
-   if(error){setBlockError('Bloqueios indisponíveis: configuração do banco de dados pendente.');return;}
-   setBlocks(Object.fromEntries((data||[]).map(x=>[x.customer_phone,true])));
+   if(error){setBlockError('Não foi possível carregar os bloqueios desta loja.');return;}
+   setBlocks(Object.fromEntries((data||[]).map(x=>[x.match_value,x.id])));
   });
   return()=>{live=false};
  },[storeId]);
@@ -26,10 +26,10 @@ component="""function CustomersFromOrders({orders=[],storeId}){
   setBlockBusy(true);setBlockError('');
   const blocked=!!blocks[c.phone];
   const result=blocked
-   ?await supabase.from('customer_blocks').delete().eq('store_id',storeId).eq('customer_phone',c.phone)
-   :await supabase.from('customer_blocks').insert({store_id:storeId,customer_phone:c.phone});
+   ?await supabase.rpc('pitacco_release_customer_block',{p_id:blocks[c.phone]})
+   :await supabase.rpc('pitacco_manage_customer_block',{p_store:storeId,p_type:'phone',p_value:c.phone,p_reason:''});
   if(result.error){setBlockError(result.error.message||'Não foi possível atualizar o bloqueio.');}
-  else setBlocks(old=>({...old,[c.phone]:!blocked}));
+  else setBlocks(old=>({...old,[c.phone]:blocked?null:result.data}));
   setBlockBusy(false);
  }
 
