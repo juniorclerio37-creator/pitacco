@@ -57,3 +57,6 @@ subprocess.run([sys.executable,'revisions/0.12/apply_four_workspaces_035.py'],ch
 
 # Owner-only release center, after navigation and theme overlays.
 subprocess.run([sys.executable,'revisions/0.12/add_release_center_036.py'],check=True)
+
+# Native update-check feedback, no unsigned installer execution.
+subprocess.run([sys.executable,'revisions/0.12/add_update_check_037.py'],check=True)
