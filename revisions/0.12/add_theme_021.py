@@ -2,9 +2,9 @@
 from pathlib import Path
 p=Path('web/src.jsx')
 s=p.read_text(encoding='utf-8')
-needle="function App(){const[session"
+needle="function App(){"
 assert s.count(needle)==1
-s=s.replace(needle,"function App(){const [theme,setTheme]=useState(()=>{try{return window.localStorage.getItem('pitacco-theme')==='dark'?'dark':'light'}catch{return 'light'}});\nuseEffect(()=>{try{window.localStorage.setItem('pitacco-theme',theme)}catch{}},[theme]);\nconst[session",1)
+s=s.replace(needle,"function App(){const [theme,setTheme]=useState(()=>{try{return window.localStorage.getItem('pitacco-theme')==='dark'?'dark':'light'}catch{return 'light'}});\nuseEffect(()=>{try{window.localStorage.setItem('pitacco-theme',theme)}catch{}},[theme]);\n",1)
 needle='return <div className="app"><aside>'
 assert s.count(needle)==1
 s=s.replace(needle,'return <div className={"app pitacco-theme-"+theme}><aside>',1)
