@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {courierEarnings,courierDailyAllowance,courierOutstanding} from '../courierRemuneration.mjs';
+test('taxa do cliente',()=>assert.equal(courierEarnings({type:'customer_fee'},{customer_delivery_fee:5.99}),5.99));
+test('quilômetros viários loja-cliente',()=>assert.equal(courierEarnings({type:'per_km',rate:1},{road_distance_km:5.4}),5.4));
+test('valor fixo por entrega',()=>assert.equal(courierEarnings({type:'per_delivery',rate:5},{}),5));
+test('diária não é multiplicada por entrega',()=>{assert.equal(courierEarnings({type:'daily',rate:70},{}),0);assert.equal(courierDailyAllowance({type:'daily',rate:70},3),210)});
+test('misto diário e por km',()=>{const rule={type:'mixed',daily:70,per_km:1.25,per_delivery:2};assert.equal(courierEarnings(rule,{road_distance_km:4}),7);assert.equal(courierDailyAllowance(rule,2),140)});
+test('saldo depois de pagamento parcial',()=>assert.equal(courierOutstanding(350,150),200));
+test('recusa pagamento acima do saldo',()=>assert.throws(()=>courierOutstanding(100,101)));
+test('não inventa distância desconhecida',()=>assert.throws(()=>courierEarnings({type:'per_km',rate:1},{road_distance_km:undefined})));
+test('não aceita valores negativos',()=>assert.throws(()=>courierEarnings({type:'customer_fee'},{customer_delivery_fee:-1})));
