@@ -41,3 +41,5 @@ subprocess.run([sys.executable,'revisions/0.12/add_store_profile_020.py'],check=
 subprocess.run([sys.executable,'revisions/0.12/add_theme_021.py'],check=True)
 
 subprocess.run([sys.executable,'revisions/0.12/add_whatsapp_022.py'],check=True)
+
+subprocess.run([sys.executable,'revisions/0.12/apply_approved_receipt_027.py'],check=True)
