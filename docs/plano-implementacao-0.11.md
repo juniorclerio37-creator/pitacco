@@ -1,7 +1,7 @@
-# Plano de execução Pitacco 0.11 → módulos adicionais
+# Plano de melhorias na base existente Pitacco 0.12
 
 ## Estado conhecido
-O código do checkpoint está em `source/*.b64` como ZIP particionado. Não editar artefatos compactados diretamente. Recuperar, verificar SHA-256 conforme workflow existente, executar testes, alterar fonte, reconstruir pacote e atualizar verificação apenas depois de confirmar a integridade. Não declarar executável homologado: Windows sem assinatura Authenticode.
+A versão de trabalho permanece 0.12, conforme `revisions/0.12/restore.py` e `.github/workflows/windows.yml`. Não criar versão nova nem alterar o número de versão sem autorização. Não foi encontrada ramificação 0.13 na verificação de 10/11/2026. O código do checkpoint está em `source/*.b64` como ZIP particionado. Não editar artefatos compactados diretamente. Recuperar, verificar SHA-256 conforme workflow existente, executar testes, alterar fonte, reconstruir pacote e atualizar verificação apenas depois de confirmar a integridade. Não declarar executável homologado: Windows sem assinatura Authenticode.
 
 ## Ordem de entrega
 1. Impressão Windows (#10): reproduzir erro com 80 mm, capturar código e logs, confirmar permissões e nome da impressora, corrigir fila SQLite e adaptadores Tauri, permitir vincular/editar/excluir/testar impressora por loja, templates HTML sanitizados, status distintos enviado ao spooler / impresso confirmado, reimpressão auditada.
@@ -25,6 +25,9 @@ O código do checkpoint está em `source/*.b64` como ZIP particionado. Não edit
 - Teste físico 80 mm no Windows e teste de reconexão/falha de impressora.
 - Testes de isolamento de lojas, permissões, concorrência e duplicação.
 - Registrar evidências e versão; só fechar issues após critérios de aceite cumpridos.
+
+## Observação sobre impressão
+A reconstrução já aplica `add_printer_ui_013.py`, `printer_experience_031.py` e `print_device_controls_033.py`. Conferir estados de edição e controles duplicados após restauração, antes de modificar o fluxo. Tarefa de auditoria: #14.
 
 ## Próxima ação técnica
 Extrair fontes do ZIP conforme pipeline existente, identificar módulo de impressão e executar reprodução do erro. Este arquivo é planejamento, não implementação funcional.
