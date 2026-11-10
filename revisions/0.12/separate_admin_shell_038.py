@@ -6,12 +6,13 @@ needle="['Atualizações',Settings,'Principal'],"
 assert s.count(needle)==1
 s=s.replace(needle,"",1)
 # Reset workspace when the authenticated identity changes, avoiding role-view leakage.
-needle="useEffect(()=>{if(!supabase)"
-assert s.count(needle)==1
-s=s.replace(needle,"useEffect(()=>{setPlatformWorkspace(true)},[session?.user?.id]);\n"+needle,1)
 needle="function App(){const[storeBrand"
 assert s.count(needle)==1
 s=s.replace(needle,"function App(){const [platformWorkspace,setPlatformWorkspace]=useState(true);const[storeBrand",1)
+needle="useEffect(()=>{if(!supabase)"
+assert s.count(needle)==1
+s=s.replace(needle,"useEffect(()=>{setPlatformWorkspace(true)},[session?.user?.id]);\n"+needle,1)
+
 needle="return <div className=\"app\"><aside>"
 assert s.count(needle)==1
 admin_shell="""if(admin&&platformWorkspace){
