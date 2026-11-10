@@ -44,3 +44,15 @@ needle="paymentOrder.id.slice(0,8)"
 assert s.count(needle)==1
 s=s.replace(needle,"displayOrderNumber(paymentOrder)",1)
 p.write_text(s,encoding='utf-8')
+
+# Store identity writes through a store-scoped RPC; the general stores table
+# deliberately does not grant tenants access to subscription/plan columns.
+p=Path('web/StoreProfile.jsx')
+s=p.read_text(encoding='utf-8')
+needle="const {data,error}=await client.from('stores').update(row).eq('id',store.id).select('id').single();"
+assert s.count(needle)==1
+s=s.replace(needle,"const {error}=await client.rpc('pitacco_update_store_identity',{p_store_id:store.id,p_data:row});",1)
+needle="if(error)throw error;if(data.id!==store.id)throw Error('Loja incorreta.');"
+assert s.count(needle)==1
+s=s.replace(needle,"if(error)throw error;",1)
+p.write_text(s,encoding='utf-8')
