@@ -1,3 +1,4 @@
+export {CUPOM_80MM_HTML} from './cupom80mm.mjs';
 // Original, script-free receipt templates. Render with a sanitized thermal renderer.
 export const RECEIPT_TEMPLATES=Object.freeze({
  simples: '<h2>{{loja}}</h2><p>Pedido {{pedido}}</p><p>{{itens}}</p><hr><strong>Total: {{total}}</strong>',
