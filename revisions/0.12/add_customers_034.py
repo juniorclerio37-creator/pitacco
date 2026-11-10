@@ -14,7 +14,7 @@ component="""function CustomersFromOrders({orders=[]}){
   const key=phone||name.toLocaleLowerCase('pt-BR');
   const row=customers.get(key)||{name,phone,count:0,total:0,last:''};
   row.count+=1;
-  row.total+=Number(order.total||0);
+  row.total+=Number(order.gross||0);
   const when=String(order.created_at||'');
   if(when>row.last)row.last=when;
   customers.set(key,row);
@@ -26,5 +26,5 @@ component="""function CustomersFromOrders({orders=[]}){
 s=s.replace(needle,component+needle,1)
 needle="{active&&!isDriver&&tab==='Caixa'&&<CashDesk"
 assert s.count(needle)==1
-s=s.replace(needle,"{active&&!isDriver&&tab==='Clientes'&&<CustomersFromOrders orders={orders}/> }\n"+needle,1)
+s=s.replace(needle,"{active&&!isDriver&&manager&&tab==='Clientes'&&<CustomersFromOrders orders={orders}/> }\n{active&&!isDriver&&!manager&&tab==='Clientes'&&<section className=\"panel\"><p>O histórico de clientes está disponível somente para gestores autorizados.</p></section>}\n"+needle,1)
 p.write_text(s,encoding='utf-8')
