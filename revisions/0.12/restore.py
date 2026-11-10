@@ -43,3 +43,6 @@ subprocess.run([sys.executable,'revisions/0.12/add_theme_021.py'],check=True)
 subprocess.run([sys.executable,'revisions/0.12/add_whatsapp_022.py'],check=True)
 
 subprocess.run([sys.executable,'revisions/0.12/apply_approved_receipt_027.py'],check=True)
+
+subprocess.run([sys.executable,'revisions/0.12/add_courier_finance_029.py'],check=True)
+subprocess.run([sys.executable,'revisions/0.12/receipt_visibility_030.py'],check=True)
