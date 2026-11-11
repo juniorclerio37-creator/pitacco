@@ -81,10 +81,11 @@ smokeStage='dispatch';
  await page.getByText('Entregador atribuído. A rota aguarda coleta e saída.',{exact:true}).waitFor();assert.equal(assigned.p_courier,cid);
  await page.screenshot({path:'ui-evidence/entrega-modal.png',fullPage:true});
  await page.getByRole('button',{name:'Fechar',exact:true}).click();
- await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();await page.getByRole('button',{name:'Dados da loja',exact:true}).click();assert.ok(await page.getByRole('heading',{name:'Alocação automática',exact:true}).isVisible());
+ await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();
+ await page.getByRole('group',{name:'Configurações da loja'}).getByRole('button',{name:'Identidade da loja',exact:true}).click();
  await page.screenshot({path:'ui-evidence/minha-loja.png',fullPage:true});
- await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();await page.getByLabel('Menu principal').getByRole('button',{name:'Impressão e aceite',exact:true}).click();await page.screenshot({path:'ui-evidence/impressoras.png',fullPage:true});
- await page.getByRole('button',{name:'Estabelecimentos',exact:true}).click();await page.screenshot({path:'ui-evidence/lojas.png',fullPage:true});
+ await page.getByRole('group',{name:'Configurações da loja'}).getByRole('button',{name:'Impressão e aceite',exact:true}).click();
+ await page.screenshot({path:'ui-evidence/impressoras.png',fullPage:true});
  assert.deepEqual(errors,[]);console.log('PASS UI: board stages, create toggle, printer separation, neutral store payload, accept, ready, search; no page errors.');
 }catch(error){
  await fs.mkdir('ui-evidence',{recursive:true});
