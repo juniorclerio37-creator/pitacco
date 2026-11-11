@@ -76,4 +76,4 @@ subprocess.run([sys.executable,'revisions/0.12/isolate_print_sync_040.py'],check
 subprocess.run([sys.executable,'revisions/0.12/layout_unificado_042.py'],check=True)
 
 # Rebuild workspace structure after legacy overlays, keeping operational components.
-subprocess.run([sys.executable,'revisions/0.12/rebuild_workspaces_043.py'],check=True)
+# Temporarily disable rebuild_workspaces_043.py: Windows #176 blanks after startup; investigate before re-enabling.
