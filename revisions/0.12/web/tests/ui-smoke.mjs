@@ -51,7 +51,7 @@ smokeStage='board columns';
  await page.getByRole('button',{name:'+ Nova venda',exact:true}).click();assert.ok(await page.getByPlaceholder('Cliente',{exact:true}).isVisible());
  await page.getByRole('button',{name:'+ Nova venda',exact:true}).click();
 smokeStage='store administration';
- await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();await page.getByLabel('Menu principal').getByRole('button',{name:'Impressão e aceite',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Criar pedido',exact:true}).count(),0);assert.ok(await page.getByRole('heading',{name:'Impressoras por setor'}).isVisible());
+ await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();await page.getByRole('group',{name:'Configurações da loja'}).getByRole('button',{name:'Impressão e aceite',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Criar pedido',exact:true}).count(),0);assert.ok(await page.getByRole('heading',{name:'Impressoras por setor'}).isVisible());
  await page.getByRole('button',{name:'Estabelecimentos',exact:true}).click();assert.equal(await page.locator('select[name=platform]').count(),0);assert.equal(await page.locator('select[name=plan]').count(),0);
  await page.getByLabel('Nome do estabelecimento').fill('Nova loja');await page.getByRole('button',{name:'Cadastrar loja',exact:true}).click();await page.getByText('Registro salvo.',{exact:true}).waitFor();assert.deepEqual(submittedStore,{name:'Nova loja',platform:'',plan:'saas'});
 smokeStage='finance navigation regression';
