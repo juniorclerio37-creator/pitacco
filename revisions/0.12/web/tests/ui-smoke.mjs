@@ -37,7 +37,7 @@ try{
  await page.getByRole('button',{name:'Entrar no ambiente da loja',exact:true}).waitFor({timeout:12000});
  await page.getByRole('button',{name:'Entrar no ambiente da loja',exact:true}).click();
  // The store switch opens the overview (Painel), not the order board.
- await page.getByRole('button',{name:'Pedidos',exact:true}).click();
+ await page.getByRole('navigation',{name:'Menu principal'}).getByRole('button',{name:'Pedidos',exact:true}).click();
  smokeStage='orders visible';
  try{await page.getByText('Ana · exemplo',{exact:true}).waitFor({timeout:12000})}catch(e){await fs.mkdir('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/login-diagnostic.png',fullPage:true});throw new Error('Pedido de demonstração não apareceu. URL='+page.url()+'; tela='+JSON.stringify((await page.locator('body').innerText()).slice(0,1600))+'; erros='+JSON.stringify(errors)+'; causa='+e.message)}
 smokeStage='reprint';
