@@ -84,3 +84,44 @@ body{background:#f8f9fe;color:#111529}
 .app.pitacco-theme-dark:not(.pitacco-admin-shell) .pitacco-workspace>header h2,.app.pitacco-theme-dark:not(.pitacco-admin-shell) .pitacco-workspace .panel h3,.app.pitacco-theme-dark:not(.pitacco-admin-shell) .pitacco-workspace .metrics strong{color:#f7f5ff!important}
 @media(max-width:1250px){.app:not(.pitacco-admin-shell) .pitacco-workspace .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:800px){.app:not(.pitacco-admin-shell) .pitacco-workspace{padding:20px 16px 38px!important}}
+
+
+/* Approved panel structures: shared responsive workspaces, not color-only changes. */
+.app:not(.pitacco-admin-shell) .pitacco-workspace--overview .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-bottom:24px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--overview .quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:22px 0}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--overview .quick-actions button{min-height:80px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:9px;border:1px solid #ddd9ea;border-radius:13px;padding:16px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--overview>.panel{margin-top:22px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--couriers .courier-unified-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--couriers .courier-unified-tools>.panel{margin-top:0;max-width:none;min-width:0}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--couriers .courier-unified-tools table{width:100%}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--couriers .panel{max-width:none}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--couriers .quick-actions button{min-height:44px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--other .cash-desk{display:grid;grid-template-columns:1fr;gap:18px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--other .cash-desk>.panel{margin-top:0}
+.app:not(.pitacco-admin-shell) .cash-desk .cash-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin:20px 0}
+.app:not(.pitacco-admin-shell) .cash-desk .cash-metrics article{padding:20px;border:1px solid #ddd9ea;border-radius:14px;background:#fff}
+.app:not(.pitacco-admin-shell) .cash-desk .cash-metrics span{display:block;font-size:13px;color:#657085;margin-bottom:10px}
+.app:not(.pitacco-admin-shell) .cash-desk .cash-metrics strong{display:block;font-size:22px;color:#17142c}
+.app:not(.pitacco-admin-shell) .cash-desk .cash-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.app:not(.pitacco-admin-shell) .cash-desk .cash-actions>.panel{margin-top:0;min-width:0}
+.app:not(.pitacco-admin-shell) .cash-desk form{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-top:18px}
+.app:not(.pitacco-admin-shell) .cash-desk form .field{flex:1 1 190px}
+.app:not(.pitacco-admin-shell) .cash-desk form button{min-height:43px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--other>.panel{margin-top:18px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--other .page-intro{margin-bottom:18px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--other .pitacco-local-tabs,.app:not(.pitacco-admin-shell) .pitacco-workspace--other .store-settings-tabs{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 22px;padding-bottom:15px;border-bottom:1px solid #dedbe9}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--other .pitacco-local-tabs button{padding:12px 20px;border-radius:10px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--other .panel form{display:flex;flex-wrap:wrap;align-items:end;gap:12px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--other .panel form input,.app:not(.pitacco-admin-shell) .pitacco-workspace--other .panel form select{min-height:43px;max-width:100%}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--other .panel .line{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:13px 0;border-bottom:1px solid #e9e8ef}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--other .panel .line:last-child{border-bottom:0}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--other .tabs{border-bottom:1px solid #dedbe9;padding-bottom:16px;margin-bottom:18px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--other .tabs button{padding:12px 18px;min-height:45px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--other .tabs button.active{background:#5b0caf!important;color:#fff!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--orders .order-board{display:grid;gap:15px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--orders .order-card{padding:17px;min-height:170px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--settings .pitacco-operations--printing>.tabs{display:flex;gap:12px;margin-bottom:18px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace--settings .pitacco-operations--printing>.panel{max-width:none}
+@media(max-width:1150px){.app:not(.pitacco-admin-shell) .pitacco-workspace--couriers .courier-unified-tools,.app:not(.pitacco-admin-shell) .cash-desk .cash-actions{grid-template-columns:1fr}.app:not(.pitacco-admin-shell) .cash-desk .cash-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:800px){.app:not(.pitacco-admin-shell) .pitacco-workspace--overview .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.app:not(.pitacco-admin-shell) .pitacco-workspace--overview .quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:530px){.app:not(.pitacco-admin-shell) .pitacco-workspace--overview .quick-actions{grid-template-columns:1fr}.app:not(.pitacco-admin-shell) .cash-desk .cash-metrics{grid-template-columns:1fr}.app:not(.pitacco-admin-shell) .pitacco-workspace--other .panel .line{align-items:flex-start;flex-direction:column}}
