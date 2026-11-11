@@ -80,3 +80,6 @@ subprocess.run([sys.executable,'revisions/0.12/layout_unificado_042.py'],check=T
 
 # Notify with bell + voice only for orders arriving after initial synchronization.
 subprocess.run([sys.executable,'revisions/0.12/new_order_voice_044.py'],check=True)
+
+# Mount new orders UI with real backend callbacks and isolated styling.
+subprocess.run([sys.executable,'revisions/0.12/mount_orders_045.py'],check=True)
