@@ -223,6 +223,21 @@ jobs:
               if ($signingCert) { Remove-Item "Cert:\\CurrentUser\\My\\$($signingCert.Thumbprint)" -Force -ErrorAction SilentlyContinue }
             }
           }
+      - name: Verificar instalador com Microsoft Defender
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = @(Get-ChildItem 'src-tauri/target/release/bundle/nsis/*.exe')
+          if ($exe.Count -eq 0) { throw 'Instalador nao encontrado para verificacao.' }
+          $defender = Join-Path $env:ProgramFiles 'Windows Defender/MpCmdRun.exe'
+          if (-not (Test-Path $defender)) { throw 'Microsoft Defender CLI indisponivel no runner; verificacao obrigatoria.' }
+          & $defender -SignatureUpdate
+          if ($LASTEXITCODE -ne 0) { Write-Warning 'Atualizacao de assinaturas nao concluida; verificando com definicoes disponiveis.' }
+          foreach ($file in $exe) {
+            & $defender -Scan -ScanType 3 -File $file.FullName -DisableRemediation
+            if ($LASTEXITCODE -ne 0) { throw "Verificacao do Defender nao aprovada para $($file.Name). Codigo: $LASTEXITCODE" }
+          }
+          'Microsoft Defender: verificacao concluida sem deteccao no runner. Isto nao garante reputacao Safe Browsing ou SmartScreen.' | Out-File -Encoding utf8 '../VERIFICACAO-WINDOWS.txt'
       - name: Hashes dos instaladores
         run: Get-ChildItem src-tauri/target/release/bundle/nsis/*.exe | Get-FileHash -Algorithm SHA256 | Format-List | Out-File -Encoding utf8 ../SHA256-WINDOWS.txt
       - name: Instalador e integridade
@@ -233,6 +248,7 @@ jobs:
             web/src-tauri/target/release/bundle/nsis/*.exe
             SHA256-WINDOWS.txt
             ASSINATURA-WINDOWS.txt
+            VERIFICACAO-WINDOWS.txt
           if-no-files-found: error
           retention-days: 30
 
