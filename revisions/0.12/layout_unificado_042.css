@@ -44,3 +44,43 @@
 .pitacco-workspace .notice.error{border-radius:10px;max-width:100%;overflow-wrap:anywhere}
 .pitacco-workspace .store-settings-tabs button,.pitacco-workspace .pitacco-local-tabs button{font-size:14px;min-height:44px}
 .pitacco-workspace--other:has(.pitacco-operations)>.pitacco-operations>h2:first-child{display:none}
+
+
+/* Approved Pitacco visual references: navy/purple store shell and workspace cards. */
+:root{--pt-ink:#111529;--pt-muted:#667087;--pt-line:#e0e1ed;--pt-accent:#6415b6;--pt-surface:#fff}
+body{background:#f8f9fe;color:#111529}
+.app:not(.pitacco-admin-shell) aside{background:linear-gradient(165deg,#17112d 0%,#151025 54%,#10152a 100%)!important;border-right:1px solid #342b4b!important;color:#fff!important;padding:22px 14px!important}
+.app:not(.pitacco-admin-shell) aside nav>button{color:#f2eefc!important;border-radius:11px!important;font-weight:600!important;font-size:15px!important;min-height:49px!important}
+.app:not(.pitacco-admin-shell) aside nav>button.active{background:linear-gradient(100deg,#7620d0,#4f0aa2)!important;color:#fff!important;box-shadow:0 3px 10px #16072d33!important}
+.app:not(.pitacco-admin-shell) aside nav>button:hover:not(.active){background:#31234c!important}
+.app:not(.pitacco-admin-shell) .store-identity{border-bottom:1px solid #453854!important;padding-bottom:20px!important;margin-bottom:20px!important}
+.app:not(.pitacco-admin-shell) .store-identity-copy strong{font-size:19px!important;color:white!important}
+.app:not(.pitacco-admin-shell) .store-identity-copy small{font-size:12px!important;color:#c6bed9!important}
+.app:not(.pitacco-admin-shell) .store-identity-placeholder{background:#fbf7ff!important;color:#6415b6!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace{background:#fafaff!important;padding:30px 32px 52px!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace>header{background:transparent!important;border-bottom:0!important;padding:0 0 14px!important;margin-bottom:14px!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace>header h2{color:#111329!important;font-size:30px!important;font-weight:800!important;letter-spacing:-.025em!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace>header p{font-size:15px!important;color:#5d6478!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace .panel,.app:not(.pitacco-admin-shell) .pitacco-workspace .metrics article{background:#fff!important;border:1px solid #d8daea!important;border-radius:16px!important;box-shadow:0 3px 12px #19152a0a!important;color:#13172c!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace .panel h3{font-size:19px!important;color:#17132b!important;font-weight:750!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace .metrics{grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace .metrics article{min-height:130px;padding:22px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace .metrics article:nth-child(4n+1){background:linear-gradient(130deg,#fff,#f2eafa)!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace .metrics article:nth-child(4n+2){background:linear-gradient(130deg,#fff,#eaf5ff)!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace .metrics article:nth-child(4n+3){background:linear-gradient(130deg,#fff,#effbf2)!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace .metrics article:nth-child(4n+4){background:linear-gradient(130deg,#fff,#fff6e7)!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace .metrics strong{color:#141428!important;font-size:29px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace button.active:not(.logout),.app:not(.pitacco-admin-shell) .pitacco-workspace .tabs button.active{background:#5b0caf!important;color:white!important;border-color:#5b0caf!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace .store-settings-tabs button.active,.app:not(.pitacco-admin-shell) .pitacco-workspace .pitacco-local-tabs button.active{background:#5b0caf!important;color:white!important;border-color:#5b0caf!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace .tabs button,.app:not(.pitacco-admin-shell) .pitacco-workspace .store-settings-tabs button,.app:not(.pitacco-admin-shell) .pitacco-workspace .pitacco-local-tabs button{font-weight:650!important;border-radius:10px!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace .order-card{border-radius:14px!important;box-shadow:0 4px 16px #221d3c12!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace .order-card .card-heading b{font-size:17px!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace th{background:#f1f1f7!important;color:#23233a!important;font-weight:750!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace td{background:#fff!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace .notice.error{background:#fff3f1!important;color:#9d2424!important;border:1px solid #f3c6c3!important}
+.app:not(.pitacco-admin-shell) .pitacco-workspace .connection-bar{color:#747b8b!important}
+.pitacco-theme-dark .app:not(.pitacco-admin-shell) .pitacco-workspace,.app.pitacco-theme-dark:not(.pitacco-admin-shell) .pitacco-workspace{background:#1a1726!important}
+.app.pitacco-theme-dark:not(.pitacco-admin-shell) .pitacco-workspace .panel,.app.pitacco-theme-dark:not(.pitacco-admin-shell) .pitacco-workspace .metrics article{background:#262236!important;color:#f7f5ff!important;border-color:#493b61!important}
+.app.pitacco-theme-dark:not(.pitacco-admin-shell) .pitacco-workspace>header h2,.app.pitacco-theme-dark:not(.pitacco-admin-shell) .pitacco-workspace .panel h3,.app.pitacco-theme-dark:not(.pitacco-admin-shell) .pitacco-workspace .metrics strong{color:#f7f5ff!important}
+@media(max-width:1250px){.app:not(.pitacco-admin-shell) .pitacco-workspace .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:800px){.app:not(.pitacco-admin-shell) .pitacco-workspace{padding:20px 16px 38px!important}}
