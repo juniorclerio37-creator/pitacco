@@ -89,3 +89,6 @@ subprocess.run([sys.executable,'revisions/0.12/adapt_supplied_layout_046.py'],ch
 
 # Real courier search and printer sector editing, using existing database tables.
 subprocess.run([sys.executable,'revisions/0.12/functional_courier_printer_047.py'],check=True)
+
+# Mount advanced courier rate settings and persisted HTML receipt editor.
+subprocess.run([sys.executable,'revisions/0.12/advanced_rates_html_048.py'],check=True)
