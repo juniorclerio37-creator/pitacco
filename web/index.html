@@ -21,7 +21,7 @@ const $=id=>document.getElementById(id);
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 let liveChannel=null,refreshBusy=false,user=null,store=null,orders=[],products=[],deliveries=[],couriers=[],optionGroups=[],productOptions=[],editingProduct=null,selected=null,page='dashboard',menuSettings=null;
-const reserved=new Set(['www','app','entregador','pitacco','admin','api','mail']);
+const reserved=new Set(['www','app','entregador','pitacco','admin','api','mail','cadastro','privacidade','termos','sistema','configuracao','produtos','complementos','cardapio','pedidos','aceite','acompanhar','identidade','assets']);
 const courierHost=location.hostname==='entregador.pitacco.com.br'||location.pathname.startsWith('/entregador');
 const menuPath=decodeURIComponent(location.pathname.split('/').filter(Boolean)[0]||'').toLowerCase();
 const slug=(location.hostname==='pitacco.com.br'||location.hostname==='www.pitacco.com.br'||location.hostname.endsWith('.workers.dev'))&&!reserved.has(menuPath)&&/^[a-z0-9][a-z0-9-]{2,59}$/.test(menuPath)?menuPath:'';
