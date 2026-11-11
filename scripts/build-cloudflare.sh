@@ -40,7 +40,18 @@ python3 - <<'PY'
 from pathlib import Path
 p=Path('web/dist/index.html')
 html=p.read_text(encoding='utf-8')
-redirect='<script>if(location.hostname.toLowerCase()==="app.pitacco.com.br"&&location.pathname==="/"){location.replace("/app/"+location.search+location.hash)}</script>'
+redirect='''<script>
+(function(){
+const host=location.hostname.toLowerCase(),path=location.pathname;
+if(host==="app.pitacco.com.br"&&path==="/"){location.replace("/app/"+location.search+location.hash);return}
+const reserved=new Set(["app","entregador","www","pitacco","admin","api","mail","cadastro","privacidade","termos","sistema","configuracao","produtos","complementos","cardapio","pedidos","aceite","acompanhar","identidade","assets","favicon.ico","sw.js"]);
+const parts=path.split("/").filter(Boolean),slug=parts[0]||"";
+if((host==="pitacco.com.br"||host==="www.pitacco.com.br")&&parts.length===1&&/^[a-z0-9][a-z0-9-]{2,59}$/.test(slug)&&!reserved.has(slug)){
+document.documentElement.style.visibility="hidden";
+fetch("/app/",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("Falha ao carregar cardápio");return r.text()}).then(html=>{document.open();document.write(html);document.close();document.documentElement.style.visibility="visible"}).catch(()=>{document.documentElement.style.visibility="visible";document.body.textContent="Não foi possível carregar o cardápio. Atualize a página."});
+}
+})();
+</script>'''
 assert '<head' in html.lower(), 'marketing index is missing a head tag'
 import re
 html,n=re.subn(r'(<head[^>]*>)',lambda m:m.group(1)+redirect,html,count=1,flags=re.I)
