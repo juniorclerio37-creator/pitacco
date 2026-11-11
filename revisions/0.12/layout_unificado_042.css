@@ -125,3 +125,29 @@ body{background:#f8f9fe;color:#111529}
 @media(max-width:1150px){.app:not(.pitacco-admin-shell) .pitacco-workspace--couriers .courier-unified-tools,.app:not(.pitacco-admin-shell) .cash-desk .cash-actions{grid-template-columns:1fr}.app:not(.pitacco-admin-shell) .cash-desk .cash-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:800px){.app:not(.pitacco-admin-shell) .pitacco-workspace--overview .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.app:not(.pitacco-admin-shell) .pitacco-workspace--overview .quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:530px){.app:not(.pitacco-admin-shell) .pitacco-workspace--overview .quick-actions{grid-template-columns:1fr}.app:not(.pitacco-admin-shell) .cash-desk .cash-metrics{grid-template-columns:1fr}.app:not(.pitacco-admin-shell) .pitacco-workspace--other .panel .line{align-items:flex-start;flex-direction:column}}
+
+
+/* Dashboard reference: hero, 4 KPIs, 2x2 panels, shortcut tiles. */
+.approved-dashboard .approved-hero{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:24px}
+.approved-dashboard .approved-hero h3{font-size:28px;margin:0 0 7px;font-weight:800}
+.approved-dashboard .approved-hero p{color:#677187;margin:0}
+.approved-dashboard .approved-actions{display:flex;flex-wrap:wrap;gap:12px}
+.approved-dashboard .approved-actions button{min-height:48px;padding:12px 17px}
+.approved-dashboard .approved-actions button:first-child{background:#0b9742;color:white;border-color:#0b9742}
+.approved-dashboard .approved-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px}
+.approved-dashboard .approved-grid>.panel{margin:0!important;min-width:0}
+.approved-dashboard .approved-panel-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:15px}
+.approved-dashboard .approved-panel-title button{padding:8px 12px}
+.approved-dashboard .approved-table-scroll{overflow-x:auto}
+.approved-dashboard .approved-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:19px}
+.approved-dashboard .approved-shortcuts button{display:flex;align-items:flex-start;justify-content:center;flex-direction:column;gap:10px;min-height:90px;padding:14px;border:1px solid #dce0eb;border-radius:12px;background:#fff;color:#242039;font-weight:650}
+.approved-dashboard .approved-shortcuts button svg{color:#6314ba}
+.approved-dashboard .approved-finance{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
+.approved-dashboard .approved-finance>div{border-radius:12px;background:#f5f3fa;padding:16px}
+.approved-dashboard .approved-finance span{display:block;color:#647087;font-size:12px}
+.approved-dashboard .approved-finance strong{display:block;font-size:20px;margin-top:9px}
+.approved-dashboard .approved-status{display:flex;flex-direction:column;margin-top:12px}
+.approved-dashboard .approved-status button{display:flex;align-items:center;gap:12px;justify-content:flex-start;padding:16px 4px;border:0;border-bottom:1px solid #e7e5ee;background:transparent;font-weight:650}
+.approved-dashboard .approved-status button span{margin-left:auto;color:#6619b3}
+@media(max-width:1150px){.approved-dashboard .approved-grid{grid-template-columns:1fr}}
+@media(max-width:620px){.approved-dashboard .approved-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}.approved-dashboard .approved-finance{grid-template-columns:1fr}.approved-dashboard .approved-actions{width:100%}}
