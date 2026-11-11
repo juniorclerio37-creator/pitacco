@@ -31,3 +31,16 @@
 .pitacco-theme-dark .pitacco-local-tabs button.active,.pitacco-theme-dark .store-settings-tabs button.active{background:#2a303a;color:#ffc08e;border-color:#4b5360}
 @media(max-width:1100px){.pitacco-workspace--couriers .courier-unified-tools{grid-template-columns:1fr}}
 @media(max-width:800px){.app:not(.pitacco-admin-shell) aside{width:100%;min-width:0}.app:not(.pitacco-admin-shell) .pitacco-workspace{padding:20px 16px 36px}.pitacco-workspace--other:has(.pitacco-local-tabs)>.panel form{display:grid;grid-template-columns:1fr}.pitacco-workspace--other:has(.pitacco-local-tabs)>.panel form input,.pitacco-workspace--other:has(.pitacco-local-tabs)>.panel form select{width:100%}}
+
+
+/* Store workspace title appears once: the application header is the canonical title. */
+.pitacco-workspace>header{padding-bottom:18px;border-bottom:1px solid var(--line,#e3e7ed);margin-bottom:22px}
+.pitacco-workspace>header .eyebrow{font-size:12px;letter-spacing:.07em;font-weight:700;text-transform:uppercase}
+.pitacco-workspace>header h2{font-size:29px;font-weight:750;letter-spacing:-.025em}
+.pitacco-workspace>header+section>header:first-child{display:none}
+.pitacco-workspace .pitacco-operations .connection-bar{font-size:12px;min-height:28px}
+.pitacco-workspace .pitacco-operations:has(.store-settings-tabs) .connection-bar{margin-bottom:14px}
+.pitacco-workspace .panel{border-radius:15px}
+.pitacco-workspace .notice.error{border-radius:10px;max-width:100%;overflow-wrap:anywhere}
+.pitacco-workspace .store-settings-tabs button,.pitacco-workspace .pitacco-local-tabs button{font-size:14px;min-height:44px}
+.pitacco-workspace--other:has(.pitacco-operations)>.pitacco-operations>h2:first-child{display:none}
