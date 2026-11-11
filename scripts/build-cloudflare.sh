@@ -33,7 +33,7 @@ html=p.read_text(encoding='utf-8')
 redirect='<script>if(location.hostname.toLowerCase()==="app.pitacco.com.br"&&location.pathname==="/"){location.replace("/app/"+location.search+location.hash)}</script>'
 assert '<head' in html.lower(), 'marketing index is missing a head tag'
 import re
-html,n=re.subn(r'(<head\\b[^>]*>)',lambda m:m.group(1)+redirect,html,count=1,flags=re.I)
+html,n=re.subn(r'(<head[^>]*>)',lambda m:m.group(1)+redirect,html,count=1,flags=re.I)
 assert n==1
 p.write_text(html,encoding='utf-8')
 assert Path('web/dist/app/index.html').exists()
