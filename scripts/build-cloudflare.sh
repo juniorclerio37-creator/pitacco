@@ -22,3 +22,19 @@ cp marketing/aceite.html web/dist/aceite/index.html
 cp marketing/acompanhar.html web/dist/acompanhar/index.html
 cp marketing/identidade.html web/dist/identidade/index.html
 cp marketing/sw.js web/dist/sw.js
+
+# Existing Cloudflare Worker serves the same asset bundle for all three domains.
+# Route the app subdomain to the already-built React dashboard at /app/,
+# while keeping pitacco.com.br and www.pitacco.com.br on the marketing home.
+python3 - <<'PY'
+from pathlib import Path
+p=Path('web/dist/index.html')
+html=p.read_text(encoding='utf-8')
+redirect='<script>if(location.hostname.toLowerCase()==="app.pitacco.com.br"&&location.pathname==="/"){location.replace("/app/"+location.search+location.hash)}</script>'
+assert '<head' in html.lower(), 'marketing index is missing a head tag'
+import re
+html,n=re.subn(r'(<head\\b[^>]*>)',lambda m:m.group(1)+redirect,html,count=1,flags=re.I)
+assert n==1
+p.write_text(html,encoding='utf-8')
+assert Path('web/dist/app/index.html').exists()
+PY
