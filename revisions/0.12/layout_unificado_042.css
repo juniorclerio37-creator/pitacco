@@ -1,0 +1,33 @@
+/* Unified store UI: clear information hierarchy without changing business logic. */
+.app:not(.pitacco-admin-shell) aside{width:246px;min-width:246px;overflow-y:auto}
+.app:not(.pitacco-admin-shell) aside nav{display:flex;flex-direction:column;gap:5px}
+.app:not(.pitacco-admin-shell) aside nav>button{display:flex;align-items:center;gap:12px;width:100%;min-height:46px;text-align:left;padding:11px 14px;border-radius:11px}
+.app:not(.pitacco-admin-shell) .pitacco-workspace{min-width:0;padding:28px clamp(22px,2.8vw,42px) 48px}
+.pitacco-workspace>header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+.pitacco-workspace>header h2{margin:5px 0 6px;line-height:1.15}
+.pitacco-workspace .panel{min-width:0;margin-top:16px}
+.pitacco-workspace .panel form{max-width:100%}
+.pitacco-workspace .panel input,.pitacco-workspace .panel select,.pitacco-workspace .panel textarea{max-width:100%}
+.pitacco-local-tabs,.store-settings-tabs{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:6px 0 18px;margin:0 0 18px;border-bottom:1px solid var(--line,#e5e8ee)}
+.pitacco-local-tabs button,.store-settings-tabs button{background:transparent;color:var(--ink,#273345);border:1px solid transparent;box-shadow:none;padding:11px 17px;border-radius:10px;font-weight:650}
+.pitacco-local-tabs button:hover,.store-settings-tabs button:hover{background:rgba(124,133,151,.09)}
+.pitacco-local-tabs button.active,.store-settings-tabs button.active{background:var(--surface,#fff);border-color:var(--line,#dfe5ed);box-shadow:0 2px 8px #1c2b400d;color:var(--accent,#d76a22)}
+.pitacco-workspace--other:has(.pitacco-local-tabs)>.panel{max-width:1250px}
+.pitacco-workspace--other:has(.pitacco-local-tabs)>.panel form{display:flex;flex-wrap:wrap;align-items:end;gap:12px}
+.pitacco-workspace--other:has(.pitacco-local-tabs)>.panel form input,.pitacco-workspace--other:has(.pitacco-local-tabs)>.panel form select{flex:1 1 170px;min-width:130px}
+.pitacco-workspace--other:has(.pitacco-local-tabs)>.panel form button{flex:0 0 auto}
+.pitacco-workspace--other:has(.pitacco-local-tabs)>.panel .line{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:14px 0}
+.pitacco-workspace--couriers .courier-unified-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:16px}
+.pitacco-workspace--couriers .courier-unified-tools>.panel{margin-top:0}
+.pitacco-workspace--settings .store-settings-tabs{margin-top:6px}
+.pitacco-workspace--orders .kanban{align-items:start}
+.pitacco-workspace--orders .kanban .order-card{border-radius:12px;padding:15px;box-shadow:0 3px 12px #15283e0a}
+.pitacco-workspace--orders .kanban .order-card .card-heading{min-height:46px}
+.pitacco-workspace--orders .kanban .order-card .card-heading>b{font-size:17px;line-height:1.2;overflow-wrap:anywhere}
+.pitacco-workspace--overview .metrics{gap:14px}
+.pitacco-workspace--overview .metrics article{min-height:116px}
+.pitacco-workspace .cash-desk .cash-actions>.panel{margin-top:0}
+.pitacco-theme-dark .pitacco-local-tabs button,.pitacco-theme-dark .store-settings-tabs button{color:#e5eaf2}
+.pitacco-theme-dark .pitacco-local-tabs button.active,.pitacco-theme-dark .store-settings-tabs button.active{background:#2a303a;color:#ffc08e;border-color:#4b5360}
+@media(max-width:1100px){.pitacco-workspace--couriers .courier-unified-tools{grid-template-columns:1fr}}
+@media(max-width:800px){.app:not(.pitacco-admin-shell) aside{width:100%;min-width:0}.app:not(.pitacco-admin-shell) .pitacco-workspace{padding:20px 16px 36px}.pitacco-workspace--other:has(.pitacco-local-tabs)>.panel form{display:grid;grid-template-columns:1fr}.pitacco-workspace--other:has(.pitacco-local-tabs)>.panel form input,.pitacco-workspace--other:has(.pitacco-local-tabs)>.panel form select{width:100%}}
