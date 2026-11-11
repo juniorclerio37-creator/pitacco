@@ -69,3 +69,6 @@ subprocess.run([sys.executable,'revisions/0.12/polish_store_workspaces_039.py'],
 
 # Printer failure does not take down the orders feed.
 subprocess.run([sys.executable,'revisions/0.12/isolate_print_sync_040.py'],check=True)
+
+# Prefer the saved store logo in the tenant workspace.
+subprocess.run([sys.executable,'revisions/0.12/store_logo_fallback_041.py'],check=True)
