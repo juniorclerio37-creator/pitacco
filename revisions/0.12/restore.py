@@ -95,3 +95,6 @@ subprocess.run([sys.executable,'revisions/0.12/advanced_rates_html_048.py'],chec
 
 # Consolidated courier workspace: real data and existing backend operations.
 subprocess.run([sys.executable,'revisions/0.12/mount_courier_workspace_049.py'],check=True)
+
+# Windows only: orders, kitchen and printing. Full administration stays on the website.
+subprocess.run([sys.executable,'revisions/0.12/windows_orders_only_050.py'],check=True)
