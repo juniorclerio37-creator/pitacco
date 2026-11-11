@@ -185,6 +185,44 @@ jobs:
           if-no-files-found: ignore
       - name: Instalador NSIS
         run: npm run desktop:build -- --bundles nsis
+      - name: Assinar instalador quando certificado estiver configurado
+        shell: pwsh
+        env:
+          PITACCO_SIGN_PFX_BASE64: ${{ secrets.PITACCO_SIGN_PFX_BASE64 }}
+          PITACCO_SIGN_PFX_PASSWORD: ${{ secrets.PITACCO_SIGN_PFX_PASSWORD }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installers = @(Get-ChildItem 'web/src-tauri/target/release/bundle/nsis/*.exe')
+          if ($installers.Count -eq 0) { throw 'Nenhum instalador encontrado para assinatura.' }
+          $hasPfx = -not [string]::IsNullOrWhiteSpace($env:PITACCO_SIGN_PFX_BASE64)
+          $hasPassword = -not [string]::IsNullOrWhiteSpace($env:PITACCO_SIGN_PFX_PASSWORD)
+          if ($hasPfx -ne $hasPassword) { throw 'Configure ambos os segredos de assinatura ou nenhum.' }
+          if (-not $hasPfx) {
+            'NAO ASSINADO: certificado de assinatura de codigo nao configurado.' | Out-File -Encoding utf8 'ASSINATURA-WINDOWS.txt'
+            Write-Warning 'Instalador NAO ASSINADO. Nao distribuir como versao verificada.'
+          } else {
+            $pfxPath = Join-Path $env:RUNNER_TEMP 'pitacco-signing.pfx'
+            try {
+              [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:PITACCO_SIGN_PFX_BASE64))
+              $password = ConvertTo-SecureString $env:PITACCO_SIGN_PFX_PASSWORD -AsPlainText -Force
+              $cert = Get-PfxCertificate -FilePath $pfxPath -Password $password
+              if (-not $cert.HasPrivateKey) { throw 'Certificado sem chave privada.' }
+              $codeSigningOid = '1.3.6.1.5.5.7.3.3'
+              $eku = @($cert.EnhancedKeyUsageList | ForEach-Object { $_.ObjectId })
+              if ($eku -notcontains $codeSigningOid) { throw 'Certificado nao autorizado para assinatura de codigo.' }
+              $signingCert = Import-PfxCertificate -FilePath $pfxPath -CertStoreLocation Cert:\\CurrentUser\\My -Password $password
+              foreach ($installer in $installers) {
+                $signature = Set-AuthenticodeSignature -FilePath $installer.FullName -Certificate $signingCert -TimestampServer 'http://timestamp.digicert.com' -HashAlgorithm SHA256
+                if ($signature.Status -ne 'Valid') { throw "Assinatura falhou: $($installer.Name) - $($signature.Status)" }
+                $verified = Get-AuthenticodeSignature -FilePath $installer.FullName
+                if ($verified.Status -ne 'Valid') { throw "Assinatura nao validada: $($installer.Name)" }
+              }
+              "ASSINADO: $($signingCert.Subject); Thumbprint: $($signingCert.Thumbprint)" | Out-File -Encoding utf8 'ASSINATURA-WINDOWS.txt'
+            } finally {
+              Remove-Item $pfxPath -Force -ErrorAction SilentlyContinue
+              if ($signingCert) { Remove-Item "Cert:\\CurrentUser\\My\\$($signingCert.Thumbprint)" -Force -ErrorAction SilentlyContinue }
+            }
+          }
       - name: Hashes dos instaladores
         run: Get-ChildItem src-tauri/target/release/bundle/nsis/*.exe | Get-FileHash -Algorithm SHA256 | Format-List | Out-File -Encoding utf8 ../SHA256-WINDOWS.txt
       - name: Instalador e integridade
@@ -194,6 +232,7 @@ jobs:
           path: |
             web/src-tauri/target/release/bundle/nsis/*.exe
             SHA256-WINDOWS.txt
+            ASSINATURA-WINDOWS.txt
           if-no-files-found: error
           retention-days: 30
 
