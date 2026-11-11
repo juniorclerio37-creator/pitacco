@@ -30,7 +30,7 @@ s=s.replace(needle,"nativeAvailable()&&name==='Administrar Loja'?'Minha Loja'",1
 # Make store profile available as a tab, not a nested sidebar section.
 needle="{tab==='Minha Loja'&&active&&<StoreProfile"
 assert s.count(needle)==1
-tabs="{['Minha Loja','Configurações'].includes(tab)&&active&&<div className=\\"store-settings-tabs\\" role=\\"group\\" aria-label=\\"Configurações da loja\\"><button className={tab==='Minha Loja'?'active':'secondary'} onClick={()=>setTab('Minha Loja')}>Identidade da loja</button><button className={tab==='Configurações'?'active':'secondary'} onClick={()=>setTab('Configurações')}>Impressão e aceite</button></div>}\\n"
+tabs="{['Minha Loja','Configurações'].includes(tab)&&active&&<div className=\\"store-settings-tabs\\" role=\\"group\\" aria-label=\\"Configurações da loja\\"><button className={tab==='Minha Loja'?'active':'secondary'} onClick={()=>setTab('Minha Loja')}>Identidade da loja</button><button className={tab==='Configurações'?'active':'secondary'} onClick={()=>setTab('Configurações')}>Impressão e aceite</button></div>}\n"
 s=s.replace(needle,tabs+needle,1)
 p.write_text(s,encoding='utf-8')
 
@@ -39,7 +39,7 @@ p=Path('web/Operations.jsx')
 s=p.read_text(encoding='utf-8')
 needle="const currency=n=>"
 assert s.count(needle)==1
-s=s.replace(needle,"const displayOrderNumber=o=>o?.receipt?.display_number||o?.receipt?.external_order_number||o?.receipt?.order_number||o?.receipt?.display_id||o?.receipt?.number||'Número pendente';\\n"+needle,1)
+s=s.replace(needle,"const displayOrderNumber=o=>o?.receipt?.display_number||o?.receipt?.external_order_number||o?.receipt?.order_number||o?.receipt?.display_id||o?.receipt?.number||'Número pendente';\n"+needle,1)
 old="(o.receipt?.display_number||o.receipt?.external_order_number||o.receipt?.order_number||o.receipt?.display_id||o.receipt?.number||o.id.slice(0,8))"
 assert s.count(old)>=2
 s=s.replace(old,"displayOrderNumber(o)")
