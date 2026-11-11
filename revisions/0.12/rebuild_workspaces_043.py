@@ -16,8 +16,6 @@ s=s[:start]+s[end+len("</section>}"):]
 anchor="{tab==='Assinaturas'&&active&&"
 if s.count(anchor)!=1: raise RuntimeError('Finance anchor missing')
 courier_tabs="""{['Entregadores','Relatório de motoboys','Pagamento de motoboys'].includes(tab)&&active&&manager&&<div className="pitacco-section-tabs" role="group" aria-label="Áreas dos motoboys"><button className={tab==='Entregadores'?'active':''} onClick={()=>setTab('Entregadores')}>Cadastro e entregas</button><button className={tab==='Relatório de motoboys'?'active':''} onClick={()=>setTab('Relatório de motoboys')}>Relatórios</button><button className={tab==='Pagamento de motoboys'?'active':''} onClick={()=>setTab('Pagamento de motoboys')}>Pagamentos</button></div>}
-{tab==='Relatório de motoboys'&&active&&manager&&<CourierFinance client={supabase} storeId={selected} view="Relatório de motoboys"/>}
-{tab==='Pagamento de motoboys'&&active&&manager&&<CourierFinance client={supabase} storeId={selected} view="Pagamento de motoboys"/>}
 """
 s=s.replace(anchor,courier_tabs+anchor,1)
 
