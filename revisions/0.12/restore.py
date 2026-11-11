@@ -77,3 +77,6 @@ subprocess.run([sys.executable,'revisions/0.12/layout_unificado_042.py'],check=T
 
 # Rebuild workspace structure after legacy overlays, keeping operational components.
 # Temporarily disable rebuild_workspaces_043.py: Windows #176 blanks after startup; investigate before re-enabling.
+
+# Notify with bell + voice only for orders arriving after initial synchronization.
+subprocess.run([sys.executable,'revisions/0.12/new_order_voice_044.py'],check=True)
