@@ -4,12 +4,12 @@
 - Interface responsiva com menu lateral, dashboard, listagem e aceite de pedidos, produtos, painel financeiro resumido e configuração do cardápio.
 - Login e recuperação de senha pelo Supabase Auth; acesso restrito por associação em public.store_members.
 - Leitura e escrita com escopo de store_id, sujeitas às políticas RLS.
-- Resolução de cardápio por slug do hostname em subdomínios de pitacco.com.br, com vitrine de produtos ativos.
+- Resolução de cardápio por slug do hostname em subdomínios de pitacco.com.br, com vitrine de produtos ativos.\n- Carrinho público, seleção de complementos, entrega/retirada, dados do cliente e checkout via RPC existente `checkout_public_order` (validação e total no servidor).\n- Aceite via RPC existente `accept_order` e gravação das configurações do menu via `save_public_menu_settings`.
 
 ## Limitações e pendências
 - Esta branch é uma base inicial e **não está publicada**. Não foi executado teste em navegador nem build automatizado.
-- Checkout público, complementos, pagamentos, motoboys, impressoras e relatórios completos ainda não foram implementados nesta interface. Não anunciar como prontos.
-- A leitura anônima do cardápio depende de políticas RLS adequadas, que não devem expor dados de clientes, preços de custo ou outras lojas.
+- Carrinho e checkout estão conectados ao backend, mas **não homologados por testes reais**. Integrações de pagamentos online, motoboys, impressoras e relatórios completos ainda não foram implementados nesta interface. Não anunciar como prontos.
+- A leitura anônima do cardápio usa a RPC `get_public_menu`, que retorna apenas os campos destinados ao público; a função possui permissão EXECUTE para anon. Revisar segurança de todas as RPCs privilegiadas antes da produção.
 - A impressão exige agente Windows; não confundir envio ao spooler com papel impresso.
 - Configurar roteamento, DNS wildcard e TLS na Cloudflare/hospedagem antes de usar subdomínios.
 - O banco possui lojas sem associação em store_members. Corrigir vínculo de forma autenticada e auditada, sem liberar acesso geral.
