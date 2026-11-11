@@ -74,3 +74,6 @@ subprocess.run([sys.executable,'revisions/0.12/isolate_print_sync_040.py'],check
 
 # Apply the unified store visual hierarchy after all business logic overlays.
 subprocess.run([sys.executable,'revisions/0.12/layout_unificado_042.py'],check=True)
+
+# Rebuild workspace structure after legacy overlays, keeping operational components.
+subprocess.run([sys.executable,'revisions/0.12/rebuild_workspaces_043.py'],check=True)
