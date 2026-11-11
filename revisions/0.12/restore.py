@@ -101,3 +101,6 @@ subprocess.run([sys.executable,'revisions/0.12/windows_orders_only_050.py'],chec
 
 # Hosted dashboards use the official public Supabase project and show email/password login.
 subprocess.run([sys.executable,'revisions/0.12/hosted_login_051.py'],check=True)
+
+# Explain email confirmation accurately and guide existing accounts to login.
+subprocess.run([sys.executable,'revisions/0.12/auth_signup_feedback_052.py'],check=True)
