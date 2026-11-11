@@ -71,3 +71,6 @@ subprocess.run([sys.executable,'revisions/0.12/polish_store_workspaces_039.py'],
 subprocess.run([sys.executable,'revisions/0.12/isolate_print_sync_040.py'],check=True)
 
 # Store logo overlay is deferred until its target is stable; do not block builds.
+
+# Apply the unified store visual hierarchy after all business logic overlays.
+subprocess.run([sys.executable,'revisions/0.12/layout_unificado_042.py'],check=True)
