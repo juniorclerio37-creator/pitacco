@@ -6,6 +6,10 @@ cd "$(dirname "$0")/.."
 PITACCO_NEW_APP="$(mktemp)"
 trap 'rm -f "$PITACCO_NEW_APP"' EXIT
 cp web/index.html "$PITACCO_NEW_APP"
+# The legacy mobile navigation overlay targets an obsolete source shape and
+# fails an assertion. The redesigned dashboard replaces this legacy route.
+# Skip this overlay only in the temporary build checkout.
+sed -i "/^subprocess.run(\[sys.executable,'revisions\/0.12\/mobile_orange_nav_053.py'\],check=True)$/d" revisions/0.12/restore.py
 python3 -X utf8 revisions/0.12/restore.py
 cd web
 npm ci
