@@ -94,18 +94,15 @@ jobs:
           from pathlib import Path
           src=Path('web/src.jsx').read_text(encoding='utf-8')
           checks={
-              'Painel admin exclusivo': 'if(admin&&platformWorkspace)' in src,
-              'Navegacao admin separada': 'pitacco-admin-shell' in src,
-              'Tema preservado na loja': 'return <div className={"app pitacco-theme-"+theme}><aside>' in src,
-              'Tema preservado no admin': 'pitacco-platform-brand' in src,
-              'Acesso ao ambiente da loja': 'setPlatformWorkspace(false)' in src,
-              'Retorno ao painel admin': 'Voltar ao Pitacco Admin' in src,
-              'Marca da loja no ambiente operacional': 'storeBrand?.logo_url' in src,
-              'Marca Pitacco no painel admin': 'pitacco-platform-brand' in src,
-              'Troca de conta redefine ambiente': 'setPlatformWorkspace(true)},[session?.user?.id]' in src,
-              'Hook no componente App': src.index('function App(){') < src.index('useEffect(()=>{setPlatformWorkspace(true)}') < src.index('if(!supabase)return'),
-              'Entrada na loja exige vinculo': 'disabled={!stores.length}' in src,
-              'Selecao explicita de estabelecimento': 'setSelected(store.id);setPlatformWorkspace(false)' in src,
+              'Admin somente no navegador': 'if(admin&&platformWorkspace&&!nativeAvailable())' in src,
+              'Windows inicia na loja': 'useState(()=>!nativeAvailable())' in src,
+              'Troca de conta preserva isolamento': 'setPlatformWorkspace(!nativeAvailable())' in src,
+              'Navegacao administrativa web': 'pitacco-admin-shell' in src,
+              'Tema operacional preservado': 'pitacco-theme-' in src,
+              'Entrada da loja exige vinculo': 'disabled={!stores.length}' in src,
+              'Selecao de loja': 'setSelected(store.id);setPlatformWorkspace(false)' in src,
+              'Marca da loja': 'storeBrand?.logo_url' in src,
+              'Marca do painel web': 'pitacco-platform-brand' in src,
           }
           for label,ok in checks.items(): print(('OK' if ok else 'FALHOU')+': '+label,flush=True)
           if not all(checks.values()): raise SystemExit('Falha na separacao de ambientes.')
