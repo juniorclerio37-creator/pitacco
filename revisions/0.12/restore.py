@@ -66,3 +66,6 @@ subprocess.run([sys.executable,'revisions/0.12/separate_admin_shell_038.py'],che
 
 # Unified tenant workspaces and human-readable order references.
 subprocess.run([sys.executable,'revisions/0.12/polish_store_workspaces_039.py'],check=True)
+
+# Printer failure does not take down the orders feed.
+subprocess.run([sys.executable,'revisions/0.12/isolate_print_sync_040.py'],check=True)
