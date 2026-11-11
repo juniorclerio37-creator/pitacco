@@ -89,6 +89,10 @@ smokeStage='dispatch';
  await page.getByRole('group',{name:'Configurações da loja'}).getByRole('button',{name:'Identidade da loja',exact:true}).click();
  await page.screenshot({path:'ui-evidence/minha-loja.png',fullPage:true});
  await page.getByRole('group',{name:'Configurações da loja'}).getByRole('button',{name:'Impressão e aceite',exact:true}).click();
+ smokeStage='printing editor';
+ await page.getByText('Modelos HTML de impressão',{exact:true}).waitFor({timeout:5000});
+ await page.getByText('Impressoras por setor',{exact:true}).waitFor({timeout:5000});
+ await page.getByRole('combobox',{name:'Papel'}).last().selectOption('58');
  await page.screenshot({path:'ui-evidence/impressoras.png',fullPage:true});
  assert.deepEqual(errors,[]);console.log('PASS UI: board stages, create toggle, printer separation, neutral store payload, accept, ready, search; no page errors.');
 }catch(error){
