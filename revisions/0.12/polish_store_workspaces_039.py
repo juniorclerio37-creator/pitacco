@@ -23,39 +23,6 @@ s=s.replace(needle,"'Financeiro':[]",1)
 needle="nativeAvailable()&&name==='Administrar Loja'?'Configurações'"
 assert s.count(needle)==1
 s=s.replace(needle,"nativeAvailable()&&name==='Administrar Loja'?'Minha Loja'",1)
-# Later overlays may adjust the available store-settings subpages. Match the
-# submenu by its key instead of requiring an outdated exact list of labels.
-import re
-s,count=re.subn(r"'Administrar Loja':\\[.*?\\](?=,'Financeiro':)", "'Administrar Loja':[]", s, count=1, flags=re.S)
-if count!=1:
-    raise RuntimeError("Administrar Loja submenu not found after navigation overlays")
-needle="{tab==='Minha Loja'&&active&&<StoreProfile"
-assert s.count(needle)==1
-s=s.replace(needle,"{['Minha Loja','Configurações'].includes(tab)&&active&&<div className=\"store-settings-tabs\" role=\"group\" aria-label=\"Configurações da loja\"><button className={tab==='Minha Loja'?'active':'secondary'} onClick={()=>setTab('Minha Loja')}>Identidade da loja</button><button className={tab==='Configurações'?'active':'secondary'} onClick={()=>setTab('Configurações')}>Impressão e aceite</button></div>}\n"+needle,1)
-# Avoid presenting a blank placeholder as an actual store logo.
-p.write_text(s,encoding='utf-8')
+# Store configuration remains reachable from its own main screen.
+# Do not rewrite submenu text here: later navigation overlays may change it.
 
-p=Path('web/Operations.jsx')
-s=p.read_text(encoding='utf-8')
-needle="const currency=n=>"
-assert s.count(needle)==1
-s=s.replace(needle,"const displayOrderNumber=o=>o?.receipt?.display_number||o?.receipt?.external_order_number||o?.receipt?.order_number||o?.receipt?.display_id||o?.receipt?.number||'Número pendente';\n"+needle,1)
-old="(o.receipt?.display_number||o.receipt?.external_order_number||o.receipt?.order_number||o.receipt?.display_id||o.receipt?.number||o.id.slice(0,8))"
-assert s.count(old)>=2
-s=s.replace(old,"displayOrderNumber(o)")
-needle="paymentOrder.id.slice(0,8)"
-assert s.count(needle)==1
-s=s.replace(needle,"displayOrderNumber(paymentOrder)",1)
-p.write_text(s,encoding='utf-8')
-
-# Store identity writes through a store-scoped RPC; the general stores table
-# deliberately does not grant tenants access to subscription/plan columns.
-p=Path('web/StoreProfile.jsx')
-s=p.read_text(encoding='utf-8')
-needle="const {data,error}=await client.from('stores').update(row).eq('id',store.id).select('id').single();"
-assert s.count(needle)==1
-s=s.replace(needle,"const {error}=await client.rpc('pitacco_update_store_identity',{p_store_id:store.id,p_data:row});",1)
-needle="if(error)throw error;if(data.id!==store.id)throw Error('Loja incorreta.');"
-assert s.count(needle)==1
-s=s.replace(needle,"if(error)throw error;",1)
-p.write_text(s,encoding='utf-8')
