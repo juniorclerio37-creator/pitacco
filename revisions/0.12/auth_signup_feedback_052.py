@@ -11,5 +11,10 @@ new="""setLoading(false);
   setAuthMode('login');
   setMessage(result.data?.session?'Cadastro concluído. Acesso autorizado.':result.data?.user?.identities?.length===0?'Este e-mail já possui cadastro. Entre com sua senha.':'Cadastro recebido. Se a confirmação de e-mail estiver habilitada, abra o link enviado antes de entrar.');
  }else setMessage('Login realizado.');"""
-if s.count(old)==1:\n s=s.replace(old,new,1)\nelif 'Cadastro recebido.' in s or 'Este e-mail já possui cadastro.' in s:\n pass  # Existing upstream authentication flow already provides confirmation feedback.\nelse:\n print('Auth flow differs from expected; preserve existing logic instead of blocking build.')
+if s.count(old)==1:
+    s=s.replace(old,new,1)
+elif 'Cadastro recebido.' in s or 'Este e-mail já possui cadastro.' in s:
+    pass  # Existing upstream authentication flow already provides confirmation feedback.
+else:
+    print('Auth flow differs from expected; preserve existing logic instead of blocking build.')
 p.write_text(s,encoding='utf-8')
