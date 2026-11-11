@@ -83,3 +83,6 @@ subprocess.run([sys.executable,'revisions/0.12/new_order_voice_044.py'],check=Tr
 
 # Mount new orders UI with real backend callbacks and isolated styling.
 subprocess.run([sys.executable,'revisions/0.12/mount_orders_045.py'],check=True)
+
+# Apply uploaded four-screen design language to live components without demo data.
+subprocess.run([sys.executable,'revisions/0.12/adapt_supplied_layout_046.py'],check=True)
