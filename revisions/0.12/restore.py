@@ -86,3 +86,6 @@ subprocess.run([sys.executable,'revisions/0.12/mount_orders_045.py'],check=True)
 
 # Apply uploaded four-screen design language to live components without demo data.
 subprocess.run([sys.executable,'revisions/0.12/adapt_supplied_layout_046.py'],check=True)
+
+# Real courier search and printer sector editing, using existing database tables.
+subprocess.run([sys.executable,'revisions/0.12/functional_courier_printer_047.py'],check=True)
