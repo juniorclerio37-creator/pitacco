@@ -23,9 +23,12 @@ s=s.replace(needle,"'Financeiro':[]",1)
 needle="nativeAvailable()&&name==='Administrar Loja'?'Configurações'"
 assert s.count(needle)==1
 s=s.replace(needle,"nativeAvailable()&&name==='Administrar Loja'?'Minha Loja'",1)
-needle="'Administrar Loja':[['Minha Loja','Dados da loja'],['Configurações','Impressão e aceite'],['Equipe','Usuários'],['Lojas','Estabelecimentos']]"
-assert s.count(needle)==1
-s=s.replace(needle,"'Administrar Loja':[]",1)
+# Later overlays may adjust the available store-settings subpages. Match the
+# submenu by its key instead of requiring an outdated exact list of labels.
+import re
+s,count=re.subn(r"'Administrar Loja':\\[.*?\\](?=,'Financeiro':)", "'Administrar Loja':[]", s, count=1, flags=re.S)
+if count!=1:
+    raise RuntimeError("Administrar Loja submenu not found after navigation overlays")
 needle="{tab==='Minha Loja'&&active&&<StoreProfile"
 assert s.count(needle)==1
 s=s.replace(needle,"{['Minha Loja','Configurações'].includes(tab)&&active&&<div className=\"store-settings-tabs\" role=\"group\" aria-label=\"Configurações da loja\"><button className={tab==='Minha Loja'?'active':'secondary'} onClick={()=>setTab('Minha Loja')}>Identidade da loja</button><button className={tab==='Configurações'?'active':'secondary'} onClick={()=>setTab('Configurações')}>Impressão e aceite</button></div>}\n"+needle,1)
