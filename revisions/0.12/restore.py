@@ -104,3 +104,6 @@ subprocess.run([sys.executable,'revisions/0.12/hosted_login_051.py'],check=True)
 
 # Explain email confirmation accurately and guide existing accounts to login.
 subprocess.run([sys.executable,'revisions/0.12/auth_signup_feedback_052.py'],check=True)
+
+# Compact orange navigation for mobile web; keep desktop and all workflows.
+subprocess.run([sys.executable,'revisions/0.12/mobile_orange_nav_053.py'],check=True)
