@@ -133,7 +133,7 @@ jobs:
               'Fila de impressao isolada': "setStatus('Pedidos sincronizados · impressão pendente')" in operations,
               'Falha da impressora identificada': "setError('Impressão: '" in operations,
               'Erro de ACK tratado separadamente': 'Confirmação de impressão pendente:' in operations,
-              'Logotipo salvo no cadastro': 'active?.logo_path' in src and 'storeLogoUrl?<img' in src,
+              'Marca da loja existente': 'storeBrand?.logo_url' in src,
               'Pedidos com numero legivel': 'displayOrderNumber(o)' in operations,
           }
           for name,ok in checks.items(): print(('OK' if ok else 'FALHOU')+': '+name,flush=True)
