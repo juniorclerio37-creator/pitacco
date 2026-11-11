@@ -92,3 +92,6 @@ subprocess.run([sys.executable,'revisions/0.12/functional_courier_printer_047.py
 
 # Mount advanced courier rate settings and persisted HTML receipt editor.
 subprocess.run([sys.executable,'revisions/0.12/advanced_rates_html_048.py'],check=True)
+
+# Consolidated courier workspace: real data and existing backend operations.
+subprocess.run([sys.executable,'revisions/0.12/mount_courier_workspace_049.py'],check=True)
