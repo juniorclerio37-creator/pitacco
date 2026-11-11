@@ -51,7 +51,7 @@ smokeStage='board columns';
  await page.getByRole('button',{name:'+ Nova venda',exact:true}).click();assert.ok(await page.getByPlaceholder('Cliente',{exact:true}).isVisible());
  await page.getByRole('button',{name:'+ Nova venda',exact:true}).click();
 smokeStage='store administration';
- await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();await page.getByRole('button',{name:'Impressão e aceite',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Criar pedido',exact:true}).count(),0);assert.ok(await page.getByRole('heading',{name:'Impressoras por setor'}).isVisible());
+ await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();await page.getByLabel('Menu principal').getByRole('button',{name:'Impressão e aceite',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Criar pedido',exact:true}).count(),0);assert.ok(await page.getByRole('heading',{name:'Impressoras por setor'}).isVisible());
  await page.getByRole('button',{name:'Estabelecimentos',exact:true}).click();assert.equal(await page.locator('select[name=platform]').count(),0);assert.equal(await page.locator('select[name=plan]').count(),0);
  await page.getByLabel('Nome do estabelecimento').fill('Nova loja');await page.getByRole('button',{name:'Cadastrar loja',exact:true}).click();await page.getByText('Registro salvo.',{exact:true}).waitFor();assert.deepEqual(submittedStore,{name:'Nova loja',platform:'',plan:'saas'});
 smokeStage='order acceptance';
@@ -71,7 +71,7 @@ smokeStage='dispatch';
  await page.getByRole('button',{name:'Fechar',exact:true}).click();
  await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();await page.getByRole('button',{name:'Dados da loja',exact:true}).click();assert.ok(await page.getByRole('heading',{name:'Alocação automática',exact:true}).isVisible());
  await page.screenshot({path:'ui-evidence/minha-loja.png',fullPage:true});
- await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();await page.getByRole('button',{name:'Impressão e aceite',exact:true}).click();await page.screenshot({path:'ui-evidence/impressoras.png',fullPage:true});
+ await page.getByRole('button',{name:'Administrar Loja',exact:true}).click();await page.getByLabel('Menu principal').getByRole('button',{name:'Impressão e aceite',exact:true}).click();await page.screenshot({path:'ui-evidence/impressoras.png',fullPage:true});
  await page.getByRole('button',{name:'Estabelecimentos',exact:true}).click();await page.screenshot({path:'ui-evidence/lojas.png',fullPage:true});
  assert.deepEqual(errors,[]);console.log('PASS UI: board stages, create toggle, printer separation, neutral store payload, accept, ready, search; no page errors.');
 }catch(error){
