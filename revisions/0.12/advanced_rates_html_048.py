@@ -9,7 +9,7 @@ p.write_text(s,encoding='utf-8')
 p=Path('web/Operations.jsx')
 s=p.read_text(encoding='utf-8')
 s="import ReceiptEditor from './ReceiptEditor.jsx';\n"+s
-needle="   {desktop&&<div className=\"panel\"><h3>Fila persistente deste computador</h3>"
-assert s.count(needle)==1, 'printer panel changed; review mount point'
-s=s.replace(needle,'   {manager&&<ReceiptEditor client={client} storeId={storeId} sectors={sectors}/>}\n'+needle,1)
+needle='<div className="panel"><h3>Impressoras por setor</h3>'
+assert s.count(needle)==1, 'printer settings panel changed'
+s=s.replace(needle,'{manager&&<ReceiptEditor client={client} storeId={storeId} sectors={sectors}/>}\\n'+needle,1)
 p.write_text(s,encoding='utf-8')
