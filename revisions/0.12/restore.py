@@ -98,3 +98,6 @@ subprocess.run([sys.executable,'revisions/0.12/mount_courier_workspace_049.py'],
 
 # Windows only: orders, kitchen and printing. Full administration stays on the website.
 subprocess.run([sys.executable,'revisions/0.12/windows_orders_only_050.py'],check=True)
+
+# Hosted dashboards use the official public Supabase project and show email/password login.
+subprocess.run([sys.executable,'revisions/0.12/hosted_login_051.py'],check=True)
