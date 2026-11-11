@@ -125,6 +125,22 @@ jobs:
           for name, ok in checks.items():
               print(('OK' if ok else 'ATENCAO') + ': ' + name, flush=True)
           print('Diagnostico informativo: compilacao e testes funcionais continuam.', flush=True)
+      - name: Validar isolamento de falhas e identidade da loja
+        working-directory: .
+        shell: python
+        run: |
+          from pathlib import Path
+          operations=Path('web/Operations.jsx').read_text(encoding='utf-8')
+          src=Path('web/src.jsx').read_text(encoding='utf-8')
+          checks={
+              'Fila de impressao isolada': "setStatus('Pedidos sincronizados · impressão pendente')" in operations,
+              'Falha da impressora identificada': "setError('Impressão: '" in operations,
+              'Erro de ACK tratado separadamente': 'Confirmação de impressão pendente:' in operations,
+              'Logotipo salvo no cadastro': 'active?.logo_path' in src and 'storeLogoUrl?<img' in src,
+              'Pedidos com numero legivel': 'displayOrderNumber(o)' in operations,
+          }
+          for name,ok in checks.items(): print(('OK' if ok else 'FALHOU')+': '+name,flush=True)
+          if not all(checks.values()): raise SystemExit('Regressao de sincronizacao, identidade ou pedidos.')
       - name: Empacotar codigo completo
         working-directory: .
         shell: python
