@@ -8,6 +8,13 @@ on:
       - 'revisions/0.12/**'
       - 'web/**'
       - '.github/workflows/site-validation.yml'
+  pull_request:
+    paths:
+      - 'marketing/**'
+      - 'scripts/build-cloudflare.sh'
+      - 'revisions/0.12/**'
+      - 'web/**'
+      - '.github/workflows/site-validation.yml'
   workflow_dispatch:
 jobs:
   build:
