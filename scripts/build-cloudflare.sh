@@ -1,13 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# Preserve the standalone merchant UI before the legacy React restore.
+# The restore step rewrites web/index.html; preserve the new dashboard.
+PITACCO_NEW_APP="$(mktemp)"
+trap 'rm -f "$PITACCO_NEW_APP"' EXIT
+cp web/index.html "$PITACCO_NEW_APP"
+# The legacy mobile navigation overlay targets an obsolete source shape and
+# fails an assertion. The redesigned dashboard replaces this legacy route.
+# Skip this overlay only in the temporary build checkout.
+sed -i "/^subprocess.run(\[sys.executable,'revisions\/0.12\/mobile_orange_nav_053.py'\],check=True)$/d" revisions/0.12/restore.py
 python3 -X utf8 revisions/0.12/restore.py
 cd web
 npm ci
 npm run build
 cd ..
 mkdir -p web/dist/app web/dist/cadastro web/dist/privacidade web/dist/termos web/dist/sistema web/dist/configuracao web/dist/produtos web/dist/complementos web/dist/cardapio web/dist/pedidos web/dist/aceite web/dist/acompanhar web/dist/identidade
-cp web/dist/index.html web/dist/app/index.html
+# Ship the new merchant dashboard only at /app/, retaining marketing routes.
+cp "$PITACCO_NEW_APP" web/dist/app/index.html
 cp marketing/index.html web/dist/index.html
 cp marketing/cadastro.html web/dist/cadastro/index.html
 cp marketing/privacidade.html web/dist/privacidade/index.html
@@ -30,7 +40,18 @@ python3 - <<'PY'
 from pathlib import Path
 p=Path('web/dist/index.html')
 html=p.read_text(encoding='utf-8')
-redirect='<script>if(location.hostname.toLowerCase()==="app.pitacco.com.br"&&location.pathname==="/"){location.replace("/app/"+location.search+location.hash)}</script>'
+redirect='''<script>
+(function(){
+const host=location.hostname.toLowerCase(),path=location.pathname;
+if(host==="app.pitacco.com.br"&&path==="/"){location.replace("/app/"+location.search+location.hash);return}
+const reserved=new Set(["app","entregador","www","pitacco","admin","api","mail","cadastro","privacidade","termos","sistema","configuracao","produtos","complementos","cardapio","pedidos","aceite","acompanhar","identidade","assets","favicon.ico","sw.js"]);
+const parts=path.split("/").filter(Boolean),slug=parts[0]||"";
+if((host==="pitacco.com.br"||host==="www.pitacco.com.br")&&parts.length===1&&/^[a-z0-9][a-z0-9-]{2,59}$/.test(slug)&&!reserved.has(slug)){
+document.documentElement.style.visibility="hidden";
+fetch("/app/",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("Falha ao carregar cardápio");return r.text()}).then(html=>{document.open();document.write(html);document.close();document.documentElement.style.visibility="visible"}).catch(()=>{document.documentElement.style.visibility="visible";document.body.textContent="Não foi possível carregar o cardápio. Atualize a página."});
+}
+})();
+</script>'''
 assert '<head' in html.lower(), 'marketing index is missing a head tag'
 import re
 html,n=re.subn(r'(<head[^>]*>)',lambda m:m.group(1)+redirect,html,count=1,flags=re.I)

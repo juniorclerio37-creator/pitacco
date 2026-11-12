@@ -1,0 +1,36 @@
+name: Validate Pitacco Cloudflare bundle
+on:
+  push:
+    branches: [web-redesign-2026-11]
+  pull_request:
+    paths:
+      - 'web/**'
+      - 'marketing/**'
+      - 'scripts/build-cloudflare.sh'
+      - 'revisions/**'
+      - '.github/workflows/validate-cloudflare-build.yml'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build Cloudflare assets
+        run: bash scripts/build-cloudflare.sh
+      - name: Validate marketing and app routes
+        run: |
+          test -s web/dist/index.html
+          test -s web/dist/app/index.html
+          grep -q 'app.pitacco.com.br' web/dist/index.html
+          grep -q 'Pitacco' web/dist/app/index.html
+          if cmp -s web/dist/index.html web/dist/app/index.html; then
+            echo "ERROR: merchant dashboard is identical to marketing site"
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pitacco-cloudflare-assets
+          path: web/dist/
+          retention-days: 7
