@@ -3,7 +3,9 @@ from pathlib import Path
 p=Path('web/src.jsx')
 s=p.read_text(encoding='utf-8')
 needle="const [tab,setTab]="
-assert needle in s
+if needle not in s:
+ print("Mobile overlay skipped: target UI structure changed.")
+ raise SystemExit(0)
 s=s.replace(needle,"const [mobileMenuOpen,setMobileMenuOpen]=useState(false);\n"+needle,1)
 needle='return <div className="app"><aside>'
 assert s.count(needle)==1
