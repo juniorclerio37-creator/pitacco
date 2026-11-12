@@ -8,6 +8,13 @@ on:
       - 'revisions/0.12/**'
       - 'web/**'
       - '.github/workflows/site-validation.yml'
+  pull_request:
+    paths:
+      - 'marketing/**'
+      - 'scripts/build-cloudflare.sh'
+      - 'revisions/0.12/**'
+      - 'web/**'
+      - '.github/workflows/site-validation.yml'
   workflow_dispatch:
 jobs:
   build:
@@ -33,6 +40,8 @@ jobs:
                   Path(f'/tmp/pitacco-{Path(f).stem}-{i}.mjs').write_text(block)
           PY
           for file in /tmp/pitacco-*.mjs; do node --check "$file"; done
+      - name: Testar regressões do checkout público
+        run: node --test tests/*.test.mjs
       - name: Construir site Cloudflare
         run: bash scripts/build-cloudflare.sh
       - name: Validar rotas e Service Worker
