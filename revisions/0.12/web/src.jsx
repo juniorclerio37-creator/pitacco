@@ -1,3 +1,4 @@
+import ScheduleSettings from './ScheduleSettings.jsx';
 import FinancialReport from './FinancialReport.jsx';
 import Inventory from './Inventory.jsx';
 import LogisticsHub from './LogisticsHub.jsx';

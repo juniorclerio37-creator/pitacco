@@ -14,6 +14,13 @@ try {
     const errors = [];
     const ingredients = [];
     const movements = [];
+    const appointment = {
+      id:'30000000-0000-0000-0000-000000000002', store_id:store.id, status:'pending',
+      source:'proprio', gross:30, fees:0, created_at:new Date().toISOString(),
+      scheduled_for:new Date(Date.now()+7_200_000).toISOString(),
+      scheduled_release_at:new Date(Date.now()+5_400_000).toISOString(),
+      receipt:{display_number:'D-181',customer:'Cliente agendado',items:[],payment:'pix_manual'}
+    };
     const pendingOrder = {
       id:'30000000-0000-0000-0000-000000000001', store_id:store.id, status:'pending',
       source:'proprio', gross:25, fees:0, created_at:new Date().toISOString(),
@@ -44,7 +51,20 @@ try {
         return route.fulfill({ headers, json: { user, access_token:'fixture-access', refresh_token:'fixture-refresh', token_type:'bearer', expires_in:3600 } });
       }
       if (pathname === '/rest/v1/profiles') return route.fulfill({ headers, json: { ...user, role:'gestor' } });
-      if (pathname === '/rest/v1/orders') return route.fulfill({headers,json:[pendingOrder]});
+      if (pathname === '/rest/v1/orders') {
+        const filter = new URL(route.request().url()).searchParams.get('status');
+        const orders = [pendingOrder, appointment].filter(order=>!filter||filter.includes(order.status));
+        return route.fulfill({headers,json:orders});
+      }
+      if (pathname === '/rest/v1/pitacco_schedule_windows') {
+        if(route.request().method()==='POST'){
+          const days=route.request().postDataJSON();
+          assert.equal(days.length,7);
+          assert.equal(days[0].enabled,true);
+          assert.ok(days.every(day=>day.store_id===store.id));
+        }
+        return route.fulfill({headers,json:[]});
+      }
       if (pathname === '/rest/v1/rpc/pitacco_period_financial_report') {
         const payload = route.request().postDataJSON();
         assert.equal(payload.p_store, store.id);
@@ -124,6 +144,11 @@ try {
     await inventory.getByText(/250 g/).waitFor();
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
     await navigation.getByRole('button', { name:'Pedidos', exact:true }).click();
+    await page.getByRole('button', { name:'Agendados (1)', exact:true }).click();
+    await page.locator('.pedidos-card').getByText('Cliente agendado').waitFor();
+    await page.getByText(/Aceite liberado às/).waitFor();
+    assert.equal(await page.getByRole('button',{name:'Aceitar pedido',exact:true}).count(),0);
+    await page.getByRole('button', { name:'Pendentes (1)', exact:true }).click();
     await page.getByRole('button', { name:'Recusar pedido', exact:true }).click();
     await page.getByLabel('Motivo da recusa').fill('Item indisponível');
     await page.getByRole('button', { name:'Confirmar recusa', exact:true }).click();
@@ -152,6 +177,13 @@ try {
     await preview.locator('body[data-printed="true"]').waitFor();
     await preview.getByText('Recebimentos confirmados no caixa', {exact:true}).waitFor();
     await preview.close();
+    if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
+    await navigation.getByRole('button', { name:'Administrar Loja', exact:true }).click();
+    await page.getByRole('button', { name:'Agendamento', exact:true }).click();
+    const schedule = page.getByRole('region', {name:'Horários de agendamento'});
+    await schedule.getByRole('group',{name:'Segunda-feira',exact:true}).getByRole('checkbox').check();
+    await schedule.getByRole('button',{name:'Salvar horários'}).click();
+    await schedule.getByText('Horários de agendamento salvos.').waitFor();
     assert.deepEqual(errors, []);
     await page.close();
     console.log(`PASS dashboard authentication, navigation, inventory, pending order decisions and reports at ${width}px`);

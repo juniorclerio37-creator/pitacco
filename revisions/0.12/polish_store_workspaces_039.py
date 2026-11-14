@@ -27,11 +27,13 @@ s=s.replace(needle,"nativeAvailable()&&name==='Administrar Loja'?'Minha Loja'",1
 # Do not rewrite submenu text here: later navigation overlays may change it.
 
 
+s=s.replace("['Minha Loja','WhatsApp','Configurações','Equipe','Lojas'].includes(t)","['Minha Loja','Agendamento','WhatsApp','Configurações','Equipe','Lojas'].includes(t)",1)
+
 # Make store profile available as a tab, not a nested sidebar section.
 needle="{tab==='Minha Loja'&&active&&<StoreProfile"
 assert s.count(needle)==1
-tabs="""{['Minha Loja','Configurações'].includes(tab)&&active&&<div className="store-settings-tabs" role="group" aria-label="Configurações da loja"><button className={tab==='Minha Loja'?'active':'secondary'} onClick={()=>setTab('Minha Loja')}>Identidade da loja</button><button className={tab==='Configurações'?'active':'secondary'} onClick={()=>setTab('Configurações')}>Impressão e aceite</button></div>}\n"""
-s=s.replace(needle,tabs+needle,1)
+tabs="""{['Minha Loja','Configurações','Agendamento'].includes(tab)&&active&&<div className="store-settings-tabs" role="group" aria-label="Configurações da loja"><button className={tab==='Minha Loja'?'active':'secondary'} onClick={()=>setTab('Minha Loja')}>Identidade da loja</button><button className={tab==='Configurações'?'active':'secondary'} onClick={()=>setTab('Configurações')}>Impressão e aceite</button>{manager&&!nativeAvailable()&&<button className={tab==='Agendamento'?'active':'secondary'} onClick={()=>setTab('Agendamento')}>Agendamento</button>}</div>}\n"""
+s=s.replace(needle,tabs+"{tab==='Agendamento'&&active&&manager&&!nativeAvailable()&&<ScheduleSettings key={selected} client={supabase} storeId={selected}/>}\n"+needle,1)
 p.write_text(s,encoding='utf-8')
 
 # Readable order number: keep UUID internal for deduplication only.
