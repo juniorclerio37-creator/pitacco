@@ -13,6 +13,11 @@ const token = '20000000-0000-0000-0000-000000000001';
 try {
   for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
+    const tracking = {
+      375: { status: 'accepted', delivery_status: 'cancelada', fulfillment: 'delivery', label: 'Pedido cancelado' },
+      768: { status: 'accepted', delivery_status: 'retirada', preparation_status: 'ready', fulfillment: 'delivery', label: 'Saiu para entrega' },
+      1440: { status: 'accepted', preparation_status: 'completed', fulfillment: 'pickup', label: 'Retirado' }
+    }[width];
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     const requests = [];
@@ -60,7 +65,7 @@ try {
       }
       if (pathname.endsWith('/pitacco_track_public_order')) {
         assert.equal(route.request().postDataJSON().p_token, token);
-        return route.fulfill({ json: { order_id: orderId, total: 72, status: 'cancelled', fulfillment: 'delivery' } });
+        return route.fulfill({ json: { order_id: orderId, total: 72, ...tracking } });
       }
       return route.abort();
     });
@@ -97,8 +102,8 @@ try {
     ]);
     assert.match(await page.locator('#success').innerText(), /Pagamento pendente de confirmação/);
     await page.getByRole('link', { name: 'Acompanhar meu pedido' }).click();
-    await page.getByText('Pedido cancelado', { exact: true }).waitFor();
-    assert.equal(await page.locator('#steps li').count(), 0);
+    await page.locator('#currentStatus').filter({hasText: tracking.label}).waitFor();
+    if (width === 375) assert.equal(await page.locator('#steps li').count(), 0);
     assert.deepEqual(errors, []);
     await page.close();
     console.log(`PASS public checkout and tracking at ${width}px`);
