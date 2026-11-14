@@ -19,6 +19,7 @@ try {
       1440: { status: 'accepted', preparation_status: 'completed', fulfillment: 'pickup', label: 'Retirado' }
     }[width];
     const scheduled = width === 768 ? '2026-11-17T21:00:00Z' : null;
+    let polls=0;
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     const requests = [];
@@ -71,7 +72,10 @@ try {
       }
       if (pathname.endsWith('/pitacco_track_public_order')) {
         assert.equal(route.request().postDataJSON().p_token, token);
-        return route.fulfill({ json: { order_id: orderId, total: 72, scheduled_for:scheduled, ...tracking } });
+        const courier_position=scheduled
+          ? (++polls===1?{state:'available',latitude:-22.851,longitude:-43.453,observed_at:new Date().toISOString()}:{state:'multiple_stops'})
+          : null;
+        return route.fulfill({ json: { order_id: orderId, total: 72, scheduled_for:scheduled, courier_position, ...tracking } });
       }
       return route.abort();
     });
@@ -109,9 +113,22 @@ try {
       { product_id: 'acai', quantity: 1, options: ['leite'] }
     ]);
     assert.match(await page.locator('#success').innerText(), /Pagamento pendente de confirmação/);
+    await page.clock.install();
     await page.getByRole('link', { name: 'Acompanhar meu pedido' }).click();
     await page.locator('#currentStatus').filter({hasText: tracking.label}).waitFor();
-    if(scheduled)await page.locator('#scheduledFor').filter({hasText:'Agendado para'}).waitFor();
+    if(scheduled){
+      await page.locator('#scheduledFor').filter({hasText:'Agendado para'}).waitFor();
+      const map=page.getByRole('link',{name:'Abrir localização aproximada no mapa'});
+      await map.waitFor();
+      const mapUrl=new URL(await map.getAttribute('href'));
+      assert.equal(mapUrl.hostname,'www.openstreetmap.org');
+      assert.equal(mapUrl.searchParams.get('mlat'),'-22.851');
+      assert.equal(mapUrl.searchParams.get('mlon'),'-43.453');
+      assert.equal(await map.getAttribute('rel'),'noopener noreferrer');
+      await page.clock.fastForward(15001);
+      await page.getByText(/rota com outras paradas/).waitFor();
+      assert.equal(await map.isVisible(),false);
+    }
     if (width === 375) assert.equal(await page.locator('#steps li').count(), 0);
     assert.deepEqual(errors, []);
     await page.close();
