@@ -1,3 +1,4 @@
+import MarketplaceReconciliation from './MarketplaceReconciliation.jsx';
 import React, {useRef, useState} from 'react';
 
 const dateFormat = new Intl.DateTimeFormat('sv-SE', {timeZone:'America/Sao_Paulo'});
@@ -20,6 +21,7 @@ function csvValue(value) {
 
 export default function FinancialReport({client,store}) {
   const today = dateFormat.format(new Date());
+  const [view,setView]=useState('report');
   const [start,setStart] = useState(today.slice(0,8)+'01');
   const [end,setEnd] = useState(today);
   const [report,setReport] = useState(null);
@@ -83,7 +85,12 @@ export default function FinancialReport({client,store}) {
     preview.print();
   }
 
-  return <section className="panel" aria-label="Relatório financeiro" aria-busy={busy}>
+  return <>
+    <div className="pitacco-local-tabs" role="group" aria-label="Tipos de relatório">
+      <button type="button" className={view==='report'?'active':'secondary'} onClick={()=>setView('report')}>Resumo financeiro</button>
+      <button type="button" className={view==='settlement'?'active':'secondary'} onClick={()=>setView('settlement')}>Conciliação de repasses</button>
+    </div>
+    {view==='settlement'?<MarketplaceReconciliation client={client} storeId={store.id}/>:<section className="panel" aria-label="Relatório financeiro" aria-busy={busy}>
     <h3>Resumo financeiro por período</h3>
     <form onSubmit={load}>
       <label>Data inicial <input type="date" required value={start} max={end||undefined} onChange={event=>setStart(event.target.value)}/></label>
@@ -105,5 +112,6 @@ export default function FinancialReport({client,store}) {
         <button type="button" className="secondary" onClick={print}>Salvar como PDF</button>
       </div>
     </>}
-  </section>;
+  </section>}
+  </>;
 }
