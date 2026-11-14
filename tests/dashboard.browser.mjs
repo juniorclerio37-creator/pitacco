@@ -65,6 +65,13 @@ try {
         }
         return route.fulfill({headers,json:[]});
       }
+      if (pathname === '/rest/v1/rpc/pitacco_store_subscription_status') {
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:{
+          status:'overdue',trial_ends_at:new Date(Date.now()-3600000).toISOString(),
+          orders_blocked:true,regularization_url:'https://billing.example.invalid/'
+        }});
+      }
       if (pathname === '/rest/v1/rpc/pitacco_operational_alerts') {
         assert.equal(route.request().postDataJSON().p_store,store.id);
         return route.fulfill({headers,json:{
@@ -198,6 +205,13 @@ try {
     await alerts.getByRole('button',{name:'Atualizar alertas'}).click();
     await alerts.getByRole('button',{name:'Abrir pedidos'}).click();
     await page.getByRole('heading',{name:'Pedidos',exact:true}).first().waitFor();
+    if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
+    await navigation.getByRole('button', { name:'Financeiro', exact:true }).click();
+    await page.getByRole('group',{name:'Seções financeiras'}).getByRole('button',{name:'Assinatura',exact:true}).click();
+    const billing=page.getByRole('region',{name:'Situação da assinatura'});
+    await billing.getByText('Vencida',{exact:true}).waitFor();
+    await billing.getByRole('alert').filter({hasText:'Novos pedidos bloqueados'}).waitFor();
+    assert.equal(await billing.getByRole('link',{name:'Regularizar assinatura'}).getAttribute('href'),'https://billing.example.invalid/');
     assert.deepEqual(errors, []);
     await page.close();
     console.log(`PASS dashboard authentication, navigation, inventory, pending order decisions and reports at ${width}px`);
