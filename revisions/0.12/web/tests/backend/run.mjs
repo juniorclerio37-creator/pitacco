@@ -30,4 +30,23 @@ await db.exec(await fs.readFile(web+'013_logistics_routes.sql','utf8'));
 console.log('PASS migration 013');
 try{await db.exec(await fs.readFile(web+'tests/013_logistics_routes.test.sql','utf8'));console.log('PASS logistics SQL assertions');}catch(e){console.error('FAIL logistics',e.message,e.detail,e.where);process.exit(1);}
 for(const file of ['011_public_checkout.test.sql','012_order_board.test.sql']){await db.exec(await fs.readFile(web+'tests/'+file,'utf8'));console.log('PASS post-logistics regression',file);}
+const fixtureDirectory=new URL('./',import.meta.url);
+await db.exec(await fs.readFile(web+'016_fideliza.sql','utf8'));
+for (const file of ['fixture-schema.sql','production-function-fixture.sql']) {
+ await db.exec(await fs.readFile(new URL(file,fixtureDirectory),'utf8'));
+}
+const migrationsDirectory=new URL('../../../supabase/migrations/',import.meta.url);
+for (const file of (await fs.readdir(migrationsDirectory)).filter(name=>name.endsWith('.sql')).sort()) {
+ await db.exec(await fs.readFile(new URL(file,migrationsDirectory),'utf8'));
+ console.log('PASS production compatibility migration',file);
+}
+for (const file of ['checkout-variants.test.sql','store-trial.test.sql']) {
+ try {
+  await db.exec(await fs.readFile(new URL(file,fixtureDirectory),'utf8'));
+ } catch (error) {
+  console.error('FAIL SQL regression',file,error.message,error.detail,error.where);
+  process.exit(1);
+ }
+ console.log('PASS SQL regression',file);
+}
 await db.close();

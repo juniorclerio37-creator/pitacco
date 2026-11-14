@@ -7,11 +7,22 @@ on:
       - 'scripts/build-cloudflare.sh'
       - 'revisions/0.12/**'
       - 'web/**'
+      - 'tests/**'
+      - 'supabase/migrations/**'
+      - '.github/workflows/site-validation.yml'
+  pull_request:
+    paths:
+      - 'marketing/**'
+      - 'scripts/build-cloudflare.sh'
+      - 'revisions/0.12/**'
+      - 'web/**'
+      - 'tests/**'
+      - 'supabase/migrations/**'
       - '.github/workflows/site-validation.yml'
   workflow_dispatch:
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -33,8 +44,20 @@ jobs:
                   Path(f'/tmp/pitacco-{Path(f).stem}-{i}.mjs').write_text(block)
           PY
           for file in /tmp/pitacco-*.mjs; do node --check "$file"; done
+      - name: Testar regressões do checkout público
+        run: node --test tests/*.test.mjs
       - name: Construir site Cloudflare
         run: bash scripts/build-cloudflare.sh
+      - name: Testar regras do painel e migrações em banco isolado
+        run: |
+          npm test --prefix web
+          npm ci --prefix web/tests/backend
+          npm test --prefix web/tests/backend
+      - name: Testar checkout e acompanhamento no Chromium
+        run: |
+          npm install --prefix web --no-save --package-lock=false playwright@1.58.2
+          (cd web && npx playwright install --with-deps chromium)
+          node tests/public-flow.browser.mjs
       - name: Validar rotas e Service Worker
         run: |
           test -s web/dist/index.html
