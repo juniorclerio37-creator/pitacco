@@ -65,6 +65,13 @@ try {
         }
         return route.fulfill({headers,json:[]});
       }
+      if (pathname === '/rest/v1/rpc/pitacco_operational_alerts') {
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:{
+          couriers:{available:0,unavailable:2,recent_gps:0},
+          events:[{code:'preparation_late',entity_id:pendingOrder.id,reference:'D-180',target:'Pedidos',event_at:new Date().toISOString()}]
+        }});
+      }
       if (pathname === '/rest/v1/rpc/pitacco_period_financial_report') {
         const payload = route.request().postDataJSON();
         assert.equal(payload.p_store, store.id);
@@ -184,6 +191,13 @@ try {
     await schedule.getByRole('group',{name:'Segunda-feira',exact:true}).getByRole('checkbox').check();
     await schedule.getByRole('button',{name:'Salvar horários'}).click();
     await schedule.getByText('Horários de agendamento salvos.').waitFor();
+    if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
+    await navigation.getByRole('button', { name:'Alertas', exact:true }).click();
+    const alerts=page.getByRole('region',{name:'Central de alertas'});
+    await alerts.getByText('Preparo acima do prazo',{exact:true}).waitFor();
+    await alerts.getByRole('button',{name:'Atualizar alertas'}).click();
+    await alerts.getByRole('button',{name:'Abrir pedidos'}).click();
+    await page.getByRole('heading',{name:'Pedidos',exact:true}).first().waitFor();
     assert.deepEqual(errors, []);
     await page.close();
     console.log(`PASS dashboard authentication, navigation, inventory, pending order decisions and reports at ${width}px`);
