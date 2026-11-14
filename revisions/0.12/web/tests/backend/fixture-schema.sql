@@ -27,3 +27,4 @@ create table public.store_payment_receipts (
  order_id uuid not null references public.orders(id), store_id uuid, amount numeric, recorded_at timestamptz
 );
 create table public.pitacco_courier_payouts (store_id uuid not null, amount numeric, created_at timestamptz);
+alter table public.public_menu_settings add column preparation_minutes integer not null default 30;

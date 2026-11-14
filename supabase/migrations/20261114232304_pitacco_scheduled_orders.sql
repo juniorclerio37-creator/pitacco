@@ -38,7 +38,7 @@ returns timestamptz[] language sql stable security definer set search_path = '' 
   ) slot
   where menu.slug = p_slug and menu.enabled
     and ((p_fulfillment='delivery' and menu.delivery_enabled) or (p_fulfillment='pickup' and menu.pickup_enabled))
-    and slot.time >= now() + interval '60 minutes' and slot.time <= now() + interval '7 days'
+    and slot.time >= now() + make_interval(mins => greatest(60,coalesce(menu.preparation_minutes,30)+30)) and slot.time <= now() + interval '7 days'
 $function$;
 revoke all on function public.pitacco_public_schedule_slots(text,text) from public;
 grant execute on function public.pitacco_public_schedule_slots(text,text) to anon, authenticated;
@@ -66,7 +66,7 @@ $sql$;
  end if;
 $sql$;
   order_columns constant text := $sql$status,request_id,receipt) values(cfg.store_id,'Delivery próprio',total,'proprio','pending',p_request,jsonb_build_object$sql$;
-  scheduled_columns constant text := $sql$status,request_id,scheduled_for,scheduled_release_at,receipt) values(cfg.store_id,'Delivery próprio',total,'proprio','pending',p_request,p_scheduled_for,p_scheduled_for-interval '30 minutes',jsonb_build_object$sql$;
+  scheduled_columns constant text := $sql$status,request_id,scheduled_for,scheduled_release_at,receipt) values(cfg.store_id,'Delivery próprio',total,'proprio','pending',p_request,p_scheduled_for,p_scheduled_for-make_interval(mins => greatest(1,coalesce(cfg.preparation_minutes,30))),jsonb_build_object$sql$;
   auto_accept constant text := $sql$ if exists(select 1 from public.acceptance_settings where store_id=cfg.store_id and source='proprio' and mode='automatic' and enabled) then perform public.dg_accept_own(oid);end if;$sql$;
 begin
   foreach source_function in array array[

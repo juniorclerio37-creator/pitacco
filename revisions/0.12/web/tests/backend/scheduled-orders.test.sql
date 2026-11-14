@@ -8,8 +8,8 @@ insert into public.stores(id,name) values
 insert into public.store_members values
  ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','gestor'),
  ('20000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','gestor');
-insert into public.public_menu_settings(store_id,slug,enabled,delivery_enabled,pickup_enabled,delivery_fee,payment_methods,pix_instructions)
- values ('20000000-0000-0000-0000-000000000001','test-schedule',true,false,true,0,array['pix_manual'],'');
+insert into public.public_menu_settings(store_id,slug,enabled,delivery_enabled,pickup_enabled,delivery_fee,payment_methods,pix_instructions,preparation_minutes)
+ values ('20000000-0000-0000-0000-000000000001','test-schedule',true,false,true,0,array['pix_manual'],'',45);
 insert into public.products(id,store_id,name,price,cost,menu_active)
  values ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','Açaí',20,5,true);
 insert into public.acceptance_settings(store_id,source,mode,enabled)
@@ -36,7 +36,7 @@ declare
  request_id uuid := '40000000-0000-0000-0000-000000000001';
  items jsonb := '[{"product_id":"30000000-0000-0000-0000-000000000001","quantity":2}]';
 begin
- assert cardinality(slots)>0 and slots[1]>=now()+interval '60 minutes', 'Only future slots with enough lead time are offered';
+ assert cardinality(slots)>0 and slots[1]>=now()+interval '75 minutes', 'Only future slots with enough lead time are offered';
  assert extract(minute from slots[1] at time zone 'America/Sao_Paulo') in (0,30), 'Uses half-hour slots';
  assert cardinality(public.pitacco_public_schedule_slots('test-schedule','delivery'))=0, 'Disabled delivery has no scheduled times';
  assert cardinality(public.pitacco_public_schedule_slots('other-store','pickup'))=0, 'No slots without a public menu';
@@ -66,6 +66,7 @@ do $test$
 declare selected_order uuid;
 begin
  select id into selected_order from public.orders where request_id='40000000-0000-0000-0000-000000000001';
+ assert (select scheduled_for-scheduled_release_at=interval '45 minutes' from public.orders where id=selected_order);
  begin
   perform public.accept_order(selected_order);
   raise exception 'Expected preparation time restriction';

@@ -48,7 +48,7 @@ export default function ScheduleSettings({client,storeId}){
  }
  return <section className="panel" aria-label="Horários de agendamento" aria-busy={loading||busy}>
   <h3>Horários para pedidos agendados</h3>
-  <p>As reservas aparecem em intervalos de 30 minutos, com pelo menos uma hora de antecedência e até sete dias à frente. O aceite é liberado 30 minutos antes. Horário de Brasília.</p>
+  <p>As reservas aparecem em intervalos de 30 minutos, com pelo menos uma hora de antecedência e até sete dias à frente. O aceite é liberado com a antecedência definida pelo tempo de preparo da loja. Horário de Brasília.</p>
   {loading&&<p role="status">Carregando horários…</p>}
   {error&&<p role="alert">{error}</p>}
   {notice&&<p role="status">{notice}</p>}
