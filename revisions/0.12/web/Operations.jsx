@@ -44,16 +44,17 @@ export default function Operations({client,storeId,view,manager,onNavigate}){
    if(stopped)return;if(running){refreshAgain=true;return}running=true;
    try{
     const results=await Promise.all([
-     client.from('orders').select('*').eq('store_id',storeId).in('status',['pending','accepted']).order('created_at',{ascending:false}).limit(100),
+     client.from('orders').select('*').eq('store_id',storeId).in('status',['pending','accepted','cancelled','rejected']).order('created_at',{ascending:false}).limit(100),
      client.from('acceptance_settings').select('*').eq('store_id',storeId),
      client.from('print_sectors').select('*').eq('store_id',storeId).order('sector'),
      client.from('deliveries').select('*').eq('store_id',storeId).not('order_id','is',null),
      client.from('couriers').select('id,name').eq('store_id',storeId),
-     client.rpc('pitacco_store_payment_summary',{p_store:storeId})
+     client.rpc('pitacco_store_payment_summary',{p_store:storeId}),
+     client.from('orders').select('*').eq('store_id',storeId).eq('status','pending').not('scheduled_release_at','is',null).order('scheduled_release_at').limit(100)
     ]);
     for(const result of results)if(result.error)throw result.error;
     if(stopped)return;
-    const incoming=results[0].data||[];
+    const incoming=[...new Map([...results[0].data||[],...results[6].data||[]].map(order=>[order.id,order])).values()];
     const fresh=incoming.filter(o=>o.status==='pending'&&!seen.current.has(o.id));
     incoming.forEach(o=>seen.current.add(o.id));
     setPaymentSummary(results[5].data||[]);setOrders(incoming);setDeliveryRows(results[3].data||[]);setCourierRows(results[4].data||[]);setSettings(results[1].data||[]);setSectors(results[2].data||[]);setStatus('Conectado · sincronização ativa');

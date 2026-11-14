@@ -4,7 +4,7 @@ export function orderStage(order,delivery){
  if(order.status==='cancelled'||delivery?.status==='cancelada')return 'cancelled';
  if(order.preparation_status==='completed'||delivery?.status==='entregue')return 'completed';
  if(delivery?.status==='retirada')return 'delivery';
- if(order.status==='pending')return 'analysis';
+ if(order.status==='pending')return Date.parse(order.scheduled_release_at)>Date.now()?'scheduled':'analysis';
  if(order.status==='accepted')return order.preparation_status==='ready'?'ready':'preparing';
  return 'historical';
 }

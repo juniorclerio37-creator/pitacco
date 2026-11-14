@@ -18,6 +18,7 @@ try {
       768: { status: 'accepted', delivery_status: 'retirada', preparation_status: 'ready', fulfillment: 'delivery', label: 'Saiu para entrega' },
       1440: { status: 'accepted', preparation_status: 'completed', fulfillment: 'pickup', label: 'Retirado' }
     }[width];
+    const scheduled = width === 768 ? '2026-11-17T21:00:00Z' : null;
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     const requests = [];
@@ -55,7 +56,12 @@ try {
           }] }]
         } });
       }
-      if (pathname.endsWith('/checkout_public_order')) {
+      if(pathname.endsWith('/pitacco_public_schedule_slots')){
+        assert.equal(route.request().postDataJSON().p_fulfillment,'delivery');
+        return route.fulfill({json:scheduled?[scheduled]:[]});
+      }
+      if (pathname.endsWith('/checkout_public_order') || pathname.endsWith('/pitacco_checkout_scheduled_order')) {
+        assert.equal(pathname.endsWith('/pitacco_checkout_scheduled_order'),Boolean(scheduled));
         requests.push(route.request().postDataJSON());
         if (requests.length === 1) {
           await responseGate;
@@ -65,7 +71,7 @@ try {
       }
       if (pathname.endsWith('/pitacco_track_public_order')) {
         assert.equal(route.request().postDataJSON().p_token, token);
-        return route.fulfill({ json: { order_id: orderId, total: 72, ...tracking } });
+        return route.fulfill({ json: { order_id: orderId, total: 72, scheduled_for:scheduled, ...tracking } });
       }
       return route.abort();
     });
@@ -85,6 +91,7 @@ try {
     for (const [id, value] of [['customer', 'Cliente Teste'], ['phone', '21999999999'], ['address', 'Rua Teste 123']]) {
       await page.locator('#' + id).fill(value);
     }
+    if(scheduled)await page.getByLabel('Quando deseja receber?').selectOption(scheduled);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
     await page.getByRole('button', { name: 'Confirmar pedido' }).click();
     await page.getByRole('button', { name: 'Enviando…' }).waitFor();
@@ -96,6 +103,7 @@ try {
     await page.getByRole('heading', { name: 'Pedido recebido!' }).waitFor();
     assert.equal(requests.length, 2);
     assert.deepEqual(requests[0], requests[1]);
+    assert.equal(requests[0].p_scheduled_for,scheduled||undefined);
     assert.deepEqual(requests[0].p_items, [
       { product_id: 'acai', quantity: 2, options: ['morango'] },
       { product_id: 'acai', quantity: 1, options: ['leite'] }
@@ -103,6 +111,7 @@ try {
     assert.match(await page.locator('#success').innerText(), /Pagamento pendente de confirmação/);
     await page.getByRole('link', { name: 'Acompanhar meu pedido' }).click();
     await page.locator('#currentStatus').filter({hasText: tracking.label}).waitFor();
+    if(scheduled)await page.locator('#scheduledFor').filter({hasText:'Agendado para'}).waitFor();
     if (width === 375) assert.equal(await page.locator('#steps li').count(), 0);
     assert.deepEqual(errors, []);
     await page.close();
