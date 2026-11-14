@@ -30,6 +30,6 @@ create table public.pitacco_courier_payouts (store_id uuid not null, amount nume
 alter table public.public_menu_settings add column preparation_minutes integer not null default 30;
 
 create table public.marketplace_acceptance_requests (
- id uuid primary key, store_id uuid not null, order_id uuid, source text, state text,
+ id uuid primary key, store_id uuid not null, order_id uuid, source text, state text, external_order_id text,
  created_at timestamptz not null default now(), confirmed_at timestamptz
 );

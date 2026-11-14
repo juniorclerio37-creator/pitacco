@@ -14,6 +14,8 @@ try {
     const errors = [];
     const ingredients = [];
     const movements = [];
+    const settlements=[];
+    const settlementId='50000000-0000-0000-0000-000000000001';
     const appointment = {
       id:'30000000-0000-0000-0000-000000000002', store_id:store.id, status:'pending',
       source:'proprio', gross:30, fees:0, created_at:new Date().toISOString(),
@@ -78,6 +80,18 @@ try {
           couriers:{available:0,unavailable:2,recent_gps:0},
           events:[{code:'preparation_late',entity_id:pendingOrder.id,reference:'D-180',target:'Pedidos',event_at:new Date().toISOString()}]
         }});
+      }
+      if(pathname==='/rest/v1/pitacco_marketplace_settlements')return route.fulfill({headers,json:settlements});
+      if(pathname==='/rest/v1/rpc/pitacco_import_marketplace_settlement'){
+        const input=route.request().postDataJSON();
+        assert.equal(input.p_store,store.id);
+        assert.deepEqual(input.p_lines,[{external_order:'001',net:'22.50'}]);
+        settlements.push({id:settlementId,provider:input.p_provider,account_reference:input.p_account,settlement_reference:input.p_reference,settled_on:input.p_settled_on});
+        return route.fulfill({headers,json:settlementId});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_marketplace_settlement_report'){
+        assert.equal(route.request().postDataJSON().p_settlement,settlementId);
+        return route.fulfill({headers,json:[{external_order:'001',reported_net:22.50,recorded_net:24,difference:-1.50,status:'different'}]});
       }
       if (pathname === '/rest/v1/rpc/pitacco_period_financial_report') {
         const payload = route.request().postDataJSON();
@@ -191,6 +205,17 @@ try {
     await preview.locator('body[data-printed="true"]').waitFor();
     await preview.getByText('Recebimentos confirmados no caixa', {exact:true}).waitFor();
     await preview.close();
+    await page.getByRole('button',{name:'Conciliação de repasses',exact:true}).click();
+    const payouts=page.getByRole('region',{name:'Conciliação de repasses'});
+    await payouts.getByLabel('Referência da conta').fill('loja-teste');
+    await payouts.getByLabel('Referência do repasse').fill('repasse-teste');
+    await payouts.getByLabel('Data do repasse').fill('2026-11-12');
+    await payouts.getByLabel('Arquivo CSV').setInputFiles({
+      name:'repasse.csv',mimeType:'text/csv',buffer:Buffer.from('pedido_externo;repasse_liquido\n001;22,50\n')
+    });
+    await payouts.getByRole('button',{name:'Importar repasse'}).click();
+    await payouts.getByText('Repasse importado.').waitFor();
+    await payouts.getByText('Divergente',{exact:true}).waitFor();
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
     await navigation.getByRole('button', { name:'Administrar Loja', exact:true }).click();
     await page.getByRole('button', { name:'Agendamento', exact:true }).click();
