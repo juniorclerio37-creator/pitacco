@@ -45,6 +45,14 @@ try {
       }
       if (pathname === '/rest/v1/profiles') return route.fulfill({ headers, json: { ...user, role:'gestor' } });
       if (pathname === '/rest/v1/orders') return route.fulfill({headers,json:[pendingOrder]});
+      if (pathname === '/rest/v1/rpc/pitacco_period_financial_report') {
+        const payload = route.request().postDataJSON();
+        assert.equal(payload.p_store, store.id);
+        return route.fulfill({headers,json:[
+          {metric:'vendas', channel:'Delivery próprio', entries:2, amount:73},
+          {metric:'recebimentos', channel:null, entries:1, amount:22}
+        ]});
+      }
       if (pathname === '/rest/v1/rpc/pitacco_decide_pending_order') {
         const payload = route.request().postDataJSON();
         assert.deepEqual(payload,{p_order:pendingOrder.id,p_status:'rejected',p_reason:'Item indisponível'});
@@ -121,9 +129,32 @@ try {
     await page.getByRole('button', { name:'Confirmar recusa', exact:true }).click();
     await page.getByRole('button', { name:'Recusados (1)', exact:true }).click();
     await page.locator('.pedidos-card').getByText('Cliente do pedido').waitFor();
+    if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
+    await navigation.getByRole('button', { name:'Relatórios', exact:true }).click();
+    const financial = page.getByRole('region', {name:'Relatório financeiro'});
+    await financial.getByRole('button', {name:'Gerar relatório'}).click();
+    await financial.getByText('Vendas registradas', {exact:true}).waitFor();
+    const csv = page.waitForEvent('download');
+    await financial.getByRole('button', {name:'Baixar planilha CSV'}).click();
+    const file = await csv;
+    assert.match(await readFile(await file.path(),'utf8'),/"Vendas registradas";"Delivery próprio";"2";"73,00"/);
+    await page.evaluate(()=>{
+      const open = window.open;
+      window.open = (...argumentsList)=>{
+        const preview = open.apply(window,argumentsList);
+        preview.print = ()=>{preview.document.body.dataset.printed='true';};
+        return preview;
+      };
+    });
+    const popup = page.waitForEvent('popup');
+    await financial.getByRole('button', {name:'Salvar como PDF'}).click();
+    const preview = await popup;
+    await preview.locator('body[data-printed="true"]').waitFor();
+    await preview.getByText('Recebimentos confirmados no caixa', {exact:true}).waitFor();
+    await preview.close();
     assert.deepEqual(errors, []);
     await page.close();
-    console.log(`PASS dashboard authentication, navigation, inventory and pending order decisions at ${width}px`);
+    console.log(`PASS dashboard authentication, navigation, inventory, pending order decisions and reports at ${width}px`);
   }
 } finally {
   await browser.close();

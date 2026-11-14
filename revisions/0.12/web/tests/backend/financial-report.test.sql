@@ -1,0 +1,43 @@
+begin;
+insert into auth.users(id,email) values
+ ('10000000-0000-0000-0000-000000000001','report-manager@example.invalid'),
+ ('10000000-0000-0000-0000-000000000002','report-outsider@example.invalid');
+insert into public.stores(id,name) values
+ ('20000000-0000-0000-0000-000000000001','Report Store'),
+ ('20000000-0000-0000-0000-000000000002','Other Store');
+insert into public.store_members values
+ ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','gestor'),
+ ('20000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','gestor');
+
+insert into public.orders(id,store_id,channel,gross,fees,created_at,source,status) values
+ ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','iFood',100,10,'2026-11-14T03:00:00Z','ifood','accepted'),
+ ('30000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','iFood',900,10,'2026-11-14T02:59:59Z','ifood','accepted'),
+ ('30000000-0000-0000-0000-000000000003','20000000-0000-0000-0000-000000000001','Delivery próprio',50,0,'2026-11-15T02:59:59Z','proprio','pending'),
+ ('30000000-0000-0000-0000-000000000004','20000000-0000-0000-0000-000000000001','Delivery próprio',900,0,'2026-11-14T19:00:00Z','proprio','rejected'),
+ ('30000000-0000-0000-0000-000000000005','20000000-0000-0000-0000-000000000002','iFood',900,10,'2026-11-14T19:00:00Z','ifood','accepted');
+insert into public.store_payment_receipts(order_id,store_id,amount,recorded_at) values
+ ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',40,'2026-11-14T15:00:00Z'),
+ ('30000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001',20,'2026-11-14T15:00:00Z'),
+ ('30000000-0000-0000-0000-000000000005','20000000-0000-0000-0000-000000000002',100,'2026-11-14T15:00:00Z');
+insert into public.expenses(store_id,description,amount,created_at) values
+ ('20000000-0000-0000-0000-000000000001','Insumos',12,'2026-11-14T17:00:00Z');
+insert into public.pitacco_courier_payouts(store_id,amount,created_at) values
+ ('20000000-0000-0000-0000-000000000001',20,'2026-11-14T17:00:00Z');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+do $test$
+declare v_store uuid := '20000000-0000-0000-0000-000000000001'; report jsonb;
+begin
+ select jsonb_object_agg(metric,amount) into report from public.pitacco_period_financial_report(v_store,'2026-11-14','2026-11-14');
+ assert report='{"vendas":100,"taxas":10,"pedidos_pendentes":50,"recebimentos":60,"despesas":12,"acertos_entregadores":20}'::jsonb,
+   'Use Brazilian calendar dates, separate accrual and receipts, exclude rejected orders and isolate stores';
+ begin
+  perform public.pitacco_period_financial_report('20000000-0000-0000-0000-000000000002','2026-11-14','2026-11-14');
+  raise exception 'Expected report access restriction';
+ exception when raise_exception then
+  if sqlerrm not like 'Sem permissão%' then raise; end if;
+ end;
+end;
+$test$;
+rollback;
