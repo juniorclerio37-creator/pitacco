@@ -1,6 +1,7 @@
 export const columns=[['analysis','Em análise'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega']];
 export function orderStage(order,delivery){
- if(delivery?.status==='cancelada')return 'cancelled';
+ if(order.status==='rejected')return 'rejected';
+ if(order.status==='cancelled'||delivery?.status==='cancelada')return 'cancelled';
  if(order.preparation_status==='completed'||delivery?.status==='entregue')return 'completed';
  if(delivery?.status==='retirada')return 'delivery';
  if(order.status==='pending')return 'analysis';
