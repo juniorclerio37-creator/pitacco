@@ -13,6 +13,8 @@ declare new_trial record; repeated_trial record;
 begin
  select * into new_trial from public.pitacco_register_store('Loja Nova','12345678901');
  assert new_trial.trial_ends_at=now()+interval '7 days', 'New stores receive seven days';
+ assert public.is_store_manager(new_trial.store_id), 'The verified owner can manage the new store';
+ assert not public.is_store_manager('20000000-0000-0000-0000-000000000001'), 'The owner gets no rights to other stores';
  select * into repeated_trial from public.pitacco_register_store('Loja Nova','12345678901');
  assert new_trial=repeated_trial, 'Repeating signup keeps the same store and deadline';
  assert (select monthly_amount=59.90 and due_date=current_date+7 from public.subscriptions where store_id=new_trial.store_id), 'New subscriptions have the agreed price and date';

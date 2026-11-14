@@ -13,7 +13,7 @@ test('rejected and cancelled orders do not show progress timeline',()=>{
  assert.match(html,/Pedido cancelado/);
 });
 test('pickup completed only after explicit collection',()=>{
- assert.match(html,/const collected=\[/);
+ assert.match(html,/const collected=prep==='completed'/);
  assert.match(html,/current=collected\?4:/);
 });
 test('tracking refresh avoids overlapping requests and has a timer',()=>{

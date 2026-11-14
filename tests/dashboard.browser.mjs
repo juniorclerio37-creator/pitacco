@@ -12,6 +12,8 @@ try {
   for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
+    const ingredients = [];
+    const movements = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.addInitScript(({ api }) => {
       localStorage.setItem('dg.supabase.url', api);
@@ -41,6 +43,24 @@ try {
       if (pathname === '/rest/v1/couriers' && route.request().headers().accept?.includes('object')) {
         return route.fulfill({ headers, json: null });
       }
+      if (pathname === '/rest/v1/pitacco_ingredients') {
+        if (route.request().method() === 'POST') {
+          const payload = route.request().postDataJSON();
+          assert.equal(payload.store_id, store.id);
+          ingredients.push({...payload, id:'fixture-ingredient', balance:0});
+        }
+        return route.fulfill({headers,json:ingredients});
+      }
+      if (pathname === '/rest/v1/pitacco_stock_movements') {
+        if (route.request().method() === 'POST') {
+          const payload = route.request().postDataJSON();
+          assert.equal(payload.store_id, store.id);
+          assert.equal(payload.ingredient_id, ingredients[0].id);
+          ingredients[0].balance += payload.quantity;
+          movements.push({...payload, created_at:new Date().toISOString()});
+        }
+        return route.fulfill({headers,json:movements});
+      }
       return route.fulfill({ headers, json: [] });
     });
 
@@ -67,9 +87,24 @@ try {
     await page.getByRole('heading', { name:'Visão Geral', exact:true }).waitFor();
     if (width <= 800) assert.equal(await navigation.isVisible(), false);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
+    await navigation.getByRole('button', { name:'Estoque', exact:true }).click();
+    const inventory = page.getByRole('region', { name:'Controle de estoque' });
+    await inventory.getByLabel('Nome').fill('Polpa de açaí');
+    await inventory.getByLabel('Estoque mínimo').fill('100');
+    await inventory.getByRole('button', { name:'Cadastrar insumo' }).click();
+    await inventory.getByText('Estoque baixo', { exact:false }).waitFor();
+    await inventory.getByRole('button', { name:'Movimentações', exact:true }).click();
+    await inventory.getByLabel('Insumo').selectOption('fixture-ingredient');
+    await inventory.getByLabel('Quantidade', { exact:true }).fill('250');
+    await inventory.getByLabel('Motivo').fill('Compra de teste');
+    await inventory.getByRole('button', { name:'Registrar movimentação' }).click();
+    await inventory.getByText(/Compra de teste/).waitFor();
+    await inventory.getByRole('button', { name:'Insumos', exact:true }).click();
+    await inventory.getByText(/250 g/).waitFor();
     assert.deepEqual(errors, []);
     await page.close();
-    console.log(`PASS dashboard authentication and navigation at ${width}px`);
+    console.log(`PASS dashboard authentication, navigation and inventory at ${width}px`);
   }
 } finally {
   await browser.close();
