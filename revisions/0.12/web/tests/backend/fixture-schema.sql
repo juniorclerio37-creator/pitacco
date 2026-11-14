@@ -23,4 +23,7 @@ $$ select length(document) in (11,14) $$;
 create schema extensions;
 create function extensions.hmac(document text, key text, algorithm text) returns bytea language sql immutable as
 $$ select convert_to(md5(document || key || algorithm), 'UTF8') $$;
-create table public.store_payment_receipts (order_id uuid not null references public.orders(id));
+create table public.store_payment_receipts (
+ order_id uuid not null references public.orders(id), store_id uuid, amount numeric, recorded_at timestamptz
+);
+create table public.pitacco_courier_payouts (store_id uuid not null, amount numeric, created_at timestamptz);
