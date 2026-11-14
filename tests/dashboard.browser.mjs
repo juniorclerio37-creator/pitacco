@@ -14,6 +14,11 @@ try {
     const errors = [];
     const ingredients = [];
     const movements = [];
+    const pendingOrder = {
+      id:'30000000-0000-0000-0000-000000000001', store_id:store.id, status:'pending',
+      source:'proprio', gross:25, fees:0, created_at:new Date().toISOString(),
+      receipt:{display_number:'D-180',customer:'Cliente do pedido',items:[],payment:'pix_manual'}
+    };
     page.on('pageerror', error => errors.push(error.message));
     await page.addInitScript(({ api }) => {
       localStorage.setItem('dg.supabase.url', api);
@@ -39,6 +44,13 @@ try {
         return route.fulfill({ headers, json: { user, access_token:'fixture-access', refresh_token:'fixture-refresh', token_type:'bearer', expires_in:3600 } });
       }
       if (pathname === '/rest/v1/profiles') return route.fulfill({ headers, json: { ...user, role:'gestor' } });
+      if (pathname === '/rest/v1/orders') return route.fulfill({headers,json:[pendingOrder]});
+      if (pathname === '/rest/v1/rpc/pitacco_decide_pending_order') {
+        const payload = route.request().postDataJSON();
+        assert.deepEqual(payload,{p_order:pendingOrder.id,p_status:'rejected',p_reason:'Item indisponível'});
+        pendingOrder.status = payload.p_status;
+        return route.fulfill({headers,json:null});
+      }
       if (pathname === '/rest/v1/stores') return route.fulfill({ headers, json: [store] });
       if (pathname === '/rest/v1/couriers' && route.request().headers().accept?.includes('object')) {
         return route.fulfill({ headers, json: null });
@@ -102,9 +114,16 @@ try {
     await inventory.getByText(/Compra de teste/).waitFor();
     await inventory.getByRole('button', { name:'Insumos', exact:true }).click();
     await inventory.getByText(/250 g/).waitFor();
+    if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
+    await navigation.getByRole('button', { name:'Pedidos', exact:true }).click();
+    await page.getByRole('button', { name:'Recusar pedido', exact:true }).click();
+    await page.getByLabel('Motivo da recusa').fill('Item indisponível');
+    await page.getByRole('button', { name:'Confirmar recusa', exact:true }).click();
+    await page.getByRole('button', { name:'Recusados (1)', exact:true }).click();
+    await page.locator('.pedidos-card').getByText('Cliente do pedido').waitFor();
     assert.deepEqual(errors, []);
     await page.close();
-    console.log(`PASS dashboard authentication, navigation and inventory at ${width}px`);
+    console.log(`PASS dashboard authentication, navigation, inventory and pending order decisions at ${width}px`);
   }
 } finally {
   await browser.close();
