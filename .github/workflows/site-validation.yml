@@ -9,6 +9,8 @@ on:
       - 'web/**'
       - 'tests/**'
       - 'supabase/migrations/**'
+      - 'supabase/functions/**'
+      - 'supabase/config.toml'
       - '.github/workflows/site-validation.yml'
   pull_request:
     paths:
@@ -18,6 +20,8 @@ on:
       - 'web/**'
       - 'tests/**'
       - 'supabase/migrations/**'
+      - 'supabase/functions/**'
+      - 'supabase/config.toml'
       - '.github/workflows/site-validation.yml'
   workflow_dispatch:
 jobs:

@@ -1,0 +1,4 @@
+project_id = "pitacco"
+
+[functions.asaas-subscription-webhook]
+verify_jwt = false
