@@ -1,20 +1,31 @@
-"""Clarify signup confirmation and switch to login when account exists.
-Keep password login and confirmation security managed by Supabase.
-"""
+"""Keep email/password authentication in Supabase and explain the outcome."""
 from pathlib import Path
-p=Path('web/src.jsx')
-s=p.read_text(encoding='utf-8')
-old="setLoading(false);setMessage(result.error?result.error.message:authMode==='register'?'Conta criada. Verifique seu e-mail se a confirmação estiver habilitada.':'Login realizado.');"
-new="""setLoading(false);
- if(result.error){setMessage(result.error.message);return}
- if(authMode==='register'){
-  setAuthMode('login');
-  setMessage(result.data?.session?'Cadastro concluído. Acesso autorizado.':result.data?.user?.identities?.length===0?'Este e-mail já possui cadastro. Entre com sua senha.':'Cadastro recebido. Se a confirmação de e-mail estiver habilitada, abra o link enviado antes de entrar.');
- }else setMessage('Login realizado.');"""
-if s.count(old)==1:
- s=s.replace(old,new,1)
-elif 'Cadastro recebido.' in s or 'Este e-mail já possui cadastro.' in s:
- pass  # Existing upstream authentication flow already provides confirmation feedback.
-else:
- print('Auth flow differs from expected; preserve existing logic instead of blocking build.')
-p.write_text(s,encoding='utf-8')
+
+path = Path('web/src.jsx')
+source = path.read_text(encoding='utf-8')
+start = source.index('async function submitAuth(e){')
+end = source.index('\nasync function execute(', start)
+path.write_text(source[:start] + """async function submitAuth(event) {
+ event.preventDefault();
+ setLoading(true);
+ setMessage('');
+ const form = new FormData(event.currentTarget);
+ const email = String(form.get('email')).trim(), password = String(form.get('password'));
+ const registering = authMode === 'register';
+ try {
+  const {data, error} = registering
+   ? await supabase.auth.signUp({email, password, options:{data:{full_name:form.get('name')}}})
+   : await supabase.auth.signInWithPassword({email, password});
+  if (error) throw error;
+  if (registering && !data.session) {
+   setAuthMode('login');
+   setMessage('Se este e-mail já estiver cadastrado, entre com sua senha. Se acabou de criar a conta, confirme o cadastro pelo link enviado ao seu e-mail.');
+  } else {
+   setMessage(registering ? 'Cadastro concluído.' : 'Login realizado.');
+  }
+ } catch (error) {
+  setMessage(error.message || 'Não foi possível concluir o acesso. Tente novamente.');
+ } finally {
+  setLoading(false);
+ }
+}""" + source[end:], encoding='utf-8')
