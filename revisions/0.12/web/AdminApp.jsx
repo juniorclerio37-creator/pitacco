@@ -35,7 +35,7 @@ function AdminApp(){
  useEffect(()=>{
   let live=true;
   if(session){
-   client.rpc('is_admin').then(({data,error})=>{
+   client.rpc('pitacco_is_platform_owner').then(({data,error})=>{
     if(live)setVerified({id:session.user.id,allowed:!error&&data===true,error:error?.message});
    }).catch(()=>{if(live)setVerified({id:session.user.id,allowed:false,error:'Falha na consulta de acesso'});});
   }

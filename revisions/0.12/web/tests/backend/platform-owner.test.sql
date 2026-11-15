@@ -20,6 +20,7 @@ declare
  placed jsonb;
 begin
  assert public.is_admin();
+ assert public.pitacco_is_platform_owner();
  product_id:=public.pitacco_save_product(store_b,null,'Açaí teste','Açaí','',15,6,true);
  group_id:=public.pitacco_save_option_group(store_b,product_id,null,'Cobertura',0,1);
  option_id:=public.pitacco_save_option(store_b,group_id,null,'Morango',2.5,true);
@@ -44,6 +45,7 @@ select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002'
 do $test$
 begin
  assert not public.is_admin(), 'An admin profile alone is insufficient';
+ assert not public.pitacco_is_platform_owner(), 'Admin access check requires the designated owner';
  assert (select count(*) from public.stores)=1;
  assert (select count(*) from public.pitacco_list_products('20000000-0000-0000-0000-000000000002'))=0;
  perform public.pitacco_save_product('20000000-0000-0000-0000-000000000001',null,'Produto do gestor','','',10,3,false);
@@ -71,6 +73,7 @@ $test$;
 reset role;
 do $test$
 begin
+ assert not has_function_privilege('anon','public.pitacco_is_platform_owner()','EXECUTE');
  assert (select count(*) from pitacco_private.store_feature_audit)=3;
  assert (select count(*) from public.operation_audit where action like 'owner_catalog_%_saved')=3;
 end;

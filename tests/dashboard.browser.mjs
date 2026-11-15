@@ -15,7 +15,7 @@ try {
   for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
-    let adminMode=false,moduleEnabled=true;
+    let adminMode=false,moduleEnabled=true,ownerMigrationApplied=false;
     const catalog=[];
     const productId='70000000-0000-0000-0000-000000000001';
     const menuSettings={slug:'loja-teste',enabled:false,delivery_enabled:true,pickup_enabled:false,delivery_fee:5,
@@ -89,7 +89,11 @@ try {
         assert.deepEqual(route.request().postDataJSON(),{p_store:store.id,p_minutes:45});
         return route.fulfill({headers,json:45});
       }
-      if(pathname==='/rest/v1/rpc/is_admin')return route.fulfill({headers,json:adminMode});
+      if(pathname==='/rest/v1/rpc/is_admin')throw new Error('O painel do proprietário consultou a permissão legada');
+      if(pathname==='/rest/v1/rpc/pitacco_is_platform_owner'){
+        if(!ownerMigrationApplied)return route.fulfill({headers,status:404,json:{code:'PGRST202',message:'Função indisponível'}});
+        return route.fulfill({headers,json:adminMode});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_store_features'){
         const flags=Object.fromEntries(keys.map(key=>[key,key!=='estoque'||moduleEnabled]));
         return route.fulfill({headers,json:flags});
@@ -319,6 +323,11 @@ try {
       await page.getByLabel('Senha',{exact:true}).fill('senha-de-teste');
       await page.getByRole('button',{name:'Entrar',exact:true}).click();
     }
+    await adminLogin();
+    await page.getByRole('alert').filter({hasText:'Não foi possível verificar sua autorização.'}).waitFor();
+    assert.equal(await page.getByRole('navigation',{name:'Administração geral'}).count(),0);
+    await page.getByRole('button',{name:'Sair',exact:true}).click();
+    ownerMigrationApplied=true;
     await adminLogin();
     await page.getByRole('alert').filter({hasText:'Acesso exclusivo do proprietário'}).waitFor();
     await page.getByRole('button',{name:'Sair',exact:true}).click();
