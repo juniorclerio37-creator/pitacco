@@ -4,6 +4,7 @@ insert into auth.users(id,email) values
  ('10000000-0000-0000-0000-000000000002','billing-outsider@example.invalid'),
  ('10000000-0000-0000-0000-000000000003','billing-admin@example.invalid');
 update public.profiles set role='admin' where id='10000000-0000-0000-0000-000000000003';
+insert into pitacco_private.platform_owner(user_id) values ('10000000-0000-0000-0000-000000000003');
 insert into public.stores(id,name) values
  ('20000000-0000-0000-0000-000000000001','Expired Store'),
  ('20000000-0000-0000-0000-000000000002','Trial Store'),

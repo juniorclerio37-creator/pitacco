@@ -4,6 +4,9 @@ import { chromium } from '../web/node_modules/playwright/index.mjs';
 
 const dashboard = 'http://localhost:4180';
 const api = 'https://pitacco-fixture.supabase.co';
+const adminPortal='https://admin.pitacco.com.br';
+const realApi='https://mdevzehqcpcgxspwbiyz.supabase.co';
+const keys=['alertas','estoque','cardapio','clientes','fideliza','financeiro','caixa','relatorios','motoboys','integracoes','agendamento'];
 const user = { id: '10000000-0000-0000-0000-000000000001', aud: 'authenticated', email: 'teste@example.invalid' };
 const store = { id: '20000000-0000-0000-0000-000000000001', name: 'Loja de Teste', plan: 'saas' };
 const browser = await chromium.launch({ executablePath: process.env.PITACCO_CHROMIUM });
@@ -12,7 +15,7 @@ try {
   for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
-    let adminMode=false;
+    let adminMode=false,moduleEnabled=true;
     const evidence=[];
     const ingredients = [];
     const movements = [];
@@ -43,13 +46,33 @@ try {
         const contentType = { html:'text/html', js:'text/javascript', css:'text/css', svg:'image/svg+xml' }[file.split('.').at(-1)];
         return route.fulfill({ contentType, body: await readFile(new URL('../web/dist' + file, import.meta.url)) });
       }
-      if (origin !== api) return route.abort();
+      if(origin===adminPortal&&(pathname==='/'||/^\/(assets\/[A-Za-z0-9_.-]+|pitacco-brand-013\.svg)$/.test(pathname))){
+        const file=pathname==='/'?'/index.html':pathname;
+        const contentType={html:'text/html',js:'text/javascript',css:'text/css',svg:'image/svg+xml'}[file.split('.').at(-1)];
+        return route.fulfill({contentType,body:await readFile(new URL('../web/dist-admin'+file,import.meta.url))});
+      }
+      if (origin !== api && origin !== realApi) return route.abort();
       const headers = {
-        'access-control-allow-origin': dashboard,
+        'access-control-allow-origin': origin===realApi?adminPortal:dashboard,
         'access-control-allow-headers': 'authorization,apikey,content-type,x-client-info,x-supabase-api-version',
         'access-control-allow-methods': 'GET,POST,OPTIONS'
       };
       if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
+      if(pathname==='/rest/v1/rpc/is_admin')return route.fulfill({headers,json:adminMode});
+      if(pathname==='/rest/v1/rpc/pitacco_store_features'){
+        const flags=Object.fromEntries(keys.map(key=>[key,key!=='estoque'||moduleEnabled]));
+        return route.fulfill({headers,json:flags});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_owner_feature_settings'){
+        assert.ok(adminMode);
+        return route.fulfill({headers,json:Object.fromEntries(keys.map(key=>[key,{default_enabled:true,override:key==='estoque'&&!moduleEnabled?false:null}]))});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_owner_set_feature'){
+        assert.ok(adminMode);
+        assert.deepEqual(route.request().postDataJSON(),{p_store:store.id,p_feature:'estoque',p_enabled:false});
+        moduleEnabled=false;
+        return route.fulfill({headers,json:null});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_admin_homologation_results')return route.fulfill({headers,json:evidence});
       if(pathname==='/rest/v1/rpc/pitacco_admin_homologation_probe'){
         assert.equal(route.request().postDataJSON().p_store,store.id);
@@ -259,8 +282,17 @@ try {
     await billing.getByRole('alert').filter({hasText:'Novos pedidos bloqueados'}).waitFor();
     assert.equal(await billing.getByRole('link',{name:'Regularizar assinatura'}).getAttribute('href'),'https://billing.example.invalid/');
     assert.equal(await page.getByRole('button',{name:'Homologação',exact:true}).count(),0);
+    await page.goto(adminPortal);
+    async function adminLogin(){
+      await page.getByLabel('E-mail',{exact:true}).fill(user.email);
+      await page.getByLabel('Senha',{exact:true}).fill('senha-de-teste');
+      await page.getByRole('button',{name:'Entrar',exact:true}).click();
+    }
+    await adminLogin();
+    await page.getByRole('alert').filter({hasText:'Acesso exclusivo do proprietário'}).waitFor();
+    await page.getByRole('button',{name:'Sair',exact:true}).click();
     adminMode=true;
-    await page.reload();
+    await adminLogin();
     const platform=page.getByRole('navigation',{name:'Administração geral'});
     await platform.getByRole('button',{name:'Homologação',exact:true}).click();
     const homologation=page.getByRole('region',{name:'Homologação do Pitacco'});
@@ -275,6 +307,16 @@ try {
     await homologation.getByRole('button',{name:'Salvar resultado'}).click();
     await homologation.getByText('Resultado registrado no histórico.').waitFor();
     await homologation.getByText('Asaas conferido. Aguardando confirmação do webhook.').waitFor();
+    await platform.getByRole('button',{name:'Módulos do lojista',exact:true}).click();
+    const modules=page.getByRole('region',{name:'Módulos do painel do lojista'});
+    await modules.getByLabel('Aplicar a').selectOption(store.id);
+    await modules.getByLabel('Estoque',{exact:true}).selectOption('disabled');
+    await modules.getByText('Estoque atualizado.').waitFor();
+    await page.goto(dashboard+'/app/');
+    if(width<=800)await page.getByRole('button',{name:'Abrir menu'}).click();
+    await navigation.getByRole('button',{name:'Clientes',exact:true}).waitFor();
+    assert.equal(await navigation.getByRole('button',{name:'Estoque',exact:true}).count(),0);
+    assert.equal(await page.getByRole('button',{name:'Homologação',exact:true}).count(),0);
     assert.deepEqual(errors, []);
     await page.close();
     console.log(`PASS dashboard authentication, navigation, inventory, pending order decisions and reports at ${width}px`);

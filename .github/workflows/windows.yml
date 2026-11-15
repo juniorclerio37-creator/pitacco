@@ -77,9 +77,10 @@ jobs:
           from pathlib import Path
           src=Path('web/src.jsx').read_text(encoding='utf-8')
           operations=Path('web/Operations.jsx').read_text(encoding='utf-8')
+          owner=Path('web/AdminApp.jsx').read_text(encoding='utf-8')
           checks={
-              'Central disponivel para administrador somente no site': "admin&&platformWorkspace&&!nativeAvailable()" in src and "current==='Atualizações'" in src,
-              'Central no painel admin': "['Atualizações',Settings]" in src,
+              'Central disponivel para administrador somente no site': "page==='Atualizações'" in owner and "AdminApp" not in src,
+              'Central no painel admin': "['Atualizações',Settings]" in owner,
               'Menu da loja sem atualizacoes admin': "['Atualizações',Settings,'Principal']" not in src,
               'Verificacao nativa conectada': "invoke('check_update')" in operations,
               'Erros de verificacao exibidos': "setUpdateCheck({state:'error'" in operations,
@@ -93,16 +94,13 @@ jobs:
         run: |
           from pathlib import Path
           src=Path('web/src.jsx').read_text(encoding='utf-8')
+          owner=Path('web/AdminApp.jsx').read_text(encoding='utf-8')
           checks={
-              'Admin somente no navegador': 'if(admin&&platformWorkspace&&!nativeAvailable())' in src,
-              'Windows inicia na loja': 'useState(()=>!nativeAvailable())' in src,
-              'Troca de conta preserva isolamento': 'setPlatformWorkspace(!nativeAvailable())' in src,
-              'Navegacao administrativa web': 'pitacco-admin-shell' in src,
-              'Tema operacional preservado': 'pitacco-theme-' in src,
-              'Entrada da loja exige vinculo': 'disabled={!stores.length}' in src,
-              'Selecao de loja': 'setSelected(store.id);setPlatformWorkspace(false)' in src,
-              'Marca da loja': 'storeBrand?.logo_url' in src,
-              'Marca do painel web': 'pitacco-platform-brand' in src,
+              'Painel do proprietario separado': 'pitacco-admin-shell' not in src and 'pitacco-admin-shell' in owner,
+              'Permissao pelo backend': "rpc('is_admin')" in owner,
+              'Dominio exclusivo': 'admin.pitacco.com.br' in owner,
+              'Vinculo com a loja': 'storeBrand?.logo_url' in src,
+              'Marca do painel admin': 'pitacco-platform-brand' in owner,
           }
           for label,ok in checks.items(): print(('OK' if ok else 'FALHOU')+': '+label,flush=True)
           if not all(checks.values()): raise SystemExit('Falha na separacao de ambientes.')

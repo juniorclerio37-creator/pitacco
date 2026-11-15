@@ -3,6 +3,7 @@ insert into auth.users(id,email) values
  ('10000000-0000-0000-0000-000000000001','owner@example.invalid'),
  ('10000000-0000-0000-0000-000000000002','manager@example.invalid');
 update public.profiles set role='admin' where id='10000000-0000-0000-0000-000000000001';
+insert into pitacco_private.platform_owner(user_id) values ('10000000-0000-0000-0000-000000000001');
 insert into public.stores(id,name) values ('20000000-0000-0000-0000-000000000001','Loja para homologação');
 insert into public.store_members values ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','gestor');
 insert into public.public_menu_settings(store_id,slug,enabled,delivery_enabled,pickup_enabled,delivery_fee,payment_methods,pix_instructions)

@@ -1,6 +1,6 @@
 const idPattern = /^pay_[A-Za-z0-9_-]{1,100}$/;
 const storePattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
-const origins = ['https://app.pitacco.com.br', 'https://pitacco.com.br', 'https://www.pitacco.com.br'];
+const origins = ['https://admin.pitacco.com.br', 'https://app.pitacco.com.br', 'https://pitacco.com.br', 'https://www.pitacco.com.br'];
 
 export function createAsaasHomologation({ supabaseUrl, publicKey, sandboxKey, additionalOrigin, fetcher = fetch }) {
   return async request => {

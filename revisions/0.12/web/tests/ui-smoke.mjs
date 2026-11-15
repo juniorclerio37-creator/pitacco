@@ -18,8 +18,9 @@ let assigned=null;let submittedStore=null;let reprintCall=null;const errors=[];p
 await page.route('https://pitacco-test.supabase.co/**',async route=>{
  const request=route.request(),url=new URL(request.url());let result=[];
  if(url.pathname==='/auth/v1/token')result={access_token:'fixture-access-token',refresh_token:'fixture-refresh',token_type:'bearer',expires_in:3600,user:{id:uid,email:'demo@example.invalid',aud:'authenticated'}};
- else if(url.pathname.endsWith('/profiles'))result={id:uid,email:'demo@example.invalid',role:'admin'};
+ else if(url.pathname.endsWith('/profiles'))result={id:uid,email:'demo@example.invalid',role:'gestor'};
  else if(url.pathname.endsWith('/stores')){if(request.method()==='POST'){submittedStore=request.postDataJSON();result=[]}else result=[store]}
+ else if(url.pathname.endsWith('/rpc/pitacco_store_features'))result={alertas:true,estoque:true,cardapio:true,clientes:true,fideliza:true,financeiro:true,caixa:true,relatorios:true,motoboys:true,integracoes:true,agendamento:true};
  else if(url.pathname.endsWith('/orders'))result=orders;
  else if(url.pathname.endsWith('/deliveries'))result=deliveries;
  else if(url.pathname.endsWith('/print_sectors'))result=[{sector:'Cozinha',printer:'Térmica de teste',width:80,copies:1,enabled:true}];
@@ -33,10 +34,6 @@ await page.route('https://pitacco-test.supabase.co/**',async route=>{
 let smokeStage='login';
 try{
  await page.goto('http://127.0.0.1:4178');await page.getByPlaceholder('E-mail',{exact:true}).fill('demo@example.invalid');await page.getByPlaceholder('Senha (mínimo 6 caracteres)').fill('fixture-password');await page.getByRole('button',{name:'Entrar',exact:true}).click();
- // The admin fixture must explicitly enter its linked store before testing orders.
- await page.getByRole('button',{name:'Entrar no ambiente da loja',exact:true}).waitFor({timeout:12000});
- await page.getByRole('button',{name:'Entrar no ambiente da loja',exact:true}).click();
- // The store switch opens the overview (Painel), not the order board.
  await page.getByRole('navigation',{name:'Menu principal'}).getByRole('button',{name:'Pedidos',exact:true}).click();
  smokeStage='orders visible';
  try{await page.getByText('Ana · exemplo',{exact:true}).waitFor({timeout:12000})}catch(e){await fs.mkdir('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/login-diagnostic.png',fullPage:true});throw new Error('Pedido de demonstração não apareceu. URL='+page.url()+'; tela='+JSON.stringify((await page.locator('body').innerText()).slice(0,1600))+'; erros='+JSON.stringify(errors)+'; causa='+e.message)}

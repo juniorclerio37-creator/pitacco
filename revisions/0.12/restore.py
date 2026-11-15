@@ -107,3 +107,6 @@ subprocess.run([sys.executable,'revisions/0.12/auth_signup_feedback_052.py'],che
 
 # Compact orange navigation for mobile web; keep desktop and all workflows.
 subprocess.run([sys.executable,'revisions/0.12/mobile_orange_nav_053.py'],check=True)
+
+# Compile platform administration as a separate website, outside the store bundle.
+subprocess.run([sys.executable,'revisions/0.12/separate_public_portals.py'],check=True)

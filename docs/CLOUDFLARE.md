@@ -22,3 +22,11 @@ Depois do primeiro deploy bem-sucedido, associe `pitacco.com.br` em Settings > D
 Com a URL e a chave pública de um Supabase de teste, preencha as variáveis `PITACCO_HOMOLOG_SUPABASE_URL` e `PITACCO_HOMOLOG_SUPABASE_KEY` e execute `bash scripts/build-cloudflare.sh --homologacao`.
 
 A saída fica em `web/dist-homologacao`. O painel em `/app/`, o cardápio, o checkout, o cadastro e o acompanhamento usam o ambiente de teste. A faixa de homologação aparece nas páginas. Para hospedar esse build, aponte exclusivamente o projeto de teste para `web/dist-homologacao` e preserve o projeto dos domínios oficiais em `web/dist`. Configure o endereço de teste como URL de retorno no Supabase Auth e como origem do diagnóstico Asaas, se aplicável.
+
+## Pitacco Admin em domínio próprio
+
+O domínio reservado para o proprietário é `https://admin.pitacco.com.br`. O build administrativo é criado por `bash scripts/build-admin-cloudflare.sh` em `web/dist-admin`. A configuração `wrangler.admin.jsonc` publica esse diretório em um Worker separado. O build do lojista continua em `web/dist`.
+
+A migração `pitacco_owner_and_features` vincula o único administrador confirmado à conta proprietária. Caso existam múltiplos candidatos ou nenhum candidato confirmado, o painel aguarda a vinculação explícita por um operador autorizado do Supabase. O acesso do proprietário é validado pelo banco.
+
+Os módulos configurados em **Módulos do lojista** são exibidos no painel web conforme o padrão global ou a regra da loja. Ocultar o módulo preserva seus dados, automações e APIs operacionais. Novas funcionalidades exigem implementação e publicação.
