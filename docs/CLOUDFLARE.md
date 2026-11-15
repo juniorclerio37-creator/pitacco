@@ -31,4 +31,6 @@ A migração `pitacco_owner_and_features` vincula o único administrador confirm
 
 Antes de publicar o Worker, confirme as migrações no Supabase, incluindo `pitacco_platform_owner_access`. Valide o login com a conta proprietária e com uma conta gestora em homologação. Se a função exclusiva do proprietário estiver ausente, o painel bloqueia a sessão e apresenta a mensagem de verificação indisponível.
 
+Publique a Edge Function `platform-owner-login`. No Supabase, configure `PITACCO_ADMIN_USERNAME` com o usuário numérico e `PITACCO_ADMIN_AUTH_EMAIL` com o e-mail da conta proprietária já confirmada. Defina a senha no Supabase Auth. Em homologação, use a conta e as configurações do projeto de teste e informe a origem HTTPS do painel em `PITACCO_ADMIN_HOMOLOGATION_ORIGIN`.
+
 Os módulos configurados em **Módulos do lojista** são exibidos no painel web conforme o padrão global ou a regra da loja. Ocultar o módulo preserva seus dados, automações e APIs operacionais. Novas funcionalidades exigem implementação e publicação.

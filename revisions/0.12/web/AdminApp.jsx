@@ -63,9 +63,17 @@ function AdminApp(){
   setBusy(true);setError('');
   const form=new FormData(event.currentTarget);
   try{
-   const {error}=await client.auth.signInWithPassword({email:String(form.get('email')).trim(),password:String(form.get('password'))});
+   const response=await fetch(new URL('/functions/v1/platform-owner-login',config.url),{
+    method:'POST',headers:{apikey:config.key,'content-type':'application/json'},
+    body:JSON.stringify({username:String(form.get('username')).trim(),password:String(form.get('password'))})
+   });
+   if(response.status===401){setError('Usuário ou senha inválidos.');return;}
+   if(response.status===429){setError('Muitas tentativas. Aguarde e tente novamente.');return;}
+   if(!response.ok)throw new Error();
+   const {access_token,refresh_token}=await response.json();
+   const {error}=await client.auth.setSession({access_token,refresh_token});
    if(error)throw error;
-  }catch(failure){setError(failure.message||'Não foi possível entrar.');}
+  }catch{setError('Não foi possível entrar no Pitacco Admin. Tente novamente.');}
   finally{setBusy(false);}
  }
  async function signOut(){
@@ -79,7 +87,7 @@ function AdminApp(){
   <img className="auth-logo" src="/pitacco-brand-013.svg" alt="Pitacco"/>
   <h1>Pitacco Admin</h1>
   <form onSubmit={signIn}>
-   <label htmlFor="owner-email">E-mail</label><input id="owner-email" name="email" type="email" autoComplete="username" required/>
+   <label htmlFor="owner-username">Usuário</label><input id="owner-username" name="username" inputMode="numeric" pattern="[0-9]{11}" maxLength={11} autoComplete="username" required/>
    <label htmlFor="owner-password">Senha</label><input id="owner-password" name="password" type="password" autoComplete="current-password" required/>
    <button disabled={busy}>{busy?'Entrando…':'Entrar'}</button>
   </form>

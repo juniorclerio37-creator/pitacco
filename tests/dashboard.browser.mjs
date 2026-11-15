@@ -9,6 +9,9 @@ const realApi='https://mdevzehqcpcgxspwbiyz.supabase.co';
 const keys=['alertas','estoque','cardapio','clientes','fideliza','financeiro','caixa','relatorios','motoboys','integracoes','agendamento'];
 const user = { id: '10000000-0000-0000-0000-000000000001', aud: 'authenticated', email: 'teste@example.invalid' };
 const store = { id: '20000000-0000-0000-0000-000000000001', name: 'Loja de Teste', plan: 'saas' };
+const fixtureUsername = '00000000001';
+const adminToken = [ {alg:'HS256'}, {sub:user.id, exp:Math.floor(Date.now()/1000)+3600} ]
+  .map(part=>Buffer.from(JSON.stringify(part)).toString('base64url')).join('.')+'.Zml4dHVyZQ';
 const browser = await chromium.launch({ executablePath: process.env.PITACCO_CHROMIUM });
 
 try {
@@ -62,6 +65,14 @@ try {
         'access-control-allow-methods': 'GET,POST,OPTIONS'
       };
       if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
+      if(pathname==='/functions/v1/platform-owner-login'){
+        assert.equal(origin,realApi);
+        const {username,password}=route.request().postDataJSON();
+        assert.equal(username,fixtureUsername);
+        if(password!=='senha-de-teste')return route.fulfill({headers,status:401});
+        return route.fulfill({headers,json:{access_token:adminToken,refresh_token:'fixture-owner-refresh'}});
+      }
+      if(pathname==='/auth/v1/user'&&origin===realApi)return route.fulfill({headers,json:user});
       if(pathname==='/rest/v1/rpc/pitacco_list_products'){
         assert.equal(route.request().postDataJSON().p_store_id,store.id);
         return route.fulfill({headers,json:catalog});
@@ -318,11 +329,13 @@ try {
     assert.equal(await billing.getByRole('link',{name:'Regularizar assinatura'}).getAttribute('href'),'https://billing.example.invalid/');
     assert.equal(await page.getByRole('button',{name:'Homologação',exact:true}).count(),0);
     await page.goto(adminPortal);
-    async function adminLogin(){
-      await page.getByLabel('E-mail',{exact:true}).fill(user.email);
-      await page.getByLabel('Senha',{exact:true}).fill('senha-de-teste');
+    async function adminLogin(password='senha-de-teste'){
+      await page.getByLabel('Usuário',{exact:true}).fill(fixtureUsername);
+      await page.getByLabel('Senha',{exact:true}).fill(password);
       await page.getByRole('button',{name:'Entrar',exact:true}).click();
     }
+    await adminLogin('senha-incorreta');
+    await page.getByRole('alert').filter({hasText:'Usuário ou senha inválidos.'}).waitFor();
     await adminLogin();
     await page.getByRole('alert').filter({hasText:'Não foi possível verificar sua autorização.'}).waitFor();
     assert.equal(await page.getByRole('navigation',{name:'Administração geral'}).count(),0);
