@@ -12,8 +12,25 @@ insert into public.store_members values
 set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
 do $test$
+declare
+ store_b uuid:='20000000-0000-0000-0000-000000000002';
+ product_id uuid;
+ group_id uuid;
+ option_id uuid;
+ placed jsonb;
 begin
  assert public.is_admin();
+ product_id:=public.pitacco_save_product(store_b,null,'Açaí teste','Açaí','',15,6,true);
+ group_id:=public.pitacco_save_option_group(store_b,product_id,null,'Cobertura',0,1);
+ option_id:=public.pitacco_save_option(store_b,group_id,null,'Morango',2.5,true);
+ perform public.save_public_menu_settings(store_b,'loja-b',true,false,true,0,array['dinheiro'],'');
+ assert (select price=15 from public.pitacco_list_products(store_b) where id=product_id);
+ assert (public.pitacco_list_complements(store_b,product_id)->0->'options'->0->>'price')::numeric=2.5;
+ assert public.pitacco_owner_menu_settings(store_b)->>'slug'='loja-b';
+ placed:=public.checkout_public_order('loja-b',gen_random_uuid(),'Cliente','21999999999','',
+  jsonb_build_array(jsonb_build_object('product_id',product_id,'quantity',1,'options',jsonb_build_array(option_id))),
+  'pickup','dinheiro','');
+ assert (placed->>'total')::numeric=17.50, 'Catalog edits affect the public checkout price';
  assert (select count(*) from public.stores)=2;
  perform public.pitacco_owner_set_feature(null,'estoque',false);
  perform public.pitacco_owner_set_feature('20000000-0000-0000-0000-000000000001','estoque',true);
@@ -28,6 +45,20 @@ do $test$
 begin
  assert not public.is_admin(), 'An admin profile alone is insufficient';
  assert (select count(*) from public.stores)=1;
+ assert (select count(*) from public.pitacco_list_products('20000000-0000-0000-0000-000000000002'))=0;
+ perform public.pitacco_save_product('20000000-0000-0000-0000-000000000001',null,'Produto do gestor','','',10,3,false);
+ begin
+  perform public.pitacco_save_product('20000000-0000-0000-0000-000000000002',null,'Outra Loja','','',10,3,false);
+  raise exception 'Expected cross-store catalog write to fail';
+ exception when raise_exception then
+  if sqlerrm<>'Sem permissão para alterar produtos' then raise;end if;
+ end;
+ begin
+  perform public.pitacco_owner_menu_settings('20000000-0000-0000-0000-000000000001');
+  raise exception 'Expected owner-only settings reader';
+ exception when raise_exception then
+  if sqlerrm<>'Acesso exclusivo do proprietário do Pitacco' then raise;end if;
+ end;
  assert public.pitacco_store_features('20000000-0000-0000-0000-000000000001')->>'estoque'='false';
  begin
   perform public.pitacco_owner_set_feature(null,'estoque',true);
@@ -41,6 +72,7 @@ reset role;
 do $test$
 begin
  assert (select count(*) from pitacco_private.store_feature_audit)=3;
+ assert (select count(*) from public.operation_audit where action like 'owner_catalog_%_saved')=3;
 end;
 $test$;
 rollback;

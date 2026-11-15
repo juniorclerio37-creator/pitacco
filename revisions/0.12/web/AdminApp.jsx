@@ -7,6 +7,9 @@ import {BillingOverview} from './BillingStatus.jsx';
 import Homologation from './Homologation.jsx';
 import OwnerFeatures from './OwnerFeatures.jsx';
 import StoreProfile from './StoreProfile.jsx';
+import OwnerCatalog from './OwnerCatalog.jsx';
+import OwnerMenuSettings from './OwnerMenuSettings.jsx';
+import ScheduleSettings from './ScheduleSettings.jsx';
 import './style.css';
 
 const adminHost='admin.pitacco.com.br';
@@ -21,6 +24,7 @@ const pages=[['Painel geral',LayoutDashboard],['Estabelecimentos',Store],['Módu
 function AdminApp(){
  const [session,setSession]=useState(undefined),[verified,setVerified]=useState(null);
  const [stores,setStores]=useState([]),[storeId,setStoreId]=useState(''),[page,setPage]=useState('Painel geral');
+ const [storeTab,setStoreTab]=useState('Identidade');
  const [error,setError]=useState(''),[busy,setBusy]=useState(false);
 
  useEffect(()=>{
@@ -108,7 +112,16 @@ function AdminApp(){
      {!stores.length&&<option value="">Nenhuma loja cadastrada</option>}
      {stores.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}
     </select>
-    {store&&<StoreProfile key={store.id} client={client} store={store} manager onSaved={()=>loadStores().catch(failure=>setError(failure.message))}/>}
+    {store&&<>
+     <nav className="pitacco-local-tabs" aria-label="Seções do estabelecimento">
+      {['Identidade','Catálogo','Checkout','Agendamento'].map(tab=><button key={tab} type="button" aria-pressed={storeTab===tab}
+       className={storeTab===tab?'active':'secondary'} onClick={()=>setStoreTab(tab)}>{tab}</button>)}
+     </nav>
+     {storeTab==='Identidade'&&<StoreProfile key={store.id} client={client} store={store} manager onSaved={()=>loadStores().catch(failure=>setError(failure.message))}/>}
+     {storeTab==='Catálogo'&&<OwnerCatalog key={store.id} client={client} storeId={store.id}/>}
+     {storeTab==='Checkout'&&<OwnerMenuSettings key={store.id} client={client} storeId={store.id} storefrontOrigin={storefrontOrigin}/>}
+     {storeTab==='Agendamento'&&<ScheduleSettings key={store.id} client={client} storeId={store.id}/>}
+    </>}
    </section>}
   </main>
  </div>;
