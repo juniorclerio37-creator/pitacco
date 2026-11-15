@@ -2,3 +2,6 @@ project_id = "pitacco"
 
 [functions.asaas-subscription-webhook]
 verify_jwt = false
+
+[functions.asaas-homologation]
+verify_jwt = false

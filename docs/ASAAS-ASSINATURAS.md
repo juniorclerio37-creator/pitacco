@@ -14,3 +14,9 @@ A função `asaas-subscription-webhook` recebe `PAYMENT_CONFIRMED` e `PAYMENT_RE
 A criação da assinatura recorrente e a revisão de estornos e chargebacks ainda exigem os fluxos correspondentes do provedor. A função registra somente a confirmação consultada no Asaas e aceita somente assinaturas previamente vinculadas.
 
 [Eventos de cobrança](https://docs.asaas.com/docs/webhook-para-cobrancas) · [Autenticação do webhook](https://docs.asaas.com/docs/receba-eventos-do-asaas-no-seu-endpoint-de-webhook) · [Consulta de cobrança](https://docs.asaas.com/reference/retrieve-a-single-payment)
+
+## Consultar uma cobrança no Pitacco Admin
+
+Publique a função `asaas-homologation` no Supabase e configure `ASAAS_SANDBOX_API_KEY` com a credencial exclusiva do sandbox. Para um endereço separado de homologação, configure `PITACCO_HOMOLOGATION_ORIGIN` com a origem HTTPS desse painel. Essa configuração é independente da chave do webhook.
+
+Em **Pitacco Admin → Homologação**, selecione a loja de teste e consulte o ID da cobrança no campo Asaas Sandbox. O resultado informa separadamente a confirmação no provedor e o registro no Pitacco. Salve a conclusão no histórico da área.
