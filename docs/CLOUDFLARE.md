@@ -29,4 +29,6 @@ O domínio reservado para o proprietário é `https://admin.pitacco.com.br`. O b
 
 A migração `pitacco_owner_and_features` vincula o único administrador confirmado à conta proprietária. Caso existam múltiplos candidatos ou nenhum candidato confirmado, o painel aguarda a vinculação explícita por um operador autorizado do Supabase. O acesso do proprietário é validado pelo banco.
 
+Antes de publicar o Worker, confirme as migrações no Supabase, incluindo `pitacco_platform_owner_access`. Valide o login com a conta proprietária e com uma conta gestora em homologação. Se a função exclusiva do proprietário estiver ausente, o painel bloqueia a sessão e apresenta a mensagem de verificação indisponível.
+
 Os módulos configurados em **Módulos do lojista** são exibidos no painel web conforme o padrão global ou a regra da loja. Ocultar o módulo preserva seus dados, automações e APIs operacionais. Novas funcionalidades exigem implementação e publicação.
