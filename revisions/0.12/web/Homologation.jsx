@@ -86,12 +86,12 @@ export default function Homologation({client,stores}){
  return <section aria-label="Homologação do Pitacco">
   <div className="panel">
    <h3>Estabelecimento de teste</h3>
-   <label>Loja <select value={store} disabled={!!busy} onChange={event=>{
+   <label htmlFor="homologation-store">Loja</label><select id="homologation-store" value={store} disabled={!!busy} onChange={event=>{
     setStore(event.target.value);setProbe(null);setAsaas(null);setError('');setNotice('');
    }}>
     <option value="">Sem loja vinculada ao teste</option>
     {stores.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}
-   </select></label>
+   </select>
    <div className="dispatch-actions">
     <button type="button" className="secondary" disabled={!store||!!busy} onClick={verifyStore}>
      {busy==='probe'?'Verificando…':'Verificar configuração da loja'}
