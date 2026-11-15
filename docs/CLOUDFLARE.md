@@ -16,3 +16,9 @@ O `wrangler.jsonc` publica os arquivos estáticos de `web/dist` e usa fallback S
 O processo executa restauração do código, instalação com lockfile e `npm run build`. Se o build falhar, examine o log antes de publicar; a execução no Cloudflare ainda precisa ser validada. O deploy do painel não publica automaticamente o backend, o instalador Windows, nem aprova a integração Meta.
 
 Depois do primeiro deploy bem-sucedido, associe `pitacco.com.br` em Settings > Domains e ajuste DNS conforme instruções da Cloudflare. Confirme HTTPS, rotas de SPA, login e permissões antes de liberar para clientes.
+
+## Build separado de homologação
+
+Com a URL e a chave pública de um Supabase de teste, preencha as variáveis `PITACCO_HOMOLOG_SUPABASE_URL` e `PITACCO_HOMOLOG_SUPABASE_KEY` e execute `bash scripts/build-cloudflare.sh --homologacao`.
+
+A saída fica em `web/dist-homologacao`. O painel em `/app/`, o cardápio, o checkout, o cadastro e o acompanhamento usam o ambiente de teste. A faixa de homologação aparece nas páginas. Para hospedar esse build, aponte exclusivamente o projeto de teste para `web/dist-homologacao` e preserve o projeto dos domínios oficiais em `web/dist`. Configure o endereço de teste como URL de retorno no Supabase Auth e como origem do diagnóstico Asaas, se aplicável.
