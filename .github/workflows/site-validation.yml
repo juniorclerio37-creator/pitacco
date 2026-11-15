@@ -31,6 +31,35 @@ on:
       - '.github/workflows/site-validation.yml'
   workflow_dispatch:
 jobs:
+  postgres:
+    name: Validar migrações no PostgreSQL 17
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: isolated-ci-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:isolated-ci-password@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: python3 -X utf8 revisions/0.12/restore.py
+      - run: npm ci --prefix web/tests/backend
+      - run: npm install --prefix web/tests/backend --no-save --package-lock=false pg@8.16.3
+      - run: node web/tests/backend/run.mjs
+      - run: node web/tests/backend/concurrency.mjs
+
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
