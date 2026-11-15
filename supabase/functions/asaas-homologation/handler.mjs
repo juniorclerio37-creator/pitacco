@@ -1,12 +1,12 @@
 const idPattern = /^pay_[A-Za-z0-9_-]{1,100}$/;
 const storePattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
-const origins = ['https://app.pitacco.com.br', 'https://pitacco.com.br', 'https://www.pitacco.com.br'];
+const adminOrigin = 'https://admin.pitacco.com.br';
 
 export function createAsaasHomologation({ supabaseUrl, publicKey, sandboxKey, additionalOrigin, fetcher = fetch }) {
   return async request => {
     const origin = request.headers.get('origin');
     const headers = { 'cache-control': 'no-store', vary: 'Origin' };
-    const allowedOrigin = origin && (origins.includes(origin) || origin === additionalOrigin);
+    const allowedOrigin = origin && (origin === adminOrigin || origin === additionalOrigin);
     if (allowedOrigin) {
       headers['access-control-allow-origin'] = origin;
       headers['access-control-allow-headers'] = 'authorization, apikey, content-type, x-client-info, x-supabase-api-version';

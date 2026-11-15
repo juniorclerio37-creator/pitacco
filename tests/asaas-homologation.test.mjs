@@ -5,7 +5,7 @@ import {createAsaasHomologation} from '../supabase/functions/asaas-homologation/
 const store='20000000-0000-0000-0000-000000000001';
 const config={supabaseUrl:'https://pitacco-fixture.supabase.invalid',publicKey:'public-test',sandboxKey:'sandbox-test'};
 const payment='pay_test';
-const call=({origin='https://app.pitacco.com.br',token='Bearer fixture',payment_id=payment}={})=>new Request('https://test.example.invalid/function',{
+const call=({origin='https://admin.pitacco.com.br',token='Bearer fixture',payment_id=payment}={})=>new Request('https://test.example.invalid/function',{
  method:'POST',headers:{origin,authorization:token},body:JSON.stringify({store_id:store,payment_id})
 });
 
@@ -18,7 +18,7 @@ test('only the authorized platform admin can cause a sandbox request',async()=>{
  }});
  assert.equal((await check(call())).status,403);
  assert.equal((await check(call({token:''}))).status,401);
- assert.equal((await check(call({origin:'https://other.example.invalid'}))).status,403);
+ assert.equal((await check(call({origin:'https://app.pitacco.com.br'}))).status,403);
  assert.deepEqual(requests,[config.supabaseUrl+'/rest/v1/rpc/pitacco_admin_homologation_probe']);
 });
 

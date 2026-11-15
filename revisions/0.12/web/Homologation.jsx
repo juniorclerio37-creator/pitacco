@@ -18,7 +18,7 @@ const asaases={
 };
 const date=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'});
 
-export default function Homologation({client,stores}){
+export default function Homologation({client,stores,storefrontOrigin}){
  const [store,setStore]=useState(''),[scope,setScope]=useState('asaas'),[status,setStatus]=useState('pending');
  const [history,setHistory]=useState(null),[historyError,setHistoryError]=useState('');
  const [probe,setProbe]=useState(null),[asaas,setAsaas]=useState(null),[busy,setBusy]=useState('');
@@ -99,7 +99,7 @@ export default function Homologation({client,stores}){
    </div>
    {probe&&<ul aria-label="Configuração da loja">
     <li>{probe.menu_has_checkout?'O cardápio tem atendimento e pagamento configurados.':'Cardápio e checkout precisam de configuração.'}
-     {probe.menu_slug&&<> <a href={'/cardapio/?loja='+encodeURIComponent(probe.menu_slug)} target="_blank" rel="noopener noreferrer">Abrir cardápio</a></>}
+     {probe.menu_slug&&storefrontOrigin&&<> <a href={storefrontOrigin+'/cardapio/?loja='+encodeURIComponent(probe.menu_slug)} target="_blank" rel="noopener noreferrer">Abrir cardápio</a></>}
     </li>
     <li>{probe.has_active_products?'A loja possui produtos ativos.':'A loja ainda precisa de produtos ativos.'}</li>
     <li>{probe.sandbox_store_linked?'Loja vinculada a uma assinatura no Asaas Sandbox.':'Vínculo com assinatura de sandbox pendente.'}</li>

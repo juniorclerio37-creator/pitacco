@@ -6,7 +6,7 @@ if(process.env.DATABASE_URL){const {Client}=await import('pg');const pg=new Clie
 await db.exec(`
 create role anon; create role authenticated; create role service_role bypassrls;
 create schema auth; create schema storage;
-create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}');
+create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}',email_confirmed_at timestamptz);
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
 grant usage on schema public,auth,storage to anon,authenticated,service_role;
 grant execute on function auth.uid() to anon,authenticated,service_role;
@@ -40,7 +40,7 @@ for (const file of (await fs.readdir(migrationsDirectory)).filter(name=>name.end
  await db.exec(await fs.readFile(new URL(file,migrationsDirectory),'utf8'));
  console.log('PASS production compatibility migration',file);
 }
-for (const file of ['checkout-variants.test.sql','store-trial.test.sql','inventory.test.sql','order-decisions.test.sql','financial-report.test.sql','scheduled-orders.test.sql','operational-alerts.test.sql','subscription-entitlement.test.sql','asaas-subscription.test.sql','delivery-tracking.test.sql','marketplace-settlements.test.sql','admin-homologation.test.sql']) {
+for (const file of ['checkout-variants.test.sql','store-trial.test.sql','inventory.test.sql','order-decisions.test.sql','financial-report.test.sql','scheduled-orders.test.sql','operational-alerts.test.sql','subscription-entitlement.test.sql','asaas-subscription.test.sql','delivery-tracking.test.sql','marketplace-settlements.test.sql','admin-homologation.test.sql','platform-owner.test.sql']) {
  try {
   await db.exec(await fs.readFile(new URL(file,fixtureDirectory),'utf8'));
  } catch (error) {

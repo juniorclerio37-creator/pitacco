@@ -5,6 +5,8 @@ on:
     paths:
       - 'marketing/**'
       - 'scripts/build-cloudflare.sh'
+      - 'scripts/build-admin-cloudflare.sh'
+      - 'wrangler.admin.jsonc'
       - 'scripts/homologation-site.mjs'
       - 'revisions/0.12/**'
       - 'web/**'
@@ -17,6 +19,8 @@ on:
     paths:
       - 'marketing/**'
       - 'scripts/build-cloudflare.sh'
+      - 'scripts/build-admin-cloudflare.sh'
+      - 'wrangler.admin.jsonc'
       - 'scripts/homologation-site.mjs'
       - 'revisions/0.12/**'
       - 'web/**'
@@ -53,7 +57,14 @@ jobs:
       - name: Testar regressões do checkout público
         run: node --test tests/*.test.mjs
       - name: Construir site Cloudflare
-        run: bash scripts/build-cloudflare.sh
+        run: |
+          bash scripts/build-cloudflare.sh
+          bash scripts/build-admin-cloudflare.sh
+          test -s web/dist-admin/index.html
+          if rg -q 'pitacco_admin_homologation_results|pitacco_owner_set_feature' web/dist/assets; then
+            echo "O painel dos lojistas contém o código do proprietário." >&2
+            exit 1
+          fi
       - name: Testar regras do painel e migrações em banco isolado
         run: |
           npm test --prefix web

@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pitacco-admin",
+  "compatibility_date": "2026-11-14",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{"pattern": "admin.pitacco.com.br", "custom_domain": true}],
+  "assets": {"directory": "./web/dist-admin", "not_found_handling": "single-page-application"}
+}
