@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.asaas-homologation]
 verify_jwt = false
+
+[functions.platform-owner-login]
+verify_jwt = false

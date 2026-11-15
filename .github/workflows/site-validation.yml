@@ -90,7 +90,7 @@ jobs:
           bash scripts/build-cloudflare.sh
           bash scripts/build-admin-cloudflare.sh
           test -s web/dist-admin/index.html
-          if grep -rqE 'pitacco_is_platform_owner|pitacco_admin_homologation_results|pitacco_owner_set_feature' web/dist/assets; then
+          if grep -rqE 'platform-owner-login|pitacco_is_platform_owner|pitacco_admin_homologation_results|pitacco_owner_set_feature' web/dist/assets; then
             echo "O painel dos lojistas contém o código do proprietário." >&2
             exit 1
           fi
