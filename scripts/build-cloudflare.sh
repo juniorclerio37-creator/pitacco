@@ -1,27 +1,47 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+dist_dir=web/dist
+export VITE_PITACCO_HOMOLOGACAO=0
+if [[ "${1:-}" == "--homologacao" && "$#" == 1 ]]; then
+  dist_dir=web/dist-homologacao
+  export VITE_PITACCO_HOMOLOGACAO=1
+  export VITE_SUPABASE_URL="${PITACCO_HOMOLOG_SUPABASE_URL:-}"
+  export VITE_SUPABASE_ANON_KEY="${PITACCO_HOMOLOG_SUPABASE_KEY:-}"
+elif [[ "$#" != 0 ]]; then
+  echo "Uso: bash scripts/build-cloudflare.sh [--homologacao]" >&2
+  exit 1
+fi
+
 python3 -X utf8 revisions/0.12/restore.py
+if [[ "$VITE_PITACCO_HOMOLOGACAO" == 1 ]]; then
+  node scripts/homologation-site.mjs
+fi
 cd web
 npm ci
-npm run build
+npm run build -- --outDir "${dist_dir#web/}"
 cd ..
-mkdir -p web/dist/app web/dist/cadastro web/dist/privacidade web/dist/termos web/dist/sistema web/dist/configuracao web/dist/produtos web/dist/complementos web/dist/cardapio web/dist/pedidos web/dist/aceite web/dist/acompanhar web/dist/identidade
-cp web/dist/index.html web/dist/app/index.html
-cp marketing/index.html web/dist/index.html
-cp marketing/cadastro.html web/dist/cadastro/index.html
-cp marketing/privacidade.html web/dist/privacidade/index.html
-cp marketing/termos.html web/dist/termos/index.html
-cp marketing/sistema.html web/dist/sistema/index.html
-cp marketing/configuracao.html web/dist/configuracao/index.html
-cp marketing/produtos.html web/dist/produtos/index.html
-cp marketing/complementos.html web/dist/complementos/index.html
-cp marketing/cardapio.html web/dist/cardapio/index.html
-cp marketing/pedidos.html web/dist/pedidos/index.html
-cp marketing/aceite.html web/dist/aceite/index.html
-cp marketing/acompanhar.html web/dist/acompanhar/index.html
-cp marketing/identidade.html web/dist/identidade/index.html
-cp marketing/sw.js web/dist/sw.js
+mkdir -p "$dist_dir"/app "$dist_dir"/cadastro "$dist_dir"/privacidade "$dist_dir"/termos "$dist_dir"/sistema "$dist_dir"/configuracao "$dist_dir"/produtos "$dist_dir"/complementos "$dist_dir"/cardapio "$dist_dir"/pedidos "$dist_dir"/aceite "$dist_dir"/acompanhar "$dist_dir"/identidade
+cp "$dist_dir"/index.html "$dist_dir"/app/index.html
+cp marketing/index.html "$dist_dir"/index.html
+cp marketing/cadastro.html "$dist_dir"/cadastro/index.html
+cp marketing/privacidade.html "$dist_dir"/privacidade/index.html
+cp marketing/termos.html "$dist_dir"/termos/index.html
+cp marketing/sistema.html "$dist_dir"/sistema/index.html
+cp marketing/configuracao.html "$dist_dir"/configuracao/index.html
+cp marketing/produtos.html "$dist_dir"/produtos/index.html
+cp marketing/complementos.html "$dist_dir"/complementos/index.html
+cp marketing/cardapio.html "$dist_dir"/cardapio/index.html
+cp marketing/pedidos.html "$dist_dir"/pedidos/index.html
+cp marketing/aceite.html "$dist_dir"/aceite/index.html
+cp marketing/acompanhar.html "$dist_dir"/acompanhar/index.html
+cp marketing/identidade.html "$dist_dir"/identidade/index.html
+cp marketing/sw.js "$dist_dir"/sw.js
+
+if [[ "$VITE_PITACCO_HOMOLOGACAO" == 1 ]]; then
+  node scripts/homologation-site.mjs apply
+  exit 0
+fi
 
 # Existing Cloudflare Worker serves the same asset bundle for all three domains.
 # Route the app subdomain to the already-built React dashboard at /app/,

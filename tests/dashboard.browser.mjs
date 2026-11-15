@@ -12,6 +12,8 @@ try {
   for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
+    let adminMode=false;
+    const evidence=[];
     const ingredients = [];
     const movements = [];
     const settlements=[];
@@ -48,11 +50,30 @@ try {
         'access-control-allow-methods': 'GET,POST,OPTIONS'
       };
       if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
+      if(pathname==='/rest/v1/rpc/pitacco_admin_homologation_results')return route.fulfill({headers,json:evidence});
+      if(pathname==='/rest/v1/rpc/pitacco_admin_homologation_probe'){
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:{menu_slug:'loja-teste',menu_has_checkout:true,has_active_products:true,sandbox_store_linked:true}});
+      }
+      if(pathname==='/functions/v1/asaas-homologation'){
+        assert.deepEqual(route.request().postDataJSON(),{store_id:store.id,payment_id:'pay_test'});
+        return route.fulfill({headers,json:{outcome:'checked',confirmed:true,plan_amount:true,sandbox_enabled:true,linked:true,recorded:false}});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_admin_record_homologation'){
+        assert.ok(adminMode);
+        const input=route.request().postDataJSON();
+        assert.equal(input.p_store,store.id);
+        assert.equal(input.p_scope,'asaas');
+        assert.equal(input.p_outcome,'pending');
+        assert.ok(input.p_request);
+        evidence.unshift({id:901,store_name:store.name,scope:input.p_scope,outcome:input.p_outcome,notes:input.p_notes,recorded_at:new Date().toISOString()});
+        return route.fulfill({headers,json:901});
+      }
       if (pathname === '/auth/v1/signup') return route.fulfill({ headers, json: { user: { ...user, identities: [] }, session: null } });
       if (pathname === '/auth/v1/token') {
         return route.fulfill({ headers, json: { user, access_token:'fixture-access', refresh_token:'fixture-refresh', token_type:'bearer', expires_in:3600 } });
       }
-      if (pathname === '/rest/v1/profiles') return route.fulfill({ headers, json: { ...user, role:'gestor' } });
+      if (pathname === '/rest/v1/profiles') return route.fulfill({ headers, json: { ...user, role:adminMode?'admin':'gestor' } });
       if (pathname === '/rest/v1/orders') {
         const filter = new URL(route.request().url()).searchParams.get('status');
         const orders = [pendingOrder, appointment].filter(order=>!filter||filter.includes(order.status));
@@ -237,6 +258,23 @@ try {
     await billing.getByText('Vencida',{exact:true}).waitFor();
     await billing.getByRole('alert').filter({hasText:'Novos pedidos bloqueados'}).waitFor();
     assert.equal(await billing.getByRole('link',{name:'Regularizar assinatura'}).getAttribute('href'),'https://billing.example.invalid/');
+    assert.equal(await page.getByRole('button',{name:'Homologação',exact:true}).count(),0);
+    adminMode=true;
+    await page.reload();
+    const platform=page.getByRole('navigation',{name:'Administração geral'});
+    await platform.getByRole('button',{name:'Homologação',exact:true}).click();
+    const homologation=page.getByRole('region',{name:'Homologação do Pitacco'});
+    await homologation.getByLabel('Loja',{exact:true}).selectOption(store.id);
+    await homologation.getByRole('button',{name:'Verificar configuração da loja'}).click();
+    await homologation.getByRole('link',{name:'Abrir cardápio'}).waitFor();
+    await homologation.getByLabel('ID da cobrança de teste').fill('pay_test');
+    await homologation.getByRole('button',{name:'Consultar cobrança de teste'}).click();
+    await homologation.getByText('Pagamento confirmado pelo Asaas.').waitFor();
+    await homologation.getByText('Registro da confirmação no Pitacco pendente.').waitFor();
+    await homologation.getByLabel('Observação').fill('Asaas conferido. Aguardando confirmação do webhook.');
+    await homologation.getByRole('button',{name:'Salvar resultado'}).click();
+    await homologation.getByText('Resultado registrado no histórico.').waitFor();
+    await homologation.getByText('Asaas conferido. Aguardando confirmação do webhook.').waitFor();
     assert.deepEqual(errors, []);
     await page.close();
     console.log(`PASS dashboard authentication, navigation, inventory, pending order decisions and reports at ${width}px`);

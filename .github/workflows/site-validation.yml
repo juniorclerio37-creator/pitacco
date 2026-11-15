@@ -5,6 +5,7 @@ on:
     paths:
       - 'marketing/**'
       - 'scripts/build-cloudflare.sh'
+      - 'scripts/homologation-site.mjs'
       - 'revisions/0.12/**'
       - 'web/**'
       - 'tests/**'
@@ -16,6 +17,7 @@ on:
     paths:
       - 'marketing/**'
       - 'scripts/build-cloudflare.sh'
+      - 'scripts/homologation-site.mjs'
       - 'revisions/0.12/**'
       - 'web/**'
       - 'tests/**'
@@ -71,3 +73,19 @@ jobs:
           test -s web/dist/identidade/index.html
           test -s web/dist/configuracao/index.html
           test -s web/dist/sw.js
+
+      - name: Construir homologação isolada dos domínios oficiais
+        run: |
+          if VITE_SUPABASE_URL=https://mdevzehqcpcgxspwbiyz.supabase.co \
+             VITE_SUPABASE_ANON_KEY=sb_publishable_fixture_only_123456 node scripts/homologation-site.mjs; then
+            echo "O build de homologação aceitou o banco de produção." >&2
+            exit 1
+          fi
+          sha256sum web/dist/index.html > /tmp/pitacco-production-build.sha256
+          PITACCO_HOMOLOG_SUPABASE_URL=https://pitacco-fixture.supabase.co \
+            PITACCO_HOMOLOG_SUPABASE_KEY=sb_publishable_fixture_only_123456 \
+            bash scripts/build-cloudflare.sh --homologacao
+          sha256sum -c /tmp/pitacco-production-build.sha256
+          test -s web/dist-homologacao/app/index.html
+          test -s web/dist-homologacao/cardapio/index.html
+          test -s web/dist-homologacao/acompanhar/index.html
