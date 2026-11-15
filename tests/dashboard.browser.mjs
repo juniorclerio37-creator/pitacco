@@ -16,6 +16,10 @@ try {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
     let adminMode=false,moduleEnabled=true;
+    const catalog=[];
+    const productId='70000000-0000-0000-0000-000000000001';
+    const menuSettings={slug:'loja-teste',enabled:false,delivery_enabled:true,pickup_enabled:false,delivery_fee:5,
+      payment_methods:['dinheiro'],pix_instructions:'',preparation_minutes:30};
     const evidence=[];
     const ingredients = [];
     const movements = [];
@@ -58,6 +62,33 @@ try {
         'access-control-allow-methods': 'GET,POST,OPTIONS'
       };
       if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
+      if(pathname==='/rest/v1/rpc/pitacco_list_products'){
+        assert.equal(route.request().postDataJSON().p_store_id,store.id);
+        return route.fulfill({headers,json:catalog});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_save_product'){
+        assert.ok(adminMode);
+        const input=route.request().postDataJSON();
+        assert.deepEqual(input,{p_store_id:store.id,p_product_id:null,p_name:'Açaí 500 ml',p_category:'Açaí',
+          p_description:'',p_price:16.5,p_cost:0,p_menu_active:true});
+        catalog.push({id:productId,name:input.p_name,category:input.p_category,description:'',
+          price:input.p_price,cost:input.p_cost,menu_active:input.p_menu_active});
+        return route.fulfill({headers,json:productId});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_owner_menu_settings'){
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:menuSettings});
+      }
+      if(pathname==='/rest/v1/rpc/save_public_menu_settings'){
+        const input=route.request().postDataJSON();
+        assert.equal(input.p_store,store.id);
+        assert.equal(input.p_delivery_fee,7.50);
+        return route.fulfill({headers,json:null});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_save_preparation_minutes'){
+        assert.deepEqual(route.request().postDataJSON(),{p_store:store.id,p_minutes:45});
+        return route.fulfill({headers,json:45});
+      }
       if(pathname==='/rest/v1/rpc/is_admin')return route.fulfill({headers,json:adminMode});
       if(pathname==='/rest/v1/rpc/pitacco_store_features'){
         const flags=Object.fromEntries(keys.map(key=>[key,key!=='estoque'||moduleEnabled]));
@@ -307,6 +338,32 @@ try {
     await homologation.getByRole('button',{name:'Salvar resultado'}).click();
     await homologation.getByText('Resultado registrado no histórico.').waitFor();
     await homologation.getByText('Asaas conferido. Aguardando confirmação do webhook.').waitFor();
+    await platform.getByRole('button',{name:'Estabelecimentos',exact:true}).click();
+    const storeTabs=page.getByRole('navigation',{name:'Seções do estabelecimento'});
+    await storeTabs.getByRole('button',{name:'Catálogo',exact:true}).click();
+    const productCatalog=page.getByRole('region',{name:'Catálogo do estabelecimento'});
+    await productCatalog.getByRole('button',{name:'Novo produto',exact:true}).click();
+    const editor=productCatalog.getByRole('form',{name:'Editar produto'});
+    await editor.getByLabel('Nome do produto').fill('Açaí 500 ml');
+    await editor.getByLabel('Categoria').fill('Açaí');
+    await editor.getByLabel('Preço',{exact:true}).fill('16.50');
+    await editor.getByRole('checkbox',{name:'Publicar no cardápio'}).check();
+    await editor.getByRole('button',{name:'Salvar produto'}).click();
+    await productCatalog.getByText('Produto salvo.').waitFor();
+    await productCatalog.getByRole('button',{name:'Editar Açaí 500 ml'}).waitFor();
+    await storeTabs.getByRole('button',{name:'Checkout',exact:true}).click();
+    const checkout=page.getByRole('region',{name:'Checkout do estabelecimento'});
+    await checkout.getByLabel('Taxa de entrega').fill('7.50');
+    await checkout.getByRole('button',{name:'Salvar checkout',exact:true}).click();
+    await checkout.getByText('Configuração do checkout salva.').waitFor();
+    await checkout.getByLabel('Tempo de preparo em minutos').fill('45');
+    await checkout.getByRole('button',{name:'Salvar tempo de preparo',exact:true}).click();
+    await checkout.getByText('Tempo de preparo salvo.').waitFor();
+    await storeTabs.getByRole('button',{name:'Agendamento',exact:true}).click();
+    const adminSchedule=page.getByRole('region',{name:'Horários de agendamento'});
+    await adminSchedule.getByRole('group',{name:'Segunda-feira',exact:true}).getByRole('checkbox').check();
+    await adminSchedule.getByRole('button',{name:'Salvar horários',exact:true}).click();
+    await adminSchedule.getByText('Horários de agendamento salvos.').waitFor();
     await platform.getByRole('button',{name:'Módulos do lojista',exact:true}).click();
     const modules=page.getByRole('region',{name:'Módulos do painel do lojista'});
     await modules.getByLabel('Aplicar a').selectOption(store.id);

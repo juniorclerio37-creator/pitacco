@@ -1,9 +1,9 @@
 create table public.product_option_groups (
- id uuid primary key, store_id uuid not null, product_id uuid not null,
+ id uuid primary key default gen_random_uuid(), store_id uuid not null, product_id uuid not null,
  name text not null, min_select integer not null, max_select integer not null, sort_order integer not null default 0
 );
 create table public.product_options (
- id uuid primary key, group_id uuid not null, store_id uuid not null,
+ id uuid primary key default gen_random_uuid(), group_id uuid not null, store_id uuid not null,
  name text not null, additional_price numeric not null, available boolean not null default true, sort_order integer not null default 0
 );
 create table public.store_customer_branding (store_id uuid primary key, logo_url text, primary_color text);
