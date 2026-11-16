@@ -28,7 +28,7 @@ try {
     const merchantGroup={id:'70000000-0000-0000-0000-000000000003',name:'Frutas',min:0,max:1,options:[]};
     const menuSettings={slug:'loja-teste',enabled:false,delivery_enabled:true,pickup_enabled:false,delivery_fee:5,
       payment_methods:['dinheiro'],pix_instructions:'',preparation_minutes:30};
-    const evidence=[];
+    const evidence=[],food99Evidence=[];
     const ingredients = [];
     const movements = [];
     const settlements=[];
@@ -246,10 +246,22 @@ try {
         assert.deepEqual(route.request().postDataJSON(),{store_id:store.id,payment_id:'pay_test'});
         return route.fulfill({headers,json:{outcome:'checked',confirmed:true,plan_amount:true,sandbox_enabled:true,linked:true,recorded:false}});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_owner_99food_homologation'){
+        assert.ok(adminMode);
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        const stages=Object.fromEntries(food99Evidence.map(item=>[item.scope,item.outcome]));
+        return route.fulfill({headers,json:{stages,history:food99Evidence}});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_admin_record_homologation'){
         assert.ok(adminMode);
         const input=route.request().postDataJSON();
         assert.equal(input.p_store,store.id);
+        if(input.p_scope==='99food_entrega_propria'){
+          assert.equal(input.p_outcome,'approved');
+          assert.ok(input.p_request);
+          food99Evidence.push({id:902,scope:input.p_scope,outcome:input.p_outcome,notes:input.p_notes,recorded_at:new Date().toISOString()});
+          return route.fulfill({headers,json:902});
+        }
         assert.equal(input.p_scope,'asaas');
         assert.equal(input.p_outcome,'pending');
         assert.ok(input.p_request);
@@ -601,6 +613,16 @@ try {
       assert.match((await download).suggestedFilename(),/^pitacco-financeiro-.*\.csv$/);
     }
     await adminNavigate('Homologação');
+    const food99=page.getByRole('region',{name:'Homologação 99Food',exact:true});
+    await food99.getByRole('link',{name:'Abrir Portal de Desenvolvedores da 99Food'}).waitFor();
+    await food99.getByLabel('Loja Pitacco para o teste',{exact:true}).selectOption(store.id);
+    await food99.getByLabel('Etapa',{exact:true}).selectOption('99food_entrega_propria');
+    await food99.getByLabel('Resultado do teste',{exact:true}).selectOption('approved');
+    await food99.getByLabel('Evidência do teste',{exact:true}).fill('Pedido de teste atribuído a motoboy próprio');
+    await food99.getByRole('button',{name:'Registrar teste',exact:true}).click();
+    await food99.getByText('Teste da 99Food registrado.',{exact:true}).waitFor();
+    await food99.getByText('Pedido de teste atribuído a motoboy próprio',{exact:true}).waitFor();
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     const homologation=page.getByRole('region',{name:'Homologação do Pitacco'});
     await homologation.getByLabel('Loja',{exact:true}).selectOption(store.id);
     await homologation.getByRole('button',{name:'Verificar configuração da loja'}).click();
