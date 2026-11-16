@@ -112,3 +112,5 @@ subprocess.run([sys.executable,'revisions/0.12/mobile_orange_nav_053.py'],check=
 subprocess.run([sys.executable,'revisions/0.12/separate_public_portals.py'],check=True)
 
 subprocess.run([sys.executable,'revisions/0.12/merchant_reference_layout.py'],check=True)
+
+subprocess.run([sys.executable,'revisions/0.12/mount_storefront_settings.py'],check=True)

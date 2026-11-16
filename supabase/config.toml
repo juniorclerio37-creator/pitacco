@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.platform-owner-login]
 verify_jwt = false
+
+[functions.payment-homologation]
+verify_jwt = false

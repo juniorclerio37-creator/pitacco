@@ -1,4 +1,5 @@
 import React,{useEffect,useState} from 'react';
+import {storefrontLink} from './storefrontLink.mjs';
 
 const payments={dinheiro:'Dinheiro',cartao_entrega:'Cartão na entrega',pix_manual:'Pix manual'};
 const defaults={slug:'',enabled:false,delivery_enabled:true,pickup_enabled:false,delivery_fee:0,payment_methods:['dinheiro'],pix_instructions:'',preparation_minutes:30};
@@ -40,7 +41,7 @@ export default function OwnerMenuSettings({client,storeId,storefrontOrigin}){
   {settings&&<>
    <form onSubmit={save}>
     <label>Endereço do cardápio <input required minLength={3} maxLength={60} value={settings.slug} onChange={event=>change('slug',event.target.value)}/></label>
-    {exists&&storefrontOrigin&&settings.slug&&<a href={storefrontOrigin+'/cardapio/?loja='+encodeURIComponent(settings.slug)} target="_blank" rel="noopener noreferrer">Abrir cardápio</a>}
+    {exists&&storefrontOrigin&&settings.slug&&<a href={storefrontLink(settings.slug,storefrontOrigin)} target="_blank" rel="noopener noreferrer">Abrir cardápio</a>}
     <label><input type="checkbox" checked={settings.enabled} onChange={event=>change('enabled',event.target.checked)}/> Cardápio publicado</label>
     <label><input type="checkbox" checked={settings.delivery_enabled} onChange={event=>change('delivery_enabled',event.target.checked)}/> Aceitar entrega</label>
     <label><input type="checkbox" checked={settings.pickup_enabled} onChange={event=>change('pickup_enabled',event.target.checked)}/> Aceitar retirada</label>

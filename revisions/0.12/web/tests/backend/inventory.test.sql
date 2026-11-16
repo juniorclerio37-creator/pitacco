@@ -11,7 +11,8 @@ insert into public.store_members values
  ('20000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','gestor'),
  ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000003','lojista');
 insert into public.public_menu_settings(store_id,slug,enabled,delivery_enabled,pickup_enabled,delivery_fee,payment_methods,pix_instructions)
- values ('20000000-0000-0000-0000-000000000001','inventory-test',true,true,true,0,array['pix_manual'],'');
+ values ('20000000-0000-0000-0000-000000000001','inventory-test',true,true,true,0,array['pix_manual'],'')
+on conflict (store_id) do update set slug=excluded.slug, enabled=excluded.enabled, delivery_enabled=excluded.delivery_enabled, pickup_enabled=excluded.pickup_enabled, delivery_fee=excluded.delivery_fee, payment_methods=excluded.payment_methods, pix_instructions=excluded.pix_instructions;
 insert into public.products(id,store_id,name,price,cost,menu_active) values
  ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','Açaí',20,0,true),
  ('30000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002','Outro Açaí',20,0,true);

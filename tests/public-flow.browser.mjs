@@ -5,6 +5,7 @@ import { chromium } from '../web/node_modules/playwright/index.mjs';
 const [menuPage, trackingPage] = await Promise.all(
   ['cardapio', 'acompanhar'].map(name => readFile(new URL(`../marketing/${name}.html`, import.meta.url), 'utf8'))
 );
+const deliveryMapScript = await readFile(new URL('../revisions/0.12/web/deliveryMap.mjs',import.meta.url),'utf8');
 const browser = await chromium.launch({ executablePath: process.env.PITACCO_CHROMIUM });
 const origin = 'http://localhost:4179';
 const orderId = '10000000-0000-0000-0000-000000000001';
@@ -19,6 +20,8 @@ try {
       1440: { status: 'accepted', preparation_status: 'completed', fulfillment: 'pickup', label: 'Retirado' }
     }[width];
     const scheduled = width === 768 ? '2026-11-17T21:00:00Z' : null;
+    const area = scheduled?{latitude:-22.7,longitude:-43.4,radius_m:3000}:null;
+    if(area){await page.context().grantPermissions(['geolocation']);await page.context().setGeolocation({latitude:-22.71,longitude:-43.4});}
     let polls=0;
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -27,8 +30,11 @@ try {
     const responseGate = new Promise(resolve => { releaseResponse = resolve; });
     await page.route('**/*', async route => {
       const { pathname, origin: routeOrigin } = new URL(route.request().url());
-      if (routeOrigin === origin && pathname === '/cardapio/') {
+      if (routeOrigin === origin && ['/cardapio/', '/loja-teste'].includes(pathname)) {
         return route.fulfill({ contentType: 'text/html', body: menuPage });
+      }
+      if (routeOrigin === origin && pathname === '/assets/delivery-map.mjs') {
+        return route.fulfill({contentType:'text/javascript',body:deliveryMapScript});
       }
       if (routeOrigin === origin && pathname === '/acompanhar/') {
         return route.fulfill({ contentType: 'text/html', body: trackingPage });
@@ -49,8 +55,9 @@ try {
       if (routeOrigin !== origin || !pathname.startsWith('/fixture/')) return route.abort();
 
       if (pathname.endsWith('/get_public_menu')) {
+        assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
         return route.fulfill({ json: {
-          store: { name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true, delivery_fee: 5, payment_methods: ['pix_manual'] },
+          store: { name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true, delivery_fee: 5, delivery_area:area, payment_methods: ['pix_manual'] },
           products: [{ id: 'acai', name: 'Açaí', price: 20, option_groups: [{
             id: 'adicionais', name: 'Adicionais', min: 1, max: 1,
             options: [{ id: 'morango', name: 'Morango', price: 2 }, { id: 'leite', name: 'Leite em pó', price: 3 }]
@@ -61,8 +68,8 @@ try {
         assert.equal(route.request().postDataJSON().p_fulfillment,'delivery');
         return route.fulfill({json:scheduled?[scheduled]:[]});
       }
-      if (pathname.endsWith('/checkout_public_order') || pathname.endsWith('/pitacco_checkout_scheduled_order')) {
-        assert.equal(pathname.endsWith('/pitacco_checkout_scheduled_order'),Boolean(scheduled));
+      if (pathname.endsWith('/checkout_public_order') || pathname.endsWith('/pitacco_checkout_geocoded_order')) {
+        assert.equal(pathname.endsWith('/pitacco_checkout_geocoded_order'),Boolean(area));
         requests.push(route.request().postDataJSON());
         if (requests.length === 1) {
           await responseGate;
@@ -80,7 +87,7 @@ try {
       return route.abort();
     });
 
-    await page.goto(origin + '/cardapio/?loja=loja-teste');
+    await page.goto(origin + (width===375?'/cardapio/?loja=loja-teste':'/loja-teste?utm_source=qr&loja=outro'));
     await page.getByRole('heading', { name: 'Açaí' }).waitFor();
     await page.getByRole('button', { name: 'Adicionar ao pedido' }).click();
     assert.match(await page.locator('#msg').innerText(), /Confira as escolhas/);
@@ -95,6 +102,12 @@ try {
     for (const [id, value] of [['customer', 'Cliente Teste'], ['phone', '21999999999'], ['address', 'Rua Teste 123']]) {
       await page.locator('#' + id).fill(value);
     }
+    if(area){
+      await page.getByRole('button', { name: 'Confirmar pedido' }).click();
+      assert.match(await page.locator('#msg').innerText(),/Marque a localização/);
+      await page.getByRole('button',{name:'Usar minha localização'}).click();
+      await page.getByText('Localização marcada.').waitFor();
+    }
     if(scheduled)await page.getByLabel('Quando deseja receber?').selectOption(scheduled);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
     await page.getByRole('button', { name: 'Confirmar pedido' }).click();
@@ -108,6 +121,7 @@ try {
     assert.equal(requests.length, 2);
     assert.deepEqual(requests[0], requests[1]);
     assert.equal(requests[0].p_scheduled_for,scheduled||undefined);
+    if(area)assert.deepEqual([requests[0].p_latitude,requests[0].p_longitude],[-22.71,-43.4]);
     assert.deepEqual(requests[0].p_items, [
       { product_id: 'acai', quantity: 2, options: ['morango'] },
       { product_id: 'acai', quantity: 1, options: ['leite'] }
