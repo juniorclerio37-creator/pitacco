@@ -13,6 +13,7 @@ export default class WorkspaceBoundary extends React.Component {
 
  render(){
   if(!this.state.failed)return this.props.children;
+  if(this.props.hiddenOnError)return null;
   return <section className="panel" aria-label="Falha no painel">
    <p role="alert">Não foi possível abrir esta tela do painel.</p>
    <div className="quick-actions">
