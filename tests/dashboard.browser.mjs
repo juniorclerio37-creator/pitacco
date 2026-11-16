@@ -181,6 +181,18 @@ try {
         }
         return route.fulfill({headers,json:s===store.id});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_owner_commercial_plans'){
+        assert.equal(origin,realApi);
+        assert.equal(adminMode,true);
+        return route.fulfill({headers,json:[{code:'pitacco',monthly_cents:3990,sales_threshold_cents:200000,above_threshold_monthly_cents:5990}]});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_owner_monthly_plan_estimate'){
+        assert.equal(origin,realApi);
+        assert.equal(adminMode,true);
+        const {p_store,p_month}=route.request().postDataJSON();
+        assert.equal(p_store,store.id);
+        return route.fulfill({headers,json:{month:p_month,monthly_cents:5990,sales_cents:200001,channels:[{source:'ifood',sales_cents:200001}]}});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_owner_finance_report'){
         assert.equal(origin,realApi);
         assert.equal(adminMode,true);
@@ -565,6 +577,14 @@ try {
     await dark.click();
     assert.equal(await page.locator('.super-admin.pitacco-theme-dark').count(),1);
     await page.getByRole('button',{name:'Ativar modo claro'}).click();
+    await adminNavigate('Plano Pitacco');
+    const plan=page.getByRole('region',{name:'Assinatura por faturamento'});
+    const tiers=plan.getByRole('table',{name:'Faixas da assinatura'});
+    await tiers.getByRole('cell',{name:/39,90/}).waitFor();
+    await tiers.getByRole('cell',{name:/59,90/}).waitFor();
+    await plan.getByLabel('Loja',{exact:true}).selectOption(store.id);
+    await plan.getByRole('button',{name:'Calcular faixa',exact:true}).click();
+    await plan.getByRole('status').getByText(/iFood/).waitFor();
     await adminNavigate('Financeiro do Pitacco');
     const finance=page.getByRole('region',{name:'Financeiro do Pitacco'});
     const daily=finance.getByRole('table',{name:'Valores por dia'});

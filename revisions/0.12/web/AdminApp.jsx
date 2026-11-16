@@ -28,7 +28,7 @@ const storefrontOrigin=preview?(import.meta.env.VITE_PITACCO_HOMOLOG_SITE_ORIGIN
 const groups=[
  ['Visão geral',[['Painel geral',LayoutDashboard]]],
  ['Operação',[['Estabelecimentos',Store],['Pedidos',ShoppingBag],['Entregadores',Bike]]],
- ['Gestão comercial',[['Assinaturas',CreditCard],['Planos',Package],['Financeiro do Pitacco',CreditCard]]],
+ ['Gestão comercial',[['Assinaturas',CreditCard],['Plano Pitacco',Package],['Financeiro do Pitacco',CreditCard]]],
  ['Administração',[['Módulos do lojista',Package],['Homologação',ClipboardCheck]]],
  ['Sistema',[['Auditoria',ListChecks],['Atualizações',Settings]]]
 ];
@@ -161,7 +161,7 @@ function AdminApp(){
    {page==='Painel geral'&&<OwnerDashboard client={client} onStore={openStore}/>}
    {operations[page]&&<OwnerOperations key={page} client={client} stores={stores} kind={operations[page]}/>}
    {page==='Financeiro do Pitacco'&&<OwnerFinance client={client} stores={stores}/>}
-   {page==='Planos'&&<OwnerPlans client={client}/>}
+   {page==='Plano Pitacco'&&<OwnerPlans client={client} stores={stores}/>}
    {page==='Assinaturas'&&<OwnerSubscriptions client={client}/>}
    {page==='Módulos do lojista'&&<OwnerFeatures client={client} stores={stores}/>}
    {page==='Atualizações'&&<section className="panel"><h3>Atualizações do Windows</h3><a href="https://github.com/juniorclerio37-creator/pitacco/releases" target="_blank" rel="noopener noreferrer">Consultar versões publicadas</a></section>}
