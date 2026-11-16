@@ -530,6 +530,11 @@ try {
     adminMode=true;
     await adminLogin();
     const platform=page.getByRole('navigation',{name:'Administração geral'});
+    async function adminNavigate(name){
+      const toggle=page.getByRole('button',{name:'Menu administrativo'});
+      if(await toggle.getAttribute('aria-expanded')==='false')await toggle.click();
+      await platform.getByRole('button',{name,exact:true}).click();
+    }
     const platformDashboard=page.getByRole('region',{name:'Visão geral do Pitacco'});
     await platformDashboard.getByText('Entregadores cadastrados',{exact:true}).waitFor();
     await platformDashboard.getByText('Pedidos em andamento',{exact:true}).waitFor();
@@ -545,7 +550,11 @@ try {
       await platformDashboard.getByRole('button',{name:'Abrir configuração de '+store.name}).click();
       await page.getByRole('region',{name:'Configuração do estabelecimento'}).waitFor();
     }
-    await platform.getByRole('button',{name:'Homologação',exact:true}).click();
+    const dark=page.getByRole('button',{name:'Ativar modo escuro'});
+    await dark.click();
+    assert.equal(await page.locator('.super-admin.pitacco-theme-dark').count(),1);
+    await page.getByRole('button',{name:'Ativar modo claro'}).click();
+    await adminNavigate('Homologação');
     const homologation=page.getByRole('region',{name:'Homologação do Pitacco'});
     await homologation.getByLabel('Loja',{exact:true}).selectOption(store.id);
     await homologation.getByRole('button',{name:'Verificar configuração da loja'}).click();
@@ -558,7 +567,7 @@ try {
     await homologation.getByRole('button',{name:'Salvar resultado'}).click();
     await homologation.getByText('Resultado registrado no histórico.').waitFor();
     await homologation.getByText('Asaas conferido. Aguardando confirmação do webhook.').waitFor();
-    await platform.getByRole('button',{name:'Estabelecimentos',exact:true}).click();
+    await adminNavigate('Estabelecimentos');
     const storeTabs=page.getByRole('navigation',{name:'Seções do estabelecimento'});
     await storeTabs.getByRole('button',{name:'Catálogo',exact:true}).click();
     const productCatalog=page.getByRole('region',{name:'Catálogo do estabelecimento'});
@@ -584,7 +593,7 @@ try {
     await adminSchedule.getByRole('group',{name:'Segunda-feira',exact:true}).getByRole('checkbox').check();
     await adminSchedule.getByRole('button',{name:'Salvar horários',exact:true}).click();
     await adminSchedule.getByText('Horários de agendamento salvos.').waitFor();
-    await platform.getByRole('button',{name:'Módulos do lojista',exact:true}).click();
+    await adminNavigate('Módulos do lojista');
     const modules=page.getByRole('region',{name:'Módulos do painel do lojista'});
     await modules.getByLabel('Aplicar a').selectOption(store.id);
     await modules.getByLabel('Estoque',{exact:true}).selectOption('disabled');

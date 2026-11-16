@@ -1,7 +1,7 @@
 import React,{useEffect,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {createClient} from '@supabase/supabase-js';
-import {LayoutDashboard, Store, Package, CreditCard, ClipboardCheck, LogOut, Settings} from 'lucide-react';
+import {LayoutDashboard, Store, Package, CreditCard, ClipboardCheck, LogOut, Settings, ShoppingBag, Bike, ListChecks, Menu, Sun, Moon} from 'lucide-react';
 import {connectionConfig} from './config.mjs';
 import OwnerSubscriptions from './OwnerSubscriptions.jsx';
 import OwnerDashboard from './OwnerDashboard.jsx';
@@ -12,7 +12,9 @@ import StoreProfile from './StoreProfile.jsx';
 import OwnerCatalog from './OwnerCatalog.jsx';
 import OwnerMenuSettings from './OwnerMenuSettings.jsx';
 import ScheduleSettings from './ScheduleSettings.jsx';
+import OwnerOperations from './OwnerOperations.jsx';
 import './style.css';
+import './super-admin.css';
 
 const adminHost='admin.pitacco.com.br';
 const preview=import.meta.env.VITE_PITACCO_HOMOLOGACAO==='1';
@@ -21,11 +23,24 @@ const config=preview?connectionConfig(import.meta.env):{
 };
 const client=(preview||location.hostname===adminHost)&&config.url&&config.key?createClient(config.url,config.key):null;
 const storefrontOrigin=preview?(import.meta.env.VITE_PITACCO_HOMOLOG_SITE_ORIGIN||''):'https://pitacco.com.br';
-const pages=[['Painel geral',LayoutDashboard],['Estabelecimentos',Store],['Módulos do lojista',Package],['Assinaturas',CreditCard],['Homologação',ClipboardCheck],['Atualizações',Settings]];
+const groups=[
+ ['Visão geral',[['Painel geral',LayoutDashboard]]],
+ ['Operação',[['Estabelecimentos',Store],['Pedidos',ShoppingBag],['Entregadores',Bike]]],
+ ['Gestão comercial',[['Assinaturas',CreditCard]]],
+ ['Administração',[['Módulos do lojista',Package],['Homologação',ClipboardCheck]]],
+ ['Sistema',[['Auditoria',ListChecks],['Atualizações',Settings]]]
+];
+const operations={Pedidos:'orders',Entregadores:'couriers',Auditoria:'audit'};
+function initialTheme(){
+ try{return localStorage.getItem('pitacco.admin.theme')==='dark'?'dark':'light';}
+ catch{return 'light';}
+}
 
 function AdminApp(){
  const [session,setSession]=useState(undefined),[verified,setVerified]=useState(null);
  const [stores,setStores]=useState([]),[storeId,setStoreId]=useState(''),[page,setPage]=useState('Painel geral');
+ const [theme,setTheme]=useState(initialTheme),[sidebar,setSidebar]=useState(()=>!window.matchMedia('(max-width: 800px)').matches);
+ const [storeSearch,setStoreSearch]=useState('');
  const [storeTab,setStoreTab]=useState('Identidade');
  const [error,setError]=useState(''),[busy,setBusy]=useState(false);
 
@@ -100,18 +115,49 @@ function AdminApp(){
   <p role="alert">{verified.error?'Não foi possível verificar sua autorização.':'Acesso exclusivo do proprietário do Pitacco.'}</p>
   <button type="button" onClick={signOut}>Sair</button>
  </main>;
+ function openStore(id){
+  setStoreId(id);setStoreTab('Identidade');setPage('Estabelecimentos');
+ }
+ function changePage(next){
+  setPage(next);
+  if(window.matchMedia('(max-width: 800px)').matches)setSidebar(false);
+ }
+ function toggleTheme(){
+  const next=theme==='dark'?'light':'dark';
+  setTheme(next);
+  try{localStorage.setItem('pitacco.admin.theme',next);}catch{}
+ }
  const store=stores.find(item=>item.id===storeId);
- return <div className="app pitacco-admin-shell pitacco-theme-light">
-  <aside>
+ const results=stores.filter(item=>item.name.toLocaleLowerCase('pt-BR').includes(storeSearch.trim().toLocaleLowerCase('pt-BR')));
+ const ThemeIcon=theme==='dark'?Sun:Moon;
+ return <div className={`app pitacco-admin-shell super-admin pitacco-theme-${theme}${sidebar?'':' admin-collapsed'}`}>
+  <aside id="admin-sidebar">
    <div className="brand pitacco-platform-brand"><img src="/pitacco-brand-013.svg" alt="Pitacco"/><strong>Pitacco Admin</strong></div>
-   <nav aria-label="Administração geral">{pages.map(([name,Icon])=><button key={name} type="button" className={page===name?'active':''}
-    onClick={()=>setPage(name)}><Icon size={18}/>{name}</button>)}</nav>
+   <nav aria-label="Administração geral">{groups.map(([group,pages])=><details key={group} open>
+    <summary>{group}</summary>
+    {pages.map(([name,Icon])=><button key={name} type="button" aria-current={page===name?'page':undefined} className={page===name?'active':''}
+     onClick={()=>changePage(name)}><Icon size={18}/>{name}</button>)}
+   </details>)}</nav>
    <button type="button" className="logout" onClick={signOut}><LogOut size={16}/> Sair</button>
   </aside>
   <main className="pitacco-workspace pitacco-workspace--admin">
-   <header><h2>{page}</h2></header>
+   <header className="admin-top">
+    <div><button type="button" className="secondary" aria-label="Menu administrativo" aria-controls="admin-sidebar" aria-expanded={sidebar} onClick={()=>setSidebar(value=>!value)}><Menu size={18}/></button>
+    <h2>{page}</h2></div>
+    <div className="admin-top-actions">
+     <details className="admin-search"><summary>Buscar loja</summary>
+      <label className="field">Nome da loja<input type="search" value={storeSearch} onChange={event=>setStoreSearch(event.target.value)}/></label>
+      {results.length===0?<p>Nenhuma loja encontrada.</p>:<label className="field">Resultados<select value="" onChange={event=>{
+        if(event.target.value){openStore(event.target.value);event.currentTarget.closest('details').open=false;}
+       }}><option value="">Selecione a loja</option>{results.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}
+     </details>
+     <button type="button" className="secondary" aria-label={theme==='dark'?'Ativar modo claro':'Ativar modo escuro'} onClick={toggleTheme}><ThemeIcon size={18}/></button>
+     <details className="admin-profile"><summary>Perfil</summary><p>Proprietário do Pitacco</p><button type="button" className="secondary" onClick={signOut}>Encerrar sessão</button></details>
+    </div>
+   </header>
    {error&&<p role="alert">{error}</p>}
-   {page==='Painel geral'&&<OwnerDashboard client={client} onStore={id=>{setStoreId(id);setStoreTab('Identidade');setPage('Estabelecimentos');}}/>}
+   {page==='Painel geral'&&<OwnerDashboard client={client} onStore={openStore}/>}
+   {operations[page]&&<OwnerOperations key={page} client={client} stores={stores} kind={operations[page]}/>}
    {page==='Assinaturas'&&<OwnerSubscriptions client={client}/>}
    {page==='Módulos do lojista'&&<OwnerFeatures client={client} stores={stores}/>}
    {page==='Atualizações'&&<section className="panel"><h3>Atualizações do Windows</h3><a href="https://github.com/juniorclerio37-creator/pitacco/releases" target="_blank" rel="noopener noreferrer">Consultar versões publicadas</a></section>}
@@ -127,9 +173,10 @@ function AdminApp(){
     </select>
     {store&&<>
      <nav className="pitacco-local-tabs" aria-label="Seções do estabelecimento">
-      {['Identidade','Catálogo','Checkout','Agendamento'].map(tab=><button key={tab} type="button" aria-pressed={storeTab===tab}
+      {['Identidade','Catálogo','Checkout','Agendamento','Pedidos','Entregadores','Auditoria'].map(tab=><button key={tab} type="button" aria-pressed={storeTab===tab}
        className={storeTab===tab?'active':'secondary'} onClick={()=>setStoreTab(tab)}>{tab}</button>)}
      </nav>
+     {operations[storeTab]&&<OwnerOperations key={store.id+storeTab} client={client} storeId={store.id} kind={operations[storeTab]}/>}
      {storeTab==='Identidade'&&<StoreProfile key={store.id} client={client} store={store} manager onSaved={()=>loadStores().catch(failure=>setError(failure.message))}/>}
      {storeTab==='Catálogo'&&<OwnerCatalog key={store.id} client={client} storeId={store.id}/>}
      {storeTab==='Checkout'&&<OwnerMenuSettings key={store.id} client={client} storeId={store.id} storefrontOrigin={storefrontOrigin}/>}

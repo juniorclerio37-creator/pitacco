@@ -30,6 +30,11 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
 do $$ begin
  begin
+  begin
+   perform public.pitacco_owner_operation_rows('orders');
+   raise exception 'O gestor não deve ler os pedidos globais';
+  exception when insufficient_privilege then null;
+  end;
   perform public.pitacco_owner_platform_dashboard('',0);
   raise exception 'O gestor não deve ler os dados globais';
  exception when insufficient_privilege then null;
@@ -56,6 +61,16 @@ begin
  assert result#>>'{stores,0,orders_today}'='3';
  assert result#>>'{stores,0,couriers}'='1';
  assert result::text not like '%Nome interno%';
+ result:=public.pitacco_owner_operation_rows('orders',p_store=>'20000000-0000-0000-0000-000000000002',p_source=>'ifood',p_status=>'delivery');
+ assert jsonb_array_length(result->'rows')=1;
+ assert result#>>'{rows,0,reference}'='30000000';
+ assert result#>>'{rows,0,source}'='ifood';
+ result:=public.pitacco_owner_operation_rows('orders',p_min=>1000);
+ assert result->'rows'='[]'::jsonb;
+ result:=public.pitacco_owner_operation_rows('couriers',p_store=>'20000000-0000-0000-0000-000000000001');
+ assert jsonb_array_length(result->'rows')=1;
+ assert result#>>'{rows,0,name}'='Entregador da loja';
+ assert not has_function_privilege('anon','public.pitacco_owner_operation_rows(text,uuid,date,date,text,text,numeric,numeric,text,integer)','execute');
  assert jsonb_array_length(public.pitacco_owner_platform_dashboard('',0)->'stores')=15;
  assert jsonb_array_length(public.pitacco_owner_platform_dashboard('',1)->'stores')=2;
  assert not has_function_privilege('anon','public.pitacco_owner_platform_dashboard(text,integer)','execute');
