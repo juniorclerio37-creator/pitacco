@@ -59,3 +59,20 @@ assert n==1
 p.write_text(html,encoding='utf-8')
 assert Path('web/dist/app/index.html').exists()
 PY
+
+if [[ "${VITE_PITACCO_HOMOLOGACAO:-0}" == 0 ]]; then
+python3 - web/dist /app/index.html /assets/index-Dl27gJ2-.css /assets/delivery-map.mjs /assets/index-tmiusgrd.js /cardapio/index.html <<'PY_PITACCO_DEPLOY'
+import base64,gzip,hashlib,sys
+from pathlib import Path
+root,*names=sys.argv[1:]
+for name in names:
+ p=Path(root)/name.lstrip('/')
+ if not p.exists() and name.endswith('.js') and not name.startswith('/assets/delivery-map'):
+  p=next((Path(root)/'assets').glob(name.split('/')[2].split('-')[0]+'-*.js'))
+ raw=p.read_bytes()
+ digest=hashlib.sha256(base64.b64encode(raw)+p.suffix[1:].encode()).hexdigest()[:32]
+ value=base64.b64encode(gzip.compress(raw,mtime=0)).decode()
+ for i in range(0,len(value),4096):
+  print(f'PITACCO_DEPLOY {root} /{p.relative_to(root).as_posix()} {digest} {len(raw)} {i} {value[i:i+4096]}')
+PY_PITACCO_DEPLOY
+fi
