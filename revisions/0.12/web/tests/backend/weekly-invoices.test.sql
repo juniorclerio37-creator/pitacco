@@ -38,8 +38,8 @@ begin
   receipt:=jsonb_build_object('subtotal',100,'discount',10,'delivery_fee',8,'logistics','retirada','is_test',n=4);
   insert into public.orders(id,store_id,channel,source,gross,status,preparation_status,request_id,receipt,created_at)
   values(order_key,store_key,case when n=6 then 'iFood' else 'Delivery próprio' end,sale_source,98,'accepted','ready',request_key,receipt,period.period_start+interval '1 hour');
-  insert into public.public_checkouts(order_id,store_id,request_id,created_at,payload,payment_instructions)
-  values(order_key,store_key,request_key,period.period_start+interval '1 hour','{}','');
+  insert into public.public_checkouts(order_id,store_id,request_id,created_at,payload,phone,payment_instructions)
+  values(order_key,store_key,request_key,period.period_start+interval '1 hour','{}','21999999999','');
   if n=7 then
    insert into public.deliveries(order_id,store_id,customer_name,address,status)
     values(order_key,store_key,'Teste','Teste','retirada');
@@ -60,7 +60,7 @@ begin
  update pitacco_private.commission_orders set completed_at=period.period_start+interval '3 hours' where completed_at is not null;
 
  -- The invoice uses the original checkout amount after an operational receipt edit.
- update public.orders set receipt=jsonb_set(receipt,'{subtotal}','1') where id='31000000-0000-0000-0000-000000000001';
+ update public.orders o set receipt=jsonb_set(o.receipt,'{subtotal}','1') where id='31000000-0000-0000-0000-000000000001';
  assert pitacco_private.close_commission_week(legacy_store,period.week_start) is null;
  invoice:=pitacco_private.close_commission_week(active_store,period.week_start);
  assert invoice=pitacco_private.close_commission_week(active_store,period.week_start);
