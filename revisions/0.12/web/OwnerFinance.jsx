@@ -49,15 +49,15 @@ export default function OwnerFinance({client,stores}){
  const metricLabel=metric==='gross'?'Valor bruto dos pedidos concluídos':'Assinaturas confirmadas no Asaas';
  return <section className="panel owner-finance-report" aria-label="Financeiro do Pitacco" aria-busy={busy}>
   <form className="admin-finance-filters" onSubmit={submit}>
-   <label className="field">Período<select name="preset" value={preset} onChange={event=>setPreset(event.target.value)}>
+   <div className="field"><label htmlFor="finance-period">Período</label><select id="finance-period" name="preset" value={preset} onChange={event=>setPreset(event.target.value)}>
     <option value="today">Hoje</option><option value="week">7 dias</option><option value="last30">30 dias</option>
     <option value="month">Mês atual</option><option value="custom">Personalizado</option>
-   </select></label>
+   </select></div>
    {preset==='custom'&&<><label className="field">Início<input type="date" name="start" defaultValue={range.start} required/></label>
     <label className="field">Fim<input type="date" name="end" defaultValue={range.end} required/></label></>}
-   <label className="field">Loja<select name="store"><option value="">Todas as lojas</option>
+   <div className="field"><label htmlFor="finance-store">Loja</label><select id="finance-store" name="store"><option value="">Todas as lojas</option>
     {stores.map(store=><option key={store.id} value={store.id}>{store.name}</option>)}
-   </select></label>
+   </select></div>
    <button disabled={busy}>Consultar</button>
   </form>
   {busy&&<p role="status">Consultando…</p>}
