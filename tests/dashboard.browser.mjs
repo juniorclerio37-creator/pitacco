@@ -19,7 +19,7 @@ try {
   for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
-    let adminMode=false,moduleEnabled=true,ownerMigrationApplied=false,readOnlyChecks=0;
+    let adminMode=false,moduleEnabled=true,ownerMigrationApplied=false,readOnlyChecks=0,failFeatureCheck=false;
     const catalog=[];
     const productId='70000000-0000-0000-0000-000000000001';
     const merchantProduct={id:'70000000-0000-0000-0000-000000000002',store_id:store.id,
@@ -44,14 +44,16 @@ try {
     const pendingOrder = {
       id:'30000000-0000-0000-0000-000000000001', store_id:store.id, status:'pending',
       source:'proprio', gross:25, fees:0, created_at:new Date().toISOString(),
-      receipt:{display_number:'D-180',customer:'Cliente do pedido',items:[],payment:'pix_manual'}
+      receipt:{display_number:'D-180',customer:'Cliente do pedido',items:'Formato antigo',payment:'pix_manual'}
     };
     page.on('pageerror', error => errors.push(error.message));
-    await page.addInitScript(({ api }) => {
+    page.on('console',message=>{if(message.type()==='error'&&!message.text().startsWith('Failed to load resource'))console.log(message.text());});
+    await page.addInitScript(({ api,storeId }) => {
       if(window!==window.top)return;
       localStorage.setItem('dg.supabase.url', api);
       localStorage.setItem('dg.supabase.key', 'sb_publishable_fixture_only_123456');
-    }, { api });
+      localStorage.setItem('pitacco:print-options:'+storeId,'{preferência inválida');
+    }, { api,storeId:store.id });
 
     await page.route('**/*', async route => {
       const { pathname, origin } = new URL(route.request().url());
@@ -136,6 +138,7 @@ try {
         return route.fulfill({headers,json:adminMode});
       }
       if(pathname==='/rest/v1/rpc/pitacco_store_features'){
+        if(failFeatureCheck)return route.fulfill({headers,status:503,json:{message:'Funções indisponíveis'}});
         const flags=Object.fromEntries(keys.map(key=>[key,key!=='estoque'||moduleEnabled]));
         return route.fulfill({headers,json:flags});
       }
@@ -294,7 +297,12 @@ try {
     }
     await navigation.getByRole('button', { name:'Visão Geral', exact:true }).click();
     await page.getByRole('heading', { name:'Visão Geral', exact:true }).waitFor();
-    await page.getByRole('region',{name:'Indicadores da loja'}).getByText('Ticket médio',{exact:true}).waitFor();
+    try{
+      await page.getByRole('region',{name:'Indicadores da loja'}).getByText('Ticket médio',{exact:true}).waitFor({timeout:8500});
+    }catch(error){
+      console.log(await page.locator('main').innerText());
+      throw error;
+    }
     await page.getByRole('group',{name:'Indicador do gráfico'}).getByRole('button',{name:'Pedidos'}).click();
     await page.getByRole('img',{name:'Gráfico de pedidos registrados'}).waitFor();
     await page.getByRole('combobox',{name:'Período da visão geral'}).selectOption('7');
@@ -511,6 +519,13 @@ try {
       const ordersRegion=page.getByRole('region',{name:'Central de pedidos',exact:true});
       await ordersRegion.getByText('Solicite acesso de gestor para operar pedidos e configurações.').waitFor();
       assert.equal(await ordersRegion.getByRole('button',{name:'Aceitar pedido',exact:true}).count(),0);
+      failFeatureCheck=true;
+      await page.goto(dashboard+'/app/?aba=Produtos');
+      await page.getByRole('alert').filter({hasText:'Não foi possível carregar as funções da loja.'}).waitFor();
+      assert.ok(await navigation.getByRole('button',{name:'Visão Geral',exact:true}).isVisible());
+      failFeatureCheck=false;
+      await page.getByRole('button',{name:'Tentar novamente',exact:true}).click();
+      await page.getByRole('heading',{name:'Editor de cardápio',exact:true}).waitFor();
     }
     assert.deepEqual(errors, []);
     await page.close();

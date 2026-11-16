@@ -14,22 +14,28 @@ const tabs={
 export function featureForTab(name){
  return tabs[name]||Object.keys(featureLabels).find(key=>featureLabels[key]===name);
 }
-export function useStoreFeatures(client,store){
+export function useStoreFeatures(client,store,user){
  const [state,setState]=useState(null);
+ const [attempt,setAttempt]=useState(0);
  useEffect(()=>{
-  if(!client||!store)return;
+  if(!client||!store||!user)return;
   let live=true,running=false;
   async function update(){
    if(running)return;
    running=true;
    try{
     const result=await client.rpc('pitacco_store_features',{p_store:store});
-    if(live&&!result.error&&result.data)setState({store,features:result.data});
+    if(result.error||!result.data||typeof result.data!=='object'||Array.isArray(result.data))throw new Error('Módulos indisponíveis');
+    if(live)setState({store,user,attempt,status:'ready',features:result.data});
+   }catch{
+    if(live)setState({store,user,attempt,status:'error',features:null});
    }finally{running=false;}
   }
   update();
   const timer=setInterval(update,30000);
   return()=>{live=false;clearInterval(timer);};
- },[client,store]);
- return state?.store===store?state.features:null;
+ },[client,store,user,attempt]);
+ const current=state&&state.store===store&&state.user===user&&state.attempt===attempt
+  ?state:{status:'loading',features:null};
+ return {...current,retry:()=>setAttempt(value=>value+1)};
 }
