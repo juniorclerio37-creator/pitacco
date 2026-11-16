@@ -13,6 +13,12 @@ const stages = {scheduled:'Agendado',analysis:'Pendente',preparing:'Em preparo',
 const sum = (rows, field) => rows.reduce((total,row)=>total+Number(row[field]||0),0);
 const sale = order => ['accepted','historical'].includes(order.status);
 const daysBefore = (now,offset) => new Date(now.getTime()-offset*86400000);
+const calendarDay = value => {
+  if(!value)return null;
+  const timestamp=new Date(value);
+  return Number.isFinite(timestamp.getTime())?date.format(timestamp):null;
+};
+
 
 export default function StoreOverview({store,orders,deliveries,expenses,navigate,refresh,allowed}) {
   const [period,setPeriod] = useState(1);
@@ -21,7 +27,10 @@ export default function StoreOverview({store,orders,deliveries,expenses,navigate
   const now = new Date();
   const today = date.format(now);
   const first = date.format(daysBefore(now,period-1));
-  const inPeriod = value => Boolean(value) && date.format(new Date(value))>=first && date.format(new Date(value))<=today;
+  const inPeriod = value => {
+    const key=calendarDay(value);
+    return key!==null&&key>=first&&key<=today;
+  };
   const recent = orders.filter(order=>order.store_id===store.id);
   const rows = recent.filter(order=>inPeriod(order.created_at));
   const sales = rows.filter(sale);
@@ -47,8 +56,8 @@ export default function StoreOverview({store,orders,deliveries,expenses,navigate
   const comparisonStart=date.format(daysBefore(now,period+6));
   const previousSales=new Map();
   recent.filter(order=>sale(order)&&order.created_at).forEach(order=>{
-    const when=date.format(new Date(order.created_at));
-    if(when<comparisonStart||when>=first)return;
+    const when=calendarDay(order.created_at);
+    if(!when||when<comparisonStart||when>=first)return;
     const channel=order.channel||'Loja';
     previousSales.set(channel,(previousSales.get(channel)||0)+Number(order.gross||0));
   });
@@ -70,7 +79,8 @@ export default function StoreOverview({store,orders,deliveries,expenses,navigate
   });
   const week = Array.from({length:7},(_,i)=>{
     const at=daysBefore(now,6-i);
-    return {label:day.format(at).replace('.',''),value:sum(recent.filter(order=>sale(order)&&order.created_at&&date.format(new Date(order.created_at))===date.format(at)),'gross')};
+    const key=date.format(at);
+    return {label:day.format(at).replace('.',''),value:sum(recent.filter(order=>sale(order)&&calendarDay(order.created_at)===key),'gross')};
   });
   const ceiling = Math.max(1,...buckets.map(point=>point.value));
   const xy = buckets.map((point,i)=>[12+i*596/(buckets.length-1),126-point.value/ceiling*112]);

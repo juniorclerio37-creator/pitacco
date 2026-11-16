@@ -48,12 +48,24 @@ try {
     };
     page.on('pageerror', error => errors.push(error.message));
     page.on('console',message=>{if(message.type()==='error'&&!message.text().startsWith('Failed to load resource'))console.log(message.text());});
-    await page.addInitScript(({ api,storeId }) => {
+    await page.addInitScript(({ api,storeId,width }) => {
       if(window!==window.top)return;
       localStorage.setItem('dg.supabase.url', api);
       localStorage.setItem('dg.supabase.key', 'sb_publishable_fixture_only_123456');
       localStorage.setItem('pitacco:print-options:'+storeId,'{preferência inválida');
-    }, { api,storeId:store.id });
+      if(width===375){
+        const getItem=Storage.prototype.getItem;
+        Storage.prototype.getItem=function(key){
+          if(key==='pitacco:receipt:'+storeId)throw new DOMException('Armazenamento indisponível','SecurityError');
+          return getItem.call(this,key);
+        };
+      }
+      if(width===768){
+        const randomUUID=Crypto.prototype.randomUUID;
+        delete Crypto.prototype.randomUUID;
+        window.restoreFixtureUUID=()=>{Crypto.prototype.randomUUID=randomUUID;};
+      }
+    }, { api,storeId:store.id,width });
 
     await page.route('**/*', async route => {
       const { pathname, origin } = new URL(route.request().url());
@@ -209,6 +221,10 @@ try {
         }
         const filter=filters.get('status');
         const orders = (width===375?[pendingOrder]:[pendingOrder,appointment]).filter(order=>!filter||filter.includes(order.status));
+        if(width===1440&&!filter)orders.push({
+          id:'30000000-0000-0000-0000-000000000009',store_id:store.id,status:'historical',
+          source:'proprio',gross:99,fees:0,created_at:'Data indisponível',receipt:{display_number:'B-01'}
+        });
         return route.fulfill({headers,json:orders});
       }
       if (pathname === '/rest/v1/pitacco_schedule_windows') {
@@ -328,6 +344,8 @@ try {
       console.log(await page.locator('main').innerText());
       throw error;
     }
+    assert.equal(await page.getByRole('region',{name:'Falha no painel'}).count(),0);
+    if(width===768)await page.evaluate(()=>window.restoreFixtureUUID());
     await page.getByRole('group',{name:'Indicador do gráfico'}).getByRole('button',{name:'Pedidos'}).click();
     await page.getByRole('img',{name:'Gráfico de pedidos registrados'}).waitFor();
     await page.getByRole('combobox',{name:'Período da visão geral'}).selectOption('7');

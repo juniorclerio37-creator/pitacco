@@ -56,6 +56,14 @@ source=source.replace(needle,'Menu principal">{nav.filter(([name])=>allowed(name
 needle="{manager&&!nativeAvailable()&&<button className={tab==='Agendamento'"
 assert source.count(needle)==1
 source=source.replace(needle,"{manager&&!nativeAvailable()&&allowed('Agendamento')&&<button className={tab==='Agendamento'",1)
+# Keep background order sync mounted without letting a failure replace an unrelated screen.
+operations = '{active&&!isDriver&&<Operations key={selected} client={supabase} storeId={selected} manager={manager} view={tab} onNavigate={setTab}/>}'
+assert source.count(operations) == 1
+source=source.replace(operations,'''{active&&!isDriver&&<WorkspaceBoundary resetKey={selected+'|'+tab}
+ hiddenOnError={!['Pedidos','Cozinha e expedição','Configurações','Fideliza+'].includes(tab)}
+ onOverview={()=>setTab('Painel')}>
+ <Operations key={selected} client={supabase} storeId={selected} manager={manager} view={tab} onNavigate={setTab}/>
+</WorkspaceBoundary>}''',1)
 # Guard the workspace as well as navigation when a module is removed.
 needle='{active&&!isDriver&&!nativeAvailable()&&tab==='
 start=source.index(needle)
