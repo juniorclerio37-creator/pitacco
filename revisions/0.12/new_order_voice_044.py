@@ -8,9 +8,9 @@ s=s.replace(needle,needle+"\n const ordersInitialized=useRef(false);",1)
 needle="setDetail(null);seen.current=new Set();notifySeen.current=new Set();setOrders([]);"
 assert s.count(needle)==1
 s=s.replace(needle,"   setDetail(null);seen.current=new Set();ordersInitialized.current=false;notifySeen.current=new Set();setOrders([]);",1)
-needle="const fresh=incoming.filter(o=>o.status==='pending'&&!seen.current.has(o.id));"
+needle="const fresh=waitingForAcceptance.filter(o=>!seen.current.has(o.id));"
 assert s.count(needle)==1
-s=s.replace(needle,"    const fresh=ordersInitialized.current?incoming.filter(o=>o.status==='pending'&&!seen.current.has(o.id)):[];\n    ordersInitialized.current=true;",1)
+s=s.replace(needle,"const fresh=ordersInitialized.current?waitingForAcceptance.filter(o=>!seen.current.has(o.id)):[];\n    ordersInitialized.current=true;",1)
 needle="""if(desktop)invoke('notify',{message:`${fresh.length} pedido(s) aguardando aceite.`}).catch(e=>setError('Notificação: '+String(e)));
      else if(soundRef.current){try{const context=new AudioContext();const osc=context.createOscillator();osc.connect(context.destination);osc.start();osc.stop(context.currentTime+0.2);osc.onended=()=>context.close()}catch{}}
 """
