@@ -18,6 +18,17 @@ source="import {useStoreManagerAccess} from './storeAccess.mjs';\n"+source
 manager_check="manager=admin||profile?.role==='gestor'||members.some(m=>m.user_id===session.user.id&&m.role==='gestor')"
 assert source.count(manager_check)==1
 source=source.replace(manager_check, "manager=nativeAvailable()?(admin||profile?.role==='gestor'||members.some(m=>m.user_id===session.user.id&&m.role==='gestor')):storeAccess.manager", 1)
+tab_state="[tab,setTab]=useState('Pedidos')"
+assert source.count(tab_state)==1
+source=source.replace(tab_state,"[tab,setTab]=useState(()=>nativeAvailable()?'Pedidos':readMerchantTab())",1)
+source=source.replace("const descriptions=", """const merchantTabs=new Set([...nav.map(([name])=>name),...Object.values(landing),
+ ...Object.values(secondaryTabs).flat().map(([target])=>target),
+ 'Agendamento','Entregas','Entrega externa','Importar cardápio','Despesas','Assinaturas']);
+function readMerchantTab(){
+ const saved=new URL(window.location.href).searchParams.get('aba');
+ return merchantTabs.has(saved)?saved:'Painel';
+}
+const descriptions=""",1)
 needle='if(!supabase)return <SetupConnection/>;'
 assert source.count(needle)==1
 source=source.replace(needle,"""const featureSettings=useStoreFeatures(supabase,selected);
@@ -26,7 +37,14 @@ const allowed=name=>{
  const feature=featureForTab(name);
  return nativeAvailable()||!feature||featureSettings?.[feature]===true;
 };
-useEffect(()=>{if(!allowed(tab))setTab('Pedidos')},[tab,featureSettings]);
+useEffect(()=>{
+ if(nativeAvailable())return;
+ const location=new URL(window.location.href);
+ if(tab==='Painel')location.searchParams.delete('aba');
+ else if(merchantTabs.has(tab))location.searchParams.set('aba',tab);
+ if(location.href!==window.location.href)window.history.replaceState(window.history.state,'',location.href);
+},[tab]);
+useEffect(()=>{if(featureSettings&&!allowed(tab))setTab('Painel')},[tab,featureSettings]);
 """+needle,1)
 needle='Menu principal">{nav.filter'
 assert source.count(needle)==1
