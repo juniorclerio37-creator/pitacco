@@ -40,8 +40,7 @@ create or replace function pitacco_private.enforce_subscription_for_order()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
  if new.status<>'historical'
- and exists(select 1 from pitacco_private.subscription_control where enforce_new_orders)
- and exists(select 1 from pitacco_private.subscription_state(new.store_id) where status in ('overdue','suspended')) then
+ and exists(select 1 from pitacco_private.subscription_state(new.store_id) state where state.status='suspended' or (state.status='overdue' and exists(select 1 from pitacco_private.subscription_control where enforce_new_orders))) then
   raise exception 'Loja temporariamente indisponível para novos pedidos';
  end if;
  return new;
@@ -56,7 +55,7 @@ begin
  end if;
  select jsonb_build_object('status',state.status,'trial_ends_at',state.trial_ends_at,
   'paid_until',state.paid_until,'amount',59.90,
-  'orders_blocked',control.enforce_new_orders and state.status in ('overdue','suspended'),
+  'orders_blocked',(state.status='suspended' or (control.enforce_new_orders and state.status='overdue')),
   'regularization_url',control.regularization_url)
  into result from pitacco_private.subscription_state(p_store) state
  cross join pitacco_private.subscription_control control;
