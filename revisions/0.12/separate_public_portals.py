@@ -14,9 +14,14 @@ source=source[:start]+source[end:]
 source=source.replace("const admin=profile?.role==='admin'","const admin=false")
 source=source.replace("import Homologation from './Homologation.jsx';\n","").replace("import {ClipboardCheck} from 'lucide-react';\n","").replace("import BillingStatus,{BillingOverview} from './BillingStatus.jsx';","import BillingStatus from './BillingStatus.jsx';")
 source="import {featureForTab,useStoreFeatures} from './storeFeatures.mjs';\n"+source
+source="import {useStoreManagerAccess} from './storeAccess.mjs';\n"+source
+manager_check="manager=admin||profile?.role==='gestor'||members.some(m=>m.user_id===session.user.id&&m.role==='gestor')"
+assert source.count(manager_check)==1
+source=source.replace(manager_check, "manager=nativeAvailable()?(admin||profile?.role==='gestor'||members.some(m=>m.user_id===session.user.id&&m.role==='gestor')):storeAccess.manager", 1)
 needle='if(!supabase)return <SetupConnection/>;'
 assert source.count(needle)==1
 source=source.replace(needle,"""const featureSettings=useStoreFeatures(supabase,selected);
+const storeAccess=useStoreManagerAccess(supabase,session?.user?.id,nativeAvailable()?null:selected);
 const allowed=name=>{
  const feature=featureForTab(name);
  return nativeAvailable()||!feature||featureSettings?.[feature]===true;
@@ -33,7 +38,11 @@ source=source.replace(needle,"{manager&&!nativeAvailable()&&allowed('Agendamento
 needle='{active&&!isDriver&&!nativeAvailable()&&tab==='
 start=source.index(needle)
 end=source.index('</main>',start)
-source=source[:start]+'{allowed(tab)&&<>\n'+source[start:end]+'</>}\n'+source[end:]
+source=source[:start]+"""
+{storeAccess.status==='loading'&&<div className="panel" role="status">Verificando acesso à loja…</div>}
+{storeAccess.status==='error'&&<div className="panel"><p role="alert">Não foi possível verificar o acesso à loja.</p><button type="button" onClick={storeAccess.retry}>Tentar novamente</button></div>}
+{storeAccess.status==='ready'&&allowed(tab)&&<>
+"""+source[start:end]+'</>}\n'+source[end:]
 # Also hide shortcuts for modules removed from the main menu.
 dashboard=source.index('className="approved-dashboard"')
 summary=source.index('<h3>Resumo financeiro</h3>',dashboard)
