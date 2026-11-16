@@ -9,6 +9,7 @@ const realApi='https://mdevzehqcpcgxspwbiyz.supabase.co';
 const keys=['alertas','estoque','cardapio','clientes','fideliza','financeiro','caixa','relatorios','motoboys','integracoes','agendamento'];
 const user = { id: '10000000-0000-0000-0000-000000000001', aud: 'authenticated', email: 'teste@example.invalid' };
 const store = { id: '20000000-0000-0000-0000-000000000001', name: 'Loja de Teste', plan: 'saas' };
+const readOnlyStore = { id: '20000000-0000-0000-0000-000000000002', name: 'Loja sem gestão', plan: 'saas' };
 const fixtureUsername = '00000000001';
 const adminToken = [ {alg:'HS256'}, {sub:user.id, exp:Math.floor(Date.now()/1000)+3600} ]
   .map(part=>Buffer.from(JSON.stringify(part)).toString('base64url')).join('.')+'.Zml4dHVyZQ';
@@ -18,7 +19,7 @@ try {
   for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
-    let adminMode=false,moduleEnabled=true,ownerMigrationApplied=false;
+    let adminMode=false,moduleEnabled=true,ownerMigrationApplied=false,readOnlyChecks=0;
     const catalog=[];
     const productId='70000000-0000-0000-0000-000000000001';
     const menuSettings={slug:'loja-teste',enabled:false,delivery_enabled:true,pickup_enabled:false,delivery_fee:5,
@@ -104,6 +105,15 @@ try {
         return route.fulfill({headers,json:45});
       }
       if(pathname==='/rest/v1/rpc/is_admin')throw new Error('O painel do proprietário consultou a permissão legada');
+      if(pathname==='/rest/v1/rpc/is_store_manager'){
+        assert.equal(origin,api);
+        const {s}=route.request().postDataJSON();
+        assert.ok([store.id,readOnlyStore.id].includes(s));
+        if(s===readOnlyStore.id&&readOnlyChecks++===0){
+          return route.fulfill({headers,status:503,json:{message:'Consulta indisponível'}});
+        }
+        return route.fulfill({headers,json:s===store.id});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_is_platform_owner'){
         if(!ownerMigrationApplied)return route.fulfill({headers,status:404,json:{code:'PGRST202',message:'Função indisponível'}});
         return route.fulfill({headers,json:adminMode});
@@ -145,7 +155,8 @@ try {
       if (pathname === '/auth/v1/token') {
         return route.fulfill({ headers, json: { user, access_token:'fixture-access', refresh_token:'fixture-refresh', token_type:'bearer', expires_in:3600 } });
       }
-      if (pathname === '/rest/v1/profiles') return route.fulfill({ headers, json: { ...user, role:adminMode?'admin':'gestor' } });
+      if (pathname === '/rest/v1/profiles') return route.fulfill({ headers, json: { ...user, role:adminMode||width===375?'admin':'gestor' } });
+      if (pathname === '/rest/v1/store_members') return route.fulfill({headers,json:[]});
       if (pathname === '/rest/v1/orders') {
         const filters = new URL(route.request().url()).searchParams;
         if(width===375 && filters.has('scheduled_release_at')){
@@ -217,7 +228,9 @@ try {
         pendingOrder.status = payload.p_status;
         return route.fulfill({headers,json:null});
       }
-      if (pathname === '/rest/v1/stores') return route.fulfill({ headers, json: [store] });
+      if(pathname==='/rest/v1/stores'){
+        return route.fulfill({headers,json:origin===api&&width===1440?[store,readOnlyStore]:[store]});
+      }
       if (pathname === '/rest/v1/couriers' && route.request().headers().accept?.includes('object')) {
         return route.fulfill({ headers, json: null });
       }
@@ -448,11 +461,20 @@ try {
     await modules.getByLabel('Aplicar a').selectOption(store.id);
     await modules.getByLabel('Estoque',{exact:true}).selectOption('disabled');
     await modules.getByText('Estoque atualizado.').waitFor();
+    adminMode=false;
     await page.goto(dashboard+'/app/');
     if(width<=800)await page.getByRole('button',{name:'Abrir menu'}).click();
     await navigation.getByRole('button',{name:'Clientes',exact:true}).waitFor();
     assert.equal(await navigation.getByRole('button',{name:'Estoque',exact:true}).count(),0);
     assert.equal(await page.getByRole('button',{name:'Homologação',exact:true}).count(),0);
+    if(width===1440){
+      await page.getByRole('combobox',{name:'Selecionar loja'}).selectOption(readOnlyStore.id);
+      await page.getByRole('alert').filter({hasText:'Não foi possível verificar o acesso à loja.'}).waitFor();
+      await page.getByRole('button',{name:'Tentar novamente',exact:true}).click();
+      const ordersRegion=page.getByRole('region',{name:'Central de pedidos',exact:true});
+      await ordersRegion.getByText('Solicite acesso de gestor para operar pedidos e configurações.').waitFor();
+      assert.equal(await ordersRegion.getByRole('button',{name:'Aceitar pedido',exact:true}).count(),0);
+    }
     assert.deepEqual(errors, []);
     await page.close();
     console.log(`PASS dashboard authentication, navigation, inventory, pending order decisions and reports at ${width}px`);
