@@ -19,7 +19,7 @@ try {
   for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
-    let ifoodOrder=null;
+    let ifoodOrder=null,storeIfoodPaused=false;
     let adminMode=false,moduleEnabled=true,ownerMigrationApplied=false,readOnlyChecks=0,failFeatureCheck=false;
     const catalog=[];
     const productId='70000000-0000-0000-0000-000000000001';
@@ -180,6 +180,14 @@ try {
           return route.fulfill({headers,status:503,json:{message:'Consulta indisponível'}});
         }
         return route.fulfill({headers,json:s===store.id});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_owner_ifood_store_status'||pathname==='/rest/v1/rpc/pitacco_owner_set_ifood_store_pause'){
+        assert.equal(adminMode,true);
+        assert.equal(origin,realApi);
+        const input=route.request().postDataJSON();
+        assert.equal(input.p_store,store.id);
+        if(typeof input.p_paused==='boolean')storeIfoodPaused=input.p_paused;
+        return route.fulfill({headers,json:{paused:storeIfoodPaused,linking_released:false,connections:1,enabled_connections:1}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_owner_platform_dashboard'){
         assert.equal(origin,realApi);
@@ -584,6 +592,16 @@ try {
     await adminSchedule.getByRole('group',{name:'Segunda-feira',exact:true}).getByRole('checkbox').check();
     await adminSchedule.getByRole('button',{name:'Salvar horários',exact:true}).click();
     await adminSchedule.getByText('Horários de agendamento salvos.').waitFor();
+    if(width===1440){
+      await storeTabs.getByRole('button',{name:'iFood',exact:true}).click();
+      const control=page.getByRole('region',{name:'Controle do iFood da loja'});
+      await control.getByRole('button',{name:'Pausar iFood nesta loja'}).click();
+      await control.getByRole('button',{name:'Confirmar pausa'}).click();
+      await control.getByText('Recebimento do iFood pausado para esta loja.').waitFor();
+      await control.getByRole('button',{name:'Remover pausa do iFood'}).click();
+      await control.getByText('Pausa removida para esta loja.').waitFor();
+      await control.getByText('A integração geral aguarda liberação na aba Homologação.').waitFor();
+    }
     await platform.getByRole('button',{name:'Módulos do lojista',exact:true}).click();
     const modules=page.getByRole('region',{name:'Módulos do painel do lojista'});
     await modules.getByLabel('Aplicar a').selectOption(store.id);
