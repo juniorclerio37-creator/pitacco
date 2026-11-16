@@ -23,6 +23,8 @@ insert into public.expenses(store_id,description,amount,created_at) values
  ('20000000-0000-0000-0000-000000000001','Insumos',12,'2026-11-14T17:00:00Z');
 insert into public.pitacco_courier_payouts(store_id,amount,created_at) values
  ('20000000-0000-0000-0000-000000000001',20,'2026-11-14T17:00:00Z');
+insert into public.pitacco_order_costs(order_id,store_id,merchant_discount,goods_cost,processing_fees,delivery_cost,other_cost) values
+ ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',5,22,3,8,2);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
@@ -32,6 +34,16 @@ begin
  select jsonb_object_agg(metric,amount) into report from public.pitacco_period_financial_report(v_store,'2026-11-14','2026-11-14');
  assert report='{"vendas":100,"taxas":10,"pedidos_pendentes":50,"recebimentos":60,"despesas":12,"acertos_entregadores":20}'::jsonb,
    'Use Brazilian calendar dates, separate accrual and receipts, exclude rejected orders and isolate stores';
+ assert (select count(*)=1 and min(result)=55 and min(direct_cost)=35 and min(merchant_discount)=5
+   from public.pitacco_order_profit_report(v_store,'2026-11-14','2026-11-14'));
+ assert (select count(*)=1 and bool_and(result is null)
+   from public.pitacco_order_profit_report(v_store,'2026-11-13','2026-11-13'));
+ begin
+  perform public.pitacco_order_profit_report('20000000-0000-0000-0000-000000000002','2026-11-14','2026-11-14');
+  raise exception 'Expected order profit report access restriction';
+ exception when raise_exception then
+  if sqlerrm not like 'Sem permissão%' then raise; end if;
+ end;
  begin
   perform public.pitacco_period_financial_report('20000000-0000-0000-0000-000000000002','2026-11-14','2026-11-14');
   raise exception 'Expected report access restriction';

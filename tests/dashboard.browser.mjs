@@ -28,6 +28,8 @@ try {
     const movements = [];
     const settlements=[];
     const settlementId='50000000-0000-0000-0000-000000000001';
+    const costOrder={order_id:'30000000-0000-0000-0000-000000000003',reference:'D-182',channel:'Delivery próprio',
+      created_at:new Date().toISOString(),gross:100,fees:10,direct_cost:null,result:null};
     const appointment = {
       id:'30000000-0000-0000-0000-000000000002', store_id:store.id, status:'pending',
       source:'proprio', gross:30, fees:0, created_at:new Date().toISOString(),
@@ -195,6 +197,19 @@ try {
           {metric:'recebimentos', channel:null, entries:1, amount:22}
         ]});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_order_profit_report'){
+        const input=route.request().postDataJSON();
+        assert.equal(input.p_store,store.id);
+        assert.equal(input.p_page,0);
+        return route.fulfill({headers,json:[costOrder]});
+      }
+      if(pathname==='/rest/v1/pitacco_order_costs'){
+        const input=route.request().postDataJSON();
+        assert.deepEqual(input,{order_id:costOrder.order_id,store_id:store.id,goods_cost:'22',
+          processing_fees:'3',delivery_cost:'8',other_cost:'2',merchant_discount:'5'});
+        Object.assign(costOrder,input,{direct_cost:35,result:55});
+        return route.fulfill({headers,status:201});
+      }
       if (pathname === '/rest/v1/rpc/pitacco_decide_pending_order') {
         const payload = route.request().postDataJSON();
         assert.deepEqual(payload,{p_order:pendingOrder.id,p_status:'rejected',p_reason:'Item indisponível'});
@@ -310,6 +325,19 @@ try {
     await preview.locator('body[data-printed="true"]').waitFor();
     await preview.getByText('Recebimentos confirmados no caixa', {exact:true}).waitFor();
     await preview.close();
+    await page.getByRole('button',{name:'Resultado por pedido',exact:true}).click();
+    const orderReport=page.getByRole('region',{name:'Resultado por pedido'});
+    await orderReport.getByRole('button',{name:'Consultar pedidos'}).click();
+    await orderReport.getByText('Aguardando custos',{exact:true}).waitFor();
+    await orderReport.getByRole('button',{name:'Editar custos do pedido D-182'}).click();
+    const costForm=orderReport.getByRole('form',{name:'Custos do pedido'});
+    for(const [label,value] of [['Custo dos produtos','22'],['Taxa de pagamento adicional','3'],
+      ['Custo de entrega adicional','8'],['Outros custos diretos','2'],['Desconto informado','5']]){
+      await costForm.getByLabel(label,{exact:true}).fill(value);
+    }
+    await costForm.getByRole('button',{name:'Salvar custos'}).click();
+    await orderReport.getByText('Custos salvos.',{exact:true}).waitFor();
+    await orderReport.getByRole('cell',{name:/55,00/}).waitFor();
     await page.getByRole('button',{name:'Conciliação de repasses',exact:true}).click();
     const payouts=page.getByRole('region',{name:'Conciliação de repasses'});
     await payouts.getByLabel('Referência da conta').fill('loja-teste');
