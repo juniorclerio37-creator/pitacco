@@ -166,4 +166,3 @@ begin
  return invoice;
 end $$;
 revoke all on function pitacco_private.close_commission_week(uuid,date) from public,anon,authenticated,service_role;
-grant execute on function pitacco_private.close_commission_week(uuid,date) to service_role;

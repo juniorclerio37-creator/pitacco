@@ -21,6 +21,8 @@ insert into public.product_options(id,group_id,store_id,name,additional_price) v
 insert into public.loyalty_coupons(store_id,code,discount_type,discount_value,max_uses)
  values ('20000000-0000-0000-0000-000000000001','TESTE10','percent',10,1);
 
+insert into pitacco_private.commission_enrollments(store_id,starts_at)
+ values ('20000000-0000-0000-0000-000000000001',now()-interval '1 day');
 set local role anon;
 do $regression$
 declare
@@ -72,6 +74,9 @@ do $regression$
 begin
  assert (select uses from public.loyalty_coupons where code='TESTE10')=1, 'Coupon was used exactly once';
  assert (select count(*) from public.orders)=2, 'Replays did not duplicate orders';
+ assert (select count(*) from pitacco_private.commission_orders)=2, 'Replays did not duplicate commission records';
+ assert exists(select 1 from pitacco_private.commission_orders where product_cents=6800 and discount_cents=680 and delivery_cents=500 and completed_at is null),
+  'The real checkout persists the server-computed items, coupon and freight separately';
 end
 $regression$;
 rollback;

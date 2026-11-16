@@ -86,5 +86,6 @@ begin
  assert not has_table_privilege('authenticated','pitacco_private.weekly_invoices','select');
  assert not has_table_privilege('anon','pitacco_private.weekly_invoice_orders','select');
  assert not has_function_privilege('authenticated','pitacco_private.close_commission_week(uuid,date)','execute');
+ assert not has_function_privilege('service_role','pitacco_private.close_commission_week(uuid,date)','execute');
 end $$;
 rollback;
