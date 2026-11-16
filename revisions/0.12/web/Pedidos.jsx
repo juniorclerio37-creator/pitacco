@@ -14,6 +14,7 @@ export default function Pedidos({orders=[],stage,onAccept,onDecision,onReady,onD
  const filtered=useMemo(()=>orders.filter(o=>(filter==='all'?!terminal.has(stage(o)):stage(o)===filter)&&(!search||[number(o),o.receipt?.customer,...receiptItems(o.receipt).map(i=>i.name)].join(' ').toLowerCase().includes(search.toLowerCase()))),[orders,filter,search,stage]);
  const current=filtered.find(o=>o.id===selected)||filtered[0];
  const canDecide=current?.source==='proprio'&&current.status==='pending';
+ const waitingIfood=current?.source==='ifood'&&current.status==='pending';
  const decisionApplies=canDecide&&decision?.id===current.id;
  const total=orders.filter(o=>!['cancelled','rejected'].includes(stage(o))).reduce((sum,o)=>sum+Number(o.gross||0),0);
  return <div className="pitacco-pedidos">
@@ -32,7 +33,7 @@ export default function Pedidos({orders=[],stage,onAccept,onDecision,onReady,onD
   : <button className="primary" disabled={busy} onClick={()=>onAccept(current.id)}>Aceitar pedido</button>}
  <button type="button" disabled={busy} onClick={()=>setDecision({id:current.id,status:'rejected',reason:''})}>Recusar pedido</button>
  <button type="button" disabled={busy} onClick={()=>setDecision({id:current.id,status:'cancelled',reason:''})}>Cancelar pedido</button>
- </>}{stage(current)==='preparing'&&current.source==='proprio'&&<button className="primary" disabled={busy} onClick={()=>onReady(current.id)}>Marcar pronto</button>}</div>{decisionApplies&&<form onSubmit={async event=>{
+ </>}{stage(current)==='preparing'&&current.source==='proprio'&&<button className="primary" disabled={busy} onClick={()=>onReady(current.id)}>Marcar pronto</button>}</div>{waitingIfood&&<p>Confirme o pedido no Gestor de Pedidos do iFood. O status será atualizado aqui.</p>}{decisionApplies&&<form onSubmit={async event=>{
  event.preventDefault();
  await onDecision(current.id,decision.status,decision.reason);
  }}>

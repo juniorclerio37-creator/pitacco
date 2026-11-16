@@ -114,3 +114,5 @@ subprocess.run([sys.executable,'revisions/0.12/separate_public_portals.py'],chec
 subprocess.run([sys.executable,'revisions/0.12/merchant_reference_layout.py'],check=True)
 
 subprocess.run([sys.executable,'revisions/0.12/mount_storefront_settings.py'],check=True)
+
+subprocess.run([sys.executable,'revisions/0.12/ifood_merchant_orders.py'],check=True)

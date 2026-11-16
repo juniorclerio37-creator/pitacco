@@ -19,6 +19,7 @@ try {
   for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
+    let ifoodOrder=null;
     let adminMode=false,moduleEnabled=true,ownerMigrationApplied=false,readOnlyChecks=0,failFeatureCheck=false;
     const catalog=[];
     const productId='70000000-0000-0000-0000-000000000001';
@@ -53,6 +54,16 @@ try {
       localStorage.setItem('dg.supabase.url', api);
       localStorage.setItem('dg.supabase.key', 'sb_publishable_fixture_only_123456');
       localStorage.setItem('pitacco:print-options:'+storeId,'{preferência inválida');
+      if(width===1440&&location.origin===dashboard){
+        window.orderTones=0;
+        window.AudioContext=class {
+          state='suspended';currentTime=0;destination={};
+          async resume(){this.state='running';}
+          async close(){this.state='closed';}
+          createOscillator(){return {frequency:{setValueAtTime(){}},connect(){},start(){window.orderTones++;},stop(){}};}
+          createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){}};}
+        };
+      }
       if(width===375&&location.origin===dashboard){
         const getItem=Storage.prototype.getItem;
         Storage.prototype.getItem=function(key){
@@ -221,6 +232,8 @@ try {
         }
         const filter=filters.get('status');
         const orders = (width===375?[pendingOrder]:[pendingOrder,appointment]).filter(order=>!filter||filter.includes(order.status));
+        if(ifoodOrder&&filters.get('store_id')==='eq.'+store.id&&
+           (!filter||filter.includes(ifoodOrder.status)))orders.push(ifoodOrder);
         if(width===1440&&!filter)orders.push({
           id:'30000000-0000-0000-0000-000000000009',store_id:store.id,status:'historical',
           source:'proprio',gross:99,fees:0,created_at:'Data indisponível',receipt:{display_number:'B-01'}
@@ -586,6 +599,38 @@ try {
       failFeatureCheck=false;
       await page.getByRole('button',{name:'Tentar novamente',exact:true}).click();
       await page.getByRole('heading',{name:'Editor de cardápio',exact:true}).waitFor();
+      await navigation.getByRole('button',{name:'Pedidos',exact:true}).click();
+      const liveOrders=page.getByRole('region',{name:'Central de pedidos',exact:true});
+      await liveOrders.locator('.connection-bar').filter({hasText:'Conectado · sincronização ativa'}).waitFor();
+      await page.getByRole('button',{name:'Ativar som de pedidos',exact:true}).click();
+      await page.getByText('Som de pedidos ativado nesta aba.').waitFor();
+      const newOrder=number=>({id:'30000000-0000-0000-0000-0000000000'+number,store_id:store.id,
+        source:'ifood',status:'pending',gross:39,fees:0,created_at:new Date().toISOString(),
+        receipt:{display_number:'IF-'+number,customer:'Cliente iFood',items:[],ifood_received_at:new Date().toISOString()}});
+      ifoodOrder=newOrder('81');
+      await liveOrders.locator('.pedidos-card').filter({hasText:'#IF-81'}).waitFor();
+      await page.waitForFunction(()=>window.orderTones===4);
+      // Only the physical Windows notification is mocked here. Orders use full app refresh.
+      await page.addInitScript(origin=>{
+        if(location.origin!==origin)return;
+        window.nativeNotices=[];
+        window.__TAURI__={core:{invoke:async (command,args)=>{
+          if(command==='device_id')return 'fixture-device';
+          if(command==='list_printers'||command==='list_jobs')return [];
+          if(command==='get_autostart')return false;
+          if(command==='notify')window.nativeNotices.push(args.message);
+          return null;
+        }}};
+      },dashboard);
+      await page.goto(dashboard+'/app/');
+      const desktopOrders=page.getByRole('region',{name:'Central de pedidos',exact:true});
+      await desktopOrders.locator('.pedidos-card').filter({hasText:'#IF-81'}).waitFor();
+      assert.deepEqual(await page.evaluate(()=>window.nativeNotices),[]);
+      ifoodOrder=newOrder('82');
+      await desktopOrders.locator('.pedidos-card').filter({hasText:'#IF-82'}).waitFor();
+      await page.waitForFunction(()=>window.nativeNotices.includes('Novo pedido do iFood no Pitacco.'));
+      assert.equal(await page.evaluate(()=>window.nativeNotices.filter(message=>message.includes('iFood')).length),1);
+      console.log('PASS iFood incoming order alert on web and Windows bridge');
     }
     assert.deepEqual(errors, []);
     await page.close();
