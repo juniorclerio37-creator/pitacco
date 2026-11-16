@@ -52,12 +52,19 @@ export default function Operations({client,storeId,view,manager,onNavigate}){
      client.rpc('pitacco_store_payment_summary',{p_store:storeId}),
      client.from('orders').select('*').eq('store_id',storeId).eq('status','pending').not('scheduled_release_at','is',null).order('scheduled_release_at').limit(100)
     ]);
-    for(const result of results)if(result.error)throw result.error;
+    const scheduleError=results[6].error;
+    const scheduleColumnMissing=['42703','PGRST204'].includes(scheduleError?.code)
+     && scheduleError.message?.includes('scheduled_release_at');
+    const failure=results.slice(0,6).find(result=>result.error)?.error;
+    if(failure)throw failure;
     if(stopped)return;
     const incoming=[...new Map([...results[0].data||[],...results[6].data||[]].map(order=>[order.id,order])).values()];
-    const fresh=incoming.filter(o=>o.status==='pending'&&!seen.current.has(o.id));
-    incoming.forEach(o=>seen.current.add(o.id));
-    setPaymentSummary(results[5].data||[]);setOrders(incoming);setDeliveryRows(results[3].data||[]);setCourierRows(results[4].data||[]);setSettings(results[1].data||[]);setSectors(results[2].data||[]);setStatus('Conectado · sincronização ativa');
+    const fresh=incoming.filter(o=>orderStage(o)==='analysis'&&!seen.current.has(o.id));
+    fresh.forEach(o=>seen.current.add(o.id));
+    setPaymentSummary(results[5].data||[]);setOrders(incoming);setDeliveryRows(results[3].data||[]);setCourierRows(results[4].data||[]);setSettings(results[1].data||[]);setSectors(results[2].data||[]);
+    setStatus(scheduleError&&!scheduleColumnMissing
+     ? 'Pedidos recentes sincronizados · agendamentos pendentes de atualização'
+     : 'Conectado · sincronização ativa');
     if(fresh.length){
      if(desktop)invoke('notify',{message:`${fresh.length} pedido(s) aguardando aceite.`}).catch(e=>setError('Notificação: '+String(e)));
      else if(soundRef.current){try{const context=new AudioContext();const osc=context.createOscillator();osc.connect(context.destination);osc.start();osc.stop(context.currentTime+0.2);osc.onended=()=>context.close()}catch{}}

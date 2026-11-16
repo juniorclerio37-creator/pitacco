@@ -144,8 +144,12 @@ try {
       }
       if (pathname === '/rest/v1/profiles') return route.fulfill({ headers, json: { ...user, role:adminMode?'admin':'gestor' } });
       if (pathname === '/rest/v1/orders') {
-        const filter = new URL(route.request().url()).searchParams.get('status');
-        const orders = [pendingOrder, appointment].filter(order=>!filter||filter.includes(order.status));
+        const filters = new URL(route.request().url()).searchParams;
+        if(width===375 && filters.has('scheduled_release_at')){
+          return route.fulfill({headers,status:400,json:{code:'42703',message:'column orders.scheduled_release_at does not exist'}});
+        }
+        const filter=filters.get('status');
+        const orders = (width===375?[pendingOrder]:[pendingOrder,appointment]).filter(order=>!filter||filter.includes(order.status));
         return route.fulfill({headers,json:orders});
       }
       if (pathname === '/rest/v1/pitacco_schedule_windows') {
@@ -262,16 +266,27 @@ try {
     await inventory.getByText(/250 g/).waitFor();
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
     await navigation.getByRole('button', { name:'Pedidos', exact:true }).click();
-    await page.getByRole('button', { name:'Agendados (1)', exact:true }).click();
-    await page.locator('.pedidos-card').getByText('Cliente agendado').waitFor();
-    await page.getByText(/Aceite liberado às/).waitFor();
-    assert.equal(await page.getByRole('button',{name:'Aceitar pedido',exact:true}).count(),0);
+    if(width===375){
+      await page.getByRole('button',{name:'Agendados (0)',exact:true}).waitFor();
+      await page.locator('.connection-bar').filter({hasText:'Conectado · sincronização ativa'}).waitFor();
+    }else{
+      await page.getByRole('button', { name:'Agendados (1)', exact:true }).click();
+      await page.locator('.pedidos-card').getByText('Cliente agendado').waitFor();
+      await page.getByText(/Aceite liberado às/).waitFor();
+      assert.equal(await page.getByRole('button',{name:'Aceitar pedido',exact:true}).count(),0);
+    }
     await page.getByRole('button', { name:'Pendentes (1)', exact:true }).click();
     await page.getByRole('button', { name:'Recusar pedido', exact:true }).click();
     await page.getByLabel('Motivo da recusa').fill('Item indisponível');
     await page.getByRole('button', { name:'Confirmar recusa', exact:true }).click();
     await page.getByRole('button', { name:'Recusados (1)', exact:true }).click();
     await page.locator('.pedidos-card').getByText('Cliente do pedido').waitFor();
+    if(width===768){
+      appointment.scheduled_release_at=new Date(Date.now()-1_000).toISOString();
+      await page.getByRole('button',{name:'Pendentes (1)',exact:true}).click();
+      await page.locator('.pedidos-card').getByText('Cliente agendado').waitFor();
+      await page.getByRole('button',{name:'Aceitar pedido',exact:true}).waitFor();
+    }
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
     await navigation.getByRole('button', { name:'Relatórios', exact:true }).click();
     const financial = page.getByRole('region', {name:'Relatório financeiro'});
