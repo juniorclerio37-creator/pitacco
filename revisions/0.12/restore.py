@@ -110,3 +110,5 @@ subprocess.run([sys.executable,'revisions/0.12/mobile_orange_nav_053.py'],check=
 
 # Compile platform administration as a separate website, outside the store bundle.
 subprocess.run([sys.executable,'revisions/0.12/separate_public_portals.py'],check=True)
+
+subprocess.run([sys.executable,'revisions/0.12/merchant_reference_layout.py'],check=True)

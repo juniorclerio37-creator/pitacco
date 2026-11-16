@@ -44,6 +44,7 @@ try {
     };
     page.on('pageerror', error => errors.push(error.message));
     await page.addInitScript(({ api }) => {
+      if(window!==window.top)return;
       localStorage.setItem('dg.supabase.url', api);
       localStorage.setItem('dg.supabase.key', 'sb_publishable_fixture_only_123456');
     }, { api });
@@ -262,6 +263,11 @@ try {
     }
     await navigation.getByRole('button', { name:'Visão Geral', exact:true }).click();
     await page.getByRole('heading', { name:'Visão Geral', exact:true }).waitFor();
+    await page.getByRole('region',{name:'Indicadores da loja'}).getByText('Ticket médio',{exact:true}).waitFor();
+    await page.getByRole('group',{name:'Indicador do gráfico'}).getByRole('button',{name:'Pedidos'}).click();
+    await page.getByRole('img',{name:'Gráfico de pedidos registrados'}).waitFor();
+    await page.getByRole('combobox',{name:'Período da visão geral'}).selectOption('7');
+    await page.getByRole('heading',{name:'Movimento por dia'}).waitFor();
     if (width <= 800) assert.equal(await navigation.isVisible(), false);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
@@ -283,7 +289,8 @@ try {
     await navigation.getByRole('button', { name:'Pedidos', exact:true }).click();
     if(width===375){
       await page.getByRole('button',{name:'Agendados (0)',exact:true}).waitFor();
-      await page.locator('.connection-bar').filter({hasText:'Conectado · sincronização ativa'}).waitFor();
+      await page.getByRole('region',{name:'Central de pedidos',exact:true})
+        .locator('.connection-bar').filter({hasText:'Conectado · sincronização ativa'}).waitFor();
     }else{
       await page.getByRole('button', { name:'Agendados (1)', exact:true }).click();
       await page.locator('.pedidos-card').getByText('Cliente agendado').waitFor();
@@ -356,6 +363,13 @@ try {
     await schedule.getByRole('group',{name:'Segunda-feira',exact:true}).getByRole('checkbox').check();
     await schedule.getByRole('button',{name:'Salvar horários'}).click();
     await schedule.getByText('Horários de agendamento salvos.').waitFor();
+    if(width===1440){
+      await page.getByRole('button',{name:'Impressão e aceite',exact:true}).click();
+      await page.locator('.merchant-print-layout').getByRole('heading',{name:'Impressoras por setor'}).waitFor();
+      await page.getByTitle('Pré-visualização HTML da comanda').waitFor();
+      await navigation.getByRole('button',{name:'Motoboys',exact:true}).click();
+      await page.locator('.courier-overview-grid').getByRole('button',{name:'Abrir acerto'}).waitFor();
+    }
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
     await navigation.getByRole('button', { name:'Alertas', exact:true }).click();
     const alerts=page.getByRole('region',{name:'Central de alertas'});
