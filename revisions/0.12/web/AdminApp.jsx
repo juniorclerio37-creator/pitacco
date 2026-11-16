@@ -7,6 +7,7 @@ import {BillingOverview} from './BillingStatus.jsx';
 import OwnerDashboard from './OwnerDashboard.jsx';
 import Homologation from './Homologation.jsx';
 import OwnerIfood from './OwnerIfood.jsx';
+import OwnerStoreIfood from './OwnerStoreIfood.jsx';
 import OwnerFeatures from './OwnerFeatures.jsx';
 import StoreProfile from './StoreProfile.jsx';
 import OwnerCatalog from './OwnerCatalog.jsx';
@@ -127,13 +128,14 @@ function AdminApp(){
     </select>
     {store&&<>
      <nav className="pitacco-local-tabs" aria-label="Seções do estabelecimento">
-      {['Identidade','Catálogo','Checkout','Agendamento'].map(tab=><button key={tab} type="button" aria-pressed={storeTab===tab}
+      {['Identidade','Catálogo','Checkout','Agendamento','iFood'].map(tab=><button key={tab} type="button" aria-pressed={storeTab===tab}
        className={storeTab===tab?'active':'secondary'} onClick={()=>setStoreTab(tab)}>{tab}</button>)}
      </nav>
      {storeTab==='Identidade'&&<StoreProfile key={store.id} client={client} store={store} manager onSaved={()=>loadStores().catch(failure=>setError(failure.message))}/>}
      {storeTab==='Catálogo'&&<OwnerCatalog key={store.id} client={client} storeId={store.id}/>}
      {storeTab==='Checkout'&&<OwnerMenuSettings key={store.id} client={client} storeId={store.id} storefrontOrigin={storefrontOrigin}/>}
      {storeTab==='Agendamento'&&<ScheduleSettings key={store.id} client={client} storeId={store.id}/>}
+     {storeTab==='iFood'&&<OwnerStoreIfood key={store.id} client={client} storeId={store.id}/>}
     </>}
    </section>}
   </main>

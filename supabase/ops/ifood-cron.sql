@@ -6,6 +6,7 @@ select cron.schedule('pitacco-ifood-orders', '30 seconds', $cron$
     set queue_key=gen_random_uuid(),queue_expires_at=now()+interval '25 seconds'
     where exists (
     select 1 from pitacco_private.ifood_merchants m where m.enabled and
+      pitacco_private.ifood_store_receives(m.store_id,m.test_only) and
       ((m.credential is not null and (m.test_only or control.merchant_linking) and m.poll_after<=now())
         or exists (select 1 from pitacco_private.ifood_events e
           where e.merchant_id=m.merchant_id and e.done_at is null and e.attempts<10 and e.run_at<=now()))

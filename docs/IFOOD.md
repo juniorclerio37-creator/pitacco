@@ -9,6 +9,10 @@
 
 Uma aplicação centralizada também pode receber eventos assinados na URL `/functions/v1/ifood-orders` se configurada separadamente, com `IFOOD_CLIENT_ID`, `IFOOD_CLIENT_SECRET` e IDs vinculados pelo proprietário no servidor. O webhook aceita somente contas centralizadas. O vínculo automático dos lojistas utiliza a aplicação distribuída.
 
+## Controle por estabelecimento
+
+Em **Pitacco Admin → Estabelecimentos → iFood**, pause ou remova a pausa do recebimento de produção daquela loja. O controle local vale para todos os vínculos do estabelecimento. Ele mantém os vínculos, a fila e os pedidos já gravados e não altera a homologação geral nem o funcionamento da loja dentro do iFood.
+
 ## Loja
 
 1. Abra **Integrações → iFood**, informe o Merchant ID da sua loja e gere o código de vínculo.
