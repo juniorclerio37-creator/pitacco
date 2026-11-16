@@ -59,8 +59,9 @@ export default function Operations({client,storeId,view,manager,onNavigate}){
     if(failure)throw failure;
     if(stopped)return;
     const incoming=[...new Map([...results[0].data||[],...results[6].data||[]].map(order=>[order.id,order])).values()];
-    const fresh=incoming.filter(o=>orderStage(o)==='analysis'&&!seen.current.has(o.id));
-    fresh.forEach(o=>seen.current.add(o.id));
+    const waitingForAcceptance=incoming.filter(o=>orderStage(o)==='analysis');
+    const fresh=waitingForAcceptance.filter(o=>!seen.current.has(o.id));
+    waitingForAcceptance.forEach(o=>seen.current.add(o.id));
     setPaymentSummary(results[5].data||[]);setOrders(incoming);setDeliveryRows(results[3].data||[]);setCourierRows(results[4].data||[]);setSettings(results[1].data||[]);setSectors(results[2].data||[]);
     setStatus(scheduleError&&!scheduleColumnMissing
      ? 'Pedidos recentes sincronizados · agendamentos pendentes de atualização'
