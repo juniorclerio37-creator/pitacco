@@ -26,6 +26,9 @@ update public.orders set created_at=now()-interval '1 day' where id='30000000-00
 insert into public.deliveries(store_id,order_id,customer_name,address,status)
 values ('20000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000006','Nome interno','Endereço interno','entregue');
 
+insert into pitacco_private.subscription_payments(provider,provider_payment_id,store_id,amount,confirmed_at,paid_until) values
+ ('asaas','production:finance-example','20000000-0000-0000-0000-000000000001',59.90,now(),now()+interval '30 days'),
+ ('asaas','sandbox:finance-example','20000000-0000-0000-0000-000000000002',59.90,now(),now()+interval '30 days');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
 do $$ begin
@@ -33,6 +36,11 @@ do $$ begin
   begin
    perform public.pitacco_owner_operation_rows('orders');
    raise exception 'O gestor não deve ler os pedidos globais';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+   perform public.pitacco_owner_finance_report(current_date,current_date);
+   raise exception 'O gestor não deve ler o financeiro global';
   exception when insufficient_privilege then null;
   end;
   perform public.pitacco_owner_platform_dashboard('',0);
@@ -43,6 +51,7 @@ end $$;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
 do $$
 declare result jsonb;
+ local_day date:=(now() at time zone 'America/Sao_Paulo')::date;
 begin
  result:=public.pitacco_owner_platform_dashboard('ALPHA',0);
  assert result#>>'{billing,registered}'='17';
@@ -74,5 +83,15 @@ begin
  assert jsonb_array_length(public.pitacco_owner_platform_dashboard('',0)->'stores')=15;
  assert jsonb_array_length(public.pitacco_owner_platform_dashboard('',1)->'stores')=2;
  assert not has_function_privilege('anon','public.pitacco_owner_platform_dashboard(text,integer)','execute');
+ result:=public.pitacco_owner_finance_report(local_day-1,local_day);
+ assert (result->>'gross')::numeric=90;
+ assert (result->>'orders')::integer=2;
+ assert (result->>'subscriptions')::numeric=59.90;
+ assert (result->>'payments')::integer=1;
+ assert jsonb_array_length(result->'days')=2;
+ result:=public.pitacco_owner_finance_report(local_day,local_day,'20000000-0000-0000-0000-000000000002');
+ assert (result->>'gross')::numeric=50;
+ assert (result->>'subscriptions')::numeric=0;
+ assert not has_function_privilege('anon','public.pitacco_owner_finance_report(date,date,uuid)','execute');
 end $$;
 rollback;
