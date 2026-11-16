@@ -56,7 +56,9 @@ export default function ProductComplements({client,storeId,product,onClose,onGro
   </form>;
  }
  function optionForm(group,option){
-  return <form className="complement-item" key={option?.id||'new'} onSubmit={event=>saveOption(event,group.id,option?.id||null)}>
+  return <form className="complement-item" key={option?.id||'new'}
+   aria-label={option?'Editar item '+option.name:'Novo item de '+group.name}
+   onSubmit={event=>saveOption(event,group.id,option?.id||null)}>
    <label>Nome do item <input name="name" required maxLength={100} defaultValue={option?.name}/></label>
    <label>Preço adicional (R$) <input name="price" type="number" required min={0} max={100000} step=".01" defaultValue={option?.price??0}/></label>
    <label><input name="available" type="checkbox" defaultChecked={option?.available??true}/> Disponível</label>

@@ -34,7 +34,7 @@ export default function MenuStudio({client,storeId,products=[],onRefresh}){
  return <section className="menu-studio">
  <div className="page-intro"><div><span className="eyebrow">MEU CARDÁPIO</span><h3>Editor de cardápio</h3><p>Gerencie produtos e veja as alterações no cardápio do cliente enquanto edita.</p></div><button type="button" className="secondary" onClick={()=>setNotice('Importação direta do iFood aguardando conexão oficial autorizada para esta loja. Nenhum catálogo foi importado.')}>Importar do iFood</button></div>
  <div className="quick-actions" style={{marginBottom:16}}>{['Produtos','Complementos','Banners','Estoque','Insumos'].map(t=><button type="button" key={t} className={section===t?'':'secondary'} onClick={()=>setSection(t)}>{t}</button>)}</div>
- {notice&&<p className="notice" role="status">{notice}</p>}
+ {notice&&!showEditor&&<p className="notice" role="status">{notice}</p>}
  {section!=='Produtos'&&<div className="panel"><h3>{section}</h3><p>{section==='Complementos'?'Abra um produto para cadastrar e editar seus complementos.':'A gestão completa desta seção ainda depende do módulo de catálogo e de sua persistência.'}</p><button type="button" onClick={()=>setSection('Produtos')}>Ver produtos</button></div>}
  {section==='Produtos'&&<><div className="menu-studio-list">
  <div className="panel"><h3>Categorias</h3>{categories.map(c=><button key={c} type="button" className={selectedCategory===c?'active':'secondary'} style={{display:'block',width:'100%',marginBottom:8}} onClick={()=>setSelectedCategory(c)}>{c}</button>)}</div>
@@ -43,6 +43,7 @@ export default function MenuStudio({client,storeId,products=[],onRefresh}){
  {showEditor&&<div style={{position:'fixed',inset:0,zIndex:90,background:'rgba(0,0,0,.5)',display:'flex',justifyContent:'flex-end'}}>
  <div style={{background:'var(--background,#fff)',color:'var(--foreground,#222)',height:'100%',width:'min(1100px,100%)',overflowY:'auto',padding:22,boxSizing:'border-box'}}>
  <div className="line"><h3>{editing?'Editar produto':'Novo produto'}</h3><button type="button" className="secondary" onClick={()=>setShowEditor(false)}>Fechar</button></div>
+ {notice&&<p className="notice" role="status">{notice}</p>}
  <div className="menu-studio-editor">
  <div><form onSubmit={save} aria-label="Dados do produto">
  <label style={field}>Foto do produto (JPG, PNG, WebP)<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f&&f.size>5*1024*1024){setNotice('Imagem maior que 5 MB.');return}setPhoto(f||null)}}/></label>

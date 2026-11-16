@@ -91,10 +91,11 @@ try {
       }
       if(pathname==='/rest/v1/rpc/pitacco_save_option'){
         const input=route.request().postDataJSON();
-        assert.deepEqual(input,{p_store_id:store.id,p_group_id:merchantGroup.id,p_option_id:null,
-          p_name:'Banana',p_price:2.5,p_available:true});
         const id='70000000-0000-0000-0000-000000000004';
-        merchantGroup.options.push({id,name:input.p_name,price:input.p_price,available:input.p_available});
+        const updating=merchantGroup.options.length>0;
+        assert.deepEqual(input,{p_store_id:store.id,p_group_id:merchantGroup.id,p_option_id:updating?id:null,
+          p_name:'Banana',p_price:updating?3:2.5,p_available:!updating});
+        merchantGroup.options=[{id,name:input.p_name,price:input.p_price,available:input.p_available}];
         return route.fulfill({headers,json:id});
       }
       if(pathname==='/rest/v1/rpc/pitacco_save_product'){
@@ -496,6 +497,11 @@ try {
       await complements.getByRole('button',{name:'Adicionar item',exact:true}).click();
       await complements.getByText('Complemento salvo.',{exact:true}).waitFor();
       await complements.getByRole('button',{name:'Salvar item',exact:true}).waitFor();
+      const banana=complements.getByRole('form',{name:'Editar item Banana'});
+      await banana.getByLabel('Preço adicional (R$)',{exact:true}).fill('3.00');
+      await banana.getByLabel('Disponível',{exact:true}).uncheck();
+      await banana.getByRole('button',{name:'Salvar item',exact:true}).click();
+      await complements.getByText('Complemento salvo.',{exact:true}).waitFor();
       await page.getByRole('button',{name:'Fechar',exact:true}).click();
       await navigation.getByRole('button',{name:'Pedidos',exact:true}).click();
       await page.getByRole('combobox',{name:'Selecionar loja'}).selectOption(readOnlyStore.id);
