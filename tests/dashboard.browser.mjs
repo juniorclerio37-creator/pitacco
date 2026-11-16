@@ -44,6 +44,7 @@ try {
     };
     page.on('pageerror', error => errors.push(error.message));
     await page.addInitScript(({ api }) => {
+      if(window!==window.top)return;
       localStorage.setItem('dg.supabase.url', api);
       localStorage.setItem('dg.supabase.key', 'sb_publishable_fixture_only_123456');
     }, { api });
