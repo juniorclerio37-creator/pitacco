@@ -12,6 +12,7 @@ import StoreProfile from './StoreProfile.jsx';
 import OwnerCatalog from './OwnerCatalog.jsx';
 import OwnerMenuSettings from './OwnerMenuSettings.jsx';
 import ScheduleSettings from './ScheduleSettings.jsx';
+import OwnerPlans from './OwnerPlans.jsx';
 import OwnerOperations from './OwnerOperations.jsx';
 import './style.css';
 import './super-admin.css';
@@ -26,7 +27,7 @@ const storefrontOrigin=preview?(import.meta.env.VITE_PITACCO_HOMOLOG_SITE_ORIGIN
 const groups=[
  ['Visão geral',[['Painel geral',LayoutDashboard]]],
  ['Operação',[['Estabelecimentos',Store],['Pedidos',ShoppingBag],['Entregadores',Bike]]],
- ['Gestão comercial',[['Assinaturas',CreditCard]]],
+ ['Gestão comercial',[['Assinaturas',CreditCard],['Planos',Package]]],
  ['Administração',[['Módulos do lojista',Package],['Homologação',ClipboardCheck]]],
  ['Sistema',[['Auditoria',ListChecks],['Atualizações',Settings]]]
 ];
@@ -158,6 +159,7 @@ function AdminApp(){
    {error&&<p role="alert">{error}</p>}
    {page==='Painel geral'&&<OwnerDashboard client={client} onStore={openStore}/>}
    {operations[page]&&<OwnerOperations key={page} client={client} stores={stores} kind={operations[page]}/>}
+   {page==='Planos'&&<OwnerPlans client={client}/>}
    {page==='Assinaturas'&&<OwnerSubscriptions client={client}/>}
    {page==='Módulos do lojista'&&<OwnerFeatures client={client} stores={stores}/>}
    {page==='Atualizações'&&<section className="panel"><h3>Atualizações do Windows</h3><a href="https://github.com/juniorclerio37-creator/pitacco/releases" target="_blank" rel="noopener noreferrer">Consultar versões publicadas</a></section>}
