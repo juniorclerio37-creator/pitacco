@@ -2,3 +2,15 @@
 .super-admin.admin-collapsed{grid-template-columns:minmax(0,1fr)}.super-admin .admin-top>div:first-child{display:flex;align-items:center;gap:.65rem}.super-admin .admin-top h2{margin:0}.super-admin .owner-dashboard-table{overflow:auto}
 
 .super-admin .admin-plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(16rem,100%),1fr));gap:1rem}.super-admin .admin-plan-grid dl{display:grid;grid-template-columns:1fr;gap:.35rem;margin-bottom:0}.super-admin .admin-plan-grid dt{color:var(--muted)}.super-admin .admin-plan-grid dd{margin:0 0 .5rem;font-weight:700}
+
+.super-admin .admin-finance-filters{display:flex;flex-wrap:wrap;gap:.65rem;align-items:end}
+.super-admin .admin-finance-bars{display:flex;height:8rem;gap:3px;align-items:end;overflow:auto;padding:.3rem}
+.super-admin .admin-finance-bars button{flex:1 0 8px;min-width:8px;padding:0;height:max(.25rem,var(--bar-height));border-radius:3px;background:var(--accent)}
+.super-admin .admin-finance-bars button[aria-pressed=true]{outline:2px solid currentColor;outline-offset:2px}
+@media print{
+ .super-admin>aside,.super-admin header,.super-admin .admin-finance-filters,.super-admin .admin-report-actions,.super-admin .admin-report-chart{display:none!important}
+ .super-admin,.super-admin .pitacco-workspace,.super-admin .owner-finance-report,.super-admin .owner-finance-report .panel{display:block;color:#111!important;background:#fff!important;box-shadow:none;border:0;padding:0}
+ .super-admin .owner-finance-report p{color:#222!important}
+ .super-admin .owner-finance-report .owner-dashboard-table{overflow:visible}
+ .super-admin .owner-finance-report tr{break-inside:avoid}
+}

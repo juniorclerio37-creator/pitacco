@@ -181,6 +181,17 @@ try {
         }
         return route.fulfill({headers,json:s===store.id});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_owner_finance_report'){
+        assert.equal(origin,realApi);
+        assert.equal(adminMode,true);
+        const {p_start,p_end,p_store}=route.request().postDataJSON();
+        assert.match(p_start,/^\d{4}-\d{2}-\d{2}$/);
+        assert.match(p_end,/^\d{4}-\d{2}-\d{2}$/);
+        assert.ok([null,store.id].includes(p_store));
+        return route.fulfill({headers,json:{orders:2,gross:90,payments:1,subscriptions:59.9,days:[
+          {day:p_end,orders:2,gross:90,payments:1,subscriptions:59.9}
+        ]}});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_owner_platform_dashboard'){
         assert.equal(origin,realApi);
         assert.equal(adminMode,true);
@@ -554,6 +565,21 @@ try {
     await dark.click();
     assert.equal(await page.locator('.super-admin.pitacco-theme-dark').count(),1);
     await page.getByRole('button',{name:'Ativar modo claro'}).click();
+    await adminNavigate('Financeiro do Pitacco');
+    const finance=page.getByRole('region',{name:'Financeiro do Pitacco'});
+    const daily=finance.getByRole('table',{name:'Valores por dia'});
+    await daily.getByRole('cell',{name:/90,00/}).waitFor();
+    await daily.getByRole('cell',{name:/59,90/}).waitFor();
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    if(width===1440){
+      await finance.getByLabel('Loja',{exact:true}).selectOption(store.id);
+      await finance.getByLabel('Período',{exact:true}).selectOption('today');
+      await finance.getByRole('button',{name:'Consultar',exact:true}).click();
+      await finance.getByRole('heading',{name:store.name,exact:true}).waitFor();
+      const download=page.waitForEvent('download');
+      await finance.getByRole('button',{name:'Baixar CSV'}).click();
+      assert.match((await download).suggestedFilename(),/^pitacco-financeiro-.*\.csv$/);
+    }
     await adminNavigate('Homologação');
     const homologation=page.getByRole('region',{name:'Homologação do Pitacco'});
     await homologation.getByLabel('Loja',{exact:true}).selectOption(store.id);
