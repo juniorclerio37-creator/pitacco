@@ -3,7 +3,17 @@ insert into auth.users(id,email,email_confirmed_at) values
  ('10000000-0000-0000-0000-000000000001','owner@example.invalid',now()),
  ('10000000-0000-0000-0000-000000000002','other@example.invalid',now());
 update public.profiles set role='admin';
-insert into pitacco_private.platform_owner(user_id) values ('10000000-0000-0000-0000-000000000001');
+insert into pitacco_private.platform_owner(user_id,login_name_hash)
+values ('10000000-0000-0000-0000-000000000001',sha256(convert_to('00000000001','UTF8')));
+set local role service_role;
+do $test$
+begin
+ assert public.pitacco_lookup_platform_owner_login(encode(sha256(convert_to('00000000001','UTF8')),'hex'))='owner@example.invalid';
+ assert public.pitacco_lookup_platform_owner_login(encode(sha256(convert_to('00000000002','UTF8')),'hex')) is null;
+ assert public.pitacco_lookup_platform_owner_login('invalid') is null;
+end;
+$test$;
+reset role;
 insert into public.stores(id,name) values
  ('20000000-0000-0000-0000-000000000001','Loja A'),
  ('20000000-0000-0000-0000-000000000002','Loja B');
@@ -74,6 +84,8 @@ reset role;
 do $test$
 begin
  assert not has_function_privilege('anon','public.pitacco_is_platform_owner()','EXECUTE');
+ assert not has_function_privilege('anon','public.pitacco_lookup_platform_owner_login(text)','EXECUTE');
+ assert not has_function_privilege('authenticated','public.pitacco_lookup_platform_owner_login(text)','EXECUTE');
  assert (select count(*) from pitacco_private.store_feature_audit)=3;
  assert (select count(*) from public.operation_audit where action like 'owner_catalog_%_saved')=3;
 end;
