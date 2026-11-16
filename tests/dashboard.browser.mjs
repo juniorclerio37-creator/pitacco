@@ -262,6 +262,11 @@ try {
     }
     await navigation.getByRole('button', { name:'Visão Geral', exact:true }).click();
     await page.getByRole('heading', { name:'Visão Geral', exact:true }).waitFor();
+    await page.getByRole('region',{name:'Indicadores da loja'}).getByText('Ticket médio',{exact:true}).waitFor();
+    await page.getByRole('group',{name:'Indicador do gráfico'}).getByRole('button',{name:'Pedidos'}).click();
+    await page.getByRole('img',{name:'Gráfico de pedidos registrados'}).waitFor();
+    await page.getByRole('combobox',{name:'Período da visão geral'}).selectOption('7');
+    await page.getByRole('heading',{name:'Movimento por dia'}).waitFor();
     if (width <= 800) assert.equal(await navigation.isVisible(), false);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
