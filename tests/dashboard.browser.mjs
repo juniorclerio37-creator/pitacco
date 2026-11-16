@@ -47,6 +47,7 @@ try {
       receipt:{display_number:'D-180',customer:'Cliente do pedido',items:'Formato antigo',payment:'pix_manual'}
     };
     page.on('pageerror', error => errors.push(error.message));
+    page.on('console',message=>{if(message.type()==='error'&&!message.text().startsWith('Failed to load resource'))console.log(message.text());});
     await page.addInitScript(({ api,storeId }) => {
       if(window!==window.top)return;
       localStorage.setItem('dg.supabase.url', api);
@@ -296,7 +297,12 @@ try {
     }
     await navigation.getByRole('button', { name:'Visão Geral', exact:true }).click();
     await page.getByRole('heading', { name:'Visão Geral', exact:true }).waitFor();
-    await page.getByRole('region',{name:'Indicadores da loja'}).getByText('Ticket médio',{exact:true}).waitFor();
+    try{
+      await page.getByRole('region',{name:'Indicadores da loja'}).getByText('Ticket médio',{exact:true}).waitFor({timeout:8500});
+    }catch(error){
+      console.log(await page.locator('main').innerText());
+      throw error;
+    }
     await page.getByRole('group',{name:'Indicador do gráfico'}).getByRole('button',{name:'Pedidos'}).click();
     await page.getByRole('img',{name:'Gráfico de pedidos registrados'}).waitFor();
     await page.getByRole('combobox',{name:'Período da visão geral'}).selectOption('7');
