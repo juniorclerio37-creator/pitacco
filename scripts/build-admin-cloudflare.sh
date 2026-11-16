@@ -20,6 +20,7 @@ npm run build -- --config admin.vite.config.mjs --outDir "$output"
 mv "$output/admin.html" "$output/index.html"
 
 if [[ "${VITE_PITACCO_HOMOLOGACAO:-0}" == 0 ]]; then
+cd ..
 python3 - web/dist-admin /index.html /assets/admin-xFPoQQxb.js <<'PY_PITACCO_DEPLOY'
 import base64,gzip,hashlib,sys
 from pathlib import Path
