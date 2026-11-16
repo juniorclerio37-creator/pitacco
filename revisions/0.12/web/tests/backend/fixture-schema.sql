@@ -27,6 +27,11 @@ create table public.store_payment_receipts (
  order_id uuid not null references public.orders(id), store_id uuid, amount numeric, recorded_at timestamptz
 );
 create table public.pitacco_courier_payouts (store_id uuid not null, amount numeric, period_start date, period_end date, created_at timestamptz);
+create table public.pitacco_order_costs (
+ order_id uuid primary key, store_id uuid not null, merchant_discount numeric not null default 0,
+ processing_fees numeric not null default 0, delivery_cost numeric not null default 0,
+ goods_cost numeric not null default 0, other_cost numeric not null default 0
+);
 alter table public.public_menu_settings add column preparation_minutes integer not null default 30;
 
 create table public.marketplace_acceptance_requests (
