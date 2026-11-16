@@ -181,6 +181,20 @@ try {
         }
         return route.fulfill({headers,json:s===store.id});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_owner_platform_dashboard'){
+        assert.equal(origin,realApi);
+        assert.equal(adminMode,true);
+        const {p_search,p_page}=route.request().postDataJSON();
+        assert.equal(p_page,0);
+        const row={id:store.id,name:store.name,subscription:'trial',orders_today:5,orders_in_progress:1,scheduled:0,deliveries_in_progress:1,couriers:1};
+        return route.fulfill({headers,json:{
+          updated_at:new Date().toISOString(),billing:{registered:2,trial:1,active:1,overdue:0,legacy:0,monthly_recurring_revenue:59.9},
+          orders_today:8,orders:{pending:1,preparing:1,ready:0,delivering:0,scheduled:2,in_progress:2},
+          channels:{proprio:5,ifood:3},couriers:{registered:4,active:3,shared:1},
+          deliveries_in_progress:1,page_size:15,
+          stores:p_search==='Loja sem operação'?[]:[row],matching_stores:p_search==='Loja sem operação'?0:1
+        }});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_is_platform_owner'){
         if(!ownerMigrationApplied)return route.fulfill({headers,status:404,json:{code:'PGRST202',message:'Função indisponível'}});
         return route.fulfill({headers,json:adminMode});
@@ -516,6 +530,21 @@ try {
     adminMode=true;
     await adminLogin();
     const platform=page.getByRole('navigation',{name:'Administração geral'});
+    const platformDashboard=page.getByRole('region',{name:'Visão geral do Pitacco'});
+    await platformDashboard.getByText('Entregadores cadastrados',{exact:true}).waitFor();
+    await platformDashboard.getByText('Pedidos em andamento',{exact:true}).waitFor();
+    await platformDashboard.getByRole('rowheader',{name:store.name}).waitFor();
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    if(width===1440){
+      await platformDashboard.getByRole('searchbox',{name:'Nome da loja'}).fill('Loja sem operação');
+      await platformDashboard.getByRole('button',{name:'Buscar',exact:true}).click();
+      await platformDashboard.getByText('Nenhuma loja encontrada.').waitFor();
+      await platformDashboard.getByText('Lojas cadastradas',{exact:true}).waitFor();
+      await platformDashboard.getByRole('searchbox',{name:'Nome da loja'}).fill('');
+      await platformDashboard.getByRole('button',{name:'Buscar',exact:true}).click();
+      await platformDashboard.getByRole('button',{name:'Abrir configuração de '+store.name}).click();
+      await page.getByRole('region',{name:'Configuração do estabelecimento'}).waitFor();
+    }
     await platform.getByRole('button',{name:'Homologação',exact:true}).click();
     const homologation=page.getByRole('region',{name:'Homologação do Pitacco'});
     await homologation.getByLabel('Loja',{exact:true}).selectOption(store.id);

@@ -4,6 +4,7 @@ import {createClient} from '@supabase/supabase-js';
 import {LayoutDashboard, Store, Package, CreditCard, ClipboardCheck, LogOut, Settings} from 'lucide-react';
 import {connectionConfig} from './config.mjs';
 import {BillingOverview} from './BillingStatus.jsx';
+import OwnerDashboard from './OwnerDashboard.jsx';
 import Homologation from './Homologation.jsx';
 import OwnerIfood from './OwnerIfood.jsx';
 import OwnerFeatures from './OwnerFeatures.jsx';
@@ -110,7 +111,7 @@ function AdminApp(){
   <main className="pitacco-workspace pitacco-workspace--admin">
    <header><h2>{page}</h2></header>
    {error&&<p role="alert">{error}</p>}
-   {page==='Painel geral'&&<BillingOverview client={client}/>}
+   {page==='Painel geral'&&<OwnerDashboard client={client} onStore={id=>{setStoreId(id);setStoreTab('Identidade');setPage('Estabelecimentos');}}/>}
    {page==='Assinaturas'&&<BillingOverview client={client}/>}
    {page==='Módulos do lojista'&&<OwnerFeatures client={client} stores={stores}/>}
    {page==='Atualizações'&&<section className="panel"><h3>Atualizações do Windows</h3><a href="https://github.com/juniorclerio37-creator/pitacco/releases" target="_blank" rel="noopener noreferrer">Consultar versões publicadas</a></section>}
