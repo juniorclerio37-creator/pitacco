@@ -23,10 +23,12 @@ assert source.count(tab_state)==1
 source=source.replace(tab_state,"[tab,setTab]=useState(()=>nativeAvailable()?'Pedidos':readMerchantTab())",1)
 source=source.replace("const descriptions=", """const merchantTabs=new Set([...nav.map(([name])=>name),...Object.values(landing),
  ...Object.values(secondaryTabs).flat().map(([target])=>target),
- 'Agendamento','Entregas','Entrega externa','Importar cardápio','Despesas','Assinaturas']);
+ 'Agendamento','Entregas','Entrega externa','Importar cardápio','Despesas','Assinaturas',
+ 'Relatório de motoboys','Pagamento de motoboys']);
 function readMerchantTab(){
  const saved=new URL(window.location.href).searchParams.get('aba');
- return merchantTabs.has(saved)?saved:'Painel';
+ const target=Object.hasOwn(landing,saved)?landing[saved]:saved;
+ return merchantTabs.has(target)?target:'Painel';
 }
 const descriptions=""",1)
 needle='if(!supabase)return <SetupConnection/>;'

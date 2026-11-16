@@ -481,6 +481,7 @@ try {
     await modules.getByText('Estoque atualizado.').waitFor();
     adminMode=false;
     await page.goto(dashboard+'/app/');
+    await page.getByRole('region',{name:'Indicadores da loja'}).waitFor();
     if(width<=800)await page.getByRole('button',{name:'Abrir menu'}).click();
     await navigation.getByRole('button',{name:'Clientes',exact:true}).waitFor();
     assert.equal(await navigation.getByRole('button',{name:'Estoque',exact:true}).count(),0);
