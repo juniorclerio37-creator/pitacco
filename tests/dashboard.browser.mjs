@@ -48,24 +48,24 @@ try {
     };
     page.on('pageerror', error => errors.push(error.message));
     page.on('console',message=>{if(message.type()==='error'&&!message.text().startsWith('Failed to load resource'))console.log(message.text());});
-    await page.addInitScript(({ api,storeId,width }) => {
+    await page.addInitScript(({ api,storeId,width,dashboard }) => {
       if(window!==window.top)return;
       localStorage.setItem('dg.supabase.url', api);
       localStorage.setItem('dg.supabase.key', 'sb_publishable_fixture_only_123456');
       localStorage.setItem('pitacco:print-options:'+storeId,'{preferência inválida');
-      if(width===375){
+      if(width===375&&location.origin===dashboard){
         const getItem=Storage.prototype.getItem;
         Storage.prototype.getItem=function(key){
           if(key==='pitacco:receipt:'+storeId)throw new DOMException('Armazenamento indisponível','SecurityError');
           return getItem.call(this,key);
         };
       }
-      if(width===768){
+      if(width===768&&location.origin===dashboard){
         const randomUUID=Crypto.prototype.randomUUID;
         delete Crypto.prototype.randomUUID;
         window.restoreFixtureUUID=()=>{Crypto.prototype.randomUUID=randomUUID;};
       }
-    }, { api,storeId:store.id,width });
+    }, { api,storeId:store.id,width,dashboard });
 
     await page.route('**/*', async route => {
       const { pathname, origin } = new URL(route.request().url());
