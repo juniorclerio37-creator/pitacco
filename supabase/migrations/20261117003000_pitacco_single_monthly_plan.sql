@@ -43,6 +43,7 @@ begin
   where o.store_id=p_store and o.created_at>=starts and o.created_at<ends
    and o.status='accepted'
    and coalesce(o.receipt->>'is_test','false')='false' and coalesce(o.receipt->>'test','false')='false'
+   and coalesce(o.receipt->>'ifood_test','false')='false'
    and not exists(select 1 from public.deliveries d where d.order_id=o.id and d.store_id=o.store_id and d.status='cancelada')
    and (o.preparation_status='completed' or exists(select 1 from public.deliveries d
      where d.order_id=o.id and d.store_id=o.store_id and d.status='entregue'))

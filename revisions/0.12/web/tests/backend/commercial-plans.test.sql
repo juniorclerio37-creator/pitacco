@@ -21,7 +21,8 @@ insert into public.orders(id,store_id,channel,gross,status,source,preparation_st
  ('30000000-0000-0000-0000-000000000008','20000000-0000-0000-0000-000000000001','Delivery próprio',500,'accepted','proprio','completed','2026-11-01 03:00+00',null),
  ('30000000-0000-0000-0000-000000000009','20000000-0000-0000-0000-000000000002','iFood',3000,'accepted','ifood','completed','2026-10-04 10:00+00',null),
  ('30000000-0000-0000-0000-000000000010','20000000-0000-0000-0000-000000000001','Delivery próprio',0.01,'accepted','proprio','ready','2026-10-04 10:00+00',null),
- ('30000000-0000-0000-0000-000000000011','20000000-0000-0000-0000-000000000001','Delivery próprio',500,'accepted','proprio','completed','2026-10-04 10:00+00',null);
+ ('30000000-0000-0000-0000-000000000011','20000000-0000-0000-0000-000000000001','Delivery próprio',500,'accepted','proprio','completed','2026-10-04 10:00+00',null),
+ ('30000000-0000-0000-0000-000000000012','20000000-0000-0000-0000-000000000001','iFood',500,'accepted','ifood','completed','2026-10-05 10:00+00','{"ifood_status":"CONCLUDED","ifood_test":true}');
 insert into public.deliveries(order_id,store_id,customer_name,address,status) values
  ('30000000-0000-0000-0000-000000000004','20000000-0000-0000-0000-000000000001','Fixture','Fixture','entregue'),
  ('30000000-0000-0000-0000-000000000011','20000000-0000-0000-0000-000000000001','Fixture','Fixture','cancelada');
