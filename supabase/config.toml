@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.payment-homologation]
 verify_jwt = false
+
+[functions.ifood-orders]
+verify_jwt = false

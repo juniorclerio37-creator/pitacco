@@ -5,6 +5,7 @@ import {LayoutDashboard, Store, Package, CreditCard, ClipboardCheck, LogOut, Set
 import {connectionConfig} from './config.mjs';
 import {BillingOverview} from './BillingStatus.jsx';
 import Homologation from './Homologation.jsx';
+import OwnerIfood from './OwnerIfood.jsx';
 import OwnerFeatures from './OwnerFeatures.jsx';
 import StoreProfile from './StoreProfile.jsx';
 import OwnerCatalog from './OwnerCatalog.jsx';
@@ -113,7 +114,10 @@ function AdminApp(){
    {page==='Assinaturas'&&<BillingOverview client={client}/>}
    {page==='Módulos do lojista'&&<OwnerFeatures client={client} stores={stores}/>}
    {page==='Atualizações'&&<section className="panel"><h3>Atualizações do Windows</h3><a href="https://github.com/juniorclerio37-creator/pitacco/releases" target="_blank" rel="noopener noreferrer">Consultar versões publicadas</a></section>}
-   {page==='Homologação'&&<Homologation client={client} stores={stores} storefrontOrigin={storefrontOrigin}/>}
+   {page==='Homologação'&&<>
+    <OwnerIfood client={client} stores={stores}/>
+    <Homologation client={client} stores={stores} storefrontOrigin={storefrontOrigin}/>
+   </>}
    {page==='Estabelecimentos'&&<section className="panel" aria-label="Configuração do estabelecimento">
     <label htmlFor="owner-store">Estabelecimento</label>
     <select id="owner-store" value={storeId} onChange={event=>setStoreId(event.target.value)}>
