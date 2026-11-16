@@ -15,6 +15,7 @@ source=source.replace("const admin=profile?.role==='admin'","const admin=false")
 source=source.replace("import Homologation from './Homologation.jsx';\n","").replace("import {ClipboardCheck} from 'lucide-react';\n","").replace("import BillingStatus,{BillingOverview} from './BillingStatus.jsx';","import BillingStatus from './BillingStatus.jsx';")
 source="import {featureForTab,useStoreFeatures} from './storeFeatures.mjs';\n"+source
 source="import {useStoreManagerAccess} from './storeAccess.mjs';\n"+source
+source="import WorkspaceBoundary from './WorkspaceBoundary.jsx';\n"+source
 manager_check="manager=admin||profile?.role==='gestor'||members.some(m=>m.user_id===session.user.id&&m.role==='gestor')"
 assert source.count(manager_check)==1
 source=source.replace(manager_check, "manager=nativeAvailable()?(admin||profile?.role==='gestor'||members.some(m=>m.user_id===session.user.id&&m.role==='gestor')):storeAccess.manager", 1)
@@ -33,7 +34,8 @@ function readMerchantTab(){
 const descriptions=""",1)
 needle='if(!supabase)return <SetupConnection/>;'
 assert source.count(needle)==1
-source=source.replace(needle,"""const featureSettings=useStoreFeatures(supabase,selected);
+source=source.replace(needle,"""const modules=useStoreFeatures(supabase,nativeAvailable()?null:selected,session?.user?.id);
+const featureSettings=modules.features;
 const storeAccess=useStoreManagerAccess(supabase,session?.user?.id,nativeAvailable()?null:selected);
 const allowed=name=>{
  const feature=featureForTab(name);
@@ -61,8 +63,12 @@ end=source.index('</main>',start)
 source=source[:start]+"""
 {storeAccess.status==='loading'&&<div className="panel" role="status">Verificando acesso à loja…</div>}
 {storeAccess.status==='error'&&<div className="panel"><p role="alert">Não foi possível verificar o acesso à loja.</p><button type="button" onClick={storeAccess.retry}>Tentar novamente</button></div>}
-{storeAccess.status==='ready'&&allowed(tab)&&<>
-"""+source[start:end]+'</>}\n'+source[end:]
+{storeAccess.status==='ready'&&!nativeAvailable()&&active&&featureForTab(tab)&&modules.status==='loading'&&
+ <div className="panel" role="status">Carregando acesso às funções da loja…</div>}
+{storeAccess.status==='ready'&&!nativeAvailable()&&active&&featureForTab(tab)&&modules.status==='error'&&
+ <div className="panel"><p role="alert">Não foi possível carregar as funções da loja.</p><button type="button" onClick={modules.retry}>Tentar novamente</button></div>}
+{storeAccess.status==='ready'&&allowed(tab)&&<WorkspaceBoundary resetKey={selected+'|'+tab} onOverview={()=>setTab('Painel')}>
+"""+source[start:end]+'</WorkspaceBoundary>}\n'+source[end:]
 # Also hide shortcuts for modules removed from the main menu.
 dashboard=source.index('className="approved-dashboard"')
 summary=source.index('<h3>Resumo financeiro</h3>',dashboard)
@@ -72,4 +78,5 @@ content=re.sub(r"(<button[^>]*onClick=\{\(\)=>setTab\('(Produtos|Clientes|Fideli
                lambda found:"{allowed("+repr(found[2])+")&&"+found[1]+"}",content)
 source=head+content+tail
 source=source.replace('</React.Fragment>)}</nav>',"</React.Fragment>)}{!nativeAvailable()&&active&&featureSettings?.financeiro===false&&<button type=\"button\" onClick={()=>setTab('Assinaturas')}>Assinatura</button>}</nav>",1)
+source=source.replace('.render(<App/>);','.render(<WorkspaceBoundary><App/></WorkspaceBoundary>);',1)
 path.write_text(source,encoding='utf-8')
