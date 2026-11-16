@@ -13,7 +13,7 @@ function periods(){
 }
 const formatDay=value=>value.split('-').reverse().join('/');
 function downloadCsv(days){
- const header='Data;Pedidos concluídos;Valor bruto dos pedidos (BRL);Pagamentos Asaas;Assinaturas Asaas (BRL)';
+ const header='Data;Pedidos concluídos;Valor bruto dos pedidos (BRL);Pagamentos Asaas;Assinaturas confirmadas no Asaas (BRL)';
  const rows=days.map(row=>[row.day,row.orders,Number(row.gross).toFixed(2).replace('.',','),row.payments,Number(row.subscriptions).toFixed(2).replace('.',',')].join(';'));
  const url=URL.createObjectURL(new Blob(['\ufeff'+[header,...rows].join('\r\n')],{type:'text/csv;charset=utf-8'}));
  const link=document.createElement('a');
@@ -46,7 +46,7 @@ export default function OwnerFinance({client,stores}){
  }
  const [preset,setPreset]=useState('week'),[metric,setMetric]=useState('gross');
  const max=report?Math.max(0,...report.days.map(row=>Number(row[metric]))):0;
- const metricLabel=metric==='gross'?'Valor bruto dos pedidos concluídos':'Assinaturas recebidas via Asaas';
+ const metricLabel=metric==='gross'?'Valor bruto dos pedidos concluídos':'Assinaturas confirmadas no Asaas';
  return <section className="panel owner-finance-report" aria-label="Financeiro do Pitacco" aria-busy={busy}>
   <form className="admin-finance-filters" onSubmit={submit}>
    <label className="field">Período<select name="preset" value={preset} onChange={event=>setPreset(event.target.value)}>
@@ -67,7 +67,7 @@ export default function OwnerFinance({client,stores}){
    <p>De {formatDay(range.start)} a {formatDay(range.end)} · horário de Brasília</p>
    <div className="admin-plan-grid">
     <article className="panel"><h4>Valor bruto dos pedidos concluídos nas lojas</h4><strong>{money.format(report.gross)}</strong><p>{report.orders} pedidos, agrupados pela data de entrada.</p></article>
-    <article className="panel"><h4>Assinaturas recebidas pelo Pitacco via Asaas</h4><strong>{money.format(report.subscriptions)}</strong><p>{report.payments} pagamentos registrados no Asaas de produção, agrupados pela confirmação.</p></article>
+    <article className="panel"><h4>Assinaturas do Pitacco confirmadas no Asaas</h4><strong>{money.format(report.subscriptions)}</strong><p>{report.payments} pagamentos no Asaas de produção, agrupados pela confirmação. A liquidação bancária é apurada separadamente no Asaas.</p></article>
    </div>
    <div className="quick-actions admin-report-actions">
     <button type="button" className="secondary" onClick={()=>downloadCsv(report.days)}>Baixar CSV</button>
@@ -75,7 +75,7 @@ export default function OwnerFinance({client,stores}){
    </div>
    <div className="admin-report-chart">
     <label className="field">Indicador do gráfico<select value={metric} onChange={event=>{setMetric(event.target.value);setDetail(null);}}>
-     <option value="gross">Valor bruto dos pedidos concluídos</option><option value="subscriptions">Assinaturas recebidas via Asaas</option>
+     <option value="gross">Valor bruto dos pedidos concluídos</option><option value="subscriptions">Assinaturas confirmadas no Asaas</option>
     </select></label>
     {max>0&&<div className="admin-finance-bars" role="group" aria-label={metricLabel}>
      {report.days.map(row=><button type="button" key={row.day} aria-pressed={detail===row.day}
@@ -86,7 +86,7 @@ export default function OwnerFinance({client,stores}){
     {max===0&&<p>Sem valores registrados para este indicador no período.</p>}
    </div>
    <div className="owner-dashboard-table" tabIndex={0}><table><caption>Valores por dia</caption>
-    <thead><tr><th scope="col">Dia</th><th scope="col">Pedidos concluídos</th><th scope="col">Valor bruto das lojas</th><th scope="col">Pagamentos Asaas</th><th scope="col">Assinaturas recebidas</th></tr></thead>
+    <thead><tr><th scope="col">Dia</th><th scope="col">Pedidos concluídos</th><th scope="col">Valor bruto das lojas</th><th scope="col">Pagamentos Asaas</th><th scope="col">Assinaturas confirmadas</th></tr></thead>
     <tbody>{report.days.map(row=><tr key={row.day}><th scope="row">{formatDay(row.day)}</th><td>{row.orders}</td>
      <td>{money.format(row.gross)}</td><td>{row.payments}</td><td>{money.format(row.subscriptions)}</td></tr>)}</tbody>
    </table></div>
