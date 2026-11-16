@@ -22,6 +22,9 @@ try {
     let adminMode=false,moduleEnabled=true,ownerMigrationApplied=false,readOnlyChecks=0;
     const catalog=[];
     const productId='70000000-0000-0000-0000-000000000001';
+    const merchantProduct={id:'70000000-0000-0000-0000-000000000002',store_id:store.id,
+      name:'Açaí para editar',price:16.5,cost:0,category:'Açaí',menu_active:true};
+    const merchantGroup={id:'70000000-0000-0000-0000-000000000003',name:'Frutas',min:0,max:1,options:[]};
     const menuSettings={slug:'loja-teste',enabled:false,delivery_enabled:true,pickup_enabled:false,delivery_fee:5,
       payment_methods:['dinheiro'],pix_instructions:'',preparation_minutes:30};
     const evidence=[];
@@ -80,6 +83,20 @@ try {
       if(pathname==='/rest/v1/rpc/pitacco_list_products'){
         assert.equal(route.request().postDataJSON().p_store_id,store.id);
         return route.fulfill({headers,json:catalog});
+      }
+      if(pathname==='/rest/v1/products')return route.fulfill({headers,json:[merchantProduct]});
+      if(pathname==='/rest/v1/rpc/pitacco_list_complements'){
+        assert.deepEqual(route.request().postDataJSON(),{p_store_id:store.id,p_product_id:merchantProduct.id});
+        return route.fulfill({headers,json:[merchantGroup]});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_save_option'){
+        const input=route.request().postDataJSON();
+        const id='70000000-0000-0000-0000-000000000004';
+        const updating=merchantGroup.options.length>0;
+        assert.deepEqual(input,{p_store_id:store.id,p_group_id:merchantGroup.id,p_option_id:updating?id:null,
+          p_name:'Banana',p_price:updating?3:2.5,p_available:!updating});
+        merchantGroup.options=[{id,name:input.p_name,price:input.p_price,available:input.p_available}];
+        return route.fulfill({headers,json:id});
       }
       if(pathname==='/rest/v1/rpc/pitacco_save_product'){
         assert.ok(adminMode);
@@ -267,6 +284,7 @@ try {
     await page.getByPlaceholder('Senha (mínimo 6 caracteres)').fill('senha-de-teste');
     await page.getByRole('button', { name:'Entrar', exact:true }).click();
     await page.locator('.store-identity-copy').getByText(store.name, { exact:true }).waitFor({ state:'attached' });
+    await page.getByRole('heading',{name:'Visão Geral',exact:true}).waitFor();
 
     const navigation = page.getByRole('navigation', { name:'Menu principal' });
     if (width <= 800) {
@@ -463,11 +481,30 @@ try {
     await modules.getByText('Estoque atualizado.').waitFor();
     adminMode=false;
     await page.goto(dashboard+'/app/');
+    await page.getByRole('region',{name:'Indicadores da loja'}).waitFor();
     if(width<=800)await page.getByRole('button',{name:'Abrir menu'}).click();
     await navigation.getByRole('button',{name:'Clientes',exact:true}).waitFor();
     assert.equal(await navigation.getByRole('button',{name:'Estoque',exact:true}).count(),0);
     assert.equal(await page.getByRole('button',{name:'Homologação',exact:true}).count(),0);
     if(width===1440){
+      await navigation.getByRole('button',{name:'Meu Cardápio',exact:true}).click();
+      await page.waitForURL(url=>url.searchParams.get('aba')==='Produtos');
+      await page.reload();
+      await page.getByRole('heading',{name:'Editor de cardápio',exact:true}).waitFor();
+      await page.getByRole('button',{name:'Editar',exact:true}).click();
+      const complements=page.getByRole('region',{name:'Grupos e complementos'});
+      await complements.getByLabel('Nome do item',{exact:true}).fill('Banana');
+      await complements.getByLabel('Preço adicional (R$)',{exact:true}).fill('2.50');
+      await complements.getByRole('button',{name:'Adicionar item',exact:true}).click();
+      await complements.getByText('Complemento salvo.',{exact:true}).waitFor();
+      await complements.getByRole('button',{name:'Salvar item',exact:true}).waitFor();
+      const banana=complements.getByRole('form',{name:'Editar item Banana'});
+      await banana.getByLabel('Preço adicional (R$)',{exact:true}).fill('3.00');
+      await banana.getByLabel('Disponível',{exact:true}).uncheck();
+      await banana.getByRole('button',{name:'Salvar item',exact:true}).click();
+      await complements.getByText('Complemento salvo.',{exact:true}).waitFor();
+      await page.getByRole('button',{name:'Fechar',exact:true}).click();
+      await navigation.getByRole('button',{name:'Pedidos',exact:true}).click();
       await page.getByRole('combobox',{name:'Selecionar loja'}).selectOption(readOnlyStore.id);
       await page.getByRole('alert').filter({hasText:'Não foi possível verificar o acesso à loja.'}).waitFor();
       await page.getByRole('button',{name:'Tentar novamente',exact:true}).click();
