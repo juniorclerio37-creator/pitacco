@@ -9,7 +9,8 @@ insert into public.store_members values
  ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','gestor'),
  ('20000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','gestor');
 insert into public.public_menu_settings(store_id,slug,enabled,delivery_enabled,pickup_enabled,delivery_fee,payment_methods,pix_instructions,preparation_minutes)
- values ('20000000-0000-0000-0000-000000000001','test-schedule',true,false,true,0,array['pix_manual'],'',45);
+ values ('20000000-0000-0000-0000-000000000001','test-schedule',true,false,true,0,array['pix_manual'],'',45)
+on conflict (store_id) do update set slug=excluded.slug, enabled=excluded.enabled, delivery_enabled=excluded.delivery_enabled, pickup_enabled=excluded.pickup_enabled, delivery_fee=excluded.delivery_fee, payment_methods=excluded.payment_methods, pix_instructions=excluded.pix_instructions, preparation_minutes=excluded.preparation_minutes;
 insert into public.products(id,store_id,name,price,cost,menu_active)
  values ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','Açaí',20,5,true);
 insert into public.acceptance_settings(store_id,source,mode,enabled)

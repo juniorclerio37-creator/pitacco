@@ -40,7 +40,7 @@ for (const file of (await fs.readdir(migrationsDirectory)).filter(name=>name.end
  await db.exec(await fs.readFile(new URL(file,migrationsDirectory),'utf8'));
  console.log('PASS production compatibility migration',file);
 }
-for (const file of ['checkout-variants.test.sql','store-trial.test.sql','inventory.test.sql','order-decisions.test.sql','financial-report.test.sql','scheduled-orders.test.sql','operational-alerts.test.sql','subscription-entitlement.test.sql','asaas-subscription.test.sql','delivery-tracking.test.sql','marketplace-settlements.test.sql','admin-homologation.test.sql','platform-owner.test.sql']) {
+for (const file of ['checkout-variants.test.sql','store-trial.test.sql','inventory.test.sql','order-decisions.test.sql','financial-report.test.sql','scheduled-orders.test.sql','operational-alerts.test.sql','subscription-entitlement.test.sql','asaas-subscription.test.sql','delivery-tracking.test.sql','marketplace-settlements.test.sql','admin-homologation.test.sql','platform-owner.test.sql','storefront-settings.test.sql']) {
  try {
   await db.exec(await fs.readFile(new URL(file,fixtureDirectory),'utf8'));
  } catch (error) {

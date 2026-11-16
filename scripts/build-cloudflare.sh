@@ -32,6 +32,7 @@ cp marketing/configuracao.html "$dist_dir"/configuracao/index.html
 cp marketing/produtos.html "$dist_dir"/produtos/index.html
 cp marketing/complementos.html "$dist_dir"/complementos/index.html
 cp marketing/cardapio.html "$dist_dir"/cardapio/index.html
+cp web/deliveryMap.mjs "$dist_dir"/assets/delivery-map.mjs
 cp marketing/pedidos.html "$dist_dir"/pedidos/index.html
 cp marketing/aceite.html "$dist_dir"/aceite/index.html
 cp marketing/acompanhar.html "$dist_dir"/acompanhar/index.html

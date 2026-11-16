@@ -1,6 +1,11 @@
 import React, {useEffect,useRef,useState} from 'react';
+import {storefrontLink} from './storefrontLink.mjs';
+import PaymentHomologation,{paymentHomologationProviders} from './PaymentHomologation.jsx';
 
 const checks={
+ mercado_pago:['Mercado Pago','Use uma conta e uma cobrança de teste. Registre o resultado do checkout e da consulta à API.'],
+ pagbank:['PagBank (PagSeguro)','Use o ambiente Sandbox e confirme a cobrança pelo identificador do pedido do provedor.'],
+ infinitepay:['InfinitePay','Use a conta autorizada e confirme a transação consultando o payment_check. Registre o resultado sem incluir credenciais.'],
  asaas:['Assinatura Asaas','Use uma cobrança de sandbox. Confira o valor, o vínculo da assinatura e se a confirmação chegou ao Pitacco.'],
  marketplaces:['Marketplaces','Use a conta oficial de homologação de iFood, 99Food ou Keeta. Registre a plataforma e o resultado do recebimento e do aceite.'],
  repasse:['Conciliação de repasses','Importe em Relatórios um CSV de teste com pedido_externo e repasse_liquido. Confira valores iguais, divergências e pedidos ausentes.'],
@@ -99,7 +104,7 @@ export default function Homologation({client,stores,storefrontOrigin}){
    </div>
    {probe&&<ul aria-label="Configuração da loja">
     <li>{probe.menu_has_checkout?'O cardápio tem atendimento e pagamento configurados.':'Cardápio e checkout precisam de configuração.'}
-     {probe.menu_slug&&storefrontOrigin&&<> <a href={storefrontOrigin+'/cardapio/?loja='+encodeURIComponent(probe.menu_slug)} target="_blank" rel="noopener noreferrer">Abrir cardápio</a></>}
+     {probe.menu_slug&&storefrontOrigin&&<> <a href={storefrontLink(probe.menu_slug,storefrontOrigin)} target="_blank" rel="noopener noreferrer">Abrir cardápio</a></>}
     </li>
     <li>{probe.has_active_products?'A loja possui produtos ativos.':'A loja ainda precisa de produtos ativos.'}</li>
     <li>{probe.sandbox_store_linked?'Loja vinculada a uma assinatura no Asaas Sandbox.':'Vínculo com assinatura de sandbox pendente.'}</li>
@@ -124,6 +129,8 @@ export default function Homologation({client,stores,storefrontOrigin}){
    </div>}
   </div>
 
+  {Object.hasOwn(paymentHomologationProviders,scope)&&
+   <PaymentHomologation key={store+scope} client={client} store={store} provider={scope}/>}
   <div className="panel">
    <h3>Registrar resultado</h3>
    <form onSubmit={saveResult}>

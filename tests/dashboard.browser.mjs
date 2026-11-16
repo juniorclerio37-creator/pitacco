@@ -70,7 +70,7 @@ try {
       if (origin !== api && origin !== realApi) return route.abort();
       const headers = {
         'access-control-allow-origin': origin===realApi?adminPortal:dashboard,
-        'access-control-allow-headers': 'authorization,apikey,content-type,x-client-info,x-supabase-api-version',
+        'access-control-allow-headers': 'authorization,apikey,content-type,x-client-info,x-supabase-api-version,prefer',
         'access-control-allow-methods': 'GET,POST,OPTIONS'
       };
       if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
@@ -108,6 +108,31 @@ try {
         catalog.push({id:productId,name:input.p_name,category:input.p_category,description:'',
           price:input.p_price,cost:input.p_cost,menu_active:input.p_menu_active});
         return route.fulfill({headers,json:productId});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_storefront_link'){
+        const {p_store}=route.request().postDataJSON();
+        return route.fulfill({headers,json:p_store===store.id?{slug:menuSettings.slug,enabled:true}:{slug:'outra-loja',enabled:false}});
+      }
+      if(pathname==='/rest/v1/public_menu_settings'){
+        assert.equal(new URL(route.request().url()).searchParams.get('store_id'),'eq.'+store.id);
+        return route.fulfill({headers,json:[{...menuSettings,enabled:true}]});
+      }
+      if(pathname==='/rest/v1/pitacco_store_delivery_areas'){
+        if(route.request().method()==='POST'){
+          assert.deepEqual(route.request().postDataJSON(),{store_id:store.id,latitude:-22.71,longitude:-43.4,radius_m:4000,enabled:true});
+          return route.fulfill({headers,status:201});
+        }
+        return route.fulfill({headers,json:[]});
+      }
+      if(pathname==='/rest/v1/pitacco_store_payment_providers'){
+        if(route.request().method()==='POST'){
+          const rows=route.request().postDataJSON();
+          assert.equal(rows.length,3);
+          assert.ok(rows.every(row=>row.store_id===store.id));
+          assert.equal(rows.find(row=>row.provider==='infinitepay').requested_enabled,true);
+          return route.fulfill({headers,status:201});
+        }
+        return route.fulfill({headers,json:[]});
       }
       if(pathname==='/rest/v1/rpc/pitacco_owner_menu_settings'){
         assert.equal(route.request().postDataJSON().p_store,store.id);
@@ -397,6 +422,23 @@ try {
     await payouts.getByText('Divergente',{exact:true}).waitFor();
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
     await navigation.getByRole('button', { name:'Administrar Loja', exact:true }).click();
+    const menuLink=page.getByRole('link',{name:'https://pitacco.com.br/loja-teste',exact:true});
+    await menuLink.waitFor();
+    assert.equal(await menuLink.getAttribute('href'),'https://pitacco.com.br/loja-teste');
+    if(width===1440){
+      await page.getByRole('button',{name:'Área de entrega',exact:true}).click();
+      await page.getByLabel('Latitude do centro').fill('-22.71');
+      await page.getByLabel('Longitude do centro').fill('-43.4');
+      await page.getByLabel('Raio da área (metros)').fill('4000');
+      await page.getByLabel('Ativar limite de entrega').check();
+      await page.getByRole('button',{name:'Salvar área de entrega'}).click();
+      await page.getByText('Área de entrega ativa.').waitFor();
+      await page.getByRole('button',{name:'Pagamentos',exact:true}).click();
+      await page.getByRole('checkbox',{name:'InfinitePay'}).check();
+      await page.getByRole('button',{name:'Salvar preferências de integração'}).click();
+      await page.getByText('Preferências de integração salvas.').waitFor();
+      await page.getByRole('button',{name:'Identidade da loja',exact:true}).click();
+    }
     await page.getByRole('button', { name:'Agendamento', exact:true }).click();
     const schedule = page.getByRole('region', {name:'Horários de agendamento'});
     await schedule.getByRole('group',{name:'Segunda-feira',exact:true}).getByRole('checkbox').check();

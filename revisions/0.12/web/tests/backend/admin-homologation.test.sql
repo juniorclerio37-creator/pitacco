@@ -7,7 +7,8 @@ insert into pitacco_private.platform_owner(user_id) values ('10000000-0000-0000-
 insert into public.stores(id,name) values ('20000000-0000-0000-0000-000000000001','Loja para homologação');
 insert into public.store_members values ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','gestor');
 insert into public.public_menu_settings(store_id,slug,enabled,delivery_enabled,pickup_enabled,delivery_fee,payment_methods,pix_instructions)
- values ('20000000-0000-0000-0000-000000000001','cardapio-isolado',true,false,true,0,array['pix_manual'],'');
+ values ('20000000-0000-0000-0000-000000000001','cardapio-isolado',true,false,true,0,array['pix_manual'],'')
+on conflict (store_id) do update set slug=excluded.slug, enabled=excluded.enabled, delivery_enabled=excluded.delivery_enabled, pickup_enabled=excluded.pickup_enabled, delivery_fee=excluded.delivery_fee, payment_methods=excluded.payment_methods, pix_instructions=excluded.pix_instructions;
 insert into public.products(store_id,name,price,cost,menu_active)
  values ('20000000-0000-0000-0000-000000000001','Produto',5,0,true);
 update pitacco_private.subscription_control set asaas_environment='sandbox';
