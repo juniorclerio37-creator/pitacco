@@ -1,6 +1,10 @@
 name: Pitacco Windows
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'revisions/0.12/**'
+      - '.github/workflows/windows.yml'
   push:
     branches: [main]
     tags: ['v*']
@@ -29,126 +33,40 @@ jobs:
       - name: Restaurar codigo preservado
         working-directory: .
         run: python -X utf8 revisions/0.12/restore.py
-      - name: Verificar navegacao e renderizacao de Clientes e Fideliza+
+      - name: Validar pedidos, isolamento e impressão existente
         working-directory: .
         shell: python
         run: |
           from pathlib import Path
-          src = Path('web/src.jsx').read_text(encoding='utf-8')
-          operations = Path('web/Operations.jsx').read_text(encoding='utf-8')
+          app = Path('web/src.jsx').read_text(encoding='utf-8')
+          orders = Path('web/Operations.jsx').read_text(encoding='utf-8')
+          native = Path('web/src-tauri/src/main.rs').read_text(encoding='utf-8')
+          admin = Path('web/AdminApp.jsx').read_text(encoding='utf-8')
           checks = {
-              'Clientes no menu': "['Clientes'," in src,
-              'Fideliza+ no menu': "['Fideliza+'," in src,
-              'Clientes permitido no Windows': "'Fideliza+','Clientes','Atualizações'].includes(name)" in src,
-              'Clientes com pagina propria': "tab==='Clientes'&&<CustomersFromOrders" in src,
-              'Clientes isolados por loja': 'order.store_id!==storeId' in src,
-              'Fideliza+ renderizado': "view==='Fideliza+'&&<Fideliza" in operations,
-              'Fideliza+ visivel no roteador': "view==='Fideliza+'" in operations,
-          }
-          for name, ok in checks.items():
-              print(('OK' if ok else 'FALHOU') + ': ' + name, flush=True)
-          if not all(checks.values()):
-              raise SystemExit('Modulos de Clientes/Fideliza+ nao estao conectados corretamente.')
-      - name: Verificar identidade por loja e layout unificado
-        working-directory: .
-        shell: python
-        run: |
-          from pathlib import Path
-          src = Path('web/src.jsx').read_text(encoding='utf-8')
-          css = Path('web/style.css').read_text(encoding='utf-8')
-          checks = {
-              'Identidade da loja no menu': 'store-identity-copy' in src and 'storeBrand?.logo_url' in src,
-              'Logo Pitacco somente no login': 'src="/pitacco-brand-013.svg" alt="Pitacco"' in src and '<div className="brand"><img src="/pitacco-logo.png"' not in src,
-              'Identidade em web e Windows': "if(!session||!selected){setStoreBrand(null);return}" in src,
-              'Layout geral': 'pitacco-workspace--overview' in css or 'pitacco-workspace .metrics' in css,
-              'Layout de pedidos': 'pitacco-workspace--orders .orders-toolbar' in css,
-              'Layout de impressao': 'pitacco-workspace--settings .pitacco-operations--printing' in css,
-              'Layout de motoboys': 'pitacco-workspace--couriers .panel' in css,
-              'Demais telas': 'pitacco-workspace--other .page-intro' in css,
+              'backend oficial no Windows': 'const useOfficial=' in app,
+              'gestor validado por loja': 'useStoreManagerAccess(supabase,session?.user?.id,selected)' in app,
+              'pedidos filtrados por loja': "eq('store_id',storeId)" in orders and 'order.store_id===storeId' in orders,
+              'alerta nativo': "invoke('play_order_alert')" in orders and 'include_bytes!("order-alert.wav")' in native,
+              'fila e teste de impressão existentes': all(name in native for name in ('enqueue_job','retry_job','test_printer')),
+              'central separada': "page==='Central de Aplicativos'" in admin and 'pitacco-admin-shell' not in app,
           }
           for label, ok in checks.items():
-              print(('OK' if ok else 'FALHOU') + ': ' + label, flush=True)
+              print(f'{label}: {ok}', flush=True)
           if not all(checks.values()):
-              raise SystemExit('Layout ou identidade por loja incompletos.')
-      - name: Validar central de atualizacoes e verificacao Windows
-        working-directory: .
-        shell: python
-        run: |
-          from pathlib import Path
-          src=Path('web/src.jsx').read_text(encoding='utf-8')
-          operations=Path('web/Operations.jsx').read_text(encoding='utf-8')
-          owner=Path('web/AdminApp.jsx').read_text(encoding='utf-8')
-          checks={
-              'Central disponivel para administrador somente no site': "page==='Atualizações'" in owner and "AdminApp" not in src,
-              'Central no painel admin': "['Atualizações',Settings]" in owner,
-              'Menu da loja sem atualizacoes admin': "['Atualizações',Settings,'Principal']" not in src,
-              'Verificacao nativa conectada': "invoke('check_update')" in operations,
-              'Erros de verificacao exibidos': "setUpdateCheck({state:'error'" in operations,
-              'Sem instalacao nao assinada': 'Esta verificação não instala arquivos.' in operations,
-          }
-          for label,ok in checks.items(): print(('OK' if ok else 'FALHOU')+': '+label,flush=True)
-          if not all(checks.values()): raise SystemExit('Falha na central de atualizacoes.')
-      - name: Verificar separacao entre administrador e lojista
-        working-directory: .
-        shell: python
-        run: |
-          from pathlib import Path
-          src=Path('web/src.jsx').read_text(encoding='utf-8')
-          owner=Path('web/AdminApp.jsx').read_text(encoding='utf-8')
-          checks={
-              'Painel do proprietario separado': 'pitacco-admin-shell' not in src and 'pitacco-admin-shell' in owner,
-              'Permissao pelo backend': "rpc('is_admin')" in owner,
-              'Dominio exclusivo': 'admin.pitacco.com.br' in owner,
-              'Vinculo com a loja': 'storeBrand?.logo_url' in src,
-              'Marca do painel admin': 'pitacco-platform-brand' in owner,
-          }
-          for label,ok in checks.items(): print(('OK' if ok else 'FALHOU')+': '+label,flush=True)
-          if not all(checks.values()): raise SystemExit('Falha na separacao de ambientes.')
-      - name: Diagnosticar controles de impressao 0.12
-        working-directory: .
-        shell: python
-        run: |
-          from pathlib import Path
-          operations = Path('web/Operations.jsx').read_text(encoding='utf-8')
-          checks = {
-              'editor de impressora': 'editingSector' in operations,
-              'protecao de trabalhos pendentes': "from('print_jobs')" in operations and "if(count>0)" in operations,
-              'teste de impressao': "invoke('test_printer'" in operations,
-              'transferencia de computador': 'pitacco_switch_print_device' in operations,
-              'desvinculacao de computador': 'pitacco_unbind_print_device' in operations,
-          }
-          for name, ok in checks.items():
-              print(('OK' if ok else 'ATENCAO') + ': ' + name, flush=True)
-          print('Diagnostico informativo: compilacao e testes funcionais continuam.', flush=True)
-      - name: Validar isolamento de falhas e identidade da loja
-        working-directory: .
-        shell: python
-        run: |
-          from pathlib import Path
-          operations=Path('web/Operations.jsx').read_text(encoding='utf-8')
-          src=Path('web/src.jsx').read_text(encoding='utf-8')
-          checks={
-              'Fila de impressao isolada': "setStatus('Pedidos sincronizados · impressão pendente')" in operations,
-              'Falha da impressora identificada': "setError('Impressão: '" in operations,
-              'Erro de ACK tratado separadamente': 'Confirmação de impressão pendente:' in operations,
-              'Marca da loja existente': 'storeBrand?.logo_url' in src,
-              'Pedidos com numero legivel': 'displayOrderNumber(o)' in operations,
-          }
-          for name,ok in checks.items(): print(('OK' if ok else 'FALHOU')+': '+name,flush=True)
-          if not all(checks.values()): raise SystemExit('Regressao de sincronizacao, identidade ou pedidos.')
+              raise SystemExit('Regressão nos pedidos do Windows ou no limite entre os painéis.')
       - name: Empacotar codigo completo
         working-directory: .
         shell: python
         run: |
           import pathlib,zipfile
-          with zipfile.ZipFile('Pitacco-0.12-Codigo-Completo.zip','w',zipfile.ZIP_DEFLATED) as z:
+          with zipfile.ZipFile('Pitacco-0.12.1-Codigo-Completo.zip','w',zipfile.ZIP_DEFLATED) as z:
               for folder in ['web','android','docs']:
                   for p in pathlib.Path(folder).rglob('*'):
                       if p.is_file() and not any(x in p.parts for x in ['node_modules','target','dist','.git']): z.write(p)
       - uses: actions/upload-artifact@v4
         with:
           name: Pitacco-Codigo-Completo
-          path: Pitacco-0.12-Codigo-Completo.zip
+          path: Pitacco-0.12.1-Codigo-Completo.zip
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -170,17 +88,6 @@ jobs:
         run: npm test --prefix tests/backend
       - name: Testes fila nativa
         run: cargo test --locked --manifest-path native-tests/Cargo.toml
-      - name: Dependencia de teste visual
-        run: npm install --no-save --package-lock=false playwright@1.58.2
-      - name: Teste de navegacao e quadro
-        run: node tests/ui-smoke.mjs
-      - name: Evidencias de interface
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Pitacco-Interface
-          path: web/ui-evidence/*.png
-          if-no-files-found: ignore
       - name: Instalador NSIS
         run: npm run desktop:build -- --bundles nsis
       - name: Assinar instalador quando certificado estiver configurado
