@@ -6,9 +6,9 @@ from pathlib import Path
 
 p=Path('web/orderBoard.mjs'); s=p.read_text(encoding='utf-8')
 old=""" if(order.preparation_status==='completed'||delivery?.status==='entregue')return 'completed';
- if(delivery?.status==='retirada')return 'delivery';"""
+ if(delivery?.status==='retirada'||order.receipt?.ifood_status==='DISPATCHED')return 'delivery';"""
 new=""" if(delivery?.status==='entregue')return 'completed';
- if(delivery?.status==='retirada')return 'delivery';
+ if(delivery?.status==='retirada'||order.receipt?.ifood_status==='DISPATCHED')return 'delivery';
  // The provider may have closed its order independently of the courier's local proof.
  if(order.source==='ifood'&&order.receipt?.ifood_status==='CONCLUDED')return 'completed';
  // The kitchen finishing preparation MUST NOT mark a delivery as completed.
