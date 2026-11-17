@@ -63,7 +63,7 @@ a.btn{text-decoration:none}
 .earn-footnote{font-size:11px;color:#7d8490;line-height:1.6;margin:14px 0 0}
 .earn-error{font-size:12px;color:#ae301d;line-height:1.5;margin:10px 0}
 @media(max-width:720px){.earn-content{grid-template-columns:1fr}.earnings{padding:16px;margin:19px 0}.earn-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(148px,1fr);grid-template-columns:none;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}.earn-tab{scroll-snap-align:start;padding:15px 12px}.earn-tab strong{font-size:20px}.earn-top h2{font-size:21px}}
-</style><link rel="stylesheet" href="./painel.css"></head>
+</style><link rel="stylesheet" href="./painel.css"><link rel="stylesheet" href="./pedido-detalhe.css"></head>
 <body>
 <header class="bar">
   <div class="barinner">
@@ -151,6 +151,15 @@ a.btn{text-decoration:none}
  <p class="version-note">Pitacco Entregador • Gestão de delivery</p>
 </section>
 </main>
+<div class="order-overlay" id="orderDetailOverlay" hidden>
+  <section class="order-sheet" role="dialog" aria-modal="true" aria-labelledby="orderDetailTitle" id="orderDetailSheet" tabindex="-1">
+    <header class="order-sheet-head">
+      <div><span class="eyebrow">DETALHES DA ENTREGA</span><h2 id="orderDetailTitle">Pedido</h2></div>
+      <button class="order-sheet-close" id="closeOrderDetail" type="button" aria-label="Fechar detalhes">×</button>
+    </header>
+    <div class="order-sheet-body" id="orderDetailContent" aria-live="polite"></div>
+  </section>
+</div>
 <nav class="bottom-nav" aria-label="Navegação principal">
   <button type="button" data-tab="pedidos" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Pedidos</span></button>
   <button type="button" data-tab="ganhos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 2v20m5-15c-1-2-3-3-5-3-3 0-5 2-5 4s2 3 5 4 5 2 5 4-2 4-5 4c-2 0-5-1-6-3"/></svg><span>Ganhos</span></button>
@@ -161,9 +170,11 @@ a.btn{text-decoration:none}
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2.57.0";
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "./config.mjs";
 import {createDriverAuth} from "./supabase-client.mjs";
+import {createOrderDetailsController} from "./order-details.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
+const orderDetails=createOrderDetailsController({supabase:sb,navigate:openNavigation});
 let courier=null, busy=false;
 
 let earnPeriod="hoje", earnRequest=0, lastEarningsReport=null;
@@ -376,12 +387,18 @@ async function rpc(name,args){
 }
 function card(d){
  const box=element("article","card");
+ const opener=element("button","card-open");
+ opener.type="button";
+ opener.setAttribute("aria-label","Ver detalhes do pedido de "+(d.customer_name||"cliente"));
+ opener.addEventListener("click",()=>orderDetails.open(d));
  const head=element("div","cardhead");
  head.append(element("span","order","PEDIDO • "+String(d.order_id||d.id).slice(0,8).toUpperCase()));
  head.append(element("span","tag",statuses[d.status]||d.status||"Em andamento"));
- box.append(head,element("div","customer",d.customer_name||"Cliente"));
- box.append(element("p","address",d.address||"Endereço não informado"));
- if(d.notes)box.append(element("p","notes",d.notes));
+ opener.append(head,element("div","customer",d.customer_name||"Cliente"));
+ opener.append(element("p","address",d.address||"Endereço não informado"));
+ if(d.notes)opener.append(element("p","notes",d.notes));
+ opener.append(element("span","card-detail-hint","Ver detalhes, itens e contato do cliente  ›"));
+ box.append(opener);
  box.append(element("div","pay","Cobrança: a confirmar com a loja. Não presuma pagamento aprovado."));
  const actions=element("div","actions");
  if(d.address)actions.append(createAction("Abrir rota","ghost",()=>openNavigation(d)));
