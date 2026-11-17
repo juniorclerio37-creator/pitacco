@@ -87,7 +87,7 @@ begin
  assert auto_claim.external_order_id=external_id and auto_claim.uses_store_token;
  assert not exists(select 1 from public.pitacco_ifood_claim_auto_confirm(external_id));
  perform public.pitacco_ifood_finish_auto_confirm(external_id,auto_claim.lease,false);
- assert exists(select 1 from public.orders where receipt->>'external_order_id'=external_id::text and status='pending');
+ assert exists(select 1 from public.orders o where o.receipt->>'external_order_id'=external_id::text and status='pending');
  event_id:=gen_random_uuid();
  assert public.pitacco_ifood_enqueue(event_id,merchant,external_id,'CONFIRMED',now(),true);
  select * into claim from public.pitacco_ifood_claim(event_id);
