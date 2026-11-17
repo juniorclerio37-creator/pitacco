@@ -3,12 +3,12 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 
-test("Pitacco mobile shell has exactly five functional navigation views",()=>{
+test("Pitacco mobile shell has exactly four functional navigation views",()=>{
  const html=read("entregador/painel.html");
- const tabs=[...html.matchAll(/data-tab="(pedidos|mapa|ganhos|perfil|config)"/g)].map(m=>m[1]);
- const views=[...html.matchAll(/data-view="(pedidos|mapa|ganhos|perfil|config)"/g)].map(m=>m[1]);
- assert.deepEqual(tabs,["pedidos","mapa","ganhos","perfil","config"]);
- assert.deepEqual(views,["pedidos","mapa","ganhos","perfil","config"]);
+ const tabs=[...html.matchAll(/data-tab="(pedidos|ganhos|perfil|config)"/g)].map(m=>m[1]);
+ const views=[...html.matchAll(/data-view="(pedidos|ganhos|perfil|config)"/g)].map(m=>m[1]);
+ assert.deepEqual(tabs,["pedidos","ganhos","perfil","config"]);
+ assert.deepEqual(views,["pedidos","ganhos","perfil","config"]);
  assert.match(html,/class="bottom-nav"/);
  assert.match(html,/switchView\(b\.dataset\.tab\)/);
  assert.match(html,/\.app-view/);
@@ -55,4 +55,19 @@ test("store name is only returned after authentication of the courier",()=>{
  assert.match(edge,/\.eq\("id",courier\.store_id\)/);
  assert.match(edge,/storeName:store\?\.name/);
  assert.match(html,/status\?\.courier\?\.storeName/);
+});
+
+test("no duplicate Maps tab or navigation settings inside profile",()=>{
+ const html=read("entregador/painel.html");
+ assert.doesNotMatch(html,/data-tab="mapa"|data-view="mapa"|id="viewMapa"/);
+ assert.doesNotMatch(html,/id="profileMapChange"|id="profileNav"|id="mapPreference"/);
+ assert.doesNotMatch(html,/renderRoutes\(|routesList/);
+ assert.match(html,/data-tab="pedidos"/);
+ assert.match(html,/data-tab="ganhos"/);
+ assert.match(html,/data-tab="perfil"/);
+ assert.match(html,/data-tab="config"/);
+ assert.match(html,/createAction\("Abrir rota","ghost",\(\)=>openNavigation\(d\)\)/);
+ assert.match(html,/data-nav-choice="google"/);
+ assert.match(html,/data-nav-choice="waze"/);
+ assert.match(html,/const validViews=\["pedidos","ganhos","perfil","config"\]/);
 });
