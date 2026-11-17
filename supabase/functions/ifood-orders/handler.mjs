@@ -149,11 +149,86 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
   }
   return events.length;
  }
+
+ async function courierAction(request) {
+  const originHeader=request.headers.get('origin');
+  const cors={'cache-control':'no-store','vary':'Origin'};
+  if(originHeader!=='https://entregador.pitacco.com.br') {
+   return Response.json({error:'Origem não autorizada'},{status:403,headers:cors});
+  }
+  cors['access-control-allow-origin']=originHeader;
+  cors['access-control-allow-methods']='POST, OPTIONS';
+  cors['access-control-allow-headers']='authorization, apikey, content-type';
+  if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
+  const reply=(status,body)=>Response.json(body,{status,headers:cors});
+  if(request.method!=='POST')return reply(405,{error:'Use POST'});
+  if(!supabaseUrl||!serviceKey||!publicKey)return reply(503,{error:'Integração indisponível'});
+  const authorization=request.headers.get('authorization')||'';
+  if(!/^Bearer \S+$/.test(authorization))return reply(401,{error:'Faça login novamente'});
+  const raw=await request.text();
+  if(raw.length>4096)return reply(413,{error:'Solicitação inválida'});
+  let input;
+  try{input=JSON.parse(raw)}catch{return reply(400,{error:'Dados inválidos'})}
+  if(!uuid.test(input?.delivery??'')||!['arrival','verify'].includes(input?.action)){
+   return reply(400,{error:'Entrega ou ação inválida'});
+  }
+  if(input.action==='verify' && (typeof input.code!=='string'||! /^\d{4,8}$/.test(input.code))) {
+   return reply(400,{error:'Informe o código numérico do cliente'});
+  }
+  try{
+   const permission=await fetcher(new URL('/rest/v1/rpc/pitacco_driver_ifood_action',supabaseUrl),{
+    method:'POST',
+    headers:{apikey:publicKey,authorization,'content-type':'application/json'},
+    body:JSON.stringify({p_delivery:input.delivery,p_action:input.action}),
+    signal:AbortSignal.timeout(5500),redirect:'error',
+   });
+   if(!permission.ok)return reply(permission.status===401?401:403,
+     {error:'Entrega não autorizada ou integração iFood ainda indisponível'});
+   const assigned=await permission.json();
+   if(assigned.already)return reply(200,{provider_state:assigned.state,already:true});
+   if(!uuid.test(assigned.external_order_id)||!uuid.test(assigned.merchant_id)){
+    return reply(409,{error:'Vínculo iFood inválido'});
+   }
+   const access=await distributed.accessFor(assigned.merchant_id) ??
+      (clientId&&clientSecret?await token():null);
+   if(!access)return reply(503,{error:'Conexão iFood não homologada. Chegada registrada somente no Pitacco.'});
+   const endpoint=origin+'/logistics/v1.0/orders/'+assigned.external_order_id+
+    (input.action==='arrival'?'/arrivedAtDestination':'/verifyDeliveryCode');
+   const response=await fetcher(endpoint,{
+    method:'POST',
+    headers:{authorization:'Bearer '+access,'content-type':'application/json'},
+    body:input.action==='arrival'?'{}':JSON.stringify({code:input.code}),
+    signal:AbortSignal.timeout(9000),redirect:'error',
+   });
+   const isSuccess=response.status===200||response.status===202||response.status===204;
+   const permanent=[400,403,404,409,412,422].includes(response.status);
+   // The service-role result is written ONLY after authenticated ownership was checked.
+   if(input.action==='arrival'||isSuccess){
+    await rpc('pitacco_ifood_driver_result',{
+     p_delivery:input.delivery,p_external:assigned.external_order_id,
+     p_action:input.action,p_success:isSuccess,p_permanent:permanent,
+    });
+   }
+   if(!isSuccess)return reply(response.status>=500||response.status===429?503:409,{
+    error:input.action==='verify'?'O iFood não validou esse código. Confira com o cliente.':
+      'Chegada registrada no Pitacco, mas ainda não confirmada pelo iFood.',
+    provider_state:'not_confirmed',
+   });
+   return reply(200,input.action==='arrival'?
+    {registered:true,provider_state:'submitted',message:'Chegada enviada ao iFood; aguardando confirmação da plataforma'}:
+    {verified:true,delivered:true});
+  }catch(error){
+   logger.warn('Operação de entrega iFood indisponível.');
+   return reply(503,{error:'O iFood não respondeu. Confira a conexão e tente novamente; o registro local permanece.'});
+  }
+ }
+
  return async request=>{
   const headers={'cache-control':'no-store'};
   const reply=(status,body)=>Response.json(body,{status,headers});
   const path=new URL(request.url).pathname;
   if(path.endsWith('/connect'))return distributed.connect(request);
+  if(path.endsWith('/driver-action'))return courierAction(request);
   if(request.method!=='POST')return reply(405,{error:'Use POST'});
   if(!supabaseUrl||!serviceKey)return reply(503,{error:'Integração iFood ainda não configurada'});
   try{
