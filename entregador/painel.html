@@ -416,11 +416,7 @@ function card(d){
  if(d.notes)box.append(element("p","notes",d.notes));
  box.append(element("div","pay","Cobrança: a confirmar com a loja. Não presuma pagamento aprovado."));
  const actions=element("div","actions");
- if(d.address){
-  const nav=element("a","btn ghost","Ver endereço");
-  nav.href="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(d.address);
-  nav.target="_blank";nav.rel="noopener noreferrer";actions.append(nav);
- }
+ if(d.address)actions.append(createAction("Abrir rota","ghost",()=>openNavigation(d)));
  const collecting=d.status==="atribuida"||(d.status==="aceita"&&!d.collected_at);
  if(collecting)actions.append(createAction("Coletar pedido","primary",()=>rpc("pitacco_driver_collect",{p_delivery:d.id})));
  if(d.status==="aceita"&&d.collected_at&&d.batch_id)
@@ -436,8 +432,17 @@ async function refresh(){
  const records=await driver.myCourierRecords();
  if(records.length!==1){await driver.signOut().catch(()=>{});location.replace("./acesso.html");return;}
  courier=records[0];
- $("greeting").textContent="Olá, "+(courier.name||"entregador");
+ $("greeting").textContent="Olá, "+(courier.name?.split(" ")[0]||"entregador")+"!";
+ $("profileName").textContent=courier.name||"Entregador";
+ $("profilePhone").textContent=courier.phone||"Celular cadastrado pela loja";
+ $("profileAvatar").textContent=(courier.name?.trim().charAt(0)||"E").toUpperCase();
+ $("storeChip").textContent=storeName;
+ $("storeChip").title=storeName;
+ $("profileStore").textContent=storeName;
+ $("profileStoreAgain").textContent=storeName;
  $("availability").textContent=courier.available?"Você está online":"Você está offline";
+ $("onlineDot").classList.toggle("online",!!courier.available);
+ $("availableHelp").textContent=courier.available?"Você pode receber pedidos da loja.":"Ative sua disponibilidade para receber pedidos.";
  $("online").textContent=courier.available?"Ficar offline":"Ficar online";
  $("online").disabled=false;
  const list=await driver.myDeliveries([courier.id]);
@@ -445,9 +450,15 @@ async function refresh(){
  const current=list.filter(d=>!["entregue","cancelada"].includes(d.status));
  $("active").textContent=String(current.length);
  $("done").textContent=String(list.filter(d=>d.status==="entregue").length);
+ assignedDeliveries=current;
+ renderRoutes(current);
  const target=$("cards");target.replaceChildren();
- if(!list.length){target.append(element("div","empty","Nenhuma entrega atribuída no momento."));await loadEarnings();return;}
- for(const d of list.slice(0,50))target.append(card(d));
+ if(!current.length){
+  const empty=element("div","empty");
+  empty.append(element("div","empty-icon","✓"),element("h3","","Tudo entregue!"),
+    element("p","","Novos pedidos aparecerão aqui automaticamente assim que a loja atribuir."));
+  target.append(empty);
+ }else for(const d of current.slice(0,50))target.append(card(d));
  await loadEarnings();
 }
 async function boot(){
@@ -457,7 +468,11 @@ async function boot(){
   const status=await api("status");
   const {data:ready,error}=await sb.rpc("pitacco_courier_session_ready");
   if(status.mustChangePassword||error||!ready){location.replace("./acesso.html");return;}
+  storeName=status?.courier?.storeName||"Minha loja";
+  loadNavPreferences();
+  switchView(location.hash.slice(1));
   await refresh();
+  setInterval(()=>{if(!document.hidden&&!busy)refresh().catch(e=>message(String(e.message)))},20000);
  }catch(err){
   message("Acesso não autorizado ou falha de conexão: "+String(err?.message??"Tente novamente"));
   $("cards").replaceChildren(element("div","empty","Não foi possível carregar as entregas."));
@@ -473,6 +488,25 @@ $("online").addEventListener("click",async()=>{
  finally{busy=false;$("online").disabled=false;}
 });
 $("refresh").addEventListener("click",()=>refresh().catch(e=>message(String(e.message))));
-$("logout").addEventListener("click",async()=>{await driver.signOut().catch(()=>{});location.replace("./acesso.html");});
+$("settingsRefresh").addEventListener("click",()=>{switchView("pedidos");refresh().catch(e=>message(String(e.message)));});
+document.querySelectorAll(".bottom-nav [data-tab]").forEach(b=>
+ b.addEventListener("click",()=>switchView(b.dataset.tab)));
+$("miniEarnings").addEventListener("click",()=>switchView("ganhos"));
+$("mapChange").addEventListener("click",()=>switchView("config"));
+$("profileMapChange").addEventListener("click",()=>switchView("config"));
+window.addEventListener("hashchange",()=>switchView(location.hash.slice(1)));
+document.querySelectorAll("[data-nav-choice]").forEach(b=>b.addEventListener("click",()=>{
+ navProvider=b.dataset.navChoice==="waze"?"waze":"google";
+ try{localStorage.setItem("pitacco:driver:navigator",navProvider)}catch{}
+ updateNavPreferences();
+}));
+document.querySelectorAll("[data-map-mode]").forEach(b=>b.addEventListener("click",()=>{
+ navMode=b.dataset.mapMode==="coords"?"coords":"address";
+ try{localStorage.setItem("pitacco:driver:navmode",navMode)}catch{}
+ updateNavPreferences();
+}));
+async function logout(){await driver.signOut().catch(()=>{});location.replace("./acesso.html");}
+$("profileLogout").addEventListener("click",logout);
+$("settingsLogout").addEventListener("click",logout);
 boot();
 </script></body></html>
