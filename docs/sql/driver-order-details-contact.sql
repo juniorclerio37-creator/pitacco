@@ -139,11 +139,24 @@ begin
       'name', coalesce(nullif(i.value->>'name',''),nullif(i.value->>'title',''),'Produto'),
       'quantity', coalesce(i.value->>'quantity','1'),
       'notes', coalesce(i.value->>'notes',i.value->>'observations',''),
-      'options', case
-        when pg_catalog.jsonb_typeof(i.value->'modifiers')='array' then i.value->'modifiers'
-        when pg_catalog.jsonb_typeof(i.value->'options')='array' then i.value->'options'
-        when pg_catalog.jsonb_typeof(i.value->'complements')='array' then i.value->'complements'
-        else '[]'::jsonb end
+      'options', (
+        select coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
+          'name', case when pg_catalog.jsonb_typeof(m.value)='string'
+                     then pg_catalog.trim(both '"' from m.value::text)
+                     else coalesce(nullif(m.value->>'name',''),nullif(m.value->>'title',''),
+                                   m.value->'option'->>'name','') end,
+          'quantity', case when pg_catalog.jsonb_typeof(m.value)='object'
+                          then coalesce(m.value->>'quantity','1')
+                          else '1' end
+        ) order by m.ordinality),'[]'::jsonb)
+        from pg_catalog.jsonb_array_elements(
+          case
+            when pg_catalog.jsonb_typeof(i.value->'modifiers')='array' then i.value->'modifiers'
+            when pg_catalog.jsonb_typeof(i.value->'options')='array' then i.value->'options'
+            when pg_catalog.jsonb_typeof(i.value->'complements')='array' then i.value->'complements'
+            else '[]'::jsonb end
+        ) with ordinality as m(value,ordinality)
+      )
     ) order by i.ordinality),'[]'::jsonb)
     into v_items
     from pg_catalog.jsonb_array_elements(v_receipt->'items') with ordinality as i(value,ordinality);
