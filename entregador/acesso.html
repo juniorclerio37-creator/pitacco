@@ -28,7 +28,7 @@ input:focus-visible{border-color:#f97316}.primary{display:block;width:100%;backg
 <h1>Bem-vindo de volta</h1><p class="sub">Entre com o celular e a senha informados pela loja.</p>
 <form id="loginForm">
 <label for="phone">Celular com DDD</label><input id="phone" name="phone" type="tel" autocomplete="username" inputmode="tel" placeholder="(21) 99999-9999" maxlength="20" required>
-<label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" minlength="8" required placeholder="Sua senha">
+<label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" minlength="6" required placeholder="Sua senha">
 <button class="primary" id="loginButton" type="submit">Entrar</button>
 <p class="error" id="loginError" role="alert" aria-live="polite"></p>
 </form>
@@ -36,11 +36,11 @@ input:focus-visible{border-color:#f97316}.primary{display:block;width:100%;backg
 </section>
 <section id="change" class="hidden">
 <h1>Crie sua senha pessoal</h1><p class="sub">Por segurança, você precisa trocar a senha temporária antes de acessar as entregas.</p>
-<div class="notice">Sua nova senha deve ter 12 ou mais caracteres, incluindo letras maiúsculas, minúsculas e números.</div>
+<div class="notice">Sua nova senha deve ter pelo menos 6 caracteres. Por segurança, prefira letras e números.</div>
 <form id="changeForm">
 <label for="current">Senha temporária ou atual</label><input id="current" type="password" autocomplete="current-password" required>
-<label for="new">Nova senha</label><input id="new" type="password" autocomplete="new-password" minlength="12" required>
-<label for="confirm">Repita a nova senha</label><input id="confirm" type="password" autocomplete="new-password" minlength="12" required>
+<label for="new">Nova senha</label><input id="new" type="password" autocomplete="new-password" minlength="6" required>
+<label for="confirm">Repita a nova senha</label><input id="confirm" type="password" autocomplete="new-password" minlength="6" required>
 <button class="primary" id="changeButton" type="submit">Salvar minha senha</button><p id="changeError" class="error" role="alert" aria-live="polite"></p>
 </form><button class="secondary" type="button" id="switchAccount">Sair e trocar de conta</button>
 </section>
@@ -103,8 +103,8 @@ $("changeForm").addEventListener("submit",async event=>{
  event.preventDefault();alertError("changeError","");
  const current=$("current").value,next=$("new").value;
  if(next!==$("confirm").value){alertError("changeError","As novas senhas não conferem.");return;}
- if(!/[a-z]/.test(next)||!/[A-Z]/.test(next)||!/[0-9]/.test(next)||next.length<12){
-   alertError("changeError","Use 12 caracteres ou mais, com letras maiúsculas, minúsculas e números.");return;
+ if(next.length<6||next.length>128||next===current){
+   alertError("changeError","Use uma senha diferente da anterior, com 6 a 128 caracteres.");return;
  }
  $("changeButton").disabled=true;
  try{

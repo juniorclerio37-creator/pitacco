@@ -63,3 +63,15 @@ test("Edge Function parses and checks caller JWT and store membership",()=>{
   assert.match(edge,/pitacco_courier_auth_state/);
   assert.doesNotMatch(edge,/Deno\.env\.get\("JWT_SECRET"\)/);
 });
+
+test("personal courier password accepts six or more characters",()=>{
+ const page=read("acesso.html");
+ const edge=read("../supabase/functions/pitacco-courier-access/index.ts");
+ assert.match(page,/id="new"[^>]*minlength="6"/);
+ assert.match(page,/id="confirm"[^>]*minlength="6"/);
+ assert.match(page,/id="password"[^>]*minlength="6"/);
+ assert.match(page,/next\.length<6\|\|next\.length>128\|\|next===current/);
+ assert.match(edge,/next\.length < 6 \|\| next\.length > 128 \|\| current===next/);
+ assert.doesNotMatch(edge,/next\.length < 12/);
+ assert.doesNotMatch(page,/minlength="12"/);
+});
