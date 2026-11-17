@@ -25,6 +25,7 @@ test('signed webhook durably stores order before acknowledging and verifies offi
    const p=new URL(url).pathname;
    calls.push(p);
    if(p.endsWith('/pitacco_ifood_enqueue'))return json(true);
+   if(p.endsWith('/pitacco_ifood_claim_auto_confirm'))return json([]);
    if(p.endsWith('/pitacco_ifood_claim'))return json([{event_id:id.event,merchant_id:id.merchant,external_order_id:id.order,lease:id.attempt}]);
    if(p.endsWith('/pitacco_ifood_poll_credential'))return json(null);
    if(p.endsWith('/oauth/token')){
@@ -53,7 +54,8 @@ test('signed webhook durably stores order before acknowledging and verifies offi
  assert.equal((await submit(body,sign(body))).status,202);
  await background;
  assert.ok(calls[0].endsWith('/pitacco_ifood_enqueue'));
- assert.ok(calls.at(-1).endsWith('/pitacco_ifood_complete'));
+ assert.ok(calls.at(-2).endsWith('/pitacco_ifood_complete'));
+ assert.ok(calls.at(-1).endsWith('/pitacco_ifood_claim_auto_confirm'));
 });
 
 test('merchant link checks the authorization belongs to the requested iFood account',async()=>{
@@ -106,6 +108,7 @@ test('merchant link checks the authorization belongs to the requested iFood acco
     return json(true);
    }
    if(p.endsWith('/pitacco_ifood_claim'))return json([]);
+   if(p.endsWith('/pitacco_ifood_claim_auto_confirm'))return json([]);
    throw Error('unexpected '+p);
   },
  });
@@ -128,4 +131,33 @@ test('merchant link checks the authorization belongs to the requested iFood acco
  const retry=await handler(new Request(endpoint+'/retry',{method:'POST',headers:{'x-pitacco-queue-secret':id.attempt}}));
  assert.equal(retry.status,200);
  assert.deepEqual(providerCalls,['queued','acknowledged']);
+});
+
+test('auto-accept submits to the official iFood endpoint and waits for the provider event',async()=>{
+ let outcome=202,submitCount=0;
+ const settled=[];
+ const handle=createIfoodOrders({...config,clientId:'central-id',clientSecret:'central-key',
+  fetcher:async(url,opts)=>{
+   const p=new URL(url).pathname;
+   if(p.endsWith('/pitacco_ifood_retry_authorized'))return json(true);
+   if(p.endsWith('/pitacco_ifood_claim'))return json([]);
+   if(p.endsWith('/pitacco_ifood_claim_auto_confirm'))return json([
+    {external_order_id:id.order,merchant_id:id.merchant,lease:id.attempt,uses_store_token:false},
+   ]);
+   if(p.endsWith('/oauth/token'))return json({accessToken:'central-access',expiresIn:3600});
+   if(p.endsWith('/orders/'+id.order+'/confirm')){
+    assert.equal(opts.method,'POST');assert.equal(opts.headers.authorization,'Bearer central-access');submitCount++;
+    return new Response(null,{status:outcome});
+   }
+   if(p.endsWith('/pitacco_ifood_finish_auto_confirm')){settled.push(JSON.parse(opts.body));return json(null);}
+   assert.fail('Unexpected path '+p);
+  },
+ });
+ const request=()=>handle(new Request(endpoint+'/retry',{method:'POST',headers:{'x-pitacco-queue-secret':id.attempt}}));
+ assert.equal((await request()).status,200);
+ assert.deepEqual(settled[0],{p_order:id.order,p_lease:id.attempt,p_retry:false});
+ outcome=503;
+ assert.equal((await request()).status,200);
+ assert.equal(settled[1].p_retry,true);
+ assert.equal(submitCount,2);
 });
