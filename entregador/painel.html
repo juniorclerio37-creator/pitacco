@@ -176,7 +176,7 @@ import {buildNavigationUrl} from "./navigation.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
-const orderDetails=createOrderDetailsController({supabase:sb,navigate:openNavigation});
+const orderDetails=createOrderDetailsController({supabase:sb,routeFor:delivery=>buildNavigationUrl(delivery,navProvider,navMode)});
 let courier=null, busy=false;
 let orderCardBadges=new Map();
 let lastHistoryRequest=0;
@@ -248,13 +248,6 @@ function loadNavPreferences(){
   navMode=localStorage.getItem("pitacco:driver:navmode")==="coords"?"coords":"address";
  }catch{}
  updateNavPreferences();
-}
-function openNavigation(delivery){
- // Open from the direct user click so the device can hand the universal link to
- // Waze/Google Maps if installed, or use their web fallback.
- const url=buildNavigationUrl(delivery,navProvider,navMode);
- if(!url){message("Endereço indisponível para esta entrega.");return;}
- window.location.assign(url);
 }
 const brl=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
 const numValue=value=>{const n=Number(value??0);return Number.isFinite(n)&&n>=0?n:0;};
@@ -399,7 +392,7 @@ async function markArrival(d){
    }catch(error){info+=" Aviso iFood ainda não confirmado: "+String(error.message);}
   }else if(d.source==="99food")info+=" Aviso à 99Food ainda não homologado; não há confirmação de notificação ao cliente.";
   else if(d.source==="keeta")info+=" Aviso à Keeta ainda não homologado.";
-  await refresh();message(info);
+  await refresh(true);message(info);
  }catch(error){message(String(error.message||"Erro ao registrar chegada"))}
  finally{busy=false}
 }
@@ -419,7 +412,7 @@ async function verifyCode(d,code){
    if(!result?.verified)throw Error("O iFood não confirmou o código");
   }else throw Error("A validação oficial desta plataforma ainda depende de homologação");
   orderDetails.close();
-  await refresh();
+  await refresh(true);
   message("Entrega concluída! Os dados completos do cliente não ficam no histórico do entregador.");
  }catch(error){message(String(error.message||"A entrega não foi concluída"))}
  finally{busy=false}
@@ -453,7 +446,7 @@ async function rpc(name,args){
  try{
    const {error}=await sb.rpc(name,args);
    if(error)throw new Error(error.message||"Operação não autorizada");
-   await refresh();
+   await refresh(true);
  }catch(err){message(String(err?.message??"Não foi possível concluir a operação"));}
  finally{busy=false;}
 }
@@ -477,7 +470,8 @@ function card(d){
  box.append(opener);
  box.append(element("div","pay","Cobrança: a confirmar com a loja. Não presuma pagamento aprovado."));
  const actions=element("div","actions");
- if(d.address || (d.latitude!=null && d.longitude!=null))actions.append(createAction("Abrir rota","ghost",()=>openNavigation(d)));
+ const routeUrl=buildNavigationUrl(d,navProvider,navMode);
+ if(routeUrl){const route=element("a","btn ghost","Abrir rota");route.href=routeUrl;actions.append(route);}
  const collecting=d.status==="atribuida"||(d.status==="aceita"&&!d.collected_at);
  if(collecting)actions.append(createAction("Coletar pedido","primary",()=>rpc("pitacco_driver_collect",{p_delivery:d.id})));
  if(d.status==="aceita"&&d.collected_at&&d.batch_id)
@@ -525,7 +519,21 @@ function card(d){
  if(actions.children.length)box.append(actions);
  return box;
 }
-async function refresh(){
+let refreshTask=null,refreshRequested=false;
+function refresh(afterMutation=false){
+ if(refreshTask){
+  if(afterMutation)refreshRequested=true;
+  return refreshTask;
+ }
+ refreshTask=(async()=>{
+  do{
+   refreshRequested=false;
+   await refreshSnapshot();
+  }while(refreshRequested);
+ })().finally(()=>{refreshTask=null});
+ return refreshTask;
+}
+async function refreshSnapshot(){
  const records=await driver.myCourierRecords();
  if(records.length!==1){await driver.signOut().catch(()=>{});location.replace("./acesso.html");return;}
  courier=records[0];
@@ -555,6 +563,7 @@ async function refresh(){
  $("active").textContent=String(current.length);
  // Finished deliveries are never included in the raw private order list.
  assignedDeliveries=current;
+ orderDetails.keepActive(current);
  const target=$("cards");target.replaceChildren();
  if(!current.length){
   const empty=element("div","empty");
@@ -587,7 +596,7 @@ $("online").addEventListener("click",async()=>{
  try{
   const {error}=await sb.rpc("pitacco_driver_online",{p_online:!courier.available});
   if(error)throw new Error(error.message);
-  message("");await refresh();
+  message("");await refresh(true);
  }catch(err){message(String(err?.message??"Falha ao mudar disponibilidade"));}
  finally{busy=false;$("online").disabled=false;}
 });
@@ -597,17 +606,24 @@ document.querySelectorAll(".bottom-nav [data-tab]").forEach(b=>
  b.addEventListener("click",()=>switchView(b.dataset.tab)));
 $("miniEarnings").addEventListener("click",()=>switchView("ganhos"));
 window.addEventListener("hashchange",()=>switchView(location.hash.slice(1)));
+function updateRouteLinks(){
+ updateNavPreferences();
+ for(const [index,delivery] of assignedDeliveries.slice(0,50).entries()){
+  const route=$("cards").children[index]?.querySelector(".actions a");
+  if(route)route.href=buildNavigationUrl(delivery,navProvider,navMode);
+ }
+}
 document.querySelectorAll("[data-nav-choice]").forEach(b=>b.addEventListener("click",()=>{
  navProvider=b.dataset.navChoice==="waze"?"waze":"google";
  try{localStorage.setItem("pitacco:driver:navigator",navProvider)}catch{}
- updateNavPreferences();
+ updateRouteLinks();
 }));
 document.querySelectorAll("[data-map-mode]").forEach(b=>b.addEventListener("click",()=>{
  navMode=b.dataset.mapMode==="coords"?"coords":"address";
  try{localStorage.setItem("pitacco:driver:navmode",navMode)}catch{}
- updateNavPreferences();
+ updateRouteLinks();
 }));
-async function logout(){await driver.signOut().catch(()=>{});location.replace("./acesso.html");}
+async function logout(){orderDetails.close();await driver.signOut().catch(()=>{});location.replace("./acesso.html");}
 $("profileLogout").addEventListener("click",logout);
 $("settingsLogout").addEventListener("click",logout);
 boot();

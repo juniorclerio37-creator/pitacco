@@ -63,7 +63,7 @@ test('iFood code result is guarded by assigned order, arrival and server credent
  const sql=read('docs/sql/ifood-courier-arrival-verify.sql');
  assert.match(sql,/pitacco_courier_session_ready/);
  assert.match(sql,/c\.user_id=\(select auth\.uid\(\)\)/);
- assert.match(sql,/d\.status='retirada' and d\.arrived_at is not null/);
+ assert.match(sql,/src\.status='retirada' and src\.arrived_at is not null/);
  assert.match(sql,/pitacco_private\.ifood_order_links/);
  assert.match(sql,/grant execute on function public\.pitacco_ifood_driver_result\(uuid,uuid,text,boolean,boolean\) to service_role/);
  const handler=read('supabase/functions/ifood-orders/handler.mjs');

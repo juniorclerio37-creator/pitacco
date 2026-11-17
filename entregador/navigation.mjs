@@ -4,9 +4,9 @@ export function routeTarget(delivery, mode = 'address') {
   if (!delivery || typeof delivery !== 'object') return null;
   const address = String(delivery.address ?? '').trim().slice(0, 1000);
   const rawLat = delivery.latitude, rawLong = delivery.longitude;
+  const meaningful = value => (typeof value === 'number' || typeof value === 'string') && String(value).trim() !== '';
   const lat = Number(rawLat), long = Number(rawLong);
-  const hasCoords = rawLat !== null && rawLat !== undefined && rawLat !== '' &&
-    rawLong !== null && rawLong !== undefined && rawLong !== '' &&
+  const hasCoords = meaningful(rawLat) && meaningful(rawLong) &&
     Number.isFinite(lat) && Number.isFinite(long) &&
     lat >= -90 && lat <= 90 && long >= -180 && long <= 180 &&
     !(lat === 0 && long === 0);

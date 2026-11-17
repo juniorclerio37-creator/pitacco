@@ -11,11 +11,11 @@ begin
  if (select auth.uid()) is null or not public.pitacco_courier_session_ready() then
   raise exception 'Sessão não autorizada' using errcode='42501'; end if;
  if p_action not in ('arrival','verify') then raise exception 'Ação inválida' using errcode='22023';end if;
- select d.* into d from public.deliveries d
- join public.couriers c on c.id=d.courier_id and c.store_id=d.store_id
- where d.id=p_delivery and c.user_id=(select auth.uid()) and c.active
-   and d.source='ifood' and d.logistics_provider='loja'
-   and d.status='retirada' and d.arrived_at is not null;
+ select src.* into d from public.deliveries src
+ join public.couriers c on c.id=src.courier_id and c.store_id=src.store_id
+ where src.id=p_delivery and c.user_id=(select auth.uid()) and c.active
+   and src.source='ifood' and src.logistics_provider='loja'
+   and src.status='retirada' and src.arrived_at is not null;
  if not found then raise exception 'Entrega iFood não atribuída ou ainda não chegada' using errcode='42501'; end if;
  if p_action='arrival' and d.arrival_provider_state in ('submitted','confirmed') then
    return pg_catalog.jsonb_build_object('already',true,'state',d.arrival_provider_state);
@@ -41,11 +41,11 @@ as $fn$
 declare d public.deliveries%rowtype;
 begin
  if p_action not in ('arrival','verify') then raise exception 'Ação inválida'; end if;
- select d.* into d from public.deliveries d
- join pitacco_private.ifood_order_links l on l.order_id=d.order_id and l.external_id=p_external
- join pitacco_private.ifood_merchants m on m.merchant_id=l.merchant_id and m.store_id=d.store_id and m.enabled
- where d.id=p_delivery and d.source='ifood' and d.logistics_provider='loja'
- for update of d;
+ select src.* into d from public.deliveries src
+ join pitacco_private.ifood_order_links l on l.order_id=src.order_id and l.external_id=p_external
+ join pitacco_private.ifood_merchants m on m.merchant_id=l.merchant_id and m.store_id=src.store_id and m.enabled
+ where src.id=p_delivery and src.source='ifood' and src.logistics_provider='loja'
+ for update of src;
  if not found or d.arrived_at is null then return false; end if;
  if p_action='arrival' then
   if d.status<>'retirada' then return false;end if;

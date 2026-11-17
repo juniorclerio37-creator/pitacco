@@ -22,12 +22,12 @@ begin
  if (select auth.uid()) is null or not public.pitacco_courier_session_ready() then
    raise exception 'Sessão do entregador não autorizada' using errcode='42501';
  end if;
- select d.* into d
- from public.deliveries d
- join public.couriers c on c.id=d.courier_id and c.store_id=d.store_id
- where d.id=p_delivery and c.active and c.user_id=(select auth.uid())
-   and d.logistics_provider='loja'
- for update of d;
+ select src.* into d
+ from public.deliveries src
+ join public.couriers c on c.id=src.courier_id and c.store_id=src.store_id
+ where src.id=p_delivery and c.active and c.user_id=(select auth.uid())
+   and src.logistics_provider='loja'
+ for update of src;
  if not found then raise exception 'Entrega não atribuída' using errcode='42501'; end if;
  if d.arrived_at is not null then
   return pg_catalog.jsonb_build_object('arrived_at',d.arrived_at,'provider_state',d.arrival_provider_state);
@@ -157,11 +157,11 @@ begin
  if (select auth.uid()) is null or not public.pitacco_courier_session_ready() then
    raise exception 'Sessão não autorizada' using errcode='42501'; end if;
  if p_code is null or p_code !~ '^[0-9]{6}$' then raise exception 'Código de seis dígitos inválido' using errcode='22023'; end if;
- select d.* into d from public.deliveries d
-  join public.couriers c on c.id=d.courier_id and c.store_id=d.store_id
-  where d.id=p_delivery and c.user_id=(select auth.uid()) and c.active and d.source='proprio'
-    and d.logistics_provider='loja'
-  for update of d;
+ select src.* into d from public.deliveries src
+  join public.couriers c on c.id=src.courier_id and c.store_id=src.store_id
+  where src.id=p_delivery and c.user_id=(select auth.uid()) and c.active and src.source='proprio'
+    and src.logistics_provider='loja'
+  for update of src;
  if not found or d.status<>'retirada' or d.arrived_at is null then
   raise exception 'Registre primeiro a chegada ao cliente' using errcode='42501'; end if;
  select * into code_row from public.pitacco_own_delivery_codes

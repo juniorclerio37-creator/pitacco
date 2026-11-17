@@ -105,7 +105,7 @@ function buildItems(details) {
   }
   return block;
 }
-function buildDetails(details, delivery, navigate) {
+function buildDetails(details, delivery, routeFor) {
   const root = document.createDocumentFragment();
   const status = node('div','order-source-row');
   status.append(node('span','order-source-tag',String(details.source ?? delivery.source ?? 'Próprio').toUpperCase()),
@@ -115,11 +115,13 @@ function buildDetails(details, delivery, navigate) {
   const customer = section('Cliente e endereço');
   customer.append(node('strong','order-customer-name',details.customer_name ?? delivery.customer_name ?? 'Cliente'));
   customer.append(node('p','order-detail-address',details.address ?? delivery.address ?? 'Endereço não informado'));
-  const openRoute = node('button','order-route-button','Abrir rota');
-  openRoute.type = 'button';
-  openRoute.disabled = !String(details.address ?? delivery.address ?? '').trim();
-  openRoute.addEventListener('click',()=>navigate({...delivery,address:details.address ?? delivery.address}));
-  customer.append(openRoute);
+  const destination = {...delivery,address:String(details.address ?? '').trim() || delivery.address};
+  const routeUrl = routeFor(destination);
+  if(routeUrl){
+    const route = node('a','order-route-button','Abrir rota');
+    route.href = routeUrl;
+    customer.append(route);
+  }
   root.append(customer,buildContactBlock(details),buildItems(details));
 
   if (details.notes) {
@@ -138,15 +140,17 @@ function buildDetails(details, delivery, navigate) {
   root.append(payment);
   return root;
 }
-export function createOrderDetailsController({supabase,navigate}) {
+export function createOrderDetailsController({supabase,routeFor}) {
   const overlay = document.getElementById('orderDetailOverlay');
   const title = document.getElementById('orderDetailTitle');
   const content = document.getElementById('orderDetailContent');
   const closeButton = document.getElementById('closeOrderDetail');
   let request = 0;
   let previousFocus = null;
+  let activeDelivery = null;
   function close() {
     request++;
+    activeDelivery = null;
     overlay.hidden = true;
     document.body.classList.remove('order-detail-open');
     content.replaceChildren();
@@ -167,6 +171,7 @@ export function createOrderDetailsController({supabase,navigate}) {
   });
   async function open(delivery) {
     const ticket=++request;
+    activeDelivery = delivery.id;
     previousFocus=document.activeElement;
     overlay.hidden=false;
     document.body.classList.add('order-detail-open');
@@ -178,12 +183,15 @@ export function createOrderDetailsController({supabase,navigate}) {
       if(ticket!==request)return;
       if(error || !data || data.delivery_id!==delivery.id)throw Error('Não foi possível carregar este pedido');
       title.textContent='Pedido • '+String(data.display_number||'Aguardando número').slice(0,40);
-      content.replaceChildren(buildDetails(data,delivery,navigate));
+      content.replaceChildren(buildDetails(data,delivery,routeFor));
     }catch(err){
       if(ticket!==request)return;
       content.replaceChildren(node('p','order-detail-error',
         'Não foi possível carregar os detalhes deste pedido. Verifique sua conexão ou procure a loja.'));
     }
   }
-  return {open,close};
+  function keepActive(deliveries) {
+    if(activeDelivery && !deliveries.some(delivery=>delivery.id===activeDelivery))close();
+  }
+  return {open,close,keepActive};
 }

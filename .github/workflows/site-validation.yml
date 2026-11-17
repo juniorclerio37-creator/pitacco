@@ -99,6 +99,7 @@ jobs:
           npm test --prefix web
           npm ci --prefix web/tests/backend
           npm test --prefix web/tests/backend
+          node tests/driver-arrival-postgres.mjs
       - name: Testar checkout e acompanhamento no Chromium
         run: |
           npm install --prefix web --no-save --package-lock=false playwright@1.58.2

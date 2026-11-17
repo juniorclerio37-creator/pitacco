@@ -41,7 +41,7 @@ test("navigation uses Google Maps or Waze and never auto-accepts a delivery",()=
  const navigation=read("entregador/navigation.mjs");
  assert.match(navigation,/google\.com\/maps\/dir/);
  assert.match(navigation,/waze\.com\/ul/);
- assert.match(html,/window\.location\.assign\(url\)/);
+ assert.match(html,/route\.href=routeUrl/);
  assert.match(html,/localStorage\.setItem\("pitacco:driver:navigator"/);
  assert.match(navigation,/mode === 'coords'/);
  assert.match(client,/batch_id,latitude,longitude/);
@@ -68,7 +68,7 @@ test("no duplicate Maps tab or navigation settings inside profile",()=>{
  assert.match(html,/data-tab="ganhos"/);
  assert.match(html,/data-tab="perfil"/);
  assert.match(html,/data-tab="config"/);
- assert.match(html,/createAction\("Abrir rota","ghost",\(\)=>openNavigation\(d\)\)/);
+ assert.match(html,/buildNavigationUrl\(d,navProvider,navMode\)/);
  assert.match(html,/data-nav-choice="google"/);
  assert.match(html,/data-nav-choice="waze"/);
  assert.match(html,/const validViews=\["pedidos","ganhos","perfil","config"\]/);
