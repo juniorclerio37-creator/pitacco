@@ -19,6 +19,7 @@ try {
   for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
+    const windowsPings=[];
     let ifoodOrder=null;
     let logisticsOrders=[],logisticsDeliveries=[];
     let adminMode=false,moduleEnabled=true,ownerMigrationApplied=false,readOnlyChecks=0,failFeatureCheck=false;
@@ -206,6 +207,13 @@ try {
         studioPublishedVersion++;
         studioHistory.unshift({id:null,version:studioPublishedVersion,created_at:new Date().toISOString()});
         return route.fulfill({headers,json:{published:true,published_version:studioPublishedVersion}});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_windows_ping'){
+        const payload=route.request().postDataJSON();
+        assert.equal(payload.p_store,store.id);
+        assert.equal(payload.p_device,'fixture-device');
+        windowsPings.push(payload);
+        return route.fulfill({headers,json:{received:true,time:new Date().toISOString()}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_windows_connection'){
         assert.equal(route.request().postDataJSON().p_store,store.id);
@@ -951,6 +959,19 @@ try {
         order_id:order.id,source:order.source,logistics_provider:logistics[i][1],status:'pendente'}));
       const ownCard=liveOrders.getByRole('article',{name:'Card do pedido LOJA-23',exact:true});
       await ownCard.getByText('Entrega própria',{exact:true}).waitFor();
+      await page.evaluate(()=>{
+        window.__browserComandas=[];
+        window.__browserPrints=0;
+        window.open=()=>({
+          document:{open(){},write(html){window.__browserComandas.push(html)},close(){}},
+          focus(){},setTimeout(callback){callback()},print(){window.__browserPrints++},close(){}
+        });
+      });
+      await ownCard.getByRole('button',{name:'Imprimir no navegador pedido LOJA-23'}).click();
+      const printEvidence=await page.evaluate(()=>({html:window.__browserComandas[0],count:window.__browserPrints}));
+      assert.equal(printEvidence.count,1);
+      assert.ok(printEvidence.html.includes('PEDIDO LOJA-23'));
+      assert.ok(printEvidence.html.includes('COBRAR NA ENTREGA'));
       await ownCard.getByRole('button',{name:'Selecionar entregador',exact:true}).click();
       await page.getByRole('dialog').getByRole('heading',{name:'Motoboy próprio',exact:true}).waitFor();
       await page.getByRole('dialog').getByRole('button',{name:'Fechar detalhes',exact:true}).click();
@@ -989,6 +1010,7 @@ try {
       ifoodOrder=newOrder('82');
       await desktopOrders.locator('.pedidos-card').filter({hasText:'#IF-82'}).waitFor();
       await page.waitForFunction(()=>window.nativeNotices.includes('Você tem um novo pedido.')&&window.nativeOrderSounds===1);
+      assert.ok(windowsPings.length>=1,'Windows app must send authenticated presence heartbeat');
       assert.deepEqual(await page.evaluate(()=>window.nativeNotices),['Você tem um novo pedido.']);
       console.log('PASS iFood incoming order alert on web and Windows bridge');
     }
