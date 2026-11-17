@@ -41,3 +41,13 @@ test('iFood object modifiers render by name and quantity on 80mm and 58mm notes'
   assert.match(text,/PAGO - NAO COBRAR/);
  }
 });
+
+test('Windows navigation makes printing independently clickable and identifies installed version',()=>{
+ const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
+ assert.match(source,/Pitacco Windows v0\.12\.3/);
+ assert.match(source,/aria-label="Configurar impressão e visualizar nota"/);
+ assert.match(source,/onClick=\{\(\)=>\{setTab\('Configurações'\)/);
+ assert.match(source,/tab==='Aplicativos e Downloads'&&<AppDownloads/);
+ assert.match(source,/Pagamento de motoboys/);
+ assert.match(source,/hiddenOnError=\{false\}/);
+});
