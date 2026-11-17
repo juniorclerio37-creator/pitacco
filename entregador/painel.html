@@ -223,7 +223,7 @@ function renderDailyBreakdown(report){
   if(corresponding.length){
    for(const x of corresponding){
     const line=element("div","earn-history-item"),detail=element("div");
-    detail.append(element("b","","Entrega • "+String(x.order_id||x.delivery_id||"").slice(0,8).toUpperCase()));
+    detail.append(element("b","","Entrega • "+String(x.public_number||"Aguardando número")));
     detail.append(element("small","",new Date(x.completed_at).toLocaleTimeString("pt-BR",{timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit"})));
     line.append(detail,element("strong","",brl.format(numValue(x.amount))));details.append(line);
    }
@@ -312,7 +312,7 @@ function renderEarnings(report){
  } else {
   for(const r of report.recent){
    const line=element("div","earn-history-item"),left=element("div");
-   const code=String(r.order_id||r.delivery_id||"").slice(0,8).toUpperCase();
+   const code=String(r.public_number||"Aguardando número");
    left.append(element("b","","Entrega • "+code));
    const date=r.completed_at?new Date(r.completed_at).toLocaleString("pt-BR",{
     timeZone:"America/Sao_Paulo",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"
