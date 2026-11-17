@@ -153,6 +153,24 @@ try {
         assert.equal(input.p_neighborhoods[0].taxa,7.5);
         return route.fulfill({headers,json:{saved:true,enabled:false,requires_route_provider:true}});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_support_list'){
+        const input=route.request().postDataJSON();
+        assert.equal(input.p_store,store.id);
+        return route.fulfill({headers,json:{rows:[],has_more:false}});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_support_create'){
+        const input=route.request().postDataJSON();
+        assert.equal(input.p_store,store.id);
+        assert.equal(input.p_category,'entregas');
+        assert.equal(input.p_subject,'Configuração das entregas');
+        return route.fulfill({headers,json:'98000000-0000-0000-0000-000000000001'});
+      }
+      if(pathname==='/rest/v1/rpc/set_dispatch_policy'){
+        const input=route.request().postDataJSON();
+        assert.deepEqual(input,{s:store.id,dispatch:'automatico',max_orders:3});
+        store.dispatch_mode=input.dispatch;store.max_orders_per_trip=input.max_orders;
+        return route.fulfill({headers,json:null});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_store_readiness'){
         return route.fulfill({headers,json:{checks:{identity:true,address:true,products:true,payments:true,fulfillment:true,published:false},products:1,ready:false}});
       }
@@ -554,6 +572,9 @@ try {
     await menuLink.waitFor();
     assert.equal(await menuLink.getAttribute('href'),'https://pitacco.com.br/loja-teste');
     if(width===1440){
+      assert.equal(await page.getByRole('region',{name:'Central de ajuda'}).count(),0);
+      assert.equal(await page.getByRole('region',{name:'Chamados de suporte'}).count(),0);
+      assert.equal(await page.getByRole('heading',{name:'Localização de saída'}).count(),0);
       await page.getByRole('button',{name:'Área de entrega',exact:true}).click();
       await page.getByLabel('Distância máxima').selectOption('4');
       await page.getByLabel('Até 1 km (R$)').fill('4.50');
@@ -579,6 +600,27 @@ try {
       await page.getByTitle('Pré-visualização HTML da comanda').waitFor();
       await navigation.getByRole('button',{name:'Motoboys',exact:true}).click();
       await page.locator('.courier-overview-grid').getByRole('button',{name:'Abrir acerto'}).waitFor();
+      await page.getByRole('navigation',{name:'Seções de motoboys'})
+        .getByRole('button',{name:'Entregas',exact:true}).click();
+      const allocation=page.getByRole('region',{name:'Configuração de alocação automática'});
+      await allocation.getByRole('heading',{name:'Alocação automática'}).waitFor();
+      assert.equal(await page.getByRole('heading',{name:'Localização de saída'}).count(),0);
+      assert.equal(await page.getByLabel('Latitude',{exact:true}).count(),0);
+      assert.equal(await page.getByLabel('Longitude',{exact:true}).count(),0);
+      await allocation.getByLabel('Modo de alocação').selectOption('automatico');
+      await allocation.getByLabel('Máximo de pedidos por rota').fill('3');
+      await allocation.getByRole('button',{name:'Salvar alocação'}).click();
+      await page.getByText('Alteração salva.',{exact:true}).first().waitFor();
+      await navigation.getByRole('button',{name:'Ajuda e suporte',exact:true}).click();
+      const help=page.getByRole('region',{name:'Central de ajuda'});
+      await help.getByText('Como publico o cardápio?').waitFor();
+      const support=page.getByRole('region',{name:'Chamados de suporte'});
+      await support.getByRole('button',{name:'Abrir chamado'}).waitFor();
+      await support.getByLabel('Assunto').fill('Configuração das entregas');
+      await support.getByLabel('Tipo de solicitação').selectOption('entregas');
+      await support.getByLabel('Descrição').fill('Preciso revisar as configurações da distribuição automática.');
+      await support.getByRole('button',{name:'Abrir chamado'}).click();
+      await support.getByText('Chamado criado.',{exact:false}).waitFor();
     }
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
     await navigation.getByRole('button', { name:'Alertas', exact:true }).click();
