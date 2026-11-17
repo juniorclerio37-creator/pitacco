@@ -12,7 +12,7 @@ test('tapping a card requests detailed data for the assigned delivery only',()=>
  assert.match(html,/orderDetails\.open\(d\)/);
  assert.match(module,/supabase\.rpc\('pitacco_driver_order_detail',\{p_delivery:delivery\.id\}\)/);
  assert.match(module,/data\.delivery_id!==delivery\.id/);
- assert.match(module,/content\.replaceChildren\(buildDetails\(data,delivery,navigate\)\)/);
+ assert.match(module,/content\.replaceChildren\(buildDetails\(data,delivery,routeFor\)\)/);
  assert.doesNotMatch(module,/\.innerHTML\s*=/);
 });
 test('contact action is chosen by real phone versus intermediary 0800 and localizer',()=>{
@@ -26,7 +26,7 @@ test('contact action is chosen by real phone versus intermediary 0800 and locali
  assert.match(module,/Não funciona pelo WhatsApp/);
  assert.match(module,/resolved\.callHref/);
  assert.match(module,/linkButton\('Ligar para o 0800', resolved\.href, 'call'\)/);
- assert.match(module,/navigate\(\{\.\.\.delivery,address:details\.address \?\? delivery\.address\}\)/);
+ assert.match(module,/routeFor\(destination\)/);
 });
 test('RPC protects contact PII with assigned courier, active status and a valid session',()=>{
  const sql=read('docs/sql/driver-order-details-contact.sql');

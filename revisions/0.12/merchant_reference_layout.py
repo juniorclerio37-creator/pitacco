@@ -51,6 +51,7 @@ replace("""  const channel=client.channel(`operations:${storeId}`).on('postgres_
   try{
    channel=client.channel(`operations:${storeId}`);
    channel.on('postgres_changes',{event:'*',schema:'public',table:'orders',filter:`store_id=eq.${storeId}`},refresh)
+    .on('postgres_changes',{event:'*',schema:'public',table:'deliveries',filter:`store_id=eq.${storeId}`},refresh)
     .subscribe(state=>{if(state==='SUBSCRIBED')void refresh()});
   }catch{
    // The interval continues syncing orders when this browser blocks Realtime.

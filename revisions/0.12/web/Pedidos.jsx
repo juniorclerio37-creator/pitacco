@@ -1,7 +1,7 @@
 import React,{useMemo,useState} from 'react';
 import {Bike, CheckCircle2, ChefHat, Clock3, CreditCard, Printer, ShoppingBag, TrendingUp, UserRound} from 'lucide-react';
 import './pedidos.css';
-import {sourceLabel} from './DeliveryDialog.jsx';
+import {deliveryLabel,sourceLabel} from './DeliveryDialog.jsx';
 import {receiptItems} from './receiptItems.mjs';
 import {publicOrderNumber,validLocalizer} from './orderDisplay.mjs';
 const scheduledTime=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'});
@@ -14,7 +14,7 @@ const deliveryType=(order,delivery)=>{
  const mode=delivery?.logistics_provider??order.receipt?.logistics;
  if(mode==='retirada')return {type:'pickup',label:'Retirada na loja'};
  if(mode==='marketplace')return {type:'partner',label:'Entrega via '+(sourceLabel(delivery?.source??order.source)||'parceiro')};
- if(mode==='loja')return {type:'own',label:'Entrega própria'};
+ if(mode==='loja')return {type:'own',label:delivery?.status==='retirada'&&delivery.arrived_at?deliveryLabel(delivery):'Entrega própria'};
  return {type:'unknown',label:'Logística a confirmar'};
 };
 const canAssign=(order,delivery)=>order.status==='accepted'&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id;

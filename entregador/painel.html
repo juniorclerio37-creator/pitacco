@@ -80,12 +80,12 @@ a.btn{text-decoration:none}
   <div class="status-banner"><div class="status-copy"><span class="status-dot" id="onlineDot"></span><div><b id="availability">Carregando disponibilidade...</b><span id="availableHelp">Sua loja organiza as entregas para você.</span></div></div><button class="btn primary" id="online" type="button" disabled>Carregando...</button></div>
   <div class="summary">
     <div class="stat"><span class="stat-icon orange">↗</span><strong id="active">—</strong><span>Entregas em andamento</span></div>
-    <div class="stat"><span class="stat-icon green">✓</span><strong id="done">—</strong><span>Concluídas nos registros</span></div>
+    <div class="stat"><span class="stat-icon green">✓</span><strong id="done">—</strong><span>Concluídas hoje</span></div>
   </div>
   <p id="notice" role="alert" aria-live="polite"></p>
   <h2 class="section-title">Seus pedidos <span class="auto-pill">Atualiza automaticamente</span></h2>
   <section id="cards" class="grid" aria-label="Pedidos atribuídos"><div class="empty">Carregando entregas...</div></section>
-  <p class="note-inline">Pedidos são atribuídos pela loja, sem necessidade de aceitar. A confirmação de entrega por PIN ou foto ainda está em homologação.</p>
+  <p class="note-inline">Pedidos são atribuídos pela loja, sem necessidade de aceitar. Registre a chegada ao cliente antes de validar o código da entrega. Integração 99Food em homologação.</p>
 </section>
 
 <section class="app-view" data-view="ganhos" id="viewGanhos" hidden>
@@ -114,6 +114,7 @@ a.btn{text-decoration:none}
    <div class="earn-days panel-white"><div class="earn-panel-head"><h2>Por dia</h2><span>Toque em um dia para ver os pedidos</span></div><div id="earnDailyRows" class="earn-daily-rows"><div class="earn-empty">Carregando dias...</div></div></div>
    <div class="earn-chart-panel panel-white"><div class="earn-panel-head"><h2>Gráfico da semana</h2><span>Seg a dom</span></div><div id="earnChart" class="earn-chart" role="img" aria-label="Ganhos por dia da semana"></div></div>
    <div class="earn-history-panel panel-white"><div class="earn-panel-head"><h2 id="earnHistoryTitle">Entregas de hoje</h2><span>Últimos 20 registros</span></div><div id="earnHistory" class="earn-history"><div class="earn-empty">Carregando...</div></div></div>
+   <div class="earn-history-panel panel-white"><div class="earn-panel-head"><h2>Histórico protegido</h2><span>Até 30 entregas</span></div><p class="earn-footnote">Após concluir, o cliente aparece somente pela inicial, endereço resumido e sem telefone.</p><div id="safeHistory" class="earn-history"><div class="earn-empty">Carregando...</div></div></div>
    <div class="earn-updated" id="earnUpdated">Carregando...</div>
    <p class="earn-error" id="earnError" role="alert" hidden></p>
    <p class="earn-footnote">Os ganhos consideram somente entregas concluídas e os valores registrados pela loja. Isso não representa o valor do pedido nem confirma pagamento recebido. Diárias e adicionais dependem de lançamentos específicos.</p>
@@ -175,9 +176,10 @@ import {buildNavigationUrl} from "./navigation.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
-const orderDetails=createOrderDetailsController({supabase:sb,navigate:openNavigation});
+const orderDetails=createOrderDetailsController({supabase:sb,routeFor:delivery=>buildNavigationUrl(delivery,navProvider,navMode)});
 let courier=null, busy=false;
 let orderCardBadges=new Map();
+let lastHistoryRequest=0;
 
 let earnPeriod="hoje", earnRequest=0, lastEarningsReport=null;
 let storeName="Minha loja", navProvider="google", navMode="address", assignedDeliveries=[];
@@ -247,13 +249,6 @@ function loadNavPreferences(){
  }catch{}
  updateNavPreferences();
 }
-function openNavigation(delivery){
- // Open from the direct user click so the device can hand the universal link to
- // Waze/Google Maps if installed, or use their web fallback.
- const url=buildNavigationUrl(delivery,navProvider,navMode);
- if(!url){message("Endereço indisponível para esta entrega.");return;}
- window.location.assign(url);
-}
 const brl=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
 const numValue=value=>{const n=Number(value??0);return Number.isFinite(n)&&n>=0?n:0;};
 const countLabel=n=>n===1?"1 entrega":String(n)+" entregas";
@@ -277,6 +272,7 @@ function renderEarnings(report){
  $("earnRange").textContent=from&&to?(from===to?from:from+" – "+to):"Entregas concluídas";
  $("miniToday").textContent=brl.format(numValue(report.today.amount));
  $("miniTodayCount").textContent=countLabel(Number(report.today.count??0));
+ $("done").textContent=String(Number(report.today.count??0));
  renderDailyBreakdown(report);
  for(const [key,amountId,countId] of [["today","earnToday","earnTodayCount"],["week","earnWeek","earnWeekCount"],["month","earnMonth","earnMonthCount"]]){
   const item=report[key];
@@ -370,12 +366,87 @@ function createAction(text,style,handler,disabled=false){
  const el=element("button","btn "+style,text);el.type="button";el.disabled=disabled;
  if(handler)el.addEventListener("click",handler);return el;
 }
+
+async function ifoodDriverAction(delivery,action,code){
+ const {data:{session}}=await sb.auth.getSession();
+ if(!session?.access_token)throw Error("Faça login novamente");
+ const response=await fetch(SUPABASE_URL+"/functions/v1/ifood-orders/driver-action",{
+  method:"POST",cache:"no-store",headers:{"Content-Type":"application/json",
+   "apikey":SUPABASE_PUBLISHABLE_KEY,"Authorization":"Bearer "+session.access_token},
+  body:JSON.stringify({delivery,action,...(code?{code}:{})})
+ });
+ const out=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(out.error||"Operação iFood não confirmada");
+ return out;
+}
+async function markArrival(d){
+ if(busy)return;busy=true;message("");
+ try{
+  const {error}=await sb.rpc("pitacco_driver_arrive",{p_delivery:d.id});
+  if(error)throw Error(error.message||"Chegada não registrada");
+  let info="Chegada registrada no Pitacco. O pedido ainda não foi concluído.";
+  if(d.source==="ifood"){
+   try{
+    const result=await ifoodDriverAction(d.id,"arrival");
+    if(result.provider_state==="submitted")info="Chegada enviada ao iFood, aguardando confirmação da plataforma. Peça o código ao cliente.";
+   }catch(error){info+=" Aviso iFood ainda não confirmado: "+String(error.message);}
+  }else if(d.source==="99food")info+=" Aviso à 99Food ainda não homologado; não há confirmação de notificação ao cliente.";
+  else if(d.source==="keeta")info+=" Aviso à Keeta ainda não homologado.";
+  await refresh(true);message(info);
+ }catch(error){message(String(error.message||"Erro ao registrar chegada"))}
+ finally{busy=false}
+}
+async function verifyCode(d,code){
+ if(busy)return;busy=true;message("");
+ try{
+  if(!d.arrived_at)throw Error("Registre primeiro a chegada ao cliente");
+  const digits=String(code||"").trim();
+  if(d.source==="proprio"){
+   if(!/^[0-9]{6}$/.test(digits))throw Error("Informe o código Pitacco de seis dígitos");
+   const {data,error}=await sb.rpc("pitacco_driver_verify_own_code",{p_delivery:d.id,p_code:digits});
+   if(error)throw Error(error.message||"Código não validado");
+   if(!data?.verified)throw Error("Código incorreto. Tentativas restantes: "+String(data?.remaining??0));
+  }else if(d.source==="ifood"){
+   if(!/^[0-9]{4,8}$/.test(digits))throw Error("Informe o código numérico do iFood");
+   const result=await ifoodDriverAction(d.id,"verify",digits);
+   if(!result?.verified)throw Error("O iFood não confirmou o código");
+  }else throw Error("A validação oficial desta plataforma ainda depende de homologação");
+  orderDetails.close();
+  await refresh(true);
+  message("Entrega concluída! Os dados completos do cliente não ficam no histórico do entregador.");
+ }catch(error){message(String(error.message||"A entrega não foi concluída"))}
+ finally{busy=false}
+}
+async function loadSafeHistory(){
+ const key=++lastHistoryRequest,target=$("safeHistory");
+ try{
+  const {data,error}=await sb.rpc("pitacco_driver_history",{p_limit:30});
+  if(key!==lastHistoryRequest)return;
+  if(error||!Array.isArray(data))throw Error("Histórico indisponível");
+  target.replaceChildren();
+  if(!data.length){target.append(element("div","earn-empty","Nenhuma entrega concluída."));return;}
+  for(const x of data){
+   const line=element("div","earn-history-item"),label=element("div");
+   label.append(element("b","","Pedido #"+String(x.number||"Número indisponível")));
+   label.append(element("small","",String(x.initial||"C.")+" • "+String(x.address_hint||"Endereço resumido")));
+   const value=element("div","safe-history-meta");
+   value.append(element("strong","",brl.format(Number(x.amount)||0)));
+   const when=x.completed_at?new Date(x.completed_at).toLocaleString("pt-BR",{
+    timeZone:"America/Sao_Paulo",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}):"";
+   value.append(element("small","",when));
+   line.append(label,value);target.append(line);
+  }
+ }catch{
+  if(key===lastHistoryRequest)target.replaceChildren(element("div","earn-empty","Histórico protegido indisponível."));
+ }
+}
+
 async function rpc(name,args){
  if(busy)return;busy=true;message("");
  try{
    const {error}=await sb.rpc(name,args);
    if(error)throw new Error(error.message||"Operação não autorizada");
-   await refresh();
+   await refresh(true);
  }catch(err){message(String(err?.message??"Não foi possível concluir a operação"));}
  finally{busy=false;}
 }
@@ -399,19 +470,70 @@ function card(d){
  box.append(opener);
  box.append(element("div","pay","Cobrança: a confirmar com a loja. Não presuma pagamento aprovado."));
  const actions=element("div","actions");
- if(d.address || (d.latitude!=null && d.longitude!=null))actions.append(createAction("Abrir rota","ghost",()=>openNavigation(d)));
+ const routeUrl=buildNavigationUrl(d,navProvider,navMode);
+ if(routeUrl){const route=element("a","btn ghost","Abrir rota");route.href=routeUrl;actions.append(route);}
  const collecting=d.status==="atribuida"||(d.status==="aceita"&&!d.collected_at);
  if(collecting)actions.append(createAction("Coletar pedido","primary",()=>rpc("pitacco_driver_collect",{p_delivery:d.id})));
  if(d.status==="aceita"&&d.collected_at&&d.batch_id)
   actions.append(createAction("Sair para entrega","primary",()=>rpc("pitacco_driver_depart",{p_batch:d.batch_id})));
  if(d.status==="retirada"){
-  actions.append(createAction("Finalizar entrega","secondary",null,true));
-  box.append(element("p","warn","Finalização indisponível até homologar PIN/foto e confirmação de pagamento."));
+  if(!d.arrived_at){
+   actions.append(createAction("Cheguei na entrega","primary",()=>markArrival(d)));
+   box.append(element("p","note-inline","Chegar não é o mesmo que entregar. O código só pode ser validado após registrar a chegada."));
+  }else{
+   const arrivalTime=new Date(d.arrived_at).toLocaleTimeString("pt-BR",{
+    timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit"
+   });
+   box.append(element("p","arrival-record","✓ Chegada registrada às "+arrivalTime));
+   const synced=d.source==="ifood"&&(d.arrival_provider_state==="submitted"||d.arrival_provider_state==="confirmed");
+   const statusText=d.source==="ifood"?
+    (synced?"Chegada enviada ao iFood.":"Aviso ao iFood ainda pendente ou indisponível."):
+    (d.source==="99food"?"Aviso à 99Food ainda não homologado.":
+     d.source==="keeta"?"Aviso à Keeta ainda não homologado.":"Peça o código de seis dígitos ao cliente.");
+   box.append(element("p","arrival-provider",statusText));
+   if(d.source==="ifood"&&!synced){
+    actions.append(createAction("Tentar avisar iFood","secondary",async()=>{
+     if(busy)return;busy=true;
+     try{const result=await ifoodDriverAction(d.id,"arrival");
+       message(result.provider_state==="submitted"?"Chegada enviada ao iFood; aguardando confirmação.":"Aviso iFood pendente.");
+       await refresh();
+     }catch(error){message(String(error.message))}finally{busy=false}
+    }));
+   }
+   if(d.source==="proprio"||(d.source==="ifood"&&synced)){
+    const form=element("form","verify-form"),code=element("input","verify-input");
+    code.type="text";code.inputMode="numeric";code.autocomplete="one-time-code";
+    code.maxLength=d.source==="proprio"?6:8;
+    code.pattern=d.source==="proprio"?"[0-9]{6}":"[0-9]{4,8}";
+    code.placeholder=d.source==="proprio"?"Código de 6 dígitos":"Código do iFood";
+    code.setAttribute("aria-label","Código de entrega fornecido pelo cliente");code.required=true;
+    const submit=createAction("Concluir com código","primary",null);submit.type="submit";
+    form.addEventListener("submit",event=>{event.preventDefault();verifyCode(d,code.value)});
+    form.append(code,submit);box.append(form);
+   }
+   if(d.source==="99food"||d.source==="keeta"){
+    box.append(element("p","warn","A validação do código da plataforma ainda depende de homologação. Não finalize manualmente."));
+   }
+  }
  }
  if(actions.children.length)box.append(actions);
  return box;
 }
-async function refresh(){
+let refreshTask=null,refreshRequested=false;
+function refresh(afterMutation=false){
+ if(refreshTask){
+  if(afterMutation)refreshRequested=true;
+  return refreshTask;
+ }
+ refreshTask=(async()=>{
+  do{
+   refreshRequested=false;
+   await refreshSnapshot();
+  }while(refreshRequested);
+ })().finally(()=>{refreshTask=null});
+ return refreshTask;
+}
+async function refreshSnapshot(){
  const records=await driver.myCourierRecords();
  if(records.length!==1){await driver.signOut().catch(()=>{});location.replace("./acesso.html");return;}
  courier=records[0];
@@ -439,8 +561,9 @@ async function refresh(){
  list.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
  const current=list.filter(d=>!["entregue","cancelada"].includes(d.status));
  $("active").textContent=String(current.length);
- $("done").textContent=String(list.filter(d=>d.status==="entregue").length);
+ // Finished deliveries are never included in the raw private order list.
  assignedDeliveries=current;
+ orderDetails.keepActive(current);
  const target=$("cards");target.replaceChildren();
  if(!current.length){
   const empty=element("div","empty");
@@ -449,6 +572,7 @@ async function refresh(){
   target.append(empty);
  }else for(const d of current.slice(0,50))target.append(card(d));
  await loadEarnings();
+ await loadSafeHistory();
 }
 async function boot(){
  try{
@@ -472,7 +596,7 @@ $("online").addEventListener("click",async()=>{
  try{
   const {error}=await sb.rpc("pitacco_driver_online",{p_online:!courier.available});
   if(error)throw new Error(error.message);
-  message("");await refresh();
+  message("");await refresh(true);
  }catch(err){message(String(err?.message??"Falha ao mudar disponibilidade"));}
  finally{busy=false;$("online").disabled=false;}
 });
@@ -482,17 +606,24 @@ document.querySelectorAll(".bottom-nav [data-tab]").forEach(b=>
  b.addEventListener("click",()=>switchView(b.dataset.tab)));
 $("miniEarnings").addEventListener("click",()=>switchView("ganhos"));
 window.addEventListener("hashchange",()=>switchView(location.hash.slice(1)));
+function updateRouteLinks(){
+ updateNavPreferences();
+ for(const [index,delivery] of assignedDeliveries.slice(0,50).entries()){
+  const route=$("cards").children[index]?.querySelector(".actions a");
+  if(route)route.href=buildNavigationUrl(delivery,navProvider,navMode);
+ }
+}
 document.querySelectorAll("[data-nav-choice]").forEach(b=>b.addEventListener("click",()=>{
  navProvider=b.dataset.navChoice==="waze"?"waze":"google";
  try{localStorage.setItem("pitacco:driver:navigator",navProvider)}catch{}
- updateNavPreferences();
+ updateRouteLinks();
 }));
 document.querySelectorAll("[data-map-mode]").forEach(b=>b.addEventListener("click",()=>{
  navMode=b.dataset.mapMode==="coords"?"coords":"address";
  try{localStorage.setItem("pitacco:driver:navmode",navMode)}catch{}
- updateNavPreferences();
+ updateRouteLinks();
 }));
-async function logout(){await driver.signOut().catch(()=>{});location.replace("./acesso.html");}
+async function logout(){orderDetails.close();await driver.signOut().catch(()=>{});location.replace("./acesso.html");}
 $("profileLogout").addEventListener("click",logout);
 $("settingsLogout").addEventListener("click",logout);
 boot();

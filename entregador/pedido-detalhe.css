@@ -20,8 +20,7 @@
 .order-detail-section h3{font-size:14px;letter-spacing:-.1px;font-weight:950;margin:0 0 13px}
 .order-customer-name{display:block;font-size:17px;letter-spacing:-.3px;overflow-wrap:anywhere}
 .order-detail-address{font-size:13px;line-height:1.6;color:#697688;white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0 14px}
-.order-route-button{border:1px solid #ffdec3;border-radius:12px;background:#fff2e8;color:#ae5314;font-weight:850;font:inherit;font-size:13px;padding:12px 14px;cursor:pointer}
-.order-route-button:disabled{opacity:.5;cursor:default}
+.order-route-button{display:inline-flex;text-decoration:none;border:1px solid #ffdec3;border-radius:12px;background:#fff2e8;color:#ae5314;font-weight:850;font:inherit;font-size:13px;padding:12px 14px;cursor:pointer}
 .order-contact-box{display:flex;flex-direction:column;gap:11px}
 .order-contact-number{display:block;font-weight:850;font-size:19px;letter-spacing:.1px;overflow-wrap:anywhere}
 .order-contact-explain{font-size:12px;line-height:1.6;color:#768292;margin:0}

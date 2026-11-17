@@ -36,3 +36,16 @@ test('route falls back to real order address, never 0,0 or empty coordinates',()
  assert.equal(buildNavigationUrl({id:'empty',address:''},'google'),null);
  assert.equal(buildNavigationUrl(first,'unsupported'),null);
 });
+test('malformed coordinate values fall back to the exact address',()=>{
+ for(const latitude of [' ',true,Infinity,91]){
+  const delivery={...first,latitude};
+  assert.equal(routeTarget(delivery,'coords').value,first.address);
+ }
+});
+test('a delivery with coordinates only can open the selected navigation provider',()=>{
+ const delivery={id:'coords-only',latitude:second.latitude,longitude:second.longitude};
+ const google=new URL(buildNavigationUrl(delivery,'google','address'));
+ const waze=new URL(buildNavigationUrl(delivery,'waze','address'));
+ assert.equal(google.searchParams.get('destination'),'-22.91,-43.17');
+ assert.equal(waze.searchParams.get('ll'),'-22.91,-43.17');
+});

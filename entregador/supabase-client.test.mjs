@@ -15,7 +15,7 @@ test('uses internal email alias and password, never public signup or SMS',async(
   getUser:async()=>({data:{user:{id:'u1'}},error:null}),
   signOut:async()=>({error:null})
  },from:(table)=>({
-  select:()=>({eq:()=>({eq:async()=>({data:[{id:'c1'}],error:null})}),in:async()=>({data:[{id:'d1'}],error:null})})
+  select:()=>({eq:()=>({eq:async()=>({data:[{id:'c1'}],error:null})}),in:()=>({in:async()=>({data:[{id:'d1'}],error:null})})})
  })};
  const client=createDriverAuth(db);
  await client.signIn('(21) 99999-1234','secret');
