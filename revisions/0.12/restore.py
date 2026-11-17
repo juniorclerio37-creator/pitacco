@@ -141,7 +141,7 @@ for relative in ['package.json','package-lock.json','src-tauri/tauri.conf.json',
  p=pathlib.Path('web')/relative
  value=p.read_text(encoding='utf-8')
  if relative.endswith('Cargo.lock'):
-  value=value.replace('name = "deliverygestor-desktop"\nversion = "0.12.0"', 'name = "deliverygestor-desktop"\nversion = "0.12.1"')
+  value=value.replace('name = "deliverygestor-desktop"\nversion = "0.12.0"', 'name = "deliverygestor-desktop"\nversion = "0.12.2"')
  else:
   value=value.replace('"0.12.0"', '"0.12.2"')
  p.write_text(value,encoding='utf-8')
