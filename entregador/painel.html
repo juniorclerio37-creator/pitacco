@@ -171,6 +171,7 @@ import {createClient} from "https://esm.sh/@supabase/supabase-js@2.57.0";
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "./config.mjs";
 import {createDriverAuth} from "./supabase-client.mjs";
 import {createOrderDetailsController} from "./order-details.mjs";
+import {buildNavigationUrl} from "./navigation.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
@@ -245,20 +246,12 @@ function loadNavPreferences(){
  }catch{}
  updateNavPreferences();
 }
-function navigationUrl(delivery){
- const hasCoords=Number.isFinite(Number(delivery.latitude))&&Number.isFinite(Number(delivery.longitude))&&delivery.latitude!=null&&delivery.longitude!=null;
- const destination=(navMode==="coords"&&hasCoords)?[delivery.latitude,delivery.longitude].join(","):String(delivery.address??"");
- if(!destination)return null;
- if(navProvider==="waze"){
-  return (navMode==="coords"&&hasCoords)? "https://www.waze.com/ul?ll="+encodeURIComponent(destination)+"&navigate=yes":
-   "https://www.waze.com/ul?q="+encodeURIComponent(destination)+"&navigate=yes";
- }
- return "https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(destination)+"&travelmode=driving";
-}
 function openNavigation(delivery){
- const url=navigationUrl(delivery);
+ // Open from the direct user click so the device can hand the universal link to
+ // Waze/Google Maps if installed, or use their web fallback.
+ const url=buildNavigationUrl(delivery,navProvider,navMode);
  if(!url){message("Endereço indisponível para esta entrega.");return;}
- window.open(url,"_blank","noopener,noreferrer");
+ window.location.assign(url);
 }
 const brl=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
 const numValue=value=>{const n=Number(value??0);return Number.isFinite(n)&&n>=0?n:0;};
@@ -401,7 +394,7 @@ function card(d){
  box.append(opener);
  box.append(element("div","pay","Cobrança: a confirmar com a loja. Não presuma pagamento aprovado."));
  const actions=element("div","actions");
- if(d.address)actions.append(createAction("Abrir rota","ghost",()=>openNavigation(d)));
+ if(d.address || (d.latitude!=null && d.longitude!=null))actions.append(createAction("Abrir rota","ghost",()=>openNavigation(d)));
  const collecting=d.status==="atribuida"||(d.status==="aceita"&&!d.collected_at);
  if(collecting)actions.append(createAction("Coletar pedido","primary",()=>rpc("pitacco_driver_collect",{p_delivery:d.id})));
  if(d.status==="aceita"&&d.collected_at&&d.batch_id)
