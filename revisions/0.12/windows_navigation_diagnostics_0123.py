@@ -22,7 +22,7 @@ replace_once(
 # Set the currently installed version apart from the web interface.
 replace_once(
  '<small className="account">{profile?.email} · {profile?.role||\'carregando\'}</small>',
- '<small className="account">{profile?.email} · {profile?.role||\'carregando\'}{nativeAvailable()&&<><span className="pitacco-version">Pitacco Windows v0.12.6</span></>}</small>',
+ '<small className="account">{profile?.email} · {profile?.role||\'carregando\'}{nativeAvailable()&&<><span className="pitacco-version">Pitacco Windows v0.12.7</span></>}</small>',
  'desktop version badge'
 )
 
