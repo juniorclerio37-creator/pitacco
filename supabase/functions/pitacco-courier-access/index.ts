@@ -32,11 +32,14 @@ function json(req, status, body) {
 }
 async function authorizeStore(userId, storeId) {
   if (!idPattern.test(String(storeId ?? ""))) return false;
-  const { data, error } = await admin.from("store_members").select("role")
-    .eq("store_id", storeId).eq("user_id", userId)
-    .in("role", ["gestor", "lojista"]).maybeSingle();
+  // Owner has access to every existing store, while members are scoped by store_id.
+  // This RPC is service_role-only; actor is always derived from verified Auth JWT.
+  const { data, error } = await admin.rpc("pitacco_can_manage_courier_store", {
+    p_actor: userId,
+    p_store: storeId,
+  });
   if (error) throw error;
-  return !!data;
+  return data === true;
 }
 async function myCourier(userId) {
   const {data, error} = await admin.from("couriers")
