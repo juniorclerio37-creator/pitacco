@@ -111,7 +111,9 @@ export default function StoreLaunchWizard({client,store,manager,onNavigate,onSto
    const {data,error}=await client.rpc('pitacco_store_run_preflight',{p_store:store.id});
    if(error)throw error;
    if(!data?.run_id)throw Error('A verificação não foi registrada pelo servidor.');
-   setReport(data);setAttempt(v=>v+1);
+   setReport(data);
+   const historyResult=await client.rpc('pitacco_store_preflight_history',{p_store:store.id});
+   if(!historyResult.error&&Array.isArray(historyResult.data))setHistory(historyResult.data);
    setNotice('Verificação registrada. Nenhum pedido, pagamento, impressão ou entrega foi disparado.');
   }catch(err){setError(err.message||'Não foi possível executar a verificação.');}
   finally{setBusy(false)}
