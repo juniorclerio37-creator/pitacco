@@ -43,7 +43,7 @@ def operations(source):
  });
  const observeOrders=useMemo(()=>newOrderTracker(storeId),[client,storeId,manager]);
  async function nativeOrderSound(){
-  try{await invoke('play_order_alert',{level:alertLevel});setSoundMessage('');sayNewOrder(1850);}
+  try{await invoke('play_order_alert',{level:alertLevel});setSoundMessage('');sayNewOrder(2450);}
   catch{setSoundMessage('O alerta do Windows está indisponível. Confira o áudio do computador.');}
  }""")
     source = replace(source, '''{!desktop&&manager&&['Painel','Pedidos'].includes(view)&&soundControl}''',
@@ -118,27 +118,30 @@ fn play_order_alert(level:Option<u8>)->Result<(),String>{
 
 
 def chime(path, volume=1.0):
-    # Modern two-part alert: audible on laptop speakers without changing the OS volume.
+    # Two energetic bell phrases, not a short laptop beep. The maximum preset
+    # is limited close to 0 dBFS without sample clipping; OS volume remains user's.
     rate = 24000
+    duration = 2.38
     samples = array('h')
-    notes = [(0.00, 880.00, 0.39), (0.11, 1174.66, 0.40),
-             (0.39, 987.77, 0.48), (0.57, 1318.51, 0.45),
-             (0.96, 880.00, 0.36), (1.10, 1318.51, 0.52)]
-    for sample in range(round(1.78 * rate)):
+    notes = [(0.00, 784.00, 0.64), (0.13, 987.77, 0.61),
+             (0.40, 1174.66, 0.64), (0.64, 1567.98, 0.60),
+             (1.23, 784.00, 0.68), (1.36, 1174.66, 0.67),
+             (1.64, 987.77, 0.67), (1.84, 1567.98, 0.68)]
+    for sample in range(round(duration * rate)):
         now = sample / rate
         output = 0.0
         for start, pitch, strength in notes:
             elapsed = now - start
             if elapsed < 0:
                 continue
-            attack = min(1.0, elapsed / 0.008)
-            # Bell-like partials with much slower decay than the original chime.
+            attack = min(1.0, elapsed / 0.004)
             wave_phase = 2 * math.pi * pitch * elapsed
-            partials = math.sin(wave_phase) + 0.25 * math.sin(2 * wave_phase) + 0.10 * math.sin(3.01 * wave_phase)
-            output += strength * attack * math.exp(-3.4 * elapsed) * partials
-        fade = min(1.0, max(0.0, (1.78 - now) / 0.12))
-        # Soft limiting reduces harsh clipping while lifting the perceived loudness.
-        amplitude = math.tanh(output * 3.0) * 0.94 * volume * fade
+            # Strong fundamental and harmonics that cut through restaurant noise.
+            partials = math.sin(wave_phase) + 0.37 * math.sin(2 * wave_phase) + 0.20 * math.sin(3.01 * wave_phase)
+            output += strength * attack * math.exp(-3.8 * elapsed) * partials
+        fade = min(1.0, max(0.0, (duration - now) / 0.12))
+        # Digital limiting raises average energy without overdriving PCM.
+        amplitude = math.tanh(output * 4.15) * 0.985 * volume * fade
         samples.append(max(-32767, min(32767, round(amplitude * 32767))))
     if sys.byteorder == 'big':
         samples.byteswap()
@@ -150,5 +153,5 @@ update('web/src.jsx', app)
 update('web/Operations.jsx', operations)
 update('web/src-tauri/src/main.rs', rust)
 chime(Path('web/src-tauri/src/order-alert.wav'), 1.0)
-chime(Path('web/src-tauri/src/order-alert-high.wav'), 0.75)
+chime(Path('web/src-tauri/src/order-alert-high.wav'), 0.78)
 chime(Path('web/src-tauri/src/order-alert-soft.wav'), 0.45)
