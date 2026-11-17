@@ -1,20 +1,14 @@
-// Pitacco Entregador: authenticated client integration.
-// Requires an initialized Supabase client passed by the application.
-// Does not create users or permit public signup.
-export function normalizeBrazilPhone(raw) {
-  const digits = String(raw ?? '').replace(/\D/g, '');
-  const national = digits.startsWith('55') && digits.length >= 12 ? digits.slice(2) : digits;
-  if (!/^[1-9][0-9]9[0-9]{8}$/.test(national)) throw new Error('Informe celular com DDD válido');
-  return '+55' + national;
-}
+// Pitacco Entregador: aplicativo continua usando celular e senha.
+// O Supabase Auth usa um identificador interno por e-mail para evitar SMS/Twilio.
+import { normalizeBrazilPhone, courierEmailAlias } from './identity.mjs';
+export { normalizeBrazilPhone } from './identity.mjs';
 export function createDriverAuth(supabase) {
   if (!supabase?.auth?.signInWithPassword) throw new Error('Supabase Auth indisponível');
   return {
     async signIn(phone, password) {
-      const normalized = normalizeBrazilPhone(phone);
-      const { data, error } = await supabase.auth.signInWithPassword({ phone: normalized, password });
-      if (error?.code === 'phone_provider_disabled') throw new Error('Login por telefone está desativado no Supabase. Solicite ao administrador que habilite Authentication → Providers → Phone. Sua senha não foi verificada.');
-      if (error) throw new Error('Telefone ou senha inválidos');
+      const email = await courierEmailAlias(phone);
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw new Error('Celular ou senha inválidos. Solicite uma nova senha à loja se o cadastro for anterior à atualização.');
       if (!data?.user) throw new Error('Sessão não disponível');
       return data;
     },
