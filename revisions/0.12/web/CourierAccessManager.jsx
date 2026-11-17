@@ -137,6 +137,6 @@ export default function CourierAccessManager({client,store,onDataChanged}){
         </div>
       </article>)}</div>}
     </div>
-    <p className="hint">O motoboy entra exclusivamente pelo aplicativo Pitacco Entregador, com o celular e a senha fornecidos pela loja. Esqueceu a senha? Use “Redefinir senha” aqui.</p>
+    <p className="hint">O motoboy entra no Pitacco Entregador com celular e senha, sem SMS ou e-mail. Para acessos cadastrados antes desta atualização, use “Redefinir senha” uma vez para ativar o novo login. Senha esquecida? Redefina aqui.</p>
   </section>;
 }
