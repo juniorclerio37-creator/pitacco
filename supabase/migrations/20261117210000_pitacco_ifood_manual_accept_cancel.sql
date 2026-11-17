@@ -26,7 +26,7 @@ begin
       and (test_only or (select merchant_linking from pitacco_private.ifood_control limit 1))
     for share;
   if not found then raise exception 'Loja iFood indisponível para confirmação'; end if;
-  if o.receipt->>'ifood_test' is distinct from case when m.test_only then 'true' else 'false' end
+  if (o.receipt->>'ifood_test')::boolean is distinct from m.test_only
     then raise exception 'Ambiente iFood incompatível'; end if;
   if o.receipt->>'ifood_manual_cancel' = 'requested' then raise exception 'Cancelamento já solicitado ao iFood'; end if;
   if o.status <> 'pending' or l.state_rank <> 1
@@ -139,7 +139,7 @@ begin
    where merchant_id=l.merchant_id and store_id=o.store_id and enabled
      and (test_only or (select merchant_linking from pitacco_private.ifood_control limit 1));
  if not found then raise exception 'Vínculo iFood não autorizado'; end if;
- if o.receipt->>'ifood_test' is distinct from case when m.test_only then 'true' else 'false' end then
+ if (o.receipt->>'ifood_test')::boolean is distinct from m.test_only then
    raise exception 'Ambiente iFood não corresponde à loja';
  end if;
  select * into pref from public.acceptance_settings where store_id=o.store_id and source='ifood';
