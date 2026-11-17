@@ -26,6 +26,43 @@ h1{font-size:26px;margin:10px 0 4px;letter-spacing:-.6px}.sub{font-size:14px;col
 #notice{color:#b91c1c;font-size:13px;min-height:20px;margin:12px 0}
 .hidden{display:none!important}.empty{padding:30px;border:1px dashed #cfd6dd;border-radius:20px;text-align:center;color:#687383}
 a.btn{text-decoration:none}
+
+/* Painel financeiro do entregador — pensado primeiro para celular. */
+.earnings{margin:24px 0;background:linear-gradient(135deg,#fff 0%,#fffaf4 100%);border:1px solid #f2e5d8;border-radius:24px;padding:22px;box-shadow:0 8px 35px #4830190b}
+.earn-top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
+.earn-top h2{font-size:23px;letter-spacing:-.5px;margin:5px 0}
+.earn-top p{margin:0;color:#768090;font-size:13px;line-height:1.5}
+.earn-eyebrow{font-size:10px;letter-spacing:1.5px;font-weight:900;color:#c2600e}
+.earn-updated{font-size:11px;color:#727a85;padding-top:5px;text-align:right;min-width:80px}
+.earn-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
+.earn-tab{border:1px solid #e9e9ec;border-radius:17px;text-align:left;background:white;padding:17px 15px;min-width:0;cursor:pointer;font:inherit;color:inherit;transition:border-color .15s ease,background .15s ease;display:flex;flex-direction:column;gap:6px}
+.earn-tab[aria-pressed=true]{border-color:#fa8c3e;background:#fff1e4;box-shadow:0 0 0 1px #fac28c inset}
+.earn-tab:focus-visible{outline:3px solid #fba968;outline-offset:2px}
+.earn-tab span{font-weight:750;font-size:13px;color:#636c79}
+.earn-tab strong{font-size:clamp(17px,2.5vw,26px);font-weight:900;letter-spacing:-.7px;overflow-wrap:anywhere}
+.earn-tab small{color:#788291;font-size:11px}
+.earn-content{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px}
+.earn-panel{border:1px solid #e9eaf0;border-radius:17px;background:white;padding:16px;min-width:0}
+.earn-panel-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:13px}
+.earn-panel h3{margin:0;font-size:15px;font-weight:850}
+.earn-panel-head small{color:#81909d;font-size:11px}
+.earn-chart{height:164px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:end}
+.earn-day{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-width:0;gap:5px}
+.earn-bar-track{height:112px;width:100%;max-width:33px;background:#fff5eb;border-radius:10px 10px 5px 5px;display:flex;align-items:flex-end;overflow:hidden}
+.earn-bar{width:100%;background:linear-gradient(180deg,#ffa44d,#ef751a);border-radius:10px 10px 5px 5px;min-height:0}
+.earn-day[aria-current=true] .earn-bar{background:linear-gradient(180deg,#ffb05d,#d75d08)}
+.earn-day-num{font-size:10px;color:#8c98a6;font-variant-numeric:tabular-nums;text-align:center}
+.earn-day-label{font-size:10px;font-weight:750;color:#636f80;text-align:center}
+.earn-history{display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto}
+.earn-history-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #f0f2f4}
+.earn-history-item:last-child{border-bottom:0}
+.earn-history-item b{display:block;font-size:13px}
+.earn-history-item small{display:block;color:#81909d;font-size:11px;margin-top:2px}
+.earn-history-item strong{font-size:14px;color:#ba590d;white-space:nowrap;font-variant-numeric:tabular-nums}
+.earn-empty{font-size:13px;color:#788291;text-align:center;padding:21px 7px}
+.earn-footnote{font-size:11px;color:#7d8490;line-height:1.6;margin:14px 0 0}
+.earn-error{font-size:12px;color:#ae301d;line-height:1.5;margin:10px 0}
+@media(max-width:720px){.earn-content{grid-template-columns:1fr}.earnings{padding:16px;margin:19px 0}.earn-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(148px,1fr);grid-template-columns:none;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}.earn-tab{scroll-snap-align:start;padding:15px 12px}.earn-tab strong{font-size:20px}.earn-top h2{font-size:21px}}
 </style></head>
 <body><header class="bar"><div class="barinner">
 <div class="logo">Pitacco <span>ENTREGADOR</span></div>
@@ -34,6 +71,31 @@ a.btn{text-decoration:none}
 <h1 id="greeting">Minhas entregas</h1><p class="sub">Pedidos atribuídos pela loja. Não é necessário aceitar ou recusar.</p>
 <div class="topactions"><button class="btn primary" id="online" disabled>Carregando...</button><span id="availability" class="sub" style="margin:0"></span></div>
 <div class="summary"><div class="stat"><strong id="active">—</strong><span>Entregas em andamento</span></div><div class="stat"><strong id="done">—</strong><span>Entregues nos registros recentes</span></div></div>
+
+<section class="earnings" aria-label="Meus ganhos" id="earnings">
+ <div class="earn-top">
+  <div><span class="earn-eyebrow">SEU RESUMO FINANCEIRO</span><h2>Meus ganhos</h2><p>Valores das entregas concluídas</p></div>
+  <div class="earn-updated" id="earnUpdated">Carregando...</div>
+ </div>
+ <div class="earn-tabs" role="group" aria-label="Selecione o período dos ganhos">
+  <button type="button" class="earn-tab" data-earn-period="hoje" aria-pressed="true"><span>Hoje</span><strong id="earnToday">R$ 0,00</strong><small id="earnTodayCount">0 entregas</small></button>
+  <button type="button" class="earn-tab" data-earn-period="semana" aria-pressed="false"><span>Semana</span><strong id="earnWeek">R$ 0,00</strong><small id="earnWeekCount">0 entregas</small></button>
+  <button type="button" class="earn-tab" data-earn-period="mes" aria-pressed="false"><span>Mês</span><strong id="earnMonth">R$ 0,00</strong><small id="earnMonthCount">0 entregas</small></button>
+ </div>
+ <div class="earn-content">
+  <div class="earn-panel">
+   <div class="earn-panel-head"><h3>Ganhos nesta semana</h3><small>Segunda a domingo</small></div>
+   <div class="earn-chart" id="earnChart" role="img" aria-label="Gráfico de ganhos desta semana"><div class="earn-empty">Carregando gráfico...</div></div>
+  </div>
+  <div class="earn-panel">
+   <div class="earn-panel-head"><h3 id="earnHistoryTitle">Entregas de hoje</h3><small>Últimas 20</small></div>
+   <div class="earn-history" id="earnHistory"><div class="earn-empty">Carregando histórico...</div></div>
+  </div>
+ </div>
+ <p class="earn-error" id="earnError" role="alert" hidden></p>
+ <p class="earn-footnote">O total considera somente entregas concluídas e o repasse por entrega registrado pela loja. Não representa o valor cobrado do cliente nem confirma pagamento recebido. Diárias e adicionais dependem dos lançamentos do estabelecimento.</p>
+</section>
+
 <p id="notice" role="alert" aria-live="polite"></p>
 <div class="info" id="paymentNotice"><b>Atenção ao recebimento:</b> a confirmação de pagamento e o cálculo de troco ainda não estão disponíveis nesta tela. Confirme com a loja antes de cobrar o cliente ou informar que está pago.</div>
 <section id="cards" class="grid" aria-label="Pedidos atribuídos"><div class="empty">Verificando suas entregas...</div></section>
@@ -47,6 +109,89 @@ const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
 let courier=null, busy=false;
+
+let earnPeriod="hoje", earnRequest=0;
+const brl=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
+const numValue=value=>{const n=Number(value??0);return Number.isFinite(n)&&n>=0?n:0;};
+const countLabel=n=>n===1?"1 entrega":String(n)+" entregas";
+function earningsError(messageText){
+ const msg=$("earnError");msg.textContent=messageText;msg.hidden=!messageText;
+}
+function renderEarnings(report){
+ if(!report||!report.today||!report.week||!report.month||!Array.isArray(report.week_chart)||!Array.isArray(report.recent)){
+  throw new Error("Dados do resumo financeiro indisponíveis");
+ }
+ for(const [key,amountId,countId] of [["today","earnToday","earnTodayCount"],["week","earnWeek","earnWeekCount"],["month","earnMonth","earnMonthCount"]]){
+  const item=report[key];
+  $(amountId).textContent=brl.format(numValue(item.amount));
+  $(countId).textContent=countLabel(Number(item.count??0));
+ }
+ const rows=report.week_chart;
+ const max=Math.max(1,...rows.map(r=>numValue(r.amount)));
+ const chart=$("earnChart");chart.replaceChildren();
+ const todayBR=new Intl.DateTimeFormat("en-US",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+ const parts=Object.fromEntries(todayBR.map(x=>[x.type,x.value]));
+ const dayKey=parts.year+"-"+parts.month+"-"+parts.day;
+ chart.setAttribute("aria-label","Ganhos da semana: "+rows.map(r=>r.date+" "+brl.format(numValue(r.amount))).join("; "));
+ for(const r of rows){
+  const col=element("div","earn-day");
+  if(r.date===dayKey)col.setAttribute("aria-current","true");
+  const num=element("span","earn-day-num",numValue(r.amount)>0?brl.format(numValue(r.amount)):"—");
+  const track=element("div","earn-bar-track");
+  const bar=element("div","earn-bar");
+  bar.style.height=numValue(r.amount)===0?"0%":Math.max(8,Math.round(numValue(r.amount)/max*100))+"%";
+  track.title=brl.format(numValue(r.amount))+" • "+countLabel(Number(r.count??0));
+  track.append(bar);
+  const date=new Date(r.date+"T12:00:00-03:00");
+  const dayLabel=new Intl.DateTimeFormat("pt-BR",{weekday:"short",timeZone:"America/Sao_Paulo"}).format(date).replace(".","");
+  col.append(num,track,element("span","earn-day-label",dayLabel));
+  chart.append(col);
+ }
+ const names={hoje:"Entregas de hoje",semana:"Entregas da semana",mes:"Entregas do mês"};
+ $("earnHistoryTitle").textContent=names[earnPeriod]??"Últimas entregas";
+ const history=$("earnHistory");history.replaceChildren();
+ if(!report.recent.length){
+  history.append(element("div","earn-empty","Sem entregas concluídas neste período."));
+ } else {
+  for(const r of report.recent){
+   const line=element("div","earn-history-item"),left=element("div");
+   const code=String(r.order_id||r.delivery_id||"").slice(0,8).toUpperCase();
+   left.append(element("b","","Entrega • "+code));
+   const date=r.completed_at?new Date(r.completed_at).toLocaleString("pt-BR",{
+    timeZone:"America/Sao_Paulo",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"
+   }):"";
+   left.append(element("small","",date));
+   line.append(left,element("strong","",brl.format(numValue(r.amount))));
+   history.append(line);
+  }
+ }
+ $("earnUpdated").textContent="Atualizado agora";
+ earningsError("");
+}
+async function loadEarnings(){
+ const ticket=++earnRequest, period=earnPeriod;
+ $("earnUpdated").textContent="Atualizando...";
+ try{
+  const {data,error}=await sb.rpc("pitacco_driver_earnings",{p_period:period});
+  if(ticket!==earnRequest)return;
+  if(error)throw new Error(error.message??"Não foi possível consultar os ganhos");
+  renderEarnings(data);
+ }catch(err){
+  if(ticket!==earnRequest)return;
+  $("earnUpdated").textContent="Indisponível";
+  earningsError("Não foi possível atualizar seus ganhos. Toque em Atualizar para tentar novamente.");
+ }
+}
+document.querySelectorAll("[data-earn-period]").forEach(button=>{
+ button.addEventListener("click",()=>{
+  const next=button.dataset.earnPeriod;
+  if(next===earnPeriod)return;
+  earnPeriod=next;
+  document.querySelectorAll("[data-earn-period]").forEach(b=>
+   b.setAttribute("aria-pressed",String(b.dataset.earnPeriod===earnPeriod)));
+  loadEarnings();
+ });
+});
 const statuses={pendente:"Aguardando loja",atribuida:"Aguardando coleta",aceita:"Coletada",retirada:"Saiu para entrega",entregue:"Entregue",cancelada:"Cancelada"};
 function message(text){$("notice").textContent=text||"";}
 async function api(action,payload={}){
@@ -117,8 +262,9 @@ async function refresh(){
  $("active").textContent=String(current.length);
  $("done").textContent=String(list.filter(d=>d.status==="entregue").length);
  const target=$("cards");target.replaceChildren();
- if(!list.length){target.append(element("div","empty","Nenhuma entrega atribuída no momento."));return;}
+ if(!list.length){target.append(element("div","empty","Nenhuma entrega atribuída no momento."));await loadEarnings();return;}
  for(const d of list.slice(0,50))target.append(card(d));
+ await loadEarnings();
 }
 async function boot(){
  try{
