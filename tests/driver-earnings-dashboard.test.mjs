@@ -15,7 +15,7 @@ test("driver earnings dashboard includes day, week, month, chart and payment his
   }
   assert.match(page,/sb\.rpc\("pitacco_driver_earnings",\{p_period:period\}\)/);
   assert.match(page,/Apenas|somente entregas concluídas|somente entregas concluídas|somente entregas concluídas|somente entregas concluídas|entregas concluídas/i);
-  assert.match(page,/não confirma pagamento recebido/);
+  assert.match(page,/nem confirma pagamento recebido/);
 });
 
 test("earnings query is scoped to the signed-in courier with RLS, not store gross revenue",()=>{
