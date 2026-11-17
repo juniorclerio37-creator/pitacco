@@ -28,3 +28,12 @@ Nunca expor service_role ao painel ou ao app, nem usar contatos de pedidos para 
 6. Mostrar os itens/complementos apenas quando a integração os fornecer; caso contrário, indicar indisponibilidade.
 
 A infraestrutura está preparada, mas a importação dos contatos reais pelos conectores de marketplace ainda depende da homologação de cada integração. Não afirmar que os contatos estão sendo recebidos até verificar pedidos reais.
+
+
+## Atalhos do aparelho — 17/11/2026
+
+- **Ligar** gera um link telefônico nativo com o número da entrega selecionada.
+- **iFood com 0800 e localizador:** o discador recebe a sequência de dígitos do 0800, vírgula, dígitos do localizador, por exemplo `tel:08002005011,93898428`. O formato é uma tentativa de pausa/DTMF em discadores Android compatíveis. **Não é possível garantir que todos os celulares preservem ou disquem o sufixo automaticamente**. Por isso o app também mostra o localizador para copiar ou digitar durante a chamada.
+- O botão não efetua uma ligação silenciosamente: o sistema operacional pode exigir que o entregador toque em ligar.
+- **Google Maps / Waze:** o botão *Abrir rota* é disparado pelo toque real no pedido. O link universal carrega endereço ou coordenadas da entrega clicada, nunca da última rota. Sistemas com o app instalado podem abri-lo; caso contrário, o link abre a versão web.
+- O endereço exibido no detalhe do pedido tem prioridade sobre a versão antiga no cartão. Coordenadas nulas, inválidas ou `0,0` não são usadas como destino.
