@@ -125,4 +125,4 @@ begin
       and (d.logistics_provider='marketplace' or d.status='pendente');
   end if;
   update pitacco_private.ifood_events set done_at=now(),lease=null where id=e.id;
-end $;
+end $$;
