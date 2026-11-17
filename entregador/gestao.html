@@ -1,0 +1,158 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f97316"><title>Pitacco — Gestão de Entregadores</title>
+<style>
+:root{font-family:Inter,system-ui,sans-serif;background:#f7f8fb;color:#26313f}
+*{box-sizing:border-box}body{margin:0}.bar{background:white;border-bottom:1px solid #e7eaf0}.wrap{max-width:960px;margin:auto;padding:18px}
+.logo{font-size:25px;font-weight:900;color:#e9650d}.logo small{display:block;font-size:11px;color:#718092;letter-spacing:1.4px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1{font-size:25px;letter-spacing:-.6px;margin:16px 0 6px}.sub{color:#687485;font-size:14px;line-height:1.5;margin:0 0 20px}
+.card{background:#fff;border:1px solid #e6eaf1;border-radius:20px;padding:23px;box-shadow:0 10px 34px #1f29370a;margin-bottom:17px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.hidden{display:none!important}
+label{display:block;font-weight:760;font-size:13px;margin:11px 0 6px}
+input,select{display:block;padding:13px 14px;border:1px solid #d5dbe4;border-radius:12px;font:inherit;font-size:14px;width:100%;background:white;outline-color:#f97316}
+button{font:inherit;border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:750;font-size:13px}
+button:disabled{opacity:.5;cursor:wait}.primary{background:#f97316;color:white}.soft{background:#fff0e1;color:#b64f08}.muted{background:#edf0f4;color:#445064}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:17px}.error{color:#b91c1c;min-height:20px;font-size:13px}
+h2{font-size:18px;margin:0 0 13px}.list{display:grid;gap:12px}
+.item{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:15px;border:1px solid #e6eaf0;border-radius:15px}
+.item b{font-size:15px}.item small{display:block;color:#718092;margin-top:4px}
+.item .actions{margin:0;justify-content:flex-end}
+.pill{display:inline-block;font-size:11px;font-weight:800;border-radius:20px;padding:5px 8px;background:#e6f6ee;color:#08714b;margin-top:6px}
+.off{background:#f3f4f6;color:#64748b}
+.credential{background:#fff1e3;color:#7a430b;border:1px solid #fbd4a9;border-radius:16px;padding:18px;margin:18px 0}
+.credential code{display:block;background:white;border:1px solid #f2ccab;border-radius:12px;padding:12px;margin:12px 0;font-size:16px;letter-spacing:1px;overflow-wrap:anywhere}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.item{align-items:stretch;flex-direction:column}.item .actions{justify-content:flex-start}.wrap{padding:14px}}
+</style></head><body>
+<header class="bar"><div class="wrap top"><div class="logo">Pitacco<small>GESTÃO DE MOTOBOYS</small></div><button class="muted hidden" id="logout">Sair</button></div></header>
+<main class="wrap">
+<section id="auth" class="card hidden">
+<h1>Acesso do lojista</h1><p class="sub">Entre com o e-mail e a senha da sua loja. Somente gestores autorizados podem cadastrar entregadores.</p>
+<form id="loginForm">
+<label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required>
+<label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" required>
+<div class="actions"><button class="primary" type="submit" id="loginBtn">Entrar</button></div>
+</form><p class="error" id="loginError" role="alert"></p></section>
+<section id="loading"><p class="sub">Verificando permissões da loja...</p></section>
+<section id="manager" class="hidden">
+<h1>Entregadores da loja</h1><p class="sub">Cadastre, desative e redefina senhas. O acesso ao aplicativo é exclusivo para entregadores cadastrados aqui.</p>
+<div class="card"><label for="store">Estabelecimento</label><select id="store"></select></div>
+<section id="passwordCard" class="credential hidden">
+<b>Senha temporária gerada</b>
+<p>Entregue esta senha ao motoboy por um canal seguro. Ela é exibida uma única vez e será substituída no primeiro acesso.</p>
+<code id="tempPassword"></code>
+<div class="actions"><button class="soft" id="copyPassword">Copiar senha</button><button class="muted" id="closePassword">Ocultar senha</button></div>
+</section>
+<section class="card"><h2>Adicionar entregador</h2>
+<form id="createForm" class="grid">
+<div><label for="name">Nome</label><input id="name" required minlength="2" maxlength="100" placeholder="Nome do motoboy"></div>
+<div><label for="phone">Celular com DDD</label><input id="phone" required type="tel" inputmode="tel" placeholder="(21) 99999-9999"></div>
+<div><button class="primary" type="submit" id="createBtn">Cadastrar entregador</button></div>
+</form></section>
+<section class="card"><div class="top"><h2>Equipe cadastrada</h2><button class="muted" id="refresh" type="button">Atualizar</button></div>
+<div id="list" class="list"><p class="sub">Carregando entregadores...</p></div></section>
+<p class="error" id="managerError" role="alert" aria-live="polite"></p>
+</section></main>
+<script type="module">
+import {createClient} from "https://esm.sh/@supabase/supabase-js@2.57.0";
+import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "./config.mjs";
+const $=id=>document.getElementById(id);
+const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+let storeId="",busy=false;
+function show(id){["auth","loading","manager"].forEach(x=>$(x).classList.toggle("hidden",x!==id));$("logout").classList.toggle("hidden",id==="auth");}
+function err(id,txt){$(id).textContent=txt||"";}
+function el(tag,cls,text){const x=document.createElement(tag);if(cls)x.className=cls;if(text!==undefined)x.textContent=text;return x;}
+async function call(action,payload={}){
+ const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)throw new Error("Sessão expirada. Entre novamente.");
+ const response=await fetch(SUPABASE_URL+"/functions/v1/pitacco-courier-access",{
+  method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":SUPABASE_PUBLISHABLE_KEY},
+  cache:"no-store",body:JSON.stringify({action,...payload})
+ });
+ const result=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(result.error||"Operação não concluída");
+ return result;
+}
+function showTemporary(password){
+ $("tempPassword").textContent=password;$("passwordCard").classList.remove("hidden");
+ $("passwordCard").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function hideTemporary(){$("tempPassword").textContent="";$("passwordCard").classList.add("hidden");}
+async function stores(){
+ const {data:userData,error:userError}=await sb.auth.getUser();
+ if(userError||!userData?.user)throw new Error("Acesso não autenticado");
+ const {data,error}=await sb.from("store_members").select("store_id,role,stores(name)")
+   .eq("user_id",userData.user.id).in("role",["gestor","lojista"]);
+ if(error)throw error;
+ if(!data?.length)throw new Error("Sua conta não possui loja cadastrada como gestor ou lojista.");
+ const select=$("store");select.replaceChildren();
+ data.forEach(m=>{
+  const option=el("option","",m.stores?.name||"Estabelecimento");
+  option.value=m.store_id;select.append(option);
+ });
+ storeId=select.value;
+}
+async function loadDrivers(){
+ hideTemporary();
+ const result=await call("list",{storeId});
+ const root=$("list");root.replaceChildren();
+ if(!result.couriers?.length){root.append(el("p","sub","Nenhum entregador cadastrado."));return;}
+ for(const c of result.couriers){
+  const row=el("div","item"),left=el("div"),right=el("div","actions");
+  left.append(el("b","",c.name),el("small","",c.phone||"Sem telefone"));
+  left.append(el("span","pill"+(c.active?"":" off"),c.active?"Ativo":"Desativado"));
+  const action=(label,style,callback)=>{
+    const btn=el("button",style,label);btn.type="button";btn.addEventListener("click",callback);right.append(btn);
+  };
+  if(c.active){
+   action("Redefinir senha","soft",async()=>{
+     if(!window.confirm("Gerar uma nova senha para "+c.name+"? O acesso anterior será bloqueado."))return;
+     await run(async()=>{const r=await call("reset",{storeId,courierId:c.id});await loadDrivers();showTemporary(r.temporaryPassword);});
+   });
+   action("Desativar","muted",async()=>{
+     if(!window.confirm("Desativar "+c.name+" e bloquear seu acesso?"))return;
+     await run(async()=>{await call("disable",{storeId,courierId:c.id});await loadDrivers();});
+   });
+  }else{
+   action("Reativar com nova senha","primary",async()=>{
+     if(!window.confirm("Reativar "+c.name+" e gerar nova senha temporária?"))return;
+     await run(async()=>{const r=await call("reactivate",{storeId,courierId:c.id});await loadDrivers();showTemporary(r.temporaryPassword);});
+   });
+  }
+  row.append(left,right);root.append(row);
+ }
+}
+async function run(callback){
+ if(busy)return;busy=true;err("managerError","");
+ try{await callback();}catch(e){err("managerError",String(e?.message??"Não foi possível concluir"));}
+ finally{busy=false;}
+}
+async function init(){
+ try{
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){show("auth");return;}
+  await stores();show("manager");await loadDrivers();
+ }catch(e){show("auth");err("loginError",String(e?.message??"Falha ao abrir a loja"));}
+}
+$("loginForm").addEventListener("submit",async event=>{
+ event.preventDefault();$("loginBtn").disabled=true;err("loginError","");
+ try{
+  const {error}=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
+  $("password").value="";
+  if(error)throw new Error("E-mail ou senha inválidos");
+  await init();
+ }catch(e){err("loginError",String(e?.message??"Erro no login"));}
+ finally{$("loginBtn").disabled=false;}
+});
+$("createForm").addEventListener("submit",async event=>{
+ event.preventDefault();
+ await run(async()=>{
+  const result=await call("create",{storeId,name:$("name").value.trim(),phone:$("phone").value});
+  $("createForm").reset();await loadDrivers();showTemporary(result.temporaryPassword);
+ });
+});
+$("refresh").addEventListener("click",()=>run(loadDrivers));
+$("store").addEventListener("change",()=>{storeId=$("store").value;run(loadDrivers);});
+$("closePassword").addEventListener("click",hideTemporary);
+$("copyPassword").addEventListener("click",async()=>{await navigator.clipboard.writeText($("tempPassword").textContent);});
+$("logout").addEventListener("click",async()=>{hideTemporary();await sb.auth.signOut();show("auth");});
+init();
+</script></body></html>

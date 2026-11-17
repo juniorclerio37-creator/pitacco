@@ -3,12 +3,17 @@ on:
   pull_request:
     paths:
       - 'entregador/**'
+      - 'supabase/functions/pitacco-courier-access/**'
+      - 'docs/sql/entregador-*'
       - '.github/workflows/entregador-tests.yml'
   push:
     branches:
       - feature/pitacco-entregador-android
+      - feature/entregador-auth-operacional
     paths:
       - 'entregador/**'
+      - 'supabase/functions/pitacco-courier-access/**'
+      - 'docs/sql/entregador-*'
       - '.github/workflows/entregador-tests.yml'
 permissions:
   contents: read
