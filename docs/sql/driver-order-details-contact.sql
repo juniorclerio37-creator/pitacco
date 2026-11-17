@@ -142,7 +142,7 @@ begin
       'options', (
         select coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
           'name', case when pg_catalog.jsonb_typeof(m.value)='string'
-                     then pg_catalog.trim(both '"' from m.value::text)
+                     then pg_catalog.btrim(m.value::text, pg_catalog.chr(34))
                      else coalesce(nullif(m.value->>'name',''),nullif(m.value->>'title',''),
                                    m.value->'option'->>'name','') end,
           'quantity', case when pg_catalog.jsonb_typeof(m.value)='object'
