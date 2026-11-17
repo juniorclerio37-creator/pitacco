@@ -31,7 +31,7 @@ function DeliveryBadge({order,delivery}){
  const {type,label}=deliveryType(order,delivery);
  return <span className="pedidos-delivery-badge" data-delivery={type}>{type==='pickup'?<ShoppingBag size={15} aria-hidden="true"/>:<Bike size={15} aria-hidden="true"/>}{label}</span>;
 }
-export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccept,onAcceptIfood,onDecision,onReady,onDetail,onAssign,onReprint,busy=false,merchantLayout=false,manualPrint=false}){
+export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccept,onAcceptIfood,onGetIfoodReasons,onRejectIfood,onDecision,onReady,onDetail,onAssign,onReprint,busy=false,merchantLayout=false,manualPrint=false}){
  const [filter,setFilter]=useState('all'),[search,setSearch]=useState(''),[selected,setSelected]=useState(null),[decision,setDecision]=useState(null);
  const badgeByOrder=useMemo(()=>new Map(badges.map(b=>[b.order_id,b])),[badges]);
  const number=o=>publicOrderNumber(o,badgeByOrder.get(o?.id));
@@ -45,6 +45,20 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
  const waitingIfood=current?.source==='ifood'&&current.status==='pending';
  const ifoodRequestPending=waitingIfood&&current.receipt?.ifood_manual_accept==='requested';
  const ifoodExpired=waitingIfood&&ifoodAcceptExpired(current);
+ const ifoodCancelPending=waitingIfood&&current.receipt?.ifood_manual_cancel==='requested';
+ async function openIfoodReject(order){
+  setSelected(order.id);
+  setDecision({id:order.id,status:'ifood',reason:'',reasons:[],loading:true,error:''});
+  try{
+   const reasons=await onGetIfoodReasons(order.id);
+   if(!Array.isArray(reasons)||!reasons.length)throw Error('O iFood não disponibilizou motivos de cancelamento para este pedido.');
+   setDecision(previous=>previous?.id===order.id&&previous.status==='ifood'?
+    {...previous,reasons,loading:false}:previous);
+  }catch(error){
+   setDecision(previous=>previous?.id===order.id&&previous.status==='ifood'?
+    {...previous,error:error.message||'Não foi possível consultar motivos no iFood.',loading:false}:previous);
+  }
+ }
  const decisionApplies=canDecide&&decision?.id===current.id;
  const total=orders.filter(o=>!['cancelled','rejected'].includes(stage(o))).reduce((sum,o)=>sum+Number(o.gross||0),0);
  return <div className="pitacco-pedidos">
@@ -68,9 +82,10 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
      <DeliveryBadge order={o} delivery={delivery}/>
     </button>
     {o.source==='ifood'&&o.status==='pending'&&<div className="pedidos-card-actions">
-     {o.receipt?.ifood_manual_accept==='requested'?<span role="status">Aguardando confirmação do iFood</span>:
-      ifoodAcceptExpired(o)?<span>Prazo de aceite encerrado</span>:
-      <button type="button" className="primary" disabled={busy||!onAcceptIfood} onClick={()=>onAcceptIfood?.(o.id)}>Aceitar pedido</button>}
+     {o.receipt?.ifood_manual_cancel==='requested'?<span role="status">Cancelamento solicitado ao iFood</span>:
+      o.receipt?.ifood_manual_accept==='requested'?<span role="status">Aguardando confirmação do iFood</span>:
+      <>{!ifoodAcceptExpired(o)&&<button type="button" className="primary" disabled={busy||!onAcceptIfood} onClick={()=>onAcceptIfood?.(o.id)}>Aceitar pedido</button>}
+      <button type="button" className="secondary" disabled={busy||!onRejectIfood||!onGetIfoodReasons} onClick={()=>void openIfoodReject(o)}>Recusar pedido</button></>}
     </div>}
     {(canAssign(o,delivery)||o.status==='accepted')&&<div className="pedidos-card-actions">
      {canAssign(o,delivery)&&<button type="button" className="secondary" disabled={busy} onClick={()=>onAssign(o)}>Selecionar entregador</button>}
@@ -87,11 +102,30 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
  <button type="button" disabled={busy} onClick={()=>setDecision({id:current.id,status:'rejected',reason:''})}>Recusar pedido</button>
  <button type="button" disabled={busy} onClick={()=>setDecision({id:current.id,status:'cancelled',reason:''})}>Cancelar pedido</button>
  </>}{stage(current)==='preparing'&&current.source==='proprio'&&<button className="primary" disabled={busy} onClick={()=>onReady(current.id)}>Marcar pronto</button>}</div>{waitingIfood&&<div role="status">
- {ifoodRequestPending?<p>Aguardando confirmação oficial do iFood. Não aceite novamente.</p>:
+ {ifoodCancelPending?<p>Cancelamento solicitado ao iFood. Aguardando o evento oficial CANCELLED.</p>:
+ ifoodRequestPending?<p>Aguardando confirmação oficial do iFood. Não aceite novamente.</p>:
  ifoodExpired?<p>Prazo de aceite do iFood encerrado. Atualize o pedido ou gere outro teste.</p>:
  <><button className="primary" disabled={busy||!onAcceptIfood} onClick={()=>onAcceptIfood?.(current.id)}>Aceitar pedido no iFood</button>
  {current.receipt?.ifood_manual_accept==='failed'&&<p>O envio anterior falhou. É possível tentar novamente enquanto estiver no prazo.</p>}</>}
- </div>}{decisionApplies&&<form onSubmit={async event=>{
+ {!ifoodRequestPending&&!ifoodCancelPending&&<button type="button" className="secondary" disabled={busy||!onRejectIfood||!onGetIfoodReasons} onClick={()=>void openIfoodReject(current)}>Recusar pedido no iFood</button>}
+ {current.receipt?.ifood_manual_cancel==='failed'&&<p>O iFood não confirmou o cancelamento anterior. Consulte o motivo e tente novamente se permitido.</p>}
+ </div>}{decision?.id===current.id&&decision.status==='ifood'&&<form onSubmit={async e=>{
+ e.preventDefault();if(!decision.reason)return;
+ await onRejectIfood(current.id,decision.reason);setDecision(null);
+ }}>
+ <h4>Recusar pedido no iFood</h4>
+ <p>O pedido só será marcado como cancelado quando o iFood confirmar o cancelamento.</p>
+ {decision.loading?<p>Consultando motivos disponíveis no iFood…</p>:
+ decision.error?<p role="alert">{decision.error}</p>:
+ <label>Motivo da recusa
+ <select required value={decision.reason} onChange={event=>setDecision({...decision,reason:event.target.value})}>
+ <option value="">Selecione o motivo</option>
+ {decision.reasons.map(reason=><option key={reason.code} value={reason.code}>{reason.description}</option>)}
+ </select>
+ </label>}
+ <button className="primary" disabled={busy||decision.loading||!decision.reason||Boolean(decision.error)}>Confirmar recusa no iFood</button>
+ <button type="button" className="secondary" disabled={busy} onClick={()=>setDecision(null)}>Voltar</button>
+ </form>}{decisionApplies&&<form onSubmit={async event=>{
  event.preventDefault();
  await onDecision(current.id,decision.status,decision.reason);
  }}>
