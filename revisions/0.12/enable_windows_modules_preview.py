@@ -69,9 +69,9 @@ operations = Path("web/Operations.jsx")
 s = operations.read_text(encoding="utf-8")
 assert "import WindowsReceiptPreview from './WindowsReceiptPreview.jsx';" not in s
 s = "import WindowsReceiptPreview from './WindowsReceiptPreview.jsx';\n" + s
-old = "export default function Operations({client,storeId,manager,view,onNavigate}){"
+old = "export default function Operations({client,storeId,view,manager,onNavigate}){"
 assert s.count(old) == 1, "Operations signature changed"
-s = s.replace(old, "export default function Operations({client,storeId,manager,view,onNavigate,storeName=''}){", 1)
+s = s.replace(old, "export default function Operations({client,storeId,view,manager,onNavigate,storeName=''}){", 1)
 
 start = s.index('   <div className="panel"><h3>Conteúdo da comanda</h3>')
 end = s.index("   {desktop&&jobs.some(",start)
