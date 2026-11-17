@@ -1,6 +1,6 @@
 import React, {useEffect,useRef,useState} from 'react';
 import {invoke} from './printBridge.mjs';
-import {mountDeliveryMap,currentLocation} from './deliveryMap.mjs';
+import {mountDeliveryMap} from './deliveryMap.mjs';
 import {storefrontLink} from './storefrontLink.mjs';
 
 const origin=import.meta.env.VITE_PITACCO_HOMOLOGACAO==='1'
@@ -115,93 +115,99 @@ export function StorefrontPayments({client,storeId,resource}){
 }
 
 export function StoreDeliveryArea({client,store}){
- const [area,setArea]=useState(()=>initialArea(store)),[state,setState]=useState('loading');
- const [reason,setReason]=useState(''),[notice,setNotice]=useState(''),[mapError,setMapError]=useState('');
- const [busy,setBusy]=useState(false),[locating,setLocating]=useState(false),[retry,setRetry]=useState(0),[showMap,setShowMap]=useState(false);
- const container=useRef(null),map=useRef(null),latest=useRef(area);
- latest.current=area;
- const change=(key,value)=>setArea(previous=>({...previous,[key]:value}));
- const choose=([latitude,longitude])=>setArea(previous=>({...previous,latitude,longitude}));
+ const address=[store.address,store.address_number,store.neighborhood,store.city,store.state,store.postal_code].filter(Boolean).join(', ');
+ const center=Number.isFinite(Number(store.latitude))&&Number.isFinite(Number(store.longitude))&&store.latitude!=null&&store.longitude!=null?[Number(store.latitude),Number(store.longitude)]:null;
+ const [radius,setRadius]=useState(5),[rates,setRates]=useState(Array(10).fill(0)),[neighborhoods,setNeighborhoods]=useState([]);
+ const [status,setStatus]=useState('loading'),[error,setError]=useState(''),[notice,setNotice]=useState('');
+ const [busy,setBusy]=useState(false),[showMap,setShowMap]=useState(false);
+ const container=useRef(null),map=useRef(null);
  useEffect(()=>{
   let live=true;
-  (async()=>{
-   try{
-    const {data,error}=await client.from('pitacco_store_delivery_areas').select('enabled,latitude,longitude,radius_m').eq('store_id',store.id).maybeSingle();
-    if(error)throw error;
-    if(live){setArea(data||initialArea(store));setState('ready');}
-   }catch(failure){if(live){setReason(failure.message||'Não foi possível carregar a área.');setState('error');}}
-  })();
-  return()=>{live=false;};
- },[client,store.id,retry]);
- const point=area.latitude!==''&&area.longitude!==''&&Math.abs(Number(area.latitude))<=85&&Math.abs(Number(area.longitude))<=180
-  ?[Number(area.latitude),Number(area.longitude)]:null;
- const pointKey=point?.join(',')||'';
- useEffect(()=>{
-  if(state!=='ready'||!showMap)return;
-  let live=true;
-  const saved=latest.current;
-  const center=saved.latitude!==''&&saved.longitude!==''?[Number(saved.latitude),Number(saved.longitude)]:null;
-  mountDeliveryMap(container.current,{center,radius:Number(saved.radius_m),onSelect:choose}).then(result=>{
-   if(!live){result?.remove();return;}
-   map.current=result;
-   const current=latest.current;
-   if(current.latitude!==''&&current.longitude!==''){
-    result?.setArea([Number(current.latitude),Number(current.longitude)],Number(current.radius_m),true);
-   }
-  }).catch(failure=>{
-   if(live){setMapError(failure.message);setShowMap(false);}
+  setStatus('loading');setError('');
+  client.from('pitacco_delivery_pricing').select('max_radius_km,distance_fees,neighborhood_fees,enabled').eq('store_id',store.id).maybeSingle().then(({data,error})=>{
+   if(!live)return;
+   if(error){setError(error.message);setStatus('error');return;}
+   setRadius(data?.max_radius_km||5);
+   setRates(Array.isArray(data?.distance_fees)&&data.distance_fees.length===10?data.distance_fees:Array(10).fill(0));
+   setNeighborhoods(Array.isArray(data?.neighborhood_fees)?data.neighborhood_fees:[]);
+   setStatus('ready');
   });
-  return()=>{live=false;map.current?.remove();map.current=null;};
- },[state,showMap]);
+  return()=>{live=false;};
+ },[client,store.id]);
  useEffect(()=>{
-  const center=pointKey?pointKey.split(',').map(Number):null;
-  map.current?.setArea(center,Number(area.radius_m));
- },[pointKey,area.radius_m]);
- async function locate(){
-  setLocating(true);setNotice('');setReason('');
-  try{
-   const center=await currentLocation();
-   choose(center);
-   if(map.current){map.current.showPoint(center);map.current.setArea(center,Number(area.radius_m),true);}
-   else {setMapError('');setShowMap(true);}
-  }catch(failure){setReason(failure.message);}
-  finally{setLocating(false);}
- }
+  if(!showMap||!container.current||!center)return;
+  let live=true;
+  mountDeliveryMap(container.current,{center,radius:radius*1000,onSelect:()=>{}}).then(result=>{
+   if(live){map.current=result;result?.setArea(center,radius*1000,true)}
+   else result?.remove();
+  }).catch(e=>{if(live)setError('Não foi possível carregar o mapa: '+e.message)});
+  return()=>{live=false;map.current?.remove();map.current=null};
+ },[showMap,store.id]);
+ useEffect(()=>{if(map.current&&center)map.current.setArea(center,radius*1000,true)},[radius,store.id]);
+ const validAddress=Boolean(store.address?.trim()&&store.city?.trim()&&store.state?.trim());
+ const setFee=(index,value)=>setRates(previous=>previous.map((fee,i)=>i===index?value:fee));
+ const setNeighborhood=(index,key,value)=>setNeighborhoods(previous=>previous.map((row,i)=>i===index?{...row,[key]:value}:row));
  async function save(event){
-  event.preventDefault();setBusy(true);setReason('');setNotice('');
+  event.preventDefault();setBusy(true);setError('');setNotice('');
   try{
-   const {error}=await client.from('pitacco_store_delivery_areas').upsert({
-    store_id:store.id,enabled:area.enabled,latitude:point[0],longitude:point[1],radius_m:Number(area.radius_m)
-   },{onConflict:'store_id'});
+   if(!validAddress)throw Error('Complete a rua, cidade e estado em Dados da loja.');
+   const fees=rates.map(value=>Number(value));
+   if(fees.some(value=>!Number.isFinite(value)||value<0||value>999.99))throw Error('Corrija as taxas por distância.');
+   const rows=neighborhoods.map(row=>({bairro:String(row.bairro||'').trim(),cidade:String(row.cidade||'').trim(),taxa:Number(row.taxa)}));
+   const {data,error}=await client.rpc('pitacco_save_delivery_pricing',{p_store:store.id,p_radius:radius,p_distance:fees,p_neighborhoods:rows});
    if(error)throw error;
-   setNotice(area.enabled?'Área de entrega ativa.':'Limite de área desativado.');
-  }catch(failure){setReason(failure.message||'Não foi possível salvar a área.');}
+   if(!data?.saved)throw Error('O servidor não confirmou a gravação.');
+   setNotice('Configurações salvas como rascunho. A ativação do frete automático exige um provedor de rotas homologado.');
+  }catch(failure){setError(failure.message||'Não foi possível salvar as regras de entrega.');}
   finally{setBusy(false);}
  }
  return <section className="panel" aria-label="Área de entrega">
-  <h3>Área de entrega</h3>
-  <p>Marque o centro da área no mapa e defina a distância em linha reta. Se ativar o limite, a loja só receberá pelo cardápio pedidos de entrega com um ponto dentro dessa área.</p>
-  {state==='loading'&&<p role="status">Carregando área de entrega…</p>}
-  {reason&&<p role="alert">{reason}</p>}
+  <h3>Administrar Loja · Área de Entrega</h3>
+  <p>O endereço cadastrado da loja é a origem das entregas. Configure o raio e as taxas por quilômetro ou bairro, sem informar latitude e longitude.</p>
+  <div className="panel" style={{marginBottom:12}}>
+   <strong>Endereço de partida</strong>
+   <p>{address||'Endereço não cadastrado.'}</p>
+   <p><a href={'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(address)} target="_blank" rel="noreferrer">Conferir endereço no Google Maps</a> · Para corrigir, acesse Dados da loja.</p>
+  </div>
+  {!validAddress&&<p role="alert">Cadastre rua, cidade e estado em Dados da loja antes de salvar.</p>}
+  {status==='loading'&&<p role="status">Carregando regras de entrega…</p>}
+  {error&&<p role="alert">{error}</p>}
   {notice&&<p role="status">{notice}</p>}
-  {state==='error'&&<button type="button" onClick={()=>{setState('loading');setReason('');setRetry(value=>value+1);}}>Tentar novamente</button>}
-  {state==='ready'&&<form onSubmit={save}>
+  {status==='error'&&<button type="button" onClick={()=>{setError('');setStatus('loading');client.from('pitacco_delivery_pricing').select('*').eq('store_id',store.id).maybeSingle().then(({data,error})=>{if(error){setError(error.message);setStatus('error')}else{setRadius(data?.max_radius_km||5);setRates(data?.distance_fees||Array(10).fill(0));setNeighborhoods(data?.neighborhood_fees||[]);setStatus('ready')}})}}>Tentar novamente</button>}
+  {status==='ready'&&<form onSubmit={save}>
    <fieldset disabled={busy}>
-    <legend>Limite da loja</legend>
-    <label><input type="checkbox" checked={area.enabled} onChange={e=>change('enabled',e.target.checked)}/> Ativar limite de entrega</label>
-    <div className="storefront-map-actions">
-     <button type="button" className="secondary" onClick={()=>{setMapError('');setShowMap(value=>!value);}}>{showMap?'Ocultar mapa':'Abrir mapa'}</button>
-     <button type="button" className="secondary" disabled={locating} onClick={locate}>{locating?'Localizando…':'Usar minha localização'}</button>
-    </div>
-    {showMap&&<div ref={container} className="storefront-map" aria-label="Mapa para marcar o centro da área de entrega"/>}
-    {mapError&&<p role="status">{mapError} Você também pode informar as coordenadas.</p>}
-    <div className="storefront-area-inputs">
-     <label>Latitude do centro<input required type="number" min="-85" max="85" step="any" value={area.latitude} onChange={e=>change('latitude',e.target.value)}/></label>
-     <label>Longitude do centro<input required type="number" min="-180" max="180" step="any" value={area.longitude} onChange={e=>change('longitude',e.target.value)}/></label>
-     <label>Raio da área (metros)<input required type="number" min="100" max="100000" step="1" value={area.radius_m} onChange={e=>change('radius_m',e.target.value)}/></label>
+    <legend>Raio máximo de atendimento</legend>
+    <label>Distância máxima
+     <select value={radius} onChange={e=>setRadius(Number(e.target.value))}>
+      {Array.from({length:10},(_,i)=>i+1).map(km=><option value={km} key={km}>{km} km</option>)}
+     </select>
+    </label>
+    {center?<div className="storefront-map-actions"><button type="button" className="secondary" onClick={()=>setShowMap(value=>!value)}>{showMap?'Ocultar mapa':'Visualizar raio no mapa'}</button></div>
+     :<p>O endereço cadastrado ainda não tem localização validada para desenhar o raio. As taxas podem ser salvas como rascunho.</p>}
+    {showMap&&center&&<div ref={container} className="storefront-map" aria-label="Mapa do raio de atendimento a partir da loja"/>}
+    <small>O círculo é uma referência visual em linha reta. A cobrança definitiva deverá utilizar quilômetros de trajeto viário validados no servidor.</small>
+   </fieldset>
+   <fieldset disabled={busy}>
+    <legend>Taxas por distância de trajeto</legend>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(135px,1fr))',gap:12}}>
+     {rates.slice(0,radius).map((fee,index)=><label key={index}>Até {index+1} km (R$)
+      <input type="number" required min="0" max="999.99" step="0.01" value={fee} onChange={e=>setFee(index,e.target.value)}/>
+     </label>)}
     </div>
    </fieldset>
-   <button disabled={busy||!point}>{busy?'Salvando…':'Salvar área de entrega'}</button>
+   <fieldset disabled={busy}>
+    <legend>Taxas especiais por bairro</legend>
+    <p>Quando um bairro cadastrado estiver dentro do raio máximo, sua taxa prevalecerá sobre a faixa de quilômetros.</p>
+    {neighborhoods.map((entry,i)=><div key={i} style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:9,alignItems:'end'}}>
+     <label>Bairro<input required maxLength={80} value={entry.bairro||''} onChange={e=>setNeighborhood(i,'bairro',e.target.value)}/></label>
+     <label>Cidade<input required maxLength={80} value={entry.cidade||''} onChange={e=>setNeighborhood(i,'cidade',e.target.value)}/></label>
+     <label>Taxa (R$)<input required type="number" min="0" max="999.99" step="0.01" value={entry.taxa} onChange={e=>setNeighborhood(i,'taxa',e.target.value)}/></label>
+     <button type="button" className="secondary" onClick={()=>setNeighborhoods(rows=>rows.filter((_,j)=>j!==i))}>Remover bairro</button>
+    </div>)}
+    <button type="button" className="secondary" disabled={neighborhoods.length>=100} onClick={()=>setNeighborhoods(rows=>[...rows,{bairro:'',cidade:store.city||'',taxa:0}])}>Adicionar bairro</button>
+   </fieldset>
+   <p>As regras permanecem como <strong>rascunho</strong> até que geocodificação e rotas estejam homologadas. As entregas existentes continuam usando a configuração anterior; nenhum valor novo será cobrado indevidamente.</p>
+   <button disabled={busy||!validAddress}>{busy?'Salvando…':'Salvar regras de entrega'}</button>
   </form>}
  </section>;
 }
