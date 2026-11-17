@@ -212,5 +212,5 @@ begin
  if strpos(definition,'''appearance'',pitacco_private.storefront_public_design(cfg.store_id)')>0 then return;end if;
  if strpos(definition,marker)=0 then raise exception 'Formato do cardápio público inesperado';end if;
  execute replace(definition,marker,
-  '''appearance'',pitacco_private.storefront_public_design(cfg.store_id),''profile_logo_path'',(select to_jsonb(profile_store)->>'logo_path' from public.stores profile_store where id=cfg.store_id),'||marker);
+  '''appearance'',pitacco_private.storefront_public_design(cfg.store_id),''profile_logo_path'',(select to_jsonb(profile_store)->>''logo_path'' from public.stores profile_store where id=cfg.store_id),'||marker);
 end $migration$;
