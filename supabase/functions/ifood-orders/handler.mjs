@@ -4,6 +4,7 @@ const uuid=/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const codes=new Map([
  ['PLC','PLACED'],['CFM','CONFIRMED'],['RTP','READY_TO_PICKUP'],
  ['DSP','DISPATCHED'],['CAN','CANCELLED'],['CON','CONCLUDED'],
+ ['CARF','CANCELLATION_REQUEST_FAILED'],
 ]);
 const acceptedCodes=new Set(codes.values());
 const text=(value,length=220)=>typeof value==='string'?value.trim().slice(0,length):'';
