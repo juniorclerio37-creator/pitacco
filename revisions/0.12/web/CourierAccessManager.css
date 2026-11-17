@@ -1,0 +1,30 @@
+.pitacco-driver-access{display:flex;flex-direction:column;gap:16px}
+.pitacco-driver-access-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.pitacco-driver-access-header h3{display:flex;align-items:center;gap:9px;margin:0 0 7px;font-size:19px;color:#273140}
+.pitacco-driver-access-header h3 svg{color:#ef751d}
+.pitacco-driver-access-header p{margin:0;color:#667385;font-size:14px;line-height:1.45}
+.pitacco-driver-access-header button,.pitacco-driver-register button,.pitacco-driver-access-buttons button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 13px;border-radius:10px;font-size:13px;font-weight:750;cursor:pointer;background:#f97316;border:1px solid #f97316;color:white}
+.pitacco-driver-access button:disabled{opacity:.55;cursor:not-allowed}
+.pitacco-driver-access button.secondary{background:#fff7ed;border-color:#fed7aa;color:#ad4c0b}
+.pitacco-driver-register{display:grid;grid-template-columns:minmax(160px,1fr) minmax(160px,1fr) auto;gap:14px;align-items:end}
+.pitacco-driver-register label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:700}
+.pitacco-driver-register input{width:100%;min-height:42px;padding:9px 12px;border:1px solid #d8e0e9;border-radius:9px;font-size:14px;background:white}
+.pitacco-driver-register button{min-height:43px}
+.pitacco-driver-team{border-top:1px solid #e5eaf0;padding-top:15px}
+.pitacco-driver-team h4{margin:0 0 12px;font-size:15px}
+.pitacco-driver-team-list{display:flex;flex-direction:column;gap:10px}
+.pitacco-driver-team-row{border:1px solid #e5eaf0;border-radius:13px;padding:13px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pitacco-driver-person{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:140px}
+.pitacco-driver-person strong{font-size:14px}
+.pitacco-driver-person span{font-size:13px;color:#657386}
+.pitacco-driver-person small{display:inline-flex;align-items:center;gap:4px;padding:4px 7px;border-radius:8px;font-size:11px;font-weight:700}
+.pitacco-driver-active{background:#e7f8ee;color:#187546}
+.pitacco-driver-inactive{background:#f1f3f5;color:#687380}
+.pitacco-driver-access-buttons{display:flex;gap:8px;flex-wrap:wrap}
+.pitacco-driver-credential{border:1px solid #f4c67a;border-radius:13px;background:#fff8ed;padding:16px;color:#805021}
+.pitacco-driver-credential>div:first-child{display:flex;align-items:center;gap:9px}
+.pitacco-driver-credential p{font-size:13px;line-height:1.45;margin:8px 0}
+.pitacco-driver-credential code{display:block;background:white;padding:12px;border:1px solid #e9cda6;border-radius:9px;letter-spacing:1px;font-size:15px;overflow-wrap:anywhere;margin:10px 0}
+.pitacco-driver-access .hint{color:#64748b;font-size:12px;line-height:1.5;margin:0}
+@media(max-width:850px){.pitacco-driver-register{grid-template-columns:1fr 1fr}.pitacco-driver-register>button{grid-column:1/-1}}
+@media(max-width:600px){.pitacco-driver-access-header,.pitacco-driver-team-row{flex-direction:column;align-items:stretch}.pitacco-driver-register{grid-template-columns:1fr}.pitacco-driver-register>button{grid-column:auto}.pitacco-driver-access-buttons button{flex:1}}
