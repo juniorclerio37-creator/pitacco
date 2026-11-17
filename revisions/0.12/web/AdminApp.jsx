@@ -6,6 +6,7 @@ import {connectionConfig} from './config.mjs';
 import OwnerSubscriptions from './OwnerSubscriptions.jsx';
 import OwnerDashboard from './OwnerDashboard.jsx';
 import Homologation from './Homologation.jsx';
+import Owner99Food from './Owner99Food.jsx';
 import OwnerIfood from './OwnerIfood.jsx';
 import OwnerFeatures from './OwnerFeatures.jsx';
 import StoreProfile from './StoreProfile.jsx';
@@ -167,6 +168,7 @@ function AdminApp(){
    {page==='Atualizações'&&<section className="panel"><h3>Atualizações do Windows</h3><a href="https://github.com/juniorclerio37-creator/pitacco/releases" target="_blank" rel="noopener noreferrer">Consultar versões publicadas</a></section>}
    {page==='Homologação'&&<>
     <OwnerIfood client={client} stores={stores}/>
+    <Owner99Food client={client} stores={stores}/>
     <Homologation client={client} stores={stores} storefrontOrigin={storefrontOrigin}/>
    </>}
    {page==='Estabelecimentos'&&<section className="panel" aria-label="Configuração do estabelecimento">
