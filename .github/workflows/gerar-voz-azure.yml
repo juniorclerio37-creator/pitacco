@@ -1,0 +1,71 @@
+name: Gerar voz natural Pitacco no Azure
+on:
+  workflow_dispatch:
+    inputs:
+      voz:
+        description: "Voz brasileira autorizada do Azure Speech"
+        required: true
+        default: pt-BR-FranciscaNeural
+        type: choice
+        options:
+          - pt-BR-FranciscaNeural
+          - pt-BR-BrendaNeural
+          - pt-BR-AntonioNeural
+
+permissions:
+  contents: read
+
+jobs:
+  voz-azure:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    env:
+      AZURE_SPEECH_KEY: ${{ secrets.PITACCO_AZURE_SPEECH_KEY }}
+      AZURE_SPEECH_REGION: ${{ secrets.PITACCO_AZURE_SPEECH_REGION }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir recurso Azure Speech autorizado
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:AZURE_SPEECH_KEY) -or
+              [string]::IsNullOrWhiteSpace($env:AZURE_SPEECH_REGION)) {
+            throw 'Faltam segredos do GitHub: PITACCO_AZURE_SPEECH_KEY e PITACCO_AZURE_SPEECH_REGION. Cadastre os dois em Settings > Secrets and variables > Actions.'
+          }
+
+      - name: Sintetizar uma vez a locução natural
+        shell: pwsh
+        run: |
+          ./scripts/create-natural-order-voice.ps1 `
+            -Voice '${{ inputs.voz }}' `
+            -OutputPath (Join-Path $env:RUNNER_TEMP 'Pitacco-Voz-Natural.wav')
+
+      - name: Verificar WAV compatível com Pitacco Windows
+        shell: pwsh
+        run: |
+          $env:VOICE_FILE=Join-Path $env:RUNNER_TEMP 'Pitacco-Voz-Natural.wav'
+          @'
+          import os, pathlib, wave
+          path=pathlib.Path(os.environ['VOICE_FILE'])
+          assert path.is_file(), 'Arquivo de voz ausente'
+          assert 2048 <= path.stat().st_size <= 4_000_000, 'Tamanho inválido para o Pitacco'
+          with wave.open(str(path), 'rb') as wav:
+              channels=wav.getnchannels()
+              rate=wav.getframerate()
+              width=wav.getsampwidth()
+              frames=wav.getnframes()
+              assert (channels,rate,width)==(1,24000,2), 'Formato WAV inesperado'
+              duration=frames/rate
+              assert 0.4 <= duration <= 12, 'Duração incompatível com o alerta'
+              payload=wav.readframes(frames)
+              assert any(byte for byte in payload), 'Áudio vazio'
+          print(f'Gravação validada: {duration:.2f} s, PCM 16 bits, mono, 24 kHz, {path.stat().st_size} bytes')
+          '@ | python -
+
+      - name: Disponibilizar áudio somente para aprovação
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pitacco-Voz-Azure-${{ inputs.voz }}
+          path: ${{ runner.temp }}/Pitacco-Voz-Natural.wav
+          retention-days: 30
+          if-no-files-found: error
