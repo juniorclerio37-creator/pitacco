@@ -6,7 +6,7 @@ create or replace function public.pitacco_driver_earnings(p_period text default 
 returns jsonb
 language plpgsql
 stable
-security invoker
+security definer
 set search_path to ''
 as $function$
 declare
@@ -105,7 +105,6 @@ begin
     'recent', (
       select coalesce(pg_catalog.jsonb_agg(
         pg_catalog.jsonb_build_object(
-          'delivery_id', r.id,
           'public_number', r.public_number,
           'completed_at', r.updated_at,
           'amount', r.valor
