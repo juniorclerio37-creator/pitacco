@@ -26,8 +26,9 @@ once(anchor,anchor+"""
  ?<StoreLaunchWizard key={selected} client={supabase} store={active} manager={manager}
      onNavigate={setTab} onStoreSaved={loadStores}/>
  :<section className="panel">Solicite acesso de gestor para configurar e verificar a loja.</section>)}""")
-once("{tab==='Painel'&&active&&<>",
- """{tab==='Painel'&&active&&<>{!nativeAvailable()&&manager&&
- <OnboardingNudge client={supabase} storeId={selected} onNavigate={setTab}/>}""")
+once("{tab==='Painel'&&active&&!nativeAvailable()&&<StoreOverview",
+ """{tab==='Painel'&&active&&!nativeAvailable()&&manager&&
+ <OnboardingNudge client={supabase} storeId={selected} onNavigate={setTab}/>}
+{tab==='Painel'&&active&&!nativeAvailable()&&<StoreOverview""")
 
 p.write_text(source,encoding='utf-8')
