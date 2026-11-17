@@ -91,7 +91,7 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
      {o.receipt?.ifood_manual_cancel==='requested'&&<span role="status">Cancelamento solicitado ao iFood</span>}
     </div>}
     {(canAssign(o,delivery)||o.status==='accepted')&&<div className="pedidos-card-actions">
-     {canDispatch(o,delivery,dispatchMode)&&<button type="button" className="primary" disabled={busy} onClick={()=>onAssign(o)}>Despachar</button>}
+     {canDispatch(o,delivery,dispatchMode)&&<button type="button" className="primary" aria-label="Selecionar entregador" title="Despachar — selecionar entregador" disabled={busy} onClick={()=>onAssign(o)}>Despachar</button>}
      {canAssign(o,delivery)&&isAutomaticDispatch(dispatchMode)&&<span role="status">Aguardando alocação automática da loja</span>}
      {delivery?.courier_id&&<span role="status">Entregador atribuído</span>}
      {o.status==='accepted'&&<button type="button" className="secondary pedidos-card-print" aria-label={(manualPrint?"Imprimir no navegador pedido ":"Reimprimir comanda do pedido ")+number(o)} disabled={busy} onClick={()=>onReprint(o.id)}><Printer size={16} aria-hidden="true"/></button>}
