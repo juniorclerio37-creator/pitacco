@@ -77,8 +77,8 @@ test('Windows alerts use an imported natural audio file, not robotic SAPI',()=>{
  const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
  const rust=readFileSync(new URL('../src-tauri/src/main.rs',import.meta.url),'utf8');
  assert.match(operations,/invoke\('play_order_voice'/);
- assert.match(operations,/invoke\\('order_voice_status'/);
- assert.match(operations,/if\\(voiceReady\\)void naturalVoiceOnly\\(\\)/);
+ assert.match(operations,/invoke\('order_voice_status'/);
+ assert.match(operations,/if\(voiceReady\)void naturalVoiceOnly\(\)/);
  assert.match(operations,/Voz natural ainda não configurada neste computador/);
  assert.match(operations,/O sino continuará funcionando, sem voz robótica/);
  assert.match(operations,/invoke\('save_order_voice'/);
