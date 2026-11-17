@@ -83,9 +83,9 @@ test('Windows alerts use an imported natural audio file, not robotic SAPI',()=>{
  assert.match(operations,/O sino continuará funcionando, sem voz robótica/);
  assert.match(operations,/invoke\('save_order_voice'/);
  assert.match(operations,/Volume da voz natural/);
- assert.match(operations,/Normal \\(áudio original, sem amplificação\\)/);
- assert.match(operations,/return \\[1,2,3\\]\\.includes\\(level\\)\\?level:1/);
- assert.match(rust,/let selected=match level\\.unwrap_or\\(1\\)/);
+ assert.ok(operations.includes('Normal (áudio original, sem amplificação)'));
+ assert.ok(operations.includes('return [1,2,3].includes(level)?level:1'));
+ assert.ok(rust.includes('let selected=match level.unwrap_or(1)'));
  assert.match(rust,/if level!=1/);
  assert.match(operations,/Testar somente voz/);
  assert.doesNotMatch(rust,/System\.Speech|SpeechSynthesizer|System\.Media\.Speech/);
