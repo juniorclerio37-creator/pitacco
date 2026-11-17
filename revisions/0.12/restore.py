@@ -139,11 +139,13 @@ subprocess.run([sys.executable,'revisions/0.12/add_windows_paper_confirmation.py
 subprocess.run([sys.executable,'revisions/0.12/mount_store_opening_hours.py'],check=True)
 # Windows keeps every authorized management module and restores the Brendi-style thermal preview.
 subprocess.run([sys.executable,'revisions/0.12/enable_windows_modules_preview.py'],check=True)
+# Keep Windows operations alive while other modules navigate; show build version and print access.
+subprocess.run([sys.executable,'revisions/0.12/windows_navigation_diagnostics_0123.py'],check=True)
 for relative in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src-tauri/Cargo.toml','src-tauri/Cargo.lock']:
  p=pathlib.Path('web')/relative
  value=p.read_text(encoding='utf-8')
  if relative.endswith('Cargo.lock'):
-  value=value.replace('name = "deliverygestor-desktop"\nversion = "0.12.0"', 'name = "deliverygestor-desktop"\nversion = "0.12.2"')
+  value=value.replace('name = "deliverygestor-desktop"\nversion = "0.12.0"', 'name = "deliverygestor-desktop"\nversion = "0.12.3"')
  else:
-  value=value.replace('"0.12.0"', '"0.12.2"')
+  value=value.replace('"0.12.0"', '"0.12.3"')
  p.write_text(value,encoding='utf-8')
