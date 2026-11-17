@@ -9,6 +9,13 @@ on:
       - 'tests/driver-earnings-dashboard.test.mjs'
       - 'tests/driver-mobile-redesign.test.mjs'
       - 'tests/driver-order-details.test.mjs'
+      - 'tests/driver-arrival-privacy.test.mjs'
+      - 'tests/ifood-driver-arrival.test.mjs'
+      - 'supabase/functions/ifood-orders/**'
+      - 'docs/sql/driver-arrival-privacy-proof.sql'
+      - 'docs/sql/ifood-courier-arrival-verify.sql'
+      - 'docs/sql/customer-tracking-arrival-code.sql'
+      - 'marketing/acompanhar.html'
       - 'tests/order-public-labels.test.mjs'
       - 'docs/sql/order-card-public-number-localizer.sql'
       - 'docs/sql/order-detail-public-number.sql'
@@ -30,6 +37,13 @@ on:
       - 'tests/driver-earnings-dashboard.test.mjs'
       - 'tests/driver-mobile-redesign.test.mjs'
       - 'tests/driver-order-details.test.mjs'
+      - 'tests/driver-arrival-privacy.test.mjs'
+      - 'tests/ifood-driver-arrival.test.mjs'
+      - 'supabase/functions/ifood-orders/**'
+      - 'docs/sql/driver-arrival-privacy-proof.sql'
+      - 'docs/sql/ifood-courier-arrival-verify.sql'
+      - 'docs/sql/customer-tracking-arrival-code.sql'
+      - 'marketing/acompanhar.html'
       - 'tests/order-public-labels.test.mjs'
       - 'docs/sql/order-card-public-number-localizer.sql'
       - 'docs/sql/order-detail-public-number.sql'
@@ -51,4 +65,4 @@ jobs:
         with:
           node-version: '22'
       - name: Testar regras de acesso e entregas
-        run: node --test entregador/*.test.mjs tests/driver-earnings-dashboard.test.mjs tests/driver-mobile-redesign.test.mjs tests/driver-order-details.test.mjs tests/order-public-labels.test.mjs
+        run: node --test entregador/*.test.mjs tests/driver-earnings-dashboard.test.mjs tests/driver-mobile-redesign.test.mjs tests/driver-order-details.test.mjs tests/order-public-labels.test.mjs tests/driver-arrival-privacy.test.mjs tests/ifood-driver-arrival.test.mjs
