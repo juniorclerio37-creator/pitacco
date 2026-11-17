@@ -77,11 +77,15 @@ begin
  assert not has_function_privilege('anon','public.pitacco_storefront_save_draft(uuid,jsonb,integer)','EXECUTE');
  assert not has_function_privilege('anon','public.pitacco_storefront_publish(uuid,integer,integer)','EXECUTE');
 end $test$;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','91000000-0000-0000-0000-000000000001',true);
+select public.save_public_menu_settings('92000000-0000-0000-0000-000000000001','estudiolojaa',true,true,true,5,array['dinheiro'],'');
 set local role anon;
+select set_config('request.jwt.claim.sub','',true);
 do $test$
 declare public_design jsonb;
 begin
- public_design:=pitacco_private.storefront_public_design('92000000-0000-0000-0000-000000000001');
+ public_design:=public.get_public_menu('estudiolojaa')->'store'->'appearance';
  assert public_design->>'primary'='#d15723';
  assert jsonb_array_length(public_design->'banners')=1;
 end $test$;
