@@ -57,7 +57,7 @@ try {
       if (pathname.endsWith('/get_public_menu')) {
         assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
         return route.fulfill({ json: {
-          store: { name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true, delivery_fee: 5, delivery_area:area, payment_methods: ['pix_manual'] },
+          store: { name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true, delivery_fee: 5, delivery_area:area, payment_methods: ['pix_manual'], opening_hours:{open:true,reason:'open',next_open_at:null} },
           products: [{ id: 'acai', name: 'Açaí', category: 'Açaís', price: 20, option_groups: [{
             id: 'adicionais', name: 'Adicionais', min: 1, max: 1,
             options: [{ id: 'morango', name: 'Morango', price: 2 }, { id: 'leite', name: 'Leite em pó', price: 3 }]
@@ -65,6 +65,10 @@ try {
             id:'extras',name:'Extras',min:0,max:2,options:[{id:'granola',name:'Granola',price:1},{id:'banana',name:'Banana',price:0},{id:'mel',name:'Mel',price:0}]
           }] },{id:'agua',name:'Água',category:'Bebidas',price:5,option_groups:[]}]
         } });
+      }
+      if(pathname.endsWith('/pitacco_public_store_open')){
+        assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
+        return route.fulfill({json:{open:true,reason:'open',next_open_at:null,timezone:'America/Sao_Paulo'}});
       }
       if(pathname.endsWith('/pitacco_public_schedule_slots')){
         assert.equal(route.request().postDataJSON().p_fulfillment,'delivery');
