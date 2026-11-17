@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from 'react';
-import {downloadRelease,releaseDate} from './appReleases.mjs';
+import {downloadRelease,releaseDate,discoverPublicWindowsInstaller,downloadPublicWindowsInstaller} from './appReleases.mjs';
 import './windows-printing.css';
 
 const labels={connected:'Pitacco Windows conectado e autenticado',
@@ -11,6 +11,7 @@ export function WindowsConnectionStatus({client,storeId,compact=false,onNavigate
  const [status,setStatus]=useState(null),[fault,setFault]=useState(''),[revision,refresh]=useState(0);
  const [release,setRelease]=useState(null),[checking,setChecking]=useState(true);
  const [downloading,setDownloading]=useState(false),[downloadError,setDownloadError]=useState('');
+ const [publicWindows,setPublicWindows]=useState(null);
 
  useEffect(()=>{
   let live=true;
@@ -23,6 +24,12 @@ export function WindowsConnectionStatus({client,storeId,compact=false,onNavigate
   return()=>{live=false};
  },[client]);
 
+ useEffect(()=>{
+  let active=true;
+  discoverPublicWindowsInstaller().then(data=>{if(active)setPublicWindows(data)})
+   .catch(()=>{if(active)setPublicWindows(null)});
+  return()=>{active=false};
+ },[]);
  useEffect(()=>{
   if(!storeId)return;
   let live=true,running=false;
@@ -43,9 +50,9 @@ export function WindowsConnectionStatus({client,storeId,compact=false,onNavigate
  },[client,storeId,revision]);
 
  async function getInstaller(){
-  if(!release){onNavigate?.('Aplicativos e Downloads');return}
+  if(!release&&!publicWindows){onNavigate?.('Aplicativos e Downloads');return}
   setDownloading(true);setDownloadError('');
-  try{await downloadRelease(client,release);}
+  try{if(release)await downloadRelease(client,release);else downloadPublicWindowsInstaller(publicWindows);}
   catch(error){setDownloadError(error.message||'Falha ao obter o instalador.')}
   finally{setDownloading(false)}
  }
@@ -84,12 +91,13 @@ export function WindowsConnectionStatus({client,storeId,compact=false,onNavigate
   </div>}
   <div className="windows-link-actions">
    <button type="button" onClick={()=>void getInstaller()} disabled={downloading}>
-    {downloading?'Preparando download…':release?'Baixar Pitacco Windows':'Ver versões e downloads'}
+    {downloading?'Preparando download…':release||publicWindows?'Baixar Pitacco Windows':'Ver versões e downloads'}
    </button>
    <button type="button" className="secondary" onClick={()=>refresh(v=>v+1)}>Atualizar conexão</button>
    {release&&<small>Versão estável disponível: {release.version} · {releaseDate(release.published_at)}</small>}
+   {!release&&publicWindows&&<small>Instalador Windows disponível · {releaseDate(publicWindows.published_at)}</small>}
   </div>
   {downloadError&&<p role="alert">{downloadError}</p>}
-  {!release&&!downloadError&&<p className="hint">O download exige que o Super Admin tenha publicado um instalador Windows estável e verificado. Não oferecemos arquivos de teste como versão estável.</p>}
+  {!release&&!publicWindows&&!downloadError&&<p className="hint">Consulte a área de Aplicativos e Downloads para obter a versão Windows disponível.</p>}
  </section>;
 }
