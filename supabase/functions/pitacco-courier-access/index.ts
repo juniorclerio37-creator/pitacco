@@ -148,8 +148,12 @@ async function driverStatus(actor) {
   const {data:state,error} = await admin.from("pitacco_courier_auth_state")
     .select("must_change_password").eq("user_id",actor).maybeSingle();
   if (error || !state) return [403,{error:"Acesso ainda não configurado"}];
-  return [200,{courier:{id:courier.id,storeId:courier.store_id,name:courier.name},
-    mustChangePassword:state.must_change_password}];
+  // Apenas loja vinculada ao entregador autenticado, sem expor o cadastro de outras lojas.
+  const {data:store, error:storeError}=await admin.from("stores")
+    .select("name").eq("id",courier.store_id).maybeSingle();
+  if (storeError) return [503,{error:"Dados da loja indisponíveis"}];
+  return [200,{courier:{id:courier.id,storeId:courier.store_id,name:courier.name,
+    storeName:store?.name||"Minha loja"},mustChangePassword:state.must_change_password}];
 }
 async function changePassword(body, actor, user) {
   const courier=await myCourier(actor);
