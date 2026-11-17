@@ -17,6 +17,8 @@ import OwnerFinance from './OwnerFinance.jsx';
 import OwnerPlans from './OwnerPlans.jsx';
 import OwnerOperations from './OwnerOperations.jsx';
 import OwnerAppReleases from './OwnerAppReleases.jsx';
+import SupportCenter from './SupportCenter.jsx';
+import IncidentCenter from './IncidentCenter.jsx';
 import './style.css';
 import './super-admin.css';
 
@@ -32,7 +34,7 @@ const groups=[
  ['Operação',[['Estabelecimentos',Store],['Pedidos',ShoppingBag],['Entregadores',Bike]]],
  ['Gestão comercial',[['Assinaturas',CreditCard],['Plano Pitacco',Package],['Financeiro do Pitacco',CreditCard]]],
  ['Administração',[['Módulos do lojista',Package],['Homologação',ClipboardCheck]]],
- ['Sistema',[['Auditoria',ListChecks],['Central de Aplicativos',Settings]]]
+ ['Sistema',[['Auditoria',ListChecks],['Suporte e incidentes',ClipboardCheck],['Central de Aplicativos',Settings]]]
 ];
 const operations={Pedidos:'orders',Entregadores:'couriers',Auditoria:'audit'};
 function initialTheme(){
@@ -167,6 +169,7 @@ function AdminApp(){
    {page==='Assinaturas'&&<OwnerSubscriptions client={client}/>}
    {page==='Módulos do lojista'&&<OwnerFeatures client={client} stores={stores}/>}
    {page==='Central de Aplicativos'&&<OwnerAppReleases client={client}/>}
+   {page==='Suporte e incidentes'&&<><SupportCenter client={client} stores={stores} owner/><IncidentCenter client={client} stores={stores} owner/></>}
    {page==='Homologação'&&<>
     <OwnerIfood client={client} stores={stores}/>
     <Owner99Food client={client} stores={stores}/>
