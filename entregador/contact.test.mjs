@@ -13,7 +13,7 @@ test('real Brazilian phone opens WhatsApp with country code',()=>{
 test('iFood intermediary 0800 calls phone and shows localizer, never WhatsApp',()=>{
  const result=resolveCustomerContact({kind:'intermediary',number:'0800 705 3040',localizer:'75159000'});
  assert.equal(result.type,'intermediary');
- assert.equal(result.href,'tel:08007053040');
+ assert.equal(result.href,'tel:08007053040,75159000');
  assert.equal(result.localizer,'75159000');
  assert.equal(result.href.includes('wa.me'),false);
 });
@@ -41,4 +41,22 @@ test('direct real number provided by a marketplace remains WhatsApp eligible',()
  const result=resolveCustomerContact({kind:'real',number:'21988881234',localizer:null});
  assert.equal(result.type,'real');
  assert.equal(result.href,'https://wa.me/5521988881234');
+});
+
+test('0800 containing comma and labeled localizer is parsed into native dialer pause',()=>{
+ const result=resolveCustomerContact({kind:'unknown',number:'0800 200 5011, localizador: 93898428'});
+ assert.equal(result.type,'intermediary');
+ assert.equal(result.number,'0800 200 5011');
+ assert.equal(result.localizer,'93898428');
+ assert.equal(result.href,'tel:08002005011,93898428');
+ assert.equal(result.href.includes('wa.me'),false);
+});
+test('direct Brazilian customer phone opens prefilled native dialer',()=>{
+ const c=resolveCustomerContact({kind:'real',number:'(21) 98888-1234'});
+ assert.equal(c.callHref,'tel:+5521988881234');
+});
+test('iFood intermediary without localizer still opens native dialer to the 0800',()=>{
+ const c=resolveCustomerContact({kind:'intermediary',number:'0800 200 5011'});
+ assert.equal(c.href,'tel:08002005011');
+ assert.equal(c.localizer,null);
 });
