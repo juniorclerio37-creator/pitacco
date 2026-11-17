@@ -13,6 +13,7 @@ export function createDriverAuth(supabase) {
     async signIn(phone, password) {
       const normalized = normalizeBrazilPhone(phone);
       const { data, error } = await supabase.auth.signInWithPassword({ phone: normalized, password });
+      if (error?.code === 'phone_provider_disabled') throw new Error('Login por telefone está desativado no Supabase. Solicite ao administrador que habilite Authentication → Providers → Phone. Sua senha não foi verificada.');
       if (error) throw new Error('Telefone ou senha inválidos');
       if (!data?.user) throw new Error('Sessão não disponível');
       return data;
