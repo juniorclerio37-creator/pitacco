@@ -22,25 +22,28 @@ reset role;
 update public.pitacco_delivery_pricing set enabled=true
  where store_id='90000000-0000-0000-0000-000000000002';
 
+insert into public.pitacco_delivery_route_quotes(id,store_id,request_id,destination_address,distance_m,fee,pricing_updated_at,expires_at)
+select '90000000-0000-0000-0000-000000000005',
+ store_id,'90000000-0000-0000-0000-000000000004','Rua Teste 100',3200,7.50,updated_at,now()+interval '5 minutes'
+from public.pitacco_delivery_pricing where store_id='90000000-0000-0000-0000-000000000002';
+
+set local role anon;
+select set_config('request.jwt.claim.sub','',true);
 do $$
-declare request_id uuid:=gen_random_uuid(); quote_id uuid; order_result jsonb;
- items jsonb:='[{"product_id":"90000000-0000-0000-0000-000000000003","quantity":1}]'::jsonb;
+declare items jsonb:='[{"product_id":"90000000-0000-0000-0000-000000000003","quantity":1}]'::jsonb;
+ result jsonb;
 begin
- insert into public.pitacco_delivery_route_quotes(store_id,request_id,destination_address,distance_m,fee,pricing_updated_at,expires_at)
- select store_id,request_id,'Rua Teste 100',3200,7.5,updated_at,now()+interval '5 minutes'
- from public.pitacco_delivery_pricing where store_id='90000000-0000-0000-0000-000000000002'
- returning id into quote_id;
- perform set_config('request.jwt.claim.sub','',true);
- set local role anon;
  begin
-  perform public.checkout_public_order('lojarotas',request_id,'Cliente','21999999999','Rua Teste 100',items,'delivery','dinheiro','');
+  perform public.checkout_public_order('lojarotas','90000000-0000-0000-0000-000000000004',
+   'Cliente','21999999999','Rua Teste 100',items,'delivery','dinheiro','');
   raise exception 'Pedido sem cotação deveria ser recusado';
  exception when raise_exception then
   if sqlerrm not like 'Calcule o frete%' then raise;end if;
  end;
- order_result:=public.pitacco_checkout_quoted_delivery('lojarotas',request_id,'Cliente','21999999999','Rua Teste 100',items,'delivery','dinheiro','',quote_id);
- assert (order_result->>'total')::numeric=32.50;
- assert order_result=public.pitacco_checkout_quoted_delivery('lojarotas',request_id,'Cliente','21999999999','Rua Teste 100',items,'delivery','dinheiro','',quote_id);
- reset role;
+ result:=public.pitacco_checkout_quoted_delivery('lojarotas','90000000-0000-0000-0000-000000000004',
+   'Cliente','21999999999','Rua Teste 100',items,'delivery','dinheiro','','90000000-0000-0000-0000-000000000005');
+ assert (result->>'total')::numeric=32.50;
+ assert result=public.pitacco_checkout_quoted_delivery('lojarotas','90000000-0000-0000-0000-000000000004',
+   'Cliente','21999999999','Rua Teste 100',items,'delivery','dinheiro','','90000000-0000-0000-0000-000000000005');
 end $$;
 rollback;
