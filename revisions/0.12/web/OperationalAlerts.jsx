@@ -1,4 +1,5 @@
 import React, {useEffect,useState} from 'react';
+import IncidentCenter from './IncidentCenter.jsx';
 
 const labels={
  awaiting_acceptance:'Pedido aguardando aceite',
@@ -36,7 +37,7 @@ export default function OperationalAlerts({client,storeId,onNavigate}){
   const timer=setInterval(update,30000);
   return()=>{live=false;clearInterval(timer);};
  },[client,storeId,refresh]);
- return <section className="panel" aria-label="Central de alertas" aria-busy={busy}>
+ return <><section className="panel" aria-label="Central de alertas" aria-busy={busy}>
   <div className="dispatch-actions"><button type="button" className="secondary" disabled={busy} onClick={()=>setRefresh(value=>value+1)}>Atualizar alertas</button></div>
   {busy&&!data&&<p role="status">Carregando alertas…</p>}
   {error&&<p role="alert">{error}</p>}
@@ -57,5 +58,5 @@ export default function OperationalAlerts({client,storeId,onNavigate}){
     </button>
    </li>)}</ul>
   </>}
- </section>;
+ </section><IncidentCenter client={client} storeId={storeId}/></>;
 }
