@@ -81,6 +81,38 @@ form h3{margin:0;font-size:1.16rem}fieldset{min-width:0;border:1px solid var(--l
 @media(max-width:900px){.products{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:590px){.shell{width:calc(100% - 28px)}.hero{min-height:0;padding:36px 0 23px}.hero-content{min-height:0;flex-direction:column;align-items:flex-start;gap:17px}.identity{gap:12px}.store-mark{width:58px;height:58px;border-radius:16px;font-size:25px}.hero p{font-size:.86rem}.catalog{padding-top:21px}.toolbar{align-items:stretch;flex-direction:column;gap:11px}.search{width:100%}.nav{flex-wrap:nowrap;margin:11px 0 15px}.products{grid-template-columns:1fr;gap:9px}.product-open{min-height:115px;border-radius:17px;padding:12px}.product-visual{width:76px;height:76px;border-radius:14px}dialog{margin:auto 0 0;width:100%;max-width:none;border-radius:23px 23px 0 0;max-height:94dvh}.dialog-shell{max-height:94dvh}.dialog-header,.dialog-scroll,.dialog-footer{padding-inline:15px}.purchase .primary{padding-inline:10px;font-size:.88rem}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+/* Keep browsing controls in reach while scrolling the catalogue. */
+.catalog{padding-top:0}
+.catalog-tools{position:sticky;top:0;z-index:1;background:var(--surface);padding:18px 0 5px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.catalog-tools .nav{flex-wrap:nowrap;margin:12px 0 0;padding:4px 4px 10px;scrollbar-width:thin}
+.catalog-tools .chip{min-height:42px}
+.category-section{grid-column:1/-1;min-width:0;margin:0 0 27px}
+.category-section h3{font-size:1.23rem;margin:0 0 10px;letter-spacing:-.02em}
+.category-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.products{display:block}
+.product-name{font-weight:800}
+.product-visual{width:100px;height:100px}
+.product-customize{display:block;color:var(--muted);font-size:.79rem;margin-top:4px}
+.product-open{min-height:130px}
+.option{min-height:50px}
+.group-count[data-ready=true]{color:#245a37;font-weight:750}
+.product-progress{font-size:.85rem;font-weight:650;color:var(--muted);margin:0}
+.cart-controls{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.cart-controls button{font-size:.82rem;min-height:40px;padding:7px 10px}
+.feedback{width:max-content;max-width:100%;margin:0 auto 8px;padding:8px 14px;border-radius:999px;background:var(--hero);color:#fff;font-weight:650;text-align:center;box-shadow:0 4px 16px #33212e22}
+@media(max-width:900px){.category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:590px){
+ .catalog-tools{padding-top:10px;margin-bottom:15px}
+ .catalog-tools .toolbar{gap:9px}
+ .catalog-tools .toolbar h2{display:none}
+ .catalog-tools .nav{margin-top:7px}
+ .category-grid{grid-template-columns:1fr;gap:9px}
+ .category-section{margin-bottom:20px}
+ .product-open{min-height:111px}
+ .product-visual{width:86px;height:86px}
+ .purchase{gap:7px}
+}
 </style></head><body>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
@@ -90,20 +122,20 @@ form h3{margin:0;font-size:1.16rem}fieldset{min-width:0;border:1px solid var(--l
 <main class="shell catalog">
  <p id="msg" class="msg" role="status">Carregando cardápio…</p>
  <section id="layout" aria-label="Produtos da loja" hidden>
-  <div class="toolbar"><h2>Cardápio</h2><label class="search"><span class="visually-hidden">Buscar no cardápio</span>
+  <div class="catalog-tools"><div class="toolbar"><h2>Cardápio</h2><label class="search"><span class="visually-hidden">Buscar no cardápio</span>
    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
    <input type="search" id="search" placeholder="Buscar no cardápio"></label></div>
-  <nav class="nav" id="categories" aria-label="Categorias"></nav>
+  <nav class="nav" id="categories" aria-label="Categorias"></nav></div>
   <div class="products" id="products"></div>
  </section>
 </main>
-<div id="cartDock" class="dock" hidden><button id="openCart" type="button"><span><span class="dock-count" id="cartCount">0</span><span id="cartAction">Ver sacola</span></span><strong id="cartValue"></strong></button></div>
+<div id="cartDock" class="dock" hidden><p id="cartFeedback" class="feedback" role="status" hidden></p><button id="openCart" type="button"><span><span class="dock-count" id="cartCount">0</span><span id="cartAction">Ver sacola</span></span><strong id="cartValue"></strong></button></div>
 <dialog id="productDialog" aria-labelledby="productTitle"><div class="dialog-shell">
  <header class="dialog-header"><h2 class="dialog-title" id="productTitle"></h2><button type="button" class="close" id="closeProduct" aria-label="Fechar produto">×</button></header>
  <div class="dialog-scroll" id="productBody"></div>
- <footer class="dialog-footer"><p id="productError" class="hint-error" role="alert" hidden></p>
+ <footer class="dialog-footer"><p id="productProgress" class="product-progress" hidden></p><p id="productError" class="hint-error" role="alert" hidden></p>
   <div class="purchase"><div class="stepper" aria-label="Quantidade"><button type="button" id="less" aria-label="Diminuir quantidade">−</button><output id="productQuantity" aria-live="polite">1</output><button type="button" id="more" aria-label="Aumentar quantidade">+</button></div>
-  <button type="button" class="primary" id="addProduct"><span>Adicionar à sacola</span><strong id="productTotal"></strong></button></div>
+  <button type="button" class="primary" id="addProduct"><span id="productAction">Adicionar à sacola</span><strong id="productTotal"></strong></button></div>
  </footer>
 </div></dialog>
 <dialog id="cartDialog" aria-labelledby="cartTitle"><div class="dialog-shell">
@@ -175,7 +207,7 @@ const categoryOf=product=>product.category?.trim()||'Outros';
 const normal=text=>text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 const button=(name,cls)=>{const node=el('button',name,cls);node.type='button';return node};
 const imageUrl=value=>typeof value==='string'&&/^https:\/\//i.test(value);
-let category=null, current=null, quantity=1, groups=[], completed=false;
+let category=null, current=null, editing=null, quantity=1, groups=[], completed=false, feedbackTimer;
 function msg(text){
  const node=$($('cartDialog').open?'checkoutMessage':'msg');
  node.textContent=text;
@@ -201,6 +233,7 @@ function renderCategories(){
    category=key;
    for(const sibling of root.children)sibling.setAttribute('aria-pressed',String(tab===sibling));
    renderProducts();
+   if($('layout').getBoundingClientRect().top<0)$('layout').scrollIntoView();
   };
   root.append(tab);
  }
@@ -209,7 +242,16 @@ function renderProducts(){
  const query=normal($('search').value);
  const products=menu.products.filter(p=>(category===null||categoryOf(p)===category)&&normal([p.name,p.description,categoryOf(p)].join(' ')).includes(query));
  const root=$('products');root.replaceChildren();
+ const sections=new Map();
  for(const product of products){
+  const name=categoryOf(product);
+  if(!sections.has(name)){
+   const section=el('section',undefined,'category-section');
+   const grid=el('div',undefined,'category-grid');
+   section.append(el('h3',name),grid);
+   sections.set(name,grid);
+   root.append(section);
+  }
   const card=el('article',undefined,'product');
   const open=button(undefined,'product-open');
   open.setAttribute('aria-label','Personalizar '+product.name);
@@ -217,12 +259,13 @@ function renderProducts(){
   info.append(el('strong',product.name,'product-name'));
   if(product.description)info.append(el('span',product.description,'product-description'));
   info.append(el('strong',money(product.price)));
+  if(product.option_groups?.some(group=>group.max>0))info.append(el('span','Escolher complementos','product-customize'));
   const visual=el('span',undefined,'product-visual');
   visual.setAttribute('aria-hidden','true');
   visual.append(el('span',product.name.trim().slice(0,1).toUpperCase()));
   addPhoto(visual,product.image_url);
   visual.append(el('span','+','product-plus'));
-  open.append(info,visual);open.onclick=()=>openProduct(product);card.append(open);root.append(card);
+  open.append(info,visual);open.onclick=()=>openProduct(product);card.append(open);sections.get(name).append(card);
  }
  if(!products.length)root.append(el('p',menu.products.length?'Nenhum produto encontrado.':'Esta loja ainda não possui produtos disponíveis.','empty'));
 }
@@ -231,8 +274,9 @@ function groupRule(group){
  if(group.min===0)return 'Até '+group.max+(group.max===1?' opção':' opções');
  return 'Escolha de '+group.min+' a '+group.max+' opções';
 }
-function openProduct(product){
- current=product;quantity=1;groups=[];
+function openProduct(product,item=null){
+ current=product;editing=item;quantity=item?.quantity??1;groups=[];
+ $('productAction').textContent=item?'Salvar alterações':'Adicionar à sacola';
  $('productTitle').textContent=product.name;
  $('productBody').replaceChildren();
  const intro=el('div',undefined,'product-intro');
@@ -252,7 +296,8 @@ function openProduct(product){
    input.type=group.max===1?'radio':'checkbox';
    input.name='group-'+index;
    input.value=option?.id??'';
-   input.checked=!option;
+   input.checked=option?Boolean(item?.options.includes(option.id)):
+    !group.options.some(choice=>item?.options.includes(choice.id));
    input.addEventListener('change',()=>{
     field.removeAttribute('data-invalid');$('productError').hidden=true;updateProduct();
    });
@@ -273,13 +318,19 @@ function openProduct(product){
 }
 function getChoices(row){return row.choices.filter(({input})=>input.checked).map(({option})=>option)}
 function updateProduct(){
- let extra=0;
+ let extra=0,pendingGroups=0;
  for(const row of groups){
   const options=getChoices(row);
   extra+=options.reduce((sum,option)=>sum+Number(option.price),0);
   row.count.textContent=options.length+' de '+row.group.max;
+  row.count.dataset.ready=String(row.group.min>0&&options.length>=row.group.min);
+  if(options.length<row.group.min)pendingGroups++;
   for(const {input} of row.choices)input.disabled=row.group.max>1&&!input.checked&&options.length>=row.group.max;
  }
+ const progress=$('productProgress');
+ progress.hidden=!groups.some(row=>row.group.min>0);
+ progress.textContent=pendingGroups===1?'Falta completar 1 grupo obrigatório':
+  pendingGroups>1?'Faltam completar '+pendingGroups+' grupos obrigatórios':'Escolhas obrigatórias completas';
  $('less').disabled=quantity<=1;
  $('more').disabled=quantity>=20;
  $('productQuantity').textContent=quantity;
@@ -292,6 +343,20 @@ function productError(text){
 $('less').onclick=()=>{if(quantity>1){quantity--;updateProduct()}};
 $('more').onclick=()=>{if(quantity<20){quantity++;updateProduct()}};
 $('closeProduct').onclick=()=>$('productDialog').close();
+$('productDialog').addEventListener('close',()=>{
+ if(!editing)return;
+ editing=null;
+ $('cartDialog').showModal();
+ const editButtons=[...$('cart').querySelectorAll('.cart-controls button')];
+ (editButtons.find(button=>button.textContent==='Editar complementos')||$('closeCart')).focus();
+});
+function cartFeedback(text){
+ clearTimeout(feedbackTimer);
+ const notice=$('cartFeedback');
+ notice.textContent=text;
+ notice.hidden=false;
+ feedbackTimer=setTimeout(()=>{notice.hidden=true},2200);
+}
 $('search').addEventListener('input',renderProducts);
 $('addProduct').onclick=()=>{
  if(!current||pendingRequest||completed)return;
@@ -305,16 +370,23 @@ $('addProduct').onclick=()=>{
  }
  const options=groups.flatMap(getChoices);
  const chosen=options.map(option=>option.id);
- const existing=cart.find(item=>item.product_id===current.id&&item.options.length===chosen.length&&chosen.every(id=>item.options.includes(id)));
+ const existing=cart.find(item=>item!==editing&&item.product_id===current.id&&item.options.length===chosen.length&&chosen.every(id=>item.options.includes(id)));
  if(existing){
   if(existing.quantity+quantity>20){productError('Limite de 20 unidades por combinação.');return}
   existing.quantity+=quantity;
+  if(editing)cart=cart.filter(item=>item!==editing);
  }else{
-  if(cart.length>=30){productError('Limite de 30 combinações por pedido.');return}
-  cart.push({product_id:current.id,quantity,options:chosen,name:current.name,labels:options.map(option=>option.name),
-   unit:Number(current.price)+options.reduce((sum,option)=>sum+Number(option.price),0)});
+  if(!editing&&cart.length>=30){productError('Limite de 30 combinações por pedido.');return}
+  const item={product_id:current.id,quantity,options:chosen,name:current.name,labels:options.map(option=>option.name),
+   unit:Number(current.price)+options.reduce((sum,option)=>sum+Number(option.price),0)};
+  if(editing)cart[cart.indexOf(editing)]=item;
+  else cart.push(item);
  }
- renderCart();$('productDialog').close();msg(current.name+' adicionado à sacola.');
+ if(editing){
+  $('checkoutMessage').textContent='Item atualizado na sacola.';
+  $('checkoutMessage').hidden=false;
+ }else cartFeedback('Adicionado à sacola');
+ renderCart();$('productDialog').close();
 };
 function renderCart(){
  const root=$('cart');root.replaceChildren();
@@ -337,7 +409,20 @@ function renderCart(){
   const remove=button('Remover','secondary');
   remove.setAttribute('aria-label','Remover '+item.name);
   remove.onclick=()=>{cart=cart.filter(c=>c!==item);renderCart()};
-  line.append(info,qtyLabel,el('strong',money(item.unit*item.quantity)),remove);root.append(line);
+  const controls=el('div',undefined,'cart-controls');
+  const product=menu.products.find(product=>product.id===item.product_id);
+  if(product?.option_groups?.some(group=>group.max>0)){
+   const edit=button('Editar complementos','secondary');
+   edit.onclick=()=>{
+    if(pendingRequest||completed)return;
+    $('checkoutMessage').hidden=true;
+    $('cartDialog').close();
+    openProduct(product,item);
+   };
+   controls.append(edit);
+  }
+  controls.append(remove);
+  line.append(info,qtyLabel,el('strong',money(item.unit*item.quantity)),controls);root.append(line);
  }
  const fee=cart.length&&$('fulfillment').value==='delivery'?Number(menu.store.delivery_fee)||0:0;
  const subtotal=cart.reduce((sum,item)=>sum+item.unit*item.quantity,0);
