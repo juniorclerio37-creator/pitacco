@@ -70,6 +70,18 @@ export function WindowsConnectionStatus({client,storeId,compact=false,onNavigate
   {status?.status==='not_detected'&&<p role="status">Não há um aplicativo Windows autenticado detectado para esta loja. O navegador não consegue verificar se o aplicativo está instalado e fechado.</p>}
   {fault&&<p role="alert">{fault}</p>}
   {status?.last_seen_at&&<small>Última atividade confirmada: {freshness(status.last_seen_at)}</small>}
+  {status?.last_printer_test&&<div className="windows-last-print-check" aria-label="Último teste de impressão Windows">
+   <strong>Último teste de impressora (Windows)</strong>
+   <p>{status.last_printer_test.outcome==='printed'
+    ?'O operador confirmou que o cupom saiu no papel.'
+    :status.last_printer_test.outcome==='failed'
+    ?'O operador informou que o cupom não saiu no papel.'
+    :status.last_printer_test.outcome==='uncertain'
+    ?'O operador não conseguiu confirmar a impressão.'
+    :'Teste enviado ao spooler; confirmação física ainda pendente.'}</p>
+   <small>{status.last_printer_test.printer_name} · {status.last_printer_test.paper_width} mm · {freshness(status.last_printer_test.confirmed_at||status.last_printer_test.submitted_at)}</small>
+   <small>Registro informado no aplicativo Windows. Não comprova a impressão automática de novos pedidos.</small>
+  </div>}
   <div className="windows-link-actions">
    <button type="button" onClick={()=>void getInstaller()} disabled={downloading}>
     {downloading?'Preparando download…':release?'Baixar Pitacco Windows':'Ver versões e downloads'}
