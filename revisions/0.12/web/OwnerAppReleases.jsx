@@ -124,7 +124,7 @@ export default function OwnerAppReleases({client}){
      <button type="button" className="secondary" disabled={busy} onClick={()=>void run(async()=>{await verify(release.id);await load();},'Arquivo verificado.')}>Validar envio</button></>}
     {release.verified_at&&<button type="button" className="secondary" disabled={busy} onClick={()=>void run(()=>downloadRelease(client,release),'Download iniciado.')}>Baixar para conferir</button>}
     {release.verified_at&&release.state!=='published'&&<>
-     <label className="release-check"><input type="checkbox" checked={reviewed} onChange={event=>setReviewed(event.target.checked)}/> Conferi a origem, a assinatura e o resultado da análise de segurança do instalador.</label>
+     <label className="release-check"><input type="checkbox" checked={reviewed} onChange={event=>setReviewed(event.target.checked)}/> Conferi a procedência do arquivo, a integridade SHA-256 e o resultado da análise de segurança.</label>
      <p>A publicação substitui a versão atual deste aplicativo no mesmo canal.</p>
      <button type="button" disabled={busy||!reviewed} onClick={()=>transition('publish')}>Publicar versão</button></>}
     {release.state==='published'&&<button type="button" disabled={busy} onClick={()=>transition('withdraw')}>Retirar publicação</button>}
