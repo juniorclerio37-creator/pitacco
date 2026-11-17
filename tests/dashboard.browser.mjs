@@ -243,6 +243,16 @@ try {
         assert.equal(route.request().postDataJSON().p_store,store.id);
         return route.fulfill({headers,json:{menu_slug:'loja-teste',menu_has_checkout:true,has_active_products:true,sandbox_store_linked:true}});
       }
+      if(pathname==='/functions/v1/payment-homologation'){
+        assert.ok(adminMode);
+        const input=route.request().postDataJSON();
+        assert.equal(input.store_id,store.id);
+        assert.equal(input.expected_cents,1250);
+        assert.ok(['pagbank','mercado_pago'].includes(input.provider));
+        assert.equal(input.token,'sandbox-fixture-'+input.provider);
+        return route.fulfill({headers,json:{confirmed:true,amount_matches:true,environment:'sandbox',
+         amount_cents:1250,provider_status:input.provider==='pagbank'?'PAID':'approved',reference:input.reference}});
+      }
       if(pathname==='/functions/v1/asaas-homologation'){
         assert.deepEqual(route.request().postDataJSON(),{store_id:store.id,payment_id:'pay_test'});
         return route.fulfill({headers,json:{outcome:'checked',confirmed:true,plan_amount:true,sandbox_enabled:true,linked:true,recorded:false}});
@@ -262,6 +272,13 @@ try {
           assert.ok(input.p_request);
           food99Evidence.push({id:902,scope:input.p_scope,outcome:input.p_outcome,notes:input.p_notes,recorded_at:new Date().toISOString()});
           return route.fulfill({headers,json:902});
+        }
+        if(['pagbank','mercado_pago'].includes(input.p_scope)){
+          assert.equal(input.p_outcome,'approved');
+          assert.match(input.p_notes,/Consulta de teste/);
+          assert.equal(input.p_notes.includes('sandbox-fixture-'),false);
+          evidence.unshift({id:910+evidence.length,store_name:store.name,scope:input.p_scope,outcome:input.p_outcome,notes:input.p_notes,recorded_at:new Date().toISOString()});
+          return route.fulfill({headers,json:910});
         }
         assert.equal(input.p_scope,'asaas');
         assert.equal(input.p_outcome,'pending');
@@ -638,6 +655,25 @@ try {
     await homologation.getByRole('button',{name:'Salvar resultado'}).click();
     await homologation.getByText('Resultado registrado no histórico.').waitFor();
     await homologation.getByText('Asaas conferido. Aguardando confirmação do webhook.').waitFor();
+    const payments=homologation.getByRole('region',{name:'Homologação de pagamentos',exact:true});
+    for(const [provider,label,reference] of [
+      ['pagbank','PagBank (PagSeguro)','ORDE_AAAAAAAA-BBBB'],
+      ['mercado_pago','Mercado Pago','123']
+    ]){
+      await payments.getByRole('button',{name:label,exact:true}).click();
+      const form=payments.locator('form');
+      await form.locator('[name=token]').fill('sandbox-fixture-'+provider);
+      await form.locator('[name=reference]').fill(reference);
+      await form.getByLabel('Valor esperado em reais').fill('12.50');
+      await form.getByRole('button',{name:'Consultar pagamento',exact:true}).click();
+      await form.getByText(/Pagamento confirmado pelo provedor/).waitFor();
+      assert.equal(await form.locator('[name=token]').inputValue(),'');
+      await form.getByRole('button',{name:'Usar resultado no registro',exact:true}).click();
+      assert.ok((await homologation.getByLabel('Observação').inputValue()).includes(reference));
+      await homologation.getByRole('button',{name:'Salvar resultado',exact:true}).click();
+      await homologation.getByText('Resultado registrado no histórico.',{exact:true}).waitFor();
+      await homologation.getByText('Consulta de teste · '+reference,{exact:false}).waitFor();
+    }
     await adminNavigate('Estabelecimentos');
     const storeTabs=page.getByRole('navigation',{name:'Seções do estabelecimento'});
     await storeTabs.getByRole('button',{name:'Catálogo',exact:true}).click();

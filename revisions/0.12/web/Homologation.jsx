@@ -28,6 +28,7 @@ export default function Homologation({client,stores,storefrontOrigin}){
  const [history,setHistory]=useState(null),[historyError,setHistoryError]=useState('');
  const [probe,setProbe]=useState(null),[asaas,setAsaas]=useState(null),[busy,setBusy]=useState('');
  const [error,setError]=useState(''),[notice,setNotice]=useState('');
+ const notesRef=useRef(null);
  const running=useRef(false),saveAttempt=useRef(null),historyRequest=useRef(0);
 
  async function loadHistory(){
@@ -71,6 +72,20 @@ export default function Homologation({client,stores,storefrontOrigin}){
    setAsaas(data);
   });
  }
+ function usePaymentEvidence(result){
+  const amount=Number.isInteger(result.amount_cents)
+   ?new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(result.amount_cents/100):'indisponível';
+  const notes=notesRef.current;
+  const line=['Consulta de teste',result.reference,result.provider_status||'sem status informado',amount,
+   result.confirmed?'pagamento confirmado':'pagamento sem confirmação',result.amount_matches?'valor confere':'valor não conferido'].join(' · ');
+  const lines=[notes.value.trim(),line].filter(Boolean);
+  const combined=notes.value.includes(line)?notes.value:lines.join('\n');
+  if(combined.length<=notes.maxLength){
+   notes.value=combined;
+   setStatus(result.confirmed?(result.amount_matches?'approved':'failed'):'pending');
+  }else setNotice('A observação está cheia. Libere espaço para adicionar o resultado.');
+  notes.focus();
+ }
  function saveResult(event){
   event.preventDefault();
   const form=event.currentTarget;
@@ -111,6 +126,18 @@ export default function Homologation({client,stores,storefrontOrigin}){
    </ul>}
   </div>
 
+  <section aria-label="Homologação de pagamentos">
+   <div className="panel">
+    <h3>PagBank e Mercado Pago</h3>
+    <div className="dispatch-actions">
+     {['pagbank','mercado_pago'].map(provider=><button key={provider} type="button" className="secondary"
+      aria-pressed={scope===provider} disabled={!!busy} onClick={()=>setScope(provider)}>{paymentHomologationProviders[provider]}</button>)}
+    </div>
+   </div>
+   {['pagbank','mercado_pago'].includes(scope)&&
+    <PaymentHomologation key={store+scope} client={client} store={store} provider={scope} onEvidence={usePaymentEvidence}/>}
+  </section>
+
   <div className="panel">
    <h3>Verificar cobrança Asaas Sandbox</h3>
    <p>Use o identificador da cobrança de teste. A consulta verifica o Asaas e o registro no Pitacco.</p>
@@ -129,7 +156,7 @@ export default function Homologation({client,stores,storefrontOrigin}){
    </div>}
   </div>
 
-  {Object.hasOwn(paymentHomologationProviders,scope)&&
+  {scope==='infinitepay'&&
    <PaymentHomologation key={store+scope} client={client} store={store} provider={scope}/>}
   <div className="panel">
    <h3>Registrar resultado</h3>
@@ -140,7 +167,7 @@ export default function Homologation({client,stores,storefrontOrigin}){
     <label>Resultado <select value={status} onChange={event=>setStatus(event.target.value)} disabled={!!busy}>
      {Object.entries(outcomes).map(([key,label])=><option key={key} value={key}>{label}</option>)}
     </select></label>
-    <label>Observação <textarea name="notes" required minLength={3} maxLength={1200} rows={3} disabled={!!busy}/></label>
+    <label>Observação <textarea ref={notesRef} name="notes" required minLength={3} maxLength={1200} rows={3} disabled={!!busy}/></label>
     <p>{checks[scope][1]} Use a observação para registrar o cenário e o resultado. Chaves e tokens ficam na configuração do provedor.</p>
     <button disabled={!!busy}>{busy==='save'?'Salvando…':'Salvar resultado'}</button>
    </form>
