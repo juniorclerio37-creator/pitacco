@@ -1,7 +1,7 @@
 -- Pitacco Entregador: ganhos baseados em entregas concluídas e repasse registrado.
 -- Fonte idêntica à usada em CourierFinance.jsx / pitacco_register_courier_payout:
 -- deliveries.courier_payment e data de conclusão = updated_at, em America/Sao_Paulo.
--- SECURITY INVOKER + RLS: não permite consultar entregas de outro motoboy.
+-- SECURITY DEFINER + sessão e dono da entrega: RLS bloqueia leitura bruta de entregas concluídas.
 create or replace function public.pitacco_driver_earnings(p_period text default 'semana')
 returns jsonb
 language plpgsql
