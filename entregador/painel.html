@@ -179,7 +179,108 @@ const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshTo
 const driver=createDriverAuth(sb);
 let courier=null, busy=false;
 
-let earnPeriod="hoje", earnRequest=0;
+let earnPeriod="hoje", earnRequest=0, lastEarningsReport=null;
+let storeName="Minha loja", navProvider="google", navMode="address", assignedDeliveries=[];
+const validViews=["pedidos","mapa","ganhos","perfil","config"];
+function switchView(view){
+ const next=validViews.includes(view)?view:"pedidos";
+ for(const section of document.querySelectorAll(".app-view"))section.hidden=section.dataset.view!==next;
+ for(const btn of document.querySelectorAll(".bottom-nav [data-tab]")){
+  if(btn.dataset.tab===next)btn.setAttribute("aria-current","page");else btn.removeAttribute("aria-current");
+ }
+ if(location.hash!=="#"+next)history.replaceState(null,"","#"+next);
+ window.scrollTo({top:0,behavior:"instant"});
+}
+
+
+function dateKey(value){
+ const parts=new Intl.DateTimeFormat("en-US",{
+  timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"
+ }).formatToParts(new Date(value));
+ const o=Object.fromEntries(parts.map(part=>[part.type,part.value]));
+ return o.year+"-"+o.month+"-"+o.day;
+}
+function shortDate(iso){
+ if(!iso)return "";
+ return new Intl.DateTimeFormat("pt-BR",{timeZone:"America/Sao_Paulo",day:"2-digit",month:"short",weekday:"long"}).format(new Date(iso+"T12:00:00-03:00"));
+}
+function selectedName(){return {hoje:"HOJE",semana:"NESTA SEMANA",mes:"NESTE MÊS"}[earnPeriod];}
+function renderDailyBreakdown(report){
+ const container=$("earnDailyRows");
+ container.replaceChildren();
+ const days=Array.isArray(report.day_breakdown)?report.day_breakdown:[];
+ if(!days.length){container.append(element("div","earn-empty","Sem entregas concluídas neste período."));return;}
+ const recent=report.recent||[];
+ for(const day of days){
+  const wrapper=element("div","day-group");
+  const row=element("button","day-row");row.type="button";row.setAttribute("aria-expanded","false");
+  const info=element("span");
+  info.append(element("strong","",shortDate(day.date)),element("small","",countLabel(Number(day.count??0))));
+  const summary=element("span");summary.append(element("b","",brl.format(numValue(day.amount))),element("span","day-arrow","›"));
+  row.append(info,summary);
+  const details=element("div","day-details");details.hidden=true;
+  const corresponding=recent.filter(x=>dateKey(x.completed_at)===day.date);
+  if(corresponding.length){
+   for(const x of corresponding){
+    const line=element("div","earn-history-item"),detail=element("div");
+    detail.append(element("b","","Entrega • "+String(x.order_id||x.delivery_id||"").slice(0,8).toUpperCase()));
+    detail.append(element("small","",new Date(x.completed_at).toLocaleTimeString("pt-BR",{timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit"})));
+    line.append(detail,element("strong","",brl.format(numValue(x.amount))));details.append(line);
+   }
+   if(Number(day.count)>corresponding.length)details.append(element("p","note-inline","Exibindo os últimos registros disponíveis. O total do dia inclui todas as entregas concluídas."));
+  }else{details.append(element("p","note-inline","Detalhes antigos indisponíveis nesta lista. O total do dia está correto."));}
+  row.addEventListener("click",()=>{
+   const expanded=row.getAttribute("aria-expanded")==="true";
+   row.setAttribute("aria-expanded",String(!expanded));details.hidden=expanded;
+  });
+  wrapper.append(row,details);container.append(wrapper);
+ }
+}
+function updateNavPreferences(){
+ $("mapPreference").textContent=(navProvider==="waze"?"Waze":"Google Maps")+" • "+(navMode==="coords"?"Coordenadas quando disponíveis":"Endereço");
+ $("profileNav").textContent=navProvider==="waze"?"Waze":"Google Maps";
+ for(const b of document.querySelectorAll("[data-nav-choice]"))b.setAttribute("aria-pressed",String(b.dataset.navChoice===navProvider));
+ for(const b of document.querySelectorAll("[data-map-mode]"))b.setAttribute("aria-pressed",String(b.dataset.mapMode===navMode));
+}
+function loadNavPreferences(){
+ try{
+  navProvider=localStorage.getItem("pitacco:driver:navigator")==="waze"?"waze":"google";
+  navMode=localStorage.getItem("pitacco:driver:navmode")==="coords"?"coords":"address";
+ }catch{}
+ updateNavPreferences();
+}
+function navigationUrl(delivery){
+ const hasCoords=Number.isFinite(Number(delivery.latitude))&&Number.isFinite(Number(delivery.longitude))&&delivery.latitude!=null&&delivery.longitude!=null;
+ const destination=(navMode==="coords"&&hasCoords)?[delivery.latitude,delivery.longitude].join(","):String(delivery.address??"");
+ if(!destination)return null;
+ if(navProvider==="waze"){
+  return (navMode==="coords"&&hasCoords)? "https://www.waze.com/ul?ll="+encodeURIComponent(destination)+"&navigate=yes":
+   "https://www.waze.com/ul?q="+encodeURIComponent(destination)+"&navigate=yes";
+ }
+ return "https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(destination)+"&travelmode=driving";
+}
+function openNavigation(delivery){
+ const url=navigationUrl(delivery);
+ if(!url){message("Endereço indisponível para esta entrega.");return;}
+ window.open(url,"_blank","noopener,noreferrer");
+}
+function renderRoutes(current){
+ const target=$("routesList");target.replaceChildren();
+ if(!current.length){
+  const empty=element("div","empty");
+  empty.append(element("div","empty-icon","⌖"),element("h3","","Sem rotas pendentes"),element("p","","Os destinos serão listados assim que sua loja atribuir entregas."));
+  target.append(empty);return;
+ }
+ for(const delivery of current){
+  const item=element("article","route-card"),detail=element("div");
+  detail.append(element("strong","",delivery.customer_name||"Cliente"));
+  detail.append(element("p","",delivery.address||"Endereço não informado"));
+  detail.append(element("small","",statuses[delivery.status]||"Em andamento"));
+  const btn=createAction("Abrir rota","primary",()=>openNavigation(delivery),!delivery.address);
+  item.append(detail,btn);target.append(item);
+ }
+}
+
 const brl=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
 const numValue=value=>{const n=Number(value??0);return Number.isFinite(n)&&n>=0?n:0;};
 const countLabel=n=>n===1?"1 entrega":String(n)+" entregas";
@@ -190,6 +291,20 @@ function renderEarnings(report){
  if(!report||!report.today||!report.week||!report.month||!Array.isArray(report.week_chart)||!Array.isArray(report.recent)){
   throw new Error("Dados do resumo financeiro indisponíveis");
  }
+ lastEarningsReport=report;
+ const selected=report[{hoje:"today",semana:"week",mes:"month"}[earnPeriod]];
+ $("earnPeriodTitle").textContent="VOCÊ GANHOU "+selectedName();
+ $("earnSelectedAmount").textContent=brl.format(numValue(selected.amount));
+ $("earnTotal").textContent=brl.format(numValue(selected.amount));
+ $("earnDeliveryComponent").textContent=brl.format(numValue(selected.amount));
+ $("earnSelectedCount").textContent=String(Number(selected.count??0));
+ $("earnWorkedDays").textContent=String(Number(report.worked_days??0));
+ const from=report.period_start?shortDate(report.period_start):"";
+ const to=report.period_end?shortDate(report.period_end):"";
+ $("earnRange").textContent=from&&to?(from===to?from:from+" – "+to):"Entregas concluídas";
+ $("miniToday").textContent=brl.format(numValue(report.today.amount));
+ $("miniTodayCount").textContent=countLabel(Number(report.today.count??0));
+ renderDailyBreakdown(report);
  for(const [key,amountId,countId] of [["today","earnToday","earnTodayCount"],["week","earnWeek","earnWeekCount"],["month","earnMonth","earnMonthCount"]]){
   const item=report[key];
   $(amountId).textContent=brl.format(numValue(item.amount));
