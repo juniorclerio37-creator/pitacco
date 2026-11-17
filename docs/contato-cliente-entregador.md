@@ -37,3 +37,17 @@ A infraestrutura está preparada, mas a importação dos contatos reais pelos co
 - O botão não efetua uma ligação silenciosamente: o sistema operacional pode exigir que o entregador toque em ligar.
 - **Google Maps / Waze:** o botão *Abrir rota* é disparado pelo toque real no pedido. O link universal carrega endereço ou coordenadas da entrega clicada, nunca da última rota. Sistemas com o app instalado podem abri-lo; caso contrário, o link abre a versão web.
 - O endereço exibido no detalhe do pedido tem prioridade sobre a versão antiga no cartão. Coordenadas nulas, inválidas ou `0,0` não são usadas como destino.
+
+## Identificação visível dos pedidos e localizador no cartão
+
+Os dois painéis — **loja (Pedidos e Cozinha)** e **Pitacco Entregador (Pedidos)** — usam o mesmo critério de identificação:
+- iFood, 99Food e Keeta: mostrar o **número público/curto da plataforma**, obtido de receipt.display_number, external_order_number, order_number ou display_id; **não** usar receipt.number como alternativa para a 99Food. Nunca mostrar IDs internos UUIDs nem números opacos de 13+ dígitos na 99Food.
+- Balcão: B-(sequência), gerado no backend antes de salvar o pedido.
+- Cardápio digital: D-(sequência), também gerado no backend.
+- Sem número público válido: mostrar "Aguardando número", nunca um UUID cortado.
+
+No iFood, o conector oficial recebe customer.phone.number, customer.phone.localizer e customer.phone.localizerExpiration, persiste contato/localizador somente na tabela privada pitacco_delivery_customer_contacts para entregas próprias e exclui esses campos do recibo geral. O código do telefone aparece em destaque nos cartões da loja e do motoboy quando disponível e não expirado; o mesmo código está visível no detalhe do pedido.
+
+As funções pitacco_driver_card_badges e pitacco_merchant_order_badges verificam respectivamente o entregador ativo autenticado e o gestor/lojista/administrador da loja. Os códigos são retornados por pedido, sem expor o telefone bruto na lista geral.
+
+A integração da 99Food deve mapear o número público oficial para receipt.display_number (ou external_order_number/order_number/display_id) e não para receipt.number ou deliveries.external_order_id quando estes forem IDs técnicos. Ainda não há homologação real de pedidos da 99Food ou Keeta neste conector.
