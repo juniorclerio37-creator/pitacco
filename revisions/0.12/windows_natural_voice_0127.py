@@ -68,8 +68,9 @@ new="""  <label className="field" htmlFor="pitacco-natural-voice-level">Volume d
   </label>
   <button type="button" className="secondary" onClick={()=>void naturalVoiceOnly()}>Testar somente voz</button>
   {soundMessage&&<small role="status">{soundMessage}</small>}"""
-assert s.count(old)==1, f'Native audio settings section changed: matches={s.count(old)}, around={s[s.find("soundMessage&&")-100:s.find("soundMessage&&")+180]!r}'
-s=s.replace(old,new)
+assert s.count(old)==2, 'Expected a browser sound status and a separate native sound status'
+native_index=s.rfind(old)
+s=s[:native_index]+new+s[native_index+len(old):]
 p.write_text(s,encoding="utf-8")
 
 p=Path("web/src-tauri/src/main.rs")
