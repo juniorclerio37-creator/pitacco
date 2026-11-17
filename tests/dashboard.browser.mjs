@@ -29,6 +29,11 @@ try {
     const merchantGroup={id:'70000000-0000-0000-0000-000000000003',name:'Frutas',min:0,max:1,options:[]};
     const menuSettings={slug:'loja-teste',enabled:false,delivery_enabled:true,pickup_enabled:false,delivery_fee:5,
       payment_methods:['dinheiro'],pix_instructions:'',preparation_minutes:30};
+    let studioDraft={theme:'moderno',primary:'#e86b23',secondary:'#7b4e37',background:'#f9f5f1',
+      paper:'#ffffff',foreground:'#30251f',hero:'#40221f',highlight:'#fff0e0',layout:'lista',radius:20,
+      font:'sistema',photo_size:'medio',show_descriptions:true,slogan:'Cardápio digital',instagram:'',
+      logo_path:'',cover_path:'',banners:[]};
+    let studioPublished=null,studioDraftVersion=0,studioPublishedVersion=0,studioHistory=[];
     const evidence=[],food99Evidence=[];
     const ingredients = [];
     const movements = [];
@@ -170,6 +175,30 @@ try {
         assert.deepEqual(input,{s:store.id,dispatch:'automatico',max_orders:3});
         store.dispatch_mode=input.dispatch;store.max_orders_per_trip=input.max_orders;
         return route.fulfill({headers,json:null});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_storefront_studio_state'){
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:{draft:studioDraft,published:studioPublished,
+          draft_version:studioDraftVersion,published_version:studioPublishedVersion,
+          history:studioHistory,published_at:studioPublishedVersion?new Date().toISOString():null}});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_storefront_save_draft'){
+        const input=route.request().postDataJSON();
+        assert.equal(input.p_store,store.id);
+        assert.equal(input.p_expected_version,studioDraftVersion);
+        studioDraft=input.p_design;
+        studioDraftVersion++;
+        return route.fulfill({headers,json:{saved:true,draft_version:studioDraftVersion}});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_storefront_publish'){
+        const input=route.request().postDataJSON();
+        assert.equal(input.p_store,store.id);
+        assert.equal(input.p_expected_draft,studioDraftVersion);
+        assert.equal(input.p_expected_published,studioPublishedVersion);
+        studioPublished=structuredClone(studioDraft);
+        studioPublishedVersion++;
+        studioHistory.unshift({id:null,version:studioPublishedVersion,created_at:new Date().toISOString()});
+        return route.fulfill({headers,json:{published:true,published_version:studioPublishedVersion}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_store_readiness'){
         return route.fulfill({headers,json:{checks:{identity:true,address:true,products:true,payments:true,fulfillment:true,published:false},products:1,ready:false}});
@@ -587,7 +616,29 @@ try {
       await page.getByRole('checkbox',{name:'InfinitePay'}).check();
       await page.getByRole('button',{name:'Salvar preferências de integração'}).click();
       await page.getByText('Preferências de integração salvas.').waitFor();
+      await page.getByRole('button',{name:'Aparência do cardápio',exact:true}).click();
+      const studio=page.getByRole('region',{name:'Estúdio de Cardápio Pitacco'});
+      await studio.getByRole('heading',{name:'Estúdio de Cardápio'}).waitFor();
+      await studio.getByRole('button',{name:'Premium',exact:true}).click();
+      await studio.getByLabel('Cor Principal').fill('#b43e24');
+      await studio.getByLabel('Slogan').fill('O melhor da cidade');
+      await studio.getByRole('button',{name:'Computador'}).click();
+      await studio.getByRole('button',{name:'Produto',exact:true}).click();
+      await studio.getByText('O melhor da cidade',{exact:true}).waitFor();
+      await studio.getByRole('button',{name:'Salvar rascunho'}).click();
+      await studio.getByText('Rascunho salvo.',{exact:false}).waitFor();
+      assert.equal(studioPublished,null,'Editing a draft must never change the public design');
+      assert.equal(studioDraft.theme,'premium');
+      assert.equal(studioDraft.primary,'#b43e24');
+      await studio.getByRole('button',{name:/Prévia e publicação/}).click();
+      page.once('dialog',dialog=>dialog.accept());
+      await studio.getByRole('button',{name:'Publicar alterações para os clientes'}).click();
+      await studio.getByText('Aparência publicada!',{exact:false}).waitFor();
+      assert.equal(studioPublishedVersion,1);
+      assert.equal(studioPublished.primary,'#b43e24');
       await page.getByRole('button',{name:'Identidade da loja',exact:true}).click();
+      assert.equal(await page.getByRole('region',{name:'Estúdio de Cardápio Pitacco'}).count(),0);
+
     }
     await page.getByRole('button', { name:'Agendamento', exact:true }).click();
     const schedule = page.getByRole('region', {name:'Horários de agendamento'});

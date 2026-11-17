@@ -122,6 +122,9 @@ subprocess.run([sys.executable,'revisions/0.12/windows_order_intake.py'],check=T
 
 # Final merchant navigation change: keep assistance in its own page and dispatch in Deliveries.
 subprocess.run([sys.executable,'revisions/0.12/finalize_merchant_navigation.py'],check=True)
+
+# New storefront design studio only on web, preserving desktop order/print workflow.
+subprocess.run([sys.executable,'revisions/0.12/mount_store_design_studio.py'],check=True)
 for relative in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src-tauri/Cargo.toml','src-tauri/Cargo.lock']:
  p=pathlib.Path('web')/relative
  value=p.read_text(encoding='utf-8')

@@ -113,12 +113,69 @@ form h3{margin:0;font-size:1.16rem}fieldset{min-width:0;border:1px solid var(--l
  .product-visual{width:86px;height:86px}
  .purchase{gap:7px}
 }
+
+/* Aparência publicada pelo Estúdio Pitacco; fallback mantém o cardápio legado intacto. */
+body.pitacco-designed{font-family:var(--design-font,Inter),system-ui,sans-serif}
+body.pitacco-designed .hero::after{background:linear-gradient(105deg,#0009,#0002)}
+body.pitacco-designed dialog,body.pitacco-designed .options,body.pitacco-designed .option,
+body.pitacco-designed input,body.pitacco-designed select,body.pitacco-designed textarea,
+body.pitacco-designed .stepper,body.pitacco-designed .stepper button{
+ background:var(--paper);color:var(--ink);border-color:var(--line)}
+body.pitacco-designed .store-mark{color:var(--ink)}
+body.pitacco-designed .option:has(input:checked){background:var(--highlight);border-color:var(--brand)}
+body.pitacco-designed .pitacco-promo{color:var(--on-highlight,#241c1c)}
+body.pitacco-designed .pitacco-promo-text small{color:var(--on-highlight,#241c1c);opacity:.85}
+
+body.pitacco-designed .hero p{color:#fff}
+body.pitacco-designed .product-open,body.pitacco-designed .chip,body.pitacco-designed .secondary{
+ background:var(--paper);color:var(--ink);border-color:var(--line)
+}
+body.pitacco-designed .product-open:hover{border-color:var(--brand)}
+body.pitacco-designed .product-visual{background:var(--highlight)}
+body.pitacco-designed .product-description{color:var(--muted)}
+body.pitacco-designed .product-open,body.pitacco-designed .product-visual,body.pitacco-designed .primary,
+body.pitacco-designed .dock button{border-radius:var(--radius)}
+body.pitacco-designed .category-grid{grid-template-columns:1fr}
+body.pitacco-designed[data-design-layout=grade] .category-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+body.pitacco-designed[data-design-layout=destaques] .category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.pitacco-designed[data-design-layout=grade] .product-open,
+body.pitacco-designed[data-design-layout=destaques] .product-open{flex-direction:column-reverse;align-items:stretch}
+body.pitacco-designed[data-design-layout=grade] .product-visual,
+body.pitacco-designed[data-design-layout=destaques] .product-visual{width:100%;height:145px}
+body.pitacco-designed[data-design-layout=grade] .product-visual>img,
+body.pitacco-designed[data-design-layout=destaques] .product-visual>img{width:100%;height:100%;object-fit:cover}
+body.pitacco-designed[data-design-layout=destaques] .product-visual{height:200px}
+body.pitacco-designed[data-design-photo=pequeno] .product-visual{width:70px;height:70px}
+body.pitacco-designed[data-design-photo=grande] .product-visual{width:125px;height:125px}
+body.pitacco-designed[data-design-layout=grade] .product-visual,
+body.pitacco-designed[data-design-layout=destaques] .product-visual{width:100%}
+body.pitacco-designed[data-design-show-description=false] .product-description{display:none}
+body.pitacco-designed .chip[aria-pressed=true]{background:var(--hero);border-color:var(--hero);color:#fff}
+body.pitacco-designed .store-mark{background:var(--highlight)}
+.pitacco-promos{padding-top:19px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.pitacco-promo{border:1px solid var(--line);border-radius:var(--radius);background:var(--highlight,#fff3e8);color:#241c1c;overflow:hidden;text-align:left;display:flex;gap:15px;align-items:center;padding:10px}
+.pitacco-promo img{width:115px;height:95px;object-fit:cover;border-radius:calc(var(--radius) - 6px);flex:none}
+.pitacco-promo-text{display:grid;gap:5px;min-width:0}
+.pitacco-promo-text strong{font-size:1.09rem;line-height:1.25;overflow-wrap:anywhere}
+.pitacco-promo-text small{color:#4c4141;overflow-wrap:anywhere}
+.pitacco-promo-link{color:var(--brand);font-weight:700;font-size:.82rem}
+.pitacco-footer{text-align:center;padding:18px;color:var(--muted);font-size:.79rem}
+.pitacco-footer a{color:inherit}
+@media(max-width:900px){body.pitacco-designed[data-design-layout=grade] .category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:590px){.pitacco-promos{grid-template-columns:1fr;padding-top:12px}
+.pitacco-promo img{width:85px;height:80px}
+body.pitacco-designed[data-design-layout=grade] .category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.pitacco-designed[data-design-layout=destaques] .category-grid{grid-template-columns:1fr}
+body.pitacco-designed[data-design-layout=grade] .product-visual{height:100px}
+body.pitacco-designed[data-design-layout=grade] .product-open{padding:9px}
+}
 </style></head><body>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
  <div class="shell hero-content"><div class="identity"><div class="store-mark" aria-hidden="true"><span id="storeInitial"></span><img id="storeLogo" alt="" hidden></div>
- <div><h1 id="storeName"></h1><p>Cardápio digital</p></div></div><div id="storeServices" class="services"></div></div>
+ <div><h1 id="storeName"></h1><p id="storeSlogan">Cardápio digital</p></div></div><div id="storeServices" class="services"></div></div>
 </header>
+<section id="pitaccoPromos" class="shell pitacco-promos" aria-label="Destaques da loja" hidden></section>
 <main class="shell catalog">
  <p id="msg" class="msg" role="status">Carregando cardápio…</p>
  <section id="layout" aria-label="Produtos da loja" hidden>
@@ -129,6 +186,7 @@ form h3{margin:0;font-size:1.16rem}fieldset{min-width:0;border:1px solid var(--l
   <div class="products" id="products"></div>
  </section>
 </main>
+<footer class="pitacco-footer" id="pitaccoFooter" hidden>Impulsionado por <a href="https://pitacco.com.br/" rel="noopener">Pitacco</a><span id="pitaccoSocial"></span></footer>
 <div id="cartDock" class="dock" hidden><p id="cartFeedback" class="feedback" role="status" hidden></p><button id="openCart" type="button"><span><span class="dock-count" id="cartCount">0</span><span id="cartAction">Ver sacola</span></span><strong id="cartValue"></strong></button></div>
 <dialog id="productDialog" aria-labelledby="productTitle"><div class="dialog-shell">
  <header class="dialog-header"><h2 class="dialog-title" id="productTitle"></h2><button type="button" class="close" id="closeProduct" aria-label="Fechar produto">×</button></header>
@@ -477,8 +535,71 @@ $('closeCart').onclick=()=>{if(!submitting)$('cartDialog').close()};
 $('cartDialog').addEventListener('cancel',event=>{if(submitting)event.preventDefault()});
 $('continueCheckout').onclick=()=>cartStep(true);
 $('backToCart').onclick=()=>{if(!pendingRequest)cartStep(false)};
+const studioAsset=path=>{
+ if(typeof path!=='string'||!/^stores\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(png|jpg|webp)$/.test(path))return '';
+ return client.storage.from('pitacco-media').getPublicUrl(path).data.publicUrl;
+};
+function applyStudioDesign(shop){
+ const d=shop.appearance;
+ if(!d||typeof d!=='object')return;
+ const root=document.documentElement;
+ const palette={primary:'--brand',secondary:'--muted',background:'--surface',paper:'--paper',foreground:'--ink',hero:'--hero',highlight:'--highlight'};
+ for(const [key,variable] of Object.entries(palette)){
+  if(/^#[0-9a-fA-F]{6}$/.test(d[key]||''))root.style.setProperty(variable,d[key]);
+ }
+ const highlight=d.highlight;
+ if(/^#[0-9a-fA-F]{6}$/.test(highlight||'')){
+  const c=[1,3,5].map(i=>parseInt(highlight.slice(i,i+2),16)/255)
+   .map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);
+  const lum=c.reduce((acc,v,i)=>acc+v*[.2126,.7152,.0722][i],0);
+  root.style.setProperty('--on-highlight',lum>.179?'#211b1c':'#ffffff');
+ }
+ const brand=d.primary;
+ if(/^#[0-9a-fA-F]{6}$/.test(brand||'')){
+  const channels=[1,3,5].map(i=>parseInt(brand.slice(i,i+2),16)/255)
+   .map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);
+  const luminance=channels.reduce((acc,v,i)=>acc+v*[.2126,.7152,.0722][i],0);
+  root.style.setProperty('--on-brand',luminance>.179?'#211b1c':'#ffffff');
+ }
+ if(Number.isInteger(d.radius)&&d.radius>=0&&d.radius<=32)root.style.setProperty('--radius',d.radius+'px');
+ const fonts={sistema:'Inter,system-ui,sans-serif',arredondada:'Trebuchet MS,system-ui,sans-serif',serifada:'Georgia,serif'};
+ if(fonts[d.font])root.style.setProperty('--design-font',fonts[d.font]);
+ if(['lista','grade','destaques'].includes(d.layout))document.body.dataset.designLayout=d.layout;
+ if(['pequeno','medio','grande'].includes(d.photo_size))document.body.dataset.designPhoto=d.photo_size;
+ document.body.dataset.designShowDescription=String(d.show_descriptions!==false);
+ document.body.classList.add('pitacco-designed');
+ if(typeof d.slogan==='string'&&d.slogan.trim())$('storeSlogan').textContent=d.slogan.trim();
+ if(d.logo_path){const url=studioAsset(d.logo_path);if(url)shop.logo_url=url}
+ if(d.cover_path){const url=studioAsset(d.cover_path);if(url)shop.banner_url=url}
+ const rootBanners=$('pitaccoPromos');
+ const banners=Array.isArray(d.banners)?d.banners.slice(0,6):[];
+ const now=Date.now();
+ for(const banner of banners){
+  if(!banner||typeof banner.title!=='string')continue;
+  if(banner.starts_at&&Date.parse(banner.starts_at)>now)continue;
+  if(banner.ends_at&&Date.parse(banner.ends_at)<now)continue;
+  const linked=menu.products.find(p=>p.id===banner.product_id);
+  const card=linked?button(undefined,'pitacco-promo'):el('article',undefined,'pitacco-promo');
+  if(linked){card.setAttribute('aria-label','Ver '+linked.name);card.onclick=()=>openProduct(linked);}
+  const photo=studioAsset(banner.image_path);
+  if(photo)addPhoto(card,photo);
+  const caption=el('span',undefined,'pitacco-promo-text');
+  caption.append(el('strong',banner.title));
+  if(banner.subtitle)caption.append(el('small',banner.subtitle));
+  if(linked)caption.append(el('span','Ver produto','pitacco-promo-link'));
+  card.append(caption);rootBanners.append(card);
+ }
+ rootBanners.hidden=rootBanners.childElementCount===0;
+ const footer=$('pitaccoFooter');footer.hidden=false;
+ if(/^@[a-z0-9._]{1,30}$/i.test(d.instagram||'')){
+  const a=el('a',d.instagram);a.href='https://www.instagram.com/'+d.instagram.slice(1)+'/';a.rel='noopener noreferrer';a.target='_blank';
+  $('pitaccoSocial').append(document.createTextNode(' · '),a);
+ }
+}
+
 function initOptions(){
  const shop=menu.store;
+ applyStudioDesign(shop);
  $('storeName').textContent=shop.name;
  $('storeInitial').textContent=shop.name.trim().slice(0,1).toUpperCase();
  document.title='Cardápio | '+shop.name;
@@ -489,7 +610,7 @@ function initOptions(){
   document.documentElement.style.setProperty('--brand',shop.primary_color);
   document.documentElement.style.setProperty('--on-brand',luminance>.179?'#000':'#fff');
  }
- for(const [image,value] of [['storeLogo',shop.logo_url],['storeBanner',shop.banner_url]]){
+ for(const [image,value] of [['storeLogo',shop.logo_url||studioAsset(shop.profile_logo_path)],['storeBanner',shop.banner_url]]){
   if(!imageUrl(value))continue;
   const node=$(image);
   node.addEventListener('load',()=>{node.hidden=false;if(image==='storeLogo')$('storeInitial').hidden=true},{once:true});
