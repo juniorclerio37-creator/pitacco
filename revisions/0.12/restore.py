@@ -131,6 +131,9 @@ subprocess.run([sys.executable,'revisions/0.12/mount_launch_wizard.py'],check=Tr
 
 # Printer tests remain native-only; website uses explicit browser print dialog.
 subprocess.run([sys.executable,'revisions/0.12/finalize_web_manual_print.py'],check=True)
+
+# Confirm printer paper only in Windows; never convert spooler submission to print success.
+subprocess.run([sys.executable,'revisions/0.12/add_windows_paper_confirmation.py'],check=True)
 for relative in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src-tauri/Cargo.toml','src-tauri/Cargo.lock']:
  p=pathlib.Path('web')/relative
  value=p.read_text(encoding='utf-8')
