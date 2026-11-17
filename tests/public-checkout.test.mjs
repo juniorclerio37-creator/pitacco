@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 const html=readFileSync(new URL('../marketing/cardapio.html',import.meta.url),'utf8');
 test('checkout uses a stable idempotency request key and backend RPC',()=>{
- assert.match(html,/p_request:crypto\.randomUUID\(\)/);
+ assert.match(html,/p_request:routeMode\?deliveryQuote\.requestId:crypto\.randomUUID\(\)/);
  assert.match(html,/if\(!pendingRequest\)/);
  assert.match(html,/pitacco_checkout_geocoded_order/);
  assert.match(html,/client\.rpc\(endpoint,pendingRequest\)/);
@@ -28,4 +28,11 @@ test('cart supports multiple variants and quantity editing',()=>{
 test('manual pix stays pending based on backend confirmation',()=>{
  assert.match(html,/data\.payment_status==='paid_manual'/);
  assert.match(html,/pix_manual:'Pix manual/);
+});
+
+test('distance pricing requires a server quote and exact delivery fee',()=>{
+ assert.match(html,/pitacco_checkout_quoted_delivery/);
+ assert.match(html,/client\.functions\.invoke\('delivery-quote'/);
+ assert.match(html,/deliveryQuote\.fee/);
+ assert.match(html,/Calcule a taxa de entrega/);
 });
