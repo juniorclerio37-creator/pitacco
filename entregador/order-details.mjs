@@ -177,7 +177,7 @@ export function createOrderDetailsController({supabase,navigate}) {
       const {data,error}=await supabase.rpc('pitacco_driver_order_detail',{p_delivery:delivery.id});
       if(ticket!==request)return;
       if(error || !data || data.delivery_id!==delivery.id)throw Error('Não foi possível carregar este pedido');
-      title.textContent='Pedido • '+String(data.display_number ?? delivery.order_id ?? delivery.id).slice(0,40);
+      title.textContent='Pedido • '+String(data.display_number||'Aguardando número').slice(0,40);
       content.replaceChildren(buildDetails(data,delivery,navigate));
     }catch(err){
       if(ticket!==request)return;
