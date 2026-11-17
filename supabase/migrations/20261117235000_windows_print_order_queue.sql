@@ -5,6 +5,12 @@
 -- during concatenation, producing "invalid input syntax for type json" and
 -- aborting reprint_order before a job was queued.
 
+-- The isolated PostgreSQL test fixture predates source/category printer filters.
+-- Production already has these columns; the additions are idempotent.
+alter table public.print_sectors
+ add column if not exists sources text[] not null default '{}'::text[],
+ add column if not exists categories text[] not null default '{}'::text[];
+
 create or replace function public.dg_receipt_text(r jsonb)
 returns text language plpgsql immutable set search_path=''
 as $receipt$
