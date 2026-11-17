@@ -123,12 +123,12 @@ begin
   'published_version',coalesce(row.published_version,0),
   'updated_at',row.updated_at,'published_at',row.published_at,
   'history',versions);
-end $;
+end $$;
 revoke all on function public.pitacco_storefront_studio_state(uuid) from public,anon,authenticated;
 grant execute on function public.pitacco_storefront_studio_state(uuid) to authenticated;
 
 create function public.pitacco_storefront_save_draft(p_store uuid,p_design jsonb,p_expected_version integer)
-returns jsonb language plpgsql security definer set search_path='' as $
+returns jsonb language plpgsql security definer set search_path='' as $$
 declare row public.pitacco_storefront_designs%rowtype;
 begin
  if auth.uid() is null or not public.is_store_manager(p_store) then
@@ -144,12 +144,12 @@ begin
  update public.pitacco_storefront_designs set draft=p_design,draft_version=draft_version+1,updated_at=now()
  where store_id=p_store;
  return jsonb_build_object('saved',true,'draft_version',row.draft_version+1);
-end $;
+end $$;
 revoke all on function public.pitacco_storefront_save_draft(uuid,jsonb,integer) from public,anon,authenticated;
 grant execute on function public.pitacco_storefront_save_draft(uuid,jsonb,integer) to authenticated;
 
 create function public.pitacco_storefront_publish(p_store uuid,p_expected_draft integer,p_expected_published integer)
-returns jsonb language plpgsql security definer set search_path='' as $
+returns jsonb language plpgsql security definer set search_path='' as $$
 declare row public.pitacco_storefront_designs%rowtype; revision integer;
 begin
  if auth.uid() is null or not public.is_store_manager(p_store) then
@@ -165,12 +165,12 @@ begin
  update public.pitacco_storefront_designs set published=row.draft,published_version=revision,published_at=now(),updated_at=now()
  where store_id=p_store;
  return jsonb_build_object('published',true,'published_version',revision);
-end $;
+end $$;
 revoke all on function public.pitacco_storefront_publish(uuid,integer,integer) from public,anon,authenticated;
 grant execute on function public.pitacco_storefront_publish(uuid,integer,integer) to authenticated;
 
 create function public.pitacco_storefront_restore_draft(p_store uuid,p_revision integer,p_expected_draft integer)
-returns jsonb language plpgsql security definer set search_path='' as $
+returns jsonb language plpgsql security definer set search_path='' as $$
 declare row public.pitacco_storefront_designs%rowtype; previous jsonb;
 begin
  if auth.uid() is null or not public.is_store_manager(p_store) then
@@ -185,13 +185,13 @@ begin
  update public.pitacco_storefront_designs set draft=previous,draft_version=draft_version+1,updated_at=now()
  where store_id=p_store;
  return jsonb_build_object('restored_to_draft',true,'draft_version',row.draft_version+1);
-end $;
+end $$;
 revoke all on function public.pitacco_storefront_restore_draft(uuid,integer,integer) from public,anon,authenticated;
 grant execute on function public.pitacco_storefront_restore_draft(uuid,integer,integer) to authenticated;
 
 -- Expor somente o visual publicado e somente os banners ativos neste instante.
 create function pitacco_private.storefront_public_design(p_store uuid)
-returns jsonb language sql stable security definer set search_path='' as $
+returns jsonb language sql stable security definer set search_path='' as $$
  select case when d.published is null then null else
    jsonb_set(d.published,'{banners}',
     coalesce((select jsonb_agg(b.value order by b.ord)
