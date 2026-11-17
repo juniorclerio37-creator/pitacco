@@ -22,4 +22,4 @@ jobs:
         with:
           node-version: '22'
       - name: Testar regras de acesso e entregas
-        run: node --test entregador/domain.test.mjs entregador/access-rules.test.mjs
+        run: node --test entregador/*.test.mjs
