@@ -200,14 +200,21 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
     body:input.action==='arrival'?'{}':JSON.stringify({code:input.code}),
     signal:AbortSignal.timeout(9000),redirect:'error',
    });
-   const isSuccess=response.status===200||response.status===202||response.status===204;
+   // Arrival can be asynchronous; code confirmation MUST be unequivocally verified.
+   let verified=false;
+   if(input.action==='verify' && response.status===200){
+    const verification=await response.json().catch(()=>null);
+    verified=verification?.status==='VERIFIED';
+   }
+   const isSuccess=input.action==='arrival'?[200,202,204].includes(response.status):verified;
    const permanent=[400,403,404,409,412,422].includes(response.status);
    // The service-role result is written ONLY after authenticated ownership was checked.
    if(input.action==='arrival'||isSuccess){
-    await rpc('pitacco_ifood_driver_result',{
+    const persisted=await rpc('pitacco_ifood_driver_result',{
      p_delivery:input.delivery,p_external:assigned.external_order_id,
      p_action:input.action,p_success:isSuccess,p_permanent:permanent,
     });
+    if(persisted!==true)return reply(409,{error:'A entrega mudou de estado; atualize os pedidos.'});
    }
    if(!isSuccess)return reply(response.status>=500||response.status===429?503:409,{
     error:input.action==='verify'?'O iFood não validou esse código. Confira com o cliente.':
