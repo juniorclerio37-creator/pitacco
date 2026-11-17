@@ -17,7 +17,7 @@ $uri="https://$Region.tts.speech.microsoft.com/cognitiveservices/v1"
 $ssml=@"
 <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="pt-BR">
  <voice name="$Voice">
-  <prosody rate="+3%" pitch="+0%">Você tem um novo pedido!</prosody>
+  <prosody rate="+3%" pitch="+0%">Pitacco! <break time="250ms"/> Você tem um novo pedido!</prosody>
  </voice>
 </speak>
 "@
