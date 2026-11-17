@@ -54,8 +54,16 @@ change(" async function saveMode(source,mode,enabled){",
  }
  async function saveMode(source,mode,enabled){""")
 
-change("onClick={()=>act(async()=>setStatus(await invoke('test_printer',{printerName:s.printer,width:s.width})))",
- "onClick={()=>runWindowsPhysicalTest(s)}")
+# Locate the existing Windows-only test button inside its native panel.
+# Other printing overlays may change its callback; do not depend on that detail.
+header='<h3>Teste de impressão física</h3>'
+label='Imprimir teste</button>'
+assert s.count(header)==1, 'Physical printer test panel missing'
+start=s.index(header)
+end=s.index(label,start)+len(label)
+button_start=s.rfind('<button',start,end)
+assert button_start>start and 'test_printer' in s[button_start:end], 'Unexpected physical print test action'
+s=s[:button_start]+'<button disabled={busy} onClick={()=>runWindowsPhysicalTest(s)}>Imprimir teste</button>'+s[end:]
 
 change("{!sectors.length&&<p>Cadastre uma impressora acima para testar.</p>}</div>}",
  """{!sectors.length&&<p>Cadastre uma impressora acima para testar.</p>}
