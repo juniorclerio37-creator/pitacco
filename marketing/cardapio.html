@@ -117,6 +117,15 @@ form h3{margin:0;font-size:1.16rem}fieldset{min-width:0;border:1px solid var(--l
 /* Aparência publicada pelo Estúdio Pitacco; fallback mantém o cardápio legado intacto. */
 body.pitacco-designed{font-family:var(--design-font,Inter),system-ui,sans-serif}
 body.pitacco-designed .hero::after{background:linear-gradient(105deg,#0009,#0002)}
+body.pitacco-designed dialog,body.pitacco-designed .options,body.pitacco-designed .option,
+body.pitacco-designed input,body.pitacco-designed select,body.pitacco-designed textarea,
+body.pitacco-designed .stepper,body.pitacco-designed .stepper button{
+ background:var(--paper);color:var(--ink);border-color:var(--line)}
+body.pitacco-designed .store-mark{color:var(--ink)}
+body.pitacco-designed .option:has(input:checked){background:var(--highlight);border-color:var(--brand)}
+body.pitacco-designed .pitacco-promo{color:var(--on-highlight,#241c1c)}
+body.pitacco-designed .pitacco-promo-text small{color:var(--on-highlight,#241c1c);opacity:.85}
+
 body.pitacco-designed .hero p{color:#fff}
 body.pitacco-designed .product-open,body.pitacco-designed .chip,body.pitacco-designed .secondary{
  background:var(--paper);color:var(--ink);border-color:var(--line)
@@ -537,6 +546,13 @@ function applyStudioDesign(shop){
  const palette={primary:'--brand',secondary:'--muted',background:'--surface',paper:'--paper',foreground:'--ink',hero:'--hero',highlight:'--highlight'};
  for(const [key,variable] of Object.entries(palette)){
   if(/^#[0-9a-fA-F]{6}$/.test(d[key]||''))root.style.setProperty(variable,d[key]);
+ }
+ const highlight=d.highlight;
+ if(/^#[0-9a-fA-F]{6}$/.test(highlight||'')){
+  const c=[1,3,5].map(i=>parseInt(highlight.slice(i,i+2),16)/255)
+   .map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);
+  const lum=c.reduce((acc,v,i)=>acc+v*[.2126,.7152,.0722][i],0);
+  root.style.setProperty('--on-highlight',lum>.179?'#211b1c':'#ffffff');
  }
  const brand=d.primary;
  if(/^#[0-9a-fA-F]{6}$/.test(brand||'')){
