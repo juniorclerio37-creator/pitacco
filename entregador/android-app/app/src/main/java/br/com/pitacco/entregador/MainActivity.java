@@ -1,6 +1,19 @@
 package br.com.pitacco.entregador;
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.ContentResolver;
+import android.content.pm.PackageManager;
+import android.media.AudioAttributes;
+import android.os.Build;
+import androidx.webkit.JavaScriptReplyProxy;
+import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewFeature;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.messaging.FirebaseMessaging;
+import java.util.Collections;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
@@ -22,6 +35,9 @@ import android.widget.Toast;
 public class MainActivity extends Activity {
     private static final String HOST = "entregador.pitacco.com.br";
     private static final String HOME = "https://" + HOST + "/";
+    private static final String PUSH_CHANNEL = "pitacco_new_assignment_v1";
+    private static final int PUSH_PERMISSION = 94;
+    private JavaScriptReplyProxy pendingPermission;
     private WebView web;
     private LinearLayout offline;
 
@@ -80,7 +96,68 @@ public class MainActivity extends Activity {
                 if (request.isForMainFrame() && error.getStatusCode() >= 400) showOffline();
             }
         });
+        preparePush();
         if (state == null || web.restoreState(state) == null) web.loadUrl(HOME);
+    }
+
+    private void preparePush() {
+        AudioAttributes attributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION).build();
+        NotificationChannel channel = new NotificationChannel(PUSH_CHANNEL, "Novas entregas", NotificationManager.IMPORTANCE_HIGH);
+        channel.enableVibration(true);
+        channel.setSound(Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getPackageName()
+                + "/raw/pitacco_assignment"), attributes);
+        getSystemService(NotificationManager.class).createNotificationChannel(channel);
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return;
+        WebViewCompat.addWebMessageListener(web, "PitaccoPush", Collections.singleton("https://" + HOST),
+                (view, message, origin, mainFrame, reply) -> {
+                    if (!mainFrame || !isHttps(origin) || !HOST.equalsIgnoreCase(origin.getHost())) return;
+                    String action = message.getData();
+                    if ("enable".equals(action)) enablePush(reply);
+                    else if ("refresh".equals(action) && pushEnabled()) sendToken(reply);
+                });
+    }
+
+    private boolean pushEnabled() {
+        return getPreferences(MODE_PRIVATE).getBoolean("push_enabled", false)
+                && getSystemService(NotificationManager.class).areNotificationsEnabled();
+    }
+
+    private void enablePush(JavaScriptReplyProxy reply) {
+        if (FirebaseApp.getApps(this).isEmpty()) {
+            reply.postMessage("unavailable");
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            pendingPermission = reply;
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, PUSH_PERMISSION);
+        } else if (!getSystemService(NotificationManager.class).areNotificationsEnabled()) {
+            reply.postMessage("permission");
+        } else {
+            finishPushEnable(reply);
+        }
+    }
+
+    private void finishPushEnable(JavaScriptReplyProxy reply) {
+        getPreferences(MODE_PRIVATE).edit().putBoolean("push_enabled", true).apply();
+        sendToken(reply);
+    }
+
+    private void sendToken(JavaScriptReplyProxy reply) {
+        if (FirebaseApp.getApps(this).isEmpty()) return;
+        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(this, result -> {
+            if (!result.isSuccessful() || result.getResult() == null) reply.postMessage("failed");
+            else reply.postMessage("token:" + result.getResult());
+        });
+    }
+
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
+        super.onRequestPermissionsResult(requestCode, permissions, results);
+        if (requestCode != PUSH_PERMISSION || pendingPermission == null) return;
+        JavaScriptReplyProxy reply = pendingPermission;
+        pendingPermission = null;
+        if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) finishPushEnable(reply);
+        else reply.postMessage("permission");
     }
 
     private boolean handleLink(Uri uri) {
