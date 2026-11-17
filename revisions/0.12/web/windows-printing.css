@@ -1,0 +1,16 @@
+.windows-link-card{border:1px solid #ead5bc;border-radius:16px;background:linear-gradient(115deg,#fff5e7,#fff);padding:19px;display:grid;gap:10px;color:#402b22}
+.windows-link-card h4{font-size:1.15rem;margin:2px 0}
+.windows-link-card p{font-size:.88rem;margin:0;line-height:1.5}
+.windows-link-card small{font-size:.75rem}
+.windows-link-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.windows-connection-state{border-radius:99px;font-weight:650;font-size:.77rem;padding:7px 12px;background:#e9e3de;color:#554b43}
+.windows-connection-state.connected{background:#deefe4;color:#18603a}
+.windows-connection-state.offline{background:#fff0cf;color:#8b5b16}
+.windows-connection-state.not_detected{background:#f4e8e6;color:#765450}
+.windows-link-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.windows-link-actions small{flex-basis:100%}
+.windows-link-card p.windows-linked{border-left:3px solid #328b5a;padding:7px 12px;background:#eef8f0}
+.windows-link-card.compact{padding:14px;margin:10px 0}
+.windows-link-card.compact h4{font-size:1rem}
+.windows-link-card.compact p{font-size:.8rem}
+@media(max-width:600px){.windows-link-card{padding:14px}.windows-link-actions button{flex:1 1 170px}}

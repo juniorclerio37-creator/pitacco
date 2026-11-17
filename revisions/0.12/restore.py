@@ -128,6 +128,9 @@ subprocess.run([sys.executable,'revisions/0.12/mount_store_design_studio.py'],ch
 
 # First-run wizard and server-backed diagnostics; never modifies existing orders.
 subprocess.run([sys.executable,'revisions/0.12/mount_launch_wizard.py'],check=True)
+
+# Printer tests remain native-only; website uses explicit browser print dialog.
+subprocess.run([sys.executable,'revisions/0.12/finalize_web_manual_print.py'],check=True)
 for relative in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src-tauri/Cargo.toml','src-tauri/Cargo.lock']:
  p=pathlib.Path('web')/relative
  value=p.read_text(encoding='utf-8')

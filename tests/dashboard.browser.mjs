@@ -19,6 +19,7 @@ try {
   for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
+    const windowsPings=[];
     let ifoodOrder=null;
     let logisticsOrders=[],logisticsDeliveries=[];
     let adminMode=false,moduleEnabled=true,ownerMigrationApplied=false,readOnlyChecks=0,failFeatureCheck=false;
@@ -206,6 +207,21 @@ try {
         studioPublishedVersion++;
         studioHistory.unshift({id:null,version:studioPublishedVersion,created_at:new Date().toISOString()});
         return route.fulfill({headers,json:{published:true,published_version:studioPublishedVersion}});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_windows_ping'){
+        const payload=route.request().postDataJSON();
+        assert.equal(payload.p_store,store.id);
+        assert.equal(payload.p_device,'fixture-device');
+        windowsPings.push(payload);
+        return route.fulfill({headers,json:{received:true,time:new Date().toISOString()}});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_windows_connection'){
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:{
+          status:'connected',app_logged_in_now:true,printer_computer_bound:true,
+          bound_computer_connected:true,installation_confirmed:false,automatic_print_tested:false,
+          last_seen_at:new Date().toISOString()
+        }});
       }
       if(pathname==='/rest/v1/rpc/pitacco_store_launch_diagnostic'){
         assert.equal(route.request().postDataJSON().p_store,store.id);
@@ -695,8 +711,14 @@ try {
     await schedule.getByText('Horários de agendamento salvos.').waitFor();
     if(width===1440){
       await page.getByRole('button',{name:'Impressão e aceite',exact:true}).click();
-      await page.locator('.merchant-print-layout').getByRole('heading',{name:'Impressoras por setor'}).waitFor();
-      await page.getByTitle('Pré-visualização HTML da comanda').waitFor();
+      const manual=page.getByRole('region',{name:'Impressão manual no navegador'});
+      await manual.getByRole('heading',{name:'Impressão manual no navegador'}).waitFor();
+      await manual.getByText(/O teste físico da impressora/).waitFor();
+      const windowsStatus=page.getByRole('region',{name:'Conexão do aplicativo Windows'});
+      await windowsStatus.getByText('Pitacco Windows conectado e autenticado').waitFor();
+      assert.equal(await page.getByRole('heading',{name:'Teste de impressão física'}).count(),0);
+      assert.equal(await page.getByRole('heading',{name:'Impressoras por setor'}).count(),0);
+      assert.equal(await page.getByTitle('Pré-visualização HTML da comanda').count(),0);
       await navigation.getByRole('button',{name:'Motoboys',exact:true}).click();
       await page.locator('.courier-overview-grid').getByRole('button',{name:'Abrir acerto'}).waitFor();
       await page.getByRole('navigation',{name:'Seções de motoboys'})
@@ -937,6 +959,19 @@ try {
         order_id:order.id,source:order.source,logistics_provider:logistics[i][1],status:'pendente'}));
       const ownCard=liveOrders.getByRole('article',{name:'Card do pedido LOJA-23',exact:true});
       await ownCard.getByText('Entrega própria',{exact:true}).waitFor();
+      await page.evaluate(()=>{
+        window.__browserComandas=[];
+        window.__browserPrints=0;
+        window.open=()=>({
+          document:{open(){},write(html){window.__browserComandas.push(html)},close(){}},
+          focus(){},setTimeout(callback){callback()},print(){window.__browserPrints++},close(){}
+        });
+      });
+      await ownCard.getByRole('button',{name:'Imprimir no navegador pedido LOJA-23'}).click();
+      const printEvidence=await page.evaluate(()=>({html:window.__browserComandas[0],count:window.__browserPrints}));
+      assert.equal(printEvidence.count,1);
+      assert.ok(printEvidence.html.includes('PEDIDO LOJA-23'));
+      assert.ok(printEvidence.html.includes('COBRAR NA ENTREGA'));
       await ownCard.getByRole('button',{name:'Selecionar entregador',exact:true}).click();
       await page.getByRole('dialog').getByRole('heading',{name:'Motoboy próprio',exact:true}).waitFor();
       await page.getByRole('dialog').getByRole('button',{name:'Fechar detalhes',exact:true}).click();
@@ -975,6 +1010,7 @@ try {
       ifoodOrder=newOrder('82');
       await desktopOrders.locator('.pedidos-card').filter({hasText:'#IF-82'}).waitFor();
       await page.waitForFunction(()=>window.nativeNotices.includes('Você tem um novo pedido.')&&window.nativeOrderSounds===1);
+      assert.ok(windowsPings.length>=1,'Windows app must send authenticated presence heartbeat');
       assert.deepEqual(await page.evaluate(()=>window.nativeNotices),['Você tem um novo pedido.']);
       console.log('PASS iFood incoming order alert on web and Windows bridge');
     }

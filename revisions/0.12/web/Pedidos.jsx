@@ -22,7 +22,7 @@ function DeliveryBadge({order,delivery}){
  const {type,label}=deliveryType(order,delivery);
  return <span className="pedidos-delivery-badge" data-delivery={type}>{type==='pickup'?<ShoppingBag size={15} aria-hidden="true"/>:<Bike size={15} aria-hidden="true"/>}{label}</span>;
 }
-export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccept,onDecision,onReady,onDetail,onAssign,onReprint,busy=false,merchantLayout=false}){
+export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccept,onDecision,onReady,onDetail,onAssign,onReprint,busy=false,merchantLayout=false,manualPrint=false}){
  const [filter,setFilter]=useState('all'),[search,setSearch]=useState(''),[selected,setSelected]=useState(null),[decision,setDecision]=useState(null);
  const badgeByOrder=useMemo(()=>new Map(badges.map(b=>[b.order_id,b])),[badges]);
  const number=o=>publicOrderNumber(o,badgeByOrder.get(o?.id));
@@ -58,13 +58,13 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
     </button>
     {(canAssign(o,delivery)||o.status==='accepted')&&<div className="pedidos-card-actions">
      {canAssign(o,delivery)&&<button type="button" className="secondary" disabled={busy} onClick={()=>onAssign(o)}>Selecionar entregador</button>}
-     {o.status==='accepted'&&<button type="button" className="secondary pedidos-card-print" aria-label={"Reimprimir comanda do pedido "+number(o)} disabled={busy} onClick={()=>onReprint(o.id)}><Printer size={16} aria-hidden="true"/></button>}
+     {o.status==='accepted'&&<button type="button" className="secondary pedidos-card-print" aria-label={(manualPrint?"Imprimir no navegador pedido ":"Reimprimir comanda do pedido ")+number(o)} disabled={busy} onClick={()=>onReprint(o.id)}><Printer size={16} aria-hidden="true"/></button>}
     </div>}
    </article>;
   })}</div>
   {current?<article className="pedidos-detail"><div className="pedidos-detail-heading"><h3><ShoppingBag size={23} aria-hidden="true"/> Pedido #{number(current)}</h3><span className="store-stage" data-stage={stage(current)}>{stages.find(([id])=>id===stage(current))?.[1]||'Em andamento'}</span></div>{currentLocalizer&&<div className="pedidos-localizer pedidos-localizer-detail"><strong>LOCALIZADOR DE LIGAÇÃO</strong><b>{currentLocalizer}</b></div>}<div className="pedidos-detail-pair"><section><h4><UserRound size={17} aria-hidden="true"/> Cliente</h4><strong>{current.receipt?.customer||'Não informado'}</strong><p>{current.receipt?.phone||''}</p><p>{current.receipt?.address||''}</p></section><section><h4><CreditCard size={17} aria-hidden="true"/> Pagamento</h4><p>{current.receipt?.payment||'Não informado'}</p><DeliveryBadge order={current} delivery={currentDelivery}/></section></div><section className="pedidos-items"><h4><ShoppingBag size={17} aria-hidden="true"/> Itens do pedido</h4>{receiptItems(current.receipt).map((item,i)=><div key={i}><span>{item.quantity||1} × {item.name}<small>{Array.isArray(item.modifiers)?item.modifiers.join(', '):''}</small></span><span>{item.total!=null?brl(item.total):''}</span></div>)}{current.receipt?.subtotal!=null&&<div><span>Subtotal</span><strong>{brl(current.receipt.subtotal)}</strong></div>}
   {current.receipt?.delivery_fee!=null&&<div><span>Taxa de entrega</span><strong>{brl(current.receipt.delivery_fee)}</strong></div>}
-  <footer><b>Total</b><strong>{brl(current.gross)}</strong></footer></section><div className="pedidos-actions"><button onClick={()=>onDetail(current)}>Detalhes e entrega</button>{current.status==='accepted'&&<button disabled={busy} onClick={()=>onReprint(current.id)}>🖨️ Reimprimir</button>}{canDecide&&<>
+  <footer><b>Total</b><strong>{brl(current.gross)}</strong></footer></section><div className="pedidos-actions"><button onClick={()=>onDetail(current)}>Detalhes e entrega</button>{current.status==='accepted'&&<button disabled={busy} onClick={()=>onReprint(current.id)}>🖨️ {manualPrint?'Imprimir no navegador':'Reimprimir'}</button>}{canDecide&&<>
  {stage(current)==='scheduled'
   ? <p>Aceite liberado às {scheduledTime.format(new Date(current.scheduled_release_at))}.</p>
   : <button className="primary" disabled={busy} onClick={()=>onAccept(current.id)}>Aceitar pedido</button>}

@@ -1,5 +1,6 @@
 import React,{useEffect,useState} from 'react';
 import './store-launch-wizard.css';
+import {WindowsConnectionStatus} from './WindowsConnectionStatus.jsx';
 
 const essentials=[
  {title:'Dados da loja',codes:['identity','address'],tab:'Minha Loja',
@@ -15,7 +16,7 @@ const essentials=[
  {title:'Publicar o cardápio',codes:['catalog_link','catalog_live'],tab:'Pagamentos da loja',
   detail:'Revise o link da loja e publique o cardápio conscientemente. A publicação não será ativada pelo assistente sem sua confirmação.'},
  {title:'Testes da operação',codes:['print_on_paper','notifications_on_device','order_to_delivery'],tab:'Configurações',manual:true,
-  detail:'Teste no equipamento real: aceite, impressão no papel, alerta do aplicativo e chegada/entrega. Esta etapa exige confirmação humana.'}
+  detail:'O teste de impressora e da impressão automática é exclusivo do aplicativo Windows. No navegador, imprima cada pedido manualmente pela caixa de impressão. Confira também alertas e entregas em equipamentos reais.'}
 ];
 const diagnostics=[
  ['identity','Nome e identificação'],
@@ -27,8 +28,8 @@ const diagnostics=[
  ['catalog_link','Link do cardápio'],
  ['catalog_live','Cardápio acessível pela API'],
  ['checkout_configuration','Configuração do checkout'],
- ['printer_configuration','Vinculação da impressora'],
- ['print_on_paper','Impressão física no papel'],
+ ['printer_configuration','Computador Windows vinculado à impressão'],
+ ['print_on_paper','Teste físico de impressão — somente aplicativo Windows'],
  ['notifications_on_device','Notificações no dispositivo'],
  ['order_to_delivery','Pedido até entrega final'],
  ['marketplace_integrations','Integrações de marketplaces']
@@ -161,12 +162,15 @@ export default function StoreLaunchWizard({client,store,manager,onNavigate,onSto
       <h5>Testes reais necessários</h5>
       <ol>
        <li>Registrar um pedido controlado em ambiente de homologação e acompanhar o aceite até a conclusão</li>
-       <li>Conferir a nota <strong>impressa no papel</strong> pelo aplicativo Windows</li>
+       <li>No aplicativo Windows, selecionar a impressora, executar o teste físico e confirmar a saída no papel</li>
+       <li>No navegador, após aceitar um pedido real, clicar em <strong>Imprimir no navegador</strong> e selecionar manualmente a impressora na janela do sistema</li>
        <li>Verificar som e notificações com o aplicativo entregador aberto e fechado</li>
        <li>Testar despacho, mapa, chegada na entrega e finalização de rota</li>
        <li>Validar cada integração com iFood, 99Food ou Keeta quando a homologação oficial estiver disponível</li>
       </ol>
-      <p>O diagnóstico automático não confirma esses testes nem cria pedidos fictícios no ambiente de produção.</p>
+      <p>O teste de impressora só aparece no aplicativo Windows. Este painel web não imprime automaticamente e não testa o spooler.</p>
+      <WindowsConnectionStatus client={client} storeId={store.id} onNavigate={onNavigate}/>
+      <p>O diagnóstico automático não confirma testes físicos nem cria pedidos fictícios no ambiente de produção.</p>
      </div>}
      <div className="launch-actions">
       <button type="button" className="secondary" disabled={step===0} onClick={()=>setStep(v=>Math.max(0,v-1))}>Voltar</button>
