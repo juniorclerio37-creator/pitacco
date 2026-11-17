@@ -1,18 +1,33 @@
 import React,{useMemo,useState} from 'react';
-import {Bike, CheckCircle2, ChefHat, Clock3, CreditCard, ShoppingBag, TrendingUp, UserRound} from 'lucide-react';
+import {Bike, CheckCircle2, ChefHat, Clock3, CreditCard, Printer, ShoppingBag, TrendingUp, UserRound} from 'lucide-react';
 import './pedidos.css';
+import {sourceLabel} from './DeliveryDialog.jsx';
 import {receiptItems} from './receiptItems.mjs';
 const scheduledTime=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'});
 const stages=[['scheduled','Agendados'],['analysis','Pendentes'],['preparing','Em preparo'],['ready','Prontos'],['delivery','Em entrega'],['completed','Concluídos'],['cancelled','Cancelados'],['rejected','Recusados']];
 const summary=[['analysis','Pendentes',Clock3],['preparing','Em preparo',ChefHat],['ready','Prontos',ShoppingBag],['delivery','Em entrega',Bike],['completed','Concluídos',CheckCircle2]];
 const terminal=new Set(['completed','cancelled','rejected']);
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const number=o=>o.receipt?.display_number||o.receipt?.external_order_number||o.receipt?.order_number||o.receipt?.number||'Pendente';
-export default function Pedidos({orders=[],stage,onAccept,onDecision,onReady,onDetail,onReprint,busy=false,merchantLayout=false}){
+const number=o=>o.receipt?.display_number||o.receipt?.external_order_number||o.receipt?.order_number||o.receipt?.number||o.receipt?.display_id||o.id.slice(0,8);
+const deliveryType=(order,delivery)=>{
+ const mode=delivery?.logistics_provider??order.receipt?.logistics;
+ if(mode==='retirada')return {type:'pickup',label:'Retirada na loja'};
+ if(mode==='marketplace')return {type:'partner',label:'Entrega via '+(sourceLabel(delivery?.source??order.source)||'parceiro')};
+ if(mode==='loja')return {type:'own',label:'Entrega própria'};
+ return {type:'unknown',label:'Logística a confirmar'};
+};
+const canAssign=(order,delivery)=>order.status==='accepted'&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id;
+function DeliveryBadge({order,delivery}){
+ const {type,label}=deliveryType(order,delivery);
+ return <span className="pedidos-delivery-badge" data-delivery={type}>{type==='pickup'?<ShoppingBag size={15} aria-hidden="true"/>:<Bike size={15} aria-hidden="true"/>}{label}</span>;
+}
+export default function Pedidos({orders=[],deliveries=[],stage,onAccept,onDecision,onReady,onDetail,onAssign,onReprint,busy=false,merchantLayout=false}){
  const [filter,setFilter]=useState('all'),[search,setSearch]=useState(''),[selected,setSelected]=useState(null),[decision,setDecision]=useState(null);
  const counts=useMemo(()=>Object.fromEntries(stages.map(([id])=>[id,orders.filter(o=>stage(o)===id).length])),[orders,stage]);
- const filtered=useMemo(()=>orders.filter(o=>(filter==='all'?!terminal.has(stage(o)):stage(o)===filter)&&(!search||[number(o),o.receipt?.customer,...receiptItems(o.receipt).map(i=>i.name)].join(' ').toLowerCase().includes(search.toLowerCase()))),[orders,filter,search,stage]);
+ const filtered=useMemo(()=>orders.filter(o=>(filter==='all'?!terminal.has(stage(o)):stage(o)===filter)&&(!search||[number(o),o.receipt?.customer,o.receipt?.phone,...receiptItems(o.receipt).map(i=>i.name)].join(' ').toLowerCase().includes(search.toLowerCase()))),[orders,filter,search,stage]);
  const current=filtered.find(o=>o.id===selected)||filtered[0];
+ const deliveriesByOrder=useMemo(()=>new Map(deliveries.map(delivery=>[delivery.order_id,delivery])),[deliveries]);
+ const currentDelivery=deliveriesByOrder.get(current?.id);
  const canDecide=current?.source==='proprio'&&current.status==='pending';
  const waitingIfood=current?.source==='ifood'&&current.status==='pending';
  const decisionApplies=canDecide&&decision?.id===current.id;
@@ -23,9 +38,26 @@ export default function Pedidos({orders=[],stage,onAccept,onDecision,onReady,onD
    <Icon size={23} aria-hidden="true"/><span><strong>{counts[key]}</strong>{label}</span>
   </button>)}<div className="pedidos-kpi"><TrendingUp size={23} aria-hidden="true"/><span><strong>{brl(total)}</strong>Total registrado*</span></div></div>:
   <div className="pedidos-kpis">{stages.map(([key,label])=><button key={key} className={'pedidos-kpi '+(filter===key?'selected':'')} onClick={()=>setFilter(key)}><strong>{counts[key]}</strong><span>{label}</span></button>)}<div className="pedidos-kpi"><strong>{brl(total)}</strong><span>Total registrado*</span></div></div>}
-  <div className="pedidos-tabs"><button className={filter==='all'?'selected':''} onClick={()=>setFilter('all')}>Em andamento</button>{stages.map(([key,label])=><button key={key} className={filter===key?'selected':''} onClick={()=>setFilter(key)}>{label} ({counts[key]})</button>)}<input aria-label="Buscar pedido, cliente ou item" placeholder="Buscar pedido, cliente ou item…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
-  <div className="pedidos-split"><div className="pedidos-list">{filtered.length===0&&<p>Nenhum pedido encontrado.</p>}{filtered.map(o=><div role="button" tabIndex={0} key={o.id} className={'pedidos-card order-card '+(current?.id===o.id?'selected':'')} onClick={()=>setSelected(o.id)} onKeyDown={e=>{if(e.key==='Enter'){setSelected(o.id)}}}><span><b className="pedidos-number"><ShoppingBag size={17} aria-hidden="true"/> #{number(o)}</b><small>{o.scheduled_for?'Agendado '+scheduledTime.format(new Date(o.scheduled_for)):o.created_at?new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</small></span><span>{o.receipt?.customer||'Cliente'} <b>{brl(o.gross)}</b></span><small><span className="store-stage" data-stage={stage(o)}>{stages.find(([id])=>id===stage(o))?.[1]||'Em andamento'}</span> · {o.channel||o.source||'Loja'}</small>{o.status==='accepted'&&<button type="button" aria-label={"Reimprimir comanda do pedido "+number(o)} disabled={busy} onClick={e=>{e.stopPropagation();onReprint(o.id)}}>🖨️</button>}</div>)}</div>
-  {current?<article className="pedidos-detail"><div className="pedidos-detail-heading"><h3><ShoppingBag size={23} aria-hidden="true"/> Pedido #{number(current)}</h3><span className="store-stage" data-stage={stage(current)}>{stages.find(([id])=>id===stage(current))?.[1]||'Em andamento'}</span></div><div className="pedidos-detail-pair"><section><h4><UserRound size={17} aria-hidden="true"/> Cliente</h4><strong>{current.receipt?.customer||'Não informado'}</strong><p>{current.receipt?.phone||''}</p><p>{current.receipt?.address||''}</p></section><section><h4><CreditCard size={17} aria-hidden="true"/> Pagamento</h4><p>{current.receipt?.payment||'Não informado'}</p><p>{current.receipt?.logistics==='retirada'?'Retirada':'Entrega'}</p></section></div><section className="pedidos-items"><h4><ShoppingBag size={17} aria-hidden="true"/> Itens do pedido</h4>{receiptItems(current.receipt).map((item,i)=><div key={i}><span>{item.quantity||1} × {item.name}<small>{Array.isArray(item.modifiers)?item.modifiers.join(', '):''}</small></span><span>{item.total!=null?brl(item.total):''}</span></div>)}{current.receipt?.subtotal!=null&&<div><span>Subtotal</span><strong>{brl(current.receipt.subtotal)}</strong></div>}
+  <div className="pedidos-tabs"><button className={filter==='all'?'selected':''} onClick={()=>setFilter('all')}>Em andamento</button>{stages.map(([key,label])=><button key={key} className={filter===key?'selected':''} onClick={()=>setFilter(key)}>{label} ({counts[key]})</button>)}<input aria-label="Buscar pedido, cliente ou item" placeholder="Buscar nome, telefone ou código…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
+  <div className="pedidos-split"><div className="pedidos-list">{filtered.length===0&&<p>Nenhum pedido encontrado.</p>}{filtered.map(o=>{
+   const delivery=deliveriesByOrder.get(o.id);
+   const source=sourceLabel(o.source)||o.channel||'Loja';
+   return <article key={o.id} aria-label={'Card do pedido '+number(o)} data-source={o.source}
+    className={'pedidos-card order-card '+(current?.id===o.id?'selected':'')}>
+    <button type="button" className="pedidos-card-select" aria-pressed={current?.id===o.id} onClick={()=>setSelected(o.id)}>
+     <span className="pedidos-card-row"><b className="pedidos-origin">{source}</b><span className="store-stage" data-stage={stage(o)}>{stages.find(([id])=>id===stage(o))?.[1]||'Em andamento'}</span></span>
+     <span className="pedidos-card-row"><b className="pedidos-number"><ShoppingBag size={17} aria-hidden="true"/> #{number(o)}</b>
+      <small>{o.scheduled_for?'Agendado '+scheduledTime.format(new Date(o.scheduled_for)):o.created_at?new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</small></span>
+     <span className="pedidos-card-row"><span>{o.receipt?.customer||'Cliente'}</span><b>{brl(o.gross)}</b></span>
+     <DeliveryBadge order={o} delivery={delivery}/>
+    </button>
+    {(canAssign(o,delivery)||o.status==='accepted')&&<div className="pedidos-card-actions">
+     {canAssign(o,delivery)&&<button type="button" className="secondary" disabled={busy} onClick={()=>onAssign(o)}>Selecionar entregador</button>}
+     {o.status==='accepted'&&<button type="button" className="secondary pedidos-card-print" aria-label={"Reimprimir comanda do pedido "+number(o)} disabled={busy} onClick={()=>onReprint(o.id)}><Printer size={16} aria-hidden="true"/></button>}
+    </div>}
+   </article>;
+  })}</div>
+  {current?<article className="pedidos-detail"><div className="pedidos-detail-heading"><h3><ShoppingBag size={23} aria-hidden="true"/> Pedido #{number(current)}</h3><span className="store-stage" data-stage={stage(current)}>{stages.find(([id])=>id===stage(current))?.[1]||'Em andamento'}</span></div><div className="pedidos-detail-pair"><section><h4><UserRound size={17} aria-hidden="true"/> Cliente</h4><strong>{current.receipt?.customer||'Não informado'}</strong><p>{current.receipt?.phone||''}</p><p>{current.receipt?.address||''}</p></section><section><h4><CreditCard size={17} aria-hidden="true"/> Pagamento</h4><p>{current.receipt?.payment||'Não informado'}</p><DeliveryBadge order={current} delivery={currentDelivery}/></section></div><section className="pedidos-items"><h4><ShoppingBag size={17} aria-hidden="true"/> Itens do pedido</h4>{receiptItems(current.receipt).map((item,i)=><div key={i}><span>{item.quantity||1} × {item.name}<small>{Array.isArray(item.modifiers)?item.modifiers.join(', '):''}</small></span><span>{item.total!=null?brl(item.total):''}</span></div>)}{current.receipt?.subtotal!=null&&<div><span>Subtotal</span><strong>{brl(current.receipt.subtotal)}</strong></div>}
   {current.receipt?.delivery_fee!=null&&<div><span>Taxa de entrega</span><strong>{brl(current.receipt.delivery_fee)}</strong></div>}
   <footer><b>Total</b><strong>{brl(current.gross)}</strong></footer></section><div className="pedidos-actions"><button onClick={()=>onDetail(current)}>Detalhes e entrega</button>{current.status==='accepted'&&<button disabled={busy} onClick={()=>onReprint(current.id)}>🖨️ Reimprimir</button>}{canDecide&&<>
  {stage(current)==='scheduled'
