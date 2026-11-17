@@ -38,10 +38,12 @@ test("courier's earnings drilldown is backed by stored completed deliveries",()=
 test("navigation uses Google Maps or Waze and never auto-accepts a delivery",()=>{
  const html=read("entregador/painel.html");
  const client=read("entregador/supabase-client.mjs");
- assert.match(html,/google\.com\/maps\/dir/);
- assert.match(html,/waze\.com\/ul/);
+ const navigation=read("entregador/navigation.mjs");
+ assert.match(navigation,/google\.com\/maps\/dir/);
+ assert.match(navigation,/waze\.com\/ul/);
+ assert.match(html,/window\.location\.assign\(url\)/);
  assert.match(html,/localStorage\.setItem\("pitacco:driver:navigator"/);
- assert.match(html,/navMode==="coords"&&hasCoords/);
+ assert.match(navigation,/mode === 'coords'/);
  assert.match(client,/batch_id,latitude,longitude/);
  assert.match(html,/pitacco_driver_collect/);
  assert.match(html,/pitacco_driver_depart/);
