@@ -21,7 +21,7 @@ begin
     raise exception 'Rota já saiu da loja';
   end if;
   if d.status = 'aceita' and d.collected_at is not null then return; end if;
-  if d.status <> 'atribuida' then raise exception 'Entrega não está aguardando coleta'; end if;
+  if d.status not in ('atribuida','aceita') then raise exception 'Entrega não está aguardando coleta'; end if;
   update public.deliveries
      set status = 'aceita', collected_at = now(), updated_at = now()
    where id = d.id;
