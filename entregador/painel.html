@@ -80,12 +80,12 @@ a.btn{text-decoration:none}
   <div class="status-banner"><div class="status-copy"><span class="status-dot" id="onlineDot"></span><div><b id="availability">Carregando disponibilidade...</b><span id="availableHelp">Sua loja organiza as entregas para você.</span></div></div><button class="btn primary" id="online" type="button" disabled>Carregando...</button></div>
   <div class="summary">
     <div class="stat"><span class="stat-icon orange">↗</span><strong id="active">—</strong><span>Entregas em andamento</span></div>
-    <div class="stat"><span class="stat-icon green">✓</span><strong id="done">—</strong><span>Concluídas nos registros</span></div>
+    <div class="stat"><span class="stat-icon green">✓</span><strong id="done">—</strong><span>Concluídas hoje</span></div>
   </div>
   <p id="notice" role="alert" aria-live="polite"></p>
   <h2 class="section-title">Seus pedidos <span class="auto-pill">Atualiza automaticamente</span></h2>
   <section id="cards" class="grid" aria-label="Pedidos atribuídos"><div class="empty">Carregando entregas...</div></section>
-  <p class="note-inline">Pedidos são atribuídos pela loja, sem necessidade de aceitar. A confirmação de entrega por PIN ou foto ainda está em homologação.</p>
+  <p class="note-inline">Pedidos são atribuídos pela loja, sem necessidade de aceitar. Registre a chegada ao cliente antes de validar o código da entrega. Integração 99Food em homologação.</p>
 </section>
 
 <section class="app-view" data-view="ganhos" id="viewGanhos" hidden>
@@ -114,6 +114,7 @@ a.btn{text-decoration:none}
    <div class="earn-days panel-white"><div class="earn-panel-head"><h2>Por dia</h2><span>Toque em um dia para ver os pedidos</span></div><div id="earnDailyRows" class="earn-daily-rows"><div class="earn-empty">Carregando dias...</div></div></div>
    <div class="earn-chart-panel panel-white"><div class="earn-panel-head"><h2>Gráfico da semana</h2><span>Seg a dom</span></div><div id="earnChart" class="earn-chart" role="img" aria-label="Ganhos por dia da semana"></div></div>
    <div class="earn-history-panel panel-white"><div class="earn-panel-head"><h2 id="earnHistoryTitle">Entregas de hoje</h2><span>Últimos 20 registros</span></div><div id="earnHistory" class="earn-history"><div class="earn-empty">Carregando...</div></div></div>
+   <div class="earn-history-panel panel-white"><div class="earn-panel-head"><h2>Histórico protegido</h2><span>Até 30 entregas</span></div><p class="earn-footnote">Após concluir, o cliente aparece somente pela inicial, endereço resumido e sem telefone.</p><div id="safeHistory" class="earn-history"><div class="earn-empty">Carregando...</div></div></div>
    <div class="earn-updated" id="earnUpdated">Carregando...</div>
    <p class="earn-error" id="earnError" role="alert" hidden></p>
    <p class="earn-footnote">Os ganhos consideram somente entregas concluídas e os valores registrados pela loja. Isso não representa o valor do pedido nem confirma pagamento recebido. Diárias e adicionais dependem de lançamentos específicos.</p>
@@ -178,6 +179,7 @@ const driver=createDriverAuth(sb);
 const orderDetails=createOrderDetailsController({supabase:sb,navigate:openNavigation});
 let courier=null, busy=false;
 let orderCardBadges=new Map();
+let lastHistoryRequest=0;
 
 let earnPeriod="hoje", earnRequest=0, lastEarningsReport=null;
 let storeName="Minha loja", navProvider="google", navMode="address", assignedDeliveries=[];
@@ -277,6 +279,7 @@ function renderEarnings(report){
  $("earnRange").textContent=from&&to?(from===to?from:from+" – "+to):"Entregas concluídas";
  $("miniToday").textContent=brl.format(numValue(report.today.amount));
  $("miniTodayCount").textContent=countLabel(Number(report.today.count??0));
+ $("done").textContent=String(Number(report.today.count??0));
  renderDailyBreakdown(report);
  for(const [key,amountId,countId] of [["today","earnToday","earnTodayCount"],["week","earnWeek","earnWeekCount"],["month","earnMonth","earnMonthCount"]]){
   const item=report[key];
@@ -439,7 +442,7 @@ async function refresh(){
  list.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
  const current=list.filter(d=>!["entregue","cancelada"].includes(d.status));
  $("active").textContent=String(current.length);
- $("done").textContent=String(list.filter(d=>d.status==="entregue").length);
+ // Finished deliveries are never included in the raw private order list.
  assignedDeliveries=current;
  const target=$("cards");target.replaceChildren();
  if(!current.length){
