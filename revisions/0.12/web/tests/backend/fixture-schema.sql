@@ -36,5 +36,6 @@ alter table public.public_menu_settings add column preparation_minutes integer n
 
 create table public.marketplace_acceptance_requests (
  id uuid primary key, store_id uuid not null, order_id uuid, source text, state text, external_order_id text,
+ provider_confirmation_id text, provider_message text,
  created_at timestamptz not null default now(), confirmed_at timestamptz
 );

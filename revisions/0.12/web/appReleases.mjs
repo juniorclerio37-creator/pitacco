@@ -39,7 +39,7 @@ export async function discoverPublicWindowsInstaller(request = fetch) {
     const url = asset.browser_download_url;
     if(!url.startsWith('https://github.com/juniorclerio37-creator/pitacco/releases/download/')
       || !url.endsWith('/'+WINDOWS_ASSET))continue;
-    return {url,version:'0.12.1',published_at:release.published_at||release.created_at};
+    return {url,version:'0.12.2',published_at:release.published_at||release.created_at};
   }
   return null;
 }

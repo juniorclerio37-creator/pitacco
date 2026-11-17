@@ -37,14 +37,27 @@ def operations(source):
     source = replace(source, " const ordersInitialized=useRef(false);\n", "")
     source = replace(source, " const [soundMessage,setSoundMessage]=useState('');",
                      """ const [soundMessage,setSoundMessage]=useState('');
+ const [alertLevel,setAlertLevel]=useState(()=>{
+  try{const level=Number(localStorage.getItem('pitacco:native-alert-volume'));return [1,2,3].includes(level)?level:3;}
+  catch{return 3;}
+ });
  const observeOrders=useMemo(()=>newOrderTracker(storeId),[client,storeId,manager]);
  async function nativeOrderSound(){
-  try{await invoke('play_order_alert');setSoundMessage('');sayNewOrder(1200);}
+  try{await invoke('play_order_alert',{level:alertLevel});setSoundMessage('');sayNewOrder(1850);}
   catch{setSoundMessage('O alerta do Windows está indisponível. Confira o áudio do computador.');}
  }""")
     source = replace(source, '''{!desktop&&manager&&['Painel','Pedidos'].includes(view)&&soundControl}''',
                      '''{manager&&['Painel','Pedidos'].includes(view)&&(desktop?<div className="dispatch-actions">
   <button type="button" className="secondary" onClick={()=>void nativeOrderSound()}>Testar alerta de pedido</button>
+  <label className="field" htmlFor="pitacco-native-order-volume">Volume do toque
+   <select id="pitacco-native-order-volume" value={alertLevel} onChange={event=>{
+    const next=Number(event.target.value);
+    setAlertLevel(next);
+    try{localStorage.setItem('pitacco:native-alert-volume',String(next));}catch{}
+   }}>
+    <option value={1}>Discreto</option><option value={2}>Alto</option><option value={3}>Máximo</option>
+   </select>
+  </label>
   {soundMessage&&<small role="status">{soundMessage}</small>}
  </div>:soundControl)}''')
     source = replace(source, 'setDetail(null);seen.current=new Set();ordersInitialized.current=false;',
@@ -83,14 +96,17 @@ fn notify_new_order(app:tauri::AppHandle,message:String)->Result<(),String>{
  app.notification().builder().title("Pitacco").body(message.chars().take(200).collect::<String>()).show().map_err(|e|e.to_string())
 }
 #[tauri::command]
-fn play_order_alert()->Result<(),String>{
+fn play_order_alert(level:Option<u8>)->Result<(),String>{
  #[cfg(windows)]
  {
   #[link(name="winmm")]
   extern "system" {fn PlaySoundA(sound:*const u8,module:*mut std::ffi::c_void,flags:u32)->i32;}
-  static AUDIO:&[u8]=include_bytes!("order-alert.wav");
-  // Memory playback is asynchronous. The embedded bytes live for the process lifetime.
-  let played=unsafe{PlaySoundA(AUDIO.as_ptr(),std::ptr::null_mut(),0x0004|0x0001|0x0002)};
+  static SOFT:&[u8]=include_bytes!("order-alert-soft.wav");
+  static HIGH:&[u8]=include_bytes!("order-alert-high.wav");
+  static MAX:&[u8]=include_bytes!("order-alert.wav");
+  let audio=match level.unwrap_or(3){1=>SOFT,2=>HIGH,_=>MAX};
+  // Memory playback is asynchronous. Embedded bytes live for the process lifetime.
+  let played=unsafe{PlaySoundA(audio.as_ptr(),std::ptr::null_mut(),0x0004|0x0001|0x0002)};
   if played!=0{Ok(())}else{Err("O áudio de pedidos do Windows não pôde ser reproduzido.".into())}
  }
  #[cfg(not(windows))]
@@ -101,30 +117,38 @@ fn play_order_alert()->Result<(),String>{
     return replace(source, ',notify,check_update]', ',notify,notify_new_order,play_order_alert,check_update]')
 
 
-def chime(path):
+def chime(path, volume=1.0):
+    # Modern two-part alert: audible on laptop speakers without changing the OS volume.
     rate = 24000
     samples = array('h')
-    notes = [(0.00, 783.99), (0.14, 1046.50), (0.46, 880.00), (0.61, 1174.66)]
-    for sample in range(round(1.16 * rate)):
+    notes = [(0.00, 880.00, 0.39), (0.11, 1174.66, 0.40),
+             (0.39, 987.77, 0.48), (0.57, 1318.51, 0.45),
+             (0.96, 880.00, 0.36), (1.10, 1318.51, 0.52)]
+    for sample in range(round(1.78 * rate)):
         now = sample / rate
         output = 0.0
-        for start, pitch in notes:
-            time = now - start
-            if time < 0:
+        for start, pitch, strength in notes:
+            elapsed = now - start
+            if elapsed < 0:
                 continue
-            wave_phase = 2 * math.pi * pitch * time
-            ring = math.sin(wave_phase) + 0.2 * math.sin(2 * wave_phase) + 0.12 * math.sin(3.03 * wave_phase)
-            output += 0.55 * min(time / 0.012, 1) * math.exp(-7.5 * time) * ring
-        fade = min(1, (1.16 - now) / 0.06)
-        samples.append(round(32767 * min(1, max(-1, output * fade))))
+            attack = min(1.0, elapsed / 0.008)
+            # Bell-like partials with much slower decay than the original chime.
+            wave_phase = 2 * math.pi * pitch * elapsed
+            partials = math.sin(wave_phase) + 0.25 * math.sin(2 * wave_phase) + 0.10 * math.sin(3.01 * wave_phase)
+            output += strength * attack * math.exp(-3.4 * elapsed) * partials
+        fade = min(1.0, max(0.0, (1.78 - now) / 0.12))
+        # Soft limiting reduces harsh clipping while lifting the perceived loudness.
+        amplitude = math.tanh(output * 3.0) * 0.94 * volume * fade
+        samples.append(max(-32767, min(32767, round(amplitude * 32767))))
     if sys.byteorder == 'big':
         samples.byteswap()
     with wave.open(str(path), 'wb') as audio:
         audio.setparams((1, 2, rate, 0, 'NONE', 'not compressed'))
         audio.writeframes(samples.tobytes())
 
-
 update('web/src.jsx', app)
 update('web/Operations.jsx', operations)
 update('web/src-tauri/src/main.rs', rust)
-chime(Path('web/src-tauri/src/order-alert.wav'))
+chime(Path('web/src-tauri/src/order-alert.wav'), 1.0)
+chime(Path('web/src-tauri/src/order-alert-high.wav'), 0.75)
+chime(Path('web/src-tauri/src/order-alert-soft.wav'), 0.45)

@@ -23,8 +23,17 @@ export function approvedReceipt(job,width=80,opts={}){
  for(const item of Array.isArray(r.items)?r.items:[]){
   const qty=amount(item.quantity??item.qty??1);
   add(qty+' x '+clean(item.name||item.title||'Produto')+(item.total!=null?'  '+cash(item.total):''));
-  const mods=[...(Array.isArray(item.options)?item.options:[]),...(Array.isArray(item.complements)?item.complements:[]),...(Array.isArray(item.additions)?item.additions:[])];
-  for(const m of opts.complements===false?[]:mods)add('   '+amount(m.quantity??m.qty??1)+'x '+clean(m.name||m.title||m.label));
+  const mods=[...(Array.isArray(item.options)?item.options:[]),...(Array.isArray(item.complements)?item.complements:[]),...(Array.isArray(item.additions)?item.additions:[]),...(Array.isArray(item.modifiers)?item.modifiers:[])];
+  for(const mod of opts.complements===false?[]:mods){
+   const m=typeof mod==='string'?{name:mod,quantity:1}:mod;
+   if(!m||typeof m!=='object')continue;
+   const name=clean(m.name||m.title||m.label||m.option?.name);
+   if(name)add('   '+amount(m.quantity??m.qty??1)+'x '+name);
+   for(const nested of Array.isArray(m.options)?m.options:[]){
+    const n=typeof nested==='string'?{name:n}:nested;
+    if(n&&typeof n==='object'&&clean(n.name||n.title))add('     '+amount(n.quantity??1)+'x '+clean(n.name||n.title));
+   }
+  }
   if(opts.notes!==false&&item.notes)add('Obs: '+clean(item.notes));
   add();
  }
