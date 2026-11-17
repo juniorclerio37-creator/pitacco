@@ -177,6 +177,7 @@ const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshTo
 const driver=createDriverAuth(sb);
 const orderDetails=createOrderDetailsController({supabase:sb,navigate:openNavigation});
 let courier=null, busy=false;
+let orderCardBadges=new Map();
 
 let earnPeriod="hoje", earnRequest=0, lastEarningsReport=null;
 let storeName="Minha loja", navProvider="google", navMode="address", assignedDeliveries=[];
@@ -385,10 +386,14 @@ function card(d){
  opener.setAttribute("aria-label","Ver detalhes do pedido de "+(d.customer_name||"cliente"));
  opener.addEventListener("click",()=>orderDetails.open(d));
  const head=element("div","cardhead");
- head.append(element("span","order","PEDIDO • "+String(d.order_id||d.id).slice(0,8).toUpperCase()));
+ const badge=orderCardBadges.get(d.id);
+ const number=String(badge?.public_number||"Aguardando número");
+ head.append(element("span","order","PEDIDO #"+number));
  head.append(element("span","tag",statuses[d.status]||d.status||"Em andamento"));
  opener.append(head,element("div","customer",d.customer_name||"Cliente"));
  opener.append(element("p","address",d.address||"Endereço não informado"));
+ if(badge?.localizer)opener.append(element("span","card-localizer",
+   "LOCALIZADOR DE LIGAÇÃO • "+String(badge.localizer).replace(/\D/g,"").slice(0,16)));
  if(d.notes)opener.append(element("p","notes",d.notes));
  opener.append(element("span","card-detail-hint","Ver detalhes, itens e contato do cliente  ›"));
  box.append(opener);
@@ -424,6 +429,13 @@ async function refresh(){
  $("online").textContent=courier.available?"Ficar offline":"Ficar online";
  $("online").disabled=false;
  const list=await driver.myDeliveries([courier.id]);
+ const {data:labels,error:labelsError}=await sb.rpc("pitacco_driver_card_badges");
+ if(labelsError){
+  orderCardBadges=new Map();
+  message("Números públicos e localizadores indisponíveis no momento. Atualize os pedidos para tentar novamente.");
+ }else{
+  orderCardBadges=new Map((Array.isArray(labels)?labels:[]).map(item=>[item.delivery_id,item]));
+ }
  list.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
  const current=list.filter(d=>!["entregue","cancelada"].includes(d.status));
  $("active").textContent=String(current.length);
