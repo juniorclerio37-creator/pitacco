@@ -137,6 +137,8 @@ subprocess.run([sys.executable,'revisions/0.12/add_windows_paper_confirmation.py
 
 # Opening hours: web-only merchant configuration, independent of scheduled-order slots.
 subprocess.run([sys.executable,'revisions/0.12/mount_store_opening_hours.py'],check=True)
+# Windows keeps every authorized management module and restores the Brendi-style thermal preview.
+subprocess.run([sys.executable,'revisions/0.12/enable_windows_modules_preview.py'],check=True)
 for relative in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src-tauri/Cargo.toml','src-tauri/Cargo.lock']:
  p=pathlib.Path('web')/relative
  value=p.read_text(encoding='utf-8')
