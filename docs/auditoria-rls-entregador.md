@@ -18,3 +18,6 @@
 
 ## Estado
 Inspeção somente leitura, nenhuma política de produção alterada. A modificação da RLS exige verificação das funções existentes para evitar bloqueios inesperados.
+
+## Atualização — 2026-11-17
+Política `delivery_select` aplicada no projeto Supabase `mdevzehqcpcgxspwbiyz` pela migração `scope_delivery_read_to_managers_and_assigned_couriers`. Confirmado por consulta a `pg_policies`: admin global, membro gestor/lojista da mesma loja, ou entregador ativo com `courier_id`, `store_id` e `user_id` correspondentes. **Ainda não foram executados testes end-to-end com JWTs de usuários reais de homologação.** O advisor de segurança também identificou funções SECURITY DEFINER executáveis por `anon`, incluindo `assign_delivery`; revisar permissões dessas funções separadamente, sem presumir exploração ou alterar outros módulos indiscriminadamente.
