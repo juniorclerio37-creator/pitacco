@@ -29,6 +29,23 @@ insert into public.pitacco_opening_periods(store_id,weekday,slot,opens_minute,cl
  select s.id,w.weekday,1,0,1440 from public.stores s cross join generate_series(1,7) as w(weekday)
  on conflict do nothing;
 
+-- Onboarding defaults to a visible 24h schedule, preserving new-store checkout
+-- compatibility. The admin screen prominently asks managers to set real operating hours.
+create function pitacco_private.seed_store_opening_hours()
+returns trigger language plpgsql security definer set search_path='' as $
+begin
+ insert into public.pitacco_store_hours(store_id,manager_configured)
+ values(new.id,false) on conflict do nothing;
+ insert into public.pitacco_opening_periods(store_id,weekday,slot,opens_minute,closes_minute)
+ select new.id,d.day,1,0,1440 from generate_series(1,7) as d(day)
+ on conflict do nothing;
+ return new;
+end $;
+revoke all on function pitacco_private.seed_store_opening_hours() from public,anon,authenticated;
+create trigger pitacco_store_seed_opening_hours
+ after insert on public.stores
+ for each row execute function pitacco_private.seed_store_opening_hours();
+
 create function pitacco_private.store_opening_status(p_store uuid,p_at timestamptz default now())
 returns jsonb language plpgsql stable security definer set search_path='' as $$
 declare config public.pitacco_store_hours%rowtype;
