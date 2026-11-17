@@ -49,7 +49,7 @@ async function ipHash(request:Request,secret:string){
 }
 Deno.serve(async request=>{
  const origin=request.headers.get('origin')||'';
- if(request.method==='OPTIONS')return response(204,{},origin);
+ if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':allowedOrigins.has(origin)?origin:'null','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin'}});
  if(request.method!=='POST')return problem(405,'Método não permitido.',origin);
  if(!allowedOrigins.has(origin))return problem(403,'Origem não autorizada.',origin);
  const key=Deno.env.get('PITACCO_GOOGLE_MAPS_SERVER_KEY');
