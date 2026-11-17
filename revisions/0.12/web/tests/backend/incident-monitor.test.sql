@@ -43,7 +43,7 @@ begin
  incident:=(public.pitacco_incidents(null)->'rows'->0->>'id')::uuid;
  result:=public.pitacco_owner_acknowledge_incident(incident,'Incidente recebido e atribuído ao suporte');
  assert result->>'acknowledged'='true';
- assert (select acknowledged_at is not null from public.pitacco_operational_incidents where id=incident);
+ assert (public.pitacco_incidents(null)->'rows'->0->>'acknowledged_at') is not null;
 end $test$;
 reset role;
 update public.orders set status='accepted',preparation_status='ready',accepted_at=now()
