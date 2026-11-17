@@ -85,3 +85,33 @@ do $$begin
  if exists(select 1 from storage.objects where bucket_id='pitacco-installers') then raise exception 'Withdrawn installer visible'; end if;
 end $$;
 rollback;
+
+begin;
+insert into public.pitacco_app_releases(app,channel,version,filename,sha256,size_bytes,state,verified_at)
+values ('android','stable','1.0.0','stable.apk',repeat('a',64),100,'published',now()),
+ ('android','test','2.0.0','test.apk',repeat('b',64),100,'published',now()),
+ ('android','stable','2.0.0','draft.apk',repeat('c',64),100,'draft',now()),
+ ('windows','stable','1.0.0','stable.exe',repeat('d',64),100,'published',now());
+insert into storage.objects(bucket_id,name)
+select 'pitacco-installers',id::text||'/'||filename from public.pitacco_app_releases;
+grant select on storage.objects to anon;
+set local role anon;
+do $$
+begin
+ if public.pitacco_public_courier_apk()->>'filename'<>'stable.apk' then
+  raise exception 'Public download did not resolve to the stable Android release';
+ end if;
+ if (select count(*) from storage.objects where bucket_id='pitacco-installers')<>1 then
+  raise exception 'Public storage exposed drafts, test versions or Windows installers';
+ end if;
+end $$;
+reset role;
+update public.pitacco_app_releases set state='withdrawn' where app='android' and channel='stable';
+set local role anon;
+do $$
+begin
+ if public.pitacco_public_courier_apk() is not null or exists(select 1 from storage.objects where bucket_id='pitacco-installers') then
+  raise exception 'Withdrawn Android APK is still public';
+ end if;
+end $$;
+rollback;

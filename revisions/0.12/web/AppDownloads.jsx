@@ -41,6 +41,7 @@ export default function AppDownloads({client}){
      <details><summary>Verificar integridade do arquivo</summary><code>{row.sha256}</code></details>
      <button type="button" disabled={!!busy} onClick={()=>void download(row)}>{busy===row.id?'Preparando download…':action}</button></>}
     {app==='windows'&&releases&&!row&&!error&&<p>Nenhum instalador estável publicado.</p>}
+    {app==='android'&&releases&&!row&&!error&&<p>O aplicativo Android está em homologação. Compartilhe o endereço abaixo com seus entregadores.</p>}
     {app==='android'&&<div className="release-detail">
      <p><a href={COURIER_APP_URL} target="_blank" rel="noopener noreferrer">Abrir Pitacco Entregador</a></p>
      <button type="button" className="secondary" onClick={()=>void share()}>{shared?'Link copiado':'Compartilhar acesso'}</button>
