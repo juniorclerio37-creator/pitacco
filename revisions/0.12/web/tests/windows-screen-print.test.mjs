@@ -44,7 +44,7 @@ test('iFood object modifiers render by name and quantity on 80mm and 58mm notes'
 
 test('Windows navigation makes printing independently clickable and identifies installed version',()=>{
  const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
- assert.match(source,/Pitacco Windows v0\.12\.5/);
+ assert.match(source,/Pitacco Windows v0\.12\.6/);
  assert.match(source,/aria-label="Configurar impressão e visualizar nota"/);
  assert.match(source,/onClick=\{\(\)=>\{setTab\('Configurações'\)/);
  assert.match(source,/tab==='Aplicativos e Downloads'&&<AppDownloads/);
@@ -61,4 +61,14 @@ test('one-store exception roster is referenced by all merchant dispatch screens'
  assert.match(dialog,/client\.rpc\('pitacco_store_couriers',\{p_store:storeId\}\)/);
  assert.match(hub,/client\.rpc\('pitacco_store_couriers',\{p_store:store\.id\}\)/);
  assert.match(workspace,/client\.rpc\('pitacco_store_couriers',\{p_store:store\.id\}\)/);
+});
+
+test('Windows gives truthful feedback after queueing a reprint, not paper confirmation',()=>{
+ const source=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
+ assert.match(source,/reprintRequests\.current\.delete\(key\);setPrintRequestFeedback\(/);
+ assert.match(source,/printRequestFeedback&&<p role="status"/);
+ assert.match(source,/O envio não confirma impressão física/);
+ assert.match(source,/rpc\('reprint_order'/);
+ assert.match(source,/rpc\('claim_print_jobs'/);
+ assert.match(source,/ingestJobs\(/);
 });
