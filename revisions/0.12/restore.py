@@ -116,3 +116,14 @@ subprocess.run([sys.executable,'revisions/0.12/merchant_reference_layout.py'],ch
 subprocess.run([sys.executable,'revisions/0.12/mount_storefront_settings.py'],check=True)
 
 subprocess.run([sys.executable,'revisions/0.12/ifood_merchant_orders.py'],check=True)
+
+# Modern order intake and a Windows-native chime; preserve the print subsystem.
+subprocess.run([sys.executable,'revisions/0.12/windows_order_intake.py'],check=True)
+for relative in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src-tauri/Cargo.toml','src-tauri/Cargo.lock']:
+ p=pathlib.Path('web')/relative
+ value=p.read_text(encoding='utf-8')
+ if relative.endswith('Cargo.lock'):
+  value=value.replace('name = "deliverygestor-desktop"\nversion = "0.12.0"', 'name = "deliverygestor-desktop"\nversion = "0.12.1"')
+ else:
+  value=value.replace('"0.12.0"', '"0.12.1"')
+ p.write_text(value,encoding='utf-8')

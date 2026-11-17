@@ -788,30 +788,37 @@ try {
         await card.getByText('Entrega via '+provider,{exact:true}).waitFor();
         assert.equal(await card.getByRole('button',{name:'Selecionar entregador',exact:true}).count(),0);
       }
+      await page.waitForFunction(()=>window.orderTones===4);
       logisticsDeliveries=[];logisticsOrders=[];
       ifoodOrder=newOrder('81');
       await liveOrders.locator('.pedidos-card').filter({hasText:'#IF-81'}).waitFor();
-      await page.waitForFunction(()=>window.orderTones===4);
-      // Only the physical Windows notification is mocked here. Orders use full app refresh.
+      await page.waitForFunction(()=>window.orderTones===6);
+      // Mock the two native alert commands while exercising real app refresh and store selection.
       await page.addInitScript(origin=>{
         if(location.origin!==origin)return;
         window.nativeNotices=[];
+        window.nativeOrderSounds=0;
         window.__TAURI__={core:{invoke:async (command,args)=>{
           if(command==='device_id')return 'fixture-device';
           if(command==='list_printers'||command==='list_jobs')return [];
           if(command==='get_autostart')return false;
-          if(command==='notify')window.nativeNotices.push(args.message);
+          if(command==='notify_new_order')window.nativeNotices.push(args.message);
+          if(command==='play_order_alert')window.nativeOrderSounds++;
           return null;
         }}};
       },dashboard);
       await page.goto(dashboard+'/app/');
+      const windowsStore=page.getByRole('combobox',{name:'Selecionar loja',exact:true});
+      await windowsStore.getByRole('option',{name:'Selecione a loja deste computador'}).waitFor({state:'attached'});
+      assert.equal(await windowsStore.inputValue(),'');
+      await windowsStore.selectOption(store.id);
       const desktopOrders=page.getByRole('region',{name:'Central de pedidos',exact:true});
       await desktopOrders.locator('.pedidos-card').filter({hasText:'#IF-81'}).waitFor();
       assert.deepEqual(await page.evaluate(()=>window.nativeNotices),[]);
       ifoodOrder=newOrder('82');
       await desktopOrders.locator('.pedidos-card').filter({hasText:'#IF-82'}).waitFor();
-      await page.waitForFunction(()=>window.nativeNotices.includes('Novo pedido do iFood no Pitacco.'));
-      assert.equal(await page.evaluate(()=>window.nativeNotices.filter(message=>message.includes('iFood')).length),1);
+      await page.waitForFunction(()=>window.nativeNotices.includes('Você tem um novo pedido.')&&window.nativeOrderSounds===1);
+      assert.deepEqual(await page.evaluate(()=>window.nativeNotices),['Você tem um novo pedido.']);
       console.log('PASS iFood incoming order alert on web and Windows bridge');
     }
     assert.deepEqual(errors, []);

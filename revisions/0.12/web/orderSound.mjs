@@ -12,10 +12,10 @@ export function playOrderChime(context){
  }
 }
 
-export function sayNewOrder(){
+export function sayNewOrder(delay=650){
  if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance!=='function')return;
  const phrase=new SpeechSynthesisUtterance('Você tem um novo pedido.');
  phrase.lang='pt-BR';phrase.rate=0.93;phrase.volume=1;
  const speech=window.speechSynthesis;
- setTimeout(()=>speech.speak(phrase),650);
+ setTimeout(()=>speech.speak(phrase),delay);
 }
