@@ -31,10 +31,16 @@ try {
     const menuSettings={slug:'loja-teste',enabled:false,delivery_enabled:true,pickup_enabled:false,delivery_fee:5,
       payment_methods:['dinheiro'],pix_instructions:'',preparation_minutes:30};
     const launchRuns=[];
+    let storeHoursVersion=0,storeHoursPaused=false;
+    let storeHoursRows=Array.from({length:7},(_,i)=>({weekday:i+1,slot:1,opens_minute:0,closes_minute:1440}));
+    const hoursState=()=>({periods:storeHoursRows,paused:storeHoursPaused,revision:storeHoursVersion,
+      manager_configured:storeHoursVersion>0,
+      current:{open:!storeHoursPaused,paused:storeHoursPaused,reason:storeHoursPaused?'paused':'open',timezone:'America/Sao_Paulo'}});
     const diagnostic=()=>({run_type:'read_only_diagnostic',checked_at:new Date().toISOString(),store_id:store.id,
       configured:true,basic_ready:false,fully_homologated:false,catalog_url:'https://pitacco.com.br/loja-teste',
       checks:{identity:'ok',address:'ok',products:'ok',payments:'ok',fulfillment:'ok',delivery_rules:'ok',
-        catalog_link:'ok',catalog_live:'ok',checkout_configuration:'ok',printer_configuration:'optional',
+        catalog_link:'ok',catalog_live:'ok',checkout_configuration:'ok',
+        opening_hours:storeHoursVersion>0?'ok':'action',printer_configuration:'optional',
         print_on_paper:'manual',notifications_on_device:'manual',order_to_delivery:'manual',
         marketplace_integrations:'optional'},counts:{products:1,printers_bound:0}});
     let studioDraft={theme:'moderno',primary:'#e86b23',secondary:'#7b4e37',background:'#f9f5f1',
@@ -230,6 +236,20 @@ try {
           bound_computer_connected:true,installation_confirmed:false,automatic_print_tested:false,
           last_seen_at:new Date().toISOString()
         }});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_store_hours_state'){
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:hoursState()});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_store_hours_save'){
+        const args=route.request().postDataJSON();
+        assert.equal(args.p_store,store.id);
+        assert.equal(args.p_expected_revision,storeHoursVersion);
+        assert.ok(Array.isArray(args.p_periods));
+        storeHoursRows=args.p_periods;
+        storeHoursPaused=args.p_paused;
+        storeHoursVersion++;
+        return route.fulfill({headers,json:{saved:true,revision:storeHoursVersion,current:hoursState().current}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_store_launch_diagnostic'){
         assert.equal(route.request().postDataJSON().p_store,store.id);
@@ -711,7 +731,20 @@ try {
       assert.equal(studioPublished.primary,'#b43e24');
       await page.getByRole('button',{name:'Identidade da loja',exact:true}).click();
       assert.equal(await page.getByRole('region',{name:'Estúdio de Cardápio Pitacco'}).count(),0);
-
+      await page.getByRole('button',{name:'Horário de funcionamento',exact:true}).click();
+      const hours=page.getByRole('region',{name:'Horário de funcionamento da loja'});
+      await hours.getByRole('heading',{name:'Horário de funcionamento'}).waitFor();
+      await hours.getByText('Horário inicial configurado para preservar suas vendas.').waitFor();
+      await hours.getByRole('checkbox',{name:'Segunda-feira'}).uncheck();
+      await hours.getByRole('button',{name:'Salvar horário de funcionamento'}).click();
+      await hours.getByText(/Horários salvos!/).waitFor();
+      assert.equal(storeHoursRows.some(x=>x.weekday===1),false,'Closed Monday must not have a window');
+      await hours.getByRole('button',{name:'Pausar pedidos agora'}).click();
+      await hours.getByRole('button',{name:'Reabrir conforme os horários'}).waitFor();
+      assert.equal(storeHoursPaused,true);
+      await hours.getByRole('button',{name:'Reabrir conforme os horários'}).click();
+      await hours.getByRole('button',{name:'Pausar pedidos agora'}).waitFor();
+      assert.equal(storeHoursPaused,false);
     }
     await page.getByRole('button', { name:'Agendamento', exact:true }).click();
     const schedule = page.getByRole('region', {name:'Horários de agendamento'});

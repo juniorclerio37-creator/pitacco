@@ -9,6 +9,8 @@ const essentials=[
   detail:'Adicione ao menos um produto ativo, com nome e preço, e revise complementos e categorias.'},
  {title:'Identidade visual',codes:[],tab:'Aparência do cardápio',optional:true,
   detail:'Escolha tema, cores, logotipo e banners. Salve o rascunho e publique a aparência separadamente.'},
+ {title:'Horário de funcionamento',codes:['opening_hours'],tab:'Horário de funcionamento',
+  detail:'Defina o horário de cada dia e os turnos de atendimento. O cardápio fechará automaticamente fora desses intervalos.'},
  {title:'Pagamentos e checkout',codes:['payments','checkout_configuration'],tab:'Pagamentos da loja',
   detail:'Defina formas aceitas, instruções de Pix manual e confira o checkout. Nenhuma cobrança é realizada nesta etapa.'},
  {title:'Entregas e retirada',codes:['fulfillment','delivery_rules'],tab:'Área de entrega',
@@ -25,6 +27,7 @@ const diagnostics=[
  ['payments','Pagamento configurado'],
  ['fulfillment','Entrega ou retirada'],
  ['delivery_rules','Regras de entrega'],
+ ['opening_hours','Horário de funcionamento revisado'],
  ['catalog_link','Link do cardápio'],
  ['catalog_live','Cardápio acessível pela API'],
  ['checkout_configuration','Configuração do checkout'],
@@ -158,7 +161,7 @@ export default function StoreLaunchWizard({client,store,manager,onNavigate,onSto
        onChange={event=>setIdentity(old=>({...old,[key]:event.target.value}))}/></label>)}
       <button type="submit" disabled={busy||!manager}>{busy?'Salvando…':'Salvar dados básicos'}</button>
      </form>}
-     {step===6&&<div className="launch-manual">
+     {step===7&&<div className="launch-manual">
       <h5>Testes reais necessários</h5>
       <ol>
        <li>Registrar um pedido controlado em ambiente de homologação e acompanhar o aceite até a conclusão</li>

@@ -169,12 +169,18 @@ body.pitacco-designed[data-design-layout=destaques] .category-grid{grid-template
 body.pitacco-designed[data-design-layout=grade] .product-visual{height:100px}
 body.pitacco-designed[data-design-layout=grade] .product-open{padding:9px}
 }
+/* Status de funcionamento: os itens continuam visíveis mesmo quando a loja fecha. */
+.store-open-status{margin-top:16px;margin-bottom:8px;padding:13px 16px;border:1px solid #e2d6c8;border-radius:13px;background:#fff7ed;color:#683f23;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.store-open-status.is-open{background:#edf8ef;border-color:#d1e9d5;color:#1c683b}
+.store-open-status strong{font-size:.93rem}.store-open-status span{font-size:.83rem}
+body.store-closed .dock{display:none}
 </style></head><body>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
  <div class="shell hero-content"><div class="identity"><div class="store-mark" aria-hidden="true"><span id="storeInitial"></span><img id="storeLogo" alt="" hidden></div>
  <div><h1 id="storeName"></h1><p id="storeSlogan">Cardápio digital</p></div></div><div id="storeServices" class="services"></div></div>
 </header>
+<section id="storeOpenStatus" class="shell store-open-status" role="status" aria-live="polite" hidden></section>
 <section id="pitaccoPromos" class="shell pitacco-promos" aria-label="Destaques da loja" hidden></section>
 <main class="shell catalog">
  <p id="msg" class="msg" role="status">Carregando cardápio…</p>
@@ -222,6 +228,7 @@ const slug=segments[0]==='cardapio'
  ? new URLSearchParams(location.search).get('loja')||segments[1]||''
  : segments[0]||'';
 let menu,cart=[],pendingRequest=null,submitting=false,scheduleRequest=0;
+let storeOpening=null;
 let deliveryPoint=null,deliveryMap,deliveryQuote=null;
 function selectDeliveryPoint(point){
  deliveryPoint=point;
@@ -436,7 +443,7 @@ function cartFeedback(text){
 }
 $('search').addEventListener('input',renderProducts);
 $('addProduct').onclick=()=>{
- if(!current||pendingRequest||completed)return;
+ if(!current||pendingRequest||completed||!storeOpening?.open)return;
  const invalid=groups.find(row=>getChoices(row).length<row.group.min||getChoices(row).length>row.group.max);
  if(invalid){
   invalid.field.dataset.invalid='true';
@@ -514,8 +521,8 @@ function renderCart(){
  $('total').append(totalLine('Total',subtotal+fee));
  $('cartCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0);
  $('cartValue').textContent=money(subtotal);
- $('continueCheckout').disabled=!cart.length||!$('fulfillment').value||!$('payment').value;
- $('send').disabled=submitting||!cart.length||!$('fulfillment').value||!$('payment').value||(routeMode&&!quoteValid);
+ $('continueCheckout').disabled=(!storeOpening?.open&&!pendingRequest)||!cart.length||!$('fulfillment').value||!$('payment').value;
+ $('send').disabled=(!storeOpening?.open&&!pendingRequest)||submitting||!cart.length||!$('fulfillment').value||!$('payment').value||(routeMode&&!quoteValid);
 }
 function cartStep(checkout){
  $('checkout').hidden=!checkout;
@@ -597,6 +604,45 @@ function applyStudioDesign(shop){
  }
 }
 
+const brazilTime=new Intl.DateTimeFormat('pt-BR',{
+ weekday:'long',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',
+ timeZone:'America/Sao_Paulo'
+});
+function showStoreOpening(opening){
+ storeOpening=opening&&typeof opening.open==='boolean'?opening:{open:false,reason:'unavailable'};
+ const status=$('storeOpenStatus');
+ const isOpen=storeOpening.open;
+ status.classList.toggle('is-open',isOpen);
+ document.body.classList.toggle('store-closed',!isOpen);
+ status.replaceChildren();
+ const title=el('strong',isOpen?'● Loja aberta — pedidos disponíveis':
+  storeOpening.reason==='paused'?'● Pedidos temporariamente pausados':
+  '● Loja fechada — pedidos indisponíveis');
+ const next=storeOpening.next_open_at&&!isOpen?
+  'Próxima abertura: '+brazilTime.format(new Date(storeOpening.next_open_at))+'.':
+  storeOpening.reason==='unconfigured'?'Horário de funcionamento não configurado.':
+  isOpen?'Você pode fazer seu pedido agora.':'Consulte os horários de atendimento.';
+ status.append(title,el('span',next));
+ status.hidden=false;
+ $('cartDock').hidden=!isOpen&&!pendingRequest;
+ $('addProduct').disabled=!isOpen;
+ if(menu)renderCart();
+}
+async function refreshStoreOpening(){
+ const {data,error}=await client.rpc('pitacco_public_store_open',{p_slug:slug});
+ if(error||typeof data?.open!=='boolean')throw Error('Não foi possível consultar o horário de funcionamento da loja.');
+ showStoreOpening(data);
+ return data;
+}
+setInterval(()=>{
+ if(menu&&document.visibilityState==='visible')
+  refreshStoreOpening().catch(()=>showStoreOpening({open:false,reason:'unavailable'}));
+},30000);
+document.addEventListener('visibilitychange',()=>{
+ if(menu&&document.visibilityState==='visible')
+  refreshStoreOpening().catch(()=>showStoreOpening({open:false,reason:'unavailable'}));
+});
+
 function initOptions(){
  const shop=menu.store;
  applyStudioDesign(shop);
@@ -634,6 +680,7 @@ function initOptions(){
  $('fulfillment').dispatchEvent(new Event('change'));
  renderCategories();renderProducts();
  $('hero').hidden=false;$('layout').hidden=false;$('cartDock').hidden=false;
+ showStoreOpening(shop.opening_hours);
  msg(!$('fulfillment').options.length?'Esta loja está sem modalidade de atendimento.':!$('payment').options.length?'Esta loja ainda está configurando o pagamento.':'');
 }
 async function loadSchedule(){
@@ -662,6 +709,10 @@ $('checkout').onsubmit=async event=>{
  event.preventDefault();
  if(submitting||!cart.length)return;
  if(!pendingRequest){
+  try{
+   const currentOpening=await refreshStoreOpening();
+   if(!currentOpening.open){msg('Esta loja está fechada no momento. Aguarde o próximo horário de funcionamento.');return;}
+  }catch(error){msg(error.message);return;}
   const fulfillment=$('fulfillment').value,payment=$('payment').value;
   if(!fulfillment||!payment){
    msg('Esta loja precisa configurar atendimento e pagamento antes de receber pedidos.');
@@ -745,7 +796,12 @@ $('checkout').onsubmit=async event=>{
   msg('');
   $('cartBody').scrollTop=0;
  }catch(error){
-  msg(pendingRequest?'Ainda não foi possível confirmar o pedido. Tente novamente para consultar ou concluir o mesmo envio.':'Não foi possível finalizar: '+error.message);
+  if(/Loja fechada no momento/.test(error.message||'')){
+   pendingRequest=null;
+   await refreshStoreOpening().catch(()=>showStoreOpening({open:false,reason:'outside_hours'}));
+  }
+  msg(/Loja fechada no momento/.test(error.message||'')?'Esta loja está fechada no momento. Verifique o próximo horário de funcionamento.':
+   pendingRequest?'Ainda não foi possível confirmar o pedido. Tente novamente para consultar ou concluir o mesmo envio.':'Não foi possível finalizar: '+error.message);
   submitting=false;
   lockCheckout(Boolean(pendingRequest));
   $('send').textContent=pendingRequest?'Tentar novamente':'Confirmar pedido';
