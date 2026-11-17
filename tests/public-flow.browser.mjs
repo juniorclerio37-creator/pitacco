@@ -77,14 +77,14 @@ try {
           await responseGate;
           return route.fulfill({ status: 503, json: { message: 'Resposta indisponível' } });
         }
-        return route.fulfill({ json: { order_id: orderId, tracking_token: token, total: 72, payment_status: 'pending' } });
+        return route.fulfill({ json: { order_id: orderId, tracking_token: token, total: 74, payment_status: 'pending' } });
       }
       if (pathname.endsWith('/pitacco_track_public_order')) {
         assert.equal(route.request().postDataJSON().p_token, token);
         const courier_position=scheduled
           ? (++polls===1?{state:'available',latitude:-22.851,longitude:-43.453,observed_at:new Date().toISOString()}:{state:'multiple_stops'})
           : null;
-        return route.fulfill({ json: { order_id: orderId, total: 72, scheduled_for:scheduled, courier_position, ...tracking } });
+        return route.fulfill({ json: { order_id: orderId, total: 74, scheduled_for:scheduled, courier_position, ...tracking } });
       }
       return route.abort();
     });
@@ -127,8 +127,10 @@ try {
     assert.equal(await product.getByRole('radio',{name:/Morango/}).isChecked(),true);
     assert.equal(await product.locator('#productQuantity').innerText(),'2');
     await product.getByRole('checkbox',{name:/Granola/}).check();
+    assert.match(await product.getByRole('button',{name:/Salvar alterações/}).innerText(),/46,00/);
     await product.getByRole('button',{name:/Salvar alterações/}).click();
     await cart.getByText('Item atualizado na sacola.',{exact:true}).waitFor();
+    assert.match(await cart.locator('#total').innerText(),/74,00/);
     await firstLine.getByText(/Morango · Granola/).waitFor();
     await firstLine.getByRole('button',{name:'Editar complementos',exact:true}).click();
     await product.getByRole('checkbox',{name:/Granola/}).uncheck();
