@@ -18,3 +18,39 @@ export async function downloadRelease(client, release) {
   link.click();
   link.remove();
 }
+
+
+const WINDOWS_PUBLIC_RELEASES = 'https://api.github.com/repos/juniorclerio37-creator/pitacco/releases?per_page=20';
+const WINDOWS_ASSET = 'Pitacco-Windows-Setup.exe';
+
+// Secondary distribution via a public GitHub release when no Super Admin
+// release has been uploaded to the original private download bucket.
+export async function discoverPublicWindowsInstaller(request = fetch) {
+  const response = await request(WINDOWS_PUBLIC_RELEASES, {
+    headers:{Accept:'application/vnd.github+json'}
+  });
+  if(!response.ok)throw Error('Não foi possível consultar o instalador Windows.');
+  const entries = await response.json();
+  if(!Array.isArray(entries))throw Error('Resposta inesperada da central de versões.');
+  for(const release of entries) {
+    if(release.draft || release.prerelease || !/^pitacco-windows-[a-f0-9]{12}$/.test(release.tag_name||''))continue;
+    const asset = release.assets?.find(item=>item.name===WINDOWS_ASSET);
+    if(!asset?.browser_download_url || asset.size<=0)continue;
+    const url = asset.browser_download_url;
+    if(!url.startsWith('https://github.com/juniorclerio37-creator/pitacco/releases/download/')
+      || !url.endsWith('/'+WINDOWS_ASSET))continue;
+    return {url,version:'0.12.1',published_at:release.published_at||release.created_at};
+  }
+  return null;
+}
+export function downloadPublicWindowsInstaller(installer) {
+  const url=installer?.url;
+  if(typeof url!=='string'
+    || !url.startsWith('https://github.com/juniorclerio37-creator/pitacco/releases/download/')
+    || !url.endsWith('/'+WINDOWS_ASSET)) {
+    throw Error('Instalador Windows indisponível.');
+  }
+  const link=document.createElement('a');
+  link.href=url;link.rel='noopener noreferrer';link.target='_blank';
+  document.body.append(link);link.click();link.remove();
+}
