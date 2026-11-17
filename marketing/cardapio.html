@@ -604,6 +604,45 @@ function applyStudioDesign(shop){
  }
 }
 
+const brazilTime=new Intl.DateTimeFormat('pt-BR',{
+ weekday:'long',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',
+ timeZone:'America/Sao_Paulo'
+});
+function showStoreOpening(opening){
+ storeOpening=opening&&typeof opening.open==='boolean'?opening:{open:false,reason:'unavailable'};
+ const status=$('storeOpenStatus');
+ const isOpen=storeOpening.open;
+ status.classList.toggle('is-open',isOpen);
+ document.body.classList.toggle('store-closed',!isOpen);
+ status.replaceChildren();
+ const title=el('strong',isOpen?'● Loja aberta — pedidos disponíveis':
+  storeOpening.reason==='paused'?'● Pedidos temporariamente pausados':
+  '● Loja fechada — pedidos indisponíveis');
+ const next=storeOpening.next_open_at&&!isOpen?
+  'Próxima abertura: '+brazilTime.format(new Date(storeOpening.next_open_at))+'.':
+  storeOpening.reason==='unconfigured'?'Horário de funcionamento não configurado.':
+  isOpen?'Você pode fazer seu pedido agora.':'Consulte os horários de atendimento.';
+ status.append(title,el('span',next));
+ status.hidden=false;
+ $('cartDock').hidden=!isOpen&&!pendingRequest;
+ $('addProduct').disabled=!isOpen;
+ if(menu)renderCart();
+}
+async function refreshStoreOpening(){
+ const {data,error}=await client.rpc('pitacco_public_store_open',{p_slug:slug});
+ if(error||typeof data?.open!=='boolean')throw Error('Não foi possível consultar o horário de funcionamento da loja.');
+ showStoreOpening(data);
+ return data;
+}
+setInterval(()=>{
+ if(menu&&document.visibilityState==='visible')
+  refreshStoreOpening().catch(()=>showStoreOpening({open:false,reason:'unavailable'}));
+},30000);
+document.addEventListener('visibilitychange',()=>{
+ if(menu&&document.visibilityState==='visible')
+  refreshStoreOpening().catch(()=>showStoreOpening({open:false,reason:'unavailable'}));
+});
+
 function initOptions(){
  const shop=menu.store;
  applyStudioDesign(shop);
@@ -670,6 +709,10 @@ $('checkout').onsubmit=async event=>{
  event.preventDefault();
  if(submitting||!cart.length)return;
  if(!pendingRequest){
+  try{
+   const currentOpening=await refreshStoreOpening();
+   if(!currentOpening.open){msg('Esta loja está fechada no momento. Aguarde o próximo horário de funcionamento.');return;}
+  }catch(error){msg(error.message);return;}
   const fulfillment=$('fulfillment').value,payment=$('payment').value;
   if(!fulfillment||!payment){
    msg('Esta loja precisa configurar atendimento e pagamento antes de receber pedidos.');
@@ -753,7 +796,12 @@ $('checkout').onsubmit=async event=>{
   msg('');
   $('cartBody').scrollTop=0;
  }catch(error){
-  msg(pendingRequest?'Ainda não foi possível confirmar o pedido. Tente novamente para consultar ou concluir o mesmo envio.':'Não foi possível finalizar: '+error.message);
+  if(/Loja fechada no momento/.test(error.message||'')){
+   pendingRequest=null;
+   await refreshStoreOpening().catch(()=>showStoreOpening({open:false,reason:'outside_hours'}));
+  }
+  msg(/Loja fechada no momento/.test(error.message||'')?'Esta loja está fechada no momento. Verifique o próximo horário de funcionamento.':
+   pendingRequest?'Ainda não foi possível confirmar o pedido. Tente novamente para consultar ou concluir o mesmo envio.':'Não foi possível finalizar: '+error.message);
   submitting=false;
   lockCheckout(Boolean(pendingRequest));
   $('send').textContent=pendingRequest?'Tentar novamente':'Confirmar pedido';
