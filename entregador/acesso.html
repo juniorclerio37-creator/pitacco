@@ -86,7 +86,8 @@ async function routeSession(){
  } catch(err) {
    await auth.signOut().catch(()=>{});
    show("login");
-   alertError("loginError",String(err?.message??"Não foi possível autenticar"));
+   const expired=/auth session missing|session not found|sessão (inválida|expirou)/i.test(String(err?.message??""));
+   alertError("loginError",expired?"Sua sessão terminou. Entre novamente com seu celular e sua senha.":String(err?.message??"Não foi possível autenticar"));
  }
 }
 $("loginForm").addEventListener("submit",async event=>{
@@ -110,11 +111,13 @@ $("changeForm").addEventListener("submit",async event=>{
  try{
    await call("change-password",{currentPassword:current,newPassword:next});
    $("current").value="";$("new").value="";$("confirm").value="";
-   await auth.signOut();show("login");alertError("loginError","Senha alterada. Entre novamente com sua senha pessoal.");
+   // A atualização de senha encerra sessões no Supabase. Logout já revogado é esperado.
+   await auth.signOut().catch(()=>{});
+   show("login");alertError("loginError","Senha alterada com sucesso! Entre novamente com seu celular e sua nova senha.");
  }catch(err){alertError("changeError",String(err?.message??"Não foi possível alterar a senha"));}
  finally{$("changeButton").disabled=false;}
 });
-$("switchAccount").addEventListener("click",async()=>{await auth.signOut();show("login");});
+$("switchAccount").addEventListener("click",async()=>{await auth.signOut().catch(()=>{});show("login");});
 $("tryAgain").addEventListener("click",()=>location.reload());
 routeSession();
 </script></body></html>

@@ -105,7 +105,7 @@ function card(d){
 }
 async function refresh(){
  const records=await driver.myCourierRecords();
- if(records.length!==1){await sb.auth.signOut();location.replace("./acesso.html");return;}
+ if(records.length!==1){await driver.signOut().catch(()=>{});location.replace("./acesso.html");return;}
  courier=records[0];
  $("greeting").textContent="Olá, "+(courier.name||"entregador");
  $("availability").textContent=courier.available?"Você está online":"Você está offline";
@@ -143,6 +143,6 @@ $("online").addEventListener("click",async()=>{
  finally{busy=false;$("online").disabled=false;}
 });
 $("refresh").addEventListener("click",()=>refresh().catch(e=>message(String(e.message))));
-$("logout").addEventListener("click",async()=>{await sb.auth.signOut();location.replace("./acesso.html");});
+$("logout").addEventListener("click",async()=>{await driver.signOut().catch(()=>{});location.replace("./acesso.html");});
 boot();
 </script></body></html>
