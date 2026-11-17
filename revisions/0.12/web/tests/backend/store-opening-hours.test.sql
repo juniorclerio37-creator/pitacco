@@ -17,6 +17,14 @@ insert into public.products(id,store_id,name,price,cost,menu_active)
  values('d3000000-0000-0000-0000-000000000001','d2000000-0000-0000-0000-000000000001',
  'Açaí 500 ml',20,4,true);
 
+-- Test-only privileged clock injection; this function disappears at ROLLBACK.
+create function public.pitacco_test_hours_at(p_store uuid,p_at timestamptz)
+returns jsonb language sql stable security definer set search_path='' as $$
+ select pitacco_private.store_opening_status(p_store,p_at)
+$$;
+revoke all on function public.pitacco_test_hours_at(uuid,timestamptz) from public,anon;
+grant execute on function public.pitacco_test_hours_at(uuid,timestamptz) to authenticated;
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub','d1000000-0000-0000-0000-000000000001',true);
 do $test$
@@ -32,17 +40,17 @@ begin
     {"weekday":5,"slot":1,"opens_minute":1200,"closes_minute":120},
     {"weekday":7,"slot":1,"opens_minute":0,"closes_minute":1440}]'::jsonb,false,0);
  assert first->>'revision'='1';
- state:=pitacco_private.store_opening_status('d2000000-0000-0000-0000-000000000001','2026-11-16 12:00:00-03');
+ state:=public.pitacco_test_hours_at('d2000000-0000-0000-0000-000000000001','2026-11-16 12:00:00-03');
  assert state->>'open'='true','Monday at opening should accept orders';
- state:=pitacco_private.store_opening_status('d2000000-0000-0000-0000-000000000001','2026-11-16 14:00:00-03');
+ state:=public.pitacco_test_hours_at('d2000000-0000-0000-0000-000000000001','2026-11-16 14:00:00-03');
  assert state->>'open'='false','At closing boundary should stop orders';
- state:=pitacco_private.store_opening_status('d2000000-0000-0000-0000-000000000001','2026-11-16 18:00:00-03');
+ state:=public.pitacco_test_hours_at('d2000000-0000-0000-0000-000000000001','2026-11-16 18:00:00-03');
  assert state->>'open'='true','Second shift opens';
- state:=pitacco_private.store_opening_status('d2000000-0000-0000-0000-000000000001','2026-11-21 01:30:00-03');
+ state:=public.pitacco_test_hours_at('d2000000-0000-0000-0000-000000000001','2026-11-21 01:30:00-03');
  assert state->>'open'='true','Friday overnight service extends into Saturday';
- state:=pitacco_private.store_opening_status('d2000000-0000-0000-0000-000000000001','2026-11-21 02:00:00-03');
+ state:=public.pitacco_test_hours_at('d2000000-0000-0000-0000-000000000001','2026-11-21 02:00:00-03');
  assert state->>'open'='false','Overnight closing boundary blocks orders';
- state:=pitacco_private.store_opening_status('d2000000-0000-0000-0000-000000000001','2026-11-22 13:00:00-03');
+ state:=public.pitacco_test_hours_at('d2000000-0000-0000-0000-000000000001','2026-11-22 13:00:00-03');
  assert state->>'open'='true','All-day Sunday schedule works';
  begin
   perform public.pitacco_store_hours_save('d2000000-0000-0000-0000-000000000001',
