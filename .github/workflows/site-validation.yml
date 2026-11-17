@@ -94,6 +94,11 @@ jobs:
             echo "O painel dos lojistas contém o código do proprietário." >&2
             exit 1
           fi
+      - name: Validar sintaxe da função de aceite/recusa do iFood
+        run: |
+          ./web/node_modules/.bin/esbuild supabase/functions/ifood-manual-action/index.ts --bundle --platform=neutral --target=es2022 --outfile=/tmp/ifood-manual-action.mjs
+          node --check /tmp/ifood-manual-action.mjs
+
       - name: Testar regras do painel e migrações em banco isolado
         run: |
           npm test --prefix web
