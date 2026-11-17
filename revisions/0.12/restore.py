@@ -119,6 +119,9 @@ subprocess.run([sys.executable,'revisions/0.12/ifood_merchant_orders.py'],check=
 
 # Modern order intake and a Windows-native chime; preserve the print subsystem.
 subprocess.run([sys.executable,'revisions/0.12/windows_order_intake.py'],check=True)
+
+# Final merchant navigation change: keep assistance in its own page and dispatch in Deliveries.
+subprocess.run([sys.executable,'revisions/0.12/finalize_merchant_navigation.py'],check=True)
 for relative in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src-tauri/Cargo.toml','src-tauri/Cargo.lock']:
  p=pathlib.Path('web')/relative
  value=p.read_text(encoding='utf-8')
