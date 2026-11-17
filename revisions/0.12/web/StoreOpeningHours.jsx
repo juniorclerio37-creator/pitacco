@@ -62,7 +62,7 @@ export default function StoreOpeningHours({client,store,manager=true}){
    });
    if(error)throw error;
    if(!data?.saved)throw Error('O servidor não confirmou os horários.');
-   setPaused(nextPaused);setRevision(data.revision);setCurrent(data.current);setLegacy(false);
+   setPaused(nextPaused);setRevision(data.revision);setCurrent(data.current);setLegacy(!data.current?.manager_configured);
    setNotice(nextPaused?'Pedidos pausados. O cardápio continuará visível, mas não aceitará novos pedidos.':
     'Horários salvos! O cardápio agora recebe pedidos somente nos intervalos definidos.');
   }catch(e){setError(e.message||'Não foi possível salvar os horários.');}
