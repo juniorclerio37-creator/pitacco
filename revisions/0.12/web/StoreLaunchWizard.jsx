@@ -74,7 +74,7 @@ export default function StoreLaunchWizard({client,store,manager,onNavigate,onSto
  const current=essentials[step];
 
  useEffect(()=>{
-  let live=true;setError('');setNotice('');setReport(null);
+  let live=true;setReport(null);
   client.rpc('pitacco_store_launch_diagnostic',{p_store:store.id}).then(({data,error})=>{
    if(error)throw error;
    if(live)setReport(data);
