@@ -38,9 +38,11 @@ declare
  v_status text;
 begin
  if new.logistics_provider is distinct from 'loja' then return new;end if;
- if tg_op='UPDATE' and new.courier_id is not distinct from old.courier_id
-  and new.batch_id is not distinct from old.batch_id then
-  return new;
+ if tg_op='UPDATE' then
+  if new.courier_id is not distinct from old.courier_id
+   and new.batch_id is not distinct from old.batch_id then
+   return new;
+  end if;
  end if;
  if new.courier_id is null and new.batch_id is null then return new;end if;
  select o.receipt->>'ifood_status' into v_status
