@@ -86,6 +86,20 @@ begin
             interval '1 day') as g(dia)
       left join daily on daily.dia = g.dia::date
     ),
+    'worked_days', (
+      select count(distinct dia) from done where dia between v_start and v_today
+    ),
+    'period_start', v_start,
+    'period_end', v_today,
+    'day_breakdown', (
+      select coalesce(pg_catalog.jsonb_agg(
+        pg_catalog.jsonb_build_object(
+          'date', daily.dia,
+          'amount', daily.total,
+          'count', daily.qtd
+        ) order by daily.dia desc), '[]'::jsonb)
+      from daily where daily.dia between v_start and v_today
+    ),
     'recent', (
       select coalesce(pg_catalog.jsonb_agg(
         pg_catalog.jsonb_build_object(
