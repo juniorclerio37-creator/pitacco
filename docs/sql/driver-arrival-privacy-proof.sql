@@ -63,8 +63,9 @@ grant execute on function public.pitacco_driver_arrive(uuid) to authenticated;
 drop policy if exists delivery_select on public.deliveries;
 create policy delivery_select on public.deliveries for select to authenticated using (
  public.is_admin()
- or exists(select 1 from public.store_members sm where sm.store_id=deliveries.store_id
-   and sm.user_id=(select auth.uid()) and sm.role in ('gestor','lojista'))
+ or (not exists(select 1 from public.profiles p where p.id=(select auth.uid()) and p.role='entregador')
+   and exists(select 1 from public.store_members sm where sm.store_id=deliveries.store_id
+   and sm.user_id=(select auth.uid()) and sm.role in ('gestor','lojista')))
  or (deliveries.status not in ('entregue','cancelada')
   and (select public.pitacco_courier_session_ready())
   and exists(select 1 from public.couriers c where c.id=deliveries.courier_id
