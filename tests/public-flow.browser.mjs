@@ -146,7 +146,7 @@ try {
     }
     if(area){
       await page.getByRole('button', { name: 'Confirmar pedido' }).click();
-      assert.match(await page.locator('#checkoutMessage').innerText(),/Marque a localização/);
+      await page.locator('#checkoutMessage').filter({hasText:/Marque a localização/}).waitFor();
       await page.getByRole('button',{name:'Usar minha localização'}).click();
       await page.getByText('Localização marcada.').waitFor();
     }
