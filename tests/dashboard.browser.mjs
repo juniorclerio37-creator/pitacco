@@ -29,6 +29,13 @@ try {
     const merchantGroup={id:'70000000-0000-0000-0000-000000000003',name:'Frutas',min:0,max:1,options:[]};
     const menuSettings={slug:'loja-teste',enabled:false,delivery_enabled:true,pickup_enabled:false,delivery_fee:5,
       payment_methods:['dinheiro'],pix_instructions:'',preparation_minutes:30};
+    const launchRuns=[];
+    const diagnostic=()=>({run_type:'read_only_diagnostic',checked_at:new Date().toISOString(),store_id:store.id,
+      configured:true,basic_ready:false,fully_homologated:false,catalog_url:'https://pitacco.com.br/loja-teste',
+      checks:{identity:'ok',address:'ok',products:'ok',payments:'ok',fulfillment:'ok',delivery_rules:'ok',
+        catalog_link:'ok',catalog_live:'ok',checkout_configuration:'ok',printer_configuration:'optional',
+        print_on_paper:'manual',notifications_on_device:'manual',order_to_delivery:'manual',
+        marketplace_integrations:'optional'},counts:{products:1,printers_bound:0}});
     let studioDraft={theme:'moderno',primary:'#e86b23',secondary:'#7b4e37',background:'#f9f5f1',
       paper:'#ffffff',foreground:'#30251f',hero:'#40221f',highlight:'#fff0e0',layout:'lista',radius:20,
       font:'sistema',photo_size:'medio',show_descriptions:true,slogan:'Cardápio digital',instagram:'',
@@ -199,6 +206,21 @@ try {
         studioPublishedVersion++;
         studioHistory.unshift({id:null,version:studioPublishedVersion,created_at:new Date().toISOString()});
         return route.fulfill({headers,json:{published:true,published_version:studioPublishedVersion}});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_store_launch_diagnostic'){
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:diagnostic()});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_store_preflight_history'){
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:launchRuns.map(v=>({id:v.run_id,
+         created_at:v.checked_at,basic_ready:String(v.basic_ready),configured:String(v.configured)}))});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_store_run_preflight'){
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        const value={...diagnostic(),run_id:'97000000-0000-0000-0000-000000000001'};
+        launchRuns.push(value);
+        return route.fulfill({headers,json:value});
       }
       if(pathname==='/rest/v1/rpc/pitacco_store_readiness'){
         return route.fulfill({headers,json:{checks:{identity:true,address:true,products:true,payments:true,fulfillment:true,published:false},products:1,ready:false}});
@@ -441,6 +463,14 @@ try {
         return route.fulfill({headers,json:null});
       }
       if(pathname==='/rest/v1/stores'){
+        if(route.request().method()==='PATCH'){
+          const updates=route.request().postDataJSON();
+          assert.equal(updates.name,store.name);
+          assert.equal(updates.phone,'21988888888');
+          assert.equal(new URL(route.request().url()).searchParams.get('id'),'eq.'+store.id);
+          Object.assign(store,updates);
+          return route.fulfill({headers,json:{id:store.id}});
+        }
         return route.fulfill({headers,json:origin===api&&width===1440?[store,readOnlyStore]:[store]});
       }
       if (pathname === '/rest/v1/couriers' && route.request().headers().accept?.includes('object')) {
@@ -488,6 +518,24 @@ try {
       await navigation.waitFor({ state:'visible' });
     }
     if(width===1440){
+      const prompt=page.getByRole('region',{name:'Preparar o Pitacco para operar'});
+      await prompt.getByRole('button',{name:'Iniciar configuração'}).click();
+      const wizard=page.getByRole('region',{name:'Assistente de configuração inicial'});
+      await wizard.getByRole('heading',{name:'Prepare sua loja para operar'}).waitFor();
+      await wizard.getByRole('button',{name:'Executar verificação'}).click();
+      await wizard.getByText('Verificação registrada.',{exact:false}).waitFor();
+      assert.equal(launchRuns.length,1);
+      await wizard.getByRole('button',{name:'Ver histórico de verificações'}).click();
+      await wizard.getByText('Configuração básica válida').waitFor();
+      assert.equal(await wizard.getByText('Teste presencial pendente').count(),3);
+      await wizard.getByLabel('Telefone').fill('21988888888');
+      await wizard.getByRole('button',{name:'Salvar dados básicos'}).click();
+      await wizard.getByText('Dados da loja salvos.',{exact:false}).waitFor();
+      await wizard.getByRole('button',{name:/Produtos do cardápio/}).click();
+      await wizard.getByRole('button',{name:'Abrir Produtos'}).click();
+      await page.getByRole('heading',{name:'Produtos',exact:true}).waitFor();
+      await navigation.getByRole('button',{name:'Visão Geral',exact:true}).click();
+      await page.getByRole('heading',{name:'Visão Geral',exact:true}).waitFor();
       await navigation.getByRole('button',{name:'Aplicativos e Downloads',exact:true}).click();
       await page.getByText('Nenhum instalador estável publicado.').waitFor();
       assert.equal(await page.getByRole('link',{name:'Abrir Pitacco Entregador'}).getAttribute('href'),'https://entregador.pitacco.com.br/');
