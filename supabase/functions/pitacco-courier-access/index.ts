@@ -100,6 +100,21 @@ async function resetDriver(body, actor) {
   if (finishErr) return [500,{error:"Senha redefinida, mas acesso bloqueado. Redefina novamente."}];
   return [200,{courierId,temporaryPassword:password,mustChangePassword:true}];
 }
+async function reactivateDriver(body, actor) {
+  const {storeId, courierId} = body;
+  if (!idPattern.test(String(storeId ?? "")) || !idPattern.test(String(courierId ?? ""))) return [400,{error:"Dados inválidos"}];
+  if (!await authorizeStore(actor,storeId)) return [403,{error:"Sem permissão para esta loja"}];
+  const {data: courier,error:findError}=await admin.from("couriers")
+    .select("id,active").eq("id",courierId).eq("store_id",storeId).maybeSingle();
+  if (findError || !courier) return [404,{error:"Entregador não encontrado"}];
+  if (courier.active) return [409,{error:"Entregador já está ativo"}];
+  const [code,out]=await resetDriver(body,actor);
+  if (code!==200) return [code,out];
+  const {error}=await admin.from("couriers")
+    .update({active:true,available:false}).eq("id",courierId).eq("store_id",storeId);
+  if (error) return [500,{error:"Senha redefinida, porém reativação incompleta. Solicite suporte."}];
+  return [200,{courierId,active:true,temporaryPassword:out.temporaryPassword,mustChangePassword:true}];
+}
 async function listDrivers(body, actor) {
   const storeId = body.storeId;
   if (!await authorizeStore(actor,storeId)) return [403,{error:"Sem permissão para esta loja"}];
@@ -179,11 +194,12 @@ Deno.serve(async(req)=>{
     const body=await req.json();
     const action=String(body?.action??"");
     let result;
-    if (["create","reset","list","disable"].includes(action)) {
+    if (["create","reset","list","disable","reactivate"].includes(action)) {
       if (action==="create") result=await registerDriver(body,session.user.id);
       if (action==="reset") result=await resetDriver(body,session.user.id);
       if (action==="list") result=await listDrivers(body,session.user.id);
       if (action==="disable") result=await disableDriver(body,session.user.id);
+      if (action==="reactivate") result=await reactivateDriver(body,session.user.id);
     } else if(action==="status") result=await driverStatus(session.user.id);
     else if(action==="change-password") result=await changePassword(body,session.user.id,session.user);
     else return json(req,400,{error:"Operação desconhecida"});
