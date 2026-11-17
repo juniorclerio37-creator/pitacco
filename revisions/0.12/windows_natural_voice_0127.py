@@ -13,11 +13,22 @@ new=""" const [voiceLevel,setVoiceLevel]=useState(()=>{
   try { const level=Number(localStorage.getItem('pitacco:natural-voice-level'));return [1,2,3].includes(level)?level:3; }
   catch{return 3;}
  });
+ const [voiceReady,setVoiceReady]=useState(false);
+ useEffect(()=>{
+  if(!desktop)return;
+  let active=true;
+  invoke('order_voice_status').then(ready=>{
+   if(active)setVoiceReady(ready===true);
+  }).catch(()=>{if(active)setVoiceReady(false)});
+  return ()=>{active=false};
+ },[desktop]);
  async function naturalVoiceOnly(){
   try {
    await invoke('play_order_voice',{level:voiceLevel});
+   setVoiceReady(true);
    setSoundMessage('');
   }catch(error){
+   setVoiceReady(false);
    setSoundMessage('Voz natural não configurada. Importe uma gravação WAV de voz brasileira profissional (16 bits PCM) para ativá-la.');
   }
  }
@@ -28,6 +39,7 @@ new=""" const [voiceLevel,setVoiceLevel]=useState(()=>{
   try {
    const audioData=Array.from(new Uint8Array(await file.arrayBuffer()));
    await invoke('save_order_voice',{audioData});
+   setVoiceReady(true);
    setSoundMessage('Voz natural salva neste computador. Use “Testar somente voz” para ouvi-la.');
   } catch(e){setSoundMessage('Não foi possível importar a voz WAV: '+String(e));}
   event.target.value='';
@@ -44,16 +56,19 @@ new=""" async function nativeOrderSound(){
    await invoke('play_order_alert',{level:alertLevel});
    setSoundMessage('');
    // Native bell remains unchanged. Natural WAV plays only after the bell.
-   window.setTimeout(()=>{void naturalVoiceOnly()},2450);
+   window.setTimeout(()=>{if(voiceReady)void naturalVoiceOnly()},2450);
   }catch{
    setSoundMessage('O sino do Windows está indisponível. Confira o áudio do computador.');
-   window.setTimeout(()=>{void naturalVoiceOnly()},100);
+   window.setTimeout(()=>{if(voiceReady)void naturalVoiceOnly()},100);
   }
  }"""
 assert s.count(old)==1,'Existing native order sound changed'
 s=s.replace(old,new)
 old="""  {soundMessage&&<small role="status">{soundMessage}</small>}"""
-new="""  <label className="field" htmlFor="pitacco-natural-voice-level">Volume da voz natural
+new="""  <small role="status">{voiceReady
+   ?'Voz natural configurada neste computador. O anúncio funciona mesmo sem internet.'
+   :'Voz natural ainda não configurada neste computador. O sino continuará funcionando, sem voz robótica.'}</small>
+  <label className="field" htmlFor="pitacco-natural-voice-level">Volume da voz natural
    <select id="pitacco-natural-voice-level" value={voiceLevel} onChange={event=>{
      const value=Number(event.target.value);setVoiceLevel(value);
      try{localStorage.setItem('pitacco:natural-voice-level',String(value));}catch{}
@@ -140,6 +155,13 @@ fn save_order_voice(audio_data:Vec<u8>)->Result<(),String>{
  {let _=audio_data;Err("A voz nativa só está disponível no Windows.".into())}
 }
 #[tauri::command]
+fn order_voice_status()->Result<bool,String>{
+ #[cfg(windows)]
+ {Ok(pitacco_voice_dir()?.join("voice-level-3.wav").is_file())}
+ #[cfg(not(windows))]
+ {Ok(false)}
+}
+#[tauri::command]
 fn play_order_voice(level:Option<u8>)->Result<(),String>{
  #[cfg(windows)]
  {
@@ -161,6 +183,6 @@ fn play_order_voice(level:Option<u8>)->Result<(),String>{
 s=s.replace(needle,rust+needle,1)
 needle='notify_new_order,play_order_alert,check_update]'
 assert s.count(needle)==1,'Tauri command registry changed'
-s=s.replace(needle,'notify_new_order,play_order_alert,save_order_voice,play_order_voice,check_update]',1)
+s=s.replace(needle,'notify_new_order,play_order_alert,save_order_voice,play_order_voice,order_voice_status,check_update]',1)
 p.write_text(s,encoding="utf-8")
 print("Natural human/neural prerecorded WAV import and independent amplified playback ready.")
