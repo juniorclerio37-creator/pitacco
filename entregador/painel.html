@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#f97316"><title>Pitacco Entregador — Minhas entregas</title>
+<meta name="theme-color" content="#f97316"><meta name="color-scheme" content="light"><link rel="stylesheet" href="./painel.css"><title>Pitacco Entregador — Minhas entregas</title>
 <style>
 :root{font-family:Inter,system-ui,sans-serif;color:#1f2937;background:#f6f7fa}
 *{box-sizing:border-box}body{margin:0}.bar{background:#fff;border-bottom:1px solid #e5eaf0;position:sticky;top:0;z-index:2}
@@ -64,43 +64,112 @@ a.btn{text-decoration:none}
 .earn-error{font-size:12px;color:#ae301d;line-height:1.5;margin:10px 0}
 @media(max-width:720px){.earn-content{grid-template-columns:1fr}.earnings{padding:16px;margin:19px 0}.earn-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(148px,1fr);grid-template-columns:none;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}.earn-tab{scroll-snap-align:start;padding:15px 12px}.earn-tab strong{font-size:20px}.earn-top h2{font-size:21px}}
 </style></head>
-<body><header class="bar"><div class="barinner">
-<div class="logo">Pitacco <span>ENTREGADOR</span></div>
-<div class="topactions"><button class="btn ghost" id="refresh">Atualizar</button><button class="btn secondary" id="logout">Sair</button></div>
-</div></header><main>
-<h1 id="greeting">Minhas entregas</h1><p class="sub">Pedidos atribuídos pela loja. Não é necessário aceitar ou recusar.</p>
-<div class="topactions"><button class="btn primary" id="online" disabled>Carregando...</button><span id="availability" class="sub" style="margin:0"></span></div>
-<div class="summary"><div class="stat"><strong id="active">—</strong><span>Entregas em andamento</span></div><div class="stat"><strong id="done">—</strong><span>Entregues nos registros recentes</span></div></div>
-
-<section class="earnings" aria-label="Meus ganhos" id="earnings">
- <div class="earn-top">
-  <div><span class="earn-eyebrow">SEU RESUMO FINANCEIRO</span><h2>Meus ganhos</h2><p>Valores das entregas concluídas</p></div>
-  <div class="earn-updated" id="earnUpdated">Carregando...</div>
- </div>
- <div class="earn-tabs" role="group" aria-label="Selecione o período dos ganhos">
-  <button type="button" class="earn-tab" data-earn-period="hoje" aria-pressed="true"><span>Hoje</span><strong id="earnToday">R$ 0,00</strong><small id="earnTodayCount">0 entregas</small></button>
-  <button type="button" class="earn-tab" data-earn-period="semana" aria-pressed="false"><span>Semana</span><strong id="earnWeek">R$ 0,00</strong><small id="earnWeekCount">0 entregas</small></button>
-  <button type="button" class="earn-tab" data-earn-period="mes" aria-pressed="false"><span>Mês</span><strong id="earnMonth">R$ 0,00</strong><small id="earnMonthCount">0 entregas</small></button>
- </div>
- <div class="earn-content">
-  <div class="earn-panel">
-   <div class="earn-panel-head"><h3>Ganhos nesta semana</h3><small>Segunda a domingo</small></div>
-   <div class="earn-chart" id="earnChart" role="img" aria-label="Gráfico de ganhos desta semana"><div class="earn-empty">Carregando gráfico...</div></div>
+<body>
+<header class="bar">
+  <div class="barinner">
+    <div class="app-brand"><div class="app-logo" aria-hidden="true">P</div><div><strong>Pitacco</strong><small>ENTREGADOR</small></div></div>
+    <div class="header-right"><span class="store-pill" id="storeChip" title="Loja ativa">Minha loja</span><button class="header-refresh" id="refresh" type="button" aria-label="Atualizar informações" title="Atualizar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-5L4 8m0-4v4h4M4 13a8 8 0 0 0 14 5l2-2m0 4v-4h-4"/></svg></button></div>
   </div>
-  <div class="earn-panel">
-   <div class="earn-panel-head"><h3 id="earnHistoryTitle">Entregas de hoje</h3><small>Últimas 20</small></div>
-   <div class="earn-history" id="earnHistory"><div class="earn-empty">Carregando histórico...</div></div>
+</header>
+<main class="app-shell">
+<section class="app-view" data-view="pedidos" id="viewPedidos">
+  <div class="order-header">
+    <div><span class="eyebrow">SUA OPERAÇÃO</span><h1 id="greeting">Minhas entregas</h1><p class="sub">Pedidos enviados diretamente pela loja.</p></div>
+    <button type="button" class="today-mini" id="miniEarnings" aria-label="Abrir ganhos de hoje"><small>GANHOS DE HOJE</small><b id="miniToday">R$ 0,00</b><span id="miniTodayCount">0 entregas</span></button>
   </div>
- </div>
- <p class="earn-error" id="earnError" role="alert" hidden></p>
- <p class="earn-footnote">O total considera somente entregas concluídas e o repasse por entrega registrado pela loja. Não representa o valor cobrado do cliente nem confirma pagamento recebido. Diárias e adicionais dependem dos lançamentos do estabelecimento.</p>
+  <div class="status-banner"><div class="status-copy"><span class="status-dot" id="onlineDot"></span><div><b id="availability">Carregando disponibilidade...</b><span id="availableHelp">Sua loja organiza as entregas para você.</span></div></div><button class="btn primary" id="online" type="button" disabled>Carregando...</button></div>
+  <div class="summary">
+    <div class="stat"><span class="stat-icon orange">↗</span><strong id="active">—</strong><span>Entregas em andamento</span></div>
+    <div class="stat"><span class="stat-icon green">✓</span><strong id="done">—</strong><span>Concluídas nos registros</span></div>
+  </div>
+  <p id="notice" role="alert" aria-live="polite"></p>
+  <h2 class="section-title">Seus pedidos <span class="auto-pill">Atualiza automaticamente</span></h2>
+  <section id="cards" class="grid" aria-label="Pedidos atribuídos"><div class="empty">Carregando entregas...</div></section>
+  <p class="note-inline">Pedidos são atribuídos pela loja, sem necessidade de aceitar. A confirmação de entrega por PIN ou foto ainda está em homologação.</p>
 </section>
 
-<p id="notice" role="alert" aria-live="polite"></p>
-<div class="info" id="paymentNotice"><b>Atenção ao recebimento:</b> a confirmação de pagamento e o cálculo de troco ainda não estão disponíveis nesta tela. Confirme com a loja antes de cobrar o cliente ou informar que está pago.</div>
-<section id="cards" class="grid" aria-label="Pedidos atribuídos"><div class="empty">Verificando suas entregas...</div></section>
-<p class="info">A finalização com foto ou PIN ainda está em homologação. Não marque uma entrega como concluída sem a confirmação exigida pelo estabelecimento ou marketplace.</p>
+<section class="app-view" data-view="mapa" id="viewMapa" hidden>
+  <div class="page-title"><span class="eyebrow">ROTAS E ENDEREÇOS</span><h1>Mapa e navegação</h1><p>Abra a rota no aplicativo de sua preferência.</p></div>
+  <div class="map-banner">
+    <span class="map-banner-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 18-6 3V6l6-3m0 15 6 3m-6-3V3m6 18 6-3V3l-6 3m0 15V6M9 3l6 3"/></svg></span>
+    <div><b>Seu navegador favorito</b><p id="mapPreference">Google Maps • Endereço</p></div><button class="btn secondary" type="button" id="mapChange">Alterar</button>
+  </div>
+  <h2 class="section-title">Destinos das suas entregas</h2>
+  <div id="routesList" class="routes-list"><div class="empty">Carregando seus destinos...</div></div>
+  <p class="note-inline">Para manter sua rota segura, as direções são abertas no Google Maps ou Waze. O Pitacco não envia coordenadas aproximadas como se fossem localização exata.</p>
+</section>
+
+<section class="app-view" data-view="ganhos" id="viewGanhos" hidden>
+  <div class="page-title"><span class="eyebrow">FINANCEIRO DO ENTREGADOR</span><h1>Meus ganhos</h1><p>Veja quanto você gerou em entregas concluídas.</p></div>
+  <section class="earnings" aria-label="Meus ganhos" id="earnings">
+   <div class="earn-period-nav" role="group" aria-label="Período dos ganhos">
+      <button type="button" class="earn-tab" data-earn-period="hoje" aria-pressed="true">Hoje</button>
+      <button type="button" class="earn-tab" data-earn-period="semana" aria-pressed="false">Semana</button>
+      <button type="button" class="earn-tab" data-earn-period="mes" aria-pressed="false">Mês</button>
+   </div>
+   <div class="earn-main-card">
+      <span class="eyebrow" id="earnPeriodTitle">VOCÊ GANHOU HOJE</span>
+      <strong id="earnSelectedAmount">R$ 0,00</strong>
+      <span id="earnRange" class="earn-range">Resumo das entregas concluídas</span>
+      <div class="earn-counters">
+        <div><span>Entregas</span><b id="earnSelectedCount">0</b></div>
+        <div><span>Dias trabalhados</span><b id="earnWorkedDays">0</b></div>
+      </div>
+   </div>
+   <div class="earn-total-proxy" aria-hidden="true"><span id="earnToday">R$ 0,00</span><span id="earnTodayCount">0 entregas</span><span id="earnWeek">R$ 0,00</span><span id="earnWeekCount">0 entregas</span><span id="earnMonth">R$ 0,00</span><span id="earnMonthCount">0 entregas</span></div>
+   <div class="earn-composition panel-white"><h2>Composição</h2>
+     <div class="composition-row"><span>Taxas por entrega</span><strong id="earnDeliveryComponent">R$ 0,00</strong></div>
+     <div class="composition-row"><span>Diárias e adicionais</span><strong>Não incluídos</strong></div>
+     <div class="composition-row total"><span>Total registrado</span><strong id="earnTotal">R$ 0,00</strong></div>
+   </div>
+   <div class="earn-days panel-white"><div class="earn-panel-head"><h2>Por dia</h2><span>Toque em um dia para ver os pedidos</span></div><div id="earnDailyRows" class="earn-daily-rows"><div class="earn-empty">Carregando dias...</div></div></div>
+   <div class="earn-chart-panel panel-white"><div class="earn-panel-head"><h2>Gráfico da semana</h2><span>Seg a dom</span></div><div id="earnChart" class="earn-chart" role="img" aria-label="Ganhos por dia da semana"></div></div>
+   <div class="earn-history-panel panel-white"><div class="earn-panel-head"><h2 id="earnHistoryTitle">Entregas de hoje</h2><span>Últimos 20 registros</span></div><div id="earnHistory" class="earn-history"><div class="earn-empty">Carregando...</div></div></div>
+   <div class="earn-updated" id="earnUpdated">Carregando...</div>
+   <p class="earn-error" id="earnError" role="alert" hidden></p>
+   <p class="earn-footnote">Os ganhos consideram somente entregas concluídas e os valores registrados pela loja. Isso não representa o valor do pedido nem confirma pagamento recebido. Diárias e adicionais dependem de lançamentos específicos.</p>
+  </section>
+</section>
+
+<section class="app-view" data-view="perfil" id="viewPerfil" hidden>
+ <div class="page-title"><span class="eyebrow">SUA CONTA</span><h1>Perfil</h1><p>Seus dados e sua loja ativa.</p></div>
+ <section class="profile-card panel-white"><div class="avatar" id="profileAvatar">E</div><div><b id="profileName">Entregador</b><small id="profilePhone">Celular cadastrado pela loja</small></div><button class="icon-button" type="button" id="profileLogout" aria-label="Sair da conta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9"/></svg></button></section>
+ <section class="panel-white pref-panel"><span class="eyebrow">LOJA ATIVA</span><h2 id="profileStore">Minha loja</h2><span class="profile-meta">Entregas atribuidas exclusivamente pelo estabelecimento.</span></section>
+ <section class="panel-white pref-panel"><span class="eyebrow">NAVEGAÇÃO</span><div class="pref-row"><div class="pref-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 20 8-16 8 16-8-4-8 4Z"/></svg></div><div><small>App padrão</small><strong id="profileNav">Google Maps</strong></div><button type="button" class="btn secondary" id="profileMapChange">Alterar</button></div></section>
+ <section class="panel-white pref-panel"><span class="eyebrow">MINHA LOJA</span><div class="pref-row"><div class="pref-icon store-icon">⌂</div><div><strong id="profileStoreAgain">Minha loja</strong><small>Ativa para suas entregas</small></div><span class="checkmark">✓</span></div></section>
+ <p class="note-inline">O cadastro e a redefinição de senha são feitos pelo lojista dentro do painel Pitacco.</p>
+</section>
+
+<section class="app-view" data-view="config" id="viewConfig" hidden>
+ <div class="page-title"><span class="eyebrow">PREFERÊNCIAS</span><h1>Configurações</h1><p>Escolha como prefere trabalhar.</p></div>
+ <section class="panel-white pref-panel">
+  <span class="eyebrow">ABRIR ROTAS EM</span>
+  <div class="select-options">
+   <button type="button" data-nav-choice="google" class="option-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2"/></svg> Google Maps</button>
+   <button type="button" data-nav-choice="waze" class="option-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17c-3-1-3-4-2-6 1-5 6-8 11-7 5 1 7 6 7 10 0 4-5 7-10 6-2 0-4 0-6-3Z"/><circle cx="9" cy="17" r="1"/><circle cx="17" cy="17" r="1"/></svg> Waze</button>
+  </div>
+  <span class="eyebrow config-subheading">COMO ENVIAR O DESTINO</span>
+  <div class="select-options">
+   <button type="button" data-map-mode="address" class="option-button">Pesquisar endereço</button>
+   <button type="button" data-map-mode="coords" class="option-button">Usar coordenadas disponíveis</button>
+  </div>
+  <p class="note-inline">Quando não houver coordenadas verificadas, o aplicativo abre o endereço informado pela loja.</p>
+ </section>
+ <section class="panel-white pref-panel">
+  <span class="eyebrow">AJUDA E SINCRONIZAÇÃO</span>
+  <button type="button" class="settings-row" id="settingsRefresh"><span>Atualizar pedidos e ganhos</span><span class="setting-arrow">↻</span></button>
+  <button type="button" class="settings-row" id="settingsLogout"><span>Sair da minha conta</span><span class="setting-arrow">→</span></button>
+ </section>
+ <p class="version-note">Pitacco Entregador • Gestão de delivery</p>
+</section>
 </main>
+<nav class="bottom-nav" aria-label="Navegação principal">
+  <button type="button" data-tab="pedidos" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Pedidos</span></button>
+  <button type="button" data-tab="mapa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6ZM9 3v15m6-12v15"/></svg><span>Mapa</span></button>
+  <button type="button" data-tab="ganhos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 2v20m5-15c-1-2-3-3-5-3-3 0-5 2-5 4s2 3 5 4 5 2 5 4-2 4-5 4c-2 0-5-1-6-3"/></svg><span>Ganhos</span></button>
+  <button type="button" data-tab="perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-5 3-8 8-8s8 3 8 8"/></svg><span>Perfil</span></button>
+  <button type="button" data-tab="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm0-13 2 2 3-1 1 3 3 2-1 3 1 3-3 2-1 3-3-1-2 2-2-2-3 1-1-3-3-2 1-3-1-3 3-2 1-3 3 1Z"/></svg><span>Ajustes</span></button>
+</nav>
 <script type="module">
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2.57.0";
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "./config.mjs";
