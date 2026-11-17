@@ -91,3 +91,6 @@ button{font-family:inherit}button:focus-visible,a:focus-visible{outline:3px soli
 .safe-history-meta{display:flex;flex-direction:column;align-items:flex-end;gap:3px;text-align:right}
 .safe-history-meta small{color:#8793a3;font-size:10px}
 @media(max-width:390px){.verify-form{grid-template-columns:1fr}.verify-form .btn{width:100%}}
+
+/* The single authorized testing courier can see which store sent each order. */
+.card-store-label,.order-origin-store{display:block;margin:10px 0 6px;font-size:12px;font-weight:800;letter-spacing:.035em;color:#a94b16}

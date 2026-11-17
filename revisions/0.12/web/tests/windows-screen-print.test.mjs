@@ -44,10 +44,21 @@ test('iFood object modifiers render by name and quantity on 80mm and 58mm notes'
 
 test('Windows navigation makes printing independently clickable and identifies installed version',()=>{
  const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
- assert.match(source,/Pitacco Windows v0\.12\.3/);
+ assert.match(source,/Pitacco Windows v0\.12\.4/);
  assert.match(source,/aria-label="Configurar impressão e visualizar nota"/);
  assert.match(source,/onClick=\{\(\)=>\{setTab\('Configurações'\)/);
  assert.match(source,/tab==='Aplicativos e Downloads'&&<AppDownloads/);
  assert.match(source,/Pagamento de motoboys/);
  assert.match(source,/hiddenOnError=\{false\}/);
+});
+
+test('one-store exception roster is referenced by all merchant dispatch screens',()=>{
+ const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
+ const hub=readFileSync(new URL('../LogisticsHub.jsx',import.meta.url),'utf8');
+ const dialog=readFileSync(new URL('../DeliveryDialog.jsx',import.meta.url),'utf8');
+ const workspace=readFileSync(new URL('../CourierWorkspace.jsx',import.meta.url),'utf8');
+ assert.match(operations,/client\.rpc\('pitacco_store_couriers',\{p_store:storeId\}\)/);
+ assert.match(dialog,/client\.rpc\('pitacco_store_couriers',\{p_store:storeId\}\)/);
+ assert.match(hub,/client\.rpc\('pitacco_store_couriers',\{p_store:store\.id\}\)/);
+ assert.match(workspace,/client\.rpc\('pitacco_store_couriers',\{p_store:store\.id\}\)/);
 });

@@ -187,6 +187,7 @@ let lastHistoryRequest=0;
 
 let earnPeriod="hoje", earnRequest=0, lastEarningsReport=null;
 let storeName="Minha loja", navProvider="google", navMode="address", assignedDeliveries=[];
+let permittedStores=new Map();
 let assignmentAudio, assignmentBaseline;
 async function enableAssignmentSound(){
  const Audio=window.AudioContext||window.webkitAudioContext;
@@ -498,7 +499,10 @@ function card(d){
  const number=String(badge?.public_number||"Aguardando número");
  head.append(element("span","order","PEDIDO #"+number));
  head.append(element("span","tag",statuses[d.status]||d.status||"Em andamento"));
- opener.append(head,element("div","customer",d.customer_name||"Cliente"));
+ opener.append(head);
+ const originName=d.store_name||"Loja de origem";
+ opener.append(element("span","card-store-label","LOJA • "+originName));
+ opener.append(element("div","customer",d.customer_name||"Cliente"));
  opener.append(element("p","address",d.address||"Endereço não informado"));
  if(badge?.localizer)opener.append(element("span","card-localizer",
    "LOCALIZADOR DE LIGAÇÃO • "+String(badge.localizer).replace(/\D/g,"").slice(0,16)));
@@ -574,20 +578,27 @@ async function refreshSnapshot(){
  const records=await driver.myCourierRecords();
  if(records.length!==1){await driver.signOut().catch(()=>{});location.replace("./acesso.html");return;}
  courier=records[0];
+ const authorized=await driver.myAllowedStores();
+ permittedStores=new Map(authorized.map(row=>[row.store_id,row.store_name]));
+ if(!permittedStores.size)permittedStores.set(courier.store_id,storeName);
+ const allNames=[...permittedStores.values()];
+ const currentStoreLabel=allNames.length>1?allNames.join(" + "):allNames[0];
  $("greeting").textContent="Olá, "+(courier.name?.split(" ")[0]||"entregador")+"!";
  $("profileName").textContent=courier.name||"Entregador";
  $("profilePhone").textContent=courier.phone||"Celular cadastrado pela loja";
  $("profileAvatar").textContent=(courier.name?.trim().charAt(0)||"E").toUpperCase();
- $("storeChip").textContent=storeName;
- $("storeChip").title=storeName;
- $("profileStore").textContent=storeName;
- $("profileStoreAgain").textContent=storeName;
+ $("storeChip").textContent=currentStoreLabel;
+ $("storeChip").title=currentStoreLabel;
+ $("profileStore").textContent=currentStoreLabel;
+ $("profileStoreAgain").textContent=currentStoreLabel;
  $("availability").textContent=courier.available?"Você está online":"Você está offline";
  $("onlineDot").classList.toggle("online",!!courier.available);
  $("availableHelp").textContent=courier.available?"Você pode receber pedidos da loja.":"Ative sua disponibilidade para receber pedidos.";
  $("online").textContent=courier.available?"Ficar offline":"Ficar online";
  $("online").disabled=false;
  const list=await driver.myDeliveries([courier.id]);
+ // A única exceção autorizada usa o mesmo courier_id, sem criar outro cadastro.
+ // RLS protege a seleção e as operações, inclusive a loja de testes.
  const {data:labels,error:labelsError}=await sb.rpc("pitacco_driver_card_badges");
  if(labelsError){
   orderCardBadges=new Map();
@@ -596,7 +607,8 @@ async function refreshSnapshot(){
   orderCardBadges=new Map((Array.isArray(labels)?labels:[]).map(item=>[item.delivery_id,item]));
  }
  list.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
- const current=list.filter(d=>!["entregue","cancelada"].includes(d.status));
+ const current=list.filter(d=>!["entregue","cancelada"].includes(d.status))
+  .map(d=>({...d,store_name:permittedStores.get(d.store_id)||"Loja de origem"}));
  $("active").textContent=String(current.length);
  // Finished deliveries are never included in the raw private order list.
  announceAssignments(current,courier);

@@ -84,3 +84,16 @@ test("login redirects normally when password update already revoked the session"
  assert.match(login,/Sua sessão terminou/);
  assert.doesNotMatch(panel,/await sb\.auth\.signOut\(\);/);
 });
+
+test("courier app shows all authorized store origins without creating a second login",()=>{
+ const panel=read("painel.html"),client=read("supabase-client.mjs"),detail=read("order-details.mjs");
+ assert.match(panel,/driver\.myAllowedStores\(\)/);
+ assert.match(panel,/permittedStores=new Map/);
+ assert.match(panel,/LOJA • /);
+ assert.match(panel,/store_name:permittedStores/);
+ assert.match(panel,/orderDetails\.open\(d\)/);
+ assert.match(client,/rpc\('pitacco_driver_allowed_stores'\)/);
+ assert.match(client,/\.in\('courier_id', courierIds\)/);
+ assert.match(detail,/delivery\.store_name/);
+ assert.match(panel,/records\.length!==1/);
+});

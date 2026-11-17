@@ -111,6 +111,7 @@ function buildDetails(details, delivery, routeFor) {
   status.append(node('span','order-source-tag',String(details.source ?? delivery.source ?? 'Próprio').toUpperCase()),
                 node('span','order-status-tag',String(details.status ?? delivery.status ?? 'Em andamento')));
   root.append(status);
+  if(delivery.store_name)root.append(node('div','order-origin-store','LOJA • '+String(delivery.store_name).slice(0,100)));
 
   const customer = section('Cliente e endereço');
   customer.append(node('strong','order-customer-name',details.customer_name ?? delivery.customer_name ?? 'Cliente'));

@@ -63,6 +63,12 @@ export function createDriverAuth(supabase) {
       if (error) throw error;
       return data ?? [];
     },
+    async myAllowedStores() {
+      // Server verifies the authenticated courier identity and permitted store links.
+      const {data,error}=await supabase.rpc('pitacco_driver_allowed_stores');
+      if(error)throw new Error('Não foi possível carregar as lojas autorizadas: '+String(error.message||'acesso indisponível'));
+      return Array.isArray(data)?data:[];
+    },
     async myDeliveries(courierIds) {
       if (!Array.isArray(courierIds) || !courierIds.length) return [];
       // RLS MUST enforce ownership. Client-side filters alone are insufficient.
