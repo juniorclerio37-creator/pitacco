@@ -1,6 +1,6 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.57.0';
 
-const allowedOrigins=new Set(['https://pitacco.com.br','https://www.pitacco.com.br']);
+const allowedOrigins=new Set(['https://pitacco.com.br','https://www.pitacco.com.br','https://app.pitacco.com.br']);
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const slugPattern=/^[a-z0-9][a-z0-9-]{2,59}$/;
 const normalize=(value:string)=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
@@ -58,11 +58,31 @@ Deno.serve(async request=>{
  if(!key||!serviceKey||!url)return problem(503,'Cálculo de rotas ainda não homologado.',origin);
  try{
   const body=await request.json();
+  const db=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
+  if(body.action==='store-origin'){
+   const storeId=String(body.store_id||''),token=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
+   if(!uuid.test(storeId)||!token)return problem(401,'Faça login como gestor para validar o endereço.',origin);
+   const {data:identity,error:authError}=await db.auth.getUser(token);
+   if(authError||!identity.user)return problem(401,'Sessão inválida.',origin);
+   const {data:member,error:memberError}=await db.from('store_members').select('role')
+    .eq('user_id',identity.user.id).eq('store_id',storeId).in('role',['lojista','gestor']).maybeSingle();
+   if(memberError||!member)return problem(403,'Você não gerencia este estabelecimento.',origin);
+   const {data:store,error:storeError}=await db.from('stores').select('address,address_number,neighborhood,city,state,postal_code').eq('id',storeId).single();
+   if(storeError||!store?.address||!store.city||!store.state)return problem(422,'Cadastre rua, cidade e estado em Dados da loja.',origin);
+   const limiter=await db.rpc('pitacco_service_delivery_quote_limit',
+    {p_scope:'origin-hour-'+storeId,p_max:20,p_minutes:60});
+   if(limiter.error||!limiter.data)return problem(429,'Validação indisponível ou limite de tentativas atingido.',origin);
+   const address=[store.address,store.address_number,store.neighborhood,store.city,store.state,store.postal_code,'Brasil'].filter(Boolean).join(', ');
+   const location=await geocode(address,key);
+   if(location.country!=='BR')return problem(422,'Endereço fora do Brasil.',origin);
+   const {error:updateError}=await db.from('stores').update({latitude:location.lat,longitude:location.lng}).eq('id',storeId);
+   if(updateError)throw Error('Não foi possível registrar a localização da loja.');
+   return response(200,{latitude:location.lat,longitude:location.lng,address},origin);
+  }
   const slug=String(body.slug||'').trim(),address=String(body.address||'').trim();
   const requestId=String(body.request_id||'');
   if(!slugPattern.test(slug)||address.length<12||address.length>500||!uuid.test(requestId))
    return problem(400,'Informe o endereço completo e uma solicitação válida.',origin);
-  const db=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data:menu,error:menuError}=await db.from('public_menu_settings').select('store_id,delivery_enabled,enabled').eq('slug',slug).maybeSingle();
   if(menuError||!menu?.enabled||!menu.delivery_enabled)return problem(404,'Cardápio indisponível.',origin);
   const {data:rules,error:rulesError}=await db.from('pitacco_delivery_pricing').select('*').eq('store_id',menu.store_id).maybeSingle();
