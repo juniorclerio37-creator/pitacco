@@ -32,8 +32,6 @@ begin
  slug_valid:=coalesce(m.slug ~ '^[a-z0-9][a-z0-9-]{2,59}$',false);
  active_methods:=coalesce(cardinality(m.payment_methods),0);
  checkout_rules:=n_products>0 and active_methods>0
-  and coalesce(m.delivery_enabled,false) or false;
- checkout_rules:=n_products>0 and active_methods>0
   and (coalesce(m.delivery_enabled,false) or coalesce(m.pickup_enabled,false))
   and (not ('pix_manual'=any(coalesce(m.payment_methods,array[]::text[])))
    or length(trim(coalesce(m.pix_instructions,'')))>=3);
