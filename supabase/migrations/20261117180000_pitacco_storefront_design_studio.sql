@@ -29,7 +29,7 @@ returns jsonb language sql stable set search_path='' as $$
  select jsonb_build_object(
   'theme','moderno',
   'primary',coalesce((select primary_color from public.store_customer_branding where store_id=p_store),'#ca4936'),
-  'secondary',coalesce((select secondary_color from public.store_customer_branding where store_id=p_store),'#655068'),
+  'secondary','#655068',
   'background','#f8f5f6','paper','#ffffff','foreground','#281e29',
   'hero','#30202e','highlight','#fff0e8',
   'layout','lista','radius',20,'font','sistema','photo_size','medio',
