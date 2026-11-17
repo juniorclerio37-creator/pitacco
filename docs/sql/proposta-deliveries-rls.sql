@@ -16,7 +16,13 @@ CREATE POLICY delivery_select ON public.deliveries
     )
     OR (
       deliveries.courier_id IS NOT NULL
-      AND public.is_courier(deliveries.courier_id)
+      AND EXISTS (
+        SELECT 1 FROM public.couriers c
+        WHERE c.id = deliveries.courier_id
+          AND c.store_id = deliveries.store_id
+          AND c.user_id = (SELECT auth.uid())
+          AND c.active = true
+      )
     )
   );
 COMMIT;
