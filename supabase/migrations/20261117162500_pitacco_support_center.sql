@@ -94,7 +94,7 @@ begin
  if not found or not (public.pitacco_is_platform_owner() or public.is_store_manager(ticket.store_id)) then
   raise exception 'Chamado indisponível' using errcode='42501';end if;
  select coalesce(jsonb_agg(jsonb_build_object('id',m.id,'body',m.body,'event_type',m.event_type,
-  'created_at',m.created_at,'owner',public.pitacco_is_platform_owner() and m.sender_id<>actor)
+  'created_at',m.created_at,'from_admin',exists(select 1 from pitacco_private.platform_owner po where po.user_id=m.sender_id))
   order by m.created_at,m.id),'[]'::jsonb) into messages
  from public.pitacco_support_messages m where m.ticket_id=p_ticket;
  return jsonb_build_object('ticket',jsonb_build_object('id',ticket.id,'store_id',ticket.store_id,
