@@ -207,6 +207,14 @@ try {
         studioHistory.unshift({id:null,version:studioPublishedVersion,created_at:new Date().toISOString()});
         return route.fulfill({headers,json:{published:true,published_version:studioPublishedVersion}});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_windows_connection'){
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:{
+          status:'connected',app_logged_in_now:true,printer_computer_bound:true,
+          bound_computer_connected:true,installation_confirmed:false,automatic_print_tested:false,
+          last_seen_at:new Date().toISOString()
+        }});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_store_launch_diagnostic'){
         assert.equal(route.request().postDataJSON().p_store,store.id);
         return route.fulfill({headers,json:diagnostic()});
@@ -695,8 +703,14 @@ try {
     await schedule.getByText('Horários de agendamento salvos.').waitFor();
     if(width===1440){
       await page.getByRole('button',{name:'Impressão e aceite',exact:true}).click();
-      await page.locator('.merchant-print-layout').getByRole('heading',{name:'Impressoras por setor'}).waitFor();
-      await page.getByTitle('Pré-visualização HTML da comanda').waitFor();
+      const manual=page.getByRole('region',{name:'Impressão manual no navegador'});
+      await manual.getByRole('heading',{name:'Impressão manual no navegador'}).waitFor();
+      await manual.getByText(/O teste físico da impressora/).waitFor();
+      const windowsStatus=page.getByRole('region',{name:'Conexão do aplicativo Windows'});
+      await windowsStatus.getByText('Pitacco Windows conectado e autenticado').waitFor();
+      assert.equal(await page.getByRole('heading',{name:'Teste de impressão física'}).count(),0);
+      assert.equal(await page.getByRole('heading',{name:'Impressoras por setor'}).count(),0);
+      assert.equal(await page.getByTitle('Pré-visualização HTML da comanda').count(),0);
       await navigation.getByRole('button',{name:'Motoboys',exact:true}).click();
       await page.locator('.courier-overview-grid').getByRole('button',{name:'Abrir acerto'}).waitFor();
       await page.getByRole('navigation',{name:'Seções de motoboys'})
