@@ -15,3 +15,16 @@
 .pedidos-card-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:.45rem;padding:0 .85rem .7rem}
 .pedidos-card-actions button{padding:.4rem .65rem;min-height:36px}
 .pedidos-card-print{display:inline-grid;place-items:center}
+
+/* Localizador de ligação destacado — sem confundir com PIN de entrega. */
+.pitacco-pedidos .pedidos-number{font-size:clamp(1.15rem,2.1vw,1.35rem);font-weight:950;letter-spacing:.015em;color:#c2580d;overflow-wrap:anywhere}
+.pitacco-pedidos .pedidos-localizer{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:11px;background:#fff3e3;border:1px solid #f4c585;color:#89450e}
+.pitacco-pedidos .pedidos-localizer strong{font-size:.7rem;letter-spacing:.07em;font-weight:850}
+.pitacco-pedidos .pedidos-localizer b{font-size:1.05rem;letter-spacing:.08em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pitacco-pedidos .pedidos-localizer-detail{margin-bottom:8px}
+.pitacco-pedidos .pedidos-detail-heading h3{font-size:clamp(1.15rem,2vw,1.4rem);color:#c2580d}
+
+/* Cozinha e expedição: localizador também visível no cartão da loja. */
+.operations-order-localizer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0;padding:10px 12px;border:1px solid #f5c991;background:#fff3e1;color:#864610;border-radius:10px}
+.operations-order-localizer small{font-size:.68rem;letter-spacing:.065em;font-weight:850}
+.operations-order-localizer strong{font-size:1.03rem;letter-spacing:.075em;font-weight:950;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}

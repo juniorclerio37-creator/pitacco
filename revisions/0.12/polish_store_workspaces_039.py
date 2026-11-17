@@ -39,14 +39,21 @@ p.write_text(s,encoding='utf-8')
 # Readable order number: keep UUID internal for deduplication only.
 p=Path('web/Operations.jsx')
 s=p.read_text(encoding='utf-8')
-needle="const currency=n=>"
-assert s.count(needle)==1
-s=s.replace(needle,"const displayOrderNumber=o=>o?.receipt?.display_number||o?.receipt?.external_order_number||o?.receipt?.order_number||o?.receipt?.display_id||o?.receipt?.number||'Número pendente';\n"+needle,1)
 old="(o.receipt?.display_number||o.receipt?.external_order_number||o.receipt?.order_number||o.receipt?.display_id||o.receipt?.number||o.id.slice(0,8))"
-assert s.count(old)>=2
-s=s.replace(old,"displayOrderNumber(o)")
+if s.count(old)>=2:
+    needle="const currency=n=>"
+    assert s.count(needle)==1
+    s=s.replace(needle,"const displayOrderNumber=o=>o?.receipt?.display_number||o?.receipt?.external_order_number||o?.receipt?.order_number||o?.receipt?.display_id||o?.receipt?.number||'Número pendente';\\n"+needle,1)
+    s=s.replace(old,"displayOrderNumber(o)")
+    label="displayOrderNumber"
+else:
+    # Newer merchant UI reads public numbers via a secure badge RPC and never
+    # falls back to the 99Food external technical ID or an order UUID prefix.
+    assert "const visibleOrderNo=o=>publicOrderNumber(o,orderBadge(o));" in s
+    assert "pitacco_merchant_order_badges" in s
+    label="visibleOrderNo"
 needle="paymentOrder.id.slice(0,8)"
-if needle in s:s=s.replace(needle,"displayOrderNumber(paymentOrder)")
+if needle in s:s=s.replace(needle,label+"(paymentOrder)")
 p.write_text(s,encoding='utf-8')
 
 # Save store identity through a scoped backend RPC.

@@ -171,11 +171,13 @@ import {createClient} from "https://esm.sh/@supabase/supabase-js@2.57.0";
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "./config.mjs";
 import {createDriverAuth} from "./supabase-client.mjs";
 import {createOrderDetailsController} from "./order-details.mjs";
+import {buildNavigationUrl} from "./navigation.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
 const orderDetails=createOrderDetailsController({supabase:sb,navigate:openNavigation});
 let courier=null, busy=false;
+let orderCardBadges=new Map();
 
 let earnPeriod="hoje", earnRequest=0, lastEarningsReport=null;
 let storeName="Minha loja", navProvider="google", navMode="address", assignedDeliveries=[];
@@ -221,7 +223,7 @@ function renderDailyBreakdown(report){
   if(corresponding.length){
    for(const x of corresponding){
     const line=element("div","earn-history-item"),detail=element("div");
-    detail.append(element("b","","Entrega • "+String(x.order_id||x.delivery_id||"").slice(0,8).toUpperCase()));
+    detail.append(element("b","","Entrega • "+String(x.public_number||"Aguardando número")));
     detail.append(element("small","",new Date(x.completed_at).toLocaleTimeString("pt-BR",{timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit"})));
     line.append(detail,element("strong","",brl.format(numValue(x.amount))));details.append(line);
    }
@@ -245,20 +247,12 @@ function loadNavPreferences(){
  }catch{}
  updateNavPreferences();
 }
-function navigationUrl(delivery){
- const hasCoords=Number.isFinite(Number(delivery.latitude))&&Number.isFinite(Number(delivery.longitude))&&delivery.latitude!=null&&delivery.longitude!=null;
- const destination=(navMode==="coords"&&hasCoords)?[delivery.latitude,delivery.longitude].join(","):String(delivery.address??"");
- if(!destination)return null;
- if(navProvider==="waze"){
-  return (navMode==="coords"&&hasCoords)? "https://www.waze.com/ul?ll="+encodeURIComponent(destination)+"&navigate=yes":
-   "https://www.waze.com/ul?q="+encodeURIComponent(destination)+"&navigate=yes";
- }
- return "https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(destination)+"&travelmode=driving";
-}
 function openNavigation(delivery){
- const url=navigationUrl(delivery);
+ // Open from the direct user click so the device can hand the universal link to
+ // Waze/Google Maps if installed, or use their web fallback.
+ const url=buildNavigationUrl(delivery,navProvider,navMode);
  if(!url){message("Endereço indisponível para esta entrega.");return;}
- window.open(url,"_blank","noopener,noreferrer");
+ window.location.assign(url);
 }
 const brl=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
 const numValue=value=>{const n=Number(value??0);return Number.isFinite(n)&&n>=0?n:0;};
@@ -318,7 +312,7 @@ function renderEarnings(report){
  } else {
   for(const r of report.recent){
    const line=element("div","earn-history-item"),left=element("div");
-   const code=String(r.order_id||r.delivery_id||"").slice(0,8).toUpperCase();
+   const code=String(r.public_number||"Aguardando número");
    left.append(element("b","","Entrega • "+code));
    const date=r.completed_at?new Date(r.completed_at).toLocaleString("pt-BR",{
     timeZone:"America/Sao_Paulo",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"
@@ -392,16 +386,20 @@ function card(d){
  opener.setAttribute("aria-label","Ver detalhes do pedido de "+(d.customer_name||"cliente"));
  opener.addEventListener("click",()=>orderDetails.open(d));
  const head=element("div","cardhead");
- head.append(element("span","order","PEDIDO • "+String(d.order_id||d.id).slice(0,8).toUpperCase()));
+ const badge=orderCardBadges.get(d.id);
+ const number=String(badge?.public_number||"Aguardando número");
+ head.append(element("span","order","PEDIDO #"+number));
  head.append(element("span","tag",statuses[d.status]||d.status||"Em andamento"));
  opener.append(head,element("div","customer",d.customer_name||"Cliente"));
  opener.append(element("p","address",d.address||"Endereço não informado"));
+ if(badge?.localizer)opener.append(element("span","card-localizer",
+   "LOCALIZADOR DE LIGAÇÃO • "+String(badge.localizer).replace(/\D/g,"").slice(0,16)));
  if(d.notes)opener.append(element("p","notes",d.notes));
  opener.append(element("span","card-detail-hint","Ver detalhes, itens e contato do cliente  ›"));
  box.append(opener);
  box.append(element("div","pay","Cobrança: a confirmar com a loja. Não presuma pagamento aprovado."));
  const actions=element("div","actions");
- if(d.address)actions.append(createAction("Abrir rota","ghost",()=>openNavigation(d)));
+ if(d.address || (d.latitude!=null && d.longitude!=null))actions.append(createAction("Abrir rota","ghost",()=>openNavigation(d)));
  const collecting=d.status==="atribuida"||(d.status==="aceita"&&!d.collected_at);
  if(collecting)actions.append(createAction("Coletar pedido","primary",()=>rpc("pitacco_driver_collect",{p_delivery:d.id})));
  if(d.status==="aceita"&&d.collected_at&&d.batch_id)
@@ -431,6 +429,13 @@ async function refresh(){
  $("online").textContent=courier.available?"Ficar offline":"Ficar online";
  $("online").disabled=false;
  const list=await driver.myDeliveries([courier.id]);
+ const {data:labels,error:labelsError}=await sb.rpc("pitacco_driver_card_badges");
+ if(labelsError){
+  orderCardBadges=new Map();
+  message("Números públicos e localizadores indisponíveis no momento. Atualize os pedidos para tentar novamente.");
+ }else{
+  orderCardBadges=new Map((Array.isArray(labels)?labels:[]).map(item=>[item.delivery_id,item]));
+ }
  list.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
  const current=list.filter(d=>!["entregue","cancelada"].includes(d.status));
  $("active").textContent=String(current.length);

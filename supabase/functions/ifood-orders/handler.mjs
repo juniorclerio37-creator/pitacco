@@ -44,6 +44,12 @@ function normalizeOrder(order,event) {
   external_order_id:order.id, merchant_id:order.merchant.id, created_at:iso(order.createdAt),
   display_number:text(order.displayId,32)||order.id.slice(0,8),
   customer:text(order.customer?.name)||'Cliente iFood',
+  // Telefone + localizador da API do iFood; o backend grava somente na tabela privada
+  // de contatos de entregas próprias e nunca na receipt pública.
+  contact_phone:text(order.customer?.phone?.number,64)||null,
+  contact_localizer:text(order.customer?.phone?.localizer,32)||null,
+  contact_expires_at:iso(order.customer?.phone?.localizerExpiration),
+
   logistics:order.orderType!=='DELIVERY'?'retirada':({MERCHANT:'loja',IFOOD:'marketplace'}[delivery.deliveredBy]??null),
   address:[address.streetName,address.streetNumber,address.complement,address.neighborhood,address.city,address.state,address.postalCode]
    .map(x=>text(x,100)).filter(Boolean).join(', ').slice(0,500),

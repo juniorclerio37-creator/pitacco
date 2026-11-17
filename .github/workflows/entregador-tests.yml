@@ -9,6 +9,13 @@ on:
       - 'tests/driver-earnings-dashboard.test.mjs'
       - 'tests/driver-mobile-redesign.test.mjs'
       - 'tests/driver-order-details.test.mjs'
+      - 'tests/order-public-labels.test.mjs'
+      - 'docs/sql/order-card-public-number-localizer.sql'
+      - 'docs/sql/order-detail-public-number.sql'
+      - 'revisions/0.12/web/Pedidos.jsx'
+      - 'revisions/0.12/web/Operations.jsx'
+      - 'revisions/0.12/web/orderDisplay.mjs'
+      - 'revisions/0.12/mount_orders_045.py'
       - 'docs/sql/driver-order-details-contact.sql'
       - '.github/workflows/entregador-tests.yml'
   push:
@@ -23,6 +30,13 @@ on:
       - 'tests/driver-earnings-dashboard.test.mjs'
       - 'tests/driver-mobile-redesign.test.mjs'
       - 'tests/driver-order-details.test.mjs'
+      - 'tests/order-public-labels.test.mjs'
+      - 'docs/sql/order-card-public-number-localizer.sql'
+      - 'docs/sql/order-detail-public-number.sql'
+      - 'revisions/0.12/web/Pedidos.jsx'
+      - 'revisions/0.12/web/Operations.jsx'
+      - 'revisions/0.12/web/orderDisplay.mjs'
+      - 'revisions/0.12/mount_orders_045.py'
       - 'docs/sql/driver-order-details-contact.sql'
       - '.github/workflows/entregador-tests.yml'
 permissions:
@@ -37,4 +51,4 @@ jobs:
         with:
           node-version: '22'
       - name: Testar regras de acesso e entregas
-        run: node --test entregador/*.test.mjs tests/driver-earnings-dashboard.test.mjs tests/driver-mobile-redesign.test.mjs tests/driver-order-details.test.mjs
+        run: node --test entregador/*.test.mjs tests/driver-earnings-dashboard.test.mjs tests/driver-mobile-redesign.test.mjs tests/driver-order-details.test.mjs tests/order-public-labels.test.mjs

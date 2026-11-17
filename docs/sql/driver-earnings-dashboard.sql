@@ -47,8 +47,10 @@ begin
   with done as materialized (
     select d.id, d.order_id, d.updated_at,
            (d.updated_at at time zone 'America/Sao_Paulo')::date as dia,
-           d.courier_payment as valor
+           d.courier_payment as valor,
+           public.pitacco_order_public_label(o.receipt,coalesce(o.source,d.source)) as public_number
       from public.deliveries d
+      left join public.orders o on o.id=d.order_id and o.store_id=d.store_id
      where d.courier_id = v_courier
        and d.store_id = v_store
        and d.status = 'entregue'
@@ -104,12 +106,12 @@ begin
       select coalesce(pg_catalog.jsonb_agg(
         pg_catalog.jsonb_build_object(
           'delivery_id', r.id,
-          'order_id', r.order_id,
+          'public_number', r.public_number,
           'completed_at', r.updated_at,
           'amount', r.valor
         ) order by r.updated_at desc), '[]'::jsonb)
       from (
-        select id,order_id,updated_at,valor from done
+        select id,public_number,updated_at,valor from done
          where dia between v_start and v_today
          order by updated_at desc limit 20
       ) r
