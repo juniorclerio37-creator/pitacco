@@ -16,6 +16,7 @@ import ScheduleSettings from './ScheduleSettings.jsx';
 import OwnerFinance from './OwnerFinance.jsx';
 import OwnerPlans from './OwnerPlans.jsx';
 import OwnerOperations from './OwnerOperations.jsx';
+import OwnerAppReleases from './OwnerAppReleases.jsx';
 import './style.css';
 import './super-admin.css';
 
@@ -31,7 +32,7 @@ const groups=[
  ['Operação',[['Estabelecimentos',Store],['Pedidos',ShoppingBag],['Entregadores',Bike]]],
  ['Gestão comercial',[['Assinaturas',CreditCard],['Plano Pitacco',Package],['Financeiro do Pitacco',CreditCard]]],
  ['Administração',[['Módulos do lojista',Package],['Homologação',ClipboardCheck]]],
- ['Sistema',[['Auditoria',ListChecks],['Atualizações',Settings]]]
+ ['Sistema',[['Auditoria',ListChecks],['Central de Aplicativos',Settings]]]
 ];
 const operations={Pedidos:'orders',Entregadores:'couriers',Auditoria:'audit'};
 function initialTheme(){
@@ -165,7 +166,7 @@ function AdminApp(){
    {page==='Plano Pitacco'&&<OwnerPlans client={client} stores={stores}/>}
    {page==='Assinaturas'&&<OwnerSubscriptions client={client}/>}
    {page==='Módulos do lojista'&&<OwnerFeatures client={client} stores={stores}/>}
-   {page==='Atualizações'&&<section className="panel"><h3>Atualizações do Windows</h3><a href="https://github.com/juniorclerio37-creator/pitacco/releases" target="_blank" rel="noopener noreferrer">Consultar versões publicadas</a></section>}
+   {page==='Central de Aplicativos'&&<OwnerAppReleases client={client}/>}
    {page==='Homologação'&&<>
     <OwnerIfood client={client} stores={stores}/>
     <Owner99Food client={client} stores={stores}/>

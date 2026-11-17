@@ -1,0 +1,11 @@
+.app-releases{display:grid;gap:1rem;max-width:68rem}
+.release-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+.app-releases label{display:grid;gap:.3rem;min-width:0}
+.app-releases input:not([type=checkbox]),.app-releases select,.app-releases textarea{max-width:100%;min-width:0;width:100%}
+.release-wide{grid-column:1/-1}
+.app-releases .release-check{display:flex;align-items:center;gap:.6rem}
+.app-releases button,.release-detail details,.release-detail form{margin-top:.65rem}
+.release-detail{margin-top:1rem}
+.app-releases code,.release-detail li{overflow-wrap:anywhere}
+.release-notes{white-space:pre-wrap}
+@media(max-width:620px){.release-form{grid-template-columns:minmax(0,1fr)}}

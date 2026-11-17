@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.ifood-orders]
 verify_jwt = false
+
+[functions.app-release-integrity]
+verify_jwt = false

@@ -80,7 +80,7 @@ try {
     }, { api,storeId:store.id,width,dashboard });
 
     await page.route('**/*', async route => {
-      const { pathname, origin } = new URL(route.request().url());
+      const { pathname, origin, searchParams } = new URL(route.request().url());
       if (origin === dashboard && (pathname === '/app/' || /^\/(assets\/[A-Za-z0-9_.-]+|pitacco-brand-013\.svg)$/.test(pathname))) {
         const file = pathname === '/app/' ? '/app/index.html' : pathname;
         const contentType = { html:'text/html', js:'text/javascript', css:'text/css', svg:'image/svg+xml' }[file.split('.').at(-1)];
@@ -237,6 +237,13 @@ try {
         assert.deepEqual(route.request().postDataJSON(),{p_store:store.id,p_feature:'estoque',p_enabled:false});
         moduleEnabled=false;
         return route.fulfill({headers,json:null});
+      }
+      if(pathname==='/rest/v1/pitacco_app_releases'){
+        if(origin===api){
+          assert.equal(searchParams.get('state'),'eq.published');
+          assert.equal(searchParams.get('channel'),'eq.stable');
+        } else assert.ok(adminMode);
+        return route.fulfill({headers,json:[]});
       }
       if(pathname==='/rest/v1/rpc/pitacco_admin_homologation_results')return route.fulfill({headers,json:evidence});
       if(pathname==='/rest/v1/rpc/pitacco_admin_homologation_probe'){
@@ -417,6 +424,12 @@ try {
       assert.equal(await navigation.isVisible(), false);
       await page.getByRole('button', { name:'Abrir menu' }).click();
       await navigation.waitFor({ state:'visible' });
+    }
+    if(width===1440){
+      await navigation.getByRole('button',{name:'Aplicativos e Downloads',exact:true}).click();
+      await page.getByText('Nenhum instalador estável publicado.').waitFor();
+      assert.equal(await page.getByRole('link',{name:'Abrir Pitacco Entregador'}).getAttribute('href'),'https://entregador.pitacco.com.br/');
+      assert.equal(await page.getByRole('button',{name:/Baixar para/}).count(),0);
     }
     await navigation.getByRole('button', { name:'Visão Geral', exact:true }).click();
     await page.getByRole('heading', { name:'Visão Geral', exact:true }).waitFor();
@@ -604,6 +617,14 @@ try {
       await platformDashboard.getByRole('button',{name:'Buscar',exact:true}).click();
       await platformDashboard.getByRole('button',{name:'Abrir configuração de '+store.name}).click();
       await page.getByRole('region',{name:'Configuração do estabelecimento'}).waitFor();
+    }
+    if(width===1440){
+      await adminNavigate('Central de Aplicativos');
+      await page.getByRole('heading',{name:'Nova versão',exact:true}).waitFor();
+      await page.getByText('Nenhuma versão cadastrada.').waitFor();
+      assert.equal(await page.getByLabel('Instalador',{exact:true}).getAttribute('accept'),'.exe,.msi');
+      await page.getByLabel('Aplicativo',{exact:true}).selectOption('android');
+      assert.equal(await page.getByLabel('Instalador',{exact:true}).getAttribute('accept'),'.apk');
     }
     const dark=page.getByRole('button',{name:'Ativar modo escuro'});
     await dark.click();
