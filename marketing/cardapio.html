@@ -169,12 +169,18 @@ body.pitacco-designed[data-design-layout=destaques] .category-grid{grid-template
 body.pitacco-designed[data-design-layout=grade] .product-visual{height:100px}
 body.pitacco-designed[data-design-layout=grade] .product-open{padding:9px}
 }
+/* Status de funcionamento: os itens continuam visíveis mesmo quando a loja fecha. */
+.store-open-status{margin-top:16px;margin-bottom:8px;padding:13px 16px;border:1px solid #e2d6c8;border-radius:13px;background:#fff7ed;color:#683f23;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.store-open-status.is-open{background:#edf8ef;border-color:#d1e9d5;color:#1c683b}
+.store-open-status strong{font-size:.93rem}.store-open-status span{font-size:.83rem}
+body.store-closed .dock{display:none}
 </style></head><body>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
  <div class="shell hero-content"><div class="identity"><div class="store-mark" aria-hidden="true"><span id="storeInitial"></span><img id="storeLogo" alt="" hidden></div>
  <div><h1 id="storeName"></h1><p id="storeSlogan">Cardápio digital</p></div></div><div id="storeServices" class="services"></div></div>
 </header>
+<section id="storeOpenStatus" class="shell store-open-status" role="status" aria-live="polite" hidden></section>
 <section id="pitaccoPromos" class="shell pitacco-promos" aria-label="Destaques da loja" hidden></section>
 <main class="shell catalog">
  <p id="msg" class="msg" role="status">Carregando cardápio…</p>
@@ -222,6 +228,7 @@ const slug=segments[0]==='cardapio'
  ? new URLSearchParams(location.search).get('loja')||segments[1]||''
  : segments[0]||'';
 let menu,cart=[],pendingRequest=null,submitting=false,scheduleRequest=0;
+let storeOpening=null;
 let deliveryPoint=null,deliveryMap,deliveryQuote=null;
 function selectDeliveryPoint(point){
  deliveryPoint=point;
@@ -436,7 +443,7 @@ function cartFeedback(text){
 }
 $('search').addEventListener('input',renderProducts);
 $('addProduct').onclick=()=>{
- if(!current||pendingRequest||completed)return;
+ if(!current||pendingRequest||completed||!storeOpening?.open)return;
  const invalid=groups.find(row=>getChoices(row).length<row.group.min||getChoices(row).length>row.group.max);
  if(invalid){
   invalid.field.dataset.invalid='true';
@@ -514,8 +521,8 @@ function renderCart(){
  $('total').append(totalLine('Total',subtotal+fee));
  $('cartCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0);
  $('cartValue').textContent=money(subtotal);
- $('continueCheckout').disabled=!cart.length||!$('fulfillment').value||!$('payment').value;
- $('send').disabled=submitting||!cart.length||!$('fulfillment').value||!$('payment').value||(routeMode&&!quoteValid);
+ $('continueCheckout').disabled=(!storeOpening?.open&&!pendingRequest)||!cart.length||!$('fulfillment').value||!$('payment').value;
+ $('send').disabled=(!storeOpening?.open&&!pendingRequest)||submitting||!cart.length||!$('fulfillment').value||!$('payment').value||(routeMode&&!quoteValid);
 }
 function cartStep(checkout){
  $('checkout').hidden=!checkout;
@@ -634,6 +641,7 @@ function initOptions(){
  $('fulfillment').dispatchEvent(new Event('change'));
  renderCategories();renderProducts();
  $('hero').hidden=false;$('layout').hidden=false;$('cartDock').hidden=false;
+ showStoreOpening(shop.opening_hours);
  msg(!$('fulfillment').options.length?'Esta loja está sem modalidade de atendimento.':!$('payment').options.length?'Esta loja ainda está configurando o pagamento.':'');
 }
 async function loadSchedule(){
