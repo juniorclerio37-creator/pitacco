@@ -14,3 +14,12 @@
 .windows-link-card.compact h4{font-size:1rem}
 .windows-link-card.compact p{font-size:.8rem}
 @media(max-width:600px){.windows-link-card{padding:14px}.windows-link-actions button{flex:1 1 170px}}
+
+.windows-last-print-check{display:grid;gap:5px;border:1px solid #e9d7c3;border-radius:11px;background:#fffaf4;padding:11px}
+.windows-last-print-check strong{font-size:.88rem}
+.windows-last-print-check small{display:block;color:#6e574b}
+.windows-print-confirmation{border:1px solid #edc69e;border-radius:13px;padding:13px;background:#fff8ee;display:grid;gap:10px;color:#483222}
+.windows-print-confirmation h4,.windows-print-confirmation p{margin:0}
+.windows-print-confirmation h4{font-size:1rem}
+.windows-print-confirmation .quick-actions{display:flex;gap:8px;flex-wrap:wrap}
+.windows-print-confirmation .quick-actions button{flex:1 1 140px}
