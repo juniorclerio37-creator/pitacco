@@ -483,8 +483,44 @@ function card(d){
  if(d.status==="aceita"&&d.collected_at&&d.batch_id)
   actions.append(createAction("Sair para entrega","primary",()=>rpc("pitacco_driver_depart",{p_batch:d.batch_id})));
  if(d.status==="retirada"){
-  actions.append(createAction("Finalizar entrega","secondary",null,true));
-  box.append(element("p","warn","Finalização indisponível até homologar PIN/foto e confirmação de pagamento."));
+  if(!d.arrived_at){
+   actions.append(createAction("Cheguei na entrega","primary",()=>markArrival(d)));
+   box.append(element("p","note-inline","Chegar não é o mesmo que entregar. O código só pode ser validado após registrar a chegada."));
+  }else{
+   const arrivalTime=new Date(d.arrived_at).toLocaleTimeString("pt-BR",{
+    timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit"
+   });
+   box.append(element("p","arrival-record","✓ Chegada registrada às "+arrivalTime));
+   const synced=d.source==="ifood"&&(d.arrival_provider_state==="submitted"||d.arrival_provider_state==="confirmed");
+   const statusText=d.source==="ifood"?
+    (synced?"Chegada enviada ao iFood.":"Aviso ao iFood ainda pendente ou indisponível."):
+    (d.source==="99food"?"Aviso à 99Food ainda não homologado.":
+     d.source==="keeta"?"Aviso à Keeta ainda não homologado.":"Peça o código de seis dígitos ao cliente.");
+   box.append(element("p","arrival-provider",statusText));
+   if(d.source==="ifood"&&!synced){
+    actions.append(createAction("Tentar avisar iFood","secondary",async()=>{
+     if(busy)return;busy=true;
+     try{const result=await ifoodDriverAction(d.id,"arrival");
+       message(result.provider_state==="submitted"?"Chegada enviada ao iFood; aguardando confirmação.":"Aviso iFood pendente.");
+       await refresh();
+     }catch(error){message(String(error.message))}finally{busy=false}
+    }));
+   }
+   if(d.source==="proprio"||(d.source==="ifood"&&synced)){
+    const form=element("form","verify-form"),code=element("input","verify-input");
+    code.type="text";code.inputMode="numeric";code.autocomplete="one-time-code";
+    code.maxLength=d.source==="proprio"?6:8;
+    code.pattern=d.source==="proprio"?"[0-9]{6}":"[0-9]{4,8}";
+    code.placeholder=d.source==="proprio"?"Código de 6 dígitos":"Código do iFood";
+    code.setAttribute("aria-label","Código de entrega fornecido pelo cliente");code.required=true;
+    const submit=createAction("Concluir com código","primary",null);submit.type="submit";
+    form.addEventListener("submit",event=>{event.preventDefault();verifyCode(d,code.value)});
+    form.append(code,submit);box.append(form);
+   }
+   if(d.source==="99food"||d.source==="keeta"){
+    box.append(element("p","warn","A validação do código da plataforma ainda depende de homologação. Não finalize manualmente."));
+   }
+  }
  }
  if(actions.children.length)box.append(actions);
  return box;
