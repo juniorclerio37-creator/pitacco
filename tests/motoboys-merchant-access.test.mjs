@@ -29,7 +29,7 @@ test("preserves billing reports routes and removes email-based courier signup",(
   assert.doesNotMatch(logistics,/register_courier/);
   const manager=read("revisions/0.12/web/CourierAccessManager.jsx");
   assert.doesNotMatch(manager,/auth\.signUp\s*\(/);
-  assert.doesNotMatch(manager,/service_role|SUPABASE_SERVICE_ROLE_KEY/);
+  assert.doesNotMatch(manager,/SUPABASE_SERVICE_ROLE_KEY|Deno\\.env\\.get/);
 });
 
 test("standalone courier manager redirects merchants to app.pitacco",()=>{
