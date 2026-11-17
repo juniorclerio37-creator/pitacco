@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {normalizeBrazilPhone,createDriverAuth} from './supabase-client.mjs';
+import {normalizeBrazilPhone,createDriverAuth,isMissingSessionError} from './supabase-client.mjs';
 import {courierEmailAlias} from './identity.mjs';
 import {readFileSync} from 'node:fs';
 test('normalizes Brazilian phone',()=>{
@@ -48,4 +48,35 @@ test('backend creates email-confirmed courier identity and converts reset users'
  assert.match(edge,/password,email,email_confirm:true/);
  assert.match(edge,/email:user\.email,password:current/);
  assert.doesNotMatch(edge,/phone:user\.phone,password:current/);
+});
+
+test('missing session is a normal signed-out state on first visit',async()=>{
+ let getUserCalls=0;
+ const client=createDriverAuth({auth:{
+  signInWithPassword:async()=>({data:{user:{id:'u1'}},error:null}),
+  getSession:async()=>({data:{session:null},error:null}),
+  getUser:async()=>{getUserCalls++;throw Error('Auth session missing!');}
+ }});
+ assert.equal(await client.currentUser(),null);
+ assert.equal(getUserCalls,0);
+});
+test('revoked session after password change returns to login',async()=>{
+ const client=createDriverAuth({auth:{
+  signInWithPassword:async()=>({data:{user:{id:'u1'}},error:null}),
+  getSession:async()=>({data:{session:{access_token:'revoked'}},error:null}),
+  getUser:async()=>({data:{user:null},error:{name:'AuthSessionMissingError',message:'Auth session missing!'}}),
+  signOut:async({scope})=>{assert.equal(scope,'local');return {error:{code:'session_not_found',message:'Session not found'}}}
+ }});
+ assert.equal(await client.currentUser(),null);
+ await assert.doesNotReject(()=>client.signOut());
+});
+test('unknown session and other network errors are distinguished',async()=>{
+ assert.ok(isMissingSessionError(new Error('Auth session missing!')));
+ assert.ok(isMissingSessionError({code:'session_not_found'}));
+ assert.equal(isMissingSessionError(new Error('Network error')),false);
+ const client=createDriverAuth({auth:{
+  signInWithPassword:async()=>({data:{user:{}},error:null}),
+  signOut:async()=>({error:new Error('Network error')})
+ }});
+ await assert.rejects(()=>client.signOut(),/Network error/);
 });
