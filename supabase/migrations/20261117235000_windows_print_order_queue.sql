@@ -22,24 +22,24 @@ begin
   if r is null or pg_catalog.jsonb_typeof(r)<>'object' then
     return result || 'Dados da comanda indisponiveis' || pg_catalog.chr(10);
   end if;
-  display_num := pg_catalog.coalesce(
-    pg_catalog.nullif(r->>'display_number',''),
-    pg_catalog.nullif(r->>'external_order_number',''),
-    pg_catalog.nullif(r->>'order_number',''),
-    pg_catalog.nullif(r->>'display_id',''),
-    pg_catalog.nullif(r->>'number',''),'');
+  display_num := coalesce(
+    nullif(r->>'display_number',''),
+    nullif(r->>'external_order_number',''),
+    nullif(r->>'order_number',''),
+    nullif(r->>'display_id',''),
+    nullif(r->>'number',''),'');
   customer := case when pg_catalog.jsonb_typeof(r->'customer')='object'
-    then pg_catalog.coalesce(r->'customer'->>'name','')
-    else pg_catalog.coalesce(r->>'customer',r->>'customer_name','') end;
+    then coalesce(r->'customer'->>'name','')
+    else coalesce(r->>'customer',r->>'customer_name','') end;
   payment := case when pg_catalog.jsonb_typeof(r->'payment')='object'
-    then pg_catalog.coalesce(r->'payment'->>'method','')
-    else pg_catalog.coalesce(r->>'payment',r->>'payment_method','') end;
+    then coalesce(r->'payment'->>'method','')
+    else coalesce(r->>'payment',r->>'payment_method','') end;
   result := result
     || 'Pedido: ' || display_num || pg_catalog.chr(10)
-    || 'Origem: ' || pg_catalog.coalesce(r->>'source','') || pg_catalog.chr(10)
+    || 'Origem: ' || coalesce(r->>'source','') || pg_catalog.chr(10)
     || 'Cliente: ' || customer || pg_catalog.chr(10);
-  if pg_catalog.coalesce(r->>'phone',r->>'customer_phone','') <> '' then
-    result := result || 'Telefone: ' || pg_catalog.coalesce(r->>'phone',r->>'customer_phone','') || pg_catalog.chr(10);
+  if coalesce(r->>'phone',r->>'customer_phone','') <> '' then
+    result := result || 'Telefone: ' || coalesce(r->>'phone',r->>'customer_phone','') || pg_catalog.chr(10);
   end if;
   for item in select e.value
     from pg_catalog.jsonb_array_elements(
@@ -48,8 +48,8 @@ begin
   loop
     if pg_catalog.jsonb_typeof(item)<>'object' then continue; end if;
     result := result
-      || pg_catalog.coalesce(item->>'quantity','1')
-      || ' x ' || pg_catalog.coalesce(item->>'name',item->>'title','Produto')
+      || coalesce(item->>'quantity','1')
+      || ' x ' || coalesce(item->>'name',item->>'title','Produto')
       || pg_catalog.chr(10);
     mods := case
       when pg_catalog.jsonb_typeof(item->'modifiers')='array' then item->'modifiers'
@@ -59,32 +59,32 @@ begin
     for modifier in select m.value from pg_catalog.jsonb_array_elements(mods) as m(value)
     loop
       if pg_catalog.jsonb_typeof(modifier)='object' then
-        label:=pg_catalog.coalesce(modifier->>'name',modifier->>'title',modifier->'option'->>'name','');
-        quantity:=pg_catalog.coalesce(modifier->>'quantity','1');
+        label:=coalesce(modifier->>'name',modifier->>'title',modifier->'option'->>'name','');
+        quantity:=coalesce(modifier->>'quantity','1');
       elsif pg_catalog.jsonb_typeof(modifier)='string' then
         label:=modifier #>> '{}'::text[];
         quantity:='1';
       else
         continue;
       end if;
-      if pg_catalog.nullif(pg_catalog.btrim(label),'') is not null then
+      if nullif(pg_catalog.btrim(label),'') is not null then
         -- Explicitly text values: never ask the JSON concatenation operator
         -- to parse a plain modifier name as JSON.
         result := result || ' + ' || quantity || ' x ' || label || pg_catalog.chr(10);
       end if;
     end loop;
-    if pg_catalog.coalesce(item->>'notes','')<>'' then
+    if coalesce(item->>'notes','')<>'' then
       result := result || 'Obs: ' || (item->>'notes') || pg_catalog.chr(10);
     end if;
   end loop;
-  result:=result || 'Subtotal: R$ ' || pg_catalog.coalesce(r->>'subtotal','0') || pg_catalog.chr(10)
-    || 'Entrega: R$ ' || pg_catalog.coalesce(r->>'delivery_fee','0') || pg_catalog.chr(10)
-    || 'Desconto: R$ ' || pg_catalog.coalesce(r->>'discount','0') || pg_catalog.chr(10)
-    || 'TOTAL: R$ ' || pg_catalog.coalesce(r->>'total',r->>'total_amount','0') || pg_catalog.chr(10)
+  result:=result || 'Subtotal: R$ ' || coalesce(r->>'subtotal','0') || pg_catalog.chr(10)
+    || 'Entrega: R$ ' || coalesce(r->>'delivery_fee','0') || pg_catalog.chr(10)
+    || 'Desconto: R$ ' || coalesce(r->>'discount','0') || pg_catalog.chr(10)
+    || 'TOTAL: R$ ' || coalesce(r->>'total',r->>'total_amount','0') || pg_catalog.chr(10)
     || 'Pagamento: ' || payment || pg_catalog.chr(10)
-    || 'Situacao: ' || pg_catalog.coalesce(r->>'payment_status','nao confirmado') || pg_catalog.chr(10)
-    || 'Endereco: ' || pg_catalog.coalesce(r->>'address','') || pg_catalog.chr(10)
-    || 'Observacoes: ' || pg_catalog.coalesce(r->>'notes','') || pg_catalog.chr(10);
+    || 'Situacao: ' || coalesce(r->>'payment_status','nao confirmado') || pg_catalog.chr(10)
+    || 'Endereco: ' || coalesce(r->>'address','') || pg_catalog.chr(10)
+    || 'Observacoes: ' || coalesce(r->>'notes','') || pg_catalog.chr(10);
   return result;
 end;
 $receipt$;
@@ -109,7 +109,7 @@ begin
     new.receipt,
     public.dg_receipt_text(
       new.receipt || pg_catalog.jsonb_build_object(
-        'source','ifood','number',pg_catalog.coalesce(new.receipt->>'display_number',new.id::text)
+        'source','ifood','number',coalesce(new.receipt->>'display_number',new.id::text)
       )
     ) || 'Setor: ' || public.dg_clean_text(s.sector)
       || ' Via: ' || n::text || pg_catalog.chr(10)
