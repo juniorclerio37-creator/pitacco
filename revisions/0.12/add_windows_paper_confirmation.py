@@ -54,29 +54,31 @@ change(" async function saveMode(source,mode,enabled){",
  }
  async function saveMode(source,mode,enabled){""")
 
-# Locate the existing Windows-only test button inside its native panel.
-# Other printing overlays may change its callback; do not depend on that detail.
-header='<h3>Teste de impressão física</h3>'
-label='Imprimir teste</button>'
-assert s.count(header)==1, 'Physical printer test panel missing'
-start=s.index(header)
-end=s.index(label,start)+len(label)
-button_start=s.rfind('<button',start,end)
-assert button_start>start and 'test_printer' in s[button_start:end], 'Unexpected physical print test action'
-s=s[:button_start]+'<button disabled={busy} onClick={()=>runWindowsPhysicalTest(s)}>Imprimir teste</button>'+s[end:]
-
-change("{!sectors.length&&<p>Cadastre uma impressora acima para testar.</p>}</div>}",
- """{!sectors.length&&<p>Cadastre uma impressora acima para testar.</p>}
- {physicalPrintCheck&&<div className="windows-print-confirmation" aria-label="Confirmar impressão física">
-  <h4>O cupom de teste saiu no papel?</h4>
-  <p>Impressora: {physicalPrintCheck.printer} · {physicalPrintCheck.width} mm. O envio ao spooler não garante a impressão física.</p>
-  <div className="quick-actions">
-   <button type="button" disabled={busy} onClick={()=>confirmWindowsPhysicalTest('printed')}>Sim, imprimiu no papel</button>
-   <button type="button" className="secondary" disabled={busy} onClick={()=>confirmWindowsPhysicalTest('failed')}>Não imprimiu</button>
-   <button type="button" className="secondary" disabled={busy} onClick={()=>confirmWindowsPhysicalTest('uncertain')}>Não tenho certeza</button>
-  </div>
- </div>}
- {physicalPrintFeedback&&<p role="status">{physicalPrintFeedback}</p>}
- </div>}""")
+# The earlier printer UX overlay intentionally removes the legacy test panel.
+# Restore one *native-only* test panel after every print overlay, without
+# bringing back the removed error queue or altering existing device settings.
+change(' </div>:<>\\n  <WindowsConnectionStatus client={client} storeId={storeId} onNavigate={onNavigate}/>',
+'''   <section className="panel" aria-label="Teste físico de impressora no Windows">
+     <h3>Teste de impressão física</h3>
+     <p>Este teste é exclusivo do aplicativo Windows. Envie uma comanda para a impressora configurada, depois confirme se ela saiu no papel. Enviar ao spooler não confirma impressão física.</p>
+     {sectors.map(sector=><div className="line" key={'test:'+sector.sector}>
+       <b>{sector.sector}</b>
+       <span>{sector.printer} · {sector.width} mm</span>
+       <button type="button" disabled={busy||!device} onClick={()=>runWindowsPhysicalTest(sector)}>Imprimir teste</button>
+     </div>)}
+     {!sectors.length&&<p>Cadastre uma impressora acima para testar.</p>}
+     {physicalPrintCheck&&<div className="windows-print-confirmation" aria-label="Confirmar impressão física">
+       <h4>O cupom de teste saiu no papel?</h4>
+       <p>Impressora: {physicalPrintCheck.printer} · {physicalPrintCheck.width} mm. Confira o papel antes de responder.</p>
+       <div className="quick-actions">
+        <button type="button" disabled={busy} onClick={()=>confirmWindowsPhysicalTest('printed')}>Sim, imprimiu no papel</button>
+        <button type="button" className="secondary" disabled={busy} onClick={()=>confirmWindowsPhysicalTest('failed')}>Não imprimiu</button>
+        <button type="button" className="secondary" disabled={busy} onClick={()=>confirmWindowsPhysicalTest('uncertain')}>Não tenho certeza</button>
+       </div>
+     </div>}
+     {physicalPrintFeedback&&<p role="status">{physicalPrintFeedback}</p>}
+   </section>
+ </div>:<>
+  <WindowsConnectionStatus client={client} storeId={storeId} onNavigate={onNavigate}/>''')
 
 p.write_text(s,encoding='utf-8')
