@@ -116,10 +116,11 @@ export function StorefrontPayments({client,storeId,resource}){
 
 export function StoreDeliveryArea({client,store}){
  const address=[store.address,store.address_number,store.neighborhood,store.city,store.state,store.postal_code].filter(Boolean).join(', ');
- const center=Number.isFinite(Number(store.latitude))&&Number.isFinite(Number(store.longitude))&&store.latitude!=null&&store.longitude!=null?[Number(store.latitude),Number(store.longitude)]:null;
+ const [center,setCenter]=useState(()=>Number.isFinite(Number(store.latitude))&&Number.isFinite(Number(store.longitude))&&store.latitude!=null&&store.longitude!=null?[Number(store.latitude),Number(store.longitude)]:null);
+ const centerKey=center?.join(',')||'';
  const [radius,setRadius]=useState(5),[rates,setRates]=useState(Array(10).fill(0)),[neighborhoods,setNeighborhoods]=useState([]);
  const [status,setStatus]=useState('loading'),[error,setError]=useState(''),[notice,setNotice]=useState('');
- const [busy,setBusy]=useState(false),[showMap,setShowMap]=useState(false);
+ const [busy,setBusy]=useState(false),[locating,setLocating]=useState(false),[showMap,setShowMap]=useState(false);
  const container=useRef(null),map=useRef(null);
  useEffect(()=>{
   let live=true;
@@ -142,11 +143,23 @@ export function StoreDeliveryArea({client,store}){
    else result?.remove();
   }).catch(e=>{if(live)setError('Não foi possível carregar o mapa: '+e.message)});
   return()=>{live=false;map.current?.remove();map.current=null};
- },[showMap,store.id]);
- useEffect(()=>{if(map.current&&center)map.current.setArea(center,radius*1000,true)},[radius,store.id]);
+ },[showMap,store.id,centerKey]);
+ useEffect(()=>{if(map.current&&center)map.current.setArea(center,radius*1000,true)},[radius,store.id,centerKey]);
  const validAddress=Boolean(store.address?.trim()&&store.city?.trim()&&store.state?.trim());
  const setFee=(index,value)=>setRates(previous=>previous.map((fee,i)=>i===index?value:fee));
  const setNeighborhood=(index,key,value)=>setNeighborhoods(previous=>previous.map((row,i)=>i===index?{...row,[key]:value}:row));
+ async function resolveOrigin(){
+  setLocating(true);setError('');setNotice('');
+  try{
+   if(!validAddress)throw Error('Cadastre a rua, cidade e o estado em Dados da loja.');
+   const {data,error}=await client.functions.invoke('delivery-quote',{body:{action:'store-origin',store_id:store.id}});
+   if(error)throw error;
+   if(!Number.isFinite(data?.latitude)||!Number.isFinite(data?.longitude))throw Error(data?.error||'O endereço não pôde ser validado.');
+   setCenter([data.latitude,data.longitude]);setShowMap(true);
+   setNotice('Endereço validado. O ponto de partida foi atualizado automaticamente.');
+  }catch(failure){setError('Falha ao validar endereço: '+(failure.message||String(failure)));}
+  finally{setLocating(false);}
+ }
  async function save(event){
   event.preventDefault();setBusy(true);setError('');setNotice('');
   try{
@@ -168,6 +181,7 @@ export function StoreDeliveryArea({client,store}){
    <strong>Endereço de partida</strong>
    <p>{address||'Endereço não cadastrado.'}</p>
    <p><a href={'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(address)} target="_blank" rel="noreferrer">Conferir endereço no Google Maps</a> · Para corrigir, acesse Dados da loja.</p>
+   <button type="button" className="secondary" disabled={locating||!validAddress} onClick={resolveOrigin}>{locating?'Validando endereço…':'Validar endereço e centralizar mapa'}</button>
   </div>
   {!validAddress&&<p role="alert">Cadastre rua, cidade e estado em Dados da loja antes de salvar.</p>}
   {status==='loading'&&<p role="status">Carregando regras de entrega…</p>}
