@@ -44,7 +44,7 @@ function normalizeOrder(order,event) {
   external_order_id:order.id, merchant_id:order.merchant.id, created_at:iso(order.createdAt),
   display_number:text(order.displayId,32)||order.id.slice(0,8),
   customer:text(order.customer?.name)||'Cliente iFood',
-  logistics:order.orderType!=='DELIVERY'?'retirada':delivery.deliveredBy==='MERCHANT'?'loja':'marketplace',
+  logistics:order.orderType!=='DELIVERY'?'retirada':({MERCHANT:'loja',IFOOD:'marketplace'}[delivery.deliveredBy]??null),
   address:[address.streetName,address.streetNumber,address.complement,address.neighborhood,address.city,address.state,address.postalCode]
    .map(x=>text(x,100)).filter(Boolean).join(', ').slice(0,500),
   notes:text(delivery.observations,1000),
@@ -115,6 +115,26 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    await rpc('pitacco_ifood_complete',{p_event:event.event_id,p_lease:event.lease,p_order:null,p_test:null});
   }
  }
+ async function submitConfirm(row){
+  let retry=true;
+  try{
+   const access=row.uses_store_token?await distributed.accessFor(row.merchant_id):clientId&&clientSecret?await token():null;
+   if(!access)return;
+   const response=await fetcher(origin+'/order/v1.0/orders/'+row.external_order_id+'/confirm',{
+    method:'POST',headers:{authorization:'Bearer '+access},signal:AbortSignal.timeout(5000),redirect:'error',
+   });
+   if(response.status===401&&access===cachedToken)cachedToken=null;
+   retry=response.status===401||response.status===408||response.status===429||response.status>=500;
+   if(!response.ok)logger.warn('iFood recusou uma solicitação de aceite automático.',response.status);
+   // A successful submission leaves the order pending until the official event is processed.
+  }catch{logger.warn('Solicitação de aceite iFood será retomada.');}
+  finally{await rpc('pitacco_ifood_finish_auto_confirm',{p_order:row.external_order_id,p_lease:row.lease,p_retry:retry});}
+ }
+ async function autoConfirm(orderId=null){
+  const requests=await rpc('pitacco_ifood_claim_auto_confirm',{p_order:orderId});
+  const results=await Promise.allSettled(requests.map(submitConfirm));
+  if(results.some(result=>result.status==='rejected'))logger.warn('A fila de aceite iFood será retomada.');
+ }
  async function process(eventId=null){
   const events=await rpc('pitacco_ifood_claim',{p_event:eventId});
   for(let i=0;i<events.length;i+=4){
@@ -137,7 +157,9 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
      return reply(401,{error:'Não autorizado'});
     }
     await distributed.poll(enqueue);
-    return reply(200,{processed:await process()});
+    const processed=await process();
+    await autoConfirm();
+    return reply(200,{processed});
    }
    if(!clientId||!clientSecret)return reply(503,{error:'Webhook iFood ainda não configurado'});
    const signature=request.headers.get('x-ifood-signature')||'';
@@ -157,7 +179,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
     return reply(202,{merchantIds});
    }
    const inserted=await enqueue(event);
-   if(inserted)runInBackground(process(event.id).catch(()=>logger.warn('Fila iFood será retomada em nova tentativa.')));
+   if(inserted)runInBackground(process(event.id).then(()=>event.code==='PLC'||event.fullCode==='PLACED'?autoConfirm(event.orderId):null).catch(()=>logger.warn('Fila iFood será retomada em nova tentativa.')));
    return reply(202,{});
   }catch(error){
    if(error.message==='invalid-event')return reply(400,{error:'Dados do pedido inválidos'});
