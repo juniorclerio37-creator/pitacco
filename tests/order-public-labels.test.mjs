@@ -58,3 +58,15 @@ test('badge functions are restricted to own assigned courier or authorized store
  assert.match(sql,/revoke all on function public\.pitacco_driver_card_badges\(\) from public,anon/);
  assert.match(sql,/revoke all on function public\.pitacco_merchant_order_badges\(uuid\) from public,anon/);
 });
+
+test('iFood importer saves phone locator privately without copying contact fields into receipts',()=>{
+ const handler=read('supabase/functions/ifood-orders/handler.mjs');
+ const sql=read('docs/sql/ifood-private-contact-ingestion.sql');
+ assert.match(handler,/contact_phone:text\(order\.customer\?\.phone\?\.number,64\)/);
+ assert.match(handler,/contact_localizer:text\(order\.customer\?\.phone\?\.localizer,32\)/);
+ assert.match(handler,/contact_expires_at:iso\(order\.customer\?\.phone\?\.localizerExpiration\)/);
+ assert.match(sql,/pitacco_delivery_customer_contacts/);
+ assert.match(sql,/p_order-'merchant_id'-'created_at'-'contact_phone'-'contact_localizer'-'contact_expires_at'/);
+ assert.match(sql,/d\.logistics_provider='loja'/);
+ assert.match(sql,/d\.source='ifood'/);
+});
