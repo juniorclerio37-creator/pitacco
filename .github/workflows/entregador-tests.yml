@@ -7,6 +7,7 @@ on:
       - 'docs/sql/entregador-*'
       - 'docs/sql/driver-earnings-dashboard.sql'
       - 'tests/driver-earnings-dashboard.test.mjs'
+      - 'tests/driver-mobile-redesign.test.mjs'
       - '.github/workflows/entregador-tests.yml'
   push:
     branches:
@@ -18,6 +19,7 @@ on:
       - 'docs/sql/entregador-*'
       - 'docs/sql/driver-earnings-dashboard.sql'
       - 'tests/driver-earnings-dashboard.test.mjs'
+      - 'tests/driver-mobile-redesign.test.mjs'
       - '.github/workflows/entregador-tests.yml'
 permissions:
   contents: read
@@ -31,4 +33,4 @@ jobs:
         with:
           node-version: '22'
       - name: Testar regras de acesso e entregas
-        run: node --test entregador/*.test.mjs tests/driver-earnings-dashboard.test.mjs
+        run: node --test entregador/*.test.mjs tests/driver-earnings-dashboard.test.mjs tests/driver-mobile-redesign.test.mjs
