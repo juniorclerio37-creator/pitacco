@@ -15,6 +15,7 @@ source=source.replace("const admin=profile?.role==='admin'","const admin=false")
 source=source.replace("import Homologation from './Homologation.jsx';\n","").replace("import {ClipboardCheck} from 'lucide-react';\n","").replace("import BillingStatus,{BillingOverview} from './BillingStatus.jsx';","import BillingStatus from './BillingStatus.jsx';")
 source="import {featureForTab,useStoreFeatures} from './storeFeatures.mjs';\n"+source
 source="import {useStoreManagerAccess} from './storeAccess.mjs';\n"+source
+source="import AppDownloads from './AppDownloads.jsx';\n"+source
 source="import WorkspaceBoundary from './WorkspaceBoundary.jsx';\n"+source
 manager_check="manager=admin||profile?.role==='gestor'||members.some(m=>m.user_id===session.user.id&&m.role==='gestor')"
 assert source.count(manager_check)==1
@@ -85,6 +86,13 @@ import re
 content=re.sub(r"(<button[^>]*onClick=\{\(\)=>setTab\('(Produtos|Clientes|Fideliza\+|Entregadores|Lançamentos)'\)\}[^>]*>.*?</button>)",
                lambda found:"{allowed("+repr(found[2])+")&&"+found[1]+"}",content)
 source=head+content+tail
-source=source.replace('</React.Fragment>)}</nav>',"</React.Fragment>)}{!nativeAvailable()&&active&&featureSettings?.financeiro===false&&<button type=\"button\" onClick={()=>setTab('Assinaturas')}>Assinatura</button>}</nav>",1)
+source=source.replace("const merchantTabs=new Set([","const merchantTabs=new Set(['Aplicativos e Downloads',",1)
+source=source.replace('</React.Fragment>)}</nav>',"""</React.Fragment>)}
+{!nativeAvailable()&&active&&!isDriver&&<button type="button" className={tab==='Aplicativos e Downloads'?'active':''}
+ onClick={()=>{setTab('Aplicativos e Downloads');setMessage('')}}><Package size={18}/>Aplicativos e Downloads</button>}</nav>""",1)
+download_panel="""{!nativeAvailable()&&active&&!isDriver&&tab==='Aplicativos e Downloads'&&<AppDownloads client={supabase}/>}
+"""
+source=source.replace('<WorkspaceBoundary resetKey={selected+\'|\'+tab} onOverview={()=>setTab(\'Painel\')}>','<WorkspaceBoundary resetKey={selected+\'|\'+tab} onOverview={()=>setTab(\'Painel\')}>\n'+download_panel,1)
+source=source.replace("Aplicativos e Downloads</button>}</nav>","Aplicativos e Downloads</button>}{!nativeAvailable()&&active&&featureSettings?.financeiro===false&&<button type=\"button\" onClick={()=>setTab('Assinaturas')}>Assinatura</button>}</nav>",1)
 source=source.replace('.render(<App/>);','.render(<WorkspaceBoundary><App/></WorkspaceBoundary>);',1)
 path.write_text(source,encoding='utf-8')

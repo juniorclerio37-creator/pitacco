@@ -1,0 +1,52 @@
+import React,{useEffect,useState} from 'react';
+import {COURIER_APP_URL,downloadRelease,releaseDate} from './appReleases.mjs';
+import './app-releases.css';
+
+export default function AppDownloads({client}){
+ const [releases,setReleases]=useState(null),[retry,setRetry]=useState(0);
+ const [busy,setBusy]=useState(''),[error,setError]=useState('');
+ useEffect(()=>{
+  let live=true;
+  setReleases(null);setError('');
+  client.from('pitacco_app_releases').select('id,app,version,filename,notes,requirements,recommended,published_at,sha256')
+   .eq('state','published').eq('channel','stable').then(({data,error})=>{
+    if(!live)return;
+    if(error){setError('Não foi possível consultar os downloads.');setReleases([]);}
+    else setReleases(data);
+   });
+  return()=>{live=false;};
+ },[client,retry]);
+ async function download(row){
+  setBusy(row.id);setError('');
+  try{await downloadRelease(client,row);}
+  catch(error){setError(error.message);}
+  finally{setBusy('');}
+ }
+ async function share(){
+  setError('');
+  try {
+   if(navigator.share)await navigator.share({title:'Pitacco Entregador',url:COURIER_APP_URL});
+   else {await navigator.clipboard.writeText(COURIER_APP_URL);setShared(true);}
+  }catch(error){if(error.name!=='AbortError')setError('Não foi possível compartilhar. Use o endereço exibido nesta página.');}
+ }
+ const [shared,setShared]=useState(false);
+ return <div className="app-releases">
+  {error&&<div className="panel"><p role="alert">{error}</p><button type="button" className="secondary" onClick={()=>setRetry(retry+1)}>Atualizar downloads</button></div>}
+  {!releases&&<p role="status">Consultando versões oficiais…</p>}
+  {[['windows','Pitacco Windows — Gestor de Pedidos','Baixar para Windows'],['android','Pitacco Entregador','Baixar para Android']].map(([app,title,action])=>{
+   const row=releases?.find(release=>release.app===app);
+   return <section className="panel" key={app}><h3>{title}</h3>
+    {row&&<><p>Versão {row.version} · {releaseDate(row.published_at)}{row.recommended?' · Atualização recomendada':''}</p>
+     {row.notes&&<p className="release-notes">{row.notes}</p>}{row.requirements&&<p>Requisitos: {row.requirements}</p>}
+     <details><summary>Verificar integridade do arquivo</summary><code>{row.sha256}</code></details>
+     <button type="button" disabled={!!busy} onClick={()=>void download(row)}>{busy===row.id?'Preparando download…':action}</button></>}
+    {app==='windows'&&releases&&!row&&!error&&<p>Nenhum instalador estável publicado.</p>}
+    {app==='android'&&<div className="release-detail">
+     <p><a href={COURIER_APP_URL} target="_blank" rel="noopener noreferrer">Abrir Pitacco Entregador</a></p>
+     <button type="button" className="secondary" onClick={()=>void share()}>{shared?'Link copiado':'Compartilhar acesso'}</button>
+     <p>{COURIER_APP_URL}</p>
+    </div>}
+   </section>;
+  })}
+ </div>;
+}
