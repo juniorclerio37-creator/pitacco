@@ -50,7 +50,7 @@ create function pitacco_private.store_opening_status(p_store uuid,p_at timestamp
 returns jsonb language plpgsql stable security definer set search_path='' as $$
 declare config public.pitacco_store_hours%rowtype;
  local_at timestamp:=p_at at time zone 'America/Sao_Paulo';
- weekday integer; minute_of_day integer; is_open boolean:=false; next_at timestamptz;
+ iso_weekday integer; minute_of_day integer; is_open boolean:=false; next_at timestamptz;
  today jsonb;
 begin
  select * into config from public.pitacco_store_hours where store_id=p_store;
@@ -58,20 +58,20 @@ begin
   return jsonb_build_object('open',false,'reason','unconfigured','paused',false,'manager_configured',false,
    'timezone','America/Sao_Paulo','today','[]'::jsonb,'next_open_at',null);
  end if;
- weekday:=extract(isodow from local_at)::integer;
+ iso_weekday:=extract(isodow from local_at)::integer;
  minute_of_day:=extract(hour from local_at)::integer*60+extract(minute from local_at)::integer;
  select exists(
   select 1 from public.pitacco_opening_periods p where p.store_id=p_store and (
-   (p.weekday=weekday and p.closes_minute>p.opens_minute
+   (p.weekday=iso_weekday and p.closes_minute>p.opens_minute
        and minute_of_day>=p.opens_minute and minute_of_day<p.closes_minute)
-   or (p.weekday=weekday and p.closes_minute<p.opens_minute and minute_of_day>=p.opens_minute)
-   or (p.weekday=case when weekday=1 then 7 else weekday-1 end
+   or (p.weekday=iso_weekday and p.closes_minute<p.opens_minute and minute_of_day>=p.opens_minute)
+   or (p.weekday=case when iso_weekday=1 then 7 else iso_weekday-1 end
        and p.closes_minute<p.opens_minute and minute_of_day<p.closes_minute)
   )
  ) into is_open;
  select coalesce(jsonb_agg(jsonb_build_object('opens_minute',p.opens_minute,'closes_minute',p.closes_minute)
    order by p.opens_minute),'[]'::jsonb) into today
- from public.pitacco_opening_periods p where p.store_id=p_store and p.weekday=weekday;
+ from public.pitacco_opening_periods p where p.store_id=p_store and p.weekday=iso_weekday;
  if not is_open and not config.paused then
   select min(candidate.next_open) into next_at from (
    select (((local_at::date+dates.day)::timestamp+make_interval(mins=>p.opens_minute))
