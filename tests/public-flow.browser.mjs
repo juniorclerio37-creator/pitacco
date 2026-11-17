@@ -58,10 +58,12 @@ try {
         assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
         return route.fulfill({ json: {
           store: { name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true, delivery_fee: 5, delivery_area:area, payment_methods: ['pix_manual'] },
-          products: [{ id: 'acai', name: 'Açaí', price: 20, option_groups: [{
+          products: [{ id: 'acai', name: 'Açaí', category: 'Açaís', price: 20, option_groups: [{
             id: 'adicionais', name: 'Adicionais', min: 1, max: 1,
             options: [{ id: 'morango', name: 'Morango', price: 2 }, { id: 'leite', name: 'Leite em pó', price: 3 }]
-          }] }]
+          }, {
+            id:'extras',name:'Extras',min:0,max:2,options:[{id:'granola',name:'Granola',price:1},{id:'banana',name:'Banana',price:0},{id:'mel',name:'Mel',price:0}]
+          }] },{id:'agua',name:'Água',category:'Bebidas',price:5,option_groups:[]}]
         } });
       }
       if(pathname.endsWith('/pitacco_public_schedule_slots')){
@@ -88,23 +90,43 @@ try {
     });
 
     await page.goto(origin + (width===375?'/cardapio/?loja=loja-teste':'/loja-teste?utm_source=qr&loja=outro'));
-    await page.getByRole('heading', { name: 'Açaí' }).waitFor();
-    await page.getByRole('button', { name: 'Adicionar ao pedido' }).click();
-    assert.match(await page.locator('#msg').innerText(), /Confira as escolhas/);
-    await page.getByRole('checkbox', { name: /Morango/ }).check();
-    await page.getByRole('button', { name: 'Adicionar ao pedido' }).click();
-    await page.getByRole('button', { name: 'Adicionar ao pedido' }).click();
-    await page.getByRole('checkbox', { name: /Morango/ }).uncheck();
-    await page.getByRole('checkbox', { name: /Leite em pó/ }).check();
-    await page.getByRole('button', { name: 'Adicionar ao pedido' }).click();
-    assert.equal(await page.locator('#cart .cartline').count(), 2);
-    assert.equal(await page.locator('#cart input').first().inputValue(), '2');
+    const productCard=page.getByRole('button',{name:'Personalizar Açaí',exact:true});
+    await productCard.waitFor();
+    assert.equal(await page.getByText('Leite em pó',{exact:true}).count(),0);
+    await page.getByRole('button',{name:'Bebidas',exact:true}).click();
+    await page.getByRole('button',{name:'Personalizar Água',exact:true}).waitFor();
+    assert.equal(await productCard.count(),0);
+    await page.getByRole('button',{name:'Todos',exact:true}).click();
+    await page.getByRole('searchbox',{name:'Buscar no cardápio'}).fill('acai');
+    await productCard.waitFor();
+    assert.equal(await page.getByRole('button',{name:'Personalizar Água',exact:true}).count(),0);
+    await productCard.click();
+    const product=page.getByRole('dialog',{name:'Açaí'});
+    const add=product.getByRole('button',{name:/Adicionar à sacola/});
+    await add.click();
+    assert.match(await product.getByRole('alert').innerText(),/Confira as escolhas em Adicionais/);
+    await product.getByRole('radio',{name:/Morango/}).check();
+    await product.getByRole('checkbox',{name:/Granola/}).check();
+    await product.getByRole('checkbox',{name:/Banana/}).check();
+    assert.equal(await product.getByRole('checkbox',{name:/Mel/}).isDisabled(),true);
+    await product.getByRole('checkbox',{name:/Banana/}).uncheck();
+    await product.getByRole('checkbox',{name:/Granola/}).uncheck();
+    await product.getByRole('button',{name:'Aumentar quantidade'}).click();
+    assert.match(await add.innerText(),/44,00/);
+    await add.click();
+    await productCard.click();
+    await product.getByRole('radio',{name:/Leite em pó/}).check();
+    await add.click();
+    await page.getByRole('button',{name:/Ver sacola/}).click();
+    assert.equal(await page.locator('#cart .cartline').count(),2);
+    assert.equal(await page.locator('#cart input').first().inputValue(),'2');
+    await page.getByRole('button',{name:'Continuar para entrega e pagamento'}).click();
     for (const [id, value] of [['customer', 'Cliente Teste'], ['phone', '21999999999'], ['address', 'Rua Teste 123']]) {
       await page.locator('#' + id).fill(value);
     }
     if(area){
       await page.getByRole('button', { name: 'Confirmar pedido' }).click();
-      assert.match(await page.locator('#msg').innerText(),/Marque a localização/);
+      assert.match(await page.locator('#checkoutMessage').innerText(),/Marque a localização/);
       await page.getByRole('button',{name:'Usar minha localização'}).click();
       await page.getByText('Localização marcada.').waitFor();
     }
