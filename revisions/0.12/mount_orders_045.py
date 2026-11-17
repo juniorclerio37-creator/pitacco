@@ -3,9 +3,24 @@ from pathlib import Path
 p=Path('web/Operations.jsx')
 s=p.read_text(encoding='utf-8')
 s="import Pedidos from './Pedidos.jsx';\n"+s
+# Persist the dispatch policy from the store, not the marketplace.
+policy_anchor=" const [settingsTab,setSettingsTab]=useState('Impressoras')"
+assert s.count(policy_anchor)==1
+policy_hook=""" const [dispatchPolicy,setDispatchPolicy]=useState('manual');
+ useEffect(()=>{
+  let active=true;
+  if(!storeId)return;
+  client.from('stores').select('dispatch_mode').eq('id',storeId).single()
+   .then(({data,error})=>{
+    if(active&&!error)setDispatchPolicy(data?.dispatch_mode||'manual');
+   }).catch(()=>{});
+  return ()=>{active=false;};
+ },[client,storeId]);
+"""
+s=s.replace(policy_anchor,policy_hook+policy_anchor,1)
 needle=" {manager&&desktop&&view==='Pedidos'&&<div className=\"operational-overview\""
 assert s.count(needle)==1
-mount=""" {manager&&view==='Pedidos'&&<Pedidos orders={orders} deliveries={deliveryRows} badges={orderBadges} stage={stage} busy={busy} onAccept={id=>act(()=>rpc('accept_order',{p_order:id}))} onAcceptIfood={id=>act(async()=>{
+mount=""" {manager&&view==='Pedidos'&&<Pedidos orders={orders} deliveries={deliveryRows} badges={orderBadges} acceptMode={settings.find(s=>s.source==='ifood'&&s.enabled)?.mode||'manual'} dispatchMode={dispatchPolicy} stage={stage} busy={busy} onAccept={id=>act(()=>rpc('accept_order',{p_order:id}))} onAcceptIfood={id=>act(async()=>{
  const {data,error}=await client.functions.invoke('ifood-manual-action',{body:{action:'accept',order_id:id}});
  if(error){
   let message=error.message||'Não foi possível enviar o aceite ao iFood.';
