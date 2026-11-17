@@ -8,8 +8,15 @@ create table if not exists pitacco_private.courier_test_store_access (
  constraint only_clerio_test_store check (courier_id='d2c2d04a-8545-449f-94f3-b67f5237d6c3'::uuid and store_id='1481c0c6-5b87-4737-9d1a-96ae5c1615d9'::uuid)
 );
 revoke all on pitacco_private.courier_test_store_access from public, anon, authenticated;
+-- Apply the special link only if both existing production records are present.
+-- Isolated CI databases intentionally do not contain this real courier.
 insert into pitacco_private.courier_test_store_access(courier_id,store_id)
-values('d2c2d04a-8545-449f-94f3-b67f5237d6c3'::uuid,'1481c0c6-5b87-4737-9d1a-96ae5c1615d9'::uuid) on conflict do nothing;
+select c.id,'1481c0c6-5b87-4737-9d1a-96ae5c1615d9'::uuid
+from public.couriers c
+where c.id='d2c2d04a-8545-449f-94f3-b67f5237d6c3'::uuid
+  and c.store_id='8732707e-e0e4-47af-b930-3e7d2d9042b9'::uuid
+  and exists (select 1 from public.stores s where s.id='1481c0c6-5b87-4737-9d1a-96ae5c1615d9'::uuid)
+on conflict do nothing;
 
 create or replace function public.pitacco_courier_test_access(p_courier uuid,p_store uuid)
 returns boolean language sql stable security definer set search_path='' as $$
