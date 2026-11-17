@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f97316"><title>Pitacco Entregador — Minhas entregas</title>
+<style>
+:root{font-family:Inter,system-ui,sans-serif;color:#1f2937;background:#f6f7fa}
+*{box-sizing:border-box}body{margin:0}.bar{background:#fff;border-bottom:1px solid #e5eaf0;position:sticky;top:0;z-index:2}
+.barinner{max-width:1000px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 18px}
+.logo{font-weight:900;font-size:23px;color:#ec6b11}.logo span{font-size:11px;letter-spacing:1.5px;display:block;color:#737d8b}
+main{max-width:1000px;margin:auto;padding:20px 18px 60px}
+h1{font-size:26px;margin:10px 0 4px;letter-spacing:-.6px}.sub{font-size:14px;color:#687383;margin:0 0 22px}
+.summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
+.stat{background:#fff;border:1px solid #e6e9ef;border-radius:18px;padding:16px}
+.stat strong{font-size:27px;display:block}.stat span{color:#6d7684;font-size:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:12px;border:0;cursor:pointer;font:inherit;font-size:13px;font-weight:800;min-height:43px}
+.btn:disabled{opacity:.48;cursor:not-allowed}.primary{background:#f97316;color:#fff}.secondary{background:#fff1e4;color:#b64e07}.ghost{background:#f0f2f5;color:#4b5563}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:16px}
+.card{background:#fff;border:1px solid #e6e9ef;border-radius:20px;padding:20px;box-shadow:0 5px 25px #25314308}
+.cardhead{display:flex;justify-content:space-between;align-items:center;gap:12px}.order{font-size:13px;color:#748092;font-weight:700}.tag{font-size:11px;font-weight:800;border-radius:30px;padding:7px 10px;background:#ffeddc;color:#b9510e;text-align:center}
+.customer{font-size:19px;font-weight:850;margin-top:14px;overflow-wrap:anywhere}
+.address{font-size:14px;color:#495569;line-height:1.5;margin:6px 0}.notes{font-size:13px;color:#6b7280;margin:12px 0;white-space:pre-wrap}
+.pay{background:#fff7e8;color:#92500c;border-radius:12px;padding:11px;font-size:12px;line-height:1.5;margin:12px 0}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.actions .btn{flex:1}
+.warn{font-size:12px;color:#7a4959;line-height:1.5;margin-top:12px}
+.info{font-size:13px;color:#657183;background:#fff;border:1px solid #e6e9ef;border-radius:15px;padding:16px;margin:15px 0}
+.topactions{display:flex;gap:8px;align-items:center}
+#notice{color:#b91c1c;font-size:13px;min-height:20px;margin:12px 0}
+.hidden{display:none!important}.empty{padding:30px;border:1px dashed #cfd6dd;border-radius:20px;text-align:center;color:#687383}
+a.btn{text-decoration:none}
+</style></head>
+<body><header class="bar"><div class="barinner">
+<div class="logo">Pitacco <span>ENTREGADOR</span></div>
+<div class="topactions"><button class="btn ghost" id="refresh">Atualizar</button><button class="btn secondary" id="logout">Sair</button></div>
+</div></header><main>
+<h1 id="greeting">Minhas entregas</h1><p class="sub">Pedidos atribuídos pela loja. Não é necessário aceitar ou recusar.</p>
+<div class="topactions"><button class="btn primary" id="online" disabled>Carregando...</button><span id="availability" class="sub" style="margin:0"></span></div>
+<div class="summary"><div class="stat"><strong id="active">—</strong><span>Entregas em andamento</span></div><div class="stat"><strong id="done">—</strong><span>Entregues nos registros recentes</span></div></div>
+<p id="notice" role="alert" aria-live="polite"></p>
+<div class="info" id="paymentNotice"><b>Atenção ao recebimento:</b> a confirmação de pagamento e o cálculo de troco ainda não estão disponíveis nesta tela. Confirme com a loja antes de cobrar o cliente ou informar que está pago.</div>
+<section id="cards" class="grid" aria-label="Pedidos atribuídos"><div class="empty">Verificando suas entregas...</div></section>
+<p class="info">A finalização com foto ou PIN ainda está em homologação. Não marque uma entrega como concluída sem a confirmação exigida pelo estabelecimento ou marketplace.</p>
+</main>
+<script type="module">
+import {createClient} from "https://esm.sh/@supabase/supabase-js@2.57.0";
+import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "./config.mjs";
+import {createDriverAuth} from "./supabase-client.mjs";
+const $=id=>document.getElementById(id);
+const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
+const driver=createDriverAuth(sb);
+let courier=null, busy=false;
+const statuses={pendente:"Aguardando loja",atribuida:"Aguardando coleta",aceita:"Coletada",retirada:"Saiu para entrega",entregue:"Entregue",cancelada:"Cancelada"};
+function message(text){$("notice").textContent=text||"";}
+async function api(action,payload={}){
+ const {data:{session}}=await sb.auth.getSession();
+ if(!session?.access_token)throw new Error("Sessão expirada");
+ const response=await fetch(SUPABASE_URL+"/functions/v1/pitacco-courier-access",{
+   method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY,
+   "Authorization":"Bearer "+session.access_token},
+   body:JSON.stringify({action,...payload}),cache:"no-store"
+ });
+ const out=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(out.error||"Acesso indisponível");
+ return out;
+}
+function element(tag,cls,txt){
+ const el=document.createElement(tag);if(cls)el.className=cls;if(txt!==undefined)el.textContent=txt;return el;
+}
+function createAction(text,style,handler,disabled=false){
+ const el=element("button","btn "+style,text);el.type="button";el.disabled=disabled;
+ if(handler)el.addEventListener("click",handler);return el;
+}
+async function rpc(name,args){
+ if(busy)return;busy=true;message("");
+ try{
+   const {error}=await sb.rpc(name,args);
+   if(error)throw new Error(error.message||"Operação não autorizada");
+   await refresh();
+ }catch(err){message(String(err?.message??"Não foi possível concluir a operação"));}
+ finally{busy=false;}
+}
+function card(d){
+ const box=element("article","card");
+ const head=element("div","cardhead");
+ head.append(element("span","order","PEDIDO • "+String(d.order_id||d.id).slice(0,8).toUpperCase()));
+ head.append(element("span","tag",statuses[d.status]||d.status||"Em andamento"));
+ box.append(head,element("div","customer",d.customer_name||"Cliente"));
+ box.append(element("p","address",d.address||"Endereço não informado"));
+ if(d.notes)box.append(element("p","notes",d.notes));
+ box.append(element("div","pay","Cobrança: a confirmar com a loja. Não presuma pagamento aprovado."));
+ const actions=element("div","actions");
+ if(d.address){
+  const nav=element("a","btn ghost","Ver endereço");
+  nav.href="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(d.address);
+  nav.target="_blank";nav.rel="noopener noreferrer";actions.append(nav);
+ }
+ const collecting=d.status==="atribuida"||(d.status==="aceita"&&!d.collected_at);
+ if(collecting)actions.append(createAction("Coletar pedido","primary",()=>rpc("pitacco_driver_collect",{p_delivery:d.id})));
+ if(d.status==="aceita"&&d.collected_at&&d.batch_id)
+  actions.append(createAction("Sair para entrega","primary",()=>rpc("pitacco_driver_depart",{p_batch:d.batch_id})));
+ if(d.status==="retirada"){
+  actions.append(createAction("Finalizar entrega","secondary",null,true));
+  box.append(element("p","warn","Finalização indisponível até homologar PIN/foto e confirmação de pagamento."));
+ }
+ if(actions.children.length)box.append(actions);
+ return box;
+}
+async function refresh(){
+ const records=await driver.myCourierRecords();
+ if(records.length!==1){await sb.auth.signOut();location.replace("./acesso.html");return;}
+ courier=records[0];
+ $("greeting").textContent="Olá, "+(courier.name||"entregador");
+ $("availability").textContent=courier.available?"Você está online":"Você está offline";
+ $("online").textContent=courier.available?"Ficar offline":"Ficar online";
+ $("online").disabled=false;
+ const list=await driver.myDeliveries([courier.id]);
+ list.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
+ const current=list.filter(d=>!["entregue","cancelada"].includes(d.status));
+ $("active").textContent=String(current.length);
+ $("done").textContent=String(list.filter(d=>d.status==="entregue").length);
+ const target=$("cards");target.replaceChildren();
+ if(!list.length){target.append(element("div","empty","Nenhuma entrega atribuída no momento."));return;}
+ for(const d of list.slice(0,50))target.append(card(d));
+}
+async function boot(){
+ try{
+  const user=await driver.currentUser();
+  if(!user){location.replace("./acesso.html");return;}
+  const status=await api("status");
+  const {data:ready,error}=await sb.rpc("pitacco_courier_session_ready");
+  if(status.mustChangePassword||error||!ready){location.replace("./acesso.html");return;}
+  await refresh();
+ }catch(err){
+  message("Acesso não autorizado ou falha de conexão: "+String(err?.message??"Tente novamente"));
+  $("cards").replaceChildren(element("div","empty","Não foi possível carregar as entregas."));
+ }
+}
+$("online").addEventListener("click",async()=>{
+ if(!courier||busy)return;busy=true;$("online").disabled=true;
+ try{
+  const {error}=await sb.rpc("pitacco_driver_online",{p_online:!courier.available});
+  if(error)throw new Error(error.message);
+  message("");await refresh();
+ }catch(err){message(String(err?.message??"Falha ao mudar disponibilidade"));}
+ finally{busy=false;$("online").disabled=false;}
+});
+$("refresh").addEventListener("click",()=>refresh().catch(e=>message(String(e.message))));
+$("logout").addEventListener("click",async()=>{await sb.auth.signOut();location.replace("./acesso.html");});
+boot();
+</script></body></html>
