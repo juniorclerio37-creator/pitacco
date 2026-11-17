@@ -150,7 +150,7 @@ form h3{margin:0;font-size:1.16rem}fieldset{min-width:0;border:1px solid var(--l
  <button id="locateDelivery" type="button" class="secondary">Usar minha localização</button>
  <div id="deliveryMap" aria-label="Mapa da área de entrega" hidden style="height:260px;margin:12px 0;z-index:0"></div>
  <p id="deliveryPointStatus" role="status"></p>
-</fieldset></div><label for="payment">Forma de pagamento</label><select id="payment" required></select><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea><p><button class="primary" id="send" type="submit">Confirmar pedido</button></p></form>
+</fieldset><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe rua, número, bairro e cidade para calcular o frete pelo trajeto.</p></div></div><label for="payment">Forma de pagamento</label><select id="payment" required></select><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea><p><button class="primary" id="send" type="submit">Confirmar pedido</button></p></form>
   <div id="success" hidden></div>
  </div>
  <footer class="dialog-footer" id="cartFooter"><button id="continueCheckout" type="button" class="primary">Continuar para entrega e pagamento</button><button id="backToCart" type="button" class="secondary" hidden>Voltar à sacola</button></footer>
@@ -164,13 +164,16 @@ const slug=segments[0]==='cardapio'
  ? new URLSearchParams(location.search).get('loja')||segments[1]||''
  : segments[0]||'';
 let menu,cart=[],pendingRequest=null,submitting=false,scheduleRequest=0;
-let deliveryPoint=null,deliveryMap;
+let deliveryPoint=null,deliveryMap,deliveryQuote=null;
 function selectDeliveryPoint(point){
  deliveryPoint=point;
  deliveryMap?.setPoint(point);
  $('deliveryPointStatus').textContent='Localização marcada.';
 }
 $('address').addEventListener('input',()=>{
+ deliveryQuote=null;
+ if(menu)renderCart();
+ if(menu?.store?.route_pricing?.enabled)$('routeQuoteStatus').textContent='Endereço alterado. Calcule novamente a taxa de entrega.';
  if(!deliveryPoint)return;
  deliveryPoint=null;
  deliveryMap?.clearPoint();
@@ -199,6 +202,22 @@ $('locateDelivery').onclick=async()=>{
   deliveryMap?.showPoint(deliveryPoint);
  }catch(error){$('deliveryPointStatus').textContent=error.message;}
  finally{button.disabled=false;}
+};
+$('quoteDelivery').onclick=async()=>{
+ const address=$('address').value.trim();
+ if(address.length<12){$('routeQuoteStatus').textContent='Informe rua, número, bairro, cidade e estado.';return;}
+ const button=$('quoteDelivery');button.disabled=true;
+ deliveryQuote=null;renderCart();$('routeQuoteStatus').textContent='Consultando o trajeto até o endereço…';
+ const requestId=crypto.randomUUID();
+ try{
+  const {data,error}=await client.functions.invoke('delivery-quote',{body:{slug,address,request_id:requestId}});
+  if(error)throw error;
+  if(!data?.quote_id||data.request_id!==requestId||!Number.isFinite(Number(data.fee)))throw Error(data?.error||'Não foi possível confirmar o frete.');
+  if($('address').value.trim()!==address)throw Error('O endereço mudou. Calcule o frete novamente.');
+  deliveryQuote={id:data.quote_id,requestId,fee:Number(data.fee),address,expiresAt:data.expires_at};
+  $('routeQuoteStatus').textContent='Trajeto: '+(data.distance_m/1000).toFixed(1).replace('.',',')+' km · Entrega: '+money(data.fee)+' · Válida por 5 minutos.';
+ }catch(error){$('routeQuoteStatus').textContent='Não foi possível calcular o frete: '+(error.message||String(error));}
+ finally{button.disabled=false;renderCart();}
 };
 const scheduleFormat=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 
@@ -424,16 +443,21 @@ function renderCart(){
   controls.append(remove);
   line.append(info,qtyLabel,el('strong',money(item.unit*item.quantity)),controls);root.append(line);
  }
- const fee=cart.length&&$('fulfillment').value==='delivery'?Number(menu.store.delivery_fee)||0:0;
+ const routeMode=Boolean(menu.store.route_pricing?.enabled)&&$('fulfillment').value==='delivery';
+ const quoteValid=deliveryQuote&&deliveryQuote.address===$('address').value.trim()&&Date.parse(deliveryQuote.expiresAt)>Date.now();
+ const fee=cart.length&&$('fulfillment').value==='delivery'?(routeMode?(quoteValid?deliveryQuote.fee:0):Number(menu.store.delivery_fee)||0):0;
  const subtotal=cart.reduce((sum,item)=>sum+item.unit*item.quantity,0);
  const totalLine=(label,value)=>{const line=el('div');line.append(el('span',label),el('span',money(value)));return line};
  $('total').replaceChildren(totalLine('Produtos',subtotal));
- if($('fulfillment').value==='delivery'&&cart.length)$('total').append(totalLine('Entrega',fee));
+ if($('fulfillment').value==='delivery'&&cart.length){
+  if(routeMode&&!quoteValid)$('total').append(el('p','Calcule a taxa de entrega para ver o total final.'));
+  else $('total').append(totalLine('Entrega',fee));
+ }
  $('total').append(totalLine('Total',subtotal+fee));
  $('cartCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0);
  $('cartValue').textContent=money(subtotal);
  $('continueCheckout').disabled=!cart.length||!$('fulfillment').value||!$('payment').value;
- $('send').disabled=submitting||!cart.length||!$('fulfillment').value||!$('payment').value;
+ $('send').disabled=submitting||!cart.length||!$('fulfillment').value||!$('payment').value||(routeMode&&!quoteValid);
 }
 function cartStep(checkout){
  $('checkout').hidden=!checkout;
@@ -474,14 +498,15 @@ function initOptions(){
  for(const [value,label,allowed] of [['delivery','Entrega',shop.delivery_enabled],['pickup','Retirada',shop.pickup_enabled]]){
   if(!allowed)continue;
   $('fulfillment').add(new Option(label,value));
-  $('storeServices').append(el('span',value==='delivery'?'Entrega · '+(Number(shop.delivery_fee)>0?money(shop.delivery_fee):'grátis'):'Retirada na loja'));
+  $('storeServices').append(el('span',value==='delivery'?(shop.route_pricing?.enabled?'Entrega calculada pelo endereço':'Entrega · '+(Number(shop.delivery_fee)>0?money(shop.delivery_fee):'grátis')):'Retirada na loja'));
  }
  const labels={dinheiro:'Dinheiro na entrega',cartao_entrega:'Cartão na entrega',pix_manual:'Pix manual — aguardar conferência'};
  for(const method of shop.payment_methods||[])$('payment').add(new Option(labels[method]||method,method));
  $('fulfillment').onchange=()=>{
   $('addressBlock').hidden=$('fulfillment').value!=='delivery';
   $('address').required=!$('addressBlock').hidden;
-  $('deliveryPoint').hidden=$('addressBlock').hidden||!shop.delivery_area;
+  $('deliveryPoint').hidden=$('addressBlock').hidden||!shop.delivery_area||Boolean(shop.route_pricing?.enabled);
+  $('routeQuoteControls').hidden=$('addressBlock').hidden||!shop.route_pricing?.enabled;
   if(!$('deliveryPoint').hidden)deliveryMap?.resize();
   renderCart();loadSchedule();
  };
@@ -532,7 +557,12 @@ $('checkout').onsubmit=async event=>{
    $('address').focus();
    return;
   }
-  const needsPin=fulfillment==='delivery'&&Boolean(menu.store.delivery_area);
+  const routeMode=fulfillment==='delivery'&&Boolean(menu.store.route_pricing?.enabled);
+  if(routeMode&&(!deliveryQuote||deliveryQuote.address!==$('address').value.trim()||Date.parse(deliveryQuote.expiresAt)<=Date.now())){
+   msg('Calcule a taxa de entrega para confirmar o valor do pedido.');
+   $('quoteDelivery').focus();return;
+  }
+  const needsPin=fulfillment==='delivery'&&!routeMode&&Boolean(menu.store.delivery_area);
   if(needsPin&&!deliveryPoint){
    msg('Marque a localização do endereço para conferir se a loja entrega no local.');
    $('showDeliveryMap').focus();
@@ -540,7 +570,7 @@ $('checkout').onsubmit=async event=>{
   }
   pendingRequest={
    p_slug:slug,
-   p_request:crypto.randomUUID(),
+   p_request:routeMode?deliveryQuote.requestId:crypto.randomUUID(),
    p_customer:$('customer').value.trim(),
    p_phone:phoneDigits,
    p_address:fulfillment==='delivery'?$('address').value.trim():'',
@@ -549,6 +579,7 @@ $('checkout').onsubmit=async event=>{
    p_payment:payment,
    p_notes:$('notes').value
   };
+  if(routeMode)pendingRequest.p_quote=deliveryQuote.id;
   if(needsPin){
    pendingRequest.p_latitude=deliveryPoint[0];
    pendingRequest.p_longitude=deliveryPoint[1];
@@ -562,7 +593,8 @@ $('checkout').onsubmit=async event=>{
  $('send').textContent='Enviando…';
  $('checkout').setAttribute('aria-busy','true');
  try{
-  const endpoint=Object.hasOwn(pendingRequest,'p_latitude')?'pitacco_checkout_geocoded_order'
+  const endpoint=Object.hasOwn(pendingRequest,'p_quote')?'pitacco_checkout_quoted_delivery'
+   :Object.hasOwn(pendingRequest,'p_latitude')?'pitacco_checkout_geocoded_order'
    :pendingRequest.p_scheduled_for?'pitacco_checkout_scheduled_order':'checkout_public_order';
   const response=await client.rpc(endpoint,pendingRequest);
   const {data,error,status}=response;

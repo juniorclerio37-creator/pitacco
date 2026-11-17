@@ -8,7 +8,7 @@ const adminPortal='https://admin.pitacco.com.br';
 const realApi='https://mdevzehqcpcgxspwbiyz.supabase.co';
 const keys=['alertas','estoque','cardapio','clientes','fideliza','financeiro','caixa','relatorios','motoboys','integracoes','agendamento'];
 const user = { id: '10000000-0000-0000-0000-000000000001', aud: 'authenticated', email: 'teste@example.invalid' };
-const store = { id: '20000000-0000-0000-0000-000000000001', name: 'Loja de Teste', plan: 'saas' };
+const store = { id: '20000000-0000-0000-0000-000000000001', name: 'Loja de Teste', plan: 'saas', address:'Rua Central',address_number:'100',neighborhood:'Centro',city:'Nova Iguacu',state:'RJ',postal_code:'26000-000' };
 const readOnlyStore = { id: '20000000-0000-0000-0000-000000000002', name: 'Loja sem gestão', plan: 'saas' };
 const fixtureUsername = '00000000001';
 const adminToken = [ {alg:'HS256'}, {sub:user.id, exp:Math.floor(Date.now()/1000)+3600} ]
@@ -140,6 +140,21 @@ try {
       if(pathname==='/rest/v1/public_menu_settings'){
         assert.equal(new URL(route.request().url()).searchParams.get('store_id'),'eq.'+store.id);
         return route.fulfill({headers,json:[{...menuSettings,enabled:true}]});
+      }
+      if(pathname==='/rest/v1/pitacco_delivery_pricing'){
+        return route.fulfill({headers,json:[]});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_save_delivery_pricing'){
+        const input=route.request().postDataJSON();
+        assert.equal(input.p_store,store.id);
+        assert.equal(input.p_radius,4);
+        assert.equal(input.p_distance[0],4.5);
+        assert.equal(input.p_neighborhoods[0].bairro,'Centro');
+        assert.equal(input.p_neighborhoods[0].taxa,7.5);
+        return route.fulfill({headers,json:{saved:true,enabled:false,requires_route_provider:true}});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_store_readiness'){
+        return route.fulfill({headers,json:{checks:{identity:true,address:true,products:true,payments:true,fulfillment:true,published:false},products:1,ready:false}});
       }
       if(pathname==='/rest/v1/pitacco_store_delivery_areas'){
         if(route.request().method()==='POST'){
@@ -540,12 +555,13 @@ try {
     assert.equal(await menuLink.getAttribute('href'),'https://pitacco.com.br/loja-teste');
     if(width===1440){
       await page.getByRole('button',{name:'Área de entrega',exact:true}).click();
-      await page.getByLabel('Latitude do centro').fill('-22.71');
-      await page.getByLabel('Longitude do centro').fill('-43.4');
-      await page.getByLabel('Raio da área (metros)').fill('4000');
-      await page.getByLabel('Ativar limite de entrega').check();
-      await page.getByRole('button',{name:'Salvar área de entrega'}).click();
-      await page.getByText('Área de entrega ativa.').waitFor();
+      await page.getByLabel('Distância máxima').selectOption('4');
+      await page.getByLabel('Até 1 km (R$)').fill('4.50');
+      await page.getByRole('button',{name:'Adicionar bairro'}).click();
+      await page.getByLabel('Bairro',{exact:true}).fill('Centro');
+      await page.getByLabel('Taxa (R$)',{exact:true}).fill('7.50');
+      await page.getByRole('button',{name:'Salvar regras de entrega'}).click();
+      await page.getByText(/Configurações salvas como rascunho/).waitFor();
       await page.getByRole('button',{name:'Pagamentos',exact:true}).click();
       await page.getByRole('checkbox',{name:'InfinitePay'}).check();
       await page.getByRole('button',{name:'Salvar preferências de integração'}).click();
