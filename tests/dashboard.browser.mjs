@@ -562,9 +562,9 @@ try {
       await page.getByRole('heading',{name:'Visão Geral',exact:true}).waitFor();
       await navigation.getByRole('button',{name:'Aplicativos e Downloads',exact:true}).click();
       await page.getByText('Versão para Windows disponível para instalação',{exact:false}).waitFor();
-      await page.getByRole('button',{name:'Baixar para Windows'}).waitFor();
+      await page.getByRole('button',{name:'Baixar Pitacco Windows'}).waitFor();
       assert.equal(await page.getByRole('link',{name:'Abrir Pitacco Entregador'}).getAttribute('href'),'https://entregador.pitacco.com.br/');
-      assert.equal(await page.getByRole('button',{name:'Baixar para Windows'}).count(),1);
+      assert.equal(await page.getByRole('button',{name:'Baixar Pitacco Windows'}).count(),1);
     }
     await navigation.getByRole('button', { name:'Visão Geral', exact:true }).click();
     await page.getByRole('heading', { name:'Visão Geral', exact:true }).waitFor();
