@@ -77,11 +77,17 @@ test('Windows alerts use an imported natural audio file, not robotic SAPI',()=>{
  const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
  const rust=readFileSync(new URL('../src-tauri/src/main.rs',import.meta.url),'utf8');
  assert.match(operations,/invoke\('play_order_voice'/);
+ assert.match(operations,/invoke\\('order_voice_status'/);
+ assert.match(operations,/if\\(voiceReady\\)void naturalVoiceOnly\\(\\)/);
+ assert.match(operations,/Voz natural ainda não configurada neste computador/);
+ assert.match(operations,/O sino continuará funcionando, sem voz robótica/);
  assert.match(operations,/invoke\('save_order_voice'/);
  assert.match(operations,/Volume da voz natural/);
  assert.match(operations,/Testar somente voz/);
  assert.doesNotMatch(rust,/System\.Speech|SpeechSynthesizer|System\.Media\.Speech/);
  assert.match(rust,/fn play_order_voice/);
+ assert.match(rust,/fn order_voice_status/);
+ assert.match(rust,/save_order_voice,play_order_voice,order_voice_status,check_update/);
  assert.match(rust,/fn save_order_voice/);
  assert.match(rust,/pitacco_voice_payload/);
  assert.match(operations,/invoke\('play_order_alert'/);
