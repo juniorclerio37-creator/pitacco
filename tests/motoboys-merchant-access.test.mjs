@@ -38,3 +38,20 @@ test("standalone courier manager redirects merchants to app.pitacco",()=>{
   assert.match(old,/Motoboys/);
   assert.doesNotMatch(old,/<form|<input[^>]*password/i);
 });
+
+
+test("courier API recognizes platform owner and scoped store members",()=>{
+  const edge=read("supabase/functions/pitacco-courier-access/index.ts");
+  const migration=read("docs/sql/fix-courier-store-admin-authorization.sql");
+  assert.match(edge,/admin\.rpc\("pitacco_can_manage_courier_store"/);
+  assert.match(edge,/p_actor:\s*userId/);
+  assert.match(edge,/p_store:\s*storeId/);
+  assert.match(edge,/return data === true/);
+  assert.match(migration,/pitacco_private\.platform_owner/);
+  assert.match(migration,/public\.store_members/);
+  assert.match(migration,/public\.stores/);
+  assert.match(migration,/sm\.store_id = s\.id/);
+  assert.match(migration,/sm\.role in \('gestor', 'lojista'\)/);
+  assert.match(migration,/revoke all on function public\.pitacco_can_manage_courier_store\(uuid,uuid\) from public, anon, authenticated/);
+  assert.match(migration,/grant execute on function public\.pitacco_can_manage_courier_store\(uuid,uuid\) to service_role/);
+});
