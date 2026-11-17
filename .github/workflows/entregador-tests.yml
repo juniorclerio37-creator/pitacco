@@ -5,6 +5,8 @@ on:
       - 'entregador/**'
       - 'supabase/functions/pitacco-courier-access/**'
       - 'docs/sql/entregador-*'
+      - 'docs/sql/driver-earnings-dashboard.sql'
+      - 'tests/driver-earnings-dashboard.test.mjs'
       - '.github/workflows/entregador-tests.yml'
   push:
     branches:
@@ -14,6 +16,8 @@ on:
       - 'entregador/**'
       - 'supabase/functions/pitacco-courier-access/**'
       - 'docs/sql/entregador-*'
+      - 'docs/sql/driver-earnings-dashboard.sql'
+      - 'tests/driver-earnings-dashboard.test.mjs'
       - '.github/workflows/entregador-tests.yml'
 permissions:
   contents: read
@@ -27,4 +31,4 @@ jobs:
         with:
           node-version: '22'
       - name: Testar regras de acesso e entregas
-        run: node --test entregador/*.test.mjs
+        run: node --test entregador/*.test.mjs tests/driver-earnings-dashboard.test.mjs
