@@ -88,17 +88,6 @@ a.btn{text-decoration:none}
   <p class="note-inline">Pedidos são atribuídos pela loja, sem necessidade de aceitar. A confirmação de entrega por PIN ou foto ainda está em homologação.</p>
 </section>
 
-<section class="app-view" data-view="mapa" id="viewMapa" hidden>
-  <div class="page-title"><span class="eyebrow">ROTAS E ENDEREÇOS</span><h1>Mapa e navegação</h1><p>Abra a rota no aplicativo de sua preferência.</p></div>
-  <div class="map-banner">
-    <span class="map-banner-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 18-6 3V6l6-3m0 15 6 3m-6-3V3m6 18 6-3V3l-6 3m0 15V6M9 3l6 3"/></svg></span>
-    <div><b>Seu navegador favorito</b><p id="mapPreference">Google Maps • Endereço</p></div><button class="btn secondary" type="button" id="mapChange">Alterar</button>
-  </div>
-  <h2 class="section-title">Destinos das suas entregas</h2>
-  <div id="routesList" class="routes-list"><div class="empty">Carregando seus destinos...</div></div>
-  <p class="note-inline">Para manter sua rota segura, as direções são abertas no Google Maps ou Waze. O Pitacco não envia coordenadas aproximadas como se fossem localização exata.</p>
-</section>
-
 <section class="app-view" data-view="ganhos" id="viewGanhos" hidden>
   <div class="page-title"><span class="eyebrow">FINANCEIRO DO ENTREGADOR</span><h1>Meus ganhos</h1><p>Veja quanto você gerou em entregas concluídas.</p></div>
   <section class="earnings" aria-label="Meus ganhos" id="earnings">
@@ -135,7 +124,6 @@ a.btn{text-decoration:none}
  <div class="page-title"><span class="eyebrow">SUA CONTA</span><h1>Perfil</h1><p>Seus dados e sua loja ativa.</p></div>
  <section class="profile-card panel-white"><div class="avatar" id="profileAvatar">E</div><div><b id="profileName">Entregador</b><small id="profilePhone">Celular cadastrado pela loja</small></div><button class="icon-button" type="button" id="profileLogout" aria-label="Sair da conta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9"/></svg></button></section>
  <section class="panel-white pref-panel"><span class="eyebrow">LOJA ATIVA</span><h2 id="profileStore">Minha loja</h2><span class="profile-meta">Entregas atribuidas exclusivamente pelo estabelecimento.</span></section>
- <section class="panel-white pref-panel"><span class="eyebrow">NAVEGAÇÃO</span><div class="pref-row"><div class="pref-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 20 8-16 8 16-8-4-8 4Z"/></svg></div><div><small>App padrão</small><strong id="profileNav">Google Maps</strong></div><button type="button" class="btn secondary" id="profileMapChange">Alterar</button></div></section>
  <section class="panel-white pref-panel"><span class="eyebrow">MINHA LOJA</span><div class="pref-row"><div class="pref-icon store-icon">⌂</div><div><strong id="profileStoreAgain">Minha loja</strong><small>Ativa para suas entregas</small></div><span class="checkmark">✓</span></div></section>
  <p class="note-inline">O cadastro e a redefinição de senha são feitos pelo lojista dentro do painel Pitacco.</p>
 </section>
@@ -165,7 +153,6 @@ a.btn{text-decoration:none}
 </main>
 <nav class="bottom-nav" aria-label="Navegação principal">
   <button type="button" data-tab="pedidos" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Pedidos</span></button>
-  <button type="button" data-tab="mapa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6ZM9 3v15m6-12v15"/></svg><span>Mapa</span></button>
   <button type="button" data-tab="ganhos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 2v20m5-15c-1-2-3-3-5-3-3 0-5 2-5 4s2 3 5 4 5 2 5 4-2 4-5 4c-2 0-5-1-6-3"/></svg><span>Ganhos</span></button>
   <button type="button" data-tab="perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-5 3-8 8-8s8 3 8 8"/></svg><span>Perfil</span></button>
   <button type="button" data-tab="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm0-13 2 2 3-1 1 3 3 2-1 3 1 3-3 2-1 3-3-1-2 2-2-2-3 1-1-3-3-2 1-3-1-3 3-2 1-3 3 1Z"/></svg><span>Ajustes</span></button>
@@ -181,7 +168,7 @@ let courier=null, busy=false;
 
 let earnPeriod="hoje", earnRequest=0, lastEarningsReport=null;
 let storeName="Minha loja", navProvider="google", navMode="address", assignedDeliveries=[];
-const validViews=["pedidos","mapa","ganhos","perfil","config"];
+const validViews=["pedidos","ganhos","perfil","config"];
 function switchView(view){
  const next=validViews.includes(view)?view:"pedidos";
  for(const section of document.querySelectorAll(".app-view"))section.hidden=section.dataset.view!==next;
@@ -237,8 +224,6 @@ function renderDailyBreakdown(report){
  }
 }
 function updateNavPreferences(){
- $("mapPreference").textContent=(navProvider==="waze"?"Waze":"Google Maps")+" • "+(navMode==="coords"?"Coordenadas quando disponíveis":"Endereço");
- $("profileNav").textContent=navProvider==="waze"?"Waze":"Google Maps";
  for(const b of document.querySelectorAll("[data-nav-choice]"))b.setAttribute("aria-pressed",String(b.dataset.navChoice===navProvider));
  for(const b of document.querySelectorAll("[data-map-mode]"))b.setAttribute("aria-pressed",String(b.dataset.mapMode===navMode));
 }
@@ -264,23 +249,6 @@ function openNavigation(delivery){
  if(!url){message("Endereço indisponível para esta entrega.");return;}
  window.open(url,"_blank","noopener,noreferrer");
 }
-function renderRoutes(current){
- const target=$("routesList");target.replaceChildren();
- if(!current.length){
-  const empty=element("div","empty");
-  empty.append(element("div","empty-icon","⌖"),element("h3","","Sem rotas pendentes"),element("p","","Os destinos serão listados assim que sua loja atribuir entregas."));
-  target.append(empty);return;
- }
- for(const delivery of current){
-  const item=element("article","route-card"),detail=element("div");
-  detail.append(element("strong","",delivery.customer_name||"Cliente"));
-  detail.append(element("p","",delivery.address||"Endereço não informado"));
-  detail.append(element("small","",statuses[delivery.status]||"Em andamento"));
-  const btn=createAction("Abrir rota","primary",()=>openNavigation(delivery),!delivery.address);
-  item.append(detail,btn);target.append(item);
- }
-}
-
 const brl=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
 const numValue=value=>{const n=Number(value??0);return Number.isFinite(n)&&n>=0?n:0;};
 const countLabel=n=>n===1?"1 entrega":String(n)+" entregas";
@@ -451,7 +419,6 @@ async function refresh(){
  $("active").textContent=String(current.length);
  $("done").textContent=String(list.filter(d=>d.status==="entregue").length);
  assignedDeliveries=current;
- renderRoutes(current);
  const target=$("cards");target.replaceChildren();
  if(!current.length){
   const empty=element("div","empty");
@@ -492,8 +459,6 @@ $("settingsRefresh").addEventListener("click",()=>{switchView("pedidos");refresh
 document.querySelectorAll(".bottom-nav [data-tab]").forEach(b=>
  b.addEventListener("click",()=>switchView(b.dataset.tab)));
 $("miniEarnings").addEventListener("click",()=>switchView("ganhos"));
-$("mapChange").addEventListener("click",()=>switchView("config"));
-$("profileMapChange").addEventListener("click",()=>switchView("config"));
 window.addEventListener("hashchange",()=>switchView(location.hash.slice(1)));
 document.querySelectorAll("[data-nav-choice]").forEach(b=>b.addEventListener("click",()=>{
  navProvider=b.dataset.navChoice==="waze"?"waze":"google";
