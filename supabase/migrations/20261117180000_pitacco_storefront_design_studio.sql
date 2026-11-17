@@ -117,6 +117,100 @@ begin
   order by v.version desc),'[]'::jsonb) into versions
  from (select * from public.pitacco_storefront_design_versions where store_id=p_store order by version desc limit 20) v;
  return jsonb_build_object(
-  'draft',case when found then null end,'placeholder',null
- );
-end $$;
+  'draft',coalesce(row.draft,pitacco_private.storefront_design_default(p_store)),
+  'published',row.published,
+  'draft_version',coalesce(row.draft_version,0),
+  'published_version',coalesce(row.published_version,0),
+  'updated_at',row.updated_at,'published_at',row.published_at,
+  'history',versions);
+end $;
+revoke all on function public.pitacco_storefront_studio_state(uuid) from public,anon,authenticated;
+grant execute on function public.pitacco_storefront_studio_state(uuid) to authenticated;
+
+create function public.pitacco_storefront_save_draft(p_store uuid,p_design jsonb,p_expected_version integer)
+returns jsonb language plpgsql security definer set search_path='' as $
+declare row public.pitacco_storefront_designs%rowtype;
+begin
+ if auth.uid() is null or not public.is_store_manager(p_store) then
+  raise exception 'Sem autorização para editar o cardápio' using errcode='42501';end if;
+ perform pitacco_private.validate_storefront_design(p_store,p_design);
+ insert into public.pitacco_storefront_designs(store_id,draft)
+ values(p_store,pitacco_private.storefront_design_default(p_store))
+ on conflict(store_id) do nothing;
+ select * into row from public.pitacco_storefront_designs where store_id=p_store for update;
+ if row.draft_version is distinct from p_expected_version then
+  raise exception 'O rascunho foi alterado em outro dispositivo. Recarregue antes de salvar';
+ end if;
+ update public.pitacco_storefront_designs set draft=p_design,draft_version=draft_version+1,updated_at=now()
+ where store_id=p_store;
+ return jsonb_build_object('saved',true,'draft_version',row.draft_version+1);
+end $;
+revoke all on function public.pitacco_storefront_save_draft(uuid,jsonb,integer) from public,anon,authenticated;
+grant execute on function public.pitacco_storefront_save_draft(uuid,jsonb,integer) to authenticated;
+
+create function public.pitacco_storefront_publish(p_store uuid,p_expected_draft integer,p_expected_published integer)
+returns jsonb language plpgsql security definer set search_path='' as $
+declare row public.pitacco_storefront_designs%rowtype; revision integer;
+begin
+ if auth.uid() is null or not public.is_store_manager(p_store) then
+  raise exception 'Sem autorização para publicar' using errcode='42501';end if;
+ select * into row from public.pitacco_storefront_designs where store_id=p_store for update;
+ if not found then raise exception 'Salve um rascunho antes de publicar';end if;
+ if row.draft_version is distinct from p_expected_draft or row.published_version is distinct from p_expected_published then
+  raise exception 'Aparência alterada em outro dispositivo. Recarregue antes de publicar';end if;
+ perform pitacco_private.validate_storefront_design(p_store,row.draft);
+ revision:=row.published_version+1;
+ insert into public.pitacco_storefront_design_versions(store_id,version,snapshot,published_by)
+ values(p_store,revision,row.draft,auth.uid());
+ update public.pitacco_storefront_designs set published=row.draft,published_version=revision,published_at=now(),updated_at=now()
+ where store_id=p_store;
+ return jsonb_build_object('published',true,'published_version',revision);
+end $;
+revoke all on function public.pitacco_storefront_publish(uuid,integer,integer) from public,anon,authenticated;
+grant execute on function public.pitacco_storefront_publish(uuid,integer,integer) to authenticated;
+
+create function public.pitacco_storefront_restore_draft(p_store uuid,p_revision integer,p_expected_draft integer)
+returns jsonb language plpgsql security definer set search_path='' as $
+declare row public.pitacco_storefront_designs%rowtype; previous jsonb;
+begin
+ if auth.uid() is null or not public.is_store_manager(p_store) then
+  raise exception 'Sem autorização para restaurar' using errcode='42501';end if;
+ select * into row from public.pitacco_storefront_designs where store_id=p_store for update;
+ if not found or row.draft_version is distinct from p_expected_draft then
+  raise exception 'Rascunho alterado. Recarregue antes de restaurar';end if;
+ select snapshot into previous from public.pitacco_storefront_design_versions
+ where store_id=p_store and version=p_revision;
+ if previous is null then raise exception 'Versão não pertence a esta loja';end if;
+ perform pitacco_private.validate_storefront_design(p_store,previous);
+ update public.pitacco_storefront_designs set draft=previous,draft_version=draft_version+1,updated_at=now()
+ where store_id=p_store;
+ return jsonb_build_object('restored_to_draft',true,'draft_version',row.draft_version+1);
+end $;
+revoke all on function public.pitacco_storefront_restore_draft(uuid,integer,integer) from public,anon,authenticated;
+grant execute on function public.pitacco_storefront_restore_draft(uuid,integer,integer) to authenticated;
+
+-- Expor somente o visual publicado e somente os banners ativos neste instante.
+create function pitacco_private.storefront_public_design(p_store uuid)
+returns jsonb language sql stable security definer set search_path='' as $
+ select case when d.published is null then null else
+   jsonb_set(d.published,'{banners}',
+    coalesce((select jsonb_agg(b.value order by b.ord)
+     from jsonb_array_elements(d.published->'banners') with ordinality as b(value,ord)
+     where (nullif(b.value->>'starts_at','') is null or (b.value->>'starts_at')::timestamptz<=now())
+       and (nullif(b.value->>'ends_at','') is null or (b.value->>'ends_at')::timestamptz>=now())
+    ),'[]'::jsonb))
+ end
+ from public.pitacco_storefront_designs d where d.store_id=p_store
+$;
+revoke all on function pitacco_private.storefront_public_design(uuid) from public,anon,authenticated;
+
+-- Acrescenta appearance sem substituir nem modificar valores de pedidos, frete ou pagamento.
+do $migration$
+declare definition text:=pg_get_functiondef('public.get_public_menu(text)'::regprocedure);
+ marker text:='''delivery_enabled'',cfg.delivery_enabled';
+begin
+ if strpos(definition,'''appearance'',pitacco_private.storefront_public_design(cfg.store_id)')>0 then return;end if;
+ if strpos(definition,marker)=0 then raise exception 'Formato do cardápio público inesperado';end if;
+ execute replace(definition,marker,
+  '''appearance'',pitacco_private.storefront_public_design(cfg.store_id),'||marker);
+end $migration$;
