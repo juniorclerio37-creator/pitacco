@@ -201,7 +201,7 @@ returns jsonb language sql stable security definer set search_path='' as $$
     ),'[]'::jsonb))
  end
  from public.pitacco_storefront_designs d where d.store_id=p_store
-$;
+$$;
 revoke all on function pitacco_private.storefront_public_design(uuid) from public,anon,authenticated;
 
 -- Acrescenta appearance sem substituir nem modificar valores de pedidos, frete ou pagamento.
