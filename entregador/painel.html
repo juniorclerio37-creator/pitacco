@@ -146,6 +146,8 @@ a.btn{text-decoration:none}
  </section>
  <section class="panel-white pref-panel">
   <span class="eyebrow">AJUDA E SINCRONIZAÇÃO</span>
+  <button type="button" class="settings-row" id="testAssignmentSound"><span>Testar som de nova entrega</span><span class="setting-arrow">♪</span></button>
+  <p id="assignmentSoundStatus" role="status" aria-live="polite"></p>
   <button type="button" class="settings-row" id="settingsRefresh"><span>Atualizar pedidos e ganhos</span><span class="setting-arrow">↻</span></button>
   <button type="button" class="settings-row" id="settingsLogout"><span>Sair da minha conta</span><span class="setting-arrow">→</span></button>
  </section>
@@ -183,6 +185,39 @@ let lastHistoryRequest=0;
 
 let earnPeriod="hoje", earnRequest=0, lastEarningsReport=null;
 let storeName="Minha loja", navProvider="google", navMode="address", assignedDeliveries=[];
+let assignmentAudio, assignmentBaseline;
+async function enableAssignmentSound(){
+ const Audio=window.AudioContext||window.webkitAudioContext;
+ if(!Audio)return;
+ try{assignmentAudio??=new Audio();await assignmentAudio.resume();}catch{}
+}
+function announceAssignments(deliveries,courier){
+ const current=new Set(deliveries.filter(order=>order.status==="atribuida"&&order.courier_id===courier.id).map(order=>order.id));
+ const fresh=courier.available&&assignmentBaseline?.courier===courier.id
+   &&[...current].some(id=>!assignmentBaseline.ids.has(id));
+ assignmentBaseline={courier:courier.id,ids:current};
+ if(!fresh)return;
+ message("Nova entrega atribuída pela loja.");
+ playAssignmentSound();
+}
+function playAssignmentSound(){
+ if(assignmentAudio?.state!=="running")return false;
+ const now=assignmentAudio.currentTime;
+ for(const [offset,pitch] of [[0,784],[.17,1046],[.43,880],[.60,1175]]){
+  const tone=assignmentAudio.createOscillator(), gain=assignmentAudio.createGain();
+  const start=now+offset;
+  tone.frequency.value=pitch;
+  gain.gain.setValueAtTime(.001,start);
+  gain.gain.exponentialRampToValueAtTime(.55,start+.02);
+  gain.gain.exponentialRampToValueAtTime(.001,start+.19);
+  tone.connect(gain);gain.connect(assignmentAudio.destination);
+  tone.start(start);tone.stop(start+.2);
+ }
+ return true;
+}
+document.addEventListener("pointerdown",enableAssignmentSound,{once:true});
+document.addEventListener("keydown",enableAssignmentSound,{once:true});
+
 const validViews=["pedidos","ganhos","perfil","config"];
 function switchView(view){
  const next=validViews.includes(view)?view:"pedidos";
@@ -562,6 +597,7 @@ async function refreshSnapshot(){
  const current=list.filter(d=>!["entregue","cancelada"].includes(d.status));
  $("active").textContent=String(current.length);
  // Finished deliveries are never included in the raw private order list.
+ announceAssignments(current,courier);
  assignedDeliveries=current;
  orderDetails.keepActive(current);
  const target=$("cards");target.replaceChildren();
@@ -586,6 +622,9 @@ async function boot(){
   switchView(location.hash.slice(1));
   await refresh();
   setInterval(()=>{if(!document.hidden&&!busy)refresh().catch(e=>message(String(e.message)))},20000);
+  document.addEventListener("visibilitychange",()=>{
+   if(!document.hidden&&!busy)refresh().catch(e=>message(String(e.message)));
+  });
  }catch(err){
   message("Acesso não autorizado ou falha de conexão: "+String(err?.message??"Tente novamente"));
   $("cards").replaceChildren(element("div","empty","Não foi possível carregar as entregas."));
@@ -601,6 +640,12 @@ $("online").addEventListener("click",async()=>{
  finally{busy=false;$("online").disabled=false;}
 });
 $("refresh").addEventListener("click",()=>refresh().catch(e=>message(String(e.message))));
+$("testAssignmentSound").addEventListener("click",async()=>{
+ await enableAssignmentSound();
+ $("assignmentSoundStatus").textContent=playAssignmentSound()
+  ?"Som de nova entrega ativado enquanto esta tela estiver aberta."
+  :"Não foi possível ativar o som. Confira o volume do aparelho.";
+});
 $("settingsRefresh").addEventListener("click",()=>{switchView("pedidos");refresh().catch(e=>message(String(e.message)));});
 document.querySelectorAll(".bottom-nav [data-tab]").forEach(b=>
  b.addEventListener("click",()=>switchView(b.dataset.tab)));

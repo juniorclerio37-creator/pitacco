@@ -26,6 +26,12 @@ input:focus-visible{border-color:#f97316}.primary{display:block;width:100%;backg
 <section id="loading"><h1>Verificando acesso</h1><p class="sub">Confirmando sua sessão.</p></section>
 <section id="login" class="hidden">
 <h1>Bem-vindo de volta</h1><p class="sub">Entre com o celular e a senha informados pela loja.</p>
+<div id="appDownloadBox" class="notice" hidden>
+ <p id="androidVersion"></p>
+ <button type="button" class="secondary" id="downloadAndroid">Baixar aplicativo Android</button>
+ <button type="button" class="secondary" id="continueWeb">Continuar na versão web</button>
+ <p id="downloadStatus" role="status" aria-live="polite"></p>
+</div>
 <form id="loginForm">
 <label for="phone">Celular com DDD</label><input id="phone" name="phone" type="tel" autocomplete="username" inputmode="tel" placeholder="(21) 99999-9999" maxlength="20" required>
 <label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" minlength="6" required placeholder="Sua senha">
@@ -61,6 +67,35 @@ function show(name){sections.forEach(s=>$(s).classList.toggle("hidden",s!==name)
 function alertError(id,message){$(id).textContent=message;}
 const sb = createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const auth = createDriverAuth(sb);
+async function showAppDownload(){
+ try {
+  const {data,error}=await sb.rpc("pitacco_public_courier_apk");
+  if(error||!data?.path||!data.filename)return;
+  $("androidVersion").textContent="Pitacco Entregador para Android · versão "+data.version;
+  $("appDownloadBox").hidden=false;
+  $("continueWeb").addEventListener("click",()=>{
+   $("appDownloadBox").hidden=true;
+   $("phone").focus();
+  });
+  $("downloadAndroid").addEventListener("click",async()=>{
+   $("downloadAndroid").disabled=true;
+   $("downloadStatus").textContent="Preparando download…";
+   try{
+    const {data:url,error}=await sb.storage.from("pitacco-installers").createSignedUrl(data.path,60,{download:data.filename});
+    if(error||!url?.signedUrl)throw Error();
+    const link=document.createElement("a");
+    link.href=url.signedUrl;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    $("downloadStatus").textContent="Download iniciado.";
+   }catch{$("downloadStatus").textContent="Download indisponível. Tente novamente ou continue pela web.";}
+   finally{$("downloadAndroid").disabled=false;}
+  });
+ }catch{}
+}
+void showAppDownload();
+
 async function call(action,payload={}){
  const {data:{session}}=await sb.auth.getSession();
  if(!session?.access_token) throw new Error("Sua sessão expirou. Entre novamente.");
