@@ -91,8 +91,8 @@ export default function OwnerAppReleases({client}){
  return <div className="app-releases">
   <section className="panel"><h3>Nova versão</h3>
    <form onSubmit={create} className="release-form">
-    <label>Aplicativo<select name="app" value={app} onChange={event=>setApp(event.target.value)}><option value="windows">Pitacco Windows</option><option value="android">Pitacco Entregador Android</option></select></label>
-    <label>Canal<select name="channel"><option value="stable">Estável</option><option value="test">Testes</option></select></label>
+    <label>Aplicativo<select name="app" aria-label="Aplicativo" value={app} onChange={event=>setApp(event.target.value)}><option value="windows">Pitacco Windows</option><option value="android">Pitacco Entregador Android</option></select></label>
+    <label>Canal<select name="channel" aria-label="Canal"><option value="stable">Estável</option><option value="test">Testes</option></select></label>
     <label>Versão<input name="version" required maxLength={64} placeholder="1.2.3"/></label>
     <label>Instalador<input name="file" type="file" required accept={app==='windows'?'.exe,.msi':'.apk'}/></label>
     <label className="release-wide">SHA-256 da compilação<input name="sha256" required pattern="[0-9a-fA-F]{64}" maxLength={64} spellCheck="false"/></label>
@@ -106,7 +106,7 @@ export default function OwnerAppReleases({client}){
   {notice&&<p role="status">{notice}</p>}{error&&<p role="alert">{error}</p>}
   <section className="panel"><h3>Versões</h3>
    {loading?<p role="status">Carregando versões…</p>:rows.length===0?<p>Nenhuma versão cadastrada.</p>:
-    <label>Selecione no histórico<select value={selected} onChange={event=>setSelected(event.target.value)}>
+    <label>Selecione no histórico<select aria-label="Selecione no histórico" value={selected} onChange={event=>setSelected(event.target.value)}>
      <option value="">Selecione uma versão</option>
      {rows.map(row=><option key={row.id} value={row.id}>{row.app==='windows'?'Windows':'Android'} · {row.version} · {row.channel==='stable'?'Estável':'Testes'} · {states[row.state]}</option>)}
     </select></label>}
