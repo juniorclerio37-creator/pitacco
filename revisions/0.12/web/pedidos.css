@@ -23,3 +23,8 @@
 .pitacco-pedidos .pedidos-localizer b{font-size:1.05rem;letter-spacing:.08em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .pitacco-pedidos .pedidos-localizer-detail{margin-bottom:8px}
 .pitacco-pedidos .pedidos-detail-heading h3{font-size:clamp(1.15rem,2vw,1.4rem);color:#c2580d}
+
+/* Cozinha e expedição: localizador também visível no cartão da loja. */
+.operations-order-localizer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0;padding:10px 12px;border:1px solid #f5c991;background:#fff3e1;color:#864610;border-radius:10px}
+.operations-order-localizer small{font-size:.68rem;letter-spacing:.065em;font-weight:850}
+.operations-order-localizer strong{font-size:1.03rem;letter-spacing:.075em;font-weight:950;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
