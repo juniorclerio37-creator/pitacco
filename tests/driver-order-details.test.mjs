@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {createOrderDetailsController} from '../entregador/order-details.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
 test('tapping a card requests detailed data for the assigned delivery only',()=>{
@@ -45,4 +46,8 @@ test('private contact table is never exposed on common deliveries table',()=>{
  assert.match(sql,/drop column if exists customer_phone_expires_at/);
  const html=read('entregador/painel.html');
  assert.doesNotMatch(html,/customer_phone\s*:/);
+});
+
+test('order details controller loads and parses as a valid ES module',()=>{
+ assert.equal(typeof createOrderDetailsController,'function');
 });
