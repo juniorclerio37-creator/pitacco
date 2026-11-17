@@ -18,8 +18,8 @@ function syntaxCheck(source) {
     assert.equal(result.status,0,result.stderr);
   } finally {rmSync(folder,{recursive:true,force:true});}
 }
-test("browser modules for login, courier dashboard, and merchant management parse",()=>{
-  for(const page of ["acesso.html","painel.html","gestao.html"]){
+test("browser modules for driver login and delivery panel parse",()=>{
+  for(const page of ["acesso.html","painel.html"]){
     const html=read(page);
     const match=html.match(/<script type="module">([\s\S]*?)<\/script>/i);
     assert.ok(match,"Missing module in "+page);
@@ -36,12 +36,24 @@ test("driver controls never implement public registration or accepting / rejecti
   assert.doesNotMatch(panel,/set_delivery_status/);
   assert.doesNotMatch(panel,/pitacco_driver_accept/);
 });
-test("manager page provides store-controlled create/reset/disable/reactivate",()=>{
-  const html=read("gestao.html");
-  for(const action of ['"create"','"reset"','"disable"','"reactivate"']){
-    assert.ok(html.includes(action),"Missing "+action);
+test("merchant management lives in existing Motoboys -> Entregadores tab",()=>{
+  const workspace=read("../revisions/0.12/web/CourierWorkspace.jsx");
+  const management=read("../revisions/0.12/web/CourierAccessManager.jsx");
+  const legacy=read("../revisions/0.12/web/LogisticsHub.jsx");
+  const oldPage=read("gestao.html");
+  assert.match(workspace,/tab==='Entregadores'/);
+  assert.match(workspace,/<CourierAccessManager/);
+  assert.match(workspace,/tab==='Pagamentos'/);
+  assert.match(workspace,/tab==='Relatórios'/);
+  assert.match(workspace,/tab==='Entregas'/);
+  assert.doesNotMatch(legacy,/register_courier/);
+  assert.doesNotMatch(management,/auth\.signUp\s*\(/);
+  assert.match(management,/client\.functions\.invoke\('pitacco-courier-access'/);
+  for(const action of ['create','reset','disable','reactivate']){
+    assert.ok(management.includes("'"+action+"'"),"Missing store management action "+action);
   }
-  assert.doesNotMatch(html,/auth\.signUp\s*\(/);
+  assert.match(oldPage,/app\.pitacco\.com\.br/);
+  assert.doesNotMatch(oldPage,/type="password"/);
 });
 test("Edge Function parses and checks caller JWT and store membership",()=>{
   const edge=read("../supabase/functions/pitacco-courier-access/index.ts");
