@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from 'react';
-import {StoreReadiness,StoreHelp} from './StoreReadiness.jsx';
+import {StoreReadiness} from './StoreReadiness.jsx';
 const keys=[['name','Nome da loja'],['description','Descrição'],['phone','Telefone'],['address','Rua / avenida'],['address_number','Número'],['neighborhood','Bairro'],['city','Cidade'],['state','Estado'],['postal_code','CEP']];
 export async function uploadStoreImage(client,storeId,file,kind){
  if(!storeId||!['stores','products'].includes(kind))throw Error('Loja ou tipo de imagem inválido.');
@@ -33,5 +33,5 @@ export default function StoreProfile({client,store,manager,onSaved}){
  <form onSubmit={save}><div style={{display:'flex',alignItems:'center',gap:16,marginBottom:16}}>{(preview||store.logo_path)&&<img src={preview||mediaUrl(client,store.logo_path)} alt="Logotipo da loja" style={{width:90,height:90,objectFit:'contain',borderRadius:12}}/>}<label>Logotipo da loja<input type="file" accept="image/png,image/jpeg,image/webp" disabled={!manager} onChange={e=>setLogo(e.target.files?.[0]||null)}/></label></div>
  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:12}}>{keys.map(([key,label])=><label key={key} className="field">{label}<input value={draft[key]||''} required={key==='name'} maxLength={key==='description'?1500:180} disabled={!manager} onChange={e=>setDraft(p=>({...p,[key]:e.target.value}))}/></label>)}</div>
  {message&&<p role="status" className="notice">{message}</p>}
- <button disabled={busy||!manager} type="submit">Salvar alterações da loja</button></form></section><StoreReadiness client={client} storeId={store.id}/><StoreHelp client={client} storeId={store.id}/></>;
+ <button disabled={busy||!manager} type="submit">Salvar alterações da loja</button></form></section><StoreReadiness client={client} storeId={store.id}/></>;
 }
