@@ -143,11 +143,13 @@ subprocess.run([sys.executable,'revisions/0.12/enable_windows_modules_preview.py
 subprocess.run([sys.executable,'revisions/0.12/windows_navigation_diagnostics_0123.py'],check=True)
 # Test-only delivery association in both web and Windows app.
 subprocess.run([sys.executable,'revisions/0.12/enable_single_test_courier.py'],check=True)
+# Respect iFood's ready vs terminal events; never mark courier delivered from kitchen preparation.
+subprocess.run([sys.executable,'revisions/0.12/ifood_not_completed_on_ready.py'],check=True)
 for relative in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src-tauri/Cargo.toml','src-tauri/Cargo.lock']:
  p=pathlib.Path('web')/relative
  value=p.read_text(encoding='utf-8')
  if relative.endswith('Cargo.lock'):
-  value=value.replace('name = "deliverygestor-desktop"\nversion = "0.12.0"', 'name = "deliverygestor-desktop"\nversion = "0.12.4"')
+  value=value.replace('name = "deliverygestor-desktop"\nversion = "0.12.0"', 'name = "deliverygestor-desktop"\nversion = "0.12.5"')
  else:
-  value=value.replace('"0.12.0"', '"0.12.4"')
+  value=value.replace('"0.12.0"', '"0.12.5"')
  p.write_text(value,encoding='utf-8')
