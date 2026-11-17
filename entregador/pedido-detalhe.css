@@ -1,0 +1,48 @@
+/* Cartão clicável e detalhes do pedido — Pitacco Entregador */
+.card-open{appearance:none;display:block;background:transparent;border:0;padding:0;margin:0;width:100%;text-align:left;color:inherit;cursor:pointer;font:inherit}
+.card-open:hover .card-detail-hint{color:#dd6414}
+.card-open:focus-visible{outline:3px solid #ff9b3c;outline-offset:4px;border-radius:8px}
+.card-detail-hint{display:block;font-size:12px;font-weight:850;color:#ea741d;margin:14px 0 2px;letter-spacing:-.1px}
+.order-detail-open{overflow:hidden}
+.order-overlay{position:fixed;inset:0;z-index:1000;background:#162334a8;display:flex;align-items:flex-end;justify-content:center;padding:0}
+.order-overlay[hidden]{display:none!important}
+.order-sheet{background:#f7f8fb;display:flex;flex-direction:column;border-radius:24px 24px 0 0;width:min(100%,620px);max-height:94dvh;min-height:230px;box-shadow:0 -12px 50px #0e1c273f;overflow:hidden}
+.order-sheet-head{padding:18px 20px 15px;background:#fff;border-bottom:1px solid #e8edf2;display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none}
+.order-sheet-head h2{font-size:20px;letter-spacing:-.6px;margin:6px 0 0;font-weight:950;overflow-wrap:anywhere}
+.order-sheet-close{background:#eff2f6;color:#5d6775;width:40px;height:40px;display:grid;place-items:center;border-radius:12px;border:0;font-size:27px;line-height:1;cursor:pointer;flex-shrink:0}
+.order-sheet-body{padding:17px 16px calc(30px + env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain}
+.order-detail-loading,.order-detail-error{padding:25px 13px;text-align:center;font-size:14px;color:#657184}
+.order-detail-error{color:#bc3830}
+.order-source-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:13px}
+.order-source-tag,.order-status-tag{font-size:10px;font-weight:900;letter-spacing:.4px;border-radius:100px;padding:7px 10px;background:#fff0e4;color:#a95116}
+.order-status-tag{background:#e9eff7;color:#667486}
+.order-detail-section{background:#fff;border:1px solid #e8edf3;border-radius:18px;padding:18px;margin-bottom:12px}
+.order-detail-section h3{font-size:14px;letter-spacing:-.1px;font-weight:950;margin:0 0 13px}
+.order-customer-name{display:block;font-size:17px;letter-spacing:-.3px;overflow-wrap:anywhere}
+.order-detail-address{font-size:13px;line-height:1.6;color:#697688;white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0 14px}
+.order-route-button{border:1px solid #ffdec3;border-radius:12px;background:#fff2e8;color:#ae5314;font-weight:850;font:inherit;font-size:13px;padding:12px 14px;cursor:pointer}
+.order-route-button:disabled{opacity:.5;cursor:default}
+.order-contact-box{display:flex;flex-direction:column;gap:11px}
+.order-contact-number{display:block;font-weight:850;font-size:19px;letter-spacing:.1px;overflow-wrap:anywhere}
+.order-contact-explain{font-size:12px;line-height:1.6;color:#768292;margin:0}
+.order-contact-warning{font-size:12px;line-height:1.5;margin:0;color:#9c520b;background:#fff4e6;border-radius:12px;padding:11px}
+.order-contact-actions{display:flex;flex-wrap:wrap;gap:9px}
+.order-contact-button{text-decoration:none!important;display:inline-flex;align-items:center;justify-content:center;flex:1;min-width:140px;min-height:47px;padding:11px;border-radius:12px;font-size:13px;font-weight:850;line-height:1.2;text-align:center}
+.order-contact-button.whatsapp{background:#1d9f62;color:#fff}
+.order-contact-button.call{background:#fff2e7;border:1px solid #ffd6b3;color:#af4b0d}
+.order-localizer{display:flex;flex-wrap:wrap;align-items:center;gap:7px;border-radius:13px;background:#f3f5f9;border:1px solid #e1e8f1;padding:12px}
+.order-localizer>span{font-size:10px;color:#718196;font-weight:900;letter-spacing:.6px;width:100%}
+.order-localizer>strong{font-size:23px;letter-spacing:1px;line-height:1.2;font-variant-numeric:tabular-nums;flex:1}
+.order-copy{font-size:12px;font-weight:850;background:white;border:1px solid #dae1e9;border-radius:9px;padding:8px 10px;color:#53637a;cursor:pointer}
+.order-product{padding:13px 0;border-top:1px solid #edf0f4}
+.order-product:first-of-type{border-top:0;padding-top:0}
+.order-product-title{font-size:14px;color:#2b3645;font-weight:850;display:block;overflow-wrap:anywhere}
+.order-product-options{padding:0;margin:10px 0 0 17px;color:#667484;font-size:12px;line-height:1.7}
+.order-product-notes{font-size:12px;color:#777f8f;margin:9px 0 0}
+.order-detail-notes{font-size:13px;line-height:1.6;white-space:pre-wrap;color:#536174;margin:0}
+.order-detail-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid #eff1f5;font-size:13px}
+.order-detail-row span{color:#7b8797}
+.order-detail-row strong{text-align:right;font-weight:850}
+.order-detail-muted{font-size:12px;line-height:1.6;color:#8b94a3;margin:8px 0}
+@media(min-width:690px){.order-overlay{align-items:center;padding:15px}.order-sheet{border-radius:24px;max-height:min(800px,90dvh)}}
+@media(max-width:390px){.order-sheet-head{padding:14px 16px}.order-sheet-head h2{font-size:18px}.order-sheet-body{padding:13px 12px calc(25px + env(safe-area-inset-bottom))}.order-detail-section{padding:15px}.order-contact-button{min-width:110px}}
