@@ -1,4 +1,7 @@
 begin;
+alter table public.stores add column if not exists address text;
+alter table public.stores add column if not exists city text;
+alter table public.stores add column if not exists state text;
 insert into auth.users(id,email) values
  ('a1000000-0000-0000-0000-000000000001','launch-manager@example.invalid'),
  ('a1000000-0000-0000-0000-000000000002','launch-other@example.invalid');
