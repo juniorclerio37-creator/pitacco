@@ -173,7 +173,8 @@ begin
    or (a.begins_at<b.ends_at+10080 and b.begins_at+10080<a.ends_at))
  into overlap_found;
  if overlap_found then raise exception 'Há horários de funcionamento sobrepostos';end if;
- update public.pitacco_store_hours set paused=p_paused,manager_configured=true,
+ update public.pitacco_store_hours set paused=p_paused,
+  manager_configured=(manager_configured or paused=p_paused),
   revision=revision+1,updated_at=now() where store_id=p_store;
  return jsonb_build_object('saved',true,'revision',current_revision+1,
   'current',pitacco_private.store_opening_status(p_store,now()));
