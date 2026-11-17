@@ -1,6 +1,13 @@
 name: Pitacco Entregador APK
 on:
   workflow_dispatch:
+    inputs:
+      channel:
+        description: Canal da compilação
+        type: choice
+        required: true
+        default: teste
+        options: [teste, estavel]
   pull_request:
     paths: ['entregador/android-app/**', '.github/workflows/courier-apk.yml']
   push:
@@ -10,6 +17,7 @@ permissions:
   contents: read
 jobs:
   android:
+    if: github.event_name != 'workflow_dispatch' || inputs.channel == 'teste'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -23,7 +31,7 @@ jobs:
           gradle-version: '8.9'
       - name: Prepare Android notification sound and Firebase configuration
         env:
-          PITACCO_FIREBASE_ANDROID_JSON: ${{ secrets.PITACCO_FIREBASE_ANDROID_JSON }}
+          PITACCO_FIREBASE_ANDROID_JSON: ${{ github.ref == 'refs/heads/main' && secrets.PITACCO_FIREBASE_ANDROID_JSON || '' }}
         run: |
           python3 entregador/android-app/generate-alert.py
           if [ -n "$PITACCO_FIREBASE_ANDROID_JSON" ]; then
@@ -38,10 +46,84 @@ jobs:
           mv app-debug.apk Pitacco-Entregador-1.0.1-teste.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose Pitacco-Entregador-1.0.1-teste.apk
           sha256sum Pitacco-Entregador-1.0.1-teste.apk > SHA256-ANDROID.txt
+      - name: Exercise release signing with an isolated test certificate
+        if: github.event_name == 'pull_request'
+        working-directory: entregador/android-app
+        run: |
+          set -euo pipefail
+          tmp=$(mktemp -d)
+          trap 'rm -rf -- "$tmp"' EXIT
+          export PITACCO_ANDROID_KEYSTORE="$tmp/test.p12"
+          export PITACCO_ANDROID_KEY_ALIAS='pitacco-ci'
+          export PITACCO_ANDROID_KEYSTORE_PASSWORD='integration-test-password'
+          export PITACCO_ANDROID_KEY_PASSWORD="$PITACCO_ANDROID_KEYSTORE_PASSWORD"
+          keytool -genkeypair -storetype PKCS12 -keyalg RSA -keysize 2048 -validity 10 \
+            -dname 'CN=Pitacco CI' -keystore "$PITACCO_ANDROID_KEYSTORE" \
+            -alias "$PITACCO_ANDROID_KEY_ALIAS" -storepass:env PITACCO_ANDROID_KEYSTORE_PASSWORD
+          gradle --no-daemon assembleRelease
+          expected=$(keytool -exportcert -keystore "$PITACCO_ANDROID_KEYSTORE" \
+            -alias "$PITACCO_ANDROID_KEY_ALIAS" -storepass:env PITACCO_ANDROID_KEYSTORE_PASSWORD |
+            sha256sum | cut -d' ' -f1)
+          export PITACCO_ANDROID_CERT_SHA256="$expected"
+          bash sign-release.sh app/build/outputs/apk/release/app-release-unsigned.apk "$tmp/signed"
+          (cd "$tmp/signed" && sha256sum --check SHA256-ANDROID.txt)
+          export PITACCO_ANDROID_CERT_SHA256="$(printf '%064d' 0)"
+          if bash sign-release.sh app/build/outputs/apk/release/app-release-unsigned.apk "$tmp/wrong"; then
+            echo 'A compilação aceitou um certificado diferente do configurado.' >&2
+            exit 1
+          fi
+          test ! -e "$tmp/wrong"
       - uses: actions/upload-artifact@v4
         with:
           name: Pitacco-Entregador-Android-teste
           path: |
             entregador/android-app/app/build/outputs/apk/debug/Pitacco-Entregador-1.0.1-teste.apk
             entregador/android-app/app/build/outputs/apk/debug/SHA256-ANDROID.txt
+          if-no-files-found: error
+
+  stable:
+    if: github.event_name == 'workflow_dispatch' && inputs.channel == 'estavel' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compile APK with Firebase configuration
+        working-directory: entregador/android-app
+        env:
+          PITACCO_FIREBASE_ANDROID_JSON: ${{ secrets.PITACCO_FIREBASE_ANDROID_JSON }}
+        run: |
+          : "${PITACCO_FIREBASE_ANDROID_JSON:?Configure PITACCO_FIREBASE_ANDROID_JSON}"
+          trap 'rm -f app/google-services.json' EXIT
+          umask 077
+          printf '%s' "$PITACCO_FIREBASE_ANDROID_JSON" > app/google-services.json
+          python3 generate-alert.py
+          gradle --no-daemon assembleRelease
+      - name: Sign APK and verify official certificate
+        working-directory: entregador/android-app
+        env:
+          PITACCO_ANDROID_KEYSTORE_BASE64: ${{ secrets.PITACCO_ANDROID_KEYSTORE_BASE64 }}
+          PITACCO_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.PITACCO_ANDROID_KEYSTORE_PASSWORD }}
+          PITACCO_ANDROID_KEY_ALIAS: ${{ secrets.PITACCO_ANDROID_KEY_ALIAS }}
+          PITACCO_ANDROID_KEY_PASSWORD: ${{ secrets.PITACCO_ANDROID_KEY_PASSWORD }}
+          PITACCO_ANDROID_CERT_SHA256: ${{ vars.PITACCO_ANDROID_CERT_SHA256 }}
+        run: |
+          : "${PITACCO_ANDROID_KEYSTORE_BASE64:?Configure PITACCO_ANDROID_KEYSTORE_BASE64}"
+          umask 077
+          export PITACCO_ANDROID_KEYSTORE
+          PITACCO_ANDROID_KEYSTORE=$(mktemp)
+          trap 'rm -f -- "$PITACCO_ANDROID_KEYSTORE"' EXIT
+          printf '%s' "$PITACCO_ANDROID_KEYSTORE_BASE64" | base64 --decode > "$PITACCO_ANDROID_KEYSTORE"
+          unset PITACCO_ANDROID_KEYSTORE_BASE64
+          bash sign-release.sh app/build/outputs/apk/release/app-release-unsigned.apk distribution
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pitacco-Entregador-Android-estavel
+          path: entregador/android-app/distribution/
           if-no-files-found: error
