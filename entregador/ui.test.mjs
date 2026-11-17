@@ -75,3 +75,12 @@ test("personal courier password accepts six or more characters",()=>{
  assert.doesNotMatch(edge,/next\.length < 12/);
  assert.doesNotMatch(page,/minlength="12"/);
 });
+
+test("login redirects normally when password update already revoked the session",()=>{
+ const login=read("acesso.html");
+ const panel=read("painel.html");
+ assert.match(login,/await auth\.signOut\(\)\.catch\(\(\)=>\{\}\)/);
+ assert.match(login,/Senha alterada com sucesso/);
+ assert.match(login,/Sua sessão terminou/);
+ assert.doesNotMatch(panel,/await sb\.auth\.signOut\(\);/);
+});
