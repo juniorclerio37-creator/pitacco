@@ -89,11 +89,26 @@ drop policy if exists courier_test_store_manager_positions on public.courier_pos
 create policy courier_test_store_manager_positions on public.courier_positions for select to authenticated
 using (public.pitacco_courier_test_access(courier_id,'1481c0c6-5b87-4737-9d1a-96ae5c1615d9'::uuid) and public.is_store_manager('1481c0c6-5b87-4737-9d1a-96ae5c1615d9'::uuid));
 drop policy if exists courier_test_store_delivery_read on public.deliveries;
-create policy courier_test_store_delivery_read on public.deliveries for select to authenticated
-using (
- store_id='1481c0c6-5b87-4737-9d1a-96ae5c1615d9'::uuid and status not in ('entregue','cancelada') and courier_id='d2c2d04a-8545-449f-94f3-b67f5237d6c3'::uuid
- and public.pitacco_courier_test_access(courier_id,store_id)
- and public.is_courier(courier_id)
- and (select public.pitacco_courier_session_ready())
-);
+-- The production courier app enforces its active authenticated session.
+-- CI's standalone schema intentionally omits that function and all real couriers.
+-- Never authorize a live test courier without the production session check.
+do $pitacco$
+begin
+ if to_regprocedure('public.pitacco_courier_session_ready()') is not null then
+  execute $policy$
+   create policy courier_test_store_delivery_read on public.deliveries for select to authenticated
+   using (
+    store_id='1481c0c6-5b87-4737-9d1a-96ae5c1615d9'::uuid
+    and status not in ('entregue','cancelada')
+    and courier_id='d2c2d04a-8545-449f-94f3-b67f5237d6c3'::uuid
+    and public.pitacco_courier_test_access(courier_id,store_id)
+    and public.is_courier(courier_id)
+    and (select public.pitacco_courier_session_ready())
+   )
+  $policy$;
+ elsif exists (select 1 from pitacco_private.courier_test_store_access) then
+  raise exception 'A sessão do entregador é obrigatória para liberar entregas nesta loja';
+ end if;
+end;
+$pitacco$;
 notify pgrst, 'reload schema';
