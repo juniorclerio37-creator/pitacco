@@ -44,7 +44,7 @@ test('iFood object modifiers render by name and quantity on 80mm and 58mm notes'
 
 test('Windows navigation makes printing independently clickable and identifies installed version',()=>{
  const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
- assert.match(source,/Pitacco Windows v0\.12\.6/);
+ assert.match(source,/Pitacco Windows v0\.12\.7/);
  assert.match(source,/aria-label="Configurar impressão e visualizar nota"/);
  assert.match(source,/onClick=\{\(\)=>\{setTab\('Configurações'\)/);
  assert.match(source,/tab==='Aplicativos e Downloads'&&<AppDownloads/);
@@ -71,4 +71,18 @@ test('Windows gives truthful feedback after queueing a reprint, not paper confir
  assert.match(source,/rpc\('reprint_order'/);
  assert.match(source,/rpc\('claim_print_jobs'/);
  assert.match(source,/ingestJobs\(/);
+});
+
+test('Windows alerts use an imported natural audio file, not robotic SAPI',()=>{
+ const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
+ const rust=readFileSync(new URL('../src-tauri/src/main.rs',import.meta.url),'utf8');
+ assert.match(operations,/invoke\('play_order_voice'/);
+ assert.match(operations,/invoke\('save_order_voice'/);
+ assert.match(operations,/Volume da voz natural/);
+ assert.match(operations,/Testar somente voz/);
+ assert.doesNotMatch(rust,/System\.Speech|SpeechSynthesizer|System\.Media\.Speech/);
+ assert.match(rust,/fn play_order_voice/);
+ assert.match(rust,/fn save_order_voice/);
+ assert.match(rust,/pitacco_voice_payload/);
+ assert.match(operations,/invoke\('play_order_alert'/);
 });
