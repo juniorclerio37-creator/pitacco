@@ -92,6 +92,7 @@ try {
     await page.goto(origin + (width===375?'/cardapio/?loja=loja-teste':'/loja-teste?utm_source=qr&loja=outro'));
     const productCard=page.getByRole('button',{name:'Personalizar Açaí',exact:true});
     await productCard.waitFor();
+    await page.getByRole('heading',{name:'Açaís',exact:true}).waitFor();
     assert.equal(await page.getByText('Leite em pó',{exact:true}).count(),0);
     await page.getByRole('button',{name:'Bebidas',exact:true}).click();
     await page.getByRole('button',{name:'Personalizar Água',exact:true}).waitFor();
@@ -120,6 +121,19 @@ try {
     await page.getByRole('button',{name:/Ver sacola/}).click();
     assert.equal(await page.locator('#cart .cartline').count(),2);
     assert.equal(await page.locator('#cart input').first().inputValue(),'2');
+    const cart=page.getByRole('dialog',{name:'Sua sacola'});
+    const firstLine=cart.locator('.cartline').first();
+    await firstLine.getByRole('button',{name:'Editar complementos',exact:true}).click();
+    assert.equal(await product.getByRole('radio',{name:/Morango/}).isChecked(),true);
+    assert.equal(await product.locator('#productQuantity').innerText(),'2');
+    await product.getByRole('checkbox',{name:/Granola/}).check();
+    await product.getByRole('button',{name:/Salvar alterações/}).click();
+    await cart.getByText('Item atualizado na sacola.',{exact:true}).waitFor();
+    await firstLine.getByText(/Morango · Granola/).waitFor();
+    await firstLine.getByRole('button',{name:'Editar complementos',exact:true}).click();
+    await product.getByRole('checkbox',{name:/Granola/}).uncheck();
+    await product.getByRole('button',{name:'Fechar produto',exact:true}).click();
+    await firstLine.getByText(/Morango · Granola/).waitFor();
     await page.getByRole('button',{name:'Continuar para entrega e pagamento'}).click();
     for (const [id, value] of [['customer', 'Cliente Teste'], ['phone', '21999999999'], ['address', 'Rua Teste 123']]) {
       await page.locator('#' + id).fill(value);
@@ -145,7 +159,7 @@ try {
     assert.equal(requests[0].p_scheduled_for,scheduled||undefined);
     if(area)assert.deepEqual([requests[0].p_latitude,requests[0].p_longitude],[-22.71,-43.4]);
     assert.deepEqual(requests[0].p_items, [
-      { product_id: 'acai', quantity: 2, options: ['morango'] },
+      { product_id: 'acai', quantity: 2, options: ['morango','granola'] },
       { product_id: 'acai', quantity: 1, options: ['leite'] }
     ]);
     assert.match(await page.locator('#success').innerText(), /Pagamento pendente de confirmação/);
