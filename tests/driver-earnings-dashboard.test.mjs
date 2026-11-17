@@ -18,9 +18,9 @@ test("driver earnings dashboard includes day, week, month, chart and payment his
   assert.match(page,/nem confirma pagamento recebido/);
 });
 
-test("earnings query is scoped to the signed-in courier with RLS, not store gross revenue",()=>{
+test("earnings privileged aggregate is scoped to the authenticated courier after terminal RLS lockout",()=>{
   const query=read("docs/sql/driver-earnings-dashboard.sql");
-  assert.match(query,/security invoker/);
+  assert.match(query,/security definer/);
   assert.match(query,/pitacco_courier_session_ready\(\)/);
   assert.match(query,/c\.user_id = \(select auth\.uid\(\)\)/);
   assert.match(query,/d\.courier_id = v_courier/);
@@ -31,7 +31,7 @@ test("earnings query is scoped to the signed-in courier with RLS, not store gros
   assert.match(query,/America\/Sao_Paulo/);
   assert.match(query,/revoke all on function public\.pitacco_driver_earnings\(text\) from public, anon/);
   assert.match(query,/grant execute on function public\.pitacco_driver_earnings\(text\) to authenticated/);
-  assert.doesNotMatch(query,/security definer/);
+  assert.doesNotMatch(query,/delivery_id\x27, r\.id/);
   assert.doesNotMatch(query,/d\.delivery_fee as valor|d\.gross as valor/);
 });
 
