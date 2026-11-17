@@ -2,7 +2,7 @@
 
 No Windows SAPI voice. The operator imports one licensed Brazilian Portuguese
 PCM16 WAV produced by a human voice talent or a properly licensed neural TTS.
-The audio is stored on-device, pre-amplified in Rust, and works offline.
+The audio is stored on-device and works offline. The default level reproduces the imported WAV sample-for-sample, without amplification; higher levels are strictly opt-in.
 """
 from pathlib import Path
 
@@ -10,8 +10,8 @@ p=Path("web/Operations.jsx")
 s=p.read_text(encoding="utf-8")
 old=" const observeOrders=useMemo(()=>newOrderTracker(storeId),[client,storeId,manager]);"
 new=""" const [voiceLevel,setVoiceLevel]=useState(()=>{
-  try { const level=Number(localStorage.getItem('pitacco:natural-voice-level'));return [1,2,3].includes(level)?level:3; }
-  catch{return 3;}
+  try { const level=Number(localStorage.getItem('pitacco:natural-voice-level'));return [1,2,3].includes(level)?level:1; }
+  catch{return 1;}
  });
  const [voiceReady,setVoiceReady]=useState(false);
  useEffect(()=>{
@@ -73,7 +73,7 @@ new="""  <small role="status">{voiceReady
      const value=Number(event.target.value);setVoiceLevel(value);
      try{localStorage.setItem('pitacco:natural-voice-level',String(value));}catch{}
    }}>
-    <option value={1}>Normal</option>
+    <option value={1}>Normal (áudio original, sem amplificação)</option>
     <option value={2}>Alto</option>
     <option value={3}>Máximo (voz amplificada)</option>
    </select>
@@ -133,14 +133,17 @@ fn save_order_voice(audio_data:Vec<u8>)->Result<(),String>{
  {
   let (start,end)=pitacco_voice_payload(&audio_data)?;
   let folder=pitacco_voice_dir()?;
-  // Three precalculated audio variants, digitally limited to PCM16 range.
-  for (level,gain) in [(1u8,1.3f64),(2u8,2.5f64),(3u8,4.0f64)]{
+  // NORMAL uses the exact original PCM data. No gain, normalization, limiting, or changes.
+  // Alternative higher levels are generated only for explicit future user choice.
+  for (level,gain) in [(1u8,1.0f64),(2u8,1.5f64),(3u8,2.0f64)]{
    let mut bytes=audio_data.clone();
-   for offset in (start..end).step_by(2){
-    let x=i16::from_le_bytes([bytes[offset],bytes[offset+1]]) as f64/32768.0;
-    let limited=32760.0*(x*gain).tanh();
-    let y=(limited.round() as i16).to_le_bytes();
-    bytes[offset]=y[0];bytes[offset+1]=y[1];
+   if level!=1 {
+    for offset in (start..end).step_by(2){
+     let x=i16::from_le_bytes([bytes[offset],bytes[offset+1]]) as f64/32768.0;
+     let limited=32760.0*(x*gain).tanh();
+     let y=(limited.round() as i16).to_le_bytes();
+     bytes[offset]=y[0];bytes[offset+1]=y[1];
+    }
    }
    let file=folder.join(format!("voice-level-{}.wav",level));
    // Replace atomically when possible to avoid half-written audio.
@@ -167,7 +170,7 @@ fn play_order_voice(level:Option<u8>)->Result<(),String>{
  {
   #[link(name="winmm")]
   extern "system" {fn PlaySoundW(sound:*const u16,module:*mut std::ffi::c_void,flags:u32)->i32;}
-  let selected=match level.unwrap_or(3){1=>1,2=>2,_=>3};
+  let selected=match level.unwrap_or(1){1=>1,2=>2,_=>3};
   let path=pitacco_voice_dir()?.join(format!("voice-level-{}.wav",selected));
   if !path.is_file(){return Err("Voz natural ainda não importada.".into());}
   use std::os::windows::ffi::OsStrExt;
