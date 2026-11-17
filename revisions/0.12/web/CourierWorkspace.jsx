@@ -1,14 +1,15 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {ArrowRight, Bike, CircleDollarSign, ClipboardList, Gauge, Route, Settings2, Wallet, Zap} from 'lucide-react';
 import LogisticsHub from './LogisticsHub.jsx';
+import CourierAccessManager from './CourierAccessManager.jsx';
 import CourierFinance from './CourierFinance.jsx';
 import CourierRates from './CourierRates.jsx';
 const cash=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const tabs=['Entregadores','Entregas','Pagamentos','Regras de Cobrança','Acerto Rápido','Relatórios','Histórico','Desempenho'];
 const metricIcons=[Bike,CircleDollarSign,Wallet,Gauge,Route,ClipboardList];
 export default function CourierWorkspace({client,store,onRefresh,onNavigate}){
- const [tab,setTab]=useState('Entregadores'),[couriers,setCouriers]=useState([]),[deliveries,setDeliveries]=useState([]),[payments,setPayments]=useState([]),[query,setQuery]=useState(''),[error,setError]=useState('');
- useEffect(()=>{let alive=true;async function refresh(){try{const [a,b,c]=await Promise.all([client.from('couriers').select('*').eq('store_id',store.id),client.from('deliveries').select('*').eq('store_id',store.id).order('created_at',{ascending:false}).limit(500),client.from('pitacco_courier_payouts').select('*').eq('store_id',store.id)]);for(const r of [a,b,c])if(r.error)throw r.error;if(alive){setCouriers(a.data||[]);setDeliveries(b.data||[]);setPayments(c.data||[]);setError('')}}catch(e){if(alive)setError(e.message)}}refresh();const timer=setInterval(refresh,15000);return()=>{alive=false;clearInterval(timer)}},[client,store.id]);
+ const [tab,setTab]=useState('Entregadores'),[couriers,setCouriers]=useState([]),[deliveries,setDeliveries]=useState([]),[payments,setPayments]=useState([]),[query,setQuery]=useState(''),[error,setError]=useState(''),[teamRefresh,setTeamRefresh]=useState(0);
+ useEffect(()=>{let alive=true;async function refresh(){try{const [a,b,c]=await Promise.all([client.from('couriers').select('*').eq('store_id',store.id),client.from('deliveries').select('*').eq('store_id',store.id).order('created_at',{ascending:false}).limit(500),client.from('pitacco_courier_payouts').select('*').eq('store_id',store.id)]);for(const r of [a,b,c])if(r.error)throw r.error;if(alive){setCouriers(a.data||[]);setDeliveries(b.data||[]);setPayments(c.data||[]);setError('')}}catch(e){if(alive)setError(e.message)}}refresh();const timer=setInterval(refresh,15000);return()=>{alive=false;clearInterval(timer)}},[client,store.id,teamRefresh]);
  const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
  const completed=deliveries.filter(d=>d.status==='entregue'),todayDone=completed.filter(d=>d.updated_at&&new Date(d.updated_at).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'})===today);
  const todayPayout=todayDone.reduce((s,d)=>s+Number(d.courier_payment||0),0);
@@ -33,7 +34,7 @@ export default function CourierWorkspace({client,store,onRefresh,onNavigate}){
    <div className="store-performance"><div><strong>{cash(todayPayout)}</strong><small>Repasse de hoje</small></div><div><strong>{todayDone.length}</strong><small>Concluídas hoje</small></div></div>
    <button type="button" className="secondary" onClick={()=>setTab('Acerto Rápido')}>Abrir acerto <ArrowRight size={15}/></button>
   </section>
- </div></div><div id="courier-register"><LogisticsHub client={client} store={store} view="Entregadores" onRefresh={onRefresh}/></div></>}
+ </div></div><div id="courier-register"><CourierAccessManager client={client} store={store} onDataChanged={async()=>{setTeamRefresh(n=>n+1);await onRefresh?.()}}/></div></>}
  {tab==='Entregas'&&<LogisticsHub client={client} store={store} view="Entregas" onRefresh={onRefresh}/>}
  {tab==='Pagamentos'&&<CourierFinance client={client} storeId={store.id} view="Pagamento de motoboys"/>}
  {tab==='Regras de Cobrança'&&<CourierRates client={client} storeId={store.id}/>}
