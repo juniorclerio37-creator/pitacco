@@ -94,6 +94,14 @@ try {
 
     await page.route('**/*', async route => {
       const { pathname, origin, searchParams } = new URL(route.request().url());
+      if(origin==='https://api.github.com' && pathname==='/repos/juniorclerio37-creator/pitacco/releases'){
+        return route.fulfill({headers:{'access-control-allow-origin':'*'},json:[{
+          tag_name:'pitacco-windows-123abc456def',draft:false,prerelease:false,
+          published_at:'2026-11-17T16:00:00Z',
+          assets:[{name:'Pitacco-Windows-Setup.exe',size:18200000,
+            browser_download_url:'https://github.com/juniorclerio37-creator/pitacco/releases/download/pitacco-windows-123abc456def/Pitacco-Windows-Setup.exe'}]
+        }]});
+      }
       if (origin === dashboard && (pathname === '/app/' || /^\/(assets\/[A-Za-z0-9_.-]+|pitacco-brand-013\.svg)$/.test(pathname))) {
         const file = pathname === '/app/' ? '/app/index.html' : pathname;
         const contentType = { html:'text/html', js:'text/javascript', css:'text/css', svg:'image/svg+xml' }[file.split('.').at(-1)];
@@ -553,9 +561,10 @@ try {
       await navigation.getByRole('button',{name:'Visão Geral',exact:true}).click();
       await page.getByRole('heading',{name:'Visão Geral',exact:true}).waitFor();
       await navigation.getByRole('button',{name:'Aplicativos e Downloads',exact:true}).click();
-      await page.getByText('Nenhum instalador estável publicado.').waitFor();
+      await page.getByText('Versão para Windows disponível para instalação',{exact:false}).waitFor();
+      await page.getByRole('button',{name:'Baixar para Windows'}).waitFor();
       assert.equal(await page.getByRole('link',{name:'Abrir Pitacco Entregador'}).getAttribute('href'),'https://entregador.pitacco.com.br/');
-      assert.equal(await page.getByRole('button',{name:/Baixar para/}).count(),0);
+      assert.equal(await page.getByRole('button',{name:'Baixar para Windows'}).count(),1);
     }
     await navigation.getByRole('button', { name:'Visão Geral', exact:true }).click();
     await page.getByRole('heading', { name:'Visão Geral', exact:true }).waitFor();

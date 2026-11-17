@@ -1,10 +1,11 @@
 import React,{useEffect,useState} from 'react';
-import {COURIER_APP_URL,downloadRelease,releaseDate} from './appReleases.mjs';
+import {COURIER_APP_URL,downloadRelease,releaseDate,discoverPublicWindowsInstaller,downloadPublicWindowsInstaller} from './appReleases.mjs';
 import './app-releases.css';
 
 export default function AppDownloads({client}){
  const [releases,setReleases]=useState(null),[retry,setRetry]=useState(0);
  const [busy,setBusy]=useState(''),[error,setError]=useState('');
+ const [publicWindows,setPublicWindows]=useState(null),[checkingWindows,setCheckingWindows]=useState(true);
  useEffect(()=>{
   let live=true;
   setReleases(null);setError('');
@@ -16,6 +17,18 @@ export default function AppDownloads({client}){
    });
   return()=>{live=false;};
  },[client,retry]);
+ useEffect(()=>{
+  let live=true;
+  setCheckingWindows(true);
+  discoverPublicWindowsInstaller().then(installer=>{if(live)setPublicWindows(installer)})
+   .catch(()=>{if(live)setPublicWindows(null)})
+   .finally(()=>{if(live)setCheckingWindows(false)});
+  return()=>{live=false};
+ },[retry]);
+ async function downloadPublic(installer){
+  try{downloadPublicWindowsInstaller(installer)}
+  catch(e){setError(e.message||'Não foi possível baixar o aplicativo Windows.')}
+ }
  async function download(row){
   setBusy(row.id);setError('');
   try{await downloadRelease(client,row);}
@@ -40,7 +53,12 @@ export default function AppDownloads({client}){
      {row.notes&&<p className="release-notes">{row.notes}</p>}{row.requirements&&<p>Requisitos: {row.requirements}</p>}
      <details><summary>Verificar integridade do arquivo</summary><code>{row.sha256}</code></details>
      <button type="button" disabled={!!busy} onClick={()=>void download(row)}>{busy===row.id?'Preparando download…':action}</button></>}
-    {app==='windows'&&releases&&!row&&!error&&<p>Nenhum instalador estável publicado.</p>}
+    {app==='windows'&&releases&&!row&&publicWindows&&<>
+     <p>Versão para Windows disponível para instalação · {releaseDate(publicWindows.published_at)}</p>
+     <button type="button" disabled={!!busy} onClick={()=>void downloadPublic(publicWindows)}>Baixar para Windows</button>
+    </>}
+    {app==='windows'&&releases&&!row&&!publicWindows&&!checkingWindows&&!error&&
+     <p>Nenhum instalador Windows disponível no momento.</p>}
     {app==='android'&&releases&&!row&&!error&&<p>O aplicativo Android está em homologação. Compartilhe o endereço abaixo com seus entregadores.</p>}
     {app==='android'&&<div className="release-detail">
      <p><a href={COURIER_APP_URL} target="_blank" rel="noopener noreferrer">Abrir Pitacco Entregador</a></p>

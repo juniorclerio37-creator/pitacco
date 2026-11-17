@@ -184,3 +184,53 @@ jobs:
       - run: npm install --prefix web/tests/backend --no-save --package-lock=false pg@8.16.3
       - run: node web/tests/backend/run.mjs
       - run: node web/tests/backend/concurrency.mjs
+
+
+  publish-installer:
+    name: Publicar instalador Windows para os lojistas
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: [build, postgres]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Baixar compilação validada
+        uses: actions/download-artifact@v4
+        with:
+          name: Pitacco-Windows-x64
+          path: release-files
+      - name: Conferir integridade e preparar download
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, re, shutil
+          base=Path('release-files')
+          installers=list(base.rglob('*.exe'))
+          manifests=list(base.rglob('SHA256-WINDOWS.txt'))
+          defender=list(base.rglob('VERIFICACAO-WINDOWS.txt'))
+          assert len(installers)==1 and len(manifests)==1 and len(defender)==1, 'Artefatos incompletos: instalador, SHA256 e resultado do Defender são obrigatórios'
+          assert 'sem deteccao' in defender[0].read_text(encoding='utf-8-sig').lower(), 'Defender não confirmou a verificação'
+          expected=re.findall(r'(?im)^\s*Hash\s*:\s*([a-f0-9]{64})\s*$',manifests[0].read_text(encoding='utf-8-sig'))
+          assert len(expected)==1, 'Hash único não encontrado no manifesto'
+          computed=hashlib.sha256(installers[0].read_bytes()).hexdigest()
+          assert computed.lower()==expected[0].lower(), 'O instalador difere do SHA-256 da compilação'
+          out=Path('release-ready');out.mkdir(exist_ok=True)
+          shutil.copy2(installers[0],out/'Pitacco-Windows-Setup.exe')
+          (out/'Pitacco-Windows-Setup.exe.sha256').write_text(computed+'  Pitacco-Windows-Setup.exe\n',encoding='ascii')
+          print('Instalador conferido: SHA-256 igual ao manifesto e verificação Defender concluída.')
+          PY
+      - name: Disponibilizar instalador público
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag="pitacco-windows-${GITHUB_SHA:0:12}"
+          if gh release view "$tag" --repo "$GH_REPO" >/dev/null 2>&1; then
+            echo "Versão de download já publicada: $tag"
+          else
+            gh release create "$tag"               release-ready/Pitacco-Windows-Setup.exe               release-ready/Pitacco-Windows-Setup.exe.sha256               --repo "$GH_REPO"               --target "$GITHUB_SHA"               --title "Pitacco Windows · ${GITHUB_SHA:0:12}"               --notes "Instalador do Pitacco Windows gerado pelo pipeline do projeto, com testes automatizados, verificação Microsoft Defender e hash SHA-256 disponível para conferência."               --latest
+          fi
