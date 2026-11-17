@@ -104,14 +104,14 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
  </>}{stage(current)==='preparing'&&current.source==='proprio'&&<button className="primary" disabled={busy} onClick={()=>onReady(current.id)}>Marcar pronto</button>}</div>{waitingIfood&&<div role="status">
  {ifoodCancelPending?<p>Cancelamento solicitado ao iFood. Aguardando o evento oficial CANCELLED.</p>:
  ifoodRequestPending?<p>Aguardando confirmação oficial do iFood. Não aceite novamente.</p>:
- ifoodExpired?<p>Prazo de aceite do iFood encerrado. Atualize o pedido ou gere outro teste.</p>:
+ ifoodExpired?<p>Prazo de aceite do iFood encerrado. Se ainda estiver disponível, utilize Recusar pedido e aguarde a resposta oficial.</p>:
  <><button className="primary" disabled={busy||!onAcceptIfood} onClick={()=>onAcceptIfood?.(current.id)}>Aceitar pedido no iFood</button>
  {current.receipt?.ifood_manual_accept==='failed'&&<p>O envio anterior falhou. É possível tentar novamente enquanto estiver no prazo.</p>}</>}
  {!ifoodRequestPending&&!ifoodCancelPending&&<button type="button" className="secondary" disabled={busy||!onRejectIfood||!onGetIfoodReasons} onClick={()=>void openIfoodReject(current)}>Recusar pedido no iFood</button>}
  {current.receipt?.ifood_manual_cancel==='failed'&&<p>O iFood não confirmou o cancelamento anterior. Consulte o motivo e tente novamente se permitido.</p>}
  </div>}{decision?.id===current.id&&decision.status==='ifood'&&<form onSubmit={async e=>{
  e.preventDefault();if(!decision.reason)return;
- await onRejectIfood(current.id,decision.reason);setDecision(null);
+ const completed=await onRejectIfood(current.id,decision.reason);if(completed)setDecision(null);
  }}>
  <h4>Recusar pedido no iFood</h4>
  <p>O pedido só será marcado como cancelado quando o iFood confirmar o cancelamento.</p>
