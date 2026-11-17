@@ -65,7 +65,7 @@ begin
     nullif(r->>'customerPhone','')
   );
   if loc is null and phone like '%,%' then
-    loc:=pg_catalog.substring(pg_catalog.split_part(phone,',',2) from '[0-9][0-9][0-9][0-9]+');
+    loc:=pg_catalog.regexp_replace(pg_catalog.split_part(phone,',',2),'[^0-9]','','g');
   end if;
   loc:=pg_catalog.left(pg_catalog.regexp_replace(coalesce(loc,''),'[^0-9]','','g'),16);
   return nullif(loc,'');
