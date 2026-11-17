@@ -51,6 +51,10 @@ export function downloadPublicWindowsInstaller(installer) {
     throw Error('Instalador Windows indisponível.');
   }
   const link=document.createElement('a');
-  link.href=url;link.rel='noopener noreferrer';link.target='_blank';
+  link.href=url;
+  link.download=WINDOWS_ASSET;
+  // GitHub serves the release asset as an attachment: clicking the button starts
+  // a download without opening GitHub in another tab or displaying its URL.
+  link.rel='noopener noreferrer';
   document.body.append(link);link.click();link.remove();
 }
