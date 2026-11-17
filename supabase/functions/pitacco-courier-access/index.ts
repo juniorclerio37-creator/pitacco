@@ -156,8 +156,7 @@ async function changePassword(body, actor, user) {
   if (!courier || !courier.active) return [403,{error:"Entregador não autorizado"}];
   const current=String(body.currentPassword??"");
   const next=String(body.newPassword??"");
-  if (next.length < 12 || next.length > 128 || !/[a-z]/.test(next) || !/[A-Z]/.test(next) ||
-      !/[0-9]/.test(next) || current===next) return [400,{error:"Use uma nova senha de 12 caracteres, com letras maiúsculas, minúsculas e números"}];
+  if (next.length < 6 || next.length > 128 || current===next) return [400,{error:"Use uma nova senha de 6 a 128 caracteres, diferente da senha anterior"}];
   if (!anonKey || !user.email) return [503,{error:"Verificação de senha indisponível"}];
   const checkClient=createClient(url,anonKey,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data:proof,error:proofError}=await checkClient.auth.signInWithPassword({
