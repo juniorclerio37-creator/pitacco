@@ -2,17 +2,28 @@
 -- Marketplace iFood: customer.phone.number = telefone real ou 0800;
 -- customer.phone.localizer / localizerExpiration vêm da integração oficial quando disponíveis.
 -- Os três campos em deliveries destinam-se aos importadores que não gravam receipt completo.
+-- Contact PII stays in a restricted table. Ordinary delivery list reads never expose it.
+create table if not exists public.pitacco_delivery_customer_contacts (
+  delivery_id uuid primary key references public.deliveries(id) on delete cascade,
+  store_id uuid not null references public.stores(id) on delete cascade,
+  phone_number text,
+  phone_localizer text,
+  phone_expires_at timestamptz,
+  updated_at timestamptz not null default now()
+);
+alter table public.pitacco_delivery_customer_contacts enable row level security;
+revoke all on table public.pitacco_delivery_customer_contacts from public, anon, authenticated;
+grant select, insert, update, delete on table public.pitacco_delivery_customer_contacts to service_role;
+comment on table public.pitacco_delivery_customer_contacts is
+  'Dados de contato restritos ao pedido ativo, preenchidos somente pela integração da loja/plataforma com credenciais de servidor. Não usar para marketing.';
+comment on column public.pitacco_delivery_customer_contacts.phone_localizer is
+  'Localizador de telefonia da plataforma (não confundir com PIN de confirmação da entrega).';
+-- These columns were introduced by a preliminary draft migration and have no values.
+-- Remove them to ensure RLS on deliveries cannot expose active/expired phone numbers.
 alter table public.deliveries
-  add column if not exists customer_phone text,
-  add column if not exists customer_phone_localizer text,
-  add column if not exists customer_phone_expires_at timestamptz;
-
-comment on column public.deliveries.customer_phone is
-  'Contato fornecido para a operação do pedido, real ou número intermediário da plataforma. Não usar para marketing.';
-comment on column public.deliveries.customer_phone_localizer is
-  'Código localizador informado pela plataforma para a chamada no número intermediário; diferente do PIN de comprovação de entrega.';
-comment on column public.deliveries.customer_phone_expires_at is
-  'Expiração do telefone intermediário fornecida pela plataforma, quando disponível.';
+  drop column if exists customer_phone,
+  drop column if exists customer_phone_localizer,
+  drop column if exists customer_phone_expires_at;
 
 create or replace function public.pitacco_driver_order_detail(p_delivery uuid)
 returns jsonb
@@ -23,6 +34,7 @@ set search_path to ''
 as $function$
 declare
   v_delivery public.deliveries%rowtype;
+  v_contact public.pitacco_delivery_customer_contacts%rowtype;
   v_receipt jsonb := '{}'::jsonb;
   v_customer jsonb := '{}'::jsonb;
   v_checkout_phone text;
@@ -69,6 +81,12 @@ begin
     v_customer := v_receipt->'customer';
   end if;
 
+  select co.* into v_contact
+    from public.pitacco_delivery_customer_contacts co
+   where co.delivery_id = v_delivery.id
+     and co.store_id = v_delivery.store_id
+   limit 1;
+
   select pc.phone into v_checkout_phone
     from public.public_checkouts pc
    where pc.order_id = v_delivery.order_id and pc.store_id = v_delivery.store_id
@@ -76,7 +94,7 @@ begin
    limit 1;
 
   v_phone := nullif(pg_catalog.btrim(coalesce(
-    nullif(v_delivery.customer_phone,''),
+    nullif(v_contact.phone_number,''),
     nullif(v_customer->'phone'->>'number',''),
     case when pg_catalog.jsonb_typeof(v_customer->'phone')='string' then v_customer->>'phone' else null end,
     nullif(v_receipt->>'customer_phone',''),
@@ -84,7 +102,7 @@ begin
     nullif(v_checkout_phone,'')
   )), '');
   v_locator := nullif(pg_catalog.btrim(coalesce(
-    nullif(v_delivery.customer_phone_localizer,''),
+    nullif(v_contact.phone_localizer,''),
     nullif(v_customer->'phone'->>'localizer',''),
     nullif(v_customer->>'localizer',''),
     nullif(v_receipt->'phone'->>'localizer',''),
@@ -92,7 +110,7 @@ begin
     nullif(v_receipt->>'localizer','')
   )), '');
   v_expires := coalesce(
-    v_delivery.customer_phone_expires_at::text,
+    v_contact.phone_expires_at::text,
     nullif(v_customer->'phone'->>'localizerExpiration',''),
     nullif(v_receipt->>'phone_localizer_expiration','')
   );
@@ -107,11 +125,12 @@ begin
     v_kind := 'none';
   end if;
 
-  if v_expires is not null and pg_catalog.pg_input_is_valid(v_expires,'timestamp with time zone')
-     and v_expires::timestamptz < pg_catalog.now() then
-    v_phone := null;
-    v_kind := 'expired';
-    v_locator := null;
+  if v_expires is not null and pg_catalog.pg_input_is_valid(v_expires,'timestamp with time zone') then
+    if v_expires::timestamptz < pg_catalog.now() then
+      v_phone := null;
+      v_kind := 'expired';
+      v_locator := null;
+    end if;
   end if;
 
   -- A lista é limitada aos campos relevantes ao entregador; não retorna receipt bruto.
