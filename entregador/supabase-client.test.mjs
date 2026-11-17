@@ -26,3 +26,8 @@ test('rejects invalid credentials without exposing provider details',async()=>{
  const client=createDriverAuth({auth:{signInWithPassword:async()=>({error:new Error('provider details')})}});
  await assert.rejects(()=>client.signIn('21999991234','bad'),/Telefone ou senha inválidos/);
 });
+
+test('explains disabled phone provider without blaming password',async()=>{
+ const client=createDriverAuth({auth:{signInWithPassword:async()=>({error:{code:'phone_provider_disabled'}})}});
+ await assert.rejects(()=>client.signIn('(21) 99999-1234','senhaTemporaria'),/desativado no Supabase/);
+});
