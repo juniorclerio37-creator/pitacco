@@ -1,6 +1,16 @@
 plugins {
     id 'com.android.application' version '8.7.3'
+    id 'com.google.gms.google-services' version '4.4.3' apply false
 }
+if (file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+    implementation 'com.google.firebase:firebase-messaging:24.1.2'
+}
+
 android {
     namespace 'br.com.pitacco.entregador'
     compileSdk 35
@@ -8,7 +18,7 @@ android {
         applicationId 'br.com.pitacco.entregador'
         minSdk 26
         targetSdk 35
-        versionCode 1
-        versionName '1.0.0-teste'
+        versionCode 2
+        versionName '1.0.1-teste'
     }
 }

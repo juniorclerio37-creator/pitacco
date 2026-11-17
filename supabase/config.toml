@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.app-release-integrity]
 verify_jwt = false
+
+[functions.courier-push]
+verify_jwt = false

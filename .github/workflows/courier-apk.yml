@@ -21,19 +21,27 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Prepare Android notification sound and Firebase configuration
+        env:
+          PITACCO_FIREBASE_ANDROID_JSON: ${{ secrets.PITACCO_FIREBASE_ANDROID_JSON }}
+        run: |
+          python3 entregador/android-app/generate-alert.py
+          if [ -n "$PITACCO_FIREBASE_ANDROID_JSON" ]; then
+            printf '%s' "$PITACCO_FIREBASE_ANDROID_JSON" > entregador/android-app/app/google-services.json
+          fi
       - name: Build APK for testing
         working-directory: entregador/android-app
         run: gradle --no-daemon assembleDebug
       - name: Verify APK signature and hash
         working-directory: entregador/android-app/app/build/outputs/apk/debug
         run: |
-          mv app-debug.apk Pitacco-Entregador-1.0.0-teste.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose Pitacco-Entregador-1.0.0-teste.apk
-          sha256sum Pitacco-Entregador-1.0.0-teste.apk > SHA256-ANDROID.txt
+          mv app-debug.apk Pitacco-Entregador-1.0.1-teste.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose Pitacco-Entregador-1.0.1-teste.apk
+          sha256sum Pitacco-Entregador-1.0.1-teste.apk > SHA256-ANDROID.txt
       - uses: actions/upload-artifact@v4
         with:
           name: Pitacco-Entregador-Android-teste
           path: |
-            entregador/android-app/app/build/outputs/apk/debug/Pitacco-Entregador-1.0.0-teste.apk
+            entregador/android-app/app/build/outputs/apk/debug/Pitacco-Entregador-1.0.1-teste.apk
             entregador/android-app/app/build/outputs/apk/debug/SHA256-ANDROID.txt
           if-no-files-found: error

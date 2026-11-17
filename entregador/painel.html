@@ -146,6 +146,8 @@ a.btn{text-decoration:none}
  </section>
  <section class="panel-white pref-panel">
   <span class="eyebrow">AJUDA E SINCRONIZAÇÃO</span>
+  <button type="button" class="settings-row" id="enableNativePush" hidden><span>Ativar avisos no Android</span><span class="setting-arrow">›</span></button>
+  <p id="nativePushStatus" role="status" aria-live="polite"></p>
   <button type="button" class="settings-row" id="testAssignmentSound"><span>Testar som de nova entrega</span><span class="setting-arrow">♪</span></button>
   <p id="assignmentSoundStatus" role="status" aria-live="polite"></p>
   <button type="button" class="settings-row" id="settingsRefresh"><span>Atualizar pedidos e ganhos</span><span class="setting-arrow">↻</span></button>
@@ -610,6 +612,31 @@ async function refreshSnapshot(){
  await loadEarnings();
  await loadSafeHistory();
 }
+function initializeNativePush(){
+ const native=window.PitaccoPush;
+ if(!native?.postMessage)return;
+ const button=$("enableNativePush"),status=$("nativePushStatus");
+ button.hidden=false;
+ button.addEventListener("click",()=>{
+  status.textContent="Verificando avisos do Android…";
+  native.postMessage("enable");
+ });
+ native.onmessage=async event=>{
+  const value=String(event.data||"");
+  if(value.startsWith("token:")){
+   const {error}=await sb.rpc("pitacco_register_courier_push",{p_token:value.slice(6)}).catch(()=>({error:true}));
+   status.textContent=error?"Não foi possível registrar este aparelho.":"Aparelho registrado para receber avisos.";
+  }else{
+   status.textContent=value==="permission"?"Permita as notificações do Pitacco nos ajustes do Android."
+    :value==="unavailable"?"Esta versão do aplicativo ainda não está conectada ao serviço de avisos."
+    :"Não foi possível ativar os avisos. Tente novamente.";
+  }
+ };
+ native.postMessage("refresh");
+ document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden)native.postMessage("refresh");
+ });
+}
 async function boot(){
  try{
   const user=await driver.currentUser();
@@ -619,6 +646,7 @@ async function boot(){
   if(status.mustChangePassword||error||!ready){location.replace("./acesso.html");return;}
   storeName=status?.courier?.storeName||"Minha loja";
   loadNavPreferences();
+  initializeNativePush();
   switchView(location.hash.slice(1));
   await refresh();
   setInterval(()=>{if(!document.hidden&&!busy)refresh().catch(e=>message(String(e.message)))},20000);
@@ -668,7 +696,12 @@ document.querySelectorAll("[data-map-mode]").forEach(b=>b.addEventListener("clic
  try{localStorage.setItem("pitacco:driver:navmode",navMode)}catch{}
  updateRouteLinks();
 }));
-async function logout(){orderDetails.close();await driver.signOut().catch(()=>{});location.replace("./acesso.html");}
+async function logout(){
+ orderDetails.close();
+ if(window.PitaccoPush?.postMessage){
+  await sb.rpc("pitacco_unregister_courier_push").catch(()=>{});
+ }
+ await driver.signOut().catch(()=>{});location.replace("./acesso.html");}
 $("profileLogout").addEventListener("click",logout);
 $("settingsLogout").addEventListener("click",logout);
 boot();
