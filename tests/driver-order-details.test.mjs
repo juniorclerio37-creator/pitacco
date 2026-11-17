@@ -24,6 +24,9 @@ test('contact action is chosen by real phone versus intermediary 0800 and locali
  assert.match(module,/Ligar para o 0800/);
  assert.match(module,/Conversar no WhatsApp/);
  assert.match(module,/Não funciona pelo WhatsApp/);
+ assert.match(module,/resolved\.callHref/);
+ assert.match(module,/linkButton\('Ligar para o 0800', resolved\.href, 'call'\)/);
+ assert.match(module,/navigate\(\{\.\.\.delivery,address:details\.address \?\? delivery\.address\}\)/);
 });
 test('RPC protects contact PII with assigned courier, active status and a valid session',()=>{
  const sql=read('docs/sql/driver-order-details-contact.sql');
