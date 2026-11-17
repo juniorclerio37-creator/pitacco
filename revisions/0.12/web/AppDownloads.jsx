@@ -46,7 +46,7 @@ export default function AppDownloads({client}){
  return <div className="app-releases">
   {error&&<div className="panel"><p role="alert">{error}</p><button type="button" className="secondary" onClick={()=>setRetry(retry+1)}>Atualizar downloads</button></div>}
   {!releases&&<p role="status">Consultando versões oficiais…</p>}
-  {[['windows','Pitacco Windows — Gestor de Pedidos','Baixar para Windows'],['android','Pitacco Entregador','Baixar para Android']].map(([app,title,action])=>{
+  {[['windows','Pitacco Windows — Gestor de Pedidos','Baixar Pitacco Windows'],['android','Pitacco Entregador','Baixar para Android']].map(([app,title,action])=>{
    const row=releases?.find(release=>release.app===app);
    return <section className="panel" key={app}><h3>{title}</h3>
     {row&&<><p>Versão {row.version} · {releaseDate(row.published_at)}{row.recommended?' · Atualização recomendada':''}</p>
@@ -55,7 +55,7 @@ export default function AppDownloads({client}){
      <button type="button" disabled={!!busy} onClick={()=>void download(row)}>{busy===row.id?'Preparando download…':action}</button></>}
     {app==='windows'&&releases&&!row&&publicWindows&&<>
      <p>Versão para Windows disponível para instalação · {releaseDate(publicWindows.published_at)}</p>
-     <button type="button" disabled={!!busy} onClick={()=>void downloadPublic(publicWindows)}>Baixar para Windows</button>
+     <button type="button" disabled={!!busy} onClick={()=>void downloadPublic(publicWindows)}>Baixar Pitacco Windows</button>
     </>}
     {app==='windows'&&releases&&!row&&!publicWindows&&!checkingWindows&&!error&&
      <p>Nenhum instalador Windows disponível no momento.</p>}
