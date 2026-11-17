@@ -373,6 +373,81 @@ function createAction(text,style,handler,disabled=false){
  const el=element("button","btn "+style,text);el.type="button";el.disabled=disabled;
  if(handler)el.addEventListener("click",handler);return el;
 }
+
+async function ifoodDriverAction(delivery,action,code){
+ const {data:{session}}=await sb.auth.getSession();
+ if(!session?.access_token)throw Error("Faça login novamente");
+ const response=await fetch(SUPABASE_URL+"/functions/v1/ifood-orders/driver-action",{
+  method:"POST",cache:"no-store",headers:{"Content-Type":"application/json",
+   "apikey":SUPABASE_PUBLISHABLE_KEY,"Authorization":"Bearer "+session.access_token},
+  body:JSON.stringify({delivery,action,...(code?{code}:{})})
+ });
+ const out=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(out.error||"Operação iFood não confirmada");
+ return out;
+}
+async function markArrival(d){
+ if(busy)return;busy=true;message("");
+ try{
+  const {error}=await sb.rpc("pitacco_driver_arrive",{p_delivery:d.id});
+  if(error)throw Error(error.message||"Chegada não registrada");
+  let info="Chegada registrada no Pitacco. O pedido ainda não foi concluído.";
+  if(d.source==="ifood"){
+   try{
+    const result=await ifoodDriverAction(d.id,"arrival");
+    if(result.provider_state==="submitted")info="Chegada enviada ao iFood, aguardando confirmação da plataforma. Peça o código ao cliente.";
+   }catch(error){info+=" Aviso iFood ainda não confirmado: "+String(error.message);}
+  }else if(d.source==="99food")info+=" Aviso à 99Food ainda não homologado; não há confirmação de notificação ao cliente.";
+  else if(d.source==="keeta")info+=" Aviso à Keeta ainda não homologado.";
+  await refresh();message(info);
+ }catch(error){message(String(error.message||"Erro ao registrar chegada"))}
+ finally{busy=false}
+}
+async function verifyCode(d,code){
+ if(busy)return;busy=true;message("");
+ try{
+  if(!d.arrived_at)throw Error("Registre primeiro a chegada ao cliente");
+  const digits=String(code||"").trim();
+  if(d.source==="proprio"){
+   if(!/^[0-9]{6}$/.test(digits))throw Error("Informe o código Pitacco de seis dígitos");
+   const {data,error}=await sb.rpc("pitacco_driver_verify_own_code",{p_delivery:d.id,p_code:digits});
+   if(error)throw Error(error.message||"Código não validado");
+   if(!data?.verified)throw Error("Código incorreto. Tentativas restantes: "+String(data?.remaining??0));
+  }else if(d.source==="ifood"){
+   if(!/^[0-9]{4,8}$/.test(digits))throw Error("Informe o código numérico do iFood");
+   const result=await ifoodDriverAction(d.id,"verify",digits);
+   if(!result?.verified)throw Error("O iFood não confirmou o código");
+  }else throw Error("A validação oficial desta plataforma ainda depende de homologação");
+  orderDetails.close();
+  await refresh();
+  message("Entrega concluída! Os dados completos do cliente não ficam no histórico do entregador.");
+ }catch(error){message(String(error.message||"A entrega não foi concluída"))}
+ finally{busy=false}
+}
+async function loadSafeHistory(){
+ const key=++lastHistoryRequest,target=$("safeHistory");
+ try{
+  const {data,error}=await sb.rpc("pitacco_driver_history",{p_limit:30});
+  if(key!==lastHistoryRequest)return;
+  if(error||!Array.isArray(data))throw Error("Histórico indisponível");
+  target.replaceChildren();
+  if(!data.length){target.append(element("div","earn-empty","Nenhuma entrega concluída."));return;}
+  for(const x of data){
+   const line=element("div","earn-history-item"),label=element("div");
+   label.append(element("b","","Pedido #"+String(x.number||"Número indisponível")));
+   label.append(element("small","",String(x.initial||"C.")+" • "+String(x.address_hint||"Endereço resumido")));
+   const value=element("div","safe-history-meta");
+   value.append(element("strong","",brl.format(Number(x.amount)||0)));
+   const when=x.completed_at?new Date(x.completed_at).toLocaleString("pt-BR",{
+    timeZone:"America/Sao_Paulo",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}):"";
+   value.append(element("small","",when));
+   line.append(label,value);target.append(line);
+  }
+ }catch{
+  if(key===lastHistoryRequest)target.replaceChildren(element("div","earn-empty","Histórico protegido indisponível."));
+ }
+}
+
 async function rpc(name,args){
  if(busy)return;busy=true;message("");
  try{
@@ -452,6 +527,7 @@ async function refresh(){
   target.append(empty);
  }else for(const d of current.slice(0,50))target.append(card(d));
  await loadEarnings();
+ await loadSafeHistory();
 }
 async function boot(){
  try{
