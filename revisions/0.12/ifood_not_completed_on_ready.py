@@ -40,4 +40,26 @@ new="""<div className="logistics-state"><small>Preparo: {o.preparation_status===
 assert s.count(old)==1,'Unexpected operations card layout'
 s=s.replace(old,new)
 p.write_text(s,encoding='utf-8')
+p=Path('web/tests/orderBoard.test.mjs');s=p.read_text(encoding='utf-8')
+old="assert.equal(orderStage({status:'accepted',preparation_status:'completed'}),'completed');"
+new="assert.equal(orderStage({status:'accepted',preparation_status:'completed'}),'ready');"
+assert s.count(old)==1,'Legacy kitchen completion test was changed'
+s=s.replace(old,new)
+s+="""
+
+test('iFood ready never marks a delivery completed',()=>{
+ const order={source:'ifood',status:'accepted',preparation_status:'ready',receipt:{ifood_status:'READY_TO_PICKUP'}};
+ assert.equal(orderStage(order,{status:'pendente'}),'ready');
+ assert.equal(orderStage({...order,preparation_status:'completed'},{status:'pendente'}),'ready');
+ assert.equal(orderStage(order,{status:'retirada'}),'delivery');
+ assert.equal(orderStage(order,{status:'entregue'}),'completed');
+});
+
+test('independent iFood CONCLUDED is distinct from a still active courier route',()=>{
+ const order={source:'ifood',status:'accepted',preparation_status:'ready',receipt:{ifood_status:'CONCLUDED'}};
+ assert.equal(orderStage(order,{status:'pendente'}),'completed');
+ assert.equal(orderStage(order,{status:'retirada'}),'delivery');
+});
+"""
+p.write_text(s,encoding='utf-8')
 print('iFood ready/provider terminal/courier delivered statuses separated in Windows and portal')
