@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION public.pitacco_track_public_order(p_token uuid)
  SET search_path TO ''
 AS $function$
 select jsonb_build_object(
- 'order_id',o.id,'status',o.status,'preparation_status',o.preparation_status,
+ 'order_id',o.id,'public_number',public.pitacco_order_public_label(o.receipt,o.source),'status',o.status,'preparation_status',o.preparation_status,
  'created_at',o.created_at,'accepted_at',o.accepted_at,'scheduled_for',o.scheduled_for,
  'fulfillment',case when c.payload->>'fulfillment'='pickup' or o.receipt->>'address'='retirada' or o.receipt->>'logistics'='retirada' then 'pickup' else 'delivery' end,
  'delivery_status',d.status,'arrived_at',d.arrived_at,'total',o.gross,
