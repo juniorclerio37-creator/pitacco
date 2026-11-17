@@ -32,7 +32,7 @@ test("courier's earnings drilldown is backed by stored completed deliveries",()=
  assert.match(sql,/'worked_days'/);
  assert.match(sql,/d\.courier_payment as valor/);
  assert.match(sql,/d\.status = 'entregue'/);
- assert.match(sql,/security invoker/);
+ assert.match(sql,/security definer/);
 });
 
 test("navigation uses Google Maps or Waze and never auto-accepts a delivery",()=>{
