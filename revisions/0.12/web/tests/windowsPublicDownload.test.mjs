@@ -26,15 +26,19 @@ test('rejects empty releases and invalid API responses',async()=>{
 });
 test('public Windows download links are restricted to the real GitHub release asset',()=>{
  const original=globalThis.document;
- let href,clicked=0,removed=0;
+ let href,clicked=0,removed=0,downloadName='',openedNewTab=false;
  globalThis.document={
-   createElement:()=>({set href(value){href=value},get href(){return href},rel:'',target:'',
-     click(){clicked++},remove(){removed++}}),
+   createElement:()=>({set href(value){href=value},get href(){return href},
+     set download(value){downloadName=value},get download(){return downloadName},
+     set target(value){openedNewTab=value==='_blank'},
+     rel:'',click(){clicked++},remove(){removed++}}),
    body:{append(){}}
  };
  try{
    downloadPublicWindowsInstaller({url});
    assert.equal(href,url);assert.equal(clicked,1);assert.equal(removed,1);
+   assert.equal(downloadName,'Pitacco-Windows-Setup.exe');
+   assert.equal(openedNewTab,false,'download should not open a GitHub tab');
    assert.throws(()=>downloadPublicWindowsInstaller({url:'https://attacker.invalid/setup.exe'}),/indisponível/);
  }finally{globalThis.document=original}
 });
