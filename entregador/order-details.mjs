@@ -54,11 +54,11 @@ function buildContactBlock(details) {
     if (resolved.type === 'real') {
       actions.append(linkButton('Conversar no WhatsApp', resolved.href, 'whatsapp'));
       const normalized = resolved.href.slice('https://wa.me/'.length);
-      actions.append(linkButton('Ligar', 'tel:+' + normalized, 'call'));
+      actions.append(linkButton('Ligar', resolved.callHref || 'tel:+' + normalized, 'call'));
       wrap.append(node('p', 'order-contact-explain', 'Use este contato somente para assuntos relacionados à entrega.'));
     } else {
       wrap.append(node('p', 'order-contact-explain',
-        'Número intermediário da plataforma: ligue e informe o localizador quando solicitado. Não funciona pelo WhatsApp.'));
+        'Número intermediário: o discador receberá o 0800 e, quando houver localizador, o código após uma vírgula (pausa em discadores compatíveis). Não funciona pelo WhatsApp.'));
       actions.append(linkButton('Ligar para o 0800', resolved.href, 'call'));
       if (resolved.localizer) {
         const box = node('div', 'order-localizer');
@@ -71,9 +71,11 @@ function buildContactBlock(details) {
         });
         box.append(copy);
         wrap.append(box);
+        wrap.append(node('p', 'order-contact-explain',
+          'Se o discador não conservar a vírgula e o código, informe o localizador manualmente durante a ligação.'));
       } else {
         wrap.append(node('p', 'order-contact-warning',
-          'O localizador não foi fornecido ao Pitacco. Confira-o com a loja antes de ligar.'));
+          'O localizador não foi fornecido ao Pitacco. Confira-o com a loja antes de ligar. Se o celular não aceitar a pausa, digite o código manualmente durante a ligação.'));
       }
     }
     wrap.append(actions);
@@ -116,7 +118,7 @@ function buildDetails(details, delivery, navigate) {
   const openRoute = node('button','order-route-button','Abrir rota');
   openRoute.type = 'button';
   openRoute.disabled = !String(details.address ?? delivery.address ?? '').trim();
-  openRoute.addEventListener('click',()=>navigate(delivery));
+  openRoute.addEventListener('click',()=>navigate({...delivery,address:details.address ?? delivery.address}));
   customer.append(openRoute);
   root.append(customer,buildContactBlock(details),buildItems(details));
 
