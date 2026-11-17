@@ -43,7 +43,7 @@ export function StoreReadiness({client,storeId}){
  </section>;
 }
 
-export function StoreHelp({client,storeId}){
+export function StoreHelp({client,storeId,canContact=true}){
  return <><section className="panel" aria-label="Central de ajuda">
   <h3>Ajuda e orientações</h3>
   <p>Respostas rápidas para configurar e operar o Pitacco.</p>
@@ -53,5 +53,5 @@ export function StoreHelp({client,storeId}){
   <details><summary>Como vejo o lucro por pedido?</summary><p>Acesse Financeiro e o relatório Resultado por pedido. Cadastre os custos diretos para visualizar a estimativa corretamente.</p></details>
   <details><summary>O que fazer se pedidos ou impressões falharem?</summary><p>Abra Alertas e verifique o diagnóstico. Para problemas de impressão, confira se o aplicativo Windows está conectado e se a impressora está selecionada. Não reenvie pedidos indiscriminadamente.</p></details>
   <details><summary>Como acompanho o andamento das integrações?</summary><p>Na área de Integrações consulte a situação da conexão. Os serviços de parceiros dependem de credenciais e homologação oficiais.</p></details>
- </section><SupportCenter client={client} storeId={storeId}/></>;
+ </section>{canContact?<SupportCenter client={client} storeId={storeId}/>:<section className="panel"><p>Para abrir chamados, solicite acesso de gestor ao estabelecimento.</p></section>}</>;
 }
