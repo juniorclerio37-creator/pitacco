@@ -1,6 +1,7 @@
 // Pitacco Entregador — administração de acessos; nunca distribuir a service_role ao navegador.
 // Endpoints autenticados via JWT do Supabase; acesso gestor restrito ao estabelecimento.
 import { createClient } from "npm:@supabase/supabase-js@2.57.0";
+import { normalizeBrazilPhone, courierEmailAlias } from "./identity.mjs";
 
 const url = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -12,12 +13,7 @@ const allowedOrigins = new Set([
 ]);
 const idPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
-function normalizePhone(value) {
-  const digits = String(value ?? "").replace(/\D/g, "");
-  const national = digits.startsWith("55") && digits.length === 13 ? digits.slice(2) : digits;
-  if (!/^[1-9][0-9]9[0-9]{8}$/.test(national)) throw new Error("Telefone com DDD inválido");
-  return "+55" + national;
-}
+
 function temporaryPassword() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#";
   const random = new Uint32Array(20);
@@ -51,14 +47,15 @@ async function myCourier(userId) {
 async function registerDriver(body, actor) {
   const {storeId, name} = body;
   const cleanedName = String(name ?? "").trim();
-  const phone = normalizePhone(body.phone);
+  const phone = normalizeBrazilPhone(body.phone);
+  const email = await courierEmailAlias(phone);
   if (!idPattern.test(String(storeId ?? "")) || cleanedName.length < 2 || cleanedName.length > 100) {
     return [400, {error:"Informe loja, nome e telefone válidos"}];
   }
   if (!await authorizeStore(actor, storeId)) return [403, {error:"Sem permissão para esta loja"}];
   const password = temporaryPassword();
   const {data: created, error: authError} = await admin.auth.admin.createUser({
-    phone, password, phone_confirm: true,
+    email, password, email_confirm: true,
     user_metadata: {full_name: cleanedName},
     app_metadata: {pitacco_role: "courier"},
   });
@@ -94,8 +91,12 @@ async function resetDriver(body, actor) {
   const {data: state,error: stateErr} = await admin.from("pitacco_courier_auth_state")
     .update({must_change_password:true}).eq("user_id",courier.user_id).eq("store_id",storeId).select("user_id").maybeSingle();
   if (stateErr || !state) return [409,{error:"Cadastro de acesso incompleto; solicite suporte"}];
+  const {data: courierAccount, error: accountError} = await admin.from("couriers")
+    .select("phone").eq("id",courierId).eq("store_id",storeId).maybeSingle();
+  if (accountError || !courierAccount?.phone) return [409,{error:"Telefone do entregador não localizado"}];
+  const email = await courierEmailAlias(courierAccount.phone);
   const password = temporaryPassword();
-  const {error:authError} = await admin.auth.admin.updateUserById(courier.user_id,{password});
+  const {error:authError} = await admin.auth.admin.updateUserById(courier.user_id,{password,email,email_confirm:true});
   if (authError) return [500,{error:"Não foi possível redefinir a senha"}];
   const {error:finishErr} = await admin.from("pitacco_courier_auth_state")
     .update({must_change_password:true,credentials_issued_at:new Date().toISOString(),password_changed_at:null})
@@ -157,10 +158,10 @@ async function changePassword(body, actor, user) {
   const next=String(body.newPassword??"");
   if (next.length < 12 || next.length > 128 || !/[a-z]/.test(next) || !/[A-Z]/.test(next) ||
       !/[0-9]/.test(next) || current===next) return [400,{error:"Use uma nova senha de 12 caracteres, com letras maiúsculas, minúsculas e números"}];
-  if (!anonKey || !user.phone) return [503,{error:"Verificação de senha indisponível"}];
+  if (!anonKey || !user.email) return [503,{error:"Verificação de senha indisponível"}];
   const checkClient=createClient(url,anonKey,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data:proof,error:proofError}=await checkClient.auth.signInWithPassword({
-    phone:user.phone,password:current
+    email:user.email,password:current
   });
   if (proofError || proof?.user?.id!==actor) return [401,{error:"Senha atual incorreta"}];
   const {data: state,error:stateError}=await admin.from("pitacco_courier_auth_state")
