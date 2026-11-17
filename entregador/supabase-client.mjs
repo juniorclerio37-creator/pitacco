@@ -6,10 +6,12 @@ export function isMissingSessionError(error) {
   const code = String(error?.code ?? '').toLowerCase();
   const name = String(error?.name ?? '').toLowerCase();
   const message = String(error?.message ?? error ?? '').toLowerCase();
-  return code === 'session_not_found' || code === 'session_missing' ||
+  return ['session_not_found', 'session_missing', 'refresh_token_not_found',
+    'refresh_token_already_used', 'invalid_refresh_token'].includes(code) ||
     name === 'authsessionmissingerror' ||
     message.includes('auth session missing') ||
-    message.includes('session not found');
+    message.includes('session not found') ||
+    message.includes('refresh token not found');
 }
 
 export function createDriverAuth(supabase) {
