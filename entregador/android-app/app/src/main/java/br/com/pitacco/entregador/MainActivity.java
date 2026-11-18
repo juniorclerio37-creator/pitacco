@@ -250,8 +250,8 @@ public class MainActivity extends Activity {
                         reply.postMessage("tracking:off");
                     } else if (action != null && action.startsWith("start:")) {
                         // The page is origin-limited to the authenticated courier
-                        // site. Tokens are sent only to this non-exported native
-                        // service, held in memory, and never written to disk.
+                        // site. A shift-scoped GPS capability, never the user's login or
+                        // refresh token, is sent to this non-exported service.
                         if (!"granted".equals(locationPermissionState()) ||
                                 action.length() > 16000) {
                             reply.postMessage("tracking:permission");
@@ -261,12 +261,9 @@ public class MainActivity extends Activity {
                             JSONObject credentials = new JSONObject(action.substring(6));
                             String backend = credentials.optString("backend");
                             String apiKey = credentials.optString("apiKey");
-                            String access = credentials.optString("access");
-                            String refresh = credentials.optString("refresh");
-                            long expiresAt = credentials.optLong("expiresAt");
+                            String token = credentials.optString("token");
                             if (!CourierLocationService.EXPECTED_BACKEND.equals(backend) ||
-                                    apiKey.length() < 20 || access.length() < 80 ||
-                                    refresh.length() < 20 || expiresAt <= 0) {
+                                    apiKey.length() < 20 || !token.matches("[a-f0-9]{64}")) {
                                 reply.postMessage("tracking:invalid_session");
                                 return;
                             }
@@ -274,9 +271,7 @@ public class MainActivity extends Activity {
                             tracking.setAction(CourierLocationService.ACTION_START);
                             tracking.putExtra("backend", backend);
                             tracking.putExtra("apiKey", apiKey);
-                            tracking.putExtra("access", access);
-                            tracking.putExtra("refresh", refresh);
-                            tracking.putExtra("expiresAt", expiresAt);
+                            tracking.putExtra("token", token);
                             startForegroundService(tracking);
                             reply.postMessage("tracking:starting");
                         } catch (Exception e) {
