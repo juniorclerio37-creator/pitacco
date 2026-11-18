@@ -28,3 +28,17 @@
 .pitacco-driver-access .hint{color:#64748b;font-size:12px;line-height:1.5;margin:0}
 @media(max-width:850px){.pitacco-driver-register{grid-template-columns:1fr 1fr}.pitacco-driver-register>button{grid-column:1/-1}}
 @media(max-width:600px){.pitacco-driver-access-header,.pitacco-driver-team-row{flex-direction:column;align-items:stretch}.pitacco-driver-register{grid-template-columns:1fr}.pitacco-driver-register>button{grid-column:auto}.pitacco-driver-access-buttons button{flex:1}}
+
+/* Remuneração definida no mesmo formulário do cadastro. */
+.pitacco-driver-registration-pay{grid-column:1/-1}
+.pitacco-driver-remuneration{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;min-width:0;border:1px solid #f0d5b8;background:#fffaf5;padding:15px;border-radius:14px;margin:0}
+.pitacco-driver-remuneration legend{font-size:14px;font-weight:850;color:#a9500e;padding:0 8px}
+.pitacco-driver-remuneration .field:first-of-type{grid-column:1/-1}
+.pitacco-driver-remuneration .field{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:750}
+.pitacco-driver-remuneration select,.pitacco-driver-remuneration input{width:100%;max-width:100%;min-width:0;min-height:42px;padding:9px 12px;border:1px solid #e2d6cc;border-radius:9px;background:#fff;font:inherit;color:#1f2937}
+.pitacco-driver-remuneration-help{grid-column:1/-1;margin:0;color:#6b7280;font-size:12px;line-height:1.5}
+.pitacco-driver-remuneration-example{grid-column:1/-1;margin:0;color:#864b24;font-size:12px;background:#fff2df;padding:10px;border-radius:9px}
+.pitacco-driver-pay-label{background:#edf9ee!important;color:#197143!important}
+.pitacco-driver-team-row{flex-wrap:wrap}
+.pitacco-driver-edit-pay{flex-basis:100%;width:100%;display:flex;flex-direction:column;gap:11px;border-top:1px solid #ecedf0;padding-top:12px}
+@media(max-width:600px){.pitacco-driver-remuneration{grid-template-columns:1fr}.pitacco-driver-registration-pay{grid-column:auto}}
