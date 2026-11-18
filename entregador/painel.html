@@ -89,6 +89,7 @@ a.btn{text-decoration:none}
   </div>
   <p id="notice" role="alert" aria-live="polite"></p>
   <h2 class="section-title">Seus pedidos <span class="auto-pill">Atualiza automaticamente</span></h2>
+  <section id="routeSuggestions" class="route-suggestions" aria-label="Sequência de entregas agrupadas" hidden></section>
   <section id="cards" class="grid" aria-label="Pedidos atribuídos"><div class="empty">Carregando entregas...</div></section>
   <p class="note-inline">Pedidos são atribuídos pela loja, sem necessidade de aceitar. Registre a chegada ao cliente antes de validar o código da entrega. Integração 99Food em homologação.</p>
 </section>
@@ -189,11 +190,12 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "./config.mjs";
 import {createDriverAuth} from "./supabase-client.mjs";
 import {createOrderDetailsController} from "./order-details.mjs";
 import {buildNavigationUrl} from "./navigation.mjs";
+import {suggestedBatchRoutes} from "./route-sequence.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
 const orderDetails=createOrderDetailsController({supabase:sb,routeFor:delivery=>buildNavigationUrl(delivery,navProvider,navMode)});
-let courier=null, busy=false;
+let courier=null, busy=false,routeOrigins=new Map();
 function updateConnectionBanner(){
  const offline=navigator.onLine===false;
  $("connectionBanner").hidden=!offline;
@@ -466,9 +468,24 @@ async function markArrival(d){
   }else if(d.source==="99food")info+=" Aviso à 99Food ainda não homologado; não há confirmação de notificação ao cliente.";
   else if(d.source==="keeta")info+=" Aviso à Keeta ainda não homologado.";
   await refresh(true);message(info);
-  const input=document.querySelector('.card-verify-block .verify-input');
+  const activeCard=[...document.querySelectorAll(".card[data-delivery-id]")]
+   .find(card=>card.getAttribute("data-delivery-id")===d.id);
+  const input=activeCard?.querySelector(".card-verify-block .verify-input");
   if(input&&document.visibilityState==="visible")input.focus({preventScroll:true});
  }catch(error){message(String(error.message||"Erro ao registrar chegada"))}
+ finally{busy=false}
+}
+async function reconcileIfoodConfirmation(d){
+ if(busy)return;busy=true;message("");
+ try{
+  if(!navigator.onLine)throw Error("Sem conexão. Tente novamente quando a internet voltar.");
+  const {data,error}=await sb.rpc("pitacco_driver_reconcile_ifood",{p_delivery:d.id});
+  if(error)throw Error(error.message||"Não foi possível conferir a entrega no iFood");
+  if(data?.confirmed){
+   await refresh(true);
+   message("Entrega concluída após confirmação oficial recebida do iFood.");
+  }else message("Aguardando o iFood confirmar a entrega. Acompanhe a página oficial e tente atualizar novamente.");
+ }catch(error){message(String(error.message||"Não foi possível confirmar a entrega"))}
  finally{busy=false}
 }
 async function verifyCode(d,code){
@@ -525,8 +542,43 @@ async function rpc(name,args){
  }catch(err){message(String(err?.message??"Não foi possível concluir a operação"));}
  finally{busy=false;}
 }
+function renderRouteSuggestions(deliveries){
+ const target=$("routeSuggestions");
+ target.replaceChildren();
+ const routes=suggestedBatchRoutes(deliveries,routeOrigins);
+ target.hidden=routes.length===0;
+ for(const plan of routes){
+  const box=element("section","route-plan");
+  box.append(element("strong","route-plan-title",
+    "Rota agrupada • "+plan.stops.length+" entregas"));
+  box.append(element("p","route-plan-explain",plan.estimated?
+    "Ordem sugerida do mais próximo ao mais distante da loja, em linha reta. O mapa definirá o trajeto pelas ruas.":
+    "Pedidos agrupados pela loja. Falta coordenada válida para sugerir a ordem; mantenha a sequência da loja."));
+  const list=element("ol","route-plan-list");
+  for(const [index,stop] of plan.stops.entries()){
+   const d=stop.delivery;
+   const item=element("li","route-plan-stop");
+   const summary=element("div","route-plan-stop-copy");
+   const number=String(orderCardBadges.get(d.id)?.public_number||"Aguardando número");
+   summary.append(element("b","","Parada "+(index+1)+" • Pedido #"+number));
+   summary.append(element("small","",d.address||"Endereço não informado"));
+   item.append(summary);
+   const url=buildNavigationUrl(d,navProvider,navMode);
+   if(url){
+    const link=element("a","route-plan-go",index===0?"Iniciar rota":"Ir");
+    link.href=url;link.setAttribute("data-route-delivery",d.id);
+    link.setAttribute("aria-label","Abrir rota para parada "+(index+1)+" do pedido #"+number);
+    item.append(link);
+   }
+   list.append(item);
+  }
+  box.append(list);
+  target.append(box);
+ }
+}
 function card(d){
  const box=element("article","card");
+ box.setAttribute("data-delivery-id",d.id);
  const opener=element("button","card-open");
  opener.type="button";
  opener.setAttribute("aria-label","Ver detalhes do pedido de "+(d.customer_name||"cliente"));
@@ -611,8 +663,11 @@ function card(d){
      external.href="https://confirmacao-entrega-propria.ifood.com.br/";
      external.setAttribute("aria-label","Abrir página oficial de confirmação de entrega própria do iFood");
      verify.append(external);
+     const check=createAction("Já confirmei no iFood • Atualizar","secondary",()=>reconcileIfoodConfirmation(d));
+     check.classList.add("card-ifood-recheck");
+     verify.append(check);
      verify.append(element("p","card-verify-help",
-      "Após confirmar na página do iFood, volte ao Pitacco e atualize os pedidos. A entrega só ficará concluída quando houver confirmação oficial."));
+      "A confirmação externa não finaliza automaticamente no Pitacco até o evento oficial CONCLUDED ser recebido. Toque em Atualizar para conferir."));
     }
     box.append(verify);
    }
@@ -678,6 +733,12 @@ async function refreshSnapshot(){
  announceAssignments(current,courier);
  assignedDeliveries=current;
  orderDetails.keepActive(current);
+ try{
+  const {data:origins,error}=await sb.rpc("pitacco_driver_route_origins");
+  routeOrigins=new Map(!error&&Array.isArray(origins)?
+   origins.filter(p=>p?.store_id).map(p=>[p.store_id,p]):[]);
+ }catch{routeOrigins=new Map();}
+ renderRouteSuggestions(current);
  const target=$("cards");target.replaceChildren();
  if(!current.length){
   const empty=element("div","empty");
@@ -904,9 +965,11 @@ $("miniEarnings").addEventListener("click",()=>switchView("ganhos"));
 window.addEventListener("hashchange",()=>switchView(location.hash.slice(1)));
 function updateRouteLinks(){
  updateNavPreferences();
- for(const [index,delivery] of assignedDeliveries.slice(0,50).entries()){
-  const route=$("cards").children[index]?.querySelector(".card-route-link");
-  if(route){route.href=buildNavigationUrl(delivery,navProvider,navMode);route.title="Abrir rota no "+(navProvider==="waze"?"Waze":"Google Maps");}
+ for(const route of document.querySelectorAll("[data-route-delivery]")){
+  const delivery=assignedDeliveries.find(item=>item.id===route.getAttribute("data-route-delivery"));
+  const url=delivery&&buildNavigationUrl(delivery,navProvider,navMode);
+  if(url)route.href=url;
+  route.title="Abrir rota no "+(navProvider==="waze"?"Waze":"Google Maps");
  }
 }
 document.querySelectorAll("[data-nav-choice]").forEach(b=>b.addEventListener("click",()=>{
