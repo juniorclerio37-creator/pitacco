@@ -12,23 +12,26 @@ import android.os.Handler;
 import android.os.Looper;
 
 /**
- * Opt-in courier shift alert. For a single bell + optional voice alert, request
- * a temporary alarm-stream volume increase, then restore it. Never alter
- * ringer mode, DND settings, or the notification policy.
- * Android can deny audio/volume changes; audibility cannot be guaranteed.
+ * Explicitly enabled courier Shift Sound. During one short alert only, raises
+ * either the media or alarm stream, then restores the previous volume. Does not
+ * change ringer mode, mute status, Do Not Disturb settings, or user audio policy.
+ *
+ * A volume override can be rejected by Android. Never claim the alert was heard.
  */
 public final class ShiftSoundPlayer {
     private static final String PREFS = "pitacco_delivery_shift_sound";
     private static final String KEY_ENABLED = "enabled";
     private static final String KEY_RESTORE_PENDING = "restore_pending";
-    private static final String KEY_ORIGINAL = "original_alarm_volume";
-    private static final String KEY_TEMPORARY = "temporary_alarm_volume";
+    private static final String KEY_STREAM = "volume_stream";
+    private static final String KEY_ORIGINAL = "original_volume";
+    private static final String KEY_TEMPORARY = "temporary_volume";
     private static final Handler HANDLER = new Handler(Looper.getMainLooper());
     private static MediaPlayer player;
     private static AudioManager volumeManager;
     private static Context playingContext;
     private static int originalVolume = -1;
     private static int temporaryVolume = -1;
+    private static int streamType = -1;
     private static String lastResult = "off";
     private static Runnable timeoutTask;
 
@@ -48,28 +51,29 @@ public final class ShiftSoundPlayer {
         lastResult = enabled ? "ready" : "off";
     }
 
-    public static synchronized String getLastResult() {
-        return lastResult;
+    public static synchronized String getLastResult() { return lastResult; }
+
+    private static void clearPending(Context context) {
+        settings(context).edit().remove(KEY_RESTORE_PENDING).remove(KEY_STREAM)
+                .remove(KEY_ORIGINAL).remove(KEY_TEMPORARY).commit();
     }
 
-    /** Restore a pending volume override on the next app startup after a crash. */
+    /** Recover after process death; restore only if the user has not changed volume. */
     public static synchronized void recover(Context context) {
         SharedPreferences prefs = settings(context);
         if (!prefs.getBoolean(KEY_RESTORE_PENDING, false)) return;
         AudioManager manager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        int before = prefs.getInt(KEY_ORIGINAL, -1);
-        int temporary = prefs.getInt(KEY_TEMPORARY, -1);
-        if (manager != null && before >= 0 && temporary >= 0) {
+        int stream = prefs.getInt(KEY_STREAM, -1);
+        int old = prefs.getInt(KEY_ORIGINAL, -1);
+        int raised = prefs.getInt(KEY_TEMPORARY, -1);
+        if (manager != null && (stream == AudioManager.STREAM_ALARM ||
+                stream == AudioManager.STREAM_MUSIC) && old >= 0 && raised >= 0) {
             try {
-                // Do not undo any volume change the user made manually.
-                if (manager.getStreamVolume(AudioManager.STREAM_ALARM) == temporary)
-                    manager.setStreamVolume(AudioManager.STREAM_ALARM, before, 0);
-            } catch (SecurityException | IllegalArgumentException ignored) {
-                // Android may restrict volume changes. Never bypass policy.
-            }
+                if (manager.getStreamVolume(stream) == raised)
+                    manager.setStreamVolume(stream, old, 0);
+            } catch (SecurityException | IllegalArgumentException ignored) {}
         }
-        prefs.edit().remove(KEY_RESTORE_PENDING).remove(KEY_ORIGINAL)
-                .remove(KEY_TEMPORARY).apply();
+        clearPending(context);
     }
 
     private static synchronized void stopAndRestore() {
@@ -82,25 +86,70 @@ public final class ShiftSoundPlayer {
             try { player.release(); } catch (RuntimeException ignored) {}
             player = null;
         }
-        if (volumeManager != null && originalVolume >= 0 && temporaryVolume >= 0) {
+        if (volumeManager != null && streamType >= 0 &&
+                originalVolume >= 0 && temporaryVolume >= 0) {
             try {
-                if (volumeManager.getStreamVolume(AudioManager.STREAM_ALARM) == temporaryVolume)
-                    volumeManager.setStreamVolume(AudioManager.STREAM_ALARM, originalVolume, 0);
+                // Never override a volume adjustment made by the user meanwhile.
+                if (volumeManager.getStreamVolume(streamType) == temporaryVolume)
+                    volumeManager.setStreamVolume(streamType, originalVolume, 0);
             } catch (SecurityException | IllegalArgumentException ignored) {}
         }
-        if (playingContext != null) {
-            settings(playingContext).edit().remove(KEY_RESTORE_PENDING)
-                    .remove(KEY_ORIGINAL).remove(KEY_TEMPORARY).apply();
-        }
+        if (playingContext != null) clearPending(playingContext);
         volumeManager = null;
         playingContext = null;
         originalVolume = -1;
         temporaryVolume = -1;
+        streamType = -1;
     }
 
     /**
-     * Returns "started" when playback was requested, NOT a claim that sound
-     * was physically heard. Needs user testing on the actual Motorola.
+     * Selects a temporary stream level for this alert. The media stream is
+     * preferred with silent/vibrate ringer mode; ALARM is preferred in normal
+     * mode. Both belong to the explicitly opted-in Shift Sound behavior.
+     */
+    private static boolean raiseForAlert(Context app, AudioManager manager, int stream) {
+        int before;
+        int target;
+        try {
+            before = manager.getStreamVolume(stream);
+            target = Math.max(before, Math.max(1,
+                    (int) Math.ceil(manager.getStreamMaxVolume(stream) * .90)));
+            if (before == target && !manager.isStreamMute(stream)) {
+                streamType = stream;
+                volumeManager = manager;
+                playingContext = app;
+                return true;
+            }
+            // Persist recovery data before touching global system audio.
+            boolean saved = settings(app).edit()
+                    .putBoolean(KEY_RESTORE_PENDING, true)
+                    .putInt(KEY_STREAM, stream)
+                    .putInt(KEY_ORIGINAL, before)
+                    .putInt(KEY_TEMPORARY, target).commit();
+            if (!saved) return false;
+            manager.setStreamVolume(stream, target, 0);
+            int after = manager.getStreamVolume(stream);
+            if (after < target || manager.isStreamMute(stream)) {
+                if (after == target) manager.setStreamVolume(stream, before, 0);
+                clearPending(app);
+                return false;
+            }
+            originalVolume = before;
+            temporaryVolume = target;
+            streamType = stream;
+            volumeManager = manager;
+            playingContext = app;
+            return true;
+        } catch (SecurityException | IllegalArgumentException error) {
+            // Do not fight Android's interruption or volume restrictions.
+            recover(app);
+            return false;
+        }
+    }
+
+    /**
+     * Sends the bundled bell + optional courier voice to a permitted audio
+     * stream. Does not claim that the physical speaker produced audible sound.
      */
     public static synchronized String play(Context context) {
         if (!isEnabled(context)) return (lastResult = "off");
@@ -108,63 +157,53 @@ public final class ShiftSoundPlayer {
         Context app = context.getApplicationContext();
         NotificationManager notifications = (NotificationManager)
                 app.getSystemService(Context.NOTIFICATION_SERVICE);
-        // If the user selected total interruption blocking, do not try
-        // circumventing DND or overriding their chosen restriction.
-        if (notifications != null &&
-                notifications.getCurrentInterruptionFilter()
-                        == NotificationManager.INTERRUPTION_FILTER_NONE)
+        int interruption = notifications == null
+                ? NotificationManager.INTERRUPTION_FILTER_UNKNOWN
+                : notifications.getCurrentInterruptionFilter();
+        if (interruption == NotificationManager.INTERRUPTION_FILTER_NONE)
             return (lastResult = "blocked_dnd");
 
         AudioManager manager = (AudioManager) app.getSystemService(Context.AUDIO_SERVICE);
         if (manager == null) return (lastResult = "audio_unavailable");
 
-        int before, raised;
-        try {
-            before = manager.getStreamVolume(AudioManager.STREAM_ALARM);
-            raised = Math.max(before, Math.max(1,
-                    (int) Math.ceil(manager.getStreamMaxVolume(AudioManager.STREAM_ALARM) * .85)));
-            if (before < raised) {
-                manager.setStreamVolume(AudioManager.STREAM_ALARM, raised, 0);
-                if (manager.getStreamVolume(AudioManager.STREAM_ALARM) < raised)
-                    return (lastResult = "volume_restricted");
-                originalVolume = before;
-                temporaryVolume = raised;
-                volumeManager = manager;
-                playingContext = app;
-                settings(app).edit().putBoolean(KEY_RESTORE_PENDING, true)
-                        .putInt(KEY_ORIGINAL, before)
-                        .putInt(KEY_TEMPORARY, raised).apply();
-            }
-        } catch (SecurityException | IllegalArgumentException error) {
-            stopAndRestore();
-            return (lastResult = "volume_restricted");
-        }
+        boolean dndNormal = interruption == NotificationManager.INTERRUPTION_FILTER_ALL;
+        boolean ringerSilent = manager.getRingerMode() != AudioManager.RINGER_MODE_NORMAL;
+        // Media may be audible with the ringer muted; do not use media as a way
+        // around an active restricted Do Not Disturb policy.
+        int preferred = ringerSilent && dndNormal
+                ? AudioManager.STREAM_MUSIC : AudioManager.STREAM_ALARM;
+        int alternative = preferred == AudioManager.STREAM_MUSIC
+                ? AudioManager.STREAM_ALARM : AudioManager.STREAM_MUSIC;
+        boolean ready = raiseForAlert(app, manager, preferred);
+        if (!ready && dndNormal) ready = raiseForAlert(app, manager, alternative);
+        if (!ready) return (lastResult = dndNormal ? "volume_restricted" : "blocked_dnd");
 
+        int audioStream = streamType;
         try {
             Uri sound = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://"
                     + app.getPackageName() + "/raw/pitacco_assignment");
             MediaPlayer instance = new MediaPlayer();
             instance.setAudioAttributes(new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setUsage(audioStream == AudioManager.STREAM_MUSIC ?
+                            AudioAttributes.USAGE_MEDIA : AudioAttributes.USAGE_ALARM)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .build());
             player = instance;
             instance.setDataSource(app, sound);
-            instance.setVolume(1.0f, 1.0f);
+            instance.setVolume(1f, 1f);
             instance.setOnCompletionListener(mp -> stopAndRestore());
             instance.setOnErrorListener((mp, what, extra) -> {
                 stopAndRestore();
                 return true;
             });
             instance.prepare();
-            // The bundled alert may include a spoken courier message
-            // following the bell. Keep volume raised through both.
             int playbackTimeMs = instance.getDuration();
             instance.start();
             timeoutTask = ShiftSoundPlayer::stopAndRestore;
             HANDLER.postDelayed(timeoutTask, Math.max(3100,
                     Math.min(14500, playbackTimeMs > 0 ? playbackTimeMs + 1200 : 3100)));
-            return (lastResult = "started");
+            return (lastResult = audioStream == AudioManager.STREAM_MUSIC ?
+                    "started_media" : "started_alarm");
         } catch (Exception error) {
             stopAndRestore();
             return (lastResult = "playback_failed");
