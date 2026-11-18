@@ -331,3 +331,14 @@ test("roteiro avança do último ponto apenas quando entrega realmente foi confi
  assert.match(route,/distanceKm\(cursor,point\(remaining\[i\]\)\)/);
  assert.doesNotMatch(page,/localStorage\.setItem\([^)]*lastCompletedBatchStops/);
 });
+
+test("múltiplas paradas têm opção de percurso Maps só quando não há chegada pendente",()=>{
+ const page=read("painel.html");
+ const navigation=read("navigation.mjs");
+ assert.match(page,/buildBatchNavigationUrl\(plan\.stops\.map\(stop=>stop\.delivery\),navProvider,navMode\)/);
+ assert.match(page,/!plan\.stops\.some\(stop=>stop\.delivery\.arrived_at\)/);
+ assert.match(page,/Ver percurso completo no Google Maps/);
+ assert.match(page,/renderRouteSuggestions\(assignedDeliveries\)/);
+ assert.match(navigation,/deliveries\.length>4/);
+ assert.match(navigation,/provider!=='google'/);
+});
