@@ -117,8 +117,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.ok(page.includes('nativeNotificationSettings'));
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 21'));
- assert.ok(build.includes("versionName '2.0.1'"));
+ assert.ok(build.includes('versionCode 22'));
+ assert.ok(build.includes("versionName '2.0.2'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -237,7 +237,7 @@ test("delivery Shift Sound is opt-in, restores prior alarm volume, and reserves 
  assert.ok(generator.includes("assets/voz-entregador.wav"));
  assert.ok(generator.includes('bell + dedicated courier voice'));
  assert.ok(generator.includes('bell only'));
- assert.ok(!generator.includes('novo pedido'));
+ assert.ok(generator.includes('Do NOT reuse the'));
  assert.ok(!page.includes('automatically changes Do Not Disturb'));
 });
 test("courier 2.0 registers FCM native payload without removing legacy token registration",()=>{
