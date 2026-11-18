@@ -83,7 +83,7 @@ test('Windows alerts use the fixed embedded natural voice, not robotic SAPI',()=
  assert.match(operations,/Nenhuma importação é necessária/);
  assert.match(operations,/invoke\('save_order_voice'/);
  assert.match(operations,/Volume da voz oficial/);
- assert.ok(operations.includes('Normal (áudio original, sem amplificação)'));
+ assert.match(operations,/pitacco-audio-voice-volume/);
  assert.ok(operations.includes('return [1,2,3].includes(level)?level:3'));
  assert.ok(rust.includes('let selected=match level.unwrap_or(1)'));
  assert.match(rust,/if level!=1/);
@@ -109,7 +109,7 @@ test('merchant Windows order alert controls belong to settings, not the Pedidos 
  assert.match(operations,/Testar sino \+ voz/);
  assert.match(operations,/Ouvir sino/);
  assert.match(operations,/pitacco-audio-bell-volume/);
- assert.match(operations,/pitacco-natural-voice-level/);
+ assert.match(operations,/pitacco-audio-voice-volume/);
  assert.match(operations,/alertLevelRef\.current=alertLevel/);
  assert.match(operations,/voiceLevelRef\.current=voiceLevel/);
  assert.match(operations,/invoke\('play_order_alert_combo'/);
@@ -146,4 +146,23 @@ test('exactly one bundled merchant voice and five distinct native bells are sele
  }
  assert.match(operations,/Nenhuma importação é necessária/);
  assert.doesNotMatch(operations,/<input type="file" accept="\.wav/);
+});
+
+test('same installed Windows app keeps order cards and guarded conclusion next to progress actions',()=>{
+ const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../pedidos.css',import.meta.url),'utf8');
+ const mount=readFileSync(new URL('../../mount_orders_045.py',import.meta.url),'utf8');
+ assert.match(mount,/popupLayout=\{desktop\}/);
+ assert.match(orders,/pedidos-detail-modal/);
+ assert.match(orders,/pedidos-modal-close/);
+ assert.match(orders,/Marcar pronto/);
+ assert.match(orders,/Despachar/);
+ assert.match(orders,/pedidos-complete-button/);
+ assert.match(orders,/canConcludeOnWindows/);
+ assert.match(orders,/canExecuteConclusion/);
+ assert.match(orders,/onPickup\?\.\(o\.id\):onConclude\?\.\(o\.id\)/);
+ assert.match(orders,/delivery\?\.logistics_provider==='loja'/);
+ assert.match(css,/pedidos-card-actions/);
+ assert.match(css,/pedidos-complete-button/);
+ assert.doesNotMatch(orders,/applicationId\s*:/);
 });
