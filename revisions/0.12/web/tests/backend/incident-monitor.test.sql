@@ -45,6 +45,10 @@ begin
   raise exception 'Managers must not read global notification pulse';
  exception when insufficient_privilege then null;end;
  begin
+  perform public.pitacco_owner_diagnostic_snapshot();
+  raise exception 'Managers must not read global technical telemetry';
+ exception when insufficient_privilege then null;end;
+ begin
   perform public.pitacco_owner_acknowledge_incident(incident,'Recebido pelo lojista');
   raise exception 'Manager must not acknowledge incidents';
  exception when insufficient_privilege then null;end;
@@ -56,6 +60,13 @@ begin
  incident:=(public.pitacco_incidents(null)->'rows'->0->>'id')::uuid;
  assert (public.pitacco_owner_incident_pulse()->>'open')::integer>=1;
  assert (public.pitacco_owner_incident_pulse()->>'urgent')::integer>=1;
+ result:=public.pitacco_owner_diagnostic_snapshot('82000000-0000-0000-0000-000000000001');
+ assert result->>'scope'='selected_store';
+ assert (result->'printing'->>'jobs_24h')::integer>=0;
+ assert (result->'courier_notifications') ? 'server_enabled';
+ assert (result->'ifood') ? 'late_over_10m';
+ assert (result->'marketplace_acceptance') ? '99food_rejected_24h';
+ assert not (result ? 'token');
  result:=public.pitacco_owner_acknowledge_incident(incident,'Incidente recebido e atribuído ao suporte');
  assert result->>'acknowledged'='true';
  assert (public.pitacco_incidents(null)->'rows'->0->>'acknowledged_at') is not null;
@@ -69,5 +80,6 @@ do $test$ begin
  where store_id='82000000-0000-0000-0000-000000000001' and code='acceptance_late');
  assert not has_table_privilege('authenticated','public.pitacco_operational_incidents','UPDATE');
  assert not has_function_privilege('anon','public.pitacco_incidents(uuid,text,integer)','EXECUTE');
+ assert not has_function_privilege('anon','public.pitacco_owner_diagnostic_snapshot(uuid)','EXECUTE');
 end $test$;
 rollback;
