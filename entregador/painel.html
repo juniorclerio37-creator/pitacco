@@ -162,7 +162,9 @@ a.btn{text-decoration:none}
   <button type="button" class="settings-row" id="retryCourierGps"><span>Autorizar localização no Android / Atualizar GPS</span><span class="setting-arrow">◎</span></button>
   <button type="button" class="btn secondary" id="openAndroidGpsSettings" hidden>Abrir permissões de localização no Android</button>
   <p id="courierGpsStatus" role="status" aria-live="polite">Ative seu plantão para compartilhar sua posição com a loja.</p>
-  <p class="note-inline">O GPS é enviado somente quando você está online. Para atualizar a localização, permita o acesso do Pitacco ao GPS do aparelho. Nesta versão, o acompanhamento pode pausar quando o aplicativo está em segundo plano.</p>
+  <button type="button" class="settings-row" id="startNativeGps" hidden><span>Ativar GPS em segundo plano durante o plantão</span><span class="setting-arrow">▶</span></button>
+  <button type="button" class="settings-row" id="stopNativeGps" hidden><span>Parar GPS em segundo plano</span><span class="setting-arrow">■</span></button>
+  <p class="note-inline">O rastreamento contínuo funciona enquanto você estiver online e a notificação persistente “GPS ativo” estiver visível. Ao ficar offline ou sair da conta, o serviço é encerrado. O Android pode interromper o serviço por bateria, falta de GPS ou encerramento forçado.</p>
   <span class="eyebrow">AJUDA E SINCRONIZAÇÃO</span>
   <button type="button" class="settings-row" id="enableNativePush" hidden><span>Ativar avisos no Android</span><span class="setting-arrow">›</span></button>
   <p id="nativePushStatus" role="status" aria-live="polite"></p>
@@ -209,6 +211,7 @@ const driver=createDriverAuth(sb);
 const orderDetails=createOrderDetailsController({supabase:sb,routeFor:delivery=>buildNavigationUrl(delivery,navProvider,navMode)});
 let courier=null, busy=false,routeOrigins=new Map(),lastCompletedBatchStops=new Map();
 let gpsWatchId=null, gpsCourierId=null, gpsLastAttemptAt=0, gpsInFlight=false;
+let nativeGpsSupported=false, nativeGpsRunning=false;
 function gpsStatus(text){
  const output=$("courierGpsStatus");
  if(output)output.textContent=text;
@@ -218,6 +221,33 @@ function showAndroidGpsSettings(show){
  if(button)button.hidden=!show;
 }
 function handleAndroidGpsReply(status){
+ if(status.startsWith("tracking:")){
+  nativeGpsSupported=true;
+  const state=status.slice("tracking:".length);
+  nativeGpsRunning=state==="on"||state==="starting";
+  $("startNativeGps").hidden=false;
+  $("stopNativeGps").hidden=!nativeGpsRunning;
+  if(state==="on"){
+   stopGpsSharing();
+   gpsStatus("GPS ativo em segundo plano. A notificação do Android confirma o rastreamento durante o plantão.");
+  }else if(state==="starting"){
+   stopGpsSharing();
+   gpsStatus("Iniciando rastreamento contínuo do Android…");
+   window.setTimeout(()=>window.PitaccoGps?.postMessage?.("tracking_status"),1200);
+  }else if(state==="permission"){
+   gpsStatus("Ative a localização precisa para iniciar GPS em segundo plano.");
+   showAndroidGpsSettings(true);
+  }else if(state==="invalid_session"){
+   gpsStatus("Sessão inválida para GPS. Entre novamente no Pitacco Entregador.");
+  }else if(state==="error"){
+   gpsStatus("Não foi possível iniciar o serviço de GPS do Android. Reabra o aplicativo e tente novamente.");
+  }else if(state==="off"){
+   gpsStatus(courier?.available?
+     "GPS em segundo plano parado. Ative para continuar rastreando ao abrir Maps ou Waze.":
+     "GPS parado. Fique online e ative o rastreamento contínuo.");
+  }
+  return;
+ }
  if(status==="request_running")return;
  if(status==="granted"){
   showAndroidGpsSettings(false);
@@ -236,6 +266,27 @@ function handleAndroidGpsReply(status){
 }
 if(window.PitaccoGps){
  window.PitaccoGps.onmessage=event=>handleAndroidGpsReply(String(event?.data||"denied"));
+ try{window.PitaccoGps.postMessage("tracking_status");}catch{}
+}
+async function startNativeGpsTracking(){
+ if(!courier?.available){gpsStatus("Fique online antes de ativar o rastreamento contínuo.");return}
+ const bridge=window.PitaccoGps;
+ if(!bridge?.postMessage){gpsStatus("Atualize o aplicativo Android para ativar GPS em segundo plano.");return}
+ const {data,error}=await sb.auth.getSession();
+ const session=data?.session;
+ if(error||!session?.access_token||!session?.refresh_token||!session?.expires_at){
+  gpsStatus("Sessão expirada. Entre novamente antes de ativar o GPS.");return;
+ }
+ // Sent only to the origin-restricted native bridge; not to other websites.
+ bridge.postMessage("start:"+JSON.stringify({
+  backend:SUPABASE_URL,apiKey:SUPABASE_PUBLISHABLE_KEY,
+  access:session.access_token,refresh:session.refresh_token,
+  expiresAt:session.expires_at
+ }));
+}
+function stopNativeGpsTracking(){
+ nativeGpsRunning=false;
+ if(window.PitaccoGps?.postMessage)window.PitaccoGps.postMessage("stop");
 }
 
 function stopGpsSharing(){
@@ -243,6 +294,7 @@ function stopGpsSharing(){
  gpsWatchId=null;gpsCourierId=null;
 }
 function syncGpsSharing(){
+ if(nativeGpsRunning){stopGpsSharing();return;}
  if(!courier?.available||navigator.onLine===false){
   stopGpsSharing();
   gpsStatus(courier?.available?"Sem internet para atualizar o GPS.":"Ative seu plantão para compartilhar sua localização.");
@@ -1178,6 +1230,11 @@ async function boot(){
   storeName=status?.courier?.storeName||"Minha loja";
   loadNavPreferences();
   initializeNativePush();
+  $("startNativeGps").addEventListener("click",()=>startNativeGpsTracking().catch(()=>gpsStatus("Não foi possível iniciar o GPS.")));
+  $("stopNativeGps").addEventListener("click",()=>{
+   stopNativeGpsTracking();
+   gpsStatus("Rastreamento contínuo interrompido. Use Ativar para voltar a compartilhar em segundo plano.");
+  });
   $("pushBannerEnable").addEventListener("click",()=>{
    const native=window.PitaccoPush;
    if(native?.postMessage){
@@ -1219,9 +1276,13 @@ $("openAndroidGpsSettings").addEventListener("click",()=>{
 });
 $("online").addEventListener("click",async()=>{
  if(!courier||busy)return;busy=true;$("online").disabled=true;
+ const nextOnline=!courier.available;
  try{
-  const {error}=await sb.rpc("pitacco_driver_online",{p_online:!courier.available});
+  const {error}=await sb.rpc("pitacco_driver_online",{p_online:nextOnline});
   if(error)throw new Error(error.message);
+  courier={...courier,available:nextOnline};
+  if(nextOnline && nativeGpsSupported) await startNativeGpsTracking();
+  if(!nextOnline){stopNativeGpsTracking();stopGpsSharing();}
   message("");await refresh(true);
  }catch(err){message(String(err?.message??"Falha ao mudar disponibilidade"));}
  finally{busy=false;$("online").disabled=navigator.onLine===false;}
@@ -1276,6 +1337,7 @@ document.querySelectorAll("[data-map-mode]").forEach(b=>b.addEventListener("clic
  updateRouteLinks();
 }));
 async function logout(){
+ stopNativeGpsTracking();
  stopGpsSharing();
  orderDetails.close();
  if(window.PitaccoPush?.postMessage){
