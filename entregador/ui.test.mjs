@@ -117,8 +117,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.ok(page.includes('nativeNotificationSettings'));
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 23'));
- assert.ok(build.includes("versionName '2.0.3'"));
+ assert.ok(build.includes('versionCode 24'));
+ assert.ok(build.includes("versionName '2.0.4'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -248,4 +248,21 @@ test("courier 2.0 registers FCM native payload without removing legacy token reg
  assert.ok(migration.includes("push_protocol text not null default 'notification'"));
  assert.ok(migration.includes("push_protocol='data_only'"));
  assert.ok(migration.includes('grant execute on function public.pitacco_courier_push_protocol(text) to service_role'));
+});
+
+test("first opening asks for notification permission and offers explicit shift sound opt-in",()=>{
+ const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
+ const page=read("painel.html");
+ const css=read("painel.css");
+ assert.match(activity,/if \(state == null\) showFirstOpenSetup\(\)/);
+ assert.match(activity,/FIRST_OPEN_NOTIFICATION_PERMISSION/);
+ assert.match(activity,/requestFirstOpenNotifications\(\)/);
+ assert.match(activity,/requestPermissions\(new String\[\]\{Manifest\.permission\.POST_NOTIFICATIONS\}/);
+ assert.match(activity,/finishFirstOpenNotifications\(\)/);
+ assert.match(activity,/setPositiveButton\("Ativar som forte"/);
+ assert.match(activity,/ShiftSoundPlayer\.setEnabled\(this, true\)/);
+ assert.match(page,/id="shiftSoundState">ATIVAR<\/span>/);
+ assert.match(page,/id="shiftSoundUnsupported"/);
+ assert.match(page,/window\.clearTimeout\(shiftProbe\)/);
+ assert.match(css,/\.settings-row\[hidden\]\{display:none!important\}/);
 });

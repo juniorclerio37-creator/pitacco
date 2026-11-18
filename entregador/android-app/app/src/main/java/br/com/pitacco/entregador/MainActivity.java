@@ -2,10 +2,12 @@ package br.com.pitacco.entregador;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.ContentResolver;
 import android.content.pm.PackageManager;
+import android.content.SharedPreferences;
 import android.media.AudioAttributes;
 import android.os.Build;
 import androidx.webkit.JavaScriptReplyProxy;
@@ -38,6 +40,9 @@ public class MainActivity extends Activity {
     private static final String HOME = "https://" + HOST + "/";
 
     private static final int PUSH_PERMISSION = 94;
+    private static final int FIRST_OPEN_NOTIFICATION_PERMISSION = 95;
+    private static final String INITIAL_SETUP_PREFS = "pitacco_delivery_initial_setup";
+    private static final String INITIAL_SETUP_DONE = "completed_v1";
     private JavaScriptReplyProxy pendingPermission;
     private WebView web;
     private LinearLayout offline;
@@ -100,6 +105,66 @@ public class MainActivity extends Activity {
         ShiftSoundPlayer.recover(this);
         preparePush();
         if (state == null || web.restoreState(state) == null) web.loadUrl(HOME);
+        if (state == null) showFirstOpenSetup();
+    }
+
+    /**
+     * Android grants INTERNET and MODIFY_AUDIO_SETTINGS at install time.
+     * POST_NOTIFICATIONS is the runtime permission currently needed by this
+     * native shell. Location/camera must be requested only when those
+     * features actually use them; background location requires a separate flow.
+     */
+    private void showFirstOpenSetup() {
+        SharedPreferences prefs = getSharedPreferences(INITIAL_SETUP_PREFS, MODE_PRIVATE);
+        if (prefs.getBoolean(INITIAL_SETUP_DONE, false)) return;
+        new AlertDialog.Builder(this)
+                .setTitle("Configurar alertas do Pitacco")
+                .setMessage("Para avisar quando chegar uma nova entrega, o Pitacco precisa de permissão para mostrar notificações. Em seguida você pode ativar o Modo Plantão: sino e voz em volume alto, com tentativa de restaurar o volume original após o alerta. O Android pode restringir o som no modo Não Perturbe.")
+                .setCancelable(false)
+                .setPositiveButton("Configurar agora", (dialog, which) -> {
+                    prefs.edit().putBoolean(INITIAL_SETUP_DONE, true).apply();
+                    requestFirstOpenNotifications();
+                })
+                .setNegativeButton("Agora não", (dialog, which) ->
+                        prefs.edit().putBoolean(INITIAL_SETUP_DONE, true).apply())
+                .show();
+    }
+
+    private void requestFirstOpenNotifications() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
+                        PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                    FIRST_OPEN_NOTIFICATION_PERMISSION);
+        } else {
+            finishFirstOpenNotifications();
+        }
+    }
+
+    private void finishFirstOpenNotifications() {
+        boolean granted = Build.VERSION.SDK_INT < 33 ||
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+                        PackageManager.PERMISSION_GRANTED;
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        if (granted && manager != null && manager.areNotificationsEnabled()) {
+            // The courier has explicitly opted in on the initial setup.
+            // Registration still happens only after authenticated web login.
+            getPreferences(MODE_PRIVATE).edit().putBoolean("push_enabled", true).apply();
+            if (!FirebaseApp.getApps(this).isEmpty())
+                FirebaseMessaging.getInstance().setAutoInitEnabled(true);
+        } else {
+            Toast.makeText(this, "Ative as notificações nos Ajustes para receber entregas.",
+                    Toast.LENGTH_LONG).show();
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Ativar Modo Plantão?")
+                .setMessage("Quando receber uma entrega, o Pitacco tentará aumentar temporariamente o volume de alarme para tocar o sino e a voz, depois restaurará o valor anterior. O recurso é opcional, não altera o Não Perturbe e pode ser bloqueado pelo Android. Você pode desligá-lo nos Ajustes.")
+                .setPositiveButton("Ativar som forte", (dialog, which) -> {
+                    ShiftSoundPlayer.setEnabled(this, true);
+                    Toast.makeText(this, "Modo Plantão ativado.", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Manter desligado", (dialog, which) -> {})
+                .show();
     }
 
     private void preparePush() {
@@ -225,6 +290,10 @@ public class MainActivity extends Activity {
 
     @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
         super.onRequestPermissionsResult(requestCode, permissions, results);
+        if (requestCode == FIRST_OPEN_NOTIFICATION_PERMISSION) {
+            finishFirstOpenNotifications();
+            return;
+        }
         if (requestCode != PUSH_PERMISSION || pendingPermission == null) return;
         JavaScriptReplyProxy reply = pendingPermission;
         pendingPermission = null;
