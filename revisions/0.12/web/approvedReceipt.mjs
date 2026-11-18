@@ -112,8 +112,8 @@ export function approvedReceipt(job,width=80,opts={}){
   const qty=amount(item.quantity??item.qty??1)||1;
   const name=first(item.name,item.title,'Produto');
   const total=item.total??item.total_price??item.price_total;
-  if(total!=null)pair(qty+'x '+name,cash(total));
-  else add(qty+'x '+name);
+  if(total!=null)pair(qty+' x '+name,cash(total));
+  else add(qty+' x '+name);
   const options=[
    ...(Array.isArray(item.options)?item.options:[]),
    ...(Array.isArray(item.complements)?item.complements:[]),
