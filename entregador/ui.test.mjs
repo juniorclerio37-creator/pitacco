@@ -193,3 +193,19 @@ test("courier notification diagnostics terminate and identify QA APK without Fir
  assert.ok(page.includes('Este APK de teste não tem Firebase configurado.'));
  assert.ok(page.includes('Não foi possível consultar o servidor em 7 segundos.'));
 });
+
+test("parallel Android test asks notification permission even without Firebase",()=>{
+ const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
+ const manifest=read("android-app/app/src/main/AndroidManifest.xml");
+ const start=activity.indexOf("private void enablePush(JavaScriptReplyProxy reply)");
+ const end=activity.indexOf("private void finishPushEnable(", start);
+ const enable=activity.slice(start,end);
+ assert.ok(enable.includes("requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}"));
+ assert.ok(!enable.includes("FirebaseApp.getApps(this).isEmpty()"));
+ const finish=activity.slice(end,activity.indexOf("private void sendToken(",end));
+ assert.ok(finish.includes("if (FirebaseApp.getApps(this).isEmpty())"));
+ assert.ok(finish.includes('reply.postMessage("unavailable")'));
+ assert.ok(activity.includes("Settings.ACTION_APP_NOTIFICATION_SETTINGS"));
+ assert.ok(activity.includes("Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS"));
+ assert.ok(manifest.includes('android.permission.POST_NOTIFICATIONS'));
+});
