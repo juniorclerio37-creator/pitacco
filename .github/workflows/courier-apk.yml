@@ -82,7 +82,7 @@ jobs:
           if-no-files-found: error
 
   stable:
-    if: github.event_name == 'workflow_dispatch' && inputs.channel == 'estavel' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.channel == 'estavel'))
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -127,3 +127,48 @@ jobs:
           name: Pitacco-Entregador-Android-estavel
           path: entregador/android-app/distribution/
           if-no-files-found: error
+
+  publish-stable:
+    name: Publicar APK oficial assinado
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: stable
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Obter APK assinado e verificado
+        uses: actions/download-artifact@v4
+        with:
+          name: Pitacco-Entregador-Android-estavel
+          path: release
+      - name: Conferir integridade antes de disponibilizar
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release
+          sha256sum --check SHA256-ANDROID.txt
+          test -s ASSINATURA-ANDROID.txt
+          shopt -s nullglob
+          apks=(Pitacco-Entregador-*.apk)
+          test "${#apks[@]}" -eq 1
+          test -s "${apks[0]}"
+      - name: Publicar download do entregador
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          apks=(release/Pitacco-Entregador-*.apk)
+          test "${#apks[@]}" -eq 1
+          filename=${apks[0]##*/}
+          version=${filename#Pitacco-Entregador-}
+          version=${version%.apk}
+          [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          tag="pitacco-entregador-v${version}-${GITHUB_SHA:0:12}"
+          if gh release view "$tag" --repo "$GH_REPO" >/dev/null 2>&1; then
+            echo "APK já publicado: $tag"
+          else
+            gh release create "$tag"               "release/$filename" "release/SHA256-ANDROID.txt" "release/ASSINATURA-ANDROID.txt"               --repo "$GH_REPO" --target "$GITHUB_SHA" --latest=false               --title "Pitacco Entregador v$version"               --notes "APK assinado com o certificado oficial configurado, com notificações nativas de nova entrega em segundo plano e toque forte. FCM requer cadastro do aparelho e configuração do serviço no Supabase. Android pode restringir o alerta conforme notificações, modo Não Perturbe, bateria e conectividade."
+          fi
