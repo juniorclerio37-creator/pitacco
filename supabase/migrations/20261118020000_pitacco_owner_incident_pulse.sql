@@ -92,3 +92,32 @@ begin
 end $$;
 revoke all on function public.pitacco_owner_incident_pulse() from public,anon,authenticated;
 grant execute on function public.pitacco_owner_incident_pulse() to authenticated;
+
+-- Diagnóstico técnico exclusivo do Super Admin. Gestores seguem com os avisos
+-- operacionais (pitacco_operational_alerts), sem acesso a registros internos.
+create or replace function public.pitacco_incidents(
+ p_store uuid default null,p_status text default 'open',p_page integer default 0
+) returns jsonb language plpgsql stable security definer set search_path='' as $$
+declare result jsonb;
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then
+  raise exception 'Diagnóstico exclusivo do Super Admin' using errcode='42501';
+ end if;
+ if p_status not in ('open','resolved','all') or p_page is null
+   or p_page not between 0 and 10000 then raise exception 'Consulta inválida'; end if;
+ select coalesce(jsonb_agg(to_jsonb(x) order by x.last_seen_at desc,x.id desc),'[]'::jsonb)
+ into result from (
+  select i.id,i.store_id,s.name as store_name,i.code,i.entity_id,i.status,
+    i.first_seen_at,i.last_seen_at,i.resolved_at,i.detections,i.acknowledged_at
+  from public.pitacco_operational_incidents i join public.stores s on s.id=i.store_id
+  where (p_store is null or i.store_id=p_store)
+    and (p_status='all' or i.status=p_status)
+  order by i.last_seen_at desc,i.id desc offset p_page*25 limit 26
+ ) x;
+ return jsonb_build_object(
+  'rows',case when jsonb_array_length(result)>25 then result-25 else result end,
+  'has_more',jsonb_array_length(result)>25
+ );
+end $$;
+revoke all on function public.pitacco_incidents(uuid,text,integer) from public,anon,authenticated;
+grant execute on function public.pitacco_incidents(uuid,text,integer) to authenticated;
