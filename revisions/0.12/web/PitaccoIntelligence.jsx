@@ -1,4 +1,5 @@
 import React,{useEffect,useState} from 'react';
+import IntelligenceRepairs from './IntelligenceRepairs.jsx';
 
 export default function PitaccoIntelligence({client,stores=[]}){
  const [storeId,setStoreId]=useState('');
@@ -130,5 +131,6 @@ export default function PitaccoIntelligence({client,stores=[]}){
     </article>)}
    </div>}
   </section>
+  <IntelligenceRepairs client={client} storeId={storeId} stores={stores}/>
  </section>;
 }
