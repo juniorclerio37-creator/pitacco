@@ -23,7 +23,7 @@ test('site and Windows provide stage-specific actions without early dispatch',()
  const win=read('revisions/0.12/web/Operations.jsx');
  const dialog=read('revisions/0.12/web/DeliveryDialog.jsx');
  const mount=read('revisions/0.12/mount_orders_045.py');
- for(const label of ['Marcar pedido pronto','Selecionar entregador','Confirmar retirada','Acompanhar entrega']){
+ for(const label of ['Marcar pedido pronto','Selecionar entregador','Confirmar retirada','Acompanhar entrega','Concluir entrega']){
   assert.ok(site.includes(label),'missing site '+label);
   assert.ok(win.includes(label),'missing Windows '+label);
  }
@@ -42,4 +42,16 @@ test('server enforces ready state for assignment and local completion only for o
  assert.match(migration,/o\.source='proprio'/);
  assert.match(migration,/o\.receipt->>'logistics'='retirada'/);
  assert.match(migration,/Marque o pedido como pronto/);
+});
+
+test('conclude button is restricted to verified own deliveries',()=>{
+ const sql=read('supabase/migrations/20261118194600_manager_conclude_only_preverified_own_delivery.sql');
+ const site=read('revisions/0.12/web/Pedidos.jsx');
+ const windows=read('revisions/0.12/web/Operations.jsx');
+ assert.match(sql,/o\.source<>'proprio'/);
+ assert.match(sql,/d\.arrived_at is null or d\.delivery_code_verified_at is null/);
+ assert.match(sql,/public\.is_store_manager\(o\.store_id\)/);
+ assert.match(sql,/public\.deliveries/);
+ assert.match(site,/onConclude/);
+ assert.match(windows,/pitacco_manager_confirm_verified_delivery/);
 });
