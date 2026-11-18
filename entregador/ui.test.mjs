@@ -137,3 +137,17 @@ test("courier can check Android push registration without exposing device tokens
  assert.match(migration,/revoke all on function public\.pitacco_courier_push_readiness\(\) from public,anon,authenticated/);
  assert.doesNotMatch(migration,/jsonb_build_object\([^;]*token/);
 });
+
+test("installed Android app with outdated native bridge falls back to audible web chime",()=>{
+ const page=read("painel.html");
+ assert.match(page,/nativeTestPending=true/);
+ assert.match(page,/await enableAssignmentSound\(\)/);
+ assert.match(page,/window\.setTimeout\(\(\)=>\{/);
+ assert.match(page,/window\.PitaccoPush\.postMessage\("test"\)/);
+ assert.match(page,/playWebSoundWhenNativeFails/);
+ assert.match(page,/if\(value==="tested"\)/);
+ assert.match(page,/nativeTestPending=false/);
+ assert.match(page,/O Android não respondeu ao teste nativo/);
+ assert.match(page,/Sem resposta do Android/);
+ assert.match(page,/Avisos com o aplicativo fechado exigem configuração nativa e Firebase/);
+});
