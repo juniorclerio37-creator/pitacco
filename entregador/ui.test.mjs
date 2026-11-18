@@ -299,3 +299,21 @@ test("sequência agrupada aparece somente para lotes válidos e navega por prefe
  assert.match(migration,/if v_status is distinct from 'CONCLUDED' or not exists/);
  assert.doesNotMatch(migration,/set delivery_code_verified_at/);
 });
+
+test("identidade de motinho laranja aprovada aparece no acesso, painel e ícone nativo",()=>{
+ const login=read("acesso.html");
+ const panel=read("painel.html");
+ const css=read("painel.css");
+ const svg=read("logo-entregador.svg");
+ const android=read("android-app/app/src/main/res/drawable/ic_pitacco.xml");
+ const manifest=read("android-app/app/src/main/AndroidManifest.xml");
+ assert.match(login,/src="\.\/logo-entregador\.svg"/);
+ assert.match(panel,/src="\.\/logo-entregador\.svg"/);
+ assert.match(css,/\.app-logo img/);
+ assert.match(svg,/viewBox="0 0 380 370"/);
+ assert.match(svg,/fill-rule="evenodd"/);
+ assert.match(svg,/#FF850D/);
+ assert.match(android,/android:fillColor="#FF7209"/);
+ assert.match(android,/android:fillType="evenOdd"/);
+ assert.match(manifest,/android:icon="@drawable\/ic_pitacco"/);
+});
