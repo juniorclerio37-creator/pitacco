@@ -11,13 +11,14 @@ function request(question='A impressão no Windows falha',changes={}){
   body:JSON.stringify({question,storeId:null,...changes.body})
  });
 }
-function harness({owner=true,auth=true,incidents=[],ai=true}={}){
+function harness({owner=true,auth=true,incidents=[],ai=true,metrics={registered:5,active:2,trial:2,courtesy:1}}={}){
  const called=[];
  globalThis.fetch=async (url,init)=>{
   called.push({url,init});
   if(url.endsWith('/auth/v1/user'))return Response.json(auth?{id:'user-1'}:{message:'invalid'},{status:auth?200:401});
   if(url.endsWith('/rest/v1/rpc/pitacco_is_platform_owner'))return Response.json(owner);
   if(url.endsWith('/rest/v1/rpc/pitacco_incidents'))return Response.json({rows:incidents,has_more:false});
+  if(url.endsWith('/rest/v1/rpc/pitacco_subscription_overview'))return Response.json(metrics);
   throw new Error('Unexpected URL '+url);
  };
  const calls=[];
@@ -67,6 +68,7 @@ test('authorized diagnosis excludes identifiers and credentials from AI context'
  assert.equal(payload.mode,'diagnostico');
  assert.equal(h.called.length,3);
  assert.equal(h.calls.length,1);
+ assert.equal(h.calls[0].model,'@cf/meta/llama-3.1-8b-instruct-fast');
  const prompt=JSON.stringify(h.calls[0].args.messages);
  assert.match(prompt,/print_error/);
  assert.doesNotMatch(prompt,/LOJA_SUPER_SECRETA|ORDER_SUPER_SECRET|CLIENTE_SUPER_SECRETO|abcDEF01234/);
@@ -94,4 +96,31 @@ test('requires a configured AI binding',async()=>{
  const h=harness({ai:false});
  const response=await worker.fetch(request(),h.env);
  assert.equal(response.status,503);assert.equal(h.called.length,3);
+});
+
+test('reported active stores comes from protected Supabase overview, not model inference',async()=>{
+ const h=harness({metrics:{registered:14,active:7,trial:4,courtesy:1}});
+ const response=await worker.fetch(request('Tem quantas lojas ativas?'),h.env);
+ assert.equal(response.status,200);
+ const result=await response.json();
+ assert.equal(result.mode,'indicadores');
+ assert.equal(result.source,'supabase');
+ assert.match(result.answer,/7 loja\(s\) com assinatura ativa/);
+ assert.match(result.answer,/14 estabelecimentos cadastrados/);
+ assert.equal(h.called.length,3);
+ assert.equal(h.calls.length,0);
+});
+test('incomplete or nonnumeric store statistics are not invented',async()=>{
+ const h=harness({metrics:{active:'3',registered:10}});
+ const response=await worker.fetch(request('Quantas lojas temos?'),h.env);
+ assert.equal(response.status,502);
+ assert.equal(h.calls.length,0);
+});
+test('text is extracted from real Workers AI chat-completions response',async()=>{
+ const h=harness();
+ h.env.AI.run=async()=>({choices:[{message:{role:'assistant',content:'Verifique a permissão de notificações e o canal de som no Android.'},finish_reason:'stop'}]});
+ const response=await worker.fetch(request('Por que não toca no app do entregador?'),h.env);
+ assert.equal(response.status,200);
+ const answer=(await response.json()).answer;
+ assert.match(answer,/permissão de notificações/);
 });
