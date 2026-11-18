@@ -53,14 +53,19 @@ export async function discoverPublicWindowsInstaller(request = fetch) {
   if(!response.ok)throw Error('Não foi possível consultar o instalador Windows.');
   const entries = await response.json();
   if(!Array.isArray(entries))throw Error('Resposta inesperada da central de versões.');
-  for(const release of entries) {
+  // GitHub's API order can differ from publication order (tags may predate
+  // the release). Never offer an older installed build as the newest update.
+  const byPublication=[...entries].sort((a,b)=>
+    (Date.parse(b.published_at||b.created_at)||0)-
+    (Date.parse(a.published_at||a.created_at)||0));
+  for(const release of byPublication) {
     if(release.draft || release.prerelease || !/^pitacco-windows-[a-f0-9]{12}$/.test(release.tag_name||''))continue;
     const asset = release.assets?.find(item=>item.name===WINDOWS_ASSET);
     if(!asset?.browser_download_url || asset.size<=0)continue;
     const url = asset.browser_download_url;
     if(!url.startsWith('https://github.com/juniorclerio37-creator/pitacco/releases/download/')
       || !url.endsWith('/'+WINDOWS_ASSET))continue;
-    return {url,version:'0.12.2',published_at:release.published_at||release.created_at};
+    return {url,version:null,published_at:release.published_at||release.created_at};
   }
   return null;
 }
