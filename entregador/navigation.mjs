@@ -31,3 +31,19 @@ export function buildNavigationUrl(delivery, provider = 'google', mode = 'addres
   }
   return null;
 }
+
+/**
+ * Abre o percurso com paradas na ordem já SUGERIDA, sem reotimização.
+ * Google Maps URLs suporta no máximo 3 waypoints intermediários em
+ * navegadores móveis. Waze Deep Links aceita apenas um destino por link.
+ */
+export function buildBatchNavigationUrl(deliveries,provider='google',mode='address') {
+  if(provider!=='google'||!Array.isArray(deliveries)||
+     deliveries.length<2||deliveries.length>4)return null;
+  const targets=deliveries.map(delivery=>routeTarget(delivery,mode));
+  if(targets.some(target=>!target))return null;
+  const destination=encodeURIComponent(targets[targets.length-1].value);
+  const waypoints=encodeURIComponent(targets.slice(0,-1).map(target=>target.value).join('|'));
+  return 'https://www.google.com/maps/dir/?api=1&destination='+
+    destination+'&waypoints='+waypoints+'&travelmode=driving&dir_action=navigate';
+}
