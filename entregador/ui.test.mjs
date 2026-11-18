@@ -121,3 +121,17 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(build.includes("versionName '1.0.2'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
+
+test("courier can check Android push registration without exposing device tokens or secrets",()=>{
+ const page=read("painel.html");
+ const migration=read("../supabase/migrations/20261118004500_courier_push_readiness.sql");
+ assert.match(page,/id="checkNativePush"/);
+ assert.match(page,/id="nativePushReadiness"/);
+ assert.match(page,/pitacco_courier_push_readiness/);
+ assert.match(page,/await checkNativePushStatus\(\)/);
+ assert.match(migration,/public\.pitacco_courier_session_ready\(\)/);
+ assert.match(migration,/d\.session_id::text=v_session/);
+ assert.match(migration,/d\.expires_at>now\(\)/);
+ assert.match(migration,/revoke all on function public\.pitacco_courier_push_readiness\(\) from public,anon,authenticated/);
+ assert.doesNotMatch(migration,/jsonb_build_object\([^;]*token/);
+});
