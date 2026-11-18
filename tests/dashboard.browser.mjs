@@ -1012,8 +1012,9 @@ try {
       await ownCard.getByRole('button',{name:'Imprimir no navegador pedido LOJA-23'}).click();
       const printEvidence=await page.evaluate(()=>({html:window.__browserComandas[0],count:window.__browserPrints}));
       assert.equal(printEvidence.count,1);
-      assert.ok(printEvidence.html.includes('PEDIDO LOJA-23'));
-      assert.ok(printEvidence.html.includes('COBRAR NA ENTREGA'));
+      assert.ok(printEvidence.html.includes('Loja Nº LOJA-23'));
+      assert.ok(printEvidence.html.includes('PAGAMENTO A CONFERIR'));
+      assert.ok(!printEvidence.html.includes('*** PAGO ONLINE ***'));
       await ownCard.getByRole('button',{name:'Selecionar entregador',exact:true}).click();
       await page.getByRole('dialog').getByRole('heading',{name:'Motoboy próprio',exact:true}).waitFor();
       await page.getByRole('dialog').getByRole('button',{name:'Fechar detalhes',exact:true}).click();
