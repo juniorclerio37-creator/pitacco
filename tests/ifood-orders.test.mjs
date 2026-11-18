@@ -9,7 +9,7 @@ const id={event:'00000000-0000-0000-0000-000000000001',merchant:'00000000-0000-0
 const event={id:id.event,code:'PLC',orderId:id.order,merchantId:id.merchant,category:'FOOD',createdAt:'2026-11-16T14:00:00Z'};
 const order={id:id.order,merchant:{id:id.merchant},isTest:false,createdAt:event.createdAt,displayId:'701',
  orderType:'DELIVERY',delivery:{deliveredBy:'IFOOD'},customer:{name:'Cliente Teste',documentNumber:'ocultar'},
- total:{orderAmount:25},items:[{name:'Açaí',quantity:1,unitPrice:25}],payments:{methods:[{method:'PIX',prepaid:true}]}};
+ total:{orderAmount:25,subTotal:25,deliveryFee:8,benefits:8},benefits:[{target:'DELIVERY_FEE',value:8}],items:[{name:'Açaí',quantity:1,unitPrice:25}],payments:{methods:[{method:'PIX',prepaid:true}]}};
 const noopLogger={warn:()=>{}};
 const config={supabaseUrl:'https://db.example.test',serviceKey:'db-fixture',logger:noopLogger};
 const endpoint='https://db.example.test/functions/v1/ifood-orders';
@@ -41,6 +41,11 @@ test('signed webhook durably stores order before acknowledging and verifies offi
     assert.equal(payload.p_order.logistics,'marketplace');
     assert.equal(payload.p_order.display_number,'701');
     assert.equal(payload.p_order.payment_status,'paid');
+    // Frete R$ 8,00 totalmente subsidiado: motoboy recebe os R$ 8,00
+    // originais, não o frete líquido R$ 0,00 visível ao cliente.
+    assert.equal(payload.p_order.delivery_fee_original,8);
+    assert.equal(payload.p_order.delivery_fee_discount,8);
+    assert.equal(payload.p_order.delivery_fee_customer,0);
     assert.equal(JSON.stringify(payload).includes('ocultar'),false);
     return json(null);
    }
