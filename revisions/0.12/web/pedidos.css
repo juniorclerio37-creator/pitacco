@@ -95,3 +95,12 @@
 @media(max-width:1200px){
  .windows-cards-only .pedidos-list.pedidos-kanban{grid-template-columns:repeat(4,minmax(250px,1fr))}
 }
+
+/* Informações essenciais do pedido em linhas compactas, sem sobrecarregar o card. */
+.pitacco-pedidos .pedidos-card-contact,.pitacco-pedidos .pedidos-card-address{justify-content:flex-start;font-size:12px;color:#58677c;line-height:1.2}
+.pitacco-pedidos .pedidos-card-address{max-width:100%;overflow-wrap:anywhere}
+.pitacco-pedidos .pedidos-card-info{padding-top:6px;border-top:1px solid #edf1f5}
+.pitacco-pedidos .pedidos-payment-pill{border-radius:999px;padding:3px 8px;font-size:11px;font-weight:750;background:#fff5db;color:#92620c}
+.pitacco-pedidos .pedidos-payment-pill[data-payment="collect"]{background:#ffe1da;color:#9c3f2d}
+.pitacco-pedidos .pedidos-payment-pill[data-payment="paid"]{background:#e1f5e9;color:#247348}
+.pitacco-pedidos .pedidos-payment-pill[data-payment="review"]{background:#eef2f7;color:#5e6a7b}
