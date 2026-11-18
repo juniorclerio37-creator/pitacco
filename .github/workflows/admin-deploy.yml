@@ -8,6 +8,9 @@ on:
       - 'revisions/0.12/web/OwnerIncidentNotifier.jsx'
       - 'revisions/0.12/web/owner-incident-notifier.css'
       - 'revisions/0.12/web/IncidentCenter.jsx'
+      - 'revisions/0.12/web/PitaccoIntelligence.jsx'
+      - 'cloudflare/admin-ai-worker.mjs'
+      - 'wrangler.admin.jsonc'
       - 'revisions/0.12/web/super-admin.css'
       - 'scripts/build-admin-cloudflare.sh'
       - '.github/workflows/admin-deploy.yml'
@@ -55,6 +58,7 @@ jobs:
           bash scripts/build-admin-cloudflare.sh
           test -s web/dist-admin/index.html
           grep -Rql 'pitacco_owner_incident_pulse' web/dist-admin/assets
+          grep -Rql 'pitacco_owner_diagnostic_snapshot' web/dist-admin/assets
       - name: Publicar no Worker existente
         shell: bash
         env:
