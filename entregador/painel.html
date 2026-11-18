@@ -154,7 +154,8 @@ a.btn{text-decoration:none}
  </section>
  <section class="panel-white pref-panel">
   <span class="eyebrow">LOCALIZAÇÃO PARA ENTREGAS</span>
-  <button type="button" class="settings-row" id="retryCourierGps"><span>Ativar ou atualizar meu GPS</span><span class="setting-arrow">◎</span></button>
+  <button type="button" class="settings-row" id="retryCourierGps"><span>Autorizar localização no Android / Atualizar GPS</span><span class="setting-arrow">◎</span></button>
+  <button type="button" class="btn secondary" id="openAndroidGpsSettings" hidden>Abrir permissões de localização no Android</button>
   <p id="courierGpsStatus" role="status" aria-live="polite">Ative seu plantão para compartilhar sua posição com a loja.</p>
   <p class="note-inline">O GPS é enviado somente quando você está online. Para atualizar a localização, permita o acesso do Pitacco ao GPS do aparelho. Nesta versão, o acompanhamento pode pausar quando o aplicativo está em segundo plano.</p>
   <span class="eyebrow">AJUDA E SINCRONIZAÇÃO</span>
@@ -207,6 +208,31 @@ function gpsStatus(text){
  const output=$("courierGpsStatus");
  if(output)output.textContent=text;
 }
+function showAndroidGpsSettings(show){
+ const button=$("openAndroidGpsSettings");
+ if(button)button.hidden=!show;
+}
+function handleAndroidGpsReply(status){
+ if(status==="request_running")return;
+ if(status==="granted"){
+  showAndroidGpsSettings(false);
+  if(courier?.available){stopGpsSharing();syncGpsSharing();}
+  else gpsStatus("Localização precisa autorizada no Android. Fique online para compartilhar seu GPS.");
+ }else if(status==="approximate"){
+  showAndroidGpsSettings(true);
+  gpsStatus("O Android autorizou apenas localização aproximada. Abra as permissões e ative localização precisa.");
+ }else if(status==="settings"){
+  showAndroidGpsSettings(true);
+  gpsStatus("Abra as permissões do Pitacco no Android e autorize a localização precisa.");
+ }else{
+  showAndroidGpsSettings(true);
+  gpsStatus("A localização não foi autorizada. Autorize nas configurações do Android.");
+ }
+}
+if(window.PitaccoGps){
+ window.PitaccoGps.onmessage=event=>handleAndroidGpsReply(String(event?.data||"denied"));
+}
+
 function stopGpsSharing(){
  if(gpsWatchId!==null&&navigator.geolocation)navigator.geolocation.clearWatch(gpsWatchId);
  gpsWatchId=null;gpsCourierId=null;
@@ -1146,7 +1172,19 @@ async function boot(){
  }
 }
 $("retryCourierGps").addEventListener("click",()=>{
- stopGpsSharing();syncGpsSharing();
+ const bridge=window.PitaccoGps;
+ if(bridge?.postMessage){
+  gpsStatus("Aguardando autorização da localização no Android…");
+  try{bridge.postMessage("request");}catch{gpsStatus("Não foi possível abrir a permissão. Verifique as configurações do Android.")}
+ }else if(navigator.geolocation){
+  navigator.geolocation.getCurrentPosition(()=>{stopGpsSharing();syncGpsSharing();},
+   error=>gpsStatus(error.code===1?"Permissão de localização recusada. Autorize o navegador ou o aplicativo.":"Verifique a localização e a conexão do aparelho."),
+   {enableHighAccuracy:true,maximumAge:0,timeout:15000});
+ }else gpsStatus("Geolocalização indisponível neste dispositivo.");
+});
+$("openAndroidGpsSettings").addEventListener("click",()=>{
+ if(window.PitaccoGps?.postMessage)window.PitaccoGps.postMessage("settings");
+ else gpsStatus("Abra as permissões do aplicativo nas configurações do Android.");
 });
 $("online").addEventListener("click",async()=>{
  if(!courier||busy)return;busy=true;$("online").disabled=true;

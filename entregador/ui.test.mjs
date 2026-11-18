@@ -117,8 +117,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.ok(page.includes('nativeNotificationSettings'));
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 27'));
- assert.ok(build.includes("versionName '2.0.7'"));
+ assert.ok(build.includes('versionCode 28'));
+ assert.ok(build.includes("versionName '2.0.8'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -452,4 +452,20 @@ test("real courier assignment reuses the exact native bell and voice test, witho
  assert.match(native,/ShiftSoundPlayer\.play\(context\)/);
  assert.match(audio,/raw\/pitacco_assignment/);
  assert.match(page,/if\(document\.hidden\)return/);
+});
+
+test("Android GPS authorization remains part of the original courier app upgrade",()=>{
+ const app=read("android-app/app/build.gradle");
+ const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
+ const screen=read("painel.html");
+ assert.match(app,/applicationId 'br\.com\.pitacco\.entregador'/);
+ assert.match(app,/versionCode 28/);
+ assert.match(app,/versionName '2\.0\.8'/);
+ assert.match(activity,/registerGpsBridge\(\)/);
+ assert.match(activity,/WebViewCompat\.addWebMessageListener\(web, "PitaccoGps"/);
+ assert.match(activity,/requestPermissions\(new String\[\]\{/);
+ assert.match(activity,/ACTION_APPLICATION_DETAILS_SETTINGS/);
+ assert.match(screen,/Autorizar localização no Android/);
+ assert.match(screen,/window\.PitaccoGps\.postMessage\("request"\)|bridge\.postMessage\("request"\)/);
+ assert.match(screen,/openAndroidGpsSettings/);
 });
