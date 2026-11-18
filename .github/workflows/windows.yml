@@ -57,7 +57,7 @@ jobs:
               'backend oficial no Windows': 'const useOfficial=' in app,
               'gestor validado por loja': 'useStoreManagerAccess(supabase,session?.user?.id,selected)' in app,
               'pedidos filtrados por loja': "eq('store_id',storeId)" in orders and 'order.store_id===storeId' in orders,
-              'alerta nativo': "invoke('play_order_bell'" in orders and "invoke('play_order_alert_combo'" in orders and 'fn play_order_alert_combo' in native and 'fn merchant_voice_bytes' in native and all(f'include_bytes!("order-alert{suffix}.wav")' in native for suffix in ('','-high','-soft')),
+              'alerta nativo': all(x in orders for x in ('pitacco:bell-choice:',"invoke('play_order_alert_combo'",'Pitacco Original','Moderno','Clássico','Duplo','Intenso')) and all(x in native for x in ('fn merchant_voice_bytes','fn merchant_bell_bytes','fn play_order_alert_combo','fn play_order_bell','order-merchant-voice-1.wav')),
               'fila e teste de impressão existentes': all(name in native for name in ('enqueue_job','retry_job','test_printer')),
               'central separada': "page==='Central de Aplicativos'" in admin and 'pitacco-admin-shell' not in app,
           }
