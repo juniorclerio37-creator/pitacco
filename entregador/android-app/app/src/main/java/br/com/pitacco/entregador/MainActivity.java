@@ -18,6 +18,7 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.WebResourceError;
@@ -113,6 +114,12 @@ public class MainActivity extends Activity {
                         boolean played = AssignmentMessagingService.showAssignment(this,
                                 "00000000-0000-4000-8000-000000000001");
                         reply.postMessage(played ? "tested" : "permission");
+                    }
+                    else if ("settings".equals(action)) {
+                        Intent settings = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
+                        settings.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+                        settings.putExtra(Settings.EXTRA_CHANNEL_ID, AssignmentMessagingService.CHANNEL_ID);
+                        startActivity(settings);
                     }
                     else if ("disable".equals(action)) {
                         getPreferences(MODE_PRIVATE).edit().putBoolean("push_enabled", false).apply();
