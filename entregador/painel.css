@@ -95,3 +95,18 @@ button{font-family:inherit}button:focus-visible,a:focus-visible{outline:3px soli
 
 /* The single authorized testing courier can see which store sent each order. */
 .card-store-label,.order-origin-store{display:block;margin:10px 0 6px;font-size:12px;font-weight:800;letter-spacing:.035em;color:#a94b16}
+
+
+/* Atalho de navegação junto ao endereço; preserva acesso separado aos detalhes. */
+.card-address-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px}
+.card-address-row .address{margin:0;min-width:0;flex:1;line-height:1.45;overflow-wrap:anywhere}
+.card-route-link{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;border-radius:11px;padding:9px 15px;background:#e8f3ff;color:#175baf;border:1px solid #bbd9ff;font-weight:900;font-size:13px;text-decoration:none;min-height:38px}
+.card-route-link:focus-visible{outline:3px solid #ff9d51;outline-offset:2px}
+.card-verify-block{margin-top:13px;border-radius:13px;border:1px solid #caead7;background:#f5fcf8;padding:14px}
+.card-verify-title{display:block;color:#166f48;font-size:14px;font-weight:900}
+.card-verify-help{font-size:12px;line-height:1.5;color:#63786d;margin:7px 0 0}
+.card-verify-pending{margin:10px 0 0;font-size:12px;color:#a16320;line-height:1.5}
+.card-verify-block .verify-form{margin-top:11px}
+.card-verify-block .verify-form .btn:disabled{opacity:.55;cursor:not-allowed}
+.card-ifood-fallback{font-size:12px;color:#526b5d;margin:15px 0 8px;text-align:center}
+.card-ifood-confirm{display:flex;align-items:center;justify-content:center;min-height:43px;font-size:13px;text-decoration:none}
