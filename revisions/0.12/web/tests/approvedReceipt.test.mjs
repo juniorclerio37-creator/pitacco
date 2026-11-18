@@ -58,3 +58,13 @@ test('confirmed payment never generates collect instruction even for cash',()=>{
  assert.doesNotMatch(s,/Troco para/);
  assert.doesNotMatch(s,/Valor a cobrar/);
 });
+
+test('print PAGO ONLINE only for verified online payments',()=>{
+ const base={source:'99food',display_number:'542012',items:[],total:27,payment_method:'Crédito',payment_confirmed:true};
+ const regular=approvedReceipt({receipt:base},80);
+ assert.match(regular,/PEDIDO PAGO/);
+ assert.doesNotMatch(regular,/PAGO ONLINE/);
+ const online=approvedReceipt({receipt:{...base,payment_online:true}},80);
+ assert.match(online,/PAGO ONLINE/);
+ assert.match(online,/NAO COBRAR NA ENTREGA/);
+});
