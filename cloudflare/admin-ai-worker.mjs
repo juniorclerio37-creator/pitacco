@@ -25,7 +25,10 @@ Se a pré-verificação mostrar push desabilitado, cron inativo, segredo ausente
 explique esses bloqueios antes de discutir áudio Android; nunca habilite ou prometa envio FCM sem homologação.
 Se o app Windows não apresentar sinal recente, recomende conexão, vínculo e teste físico na loja,
 não reimpressão automática nem marcar pedidos como impressos.
-Presença de segredo ou cron ativo NÃO comprova credencial FCM válida.\nPara falha de impressão, distinga fila de impressão de papel efetivamente impresso;
+Presença de segredo ou cron ativo NÃO comprova credencial FCM válida.
+A função de pré-verificação do Firebase informa somente se a conta de serviço e segredo
+parecem configurados. Mesmo indicadores positivos NÃO comprovam autenticação no Google,
+recebimento de notificação ou áudio ouvido pelo entregador. Nunca afirme que o push foi ativado.\nPara falha de impressão, distinga fila de impressão de papel efetivamente impresso;
 para marketplace, diferencie 'pronto/preparado' de 'entregue/concluído'.`;
 
 function asJson(value, status = 200) {
@@ -153,6 +156,23 @@ export function safeRecoveryContext(raw){
  return clean;
 }
 
+// Sender configuration comes from a separate authorized function, not the delivery queue.
+const SENDER_FIELDS=[
+ 'fcm_service_account_configured','cron_secret_env_configured',
+ 'database_service_access_configured','sender_dispatch_tested',
+ 'google_oauth_tested','fcm_delivery_tested','android_audio_tested'
+];
+export function safeSenderReadiness(input){
+ if(!input||typeof input!=='object')return null;
+ if(typeof input.fcm_service_account_configured!=='boolean'||
+    typeof input.cron_secret_env_configured!=='boolean')return null;
+ const summary={};
+ for(const key of SENDER_FIELDS){
+  summary[key]=typeof input[key]==='boolean'?input[key]:null;
+ }
+ return summary;
+}
+
 function textFromModel(result) {
   const possible = [result?.response, result?.result?.response, result?.choices?.[0]?.message?.content];
   for (const value of possible) {
@@ -241,6 +261,15 @@ async function handleAnalyze(request, env) {
     } catch {
       // Missing, unauthorized, or failed preflight MUST be reported as unavailable.
     }
+    let senderReadiness=null;
+    try {
+      const senderResponse=await callSupabase(env,
+        '/functions/v1/pitacco-owner-push-readiness',token,
+        {body:{check:'presence'}});
+      if(senderResponse.ok)senderReadiness=safeSenderReadiness(await senderResponse.json());
+    }catch{
+      // Never interpret unavailable sender credentials as valid configuration.
+    }
     if (!env.AI?.run) return asJson({ error: 'A IA ainda não está configurada neste ambiente.' }, 503);
     const messages = [
       { role: 'system', content: SYSTEM_PROMPT },
@@ -249,12 +278,15 @@ async function handleAnalyze(request, env) {
         JSON.stringify(summaries) + '\nSinais agregados seguros: ' +
         (telemetry ? JSON.stringify(telemetry) : 'indisponíveis; não infira que esteja tudo funcionando') +
         '\nPré-verificação de recuperação (somente campos autorizados): ' +
-        (recovery ? JSON.stringify(recovery) : 'indisponível; não conclua que o serviço está pronto') }
+        (recovery ? JSON.stringify(recovery) : 'indisponível; não conclua que o serviço está pronto') +
+        '\nCredenciais do emissor Firebase (presença/forma, sem envio de notificação): ' +
+        (senderReadiness ? JSON.stringify(senderReadiness) :
+          'indisponíveis; não afirme que o serviço esteja configurado') }
     ];
     const result = await env.AI.run(MODEL, { messages, max_tokens: 650, temperature: 0.2 });
     const answer = textFromModel(result);
     if (!answer) return asJson({ error: 'A IA não conseguiu gerar o texto da resposta. Tente reformular a pergunta.' }, 502);
-    return asJson({ answer, incidentsConsidered: summaries.length, signalsAvailable: !!telemetry, recoveryAvailable: !!recovery, mode: 'diagnostico', model: MODEL });
+    return asJson({ answer, incidentsConsidered: summaries.length, signalsAvailable: !!telemetry, recoveryAvailable: !!recovery, senderCredentialsAvailable: !!senderReadiness, mode: 'diagnostico', model: MODEL });
   } catch {
     // Não revelar erros de infraestrutura, detalhes de autenticação, consultas ou prompts.
     return asJson({ error: 'Serviço temporariamente indisponível. Tente novamente mais tarde.' }, 503);
