@@ -129,6 +129,8 @@ test("courier can check Android push registration without exposing device tokens
  assert.match(page,/id="nativePushReadiness"/);
  assert.match(page,/pitacco_courier_push_readiness/);
  assert.match(page,/await checkNativePushStatus\(\)/);
+ assert.ok(page.includes('if(!document.hidden)playAssignmentSound()'));
+ assert.doesNotMatch(page,/if\(!nativePushRegistered\)playAssignmentSound\(\)/);
  assert.match(migration,/public\.pitacco_courier_session_ready\(\)/);
  assert.match(migration,/d\.session_id::text=v_session/);
  assert.match(migration,/d\.expires_at>now\(\)/);
