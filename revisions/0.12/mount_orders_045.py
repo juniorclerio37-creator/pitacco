@@ -20,7 +20,7 @@ policy_hook=""" const [dispatchPolicy,setDispatchPolicy]=useState('manual');
 s=s.replace(policy_anchor,policy_hook+policy_anchor,1)
 needle=" {manager&&desktop&&view==='Pedidos'&&<div className=\"operational-overview\""
 assert s.count(needle)==1
-mount=""" {manager&&view==='Pedidos'&&<Pedidos orders={orders} deliveries={deliveryRows} badges={orderBadges} acceptMode={settings.find(s=>s.source==='ifood'&&s.enabled)?.mode||'manual'} dispatchMode={dispatchPolicy} stage={stage} busy={busy} onAccept={id=>act(()=>rpc('accept_order',{p_order:id}))} onAcceptIfood={id=>act(async()=>{
+mount=""" {manager&&view==='Pedidos'&&<Pedidos orders={orders} popupLayout={desktop} deliveries={deliveryRows} badges={orderBadges} acceptMode={settings.find(s=>s.source==='ifood'&&s.enabled)?.mode||'manual'} dispatchMode={dispatchPolicy} stage={stage} busy={busy} onAccept={id=>act(()=>rpc('accept_order',{p_order:id}))} onAcceptIfood={id=>act(async()=>{
  const {data,error}=await client.functions.invoke('ifood-manual-action',{body:{action:'accept',order_id:id}});
  if(error){
   let message=error.message||'Não foi possível enviar o aceite ao iFood.';
