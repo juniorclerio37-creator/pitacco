@@ -43,11 +43,11 @@ jobs:
       - name: Verify APK signature and hash
         working-directory: entregador/android-app/app/build/outputs/apk/debug
         run: |
-          mv app-debug.apk Pitacco-Entregador-2.0.8-TESTE-PARALELO.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose Pitacco-Entregador-2.0.8-TESTE-PARALELO.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Pitacco-Entregador-2.0.8-TESTE-PARALELO.apk | head -15
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Pitacco-Entregador-2.0.8-TESTE-PARALELO.apk | grep -q "package: name='br.com.pitacco.entregador.teste'"
-          sha256sum Pitacco-Entregador-2.0.8-TESTE-PARALELO.apk > SHA256-ANDROID.txt
+          mv app-debug.apk Pitacco-Entregador-2.0.9-TESTE-PARALELO.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose Pitacco-Entregador-2.0.9-TESTE-PARALELO.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Pitacco-Entregador-2.0.9-TESTE-PARALELO.apk | head -15
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Pitacco-Entregador-2.0.9-TESTE-PARALELO.apk | grep -q "package: name='br.com.pitacco.entregador.teste'"
+          sha256sum Pitacco-Entregador-2.0.9-TESTE-PARALELO.apk > SHA256-ANDROID.txt
       - name: Exercise release signing with an isolated test certificate
         if: github.event_name == 'pull_request'
         working-directory: entregador/android-app
@@ -79,7 +79,7 @@ jobs:
         with:
           name: Pitacco-Entregador-Android-teste
           path: |
-            entregador/android-app/app/build/outputs/apk/debug/Pitacco-Entregador-2.0.8-TESTE-PARALELO.apk
+            entregador/android-app/app/build/outputs/apk/debug/Pitacco-Entregador-2.0.9-TESTE-PARALELO.apk
             entregador/android-app/app/build/outputs/apk/debug/SHA256-ANDROID.txt
           if-no-files-found: error
 
@@ -170,6 +170,20 @@ jobs:
           printf '%s' "$PITACCO_ANDROID_KEYSTORE_BASE64" | base64 --decode > "$PITACCO_ANDROID_KEYSTORE"
           unset PITACCO_ANDROID_KEYSTORE_BASE64
           bash sign-release.sh app/build/outputs/apk/release/app-release-unsigned.apk distribution
+      # A validação precisa inspecionar o APK final, não apenas o AndroidManifest.xml.
+      - name: Conferir permissões e identidade do APK oficial
+        working-directory: entregador/android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk=distribution/Pitacco-Entregador-2.0.9.apk
+          aapt="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          test -s "$apk"
+          "$aapt" dump badging "$apk" | grep -F "package: name='br.com.pitacco.entregador'" | grep -F "versionCode='29'"
+          "$aapt" dump permissions "$apk" | grep -F "android.permission.ACCESS_FINE_LOCATION"
+          "$aapt" dump permissions "$apk" | grep -F "android.permission.ACCESS_COARSE_LOCATION"
+          "$aapt" dump permissions "$apk" | grep -F "android.permission.POST_NOTIFICATIONS"
+          echo "APK oficial usa a identidade existente e declara GPS e notificações."
       - uses: actions/upload-artifact@v4
         with:
           name: Pitacco-Entregador-Android-estavel

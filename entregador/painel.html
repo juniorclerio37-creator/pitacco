@@ -85,6 +85,11 @@ a.btn{text-decoration:none}
     <button type="button" class="today-mini" id="miniEarnings" aria-label="Abrir ganhos de hoje"><small>GANHOS DE HOJE</small><b id="miniToday">R$ 0,00</b><span id="miniTodayCount">0 entregas</span></button>
   </div>
   <div class="status-banner"><div class="status-copy"><span class="status-dot" id="onlineDot"></span><div><b id="availability">Carregando disponibilidade...</b><span id="availableHelp">Sua loja organiza as entregas para você.</span></div></div><button class="btn primary" id="online" type="button" disabled>Carregando...</button></div>
+  <div id="pushBanner" class="panel-white" role="status" aria-live="polite" hidden
+    style="padding:13px 16px;margin:12px 0;border:1px solid #f0c48e;border-radius:14px;background:#fff9f2;display:none;flex-wrap:wrap;align-items:center;gap:10px">
+    <span id="pushBannerText" style="flex:1;min-width:210px;font-size:13px">Verificando alertas de novas entregas...</span>
+    <button id="pushBannerEnable" type="button" class="btn primary" hidden>Ativar avisos</button>
+  </div>
   <div class="summary">
     <div class="stat"><span class="stat-icon orange">↗</span><strong id="active">—</strong><span>Entregas em andamento</span></div>
     <div class="stat"><span class="stat-icon green">✓</span><strong id="done">—</strong><span>Concluídas hoje</span></div>
@@ -990,11 +995,19 @@ async function refreshSnapshot(){
 }
 let nativeFirebaseUnavailable=false;
 let pushCheckRequestId=0;
+function showPushBanner(text, enable){
+ const banner=$("pushBanner"),label=$("pushBannerText"),button=$("pushBannerEnable");
+ if(!banner||!label||!button)return;
+ banner.hidden=!text;banner.style.display=text?"flex":"none";
+ label.textContent=text||"";
+ button.hidden=!enable;
+}
 async function checkNativePushStatus(){
  const view=$("nativePushReadiness");
  const requestId=++pushCheckRequestId;
  if(nativeFirebaseUnavailable){
   view.textContent="Este APK de teste não tem Firebase configurado. O registro de notificações reais não é possível nesta versão.";
+  showPushBanner("Sem Firebase neste APK: instale a versão oficial do Pitacco Entregador.",false);
   return;
  }
  view.textContent="Verificando registro de notificações…";
@@ -1009,22 +1022,30 @@ async function checkNativePushStatus(){
  if(requestId!==pushCheckRequestId)return;
  if(nativeFirebaseUnavailable){
   view.textContent="Este APK de teste não tem Firebase configurado. O registro de notificações reais não é possível nesta versão.";
+  showPushBanner("Sem Firebase neste APK: instale a versão oficial do Pitacco Entregador.",false);
   return;
  }
  const {data,error}=response;
  if(error||!data){
+  showPushBanner("Não foi possível verificar as notificações. Confira sua conexão.",false);
   view.textContent=error?.message==="timeout"
    ?"Não foi possível consultar o servidor em 7 segundos. Verifique sua conexão e toque em Verificar novamente."
    :"Não foi possível conferir o registro. Toque em Verificar novamente.";
   return;
  }
  if(!data.device_registered){
+  showPushBanner(window.PitaccoPush?.postMessage?
+   "Este celular ainda não recebe avisos com o aplicativo fechado. Toque em Ativar avisos.":
+   "A versão instalada não registra notificações. Atualize o Pitacco Entregador.",
+   !!window.PitaccoPush?.postMessage);
   view.textContent=window.PitaccoPush?.postMessage
    ?"Este celular ainda não está registrado. Toque em Ativar avisos no Android."
    :"Nenhum aparelho registrado nesta sessão. Use o Pitacco Entregador para Android.";
  }else if(!data.server_enabled){
+  showPushBanner("Celular registrado, mas o servidor de notificações do Pitacco ainda está desativado.",false);
   view.textContent="Celular registrado. O servidor de notificações ainda aguarda ativação.";
  }else{
+  showPushBanner("",false);
   view.textContent="Celular registrado e envio habilitado. Faça uma atribuição de teste com o aplicativo em segundo plano.";
  }
 }
@@ -1157,6 +1178,16 @@ async function boot(){
   storeName=status?.courier?.storeName||"Minha loja";
   loadNavPreferences();
   initializeNativePush();
+  $("pushBannerEnable").addEventListener("click",()=>{
+   const native=window.PitaccoPush;
+   if(native?.postMessage){
+    $("nativePushStatus").textContent="Solicitando registro do celular...";
+    native.postMessage("enable");
+   }else{
+    $("nativePushStatus").textContent="Atualize o Pitacco Entregador para registrar o aparelho.";
+    switchView("config");
+   }
+  });
   $("checkNativePush").addEventListener("click",checkNativePushStatus);
   // Network diagnostics must never delay the dispatch / delivery screen.
   void checkNativePushStatus();

@@ -117,8 +117,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.ok(page.includes('nativeNotificationSettings'));
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 28'));
- assert.ok(build.includes("versionName '2.0.8'"));
+ assert.ok(build.includes('versionCode 29'));
+ assert.ok(build.includes("versionName '2.0.9'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -459,8 +459,8 @@ test("Android GPS authorization remains part of the original courier app upgrade
  const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
  const screen=read("painel.html");
  assert.match(app,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(app,/versionCode 28/);
- assert.match(app,/versionName '2\.0\.8'/);
+ assert.match(app,/versionCode 29/);
+ assert.match(app,/versionName '2\.0\.9'/);
  assert.match(activity,/registerGpsBridge\(\)/);
  assert.match(activity,/WebViewCompat\.addWebMessageListener\(web, "PitaccoGps"/);
  assert.match(activity,/requestPermissions\(new String\[\]\{/);
@@ -468,4 +468,29 @@ test("Android GPS authorization remains part of the original courier app upgrade
  assert.match(screen,/Autorizar localização no Android/);
  assert.match(screen,/window\.PitaccoGps\.postMessage\("request"\)|bridge\.postMessage\("request"\)/);
  assert.match(screen,/openAndroidGpsSettings/);
+});
+
+test("Android 2.0.9 upgrade prompts for GPS and keeps notification registration opt-in",()=>{
+ const main=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
+ const manifest=read("android-app/app/src/main/AndroidManifest.xml");
+ const build=read("android-app/app/build.gradle");
+ const workflow=read("../.github/workflows/courier-apk.yml");
+ const panel=read("painel.html");
+ assert.match(build,/applicationId 'br\.com\.pitacco\.entregador'/);
+ assert.match(build,/versionCode 29/);
+ assert.match(build,/versionName '2\.0\.9'/);
+ for(const name of ["ACCESS_FINE_LOCATION","ACCESS_COARSE_LOCATION","POST_NOTIFICATIONS"])
+  assert.ok(manifest.includes("android.permission."+name));
+ assert.match(main,/GPS_SETUP_DONE = "gps_permission_explained_209"/);
+ assert.match(main,/private void showGpsPermissionSetup\(\)/);
+ assert.match(main,/\.setPositiveButton\("Permitir localização"/);
+ assert.match(main,/requestPermissions\(new String\[\]\{[\s\S]*?Manifest\.permission\.ACCESS_FINE_LOCATION/);
+ assert.match(main,/if \(prefs\.getBoolean\(INITIAL_SETUP_DONE, false\)\) \{\s*showGpsPermissionSetup\(\)/);
+ assert.match(workflow,/Conferir permissões e identidade do APK oficial/);
+ assert.match(workflow,/dump permissions/);
+ assert.match(panel,/id="pushBannerEnable"/);
+ assert.match(panel,/showPushBanner\(/);
+ assert.match(panel,/pitacco_courier_push_readiness/);
+ assert.match(panel,/native\.postMessage\("enable"\)/);
+ assert.match(panel,/o servidor de notificações do Pitacco ainda está desativado/);
 });

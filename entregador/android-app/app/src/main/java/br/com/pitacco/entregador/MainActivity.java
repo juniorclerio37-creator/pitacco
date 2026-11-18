@@ -46,6 +46,7 @@ public class MainActivity extends Activity {
     private static final int LOCATION_PERMISSION = 96;
     private static final String INITIAL_SETUP_PREFS = "pitacco_delivery_initial_setup";
     private static final String INITIAL_SETUP_DONE = "completed_v1";
+    private static final String GPS_SETUP_DONE = "gps_permission_explained_209";
     private JavaScriptReplyProxy pendingPermission;
     private GeolocationPermissions.Callback pendingLocationCallback;
     private String pendingLocationOrigin;
@@ -141,12 +142,16 @@ public class MainActivity extends Activity {
     /**
      * Android grants INTERNET and MODIFY_AUDIO_SETTINGS at install time.
      * Notification permission is requested for push. Location is requested
-     * only when the logged-in courier activates GPS sharing in the web app.
-     * Background tracking requires a separately approved native service.
+     * after the courier explicitly accepts the Android permission dialog.
+     * Location reporting remains restricted to an active shift in the web app.
+     * Background GPS requires a separate foreground service and is NOT claimed.
      */
     private void showFirstOpenSetup() {
         SharedPreferences prefs = getSharedPreferences(INITIAL_SETUP_PREFS, MODE_PRIVATE);
-        if (prefs.getBoolean(INITIAL_SETUP_DONE, false)) return;
+        if (prefs.getBoolean(INITIAL_SETUP_DONE, false)) {
+            showGpsPermissionSetup();
+            return;
+        }
         new AlertDialog.Builder(this)
                 .setTitle("Configurar alertas do Pitacco")
                 .setMessage("Para avisar quando chegar uma nova entrega, o Pitacco precisa de permissão para mostrar notificações. Em seguida você pode ativar o Modo Plantão: sino e voz em volume alto, com tentativa de restaurar o volume original após o alerta. O Android pode restringir o som no modo Não Perturbe.")
@@ -155,8 +160,10 @@ public class MainActivity extends Activity {
                     prefs.edit().putBoolean(INITIAL_SETUP_DONE, true).apply();
                     requestFirstOpenNotifications();
                 })
-                .setNegativeButton("Agora não", (dialog, which) ->
-                        prefs.edit().putBoolean(INITIAL_SETUP_DONE, true).apply())
+                .setNegativeButton("Agora não", (dialog, which) -> {
+                    prefs.edit().putBoolean(INITIAL_SETUP_DONE, true).apply();
+                    showGpsPermissionSetup();
+                })
                 .show();
     }
 
@@ -192,11 +199,35 @@ public class MainActivity extends Activity {
                 .setPositiveButton("Ativar som forte", (dialog, which) -> {
                     ShiftSoundPlayer.setEnabled(this, true);
                     Toast.makeText(this, "Modo Plantão ativado.", Toast.LENGTH_SHORT).show();
+                    showGpsPermissionSetup();
                 })
-                .setNegativeButton("Manter desligado", (dialog, which) -> {})
+                .setNegativeButton("Manter desligado", (dialog, which) -> showGpsPermissionSetup())
                 .show();
     }
 
+    /**
+     * Version 2.0.9 adds an explicit, one-time GPS prompt to upgrades as well
+     * as fresh installations. The user controls the Android permission and the
+     * courier must still go online before coordinates are sent to Pitacco.
+     */
+    private void showGpsPermissionSetup() {
+        if (!"denied".equals(locationPermissionState())) return;
+        SharedPreferences prefs = getSharedPreferences(INITIAL_SETUP_PREFS, MODE_PRIVATE);
+        if (prefs.getBoolean(GPS_SETUP_DONE, false)) return;
+        new AlertDialog.Builder(this)
+                .setTitle("Autorizar localização do Pitacco?")
+                .setMessage("O Pitacco precisa da localização precisa para a loja atribuir entregas, calcular distâncias e acompanhar o trajeto durante o plantão. O GPS é compartilhado somente quando você estiver online no aplicativo. Nesta versão, o GPS pode parar quando o aplicativo estiver em segundo plano.")
+                .setPositiveButton("Permitir localização", (dialog, which) -> {
+                    prefs.edit().putBoolean(GPS_SETUP_DONE, true).apply();
+                    requestPermissions(new String[]{
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION);
+                })
+                .setNegativeButton("Mais tarde", (dialog, which) -> {
+                    prefs.edit().putBoolean(GPS_SETUP_DONE, true).apply();
+                })
+                .show();
+    }
 
     // Runtime GPS authorization is independent of the online shift state.
     // Only the authenticated courier page may trigger this bridge.
