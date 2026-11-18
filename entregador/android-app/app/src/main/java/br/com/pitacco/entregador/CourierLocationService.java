@@ -92,18 +92,18 @@ public final class CourierLocationService extends Service implements LocationLis
             boolean listening = false;
             if (locations.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 locations.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERVAL_MS,
-                        3f, this, Looper.getMainLooper());
+                        0f, this, Looper.getMainLooper());
                 listening = true;
             }
             if (locations.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                 locations.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, INTERVAL_MS,
-                        3f, this, Looper.getMainLooper());
+                        0f, this, Looper.getMainLooper());
                 listening = true;
             }
             if (!listening) throw new IllegalStateException("Location provider disabled");
             running = true;
             return START_NOT_STICKY;
-        } catch (SecurityException | IllegalStateException e) {
+        } catch (RuntimeException e) {
             // Missing location permission or provider -> never claim tracking is on.
             stopSelf();
             return START_NOT_STICKY;
