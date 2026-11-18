@@ -36,6 +36,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import org.json.JSONObject;
 
 public class MainActivity extends Activity {
     private static final String HOST = "entregador.pitacco.com.br";
@@ -241,6 +242,41 @@ public class MainActivity extends Activity {
                     String action = message.getData();
                     if ("status".equals(action)) {
                         reply.postMessage(locationPermissionState());
+                    } else if ("tracking_status".equals(action)) {
+                        reply.postMessage(CourierLocationService.isRunning() ?
+                                "tracking:on" : "tracking:off");
+                    } else if ("stop".equals(action)) {
+                        stopService(new Intent(this, CourierLocationService.class));
+                        reply.postMessage("tracking:off");
+                    } else if (action != null && action.startsWith("start:")) {
+                        // The page is origin-limited to the authenticated courier
+                        // site. A shift-scoped GPS capability, never the user's login or
+                        // refresh token, is sent to this non-exported service.
+                        if (!"granted".equals(locationPermissionState()) ||
+                                action.length() > 16000) {
+                            reply.postMessage("tracking:permission");
+                            return;
+                        }
+                        try {
+                            JSONObject credentials = new JSONObject(action.substring(6));
+                            String backend = credentials.optString("backend");
+                            String apiKey = credentials.optString("apiKey");
+                            String token = credentials.optString("token");
+                            if (!CourierLocationService.EXPECTED_BACKEND.equals(backend) ||
+                                    apiKey.length() < 20 || !token.matches("[a-f0-9]{64}")) {
+                                reply.postMessage("tracking:invalid_session");
+                                return;
+                            }
+                            Intent tracking = new Intent(this, CourierLocationService.class);
+                            tracking.setAction(CourierLocationService.ACTION_START);
+                            tracking.putExtra("backend", backend);
+                            tracking.putExtra("apiKey", apiKey);
+                            tracking.putExtra("token", token);
+                            startForegroundService(tracking);
+                            reply.postMessage("tracking:starting");
+                        } catch (Exception e) {
+                            reply.postMessage("tracking:error");
+                        }
                     } else if ("request".equals(action)) {
                         String state = locationPermissionState();
                         if (!"denied".equals(state)) {

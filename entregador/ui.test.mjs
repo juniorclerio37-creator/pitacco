@@ -117,8 +117,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.ok(page.includes('nativeNotificationSettings'));
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 29'));
- assert.ok(build.includes("versionName '2.0.9'"));
+ assert.ok(build.includes('versionCode 30'));
+ assert.ok(build.includes("versionName '2.0.10'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -459,8 +459,8 @@ test("Android GPS authorization remains part of the original courier app upgrade
  const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
  const screen=read("painel.html");
  assert.match(app,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(app,/versionCode 29/);
- assert.match(app,/versionName '2\.0\.9'/);
+ assert.match(app,/versionCode 30/);
+ assert.match(app,/versionName '2\.0\.10'/);
  assert.match(activity,/registerGpsBridge\(\)/);
  assert.match(activity,/WebViewCompat\.addWebMessageListener\(web, "PitaccoGps"/);
  assert.match(activity,/requestPermissions\(new String\[\]\{/);
@@ -477,8 +477,8 @@ test("Android 2.0.9 upgrade prompts for GPS and keeps notification registration 
  const workflow=read("../.github/workflows/courier-apk.yml");
  const panel=read("painel.html");
  assert.match(build,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(build,/versionCode 29/);
- assert.match(build,/versionName '2\.0\.9'/);
+ assert.match(build,/versionCode 30/);
+ assert.match(build,/versionName '2\.0\.10'/);
  for(const name of ["ACCESS_FINE_LOCATION","ACCESS_COARSE_LOCATION","POST_NOTIFICATIONS"])
   assert.ok(manifest.includes("android.permission."+name));
  assert.match(main,/GPS_SETUP_DONE = "gps_permission_explained_209"/);
@@ -493,4 +493,41 @@ test("Android 2.0.9 upgrade prompts for GPS and keeps notification registration 
  assert.match(panel,/pitacco_courier_push_readiness/);
  assert.match(panel,/native\.postMessage\("enable"\)/);
  assert.match(panel,/o servidor de notificações do Pitacco ainda está desativado/);
+});
+
+test("Pitacco courier GPS continues in Android background only under a visible location foreground service",()=>{
+ const manifest=read("android-app/app/src/main/AndroidManifest.xml");
+ const service=read("android-app/app/src/main/java/br/com/pitacco/entregador/CourierLocationService.java");
+ const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
+ const page=read("painel.html");
+ const migration=read("../supabase/migrations/20261118234500_native_courier_background_gps_capabilities.sql");
+ for(const p of ["FOREGROUND_SERVICE","FOREGROUND_SERVICE_LOCATION","ACCESS_FINE_LOCATION"])
+  assert.match(manifest,new RegExp("android.permission."+p));
+ assert.match(manifest,/android:foregroundServiceType="location"/);
+ assert.match(manifest,/CourierLocationService" android:exported="false"/);
+ assert.doesNotMatch(manifest,/ACCESS_BACKGROUND_LOCATION/);
+ assert.match(service,/FOREGROUND_SERVICE_TYPE_LOCATION/);
+ assert.match(service,/startForeground\(NOTIFICATION_ID/);
+ assert.match(service,/LocationManager\.GPS_PROVIDER/);
+ assert.match(service,/requestLocationUpdates/);
+ assert.match(service,/\.setOngoing\(true\)/);
+ assert.match(service,/Parar rastreamento/);
+ assert.match(service,/START_NOT_STICKY/);
+ assert.match(service,/onDestroy\(\)/);
+ assert.doesNotMatch(service,/service.role|SUPABASE_SERVICE_ROLE_KEY|refresh_token|accessToken/i);
+ assert.match(activity,/startForegroundService\(tracking\)/);
+ assert.match(activity,/if \("tracking_status"\.equals\(action\)\)/);
+ assert.match(page,/id="startNativeGps"/);
+ assert.match(page,/id="stopNativeGps"/);
+ assert.match(page,/pitacco_courier_background_gps_start/);
+ assert.match(page,/pitacco_courier_background_gps_revoke/);
+ assert.match(page,/if\(!nextOnline\)\{await stopNativeGpsTracking\(\);stopGpsSharing\(\);\}/);
+ assert.match(migration,/extensions\.gen_random_bytes\(32\)/);
+ assert.match(migration,/extensions\.digest\(v_token,'sha256'\)/);
+ assert.match(migration,/interval '12 hours'/);
+ assert.match(migration,/c\.active and c\.available/);
+ assert.match(migration,/sess\.id=cap\.session_id/);
+ assert.match(migration,/expires_at>v_time/);
+ assert.match(migration,/pitacco_revoke_offline_background_gps/);
+ assert.match(migration,/revoke all on pitacco_private\.courier_gps_capabilities from public,anon,authenticated/);
 });
