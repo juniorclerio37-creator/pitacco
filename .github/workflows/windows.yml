@@ -61,6 +61,10 @@ jobs:
               'fila e teste de impressão existentes': all(name in native for name in ('enqueue_job','retry_job','test_printer')),
               'central separada': "page==='Central de Aplicativos'" in admin and 'pitacco-admin-shell' not in app,
           }
+          expected_ui=('pitacco:bell-choice:',"invoke('play_order_alert_combo'",'Pitacco Original','Moderno','Clássico','Duplo','Intenso')
+          expected_native=('fn merchant_voice_bytes','fn merchant_bell_bytes','fn play_order_alert_combo','fn play_order_bell','order-merchant-voice-1.wav')
+          for token in expected_ui: print("ALERT UI",repr(token),token in orders,flush=True)
+          for token in expected_native: print("ALERT RUST",repr(token),token in native,flush=True)
           for label, ok in checks.items():
               print(f'{label}: {ok}', flush=True)
           if not all(checks.values()):
