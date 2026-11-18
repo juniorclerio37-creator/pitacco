@@ -209,6 +209,8 @@ window.addEventListener("online",()=>{
 });
 updateConnectionBanner();
 let orderCardBadges=new Map();
+// Confirmation drafts are ephemeral: never stored on disk or localStorage.
+const codeDrafts=new Map();
 let lastHistoryRequest=0;
 
 let earnPeriod="hoje", earnRequest=0, lastEarningsReport=null;
@@ -451,7 +453,11 @@ async function ifoodDriverAction(delivery,action,code){
   body:JSON.stringify({delivery,action,...(code?{code}:{})})
  });
  const out=await response.json().catch(()=>({}));
- if(!response.ok)throw Error(out.error||"Operação iFood não confirmada");
+ if(!response.ok){
+  const failure=new Error(out.error||"Operação iFood não confirmada");
+  failure.status=response.status;
+  throw failure;
+ }
  return out;
 }
 async function markArrival(d){
@@ -463,7 +469,7 @@ async function markArrival(d){
   if(d.source==="ifood"){
    try{
     const result=await ifoodDriverAction(d.id,"arrival");
-    if(result.provider_state==="submitted")info="Chegada enviada ao iFood, aguardando confirmação da plataforma. Peça o código ao cliente.";
+    if(result.provider_state==="submitted")info="Chegada registrada. Peça o código ao cliente.";
    }catch(error){info+=" Aviso iFood ainda não confirmado: "+String(error.message);}
   }else if(d.source==="99food")info+=" Aviso à 99Food ainda não homologado; não há confirmação de notificação ao cliente.";
   else if(d.source==="keeta")info+=" Aviso à Keeta ainda não homologado.";
@@ -486,27 +492,54 @@ function rememberCompletedBatchStop(d){
     (latitude===0&&longitude===0))return;
  lastCompletedBatchStops.set(String(d.store_id)+":"+String(d.batch_id),{latitude,longitude});
 }
+function inlineCodeError(deliveryId,errorText){
+ const draft=codeDrafts.get(deliveryId)||{value:"",error:""};
+ draft.error=errorText;
+ codeDrafts.set(deliveryId,draft);
+ const card=[...document.querySelectorAll(".card[data-delivery-id]")]
+  .find(node=>node.getAttribute("data-delivery-id")===deliveryId);
+ const feedback=card?.querySelector(".verify-error"),input=card?.querySelector(".verify-input");
+ if(feedback){feedback.textContent=errorText;feedback.hidden=!errorText;}
+ if(input)input.setAttribute("aria-invalid",String(!!errorText));
+}
 async function verifyCode(d,code){
  if(busy)return;busy=true;message("");
  try{
   if(!d.arrived_at)throw Error("Registre primeiro a chegada ao cliente");
   const digits=String(code||"").trim();
   if(d.source==="proprio"){
-   if(!/^[0-9]{6}$/.test(digits))throw Error("Informe o código Pitacco de seis dígitos");
+   if(!/^[0-9]{6}$/.test(digits)){
+    inlineCodeError(d.id,"Código incorreto");return;
+   }
    const {data,error}=await sb.rpc("pitacco_driver_verify_own_code",{p_delivery:d.id,p_code:digits});
    if(error)throw Error(error.message||"Código não validado");
-   if(!data?.verified)throw Error("Código incorreto. Tentativas restantes: "+String(data?.remaining??0));
+   if(!data?.verified){inlineCodeError(d.id,"Código incorreto");return;}
   }else if(d.source==="ifood"){
-   if(!/^[0-9]{4,8}$/.test(digits))throw Error("Informe o código numérico do iFood");
-   const result=await ifoodDriverAction(d.id,"verify",digits);
-   if(!result?.verified)throw Error("O iFood não confirmou o código");
+   if(!/^[0-9]{4,8}$/.test(digits)){
+    inlineCodeError(d.id,"Código incorreto");return;
+   }
+   let result;
+   try{result=await ifoodDriverAction(d.id,"verify",digits);}
+   catch(error){
+    if(error.status===409 && /iFood não validou esse código|código incorreto|código inválido/i.test(String(error.message))){
+     inlineCodeError(d.id,"Código incorreto");return;
+    }
+    throw error;
+   }
+   if(!result?.verified){inlineCodeError(d.id,"Código incorreto");return;}
   }else throw Error("A validação oficial desta plataforma ainda depende de homologação");
+  codeDrafts.delete(d.id);
   orderDetails.close();
   rememberCompletedBatchStop(d);
   await refresh(true);
-  message("Entrega concluída! Os dados completos do cliente não ficam no histórico do entregador.");
- }catch(error){message(String(error.message||"A entrega não foi concluída"))}
- finally{busy=false}
+  message("Entrega concluída! Ganho registrado conforme o valor configurado pela loja.");
+ }catch(error){
+  const details=String(error?.message||"Erro ao confirmar a entrega");
+  inlineCodeError(d.id,/tentativas esgotadas/i.test(details)?
+   "Tentativas esgotadas. Solicite ajuda à loja.":
+   /Registre primeiro a chegada/.test(details)?details:
+   "Não foi possível confirmar a entrega. Verifique a conexão e tente novamente.");
+ }finally{busy=false;}
 }
 async function loadSafeHistory(){
  const key=++lastHistoryRequest,target=$("safeHistory");
@@ -665,18 +698,35 @@ function card(d){
     verify.append(element("strong","card-verify-title","Você chegou ao destino"));
     verify.append(element("p","card-verify-help","Peça o código de confirmação ao cliente."));
     const form=element("form","verify-form"),code=element("input","verify-input");
+    form.noValidate=true;
     code.type="text";code.inputMode="numeric";code.autocomplete="one-time-code";
     code.maxLength=d.source==="proprio"?6:8;
     code.pattern=d.source==="proprio"?"[0-9]{6}":"[0-9]{4,8}";
     code.placeholder=d.source==="proprio"?"Código Pitacco (6 dígitos)":"Código do cliente (iFood)";
-    code.setAttribute("aria-label","Código de entrega fornecido pelo cliente");code.required=true;
+    const draft=codeDrafts.get(d.id)||{value:"",error:""};
+    code.value=draft.value;
+    code.setAttribute("aria-label","Código de entrega fornecido pelo cliente");
+    const fields=element("div","verify-fields");
+    const feedback=element("p","verify-error",draft.error);
+    feedback.id="verify-error-"+d.id;
+    feedback.setAttribute("role","status");
+    feedback.setAttribute("aria-live","polite");
+    feedback.hidden=!draft.error;
+    code.setAttribute("aria-describedby",feedback.id);
+    code.setAttribute("aria-invalid",String(!!draft.error));
+    fields.append(code,feedback);
+    code.addEventListener("input",()=>{
+     codeDrafts.set(d.id,{value:code.value,error:""});
+     feedback.textContent="";feedback.hidden=true;
+     code.setAttribute("aria-invalid","false");
+    });
     const submit=createAction("Confirmar entrega","primary",null);submit.type="submit";
     if(d.source==="ifood"&&!synced){
      verify.append(element("p","card-verify-pending",
       "A chegada foi registrada no Pitacco. Você pode tentar validar o código pelo iFood, mesmo se o aviso de chegada ainda estiver pendente."));
     }
     form.addEventListener("submit",event=>{event.preventDefault();verifyCode(d,code.value)});
-    form.append(code,submit);verify.append(form);
+    form.append(fields,submit);verify.append(form);
     if(d.source==="ifood"){
      verify.append(element("p","card-ifood-fallback","Não conseguiu confirmar pelo código?"));
      const officialUrl="https://confirmacao-entrega-propria.ifood.com.br/";
@@ -770,6 +820,11 @@ async function refreshSnapshot(){
  // Finished deliveries are never included in the raw private order list.
  announceAssignments(current,courier);
  assignedDeliveries=current;
+ for(const id of codeDrafts.keys()){
+  if(!current.some(d=>d.id===id))codeDrafts.delete(id);
+ }
+ if(!current.some(d=>d.source==="ifood")
+   && /Aguardando o iFood confirmar a entrega/i.test($("notice").textContent||""))message("");
  orderDetails.keepActive(current);
  try{
   const {data:origins,error}=await sb.rpc("pitacco_driver_route_origins");
