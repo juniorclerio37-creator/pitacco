@@ -460,7 +460,7 @@ test("Android GPS authorization remains part of the original courier app upgrade
  const screen=read("painel.html");
  assert.match(app,/applicationId 'br\.com\.pitacco\.entregador'/);
  assert.match(app,/versionCode 29/);
- assert.match(app,/versionName '2\.0\.8'/);
+ assert.match(app,/versionName '2\.0\.9'/);
  assert.match(activity,/registerGpsBridge\(\)/);
  assert.match(activity,/WebViewCompat\.addWebMessageListener\(web, "PitaccoGps"/);
  assert.match(activity,/requestPermissions\(new String\[\]\{/);
