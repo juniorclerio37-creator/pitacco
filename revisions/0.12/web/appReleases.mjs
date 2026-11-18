@@ -9,11 +9,32 @@ export async function fileSha256(file) {
   const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', await file.arrayBuffer()));
   return Array.from(digest, byte=>byte.toString(16).padStart(2,'0')).join('');
 }
+// Only official GitHub APK assets can be linked from the release catalog.
+// Keep existing private bucket links for manually uploaded Windows/Android files.
+export function officialCourierApkUrl(release) {
+  if(release?.distribution_source!=='github_official' ||
+     release.app!=='android' || release.channel!=='stable' ||
+     !/^[0-9]+[.][0-9]+[.][0-9]+$/.test(String(release.version||'')) ||
+     release.filename!=='Pitacco-Entregador-'+release.version+'.apk')return null;
+  const url=String(release.external_download_url||'');
+  const match=url.match(/^https:\/\/github[.]com\/juniorclerio37-creator\/pitacco\/releases\/download\/pitacco-entregador-v([0-9]+[.][0-9]+[.][0-9]+)-[0-9a-f]{12}\/Pitacco-Entregador-([0-9]+[.][0-9]+[.][0-9]+)[.]apk$/);
+  if(!match || match[1]!==release.version || match[2]!==release.version)return null;
+  return url;
+}
 export async function downloadRelease(client, release) {
-  const {data,error} = await client.storage.from(RELEASE_BUCKET).createSignedUrl(releasePath(release),60,{download:release.filename});
-  if(error || !data?.signedUrl) throw Error('Arquivo indisponível. Atualize a lista de versões.');
-  const link = document.createElement('a');
-  link.href = data.signedUrl;
+  let url;
+  if(release.distribution_source==='github_official') {
+    url=officialCourierApkUrl(release);
+    if(!url)throw Error('Link do APK oficial não corresponde à versão assinada.');
+  } else {
+    const {data,error}=await client.storage.from(RELEASE_BUCKET).createSignedUrl(releasePath(release),60,{download:release.filename});
+    if(error || !data?.signedUrl)throw Error('Arquivo indisponível. Atualize a lista de versões.');
+    url=data.signedUrl;
+  }
+  const link=document.createElement('a');
+  link.href=url;
+  link.download=release.filename;
+  link.rel='noopener noreferrer';
   document.body.append(link);
   link.click();
   link.remove();
