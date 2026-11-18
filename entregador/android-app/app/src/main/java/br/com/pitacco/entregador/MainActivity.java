@@ -97,6 +97,7 @@ public class MainActivity extends Activity {
                 if (request.isForMainFrame() && error.getStatusCode() >= 400) showOffline();
             }
         });
+        ShiftSoundPlayer.recover(this);
         preparePush();
         if (state == null || web.restoreState(state) == null) web.loadUrl(HOME);
     }
@@ -115,7 +116,9 @@ public class MainActivity extends Activity {
                         if ("ready".equals(status) || "channel_silent".equals(status)) {
                             boolean posted = AssignmentMessagingService.showAssignment(this,
                                     "00000000-0000-4000-8000-000000000001");
-                            reply.postMessage(posted ?
+                            if (posted && ShiftSoundPlayer.isEnabled(this))
+                                reply.postMessage("shift_test:" + ShiftSoundPlayer.getLastResult());
+                            else reply.postMessage(posted ?
                                     ("ready".equals(status) ? "tested" : "channel_silent") :
                                     "channel_disabled");
                         } else reply.postMessage(status);
@@ -123,6 +126,22 @@ public class MainActivity extends Activity {
                     else if ("status".equals(action)) {
                         reply.postMessage("notification_status:" +
                                 AssignmentMessagingService.notificationStatus(this));
+                        reply.postMessage(ShiftSoundPlayer.isEnabled(this)
+                                ? "shift_sound:on" : "shift_sound:off");
+                    }
+                    else if ("shift_enable".equals(action)) {
+                        // This action is only sent after an explicit confirmation
+                        // in the authenticated courier's Settings screen.
+                        ShiftSoundPlayer.setEnabled(this, true);
+                        reply.postMessage("shift_sound:on");
+                    }
+                    else if ("shift_disable".equals(action)) {
+                        ShiftSoundPlayer.setEnabled(this, false);
+                        reply.postMessage("shift_sound:off");
+                    }
+                    else if ("shift_status".equals(action)) {
+                        reply.postMessage(ShiftSoundPlayer.isEnabled(this)
+                                ? "shift_sound:on" : "shift_sound:off");
                     }
                     else if ("settings".equals(action)) {
                         // If Android has not granted global notification permission,
@@ -136,7 +155,10 @@ public class MainActivity extends Activity {
                         } else {
                             settings = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
                             settings.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
-                            settings.putExtra(Settings.EXTRA_CHANNEL_ID, AssignmentMessagingService.CHANNEL_ID);
+                            settings.putExtra(Settings.EXTRA_CHANNEL_ID,
+                                    ShiftSoundPlayer.isEnabled(this) ?
+                                    AssignmentMessagingService.SHIFT_CHANNEL_ID :
+                                    AssignmentMessagingService.CHANNEL_ID);
                         }
                         startActivity(settings);
                     }
