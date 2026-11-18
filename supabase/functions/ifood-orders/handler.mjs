@@ -37,6 +37,13 @@ function normalizeOrder(order,event) {
  const delivery=order.delivery||{};
  const address=delivery.deliveryAddress||{};
  const methods=Array.isArray(order.payments?.methods)?order.payments.methods:[];
+ // API Order Details: total.deliveryFee precedes benefits targeted to DELIVERY_FEE.
+ // The courier earns the original amount even if the customer sees free shipping.
+ const originalDeliveryFee=money(order.total.deliveryFee);
+ const deliveryDiscount=Math.min(originalDeliveryFee,
+  (Array.isArray(order.benefits)?order.benefits:[])
+   .filter(benefit=>benefit?.target==='DELIVERY_FEE')
+   .reduce((sum,benefit)=>sum+money(benefit?.value),0));
  const options=item=>(Array.isArray(item.options)?item.options:[]).flatMap(option=>{
   const name=text(option.name,140);
   return name?[{name,quantity:money(option.quantity)||1,unit_price:money(option.unitPrice)},...options(option)]:[];
@@ -59,7 +66,10 @@ function normalizeOrder(order,event) {
    name:text(item.name,140),quantity:money(item.quantity),unit_price:money(item.unitPrice),
    notes:text(item.observations,500),modifiers:options(item),
   })),
-  subtotal:money(order.total.subTotal),delivery_fee:money(order.total.deliveryFee),
+  subtotal:money(order.total.subTotal),delivery_fee:originalDeliveryFee,
+  delivery_fee_original:originalDeliveryFee,
+  delivery_fee_discount:deliveryDiscount,
+  delivery_fee_customer:Math.max(0,Math.round((originalDeliveryFee-deliveryDiscount)*100)/100),
   discount:money(order.total.benefits),total:order.total.orderAmount,
   payment:methods.map(m=>text(m.method,50)).filter(Boolean).join(' / '),
   payment_status:methods.length&&methods.every(m=>m.prepaid===true)?'paid':'pending',
