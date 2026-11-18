@@ -8,7 +8,9 @@ declare
 begin
  select user_id into v_owner from pitacco_private.platform_owner order by user_id limit 1;
  if v_owner is null then
-   raise exception 'Proprietário do Pitacco não localizado; nenhum catálogo alterado';
+   -- Fresh CI/homologation databases have no platform owner yet.
+   -- Preserve the empty release catalog until an official account exists.
+   return;
  end if;
  if exists(select 1 from public.pitacco_app_releases
            where app='android' and channel='stable' and version='2.0.9' and state='published') then
