@@ -9,7 +9,7 @@ const url='https://db.example.test/functions/v1/ifood-orders/driver-action';
 const origin='https://entregador.pitacco.com.br';
 const reply=(value,status=200)=>Response.json(value,{status});
 
-function createHarness(providerStatus=200,providerBody={status:'VERIFIED'},scoped=true){
+function createHarness(providerStatus=200,providerBody={valid:true},scoped=true){
  const calls=[];
  const app=createIfoodOrders({
   clientId:'id',clientSecret:'secret',publicKey:'publishable',
@@ -49,25 +49,26 @@ test('arrival sends exact iFood logistics destination arrival with scoped order 
 });
 
 test('unscoped delivery is blocked before any marketplace request',async()=>{
- const {calls,call}=createHarness(200,{status:'VERIFIED'},false);
+ const {calls,call}=createHarness(200,{valid:true},false);
  const response=await call('arrival');
  assert.equal(response.status,403);
  assert.equal(calls.some(x=>x.path.includes('/logistics/')),false);
 });
 
 test('delivery code does not complete if provider only accepted async request',async()=>{
- const {calls,call}=createHarness(202,{status:'PENDING'});
+ const {calls,call}=createHarness(202,{valid:false});
  const response=await call('verify','1234');
  assert.equal(response.status,409);
  assert.equal(calls.some(x=>x.path.endsWith('/pitacco_ifood_driver_result')),false);
 });
 
 test('verified provider response completes only after service DB commit',async()=>{
- const {calls,call}=createHarness(200,{status:'VERIFIED'});
+ const {calls,call}=createHarness(200,{valid:true});
  const response=await call('verify','1234');
  assert.equal(response.status,200);
  assert.deepEqual(await response.json(),{verified:true,delivered:true});
  const outgoing=calls.find(x=>x.path.endsWith('/verifyDeliveryCode'));
+ assert.equal(outgoing.path,'/order/v1.0/orders/'+external+'/verifyDeliveryCode');
  assert.equal(JSON.parse(outgoing.body).code,'1234');
  const committed=calls.find(x=>x.path.endsWith('/pitacco_ifood_driver_result'));
  assert.equal(JSON.parse(committed.body).p_success,true);
@@ -85,4 +86,11 @@ test('preflight is limited to courier origin, without auth bypass',async()=>{
  assert.equal(accepted.status,204);
  const denied=await app(new Request(url,{method:'OPTIONS',headers:{origin:'https://evil.example'}}));
  assert.equal(denied.status,403);
+});
+
+test('a 200 response without valid:true never completes delivery',async()=>{
+ const {calls,call}=createHarness(200,{status:'VERIFIED',valid:false});
+ const response=await call('verify','1234');
+ assert.equal(response.status,409);
+ assert.equal(calls.some(x=>x.path.endsWith('/pitacco_ifood_driver_result')),false);
 });
