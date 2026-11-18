@@ -662,6 +662,8 @@ function card(d){
      external.href="https://confirmacao-entrega-propria.ifood.com.br/";
      external.setAttribute("aria-label","Abrir página oficial de confirmação de entrega própria do iFood");
      verify.append(external);
+     verify.append(element("p","card-verify-help",
+      "Na página do iFood, use o localizador do pedido na comanda e o código do cliente. O localizador de ligação é diferente."));
      const check=createAction("Já confirmei no iFood • Atualizar","secondary",()=>reconcileIfoodConfirmation(d));
      check.classList.add("card-ifood-recheck");
      verify.append(check);
