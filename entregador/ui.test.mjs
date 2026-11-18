@@ -97,3 +97,27 @@ test("courier app shows all authorized store origins without creating a second l
  assert.match(detail,/delivery\.store_name/);
  assert.match(panel,/records\.length!==1/);
 });
+
+test("native courier notifications play a high-importance sound when app is in background",()=>{
+ const java=read("android-app/app/src/main/java/br/com/pitacco/entregador/AssignmentMessagingService.java");
+ const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
+ const manifest=read("android-app/app/src/main/AndroidManifest.xml");
+ const build=read("android-app/app/build.gradle");
+ const page=read("painel.html");
+ const generator=read("android-app/generate-alert.py");
+ assert.ok(manifest.includes('android:name=".AssignmentMessagingService"'));
+ assert.ok(manifest.includes('com.google.firebase.MESSAGING_EVENT'));
+ assert.ok(java.includes('extends FirebaseMessagingService'));
+ assert.ok(java.includes('onMessageReceived(RemoteMessage message)'));
+ assert.ok(java.includes('NotificationManager.IMPORTANCE_HIGH'));
+ assert.ok(java.includes('AudioAttributes.USAGE_NOTIFICATION_EVENT'));
+ assert.ok(java.includes('pitacco_new_assignment_loud_v2'));
+ assert.ok(java.includes('PendingIntent.FLAG_IMMUTABLE'));
+ assert.ok(activity.includes('FirebaseMessaging.getInstance().setAutoInitEnabled(true)'));
+ assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
+ assert.ok(page.includes('nativeNotificationSettings'));
+ assert.ok(page.includes('postMessage("test")'));
+ assert.ok(build.includes('versionCode 3'));
+ assert.ok(build.includes("versionName '1.0.2'"));
+ assert.ok(generator.includes('duration = 1.78'));
+});
