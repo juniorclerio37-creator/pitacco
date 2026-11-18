@@ -44,7 +44,7 @@ test('iFood object modifiers render by name and quantity on 80mm and 58mm notes'
 
 test('Windows navigation makes printing independently clickable and identifies installed version',()=>{
  const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
- assert.match(source,/Pitacco Windows v0\.12\.9/);
+ assert.match(source,/Pitacco Windows v0\.12\.10/);
  assert.match(source,/aria-label="Configurar impressão e visualizar nota"/);
  assert.match(source,/onClick=\{\(\)=>\{setTab\('Configurações'\)/);
  assert.match(source,/tab==='Aplicativos e Downloads'&&<AppDownloads/);
@@ -82,7 +82,7 @@ test('Windows alerts use the fixed embedded natural voice, not robotic SAPI',()=
  assert.match(operations,/Voz natural já incluída no Pitacco Windows/);
  assert.match(operations,/Nenhuma importação é necessária/);
  assert.match(operations,/invoke\('save_order_voice'/);
- assert.match(operations,/Volume da voz natural/);
+ assert.match(operations,/Volume da voz oficial/);
  assert.ok(operations.includes('Normal (áudio original, sem amplificação)'));
  assert.ok(operations.includes('return [1,2,3].includes(level)?level:3'));
  assert.ok(rust.includes('let selected=match level.unwrap_or(1)'));
@@ -98,10 +98,14 @@ test('Windows alerts use the fixed embedded natural voice, not robotic SAPI',()=
 });
 
 
-test('merchant Windows order alerts provide bell and voice volume in each settings screen',()=>{
+test('merchant Windows order alert controls belong to settings, not the Pedidos screen',()=>{
  const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
  const rust=readFileSync(new URL('../src-tauri/src/main.rs',import.meta.url),'utf8');
- assert.match(operations,/\['Painel','Pedidos','Configurações','Alertas'\]/);
+ assert.match(operations,/view==='Configurações'&&settingsTab==='Alertas e aplicativo'/);
+ assert.doesNotMatch(operations,/\['Painel','Pedidos','Configurações','Alertas'\]/);
+ assert.doesNotMatch(operations,/desktop\?<div className="dispatch-actions">/);
+ assert.doesNotMatch(operations,/manager&&desktop&&view==='Pedidos'&&<div className="operational-overview"/);
+ assert.match(operations,/manager&&view==='Pedidos'&&<Pedidos/);
  assert.match(operations,/Testar sino \+ voz/);
  assert.match(operations,/Ouvir sino/);
  assert.match(operations,/pitacco-audio-bell-volume/);
