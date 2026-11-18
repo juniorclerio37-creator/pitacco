@@ -53,6 +53,10 @@ begin
   raise exception 'Managers must not read global technical telemetry';
  exception when insufficient_privilege then null;end;
  begin
+  perform public.pitacco_owner_recovery_preflight(null);
+  raise exception 'Managers must not read owner recovery signals';
+ exception when insufficient_privilege then null;end;
+ begin
   perform public.pitacco_owner_repairs();
   raise exception 'Store managers must not inspect owner repair proposals';
  exception when insufficient_privilege then null;end;
@@ -79,6 +83,13 @@ begin
  assert (result->'ifood') ? 'late_over_10m';
  assert (result->'marketplace_acceptance') ? '99food_rejected_24h';
  assert not (result ? 'token');
+ result:=public.pitacco_owner_recovery_preflight('82000000-0000-0000-0000-000000000001');
+ assert result->>'scope'='selected_store';
+ assert (result->'windows'->>'registered_computers')::integer>=0;
+ assert (result->'courier_push') ? 'cron_secret_present';
+ assert (result->'courier_push') ? 'native_protocol_ready';
+ assert result->'courier_push'->>'delivery_sound_verified'='false';
+ assert not (result ? 'token') and not (result ? 'decrypted_secret');
  result:=public.pitacco_owner_acknowledge_incident(incident,'Incidente recebido e atribuído ao suporte');
  assert result->>'acknowledged'='true';
  assert (public.pitacco_incidents(null)->'rows'->0->>'acknowledged_at') is not null;
@@ -149,6 +160,7 @@ do $test$ begin
  assert not has_table_privilege('authenticated','public.pitacco_operational_incidents','UPDATE');
  assert not has_function_privilege('anon','public.pitacco_incidents(uuid,text,integer)','EXECUTE');
  assert not has_function_privilege('anon','public.pitacco_owner_diagnostic_snapshot(uuid)','EXECUTE');
+ assert not has_function_privilege('anon','public.pitacco_owner_recovery_preflight(uuid)','EXECUTE');
  assert not has_function_privilege('anon','public.pitacco_owner_repairs(uuid)','EXECUTE');
  assert not has_function_privilege('anon','public.pitacco_owner_repair_propose(uuid)','EXECUTE');
  assert not has_function_privilege('anon','public.pitacco_owner_repair_decide(uuid,text)','EXECUTE');
