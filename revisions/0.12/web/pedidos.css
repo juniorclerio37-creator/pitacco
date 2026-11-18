@@ -104,3 +104,6 @@
 .pitacco-pedidos .pedidos-payment-pill[data-payment="collect"]{background:#ffe1da;color:#9c3f2d}
 .pitacco-pedidos .pedidos-payment-pill[data-payment="paid"]{background:#e1f5e9;color:#247348}
 .pitacco-pedidos .pedidos-payment-pill[data-payment="review"]{background:#eef2f7;color:#5e6a7b}
+
+/* Web portal retains the existing stacked list; only Windows gets Kanban columns. */
+.pitacco-pedidos:not(.windows-cards-only) .pedidos-list>.pedidos-stage-column{display:contents}
