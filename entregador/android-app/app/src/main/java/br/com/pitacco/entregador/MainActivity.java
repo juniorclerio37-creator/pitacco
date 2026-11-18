@@ -35,7 +35,7 @@ import android.widget.Toast;
 public class MainActivity extends Activity {
     private static final String HOST = "entregador.pitacco.com.br";
     private static final String HOME = "https://" + HOST + "/";
-    private static final String PUSH_CHANNEL = "pitacco_new_assignment_v1";
+
     private static final int PUSH_PERMISSION = 94;
     private JavaScriptReplyProxy pendingPermission;
     private WebView web;
@@ -101,13 +101,7 @@ public class MainActivity extends Activity {
     }
 
     private void preparePush() {
-        AudioAttributes attributes = new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION).build();
-        NotificationChannel channel = new NotificationChannel(PUSH_CHANNEL, "Novas entregas", NotificationManager.IMPORTANCE_HIGH);
-        channel.enableVibration(true);
-        channel.setSound(Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getPackageName()
-                + "/raw/pitacco_assignment"), attributes);
-        getSystemService(NotificationManager.class).createNotificationChannel(channel);
+        AssignmentMessagingService.ensureChannel(this);
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return;
         WebViewCompat.addWebMessageListener(web, "PitaccoPush", Collections.singleton("https://" + HOST),
                 (view, message, origin, mainFrame, reply) -> {
@@ -115,6 +109,15 @@ public class MainActivity extends Activity {
                     String action = message.getData();
                     if ("enable".equals(action)) enablePush(reply);
                     else if ("refresh".equals(action) && pushEnabled()) sendToken(reply);
+                    else if ("test".equals(action)) {
+                        boolean played = AssignmentMessagingService.showAssignment(this,
+                                "00000000-0000-4000-8000-000000000001");
+                        reply.postMessage(played ? "tested" : "permission");
+                    }
+                    else if ("disable".equals(action)) {
+                        getPreferences(MODE_PRIVATE).edit().putBoolean("push_enabled", false).apply();
+                        FirebaseMessaging.getInstance().setAutoInitEnabled(false);
+                    }
                 });
     }
 
@@ -139,6 +142,7 @@ public class MainActivity extends Activity {
     }
 
     private void finishPushEnable(JavaScriptReplyProxy reply) {
+        FirebaseMessaging.getInstance().setAutoInitEnabled(true);
         getPreferences(MODE_PRIVATE).edit().putBoolean("push_enabled", true).apply();
         sendToken(reply);
     }
