@@ -5,8 +5,8 @@ import {deliveryLabel,sourceLabel} from './DeliveryDialog.jsx';
 import {receiptItems} from './receiptItems.mjs';
 import {publicOrderNumber,validLocalizer} from './orderDisplay.mjs';
 const scheduledTime=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'});
-const stages=[['scheduled','Agendados'],['analysis','Novo'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega'],['completed','Concluído'],['cancelled','Cancelados'],['rejected','Recusados']];
-const summary=[['analysis','Novo',Clock3],['preparing','Em preparo',ChefHat],['ready','Prontos',ShoppingBag],['delivery','Em entrega',Bike],['completed','Concluídos',CheckCircle2]];
+const stages=[['scheduled','Agendados'],['analysis','Em análise'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega'],['completed','Concluído'],['cancelled','Cancelados'],['rejected','Recusados']];
+const summary=[['analysis','Em análise',Clock3],['preparing','Em preparo',ChefHat],['ready','Prontos',ShoppingBag],['delivery','Em entrega',Bike],['completed','Concluídos',CheckCircle2]];
 const terminal=new Set(['completed','cancelled','rejected']);
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const ifoodAcceptExpired=order=>order?.source==='ifood'&&Number.isFinite(Date.parse(order?.created_at))&&Date.now()-Date.parse(order.created_at)>=8*60*1000;
@@ -80,7 +80,17 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
   }
  }
  const decisionApplies=canDecide&&decision?.id===current.id;
- const total=orders.filter(o=>!['cancelled','rejected'].includes(stage(o))).reduce((sum,o)=>sum+Number(o.gross||0),0);
+ const total=orders.filter(o=>!['cancelled','rejected'].includes(stage(o))).reduce((sum,o)=>sum+Number(o.gross||0),0); 
+ // Agrupamento visual por etapa; a classificação continua sendo calculada a
+ // partir dos estados confirmados do pedido e da coleta, não por drag-and-drop.
+ const boardStages=[['analysis','Em análise'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega']];
+ const auxiliaryStages=[['scheduled','Agendados'],['historical','Outros']];
+ const boardGroups=popupLayout&&filter==='all'?
+  [...boardStages,...auxiliaryStages.filter(([key])=>filtered.some(o=>stage(o)===key))].map(([id,label])=>({
+   id,label,items:filtered.filter(o=>stage(o)===id)
+  })):
+  [{id:'all',label:'',items:filtered}];
+
  return <div className={"pitacco-pedidos"+(popupLayout?" windows-cards-only":"")}>
   <header className="pedidos-heading"><div><h2>Pedidos</h2><p>Acompanhe e processe os pedidos da sua loja.</p></div><span>Pedidos sincronizados com a loja</span></header>
   {merchantLayout?<div className="pedidos-kpis">{summary.map(([key,label,Icon])=><button key={key} className={'pedidos-kpi '+(filter===key?'selected':'')} onClick={()=>setFilter(key)}>
@@ -88,7 +98,12 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
   </button>)}<div className="pedidos-kpi"><TrendingUp size={23} aria-hidden="true"/><span><strong>{brl(total)}</strong>Total registrado*</span></div></div>:
   <div className="pedidos-kpis">{stages.map(([key,label])=><button key={key} className={'pedidos-kpi '+(filter===key?'selected':'')} onClick={()=>setFilter(key)}><strong>{counts[key]}</strong><span>{label}</span></button>)}<div className="pedidos-kpi"><strong>{brl(total)}</strong><span>Total registrado*</span></div></div>}
   <div className="pedidos-tabs"><button className={filter==='all'?'selected':''} onClick={()=>setFilter('all')}>Em andamento</button>{(popupLayout?stages.filter(([key])=>['analysis','preparing','ready','delivery','completed'].includes(key)):stages).map(([key,label])=><button key={key} className={filter===key?'selected':''} onClick={()=>setFilter(key)}>{label} ({counts[key]})</button>)}<input aria-label="Buscar pedido, cliente ou item" placeholder="Buscar nome, telefone ou código…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
-  <div className="pedidos-split"><div className="pedidos-list">{filtered.length===0&&<p>Nenhum pedido encontrado.</p>}{filtered.map(o=>{
+  <div className="pedidos-split"><div className={"pedidos-list"+(popupLayout&&filter==='all'?" pedidos-kanban":"")}>
+   {filtered.length===0&&<p>Nenhum pedido encontrado.</p>}
+   {boardGroups.map(group=><section className="pedidos-stage-column" data-stage={group.id} key={group.id}>
+    {popupLayout&&filter==='all'&&<header className="pedidos-stage-title"><strong>{group.label}</strong><span>{group.items.length}</span></header>}
+    {popupLayout&&filter==='all'&&group.items.length===0&&<p className="pedidos-stage-empty">Nenhum pedido aqui</p>}
+    {group.items.map(o=>{
    const delivery=deliveriesByOrder.get(o.id);
    const source=sourceLabel(o.source)||o.channel||'Loja';
    return <article key={o.id} aria-label={'Card do pedido '+number(o)} data-source={o.source}
@@ -133,7 +148,7 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
      <button type="button" className="secondary pedidos-card-print" aria-label={(manualPrint?"Imprimir no navegador pedido ":"Reimprimir comanda do pedido ")+number(o)} disabled={busy} onClick={()=>onReprint(o.id)}><Printer size={16} aria-hidden="true"/></button>
     </div>}
    </article>;
-  })}</div>
+  })}</section>)}</div>
   {popupLayout&&current&&<div className="pedidos-modal-backdrop" aria-hidden="true" onClick={()=>{setSelected(null);setDecision(null)}}/>}
   {current?<article className={"pedidos-detail"+(popupLayout?" pedidos-detail-modal":"")} role={popupLayout?"dialog":undefined} aria-modal={popupLayout?"true":undefined} aria-label={popupLayout?"Detalhes do pedido "+number(current):undefined}><div className="pedidos-detail-heading"><h3><ShoppingBag size={23} aria-hidden="true"/> Pedido #{number(current)}</h3>{popupLayout&&<button className="secondary pedidos-modal-close" type="button" onClick={()=>{setSelected(null);setDecision(null)}}>Fechar ✕</button>}<span className="store-stage" data-stage={stage(current)}>{stages.find(([id])=>id===stage(current))?.[1]||'Em andamento'}</span></div>{currentLocalizer&&<div className="pedidos-localizer pedidos-localizer-detail"><strong>LOCALIZADOR DE LIGAÇÃO</strong><b>{currentLocalizer}</b></div>}<div className="pedidos-detail-pair"><section><h4><UserRound size={17} aria-hidden="true"/> Cliente</h4><strong>{current.receipt?.customer||'Não informado'}</strong><p>{current.receipt?.phone||''}</p><p>{current.receipt?.address||''}</p></section><section><h4><CreditCard size={17} aria-hidden="true"/> Pagamento</h4><p>{current.receipt?.payment||'Não informado'}</p><DeliveryBadge order={current} delivery={currentDelivery}/></section></div><section className="pedidos-items"><h4><ShoppingBag size={17} aria-hidden="true"/> Itens do pedido</h4>{receiptItems(current.receipt).map((item,i)=><div key={i}><span>{item.quantity||1} × {item.name}<small>{Array.isArray(item.modifiers)?readableModifiers(item.modifiers):''}</small></span><span>{item.total!=null?brl(item.total):''}</span></div>)}{current.receipt?.subtotal!=null&&<div><span>Subtotal</span><strong>{brl(current.receipt.subtotal)}</strong></div>}
   {current.receipt?.delivery_fee!=null&&<div><span>Taxa de entrega</span><strong>{brl(current.receipt.delivery_fee)}</strong></div>}
