@@ -323,7 +323,7 @@ test("roteiro avança do último ponto apenas quando entrega realmente foi confi
  const route=read("route-sequence.mjs");
  assert.match(page,/lastCompletedBatchStops=new Map/);
  assert.match(page,/function rememberCompletedBatchStop\(d\)/);
- assert.match(page,/if\(data\?\.confirmed\)\{\s*rememberCompletedBatchStop\(d\)/);
+ assert.doesNotMatch(page,/async function reconcileIfoodConfirmation\(d\)/);
  assert.match(page,/orderDetails\.close\(\);\s*rememberCompletedBatchStop\(d\)/);
  assert.match(page,/suggestedBatchRoutes\(deliveries,routeOrigins,lastCompletedBatchStops\)/);
  assert.match(page,/Confirme esta entrega antes de seguir/);
