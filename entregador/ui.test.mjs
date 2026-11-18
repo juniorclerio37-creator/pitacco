@@ -181,3 +181,15 @@ test("Pitacco Entregador 2.0 responds to native notification restrictions withou
  assert.ok(page.includes('O teste de sino pela tela foi iniciado'));
  assert.ok(!page.includes('O sino da tela foi reproduzido.'));
 });
+
+test("courier notification diagnostics terminate and identify QA APK without Firebase",()=>{
+ const page=read("painel.html");
+ assert.ok(page.includes('let nativeFirebaseUnavailable=false'));
+ assert.ok(page.includes('new Promise(resolve=>{timer=window.setTimeout'));
+ assert.ok(page.includes('7000'));
+ assert.ok(page.includes('window.clearTimeout(timer)'));
+ assert.ok(page.includes('if(requestId!==pushCheckRequestId)return'));
+ assert.ok(page.includes('if(value==="unavailable")'));
+ assert.ok(page.includes('Este APK de teste não tem Firebase configurado.'));
+ assert.ok(page.includes('Não foi possível consultar o servidor em 7 segundos.'));
+});
