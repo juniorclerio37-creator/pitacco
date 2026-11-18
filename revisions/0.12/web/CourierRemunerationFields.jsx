@@ -45,7 +45,7 @@ export function remunerationLabel(input){
 export default function CourierRemunerationFields({value,onChange,disabled=false}){
  const data=normalizeRemuneration(value);
  const option=remunerationModes.find(x=>x.value===data.mode);
- const change=(key,next)=>onChange({...data,[key]:next});
+ const change=(key,next)=>onChange({...value,[key]:next});
  const amount=(key,label)=><label className="field" key={key}>{label}
   <input type="number" min="0" max="9999.99" step="0.01"
    value={value?.[key]??0} disabled={disabled} required
