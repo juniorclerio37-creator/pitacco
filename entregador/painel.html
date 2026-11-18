@@ -773,6 +773,18 @@ function card(d){
  const actions=element("div","actions");
  const collecting=d.status==="atribuida"||(d.status==="aceita"&&!d.collected_at);
  if(collecting)actions.append(createAction("Efetuei a coleta","primary",()=>collectCourierOrder(d)));
+ if(d.status==="aceita"&&d.collected_at&&d.source==="ifood"&&d.logistics_provider==="loja"){
+  actions.append(createAction("Sincronizar despacho com iFood","secondary",async()=>{
+   if(busy)return;busy=true;message("");
+   try{
+    const result=await ifoodDriverAction(d.id,"dispatch");
+    message(result.provider_state==="submitted"?"Despacho enviado ao iFood; aguardando DISPATCHED.":
+      result.provider_state==="confirmed"?"O iFood já confirmou o despacho.":
+      "Despacho iFood aguardando confirmação.");
+   }catch(err){message(String(err?.message||"Não foi possível sincronizar o despacho"))}
+   finally{busy=false}
+  }));
+ }
  if(d.status==="aceita"&&d.collected_at&&d.batch_id)
   actions.append(createAction("Sair para entrega","primary",()=>rpc("pitacco_driver_depart",{p_batch:d.batch_id})));
  if(d.status==="retirada"){
