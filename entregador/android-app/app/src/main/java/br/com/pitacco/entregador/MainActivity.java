@@ -123,7 +123,9 @@ public class MainActivity extends Activity {
                     }
                     else if ("disable".equals(action)) {
                         getPreferences(MODE_PRIVATE).edit().putBoolean("push_enabled", false).apply();
-                        FirebaseMessaging.getInstance().setAutoInitEnabled(false);
+                        if (!FirebaseApp.getApps(this).isEmpty()) {
+                            FirebaseMessaging.getInstance().setAutoInitEnabled(false);
+                        }
                     }
                 });
     }
