@@ -20,6 +20,17 @@ test('discovers Windows installer only from published verified-release channel',
  assert.equal(installed.url,url);
  assert.equal(installed.published_at,'2026-11-17T16:00:00Z');
 });
+test('download portal prefers the most recently published Windows update over stale API ordering',async()=>{
+ const older={...release,published_at:'2026-11-17T16:00:00Z'};
+ const newest={...release,tag_name:'pitacco-windows-fedcba987654',
+  published_at:'2026-11-18T21:36:40Z',
+  assets:[{name:'Pitacco-Windows-Setup.exe',size:7619873,
+    browser_download_url:repo+'/releases/download/pitacco-windows-fedcba987654/Pitacco-Windows-Setup.exe'}]};
+ const selected=await discoverPublicWindowsInstaller(async()=>({ok:true,json:async()=>[older,newest]}));
+ assert.equal(selected.url,newest.assets[0].browser_download_url);
+ assert.equal(selected.published_at,newest.published_at);
+ assert.equal(selected.version,null,'Do not label current installer with a fabricated version');
+});
 test('rejects empty releases and invalid API responses',async()=>{
  assert.equal(await discoverPublicWindowsInstaller(async()=>({ok:true,json:async()=>[]})),null);
  await assert.rejects(()=>discoverPublicWindowsInstaller(async()=>({ok:false,status:403})),/Não foi possível/);
