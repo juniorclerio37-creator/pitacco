@@ -29,6 +29,15 @@ const deliveryType=(order,delivery)=>{
 const canAssign=(order,delivery)=>order.status==='accepted'&&order.preparation_status==='ready'&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id;
 const isAutomaticDispatch=mode=>mode==='automatico';
 const canDispatch=(order,delivery)=>canAssign(order,delivery);
+const canConcludeOnWindows=(order,delivery,step)=>(
+ order?.source==='proprio' && order?.status==='accepted' &&
+ ( (order.receipt?.logistics==='retirada' && step==='ready') ||
+   (delivery?.logistics_provider==='loja' && ['ready','delivery'].includes(step)) )
+);
+const canExecuteConclusion=(order,delivery,step)=>(
+ order?.receipt?.logistics==='retirada'?step==='ready':
+ step==='delivery'&&delivery?.logistics_provider==='loja'
+);
 function DeliveryBadge({order,delivery}){
  const {type,label}=deliveryType(order,delivery);
  return <span className="pedidos-delivery-badge" data-delivery={type}>{type==='pickup'?<ShoppingBag size={15} aria-hidden="true"/>:<Bike size={15} aria-hidden="true"/>}{label}</span>;
@@ -96,13 +105,23 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
     </div>}
     {o.status==='accepted'&&<div className="pedidos-card-actions">
      {stage(o)==='preparing'&&<button type="button" className="primary pedidos-step-button" disabled={busy} onClick={()=>onReady(o.id)}>{popupLayout?'Marcar pronto':'Marcar pedido pronto'}</button>}
-     {stage(o)==='ready'&&o.source==='proprio'&&o.receipt?.logistics==='retirada'&&<button type="button" className="primary pedidos-step-button" disabled={busy||!onPickup} onClick={()=>onPickup?.(o.id)}>Confirmar retirada</button>}
+     {stage(o)==='ready'&&o.source==='proprio'&&o.receipt?.logistics==='retirada'&&!popupLayout&&<button type="button" className="primary pedidos-step-button" disabled={busy||!onPickup} onClick={()=>onPickup?.(o.id)}>Confirmar retirada</button>}
      {stage(o)==='ready'&&canDispatch(o,delivery,dispatchMode)&&<button type="button" className="primary pedidos-step-button" disabled={busy} onClick={()=>onAssign(o)}>{popupLayout?'Despachar':'Selecionar entregador'}</button>}
      {stage(o)==='ready'&&canAssign(o,delivery)&&isAutomaticDispatch(dispatchMode)&&<span role="status">Atribuição automática ativa · seleção manual também disponível</span>}
      {stage(o)==='ready'&&delivery?.courier_id&&<span role="status">Entregador selecionado · aguardando saída</span>}
      {stage(o)==='ready'&&delivery?.logistics_provider==='marketplace'&&<span role="status">Aguardando coleta pelo parceiro</span>}
-     {stage(o)==='delivery'&&o.source==='proprio'&&<button type="button" className="primary pedidos-step-button" disabled={busy||!onConclude} onClick={()=>onConclude?.(o.id)}>Concluir entrega</button>}
+     {stage(o)==='delivery'&&o.source==='proprio'&&delivery?.logistics_provider==='loja'&&!popupLayout&&<button type="button" className="primary pedidos-step-button" disabled={busy||!onConclude} onClick={()=>onConclude?.(o.id)}>Concluir entrega</button>}
      {stage(o)==='delivery'&&<button type="button" className="secondary pedidos-step-button" disabled={busy} onClick={()=>onDetail(o)}>Acompanhar entrega</button>}
+     {popupLayout&&canConcludeOnWindows(o,delivery,stage(o))&&<button
+       type="button" className="secondary pedidos-complete-button"
+       disabled={busy||!canExecuteConclusion(o,delivery,stage(o))||
+         !(o.receipt?.logistics==='retirada'?onPickup:onConclude)}
+       title={canExecuteConclusion(o,delivery,stage(o))?
+         (o.receipt?.logistics==='retirada'?'Registrar retirada concluída':'Concluir somente após chegada e comprovação da entrega'):
+         'Aguarde a saída e a comprovação da entrega antes de concluir'}
+       onClick={()=>o.receipt?.logistics==='retirada'?onPickup?.(o.id):onConclude?.(o.id)}>
+       <CheckCircle2 size={16} aria-hidden="true"/> Concluir
+      </button>}
      <button type="button" className="secondary pedidos-card-print" aria-label={(manualPrint?"Imprimir no navegador pedido ":"Reimprimir comanda do pedido ")+number(o)} disabled={busy} onClick={()=>onReprint(o.id)}><Printer size={16} aria-hidden="true"/></button>
     </div>}
    </article>;
