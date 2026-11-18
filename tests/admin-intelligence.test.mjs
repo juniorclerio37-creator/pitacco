@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import worker,{safeDiagnosticSignals,safeRecoveryContext} from '../cloudflare/admin-ai-worker.mjs';
+import worker,{safeDiagnosticSignals,safeRecoveryContext,safeSenderReadiness} from '../cloudflare/admin-ai-worker.mjs';
 
 const endpoint='https://admin.pitacco.com.br/api/intelligence/analyze';
 const originalFetch=globalThis.fetch;
@@ -11,7 +11,7 @@ function request(question='A impressão no Windows falha',changes={}){
   body:JSON.stringify({question,storeId:null,...changes.body})
  });
 }
-function harness({owner=true,auth=true,incidents=[],ai=true,metrics={registered:5,active:2,trial:2,courtesy:1},telemetry=true,preflight=true}={}){
+function harness({owner=true,auth=true,incidents=[],ai=true,metrics={registered:5,active:2,trial:2,courtesy:1},telemetry=true,preflight=true,sender=true}={}){
  const called=[];
  globalThis.fetch=async (url,init)=>{
   called.push({url,init});
@@ -36,6 +36,12 @@ function harness({owner=true,auth=true,incidents=[],ai=true,metrics={registered:
       latest_operator_test:{outcome:'awaiting_confirmation',submitted_at:'2026-11-17T21:13:22Z',
        printer_name:'SECRET_PRINTER_NAME'}}
     }):Response.json({error:'unavailable'},{status:503});
+  if(url.endsWith('/functions/v1/pitacco-owner-push-readiness'))return sender?
+    Response.json({fcm_service_account_configured:false,cron_secret_env_configured:false,
+      database_service_access_configured:true,sender_dispatch_tested:false,
+      google_oauth_tested:false,fcm_delivery_tested:false,android_audio_tested:false,
+      fcm_secret:'NEVER_EXPOSE_THIS_FIREBASE_KEY',account_email:'SECRET_GMAIL_ACCOUNT'}):
+    Response.json({error:'Unavailable'},{status:503});
   throw new Error('Unexpected URL '+url);
  };
  const calls=[];
@@ -83,7 +89,7 @@ test('authorized diagnosis excludes identifiers and credentials from AI context'
  assert.match(payload.answer,/Diagnóstico consultivo/);
  assert.equal(payload.incidentsConsidered,1);
  assert.equal(payload.mode,'diagnostico');
- assert.equal(h.called.length,5);
+ assert.equal(h.called.length,6);
  assert.equal(h.calls.length,1);
  assert.equal(h.calls[0].model,'@cf/meta/llama-3.1-8b-instruct-fast');
  const prompt=JSON.stringify(h.calls[0].args.messages);
@@ -112,7 +118,7 @@ test('missing rate limiter fails closed',async()=>{
 test('requires a configured AI binding',async()=>{
  const h=harness({ai:false});
  const response=await worker.fetch(request(),h.env);
- assert.equal(response.status,503);assert.equal(h.called.length,5);
+ assert.equal(response.status,503);assert.equal(h.called.length,6);
 });
 
 test('reported active stores comes from protected Supabase overview, not model inference',async()=>{
@@ -148,7 +154,7 @@ test('diagnostic telemetry is allowlisted and does not leak tokens or order data
  assert.equal(response.status,200);
  const payload=await response.json();
  assert.equal(payload.signalsAvailable,true);
- assert.equal(h.called.length,5);
+ assert.equal(h.called.length,6);
  assert.equal(h.calls.length,1);
  const prompt=h.calls[0].args.messages[1].content;
  assert.match(prompt,/"jobs_24h":5/);
@@ -179,7 +185,7 @@ test('recovery preflight reaches the AI only as allowlisted, coarse operational 
  assert.equal(response.status,200);
  const payload=await response.json();
  assert.equal(payload.recoveryAvailable,true);
- assert.equal(h.called.length,5);
+ assert.equal(h.called.length,6);
  assert.equal(h.calls.length,1);
  const text=h.calls[0].args.messages[1].content;
  assert.match(text,/"cron_active":false/);
@@ -210,4 +216,40 @@ test('malformed preflight fields are unknown, not converted to success',()=>{
  assert.match(value.observed_at,/^2026-11-18T04:00:00/);
  assert.doesNotMatch(JSON.stringify(value),/SECRET|api_key|receipt/);
  assert.equal(safeRecoveryContext({scope:'not_authorized'}),null);
+});
+
+test('owner-only sender status is sanitized before sending to Workers AI',async()=>{
+ const h=harness();
+ const response=await worker.fetch(request('O Firebase está configurado para alertar meus entregadores?'),h.env);
+ assert.equal(response.status,200);
+ const payload=await response.json();
+ assert.equal(payload.senderCredentialsAvailable,true);
+ assert.equal(h.called.length,6);
+ assert.equal(h.calls.length,1);
+ const prompt=h.calls[0].args.messages[1].content;
+ assert.match(prompt,/"fcm_service_account_configured":false/);
+ assert.match(prompt,/"cron_secret_env_configured":false/);
+ assert.match(prompt,/"sender_dispatch_tested":false/);
+ assert.doesNotMatch(prompt,/NEVER_EXPOSE_THIS_FIREBASE_KEY|SECRET_GMAIL_ACCOUNT|account_email|fcm_secret/);
+});
+test('unavailable sender readiness explicitly blocks claims of active FCM configuration',async()=>{
+ const h=harness({sender:false});
+ const response=await worker.fetch(request('Posso ativar o push?'),h.env);
+ assert.equal(response.status,200);
+ const payload=await response.json();
+ assert.equal(payload.senderCredentialsAvailable,false);
+ assert.match(h.calls[0].args.messages[1].content,/indisponíveis; não afirme que o serviço esteja configurado/);
+});
+test('sender readiness only accepts expected boolean configuration flags',()=>{
+ assert.equal(safeSenderReadiness({fcm_service_account_configured:'true',cron_secret_env_configured:false}),null);
+ const v=safeSenderReadiness({
+  fcm_service_account_configured:true,
+  cron_secret_env_configured:true,
+  fcm_delivery_tested:false,
+  client_email:'PERSONAL_SECRET',private_key:'TOP_SECRET'
+ });
+ assert.equal(v.fcm_service_account_configured,true);
+ assert.equal(v.fcm_delivery_tested,false);
+ assert.equal(v.google_oauth_tested,null);
+ assert.doesNotMatch(JSON.stringify(v),/PERSONAL_SECRET|TOP_SECRET|client_email|private_key/);
 });
