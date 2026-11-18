@@ -29,23 +29,24 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Prepare Android notification sound and Firebase configuration
-        env:
-          PITACCO_FIREBASE_ANDROID_JSON: ${{ github.ref == 'refs/heads/main' && secrets.PITACCO_FIREBASE_ANDROID_JSON || '' }}
+      - name: Prepare test sound without production Firebase credentials
         run: |
           python3 entregador/android-app/generate-alert.py
-          if [ -n "$PITACCO_FIREBASE_ANDROID_JSON" ]; then
-            printf '%s' "$PITACCO_FIREBASE_ANDROID_JSON" > entregador/android-app/app/google-services.json
-          fi
+          # The test APK has a separate application ID, so do not copy the
+          # production Firebase registration into this QA-only package.
+          # This test validates installation, local notifications, and WebView.
+          # Real FCM push requires a separately registered test Android app.
       - name: Build APK for testing
         working-directory: entregador/android-app
         run: gradle --no-daemon assembleDebug
       - name: Verify APK signature and hash
         working-directory: entregador/android-app/app/build/outputs/apk/debug
         run: |
-          mv app-debug.apk Pitacco-Entregador-2.0.0-teste.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose Pitacco-Entregador-2.0.0-teste.apk
-          sha256sum Pitacco-Entregador-2.0.0-teste.apk > SHA256-ANDROID.txt
+          mv app-debug.apk Pitacco-Entregador-2.0.0-TESTE-PARALELO.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose Pitacco-Entregador-2.0.0-TESTE-PARALELO.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Pitacco-Entregador-2.0.0-TESTE-PARALELO.apk | head -15
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Pitacco-Entregador-2.0.0-TESTE-PARALELO.apk | grep -q "package: name='br.com.pitacco.entregador.teste'"
+          sha256sum Pitacco-Entregador-2.0.0-TESTE-PARALELO.apk > SHA256-ANDROID.txt
       - name: Exercise release signing with an isolated test certificate
         if: github.event_name == 'pull_request'
         working-directory: entregador/android-app
@@ -77,7 +78,7 @@ jobs:
         with:
           name: Pitacco-Entregador-Android-teste
           path: |
-            entregador/android-app/app/build/outputs/apk/debug/Pitacco-Entregador-2.0.0-teste.apk
+            entregador/android-app/app/build/outputs/apk/debug/Pitacco-Entregador-2.0.0-TESTE-PARALELO.apk
             entregador/android-app/app/build/outputs/apk/debug/SHA256-ANDROID.txt
           if-no-files-found: error
 
