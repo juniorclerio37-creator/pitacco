@@ -289,7 +289,7 @@ test("sequência agrupada aparece somente para lotes válidos e navega por prefe
  const source=read("route-sequence.mjs");
  const migration=read("../supabase/migrations/20261118130000_pitacco_driver_route_ifood_reconcile.sql");
  assert.match(page,/id="routeSuggestions"/);
- assert.match(page,/suggestedBatchRoutes\(deliveries,routeOrigins\)/);
+ assert.match(page,/suggestedBatchRoutes\(deliveries,routeOrigins,lastCompletedBatchStops\)/);
  assert.match(page,/pitacco_driver_route_origins/);
  assert.match(page,/data-route-delivery/);
  assert.match(source,/Math\.sin/);
@@ -316,4 +316,29 @@ test("identidade de motinho laranja aprovada aparece no acesso, painel e ícone 
  assert.match(android,/android:fillColor="#FF7209"/);
  assert.match(android,/android:fillType="evenOdd"/);
  assert.match(manifest,/android:icon="@drawable\/ic_pitacco"/);
+});
+
+test("roteiro avança do último ponto apenas quando entrega realmente foi confirmada",()=>{
+ const page=read("painel.html");
+ const route=read("route-sequence.mjs");
+ assert.match(page,/lastCompletedBatchStops=new Map/);
+ assert.match(page,/function rememberCompletedBatchStop\(d\)/);
+ assert.match(page,/if\(data\?\.confirmed\)\{\s*rememberCompletedBatchStop\(d\)/);
+ assert.match(page,/orderDetails\.close\(\);\s*rememberCompletedBatchStop\(d\)/);
+ assert.match(page,/suggestedBatchRoutes\(deliveries,routeOrigins,lastCompletedBatchStops\)/);
+ assert.match(page,/Confirme esta entrega antes de seguir/);
+ assert.match(route,/while\(remaining\.length\)/);
+ assert.match(route,/distanceKm\(cursor,point\(remaining\[i\]\)\)/);
+ assert.doesNotMatch(page,/localStorage\.setItem\([^)]*lastCompletedBatchStops/);
+});
+
+test("múltiplas paradas têm opção de percurso Maps só quando não há chegada pendente",()=>{
+ const page=read("painel.html");
+ const navigation=read("navigation.mjs");
+ assert.match(page,/buildBatchNavigationUrl\(plan\.stops\.map\(stop=>stop\.delivery\),navProvider,navMode\)/);
+ assert.match(page,/!plan\.stops\.some\(stop=>stop\.delivery\.arrived_at\)/);
+ assert.match(page,/Ver percurso completo no Google Maps/);
+ assert.match(page,/renderRouteSuggestions\(assignedDeliveries\)/);
+ assert.match(navigation,/deliveries\.length>4/);
+ assert.match(navigation,/provider!=='google'/);
 });

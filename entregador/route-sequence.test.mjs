@@ -34,3 +34,43 @@ test('entregas concluídas ou sem lote não aparecem na lista',()=>{
    entry('a',-22.75,-43.45,'entregue'),entry('b',-22.76,-43.45,'retirada',null)
  ],new Map()),[]);
 });
+
+test('vizinho mais próximo evita voltar à loja entre as entregas',()=>{
+ const origins=new Map([[store,{latitude:-22.75,longitude:-43.45}]]);
+ const plans=suggestedBatchRoutes([
+   entry('perto-norte',-22.749,-43.45),
+   entry('sul',-22.7512,-43.45),
+   entry('norte-leste',-22.749,-43.449)
+ ],origins);
+ assert.deepEqual(plans[0].stops.map(x=>x.delivery.id),
+   ['perto-norte','norte-leste','sul']);
+ assert.equal(plans[0].anchor,'store');
+});
+test('partida muda para o último ponto confirmado do próprio lote',()=>{
+ const origins=new Map([[store,{latitude:-22.75,longitude:-43.45}]]);
+ const lastStops=new Map([[store+':'+batch,{latitude:-22.751,longitude:-43.45}]]);
+ const plans=suggestedBatchRoutes([
+   entry('norte',-22.748,-43.45),entry('sul',-22.7508,-43.45)
+ ],origins,lastStops);
+ assert.equal(plans[0].anchor,'last-stop');
+ assert.equal(plans[0].stops[0].delivery.id,'sul');
+});
+test('chegada registrada deve permanecer primeira até confirmação do código',()=>{
+ const origins=new Map([[store,{latitude:-22.75,longitude:-43.45}]]);
+ const arrived={...entry('cheguei',-22.78,-43.45),arrived_at:'2026-11-18T12:00:00Z'};
+ const plans=suggestedBatchRoutes([
+   entry('outro',-22.751,-43.45),arrived
+ ],origins);
+ assert.equal(plans[0].anchor,'arrival');
+ assert.equal(plans[0].stops[0].delivery.id,'cheguei');
+ assert.equal(plans[0].stops[1].delivery.id,'outro');
+});
+test('sem dados viáveis não estima caminho nem mistura lotes de lojas diferentes',()=>{
+ const lastStops=new Map([[store+':'+batch,{latitude:0,longitude:0}]]);
+ const plans=suggestedBatchRoutes([
+   entry('a',null,-43.45),entry('b',-22.78,-43.45)
+ ],new Map(),lastStops);
+ assert.equal(plans[0].estimated,false);
+ assert.equal(plans[0].anchor,'unsorted');
+ assert.deepEqual(plans[0].stops.map(x=>x.delivery.id),['a','b']);
+});

@@ -189,13 +189,13 @@ import {createClient} from "https://esm.sh/@supabase/supabase-js@2.57.0";
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "./config.mjs";
 import {createDriverAuth} from "./supabase-client.mjs";
 import {createOrderDetailsController} from "./order-details.mjs";
-import {buildNavigationUrl} from "./navigation.mjs";
+import {buildNavigationUrl,buildBatchNavigationUrl} from "./navigation.mjs";
 import {suggestedBatchRoutes} from "./route-sequence.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
 const orderDetails=createOrderDetailsController({supabase:sb,routeFor:delivery=>buildNavigationUrl(delivery,navProvider,navMode)});
-let courier=null, busy=false,routeOrigins=new Map();
+let courier=null, busy=false,routeOrigins=new Map(),lastCompletedBatchStops=new Map();
 function updateConnectionBanner(){
  const offline=navigator.onLine===false;
  $("connectionBanner").hidden=!offline;
@@ -475,6 +475,17 @@ async function markArrival(d){
  }catch(error){message(String(error.message||"Erro ao registrar chegada"))}
  finally{busy=false}
 }
+// Apenas entrega confirmada vira o ponto de partida do próximo destino.
+// Estas coordenadas ficam em memória, sem gravar endereços ou PINs.
+function rememberCompletedBatchStop(d){
+ if(!d?.batch_id||!d?.store_id)return;
+ const latitude=Number(d.latitude),longitude=Number(d.longitude);
+ if(d.latitude==null||d.longitude==null||
+    !Number.isFinite(latitude)||!Number.isFinite(longitude)||
+    Math.abs(latitude)>90||Math.abs(longitude)>180||
+    (latitude===0&&longitude===0))return;
+ lastCompletedBatchStops.set(String(d.store_id)+":"+String(d.batch_id),{latitude,longitude});
+}
 async function reconcileIfoodConfirmation(d){
  if(busy)return;busy=true;message("");
  try{
@@ -482,6 +493,7 @@ async function reconcileIfoodConfirmation(d){
   const {data,error}=await sb.rpc("pitacco_driver_reconcile_ifood",{p_delivery:d.id});
   if(error)throw Error(error.message||"Não foi possível conferir a entrega no iFood");
   if(data?.confirmed){
+   rememberCompletedBatchStop(d);
    await refresh(true);
    message("Entrega concluída após confirmação oficial recebida do iFood.");
   }else message("Aguardando o iFood confirmar a entrega. Acompanhe a página oficial e tente atualizar novamente.");
@@ -504,6 +516,7 @@ async function verifyCode(d,code){
    if(!result?.verified)throw Error("O iFood não confirmou o código");
   }else throw Error("A validação oficial desta plataforma ainda depende de homologação");
   orderDetails.close();
+  rememberCompletedBatchStop(d);
   await refresh(true);
   message("Entrega concluída! Os dados completos do cliente não ficam no histórico do entregador.");
  }catch(error){message(String(error.message||"A entrega não foi concluída"))}
@@ -545,15 +558,21 @@ async function rpc(name,args){
 function renderRouteSuggestions(deliveries){
  const target=$("routeSuggestions");
  target.replaceChildren();
- const routes=suggestedBatchRoutes(deliveries,routeOrigins);
+ const routes=suggestedBatchRoutes(deliveries,routeOrigins,lastCompletedBatchStops);
  target.hidden=routes.length===0;
  for(const plan of routes){
   const box=element("section","route-plan");
   box.append(element("strong","route-plan-title",
     "Rota agrupada • "+plan.stops.length+" entregas"));
-  box.append(element("p","route-plan-explain",plan.estimated?
-    "Ordem sugerida do mais próximo ao mais distante da loja, em linha reta. O mapa definirá o trajeto pelas ruas.":
-    "Pedidos agrupados pela loja. Falta coordenada válida para sugerir a ordem; mantenha a sequência da loja."));
+  const routeHelp=!plan.estimated?
+    "Pedidos agrupados pela loja. Sem coordenadas suficientes para sugerir a ordem; use Ir em cada cartão.":
+    plan.anchor==="arrival"?
+      "Você já chegou a uma parada. Confirme esta entrega antes de seguir. As próximas paradas estão ordenadas por proximidade.":
+    plan.anchor==="last-stop"?
+      "Sequência atualizada a partir da última entrega confirmada, buscando a próxima parada mais perto.":
+      "Sequência estimada a partir da loja, indo sempre à parada seguinte mais próxima.";
+  box.append(element("p","route-plan-explain",
+    routeHelp+" Estimativa em linha reta; não considera trânsito ou sentidos das ruas. Confira o trajeto no aplicativo de navegação."));
   const list=element("ol","route-plan-list");
   for(const [index,stop] of plan.stops.entries()){
    const d=stop.delivery;
@@ -562,9 +581,11 @@ function renderRouteSuggestions(deliveries){
    const number=String(orderCardBadges.get(d.id)?.public_number||"Aguardando número");
    summary.append(element("b","","Parada "+(index+1)+" • Pedido #"+number));
    summary.append(element("small","",d.address||"Endereço não informado"));
+   if(d.arrived_at)summary.append(element("small","route-plan-arrived",
+     "Você já chegou • confirme esta entrega antes de seguir"));
    item.append(summary);
    const url=buildNavigationUrl(d,navProvider,navMode);
-   if(url){
+   if(url&&!d.arrived_at){
     const link=element("a","route-plan-go",index===0?"Iniciar rota":"Ir");
     link.href=url;link.setAttribute("data-route-delivery",d.id);
     link.setAttribute("aria-label","Abrir rota para parada "+(index+1)+" do pedido #"+number);
@@ -573,6 +594,17 @@ function renderRouteSuggestions(deliveries){
    list.append(item);
   }
   box.append(list);
+  // O iFood ou o PIN Pitacco precisam concluir uma chegada já registrada
+  // antes de propor partir para a próxima entrega.
+  if(!plan.stops.some(stop=>stop.delivery.arrived_at)&&navProvider==="google"){
+   const fullUrl=buildBatchNavigationUrl(plan.stops.map(stop=>stop.delivery),navProvider,navMode);
+   if(fullUrl){
+    const full=element("a","route-plan-go route-plan-all","Ver percurso completo no Google Maps");
+    full.href=fullUrl;
+    full.setAttribute("aria-label","Abrir a rota com todas as paradas deste lote no Google Maps");
+    box.append(full);
+   }
+  }
   target.append(box);
  }
 }
@@ -966,6 +998,7 @@ $("miniEarnings").addEventListener("click",()=>switchView("ganhos"));
 window.addEventListener("hashchange",()=>switchView(location.hash.slice(1)));
 function updateRouteLinks(){
  updateNavPreferences();
+ renderRouteSuggestions(assignedDeliveries);
  for(const route of document.querySelectorAll("[data-route-delivery]")){
   const delivery=assignedDeliveries.find(item=>item.id===route.getAttribute("data-route-delivery"));
   const url=delivery&&buildNavigationUrl(delivery,navProvider,navMode);

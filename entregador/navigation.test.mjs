@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buildNavigationUrl,routeTarget,routeDestination} from './navigation.mjs';
+import {buildNavigationUrl,buildBatchNavigationUrl,routeTarget,routeDestination} from './navigation.mjs';
 
 const first={id:'pedido-A',address:'Rua das Acácias, 123, Nova Iguaçu, RJ, Brasil',
   latitude:-22.75,longitude:-43.45};
@@ -48,4 +48,20 @@ test('a delivery with coordinates only can open the selected navigation provider
  const waze=new URL(buildNavigationUrl(delivery,'waze','address'));
  assert.equal(google.searchParams.get('destination'),'-22.91,-43.17');
  assert.equal(waze.searchParams.get('ll'),'-22.91,-43.17');
+});
+
+test('percurso Google Maps segue a ordem de até quatro paradas no Android',()=>{
+ const stops=[first,second,{id:'pedido-C',address:'Rua B, 40, RJ'}];
+ const url=buildBatchNavigationUrl(stops,'google','address');
+ const data=new URL(url);
+ assert.equal(data.searchParams.get('destination'),stops[2].address);
+ assert.deepEqual(data.searchParams.get('waypoints').split('|'),[first.address,second.address]);
+ assert.equal(data.searchParams.get('dir_action'),'navigate');
+});
+test('link Waze e lotes longos continuam navegando parada a parada',()=>{
+ const stops=[first,second,first,second,first];
+ assert.equal(buildBatchNavigationUrl([first,second],'waze'),null);
+ assert.equal(buildBatchNavigationUrl(stops,'google'),null);
+ assert.equal(buildBatchNavigationUrl([first],'google'),null);
+ assert.equal(buildBatchNavigationUrl([first,{id:'empty',address:''}],'google'),null);
 });
