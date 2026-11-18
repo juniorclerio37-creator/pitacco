@@ -117,8 +117,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.ok(page.includes('nativeNotificationSettings'));
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 20'));
- assert.ok(build.includes("versionName '2.0.0'"));
+ assert.ok(build.includes('versionCode 21'));
+ assert.ok(build.includes("versionName '2.0.1'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
