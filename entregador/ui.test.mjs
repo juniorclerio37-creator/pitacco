@@ -289,7 +289,7 @@ test("sequência agrupada aparece somente para lotes válidos e navega por prefe
  const source=read("route-sequence.mjs");
  const migration=read("../supabase/migrations/20261118130000_pitacco_driver_route_ifood_reconcile.sql");
  assert.match(page,/id="routeSuggestions"/);
- assert.match(page,/suggestedBatchRoutes\(deliveries,routeOrigins\)/);
+ assert.match(page,/suggestedBatchRoutes\(deliveries,routeOrigins,lastCompletedBatchStops\)/);
  assert.match(page,/pitacco_driver_route_origins/);
  assert.match(page,/data-route-delivery/);
  assert.match(source,/Math\.sin/);
