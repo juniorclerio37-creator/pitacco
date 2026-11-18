@@ -151,3 +151,15 @@ test("installed Android app with outdated native bridge falls back to audible we
  assert.match(page,/Sem resposta do Android/);
  assert.match(page,/Avisos com o aplicativo fechado exigem configuração nativa e Firebase/);
 });
+
+test("courier continues to show opened deliveries offline without unsafe queued completion",()=>{
+ const page=read("painel.html");
+ assert.match(page,/id="connectionBanner"/);
+ assert.match(page,/window.addEventListener\("offline",updateConnectionBanner\)/);
+ assert.match(page,/window.addEventListener\("online"/);
+ assert.match(page,/if\(courier\)refresh\(\)/);
+ assert.match(page,/\$\("online"\)\.disabled=navigator\.onLine===false/);
+ assert.match(page,/confirmações precisam de internet/);
+ // No customer/address snapshots in unencrypted browser persistence.
+ assert.doesNotMatch(page,/localStorage\.setItem\([^)]*assignedDeliveries/);
+});
