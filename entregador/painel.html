@@ -707,7 +707,7 @@ function initializeNativePush(){
  settings.hidden=false;
  settings.addEventListener("click",()=>native.postMessage("settings"));
  const shiftToggle=$("shiftSoundToggle"),shiftDescription=$("shiftSoundDescription");
- shiftToggle.hidden=false;shiftDescription.hidden=false;
+ // Keep this control hidden in older APKs that do not support it.
  shiftToggle.addEventListener("click",()=>{
   if(!shiftSoundAvailable){
    $("assignmentSoundStatus").textContent="O Modo Plantão exige uma nova versão Android. Não é possível ativá-lo somente pela interface web.";
@@ -734,6 +734,7 @@ function initializeNativePush(){
  native.onmessage=async event=>{
   const value=String(event.data||"");
   if(value.startsWith("shift_sound:")){
+   shiftToggle.hidden=false;shiftDescription.hidden=false;
    shiftSoundAvailable=true;
    shiftSoundEnabled=value==="shift_sound:on";
    $("shiftSoundState").textContent=shiftSoundEnabled?"ATIVADO":"DESLIGADO";
