@@ -21,6 +21,7 @@ test('Cadastro do motoboy salva a remuneracao junto do telefone, sem chave priva
  assert.match(css,/pitacco-driver-registration-pay/);
  assert.match(api,/function validRemuneration\(value\)/);
  assert.match(api,/if\(!remuneration\)return \[400/);
+ assert.match(api,/body\.remuneration \?\? \{mode:"customer_fee"\}/);
  assert.match(api,/\.insert\(\{store_id:storeId,courier_id:courier.id,\.\.\.remuneration\}\)/);
  assert.match(api,/admin\.auth\.admin\.deleteUser\(userId\)/);
  assert.match(api,/if\s*\(action==="set-remuneration"\)/);
