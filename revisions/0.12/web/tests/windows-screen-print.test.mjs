@@ -151,7 +151,7 @@ test('exactly one bundled merchant voice and five distinct native bells are sele
 test('same installed Windows app keeps order cards and guarded conclusion next to progress actions',()=>{
  const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
  const css=readFileSync(new URL('../pedidos.css',import.meta.url),'utf8');
- const mount=readFileSync(new URL('../../mount_orders_045.py',import.meta.url),'utf8');
+ const mount=readFileSync(new URL('../../revisions/0.12/mount_orders_045.py',import.meta.url),'utf8');
  assert.match(mount,/popupLayout=\{desktop\}/);
  assert.match(orders,/pedidos-detail-modal/);
  assert.match(orders,/pedidos-modal-close/);
