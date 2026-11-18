@@ -1,6 +1,6 @@
 # Pitacco Intelligence — primeira versão (somente diagnóstico)
 
-Esta entrega usa o **Cloudflare Workers AI** com o modelo `@cf/zai-org/glm-4.7-flash`, sem nova infraestrutura de banco de dados e sem serviço externo de IA cobrado por pergunta enquanto a franquia gratuita da conta não for ultrapassada.
+Esta entrega usa o **Cloudflare Workers AI** com o modelo `@cf/meta/llama-3.1-8b-instruct-fast`, sem nova infraestrutura de banco de dados e sem serviço externo de IA cobrado por pergunta enquanto a franquia gratuita da conta não for ultrapassada.
 
 ## O que faz
 
@@ -8,7 +8,7 @@ Esta entrega usa o **Cloudflare Workers AI** com o modelo `@cf/zai-org/glm-4.7-f
 - Recebe uma pergunta do administrador, verifica a sessão no Supabase Auth e confirma `pitacco_is_platform_owner()` **no servidor**.
 - Consulta a função já existente `pitacco_incidents()` com a mesma sessão autenticada e RLS/RPC existente, podendo filtrar uma loja.
 - Envia ao modelo só a pergunta (com redator de credenciais/e-mails) e categorias resumidas de até 15 incidentes (código, estado, recorrências e momento). **Não** envia dados pessoais, pedidos inteiros, nomes de lojas, valores ou IDs.
-- Retorna hipóteses e orientações para o administrador. Sem reprocessar eventos, sem imprimir, sem finalizar pedido, sem movimentar dinheiro e sem executar código.
+- Para perguntas de contagem de lojas/assinaturas, consulta o resumo agregado `pitacco_subscription_overview()` do Supabase e responde com valores reais sem chamar a IA.\n- Retorna hipóteses e orientações para o administrador. Sem reprocessar eventos, sem imprimir, sem finalizar pedido, sem movimentar dinheiro e sem executar código.
 - O endpoint é sempre `POST /api/intelligence/analyze` no próprio domínio do Super Admin, não expõe tokens Cloudflare ao navegador.
 
 ## Permissões e limites

@@ -1,7 +1,8 @@
 // Pitacco Intelligence v1: respostas consultivas, sem operações que modifiquem o negócio.
 // O Worker usa a mesma sessão Supabase do Super Admin e a permissão validada no banco.
 // NÃO adicionar service_role, credenciais de marketplace ou execução de código aqui.
-export const MODEL = '@cf/zai-org/glm-4.7-flash';
+// Prefer a non-reasoning model: GLM-4.7-Flash can spend the response budget entirely on reasoning and return content:null.
+export const MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
 const SUPABASE_API_TIMEOUT_MS = 7000;
 const MAX_BODY_BYTES = 4096;
 const MAX_QUESTION_LENGTH = 1500;
@@ -74,7 +75,15 @@ function incidentSummary(payload) {
 }
 function textFromModel(result) {
   const possible = [result?.response, result?.result?.response, result?.choices?.[0]?.message?.content];
-  return possible.find(x => typeof x === 'string' && x.trim())?.trim() || '';
+  for (const value of possible) {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (Array.isArray(value)) {
+      const text = value.filter(part => part?.type === 'text' && typeof part.text === 'string')
+        .map(part => part.text).join('').trim();
+      if (text) return text;
+    }
+  }
+  return '';
 }
 async function handleAnalyze(request, env) {
   if (request.method !== 'POST') return asJson({ error: 'Método não permitido.' }, 405);
@@ -115,22 +124,34 @@ async function handleAnalyze(request, env) {
     if (!env.INTELLIGENCE_RATE_LIMIT?.limit) return asJson({ error: 'Proteção de consumo indisponível.' }, 503);
     const quota = await env.INTELLIGENCE_RATE_LIMIT.limit({ key: user.id });
     if (!quota.success) return asJson({ error: 'Limite temporário de consultas atingido. Tente novamente em um minuto.' }, 429);
+    // Numerical store questions use an authorized, database-backed result rather than an AI guess.
+    // A single free query, no identifiers or personal data, and no inference tokens consumed.
+    const question = safeQuestion(body.question.trim());
+    if (/\b(?:quantas?|número|total|quantidade)\b[\s\S]{0,60}\b(?:lojas?|estabelecimentos?|assinaturas?)\b/i.test(question)) {
+      const dashboard = await callSupabase(env, '/rest/v1/rpc/pitacco_subscription_overview', token, { body: {} });
+      if (!dashboard.ok) return asJson({ error: 'Não foi possível consultar as assinaturas das lojas.' }, 503);
+      const counts = await dashboard.json();
+      if (!counts || !['registered', 'active', 'trial', 'courtesy'].every(key => Number.isSafeInteger(counts[key]) && counts[key] >= 0)) {
+        return asJson({ error: 'Os indicadores retornaram dados incompletos.' }, 502);
+      }
+      const answer = `O Pitacco tem ${counts.active} loja(s) com assinatura ativa. Há também ${counts.trial} em teste e ${counts.courtesy} de cortesia. No total, ${counts.registered} estabelecimentos cadastrados. Aqui, "ativa" significa assinatura com status ativo, não que a loja esteja aberta ou recebendo pedidos agora.`;
+      return asJson({ answer, mode: 'indicadores', source: 'supabase', incidentsConsidered: 0 });
+    }
     const incidentResult = await callSupabase(env, '/rest/v1/rpc/pitacco_incidents', token, {
       body: { p_store: body.storeId || null, p_status: 'open', p_page: 0 }
     });
     if (!incidentResult.ok) return asJson({ error: 'A consulta de incidentes está indisponível.' }, 503);
     const summaries = incidentSummary(await incidentResult.json());
     if (!env.AI?.run) return asJson({ error: 'A IA ainda não está configurada neste ambiente.' }, 503);
-    const question = safeQuestion(body.question.trim());
     const messages = [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: 'Pergunta do administrador: ' + question +
         '\nIncidentes observados (amostra de até 15 do primeiro lote; lista vazia não prova ausência de problemas): ' +
         JSON.stringify(summaries) }
     ];
-    const result = await env.AI.run(MODEL, { messages, max_tokens: 650 });
+    const result = await env.AI.run(MODEL, { messages, max_tokens: 650, temperature: 0.2 });
     const answer = textFromModel(result);
-    if (!answer) return asJson({ error: 'A IA não retornou uma resposta utilizável.' }, 502);
+    if (!answer) return asJson({ error: 'A IA não conseguiu gerar o texto da resposta. Tente reformular a pergunta.' }, 502);
     return asJson({ answer, incidentsConsidered: summaries.length, mode: 'diagnostico', model: MODEL });
   } catch {
     // Não revelar erros de infraestrutura, detalhes de autenticação, consultas ou prompts.
