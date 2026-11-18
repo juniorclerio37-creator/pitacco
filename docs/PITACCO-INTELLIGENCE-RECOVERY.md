@@ -13,6 +13,29 @@ A nova RPC `pitacco_owner_recovery_preflight(p_store uuid default null)`, dispon
 
 A consulta exige as mesmas permissões do Super Admin que o Pitacco Intelligence. Funciona com todas as lojas ou filtro por loja. Usa somente SELECT; nenhuma fila é reclamada ou reiniciada.
 
+## Verificação das credenciais reais da função de envio
+
+A Edge Function isolada `pitacco-owner-push-readiness` confirma, exclusivamente a quem possui
+sessão válida do **Super Admin**, se duas variáveis da função de envio estão presentes
+e têm formato coerente:
+
+- `PITACCO_FCM_SERVICE_ACCOUNT` (JSON com `project_id`, `client_email` e chave privada);
+- `PITACCO_PUSH_CRON_SECRET` (segredo de autenticação usado no disparador).
+
+Ela autentica o JWT com o serviço Auth do Supabase e verifica
+`pitacco_is_platform_owner()` no banco sob o **token do usuário**, não como service_role.
+Não retorna valores, e-mails, identificadores de projeto, tokens ou chaves; apenas booleanos.
+Não chama Google nem altera a fila de entregas, o cron ou os dispositivos.
+
+A tela `RecoveryPreflight.jsx` consulta essa função além da RPC de diagnóstico do banco.
+Se a consulta estiver indisponível, exibe **Não verificado** e jamais considera o Firebase pronto.
+Mesmo quando ambos os sinais forem positivos, só um teste real no Android em segundo plano
+pode verificar se a entrega de notificações e o toque funcionam.
+
+A implantação desta função é independente da função de envio `courier-push` e não a substitui.
+Seu endpoint exige autorização Supabase personalizada e aceita CORS somente de
+`https://admin.pitacco.com.br`.
+
 ## Bloqueios antes de ativar o Firebase
 
 A existência do segredo no Vault e do cron ativo **não garante** que `PITACCO_FCM_SERVICE_ACCOUNT` esteja configurado corretamente no ambiente da Edge Function. Nem a presença de token confirma áudio em segundo plano. Antes de propor o executor de ativação, confirmar:
