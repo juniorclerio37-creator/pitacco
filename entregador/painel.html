@@ -466,6 +466,8 @@ async function markArrival(d){
   }else if(d.source==="99food")info+=" Aviso à 99Food ainda não homologado; não há confirmação de notificação ao cliente.";
   else if(d.source==="keeta")info+=" Aviso à Keeta ainda não homologado.";
   await refresh(true);message(info);
+  const input=document.querySelector('.card-verify-block .verify-input');
+  if(input&&document.visibilityState==="visible")input.focus({preventScroll:true});
  }catch(error){message(String(error.message||"Erro ao registrar chegada"))}
  finally{busy=false}
 }
@@ -538,16 +540,25 @@ function card(d){
  const originName=d.store_name||"Loja de origem";
  opener.append(element("span","card-store-label","LOJA • "+originName));
  opener.append(element("div","customer",d.customer_name||"Cliente"));
- opener.append(element("p","address",d.address||"Endereço não informado"));
+
  if(badge?.localizer)opener.append(element("span","card-localizer",
    "LOCALIZADOR DE LIGAÇÃO • "+String(badge.localizer).replace(/\D/g,"").slice(0,16)));
  if(d.notes)opener.append(element("p","notes",d.notes));
  opener.append(element("span","card-detail-hint","Ver detalhes, itens e contato do cliente  ›"));
  box.append(opener);
+ const addressRow=element("div","card-address-row");
+ addressRow.append(element("p","address",d.address||"Endereço não informado"));
+ const routeUrl=buildNavigationUrl(d,navProvider,navMode);
+ if(routeUrl){
+  const route=element("a","card-route-link","Ir");
+  route.href=routeUrl;route.setAttribute("aria-label","Ir ao endereço do pedido #"+number);
+  route.title="Abrir rota no "+(navProvider==="waze"?"Waze":"Google Maps");
+  route.setAttribute("data-route-delivery",d.id);
+  addressRow.append(route);
+ }
+ box.append(addressRow);
  box.append(element("div","pay","Cobrança: a confirmar com a loja. Não presuma pagamento aprovado."));
  const actions=element("div","actions");
- const routeUrl=buildNavigationUrl(d,navProvider,navMode);
- if(routeUrl){const route=element("a","btn ghost","Abrir rota");route.href=routeUrl;actions.append(route);}
  const collecting=d.status==="atribuida"||(d.status==="aceita"&&!d.collected_at);
  if(collecting)actions.append(createAction("Coletar pedido","primary",()=>rpc("pitacco_driver_collect",{p_delivery:d.id})));
  if(d.status==="aceita"&&d.collected_at&&d.batch_id)
@@ -576,16 +587,34 @@ function card(d){
      }catch(error){message(String(error.message))}finally{busy=false}
     }));
    }
-   if(d.source==="proprio"||(d.source==="ifood"&&synced)){
+   if(d.source==="proprio"||d.source==="ifood"){
+    const verify=element("section","card-verify-block");
+    verify.append(element("strong","card-verify-title","Você chegou ao destino"));
+    verify.append(element("p","card-verify-help","Peça o código de confirmação ao cliente."));
     const form=element("form","verify-form"),code=element("input","verify-input");
     code.type="text";code.inputMode="numeric";code.autocomplete="one-time-code";
     code.maxLength=d.source==="proprio"?6:8;
     code.pattern=d.source==="proprio"?"[0-9]{6}":"[0-9]{4,8}";
-    code.placeholder=d.source==="proprio"?"Código de 6 dígitos":"Código do iFood";
+    code.placeholder=d.source==="proprio"?"Código Pitacco (6 dígitos)":"Código do cliente (iFood)";
     code.setAttribute("aria-label","Código de entrega fornecido pelo cliente");code.required=true;
-    const submit=createAction("Concluir com código","primary",null);submit.type="submit";
+    const submit=createAction("Confirmar entrega","primary",null);submit.type="submit";
+    if(d.source==="ifood"&&!synced){
+     submit.disabled=true;
+     verify.append(element("p","card-verify-pending",
+      "Aguardando confirmação da chegada pelo iFood para habilitar o código. Você pode usar a confirmação oficial abaixo."));
+    }
     form.addEventListener("submit",event=>{event.preventDefault();verifyCode(d,code.value)});
-    form.append(code,submit);box.append(form);
+    form.append(code,submit);verify.append(form);
+    if(d.source==="ifood"){
+     verify.append(element("p","card-ifood-fallback","Não conseguiu confirmar pelo código?"));
+     const external=element("a","btn secondary card-ifood-confirm","Abrir confirmação no iFood");
+     external.href="https://confirmacao-entrega-propria.ifood.com.br/";
+     external.setAttribute("aria-label","Abrir página oficial de confirmação de entrega própria do iFood");
+     verify.append(external);
+     verify.append(element("p","card-verify-help",
+      "Após confirmar na página do iFood, volte ao Pitacco e atualize os pedidos. A entrega só ficará concluída quando houver confirmação oficial."));
+    }
+    box.append(verify);
    }
    if(d.source==="99food"||d.source==="keeta"){
     box.append(element("p","warn","A validação do código da plataforma ainda depende de homologação. Não finalize manualmente."));
@@ -876,8 +905,8 @@ window.addEventListener("hashchange",()=>switchView(location.hash.slice(1)));
 function updateRouteLinks(){
  updateNavPreferences();
  for(const [index,delivery] of assignedDeliveries.slice(0,50).entries()){
-  const route=$("cards").children[index]?.querySelector(".actions a");
-  if(route)route.href=buildNavigationUrl(delivery,navProvider,navMode);
+  const route=$("cards").children[index]?.querySelector(".card-route-link");
+  if(route){route.href=buildNavigationUrl(delivery,navProvider,navMode);route.title="Abrir rota no "+(navProvider==="waze"?"Waze":"Google Maps");}
  }
 }
 document.querySelectorAll("[data-nav-choice]").forEach(b=>b.addEventListener("click",()=>{
