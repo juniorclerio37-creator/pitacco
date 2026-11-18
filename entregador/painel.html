@@ -157,6 +157,8 @@ a.btn{text-decoration:none}
   <p id="nativePushReadiness" role="status" aria-live="polite">Verificação do aparelho disponível após o login.</p>
   <button type="button" class="settings-row" id="nativeNotificationSettings" hidden><span>Configurar volume e notificações do Android</span><span class="setting-arrow">›</span></button>
   <p class="note-inline">O toque de nova entrega pode chegar mesmo com o app em segundo plano. Para ouvi-lo, mantenha os avisos autorizados e o volume de notificações ligado. O modo Não Perturbe e as restrições de bateria podem silenciar ou atrasar o aviso.</p>
+  <button type="button" class="settings-row" id="shiftSoundToggle" hidden><span>Modo Plantão — som forte no silencioso</span><span class="setting-arrow" id="shiftSoundState">DESLIGADO</span></button>
+  <p id="shiftSoundDescription" class="note-inline" hidden>Com sua autorização, o Pitacco poderá elevar temporariamente o volume de alarme para avisar sobre entregas e depois restaurá-lo. Não altera o modo Não Perturbe. O Android ainda pode restringir a reprodução.</p>
   <button type="button" class="settings-row" id="testAssignmentSound"><span>Testar som de nova entrega</span><span class="setting-arrow">♪</span></button>
   <p id="assignmentSoundStatus" role="status" aria-live="polite"></p>
   <button type="button" class="settings-row" id="settingsRefresh"><span>Atualizar pedidos e ganhos</span><span class="setting-arrow">↻</span></button>
@@ -211,6 +213,7 @@ let storeName="Minha loja", navProvider="google", navMode="address", assignedDel
 let permittedStores=new Map();
 let assignmentAudio, assignmentBaseline, nativePushRegistered=false;
 let nativeTestPending=false, nativeTestTimeout=0, nativeEnableTimeout=0;
+let shiftSoundEnabled=false,shiftSoundAvailable=false;
 function playWebSoundWhenNativeFails(reason){
  const sounded=playAssignmentSound();
  $("assignmentSoundStatus").textContent=sounded
@@ -703,6 +706,18 @@ function initializeNativePush(){
  button.hidden=false;
  settings.hidden=false;
  settings.addEventListener("click",()=>native.postMessage("settings"));
+ const shiftToggle=$("shiftSoundToggle"),shiftDescription=$("shiftSoundDescription");
+ // Keep this control hidden in older APKs that do not support it.
+ shiftToggle.addEventListener("click",()=>{
+  if(!shiftSoundAvailable){
+   $("assignmentSoundStatus").textContent="O Modo Plantão exige uma nova versão Android. Não é possível ativá-lo somente pela interface web.";
+   return;
+  }
+  if(shiftSoundEnabled){native.postMessage("shift_disable");return;}
+  const confirmed=window.confirm("Ativar Modo Plantão? Para cada nova entrega, o Pitacco tentará elevar temporariamente o volume de alarme e restaurá-lo após o toque. O Android pode bloquear o som no modo Não Perturbe. Você pode desligar a qualquer momento.");
+  if(confirmed)native.postMessage("shift_enable");
+ });
+ native.postMessage("shift_status");
  button.addEventListener("click",()=>{
   status.textContent="Verificando avisos do Android…";
   window.clearTimeout(nativeEnableTimeout);
@@ -718,6 +733,25 @@ function initializeNativePush(){
  });
  native.onmessage=async event=>{
   const value=String(event.data||"");
+  if(value.startsWith("shift_sound:")){
+   shiftToggle.hidden=false;shiftDescription.hidden=false;
+   shiftSoundAvailable=true;
+   shiftSoundEnabled=value==="shift_sound:on";
+   $("shiftSoundState").textContent=shiftSoundEnabled?"ATIVADO":"DESLIGADO";
+   $("shiftSoundToggle").setAttribute("aria-pressed",String(shiftSoundEnabled));
+   return;
+  }
+  if(value.startsWith("shift_test:")){
+   nativeTestPending=false;
+   window.clearTimeout(nativeTestTimeout);
+   const result=value.slice("shift_test:".length);
+   $("assignmentSoundStatus").textContent=result==="started"
+    ?"Modo Plantão: o Android iniciou o teste com volume de alarme temporário. Confirme se ouviu o toque no silencioso."
+    :result==="blocked_dnd"?"Modo Não Perturbe impediu o teste. O Pitacco não altera essa configuração."
+    :result==="volume_restricted"?"O Android impediu o aumento temporário do volume."
+    :"Modo Plantão: o Android não conseguiu reproduzir o alerta ("+result+").";
+   return;
+  }
   if(value==="tested"){
    nativeTestPending=false;
    window.clearTimeout(nativeTestTimeout);
@@ -741,9 +775,12 @@ function initializeNativePush(){
     :"Notificações não autorizadas. Toque em Ativar avisos no Android.";
    return;
   }
-  if(value.startsWith("token:")){
+  if(value.startsWith("token:")||value.startsWith("token_native:")){
    window.clearTimeout(nativeEnableTimeout);
-   const {error}=await sb.rpc("pitacco_register_courier_push",{p_token:value.slice(6)}).catch(()=>({error:true}));
+   const nativeProtocol=value.startsWith("token_native:");
+   const token=value.slice(nativeProtocol?13:6);
+   const {error}=await sb.rpc(nativeProtocol?"pitacco_register_courier_push_native":"pitacco_register_courier_push",
+     {p_token:token}).catch(()=>({error:true}));
    nativePushRegistered=!error;
    status.textContent=error?"Não foi possível registrar este aparelho.":"Aparelho registrado para receber avisos em segundo plano.";
    await checkNativePushStatus();

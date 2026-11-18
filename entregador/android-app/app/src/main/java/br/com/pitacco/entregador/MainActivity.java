@@ -97,6 +97,7 @@ public class MainActivity extends Activity {
                 if (request.isForMainFrame() && error.getStatusCode() >= 400) showOffline();
             }
         });
+        ShiftSoundPlayer.recover(this);
         preparePush();
         if (state == null || web.restoreState(state) == null) web.loadUrl(HOME);
     }
@@ -115,7 +116,9 @@ public class MainActivity extends Activity {
                         if ("ready".equals(status) || "channel_silent".equals(status)) {
                             boolean posted = AssignmentMessagingService.showAssignment(this,
                                     "00000000-0000-4000-8000-000000000001");
-                            reply.postMessage(posted ?
+                            if (posted && ShiftSoundPlayer.isEnabled(this))
+                                reply.postMessage("shift_test:" + ShiftSoundPlayer.getLastResult());
+                            else reply.postMessage(posted ?
                                     ("ready".equals(status) ? "tested" : "channel_silent") :
                                     "channel_disabled");
                         } else reply.postMessage(status);
@@ -123,11 +126,40 @@ public class MainActivity extends Activity {
                     else if ("status".equals(action)) {
                         reply.postMessage("notification_status:" +
                                 AssignmentMessagingService.notificationStatus(this));
+                        reply.postMessage(ShiftSoundPlayer.isEnabled(this)
+                                ? "shift_sound:on" : "shift_sound:off");
+                    }
+                    else if ("shift_enable".equals(action)) {
+                        // This action is only sent after an explicit confirmation
+                        // in the authenticated courier's Settings screen.
+                        ShiftSoundPlayer.setEnabled(this, true);
+                        reply.postMessage("shift_sound:on");
+                    }
+                    else if ("shift_disable".equals(action)) {
+                        ShiftSoundPlayer.setEnabled(this, false);
+                        reply.postMessage("shift_sound:off");
+                    }
+                    else if ("shift_status".equals(action)) {
+                        reply.postMessage(ShiftSoundPlayer.isEnabled(this)
+                                ? "shift_sound:on" : "shift_sound:off");
                     }
                     else if ("settings".equals(action)) {
-                        Intent settings = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
-                        settings.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
-                        settings.putExtra(Settings.EXTRA_CHANNEL_ID, AssignmentMessagingService.CHANNEL_ID);
+                        // If Android has not granted global notification permission,
+                        // open the app's main notification settings instead of the
+                        // disabled category-level switch.
+                        String state = AssignmentMessagingService.notificationStatus(this);
+                        Intent settings;
+                        if ("permission".equals(state)) {
+                            settings = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+                            settings.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+                        } else {
+                            settings = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
+                            settings.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+                            settings.putExtra(Settings.EXTRA_CHANNEL_ID,
+                                    ShiftSoundPlayer.isEnabled(this) ?
+                                    AssignmentMessagingService.SHIFT_CHANNEL_ID :
+                                    AssignmentMessagingService.CHANNEL_ID);
+                        }
                         startActivity(settings);
                     }
                     else if ("disable".equals(action)) {
@@ -145,10 +177,9 @@ public class MainActivity extends Activity {
     }
 
     private void enablePush(JavaScriptReplyProxy reply) {
-        if (FirebaseApp.getApps(this).isEmpty()) {
-            reply.postMessage("unavailable");
-            return;
-        }
+        // Notification permission is independent of Firebase. The parallel QA
+        // app intentionally has no FCM registration, but must still request
+        // POST_NOTIFICATIONS to test its native chime on Android 13+.
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             pendingPermission = reply;
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, PUSH_PERMISSION);
@@ -160,6 +191,13 @@ public class MainActivity extends Activity {
     }
 
     private void finishPushEnable(JavaScriptReplyProxy reply) {
+        AssignmentMessagingService.ensureChannel(this);
+        if (FirebaseApp.getApps(this).isEmpty()) {
+            // Local notification test can now work. Background FCM remains
+            // unavailable until the QA app is registered in Firebase.
+            reply.postMessage("unavailable");
+            return;
+        }
         FirebaseMessaging.getInstance().setAutoInitEnabled(true);
         getPreferences(MODE_PRIVATE).edit().putBoolean("push_enabled", true).apply();
         sendToken(reply);
@@ -169,7 +207,9 @@ public class MainActivity extends Activity {
         if (FirebaseApp.getApps(this).isEmpty()) return;
         FirebaseMessaging.getInstance().getToken().addOnCompleteListener(this, result -> {
             if (!result.isSuccessful() || result.getResult() == null) reply.postMessage("failed");
-            else reply.postMessage("token:" + result.getResult());
+            // Native courier Android 2.0 supports data-only FCM with explicit
+            // notification and audible alarm. Old APKs still send "token:".
+            else reply.postMessage("token_native:" + result.getResult());
         });
     }
 

@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <application android:allowBackup="false" android:usesCleartextTraffic="false"
         android:icon="@drawable/ic_pitacco"
         android:label="${pitaccoAppLabel}" android:theme="@android:style/Theme.Material.Light.NoActionBar">
