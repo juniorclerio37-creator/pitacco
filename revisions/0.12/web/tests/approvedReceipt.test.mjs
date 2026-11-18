@@ -10,10 +10,10 @@ test('cash on delivery shows change, repeated additions and approved footer',()=
 });
 test('confirmed payment never requests collection or change',()=>{
  const s=approvedReceipt({...job,receipt:{...job.receipt,payment_confirmed:true}},58);
- assert.match(s,/PAGO - NAO COBRAR/);assert.doesNotMatch(s,/COBRAR NA ENTREGA/);
+ assert.match(s,/NAO COBRAR NA ENTREGA/);assert.doesNotMatch(s,/\*\*\* COBRAR NA ENTREGA \*\*\*/);
  assert.doesNotMatch(s,/TROCO:/);
 });
 test('unconfirmed pix is not marked paid',()=>{
  const s=approvedReceipt({...job,receipt:{...job.receipt,payment:'Pix',change_for:null}},80);
- assert.match(s,/COBRAR NA ENTREGA/);assert.doesNotMatch(s,/PAGO - NAO COBRAR/);
+ assert.match(s,/PAGAMENTO A CONFERIR/);assert.doesNotMatch(s,/PAGO ONLINE/);
 });
