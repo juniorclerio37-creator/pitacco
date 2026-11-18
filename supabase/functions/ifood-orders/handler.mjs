@@ -193,8 +193,11 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    const access=await distributed.accessFor(assigned.merchant_id) ??
       (clientId&&clientSecret?await token():null);
    if(!access)return reply(503,{error:'Conexão iFood não homologada. Chegada registrada somente no Pitacco.'});
-   const endpoint=origin+'/logistics/v1.0/orders/'+assigned.external_order_id+
-    (input.action==='arrival'?'/arrivedAtDestination':'/verifyDeliveryCode');
+   // MERCHANT own-delivery codes use the Order module: {valid:true}.
+   // The Logistics endpoint requires a separate courier lifecycle (assign/dispatch).
+   const endpoint=origin+(input.action==='arrival'
+    ?'/logistics/v1.0/orders/'+assigned.external_order_id+'/arrivedAtDestination'
+    :'/order/v1.0/orders/'+assigned.external_order_id+'/verifyDeliveryCode');
    const response=await fetcher(endpoint,{
     method:'POST',
     headers:{authorization:'Bearer '+access,'content-type':'application/json'},
@@ -205,7 +208,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    let verified=false;
    if(input.action==='verify' && response.status===200){
     const verification=await response.json().catch(()=>null);
-    verified=verification?.status==='VERIFIED';
+    verified=verification?.valid===true;
    }
    const isSuccess=input.action==='arrival'?[200,202,204].includes(response.status):verified;
    const permanent=[400,403,404,409,412,422].includes(response.status);

@@ -311,6 +311,7 @@ public class MainActivity extends Activity {
                     && (path.startsWith("/maps/dir/") || path.startsWith("/maps/")))
                 || (("waze.com".equalsIgnoreCase(host) || "www.waze.com".equalsIgnoreCase(host))
                     && "/ul".equals(path))
+                || ("confirmacao-entrega-propria.ifood.com.br".equalsIgnoreCase(host) && ("/".equals(path)||path.isEmpty()))
                 || ("wa.me".equalsIgnoreCase(host) && path.matches("/[0-9]+"))
                 || ("app.pitacco.com.br".equalsIgnoreCase(host) && path.startsWith("/app/")))) {
             openExternal(new Intent(Intent.ACTION_VIEW, uri));

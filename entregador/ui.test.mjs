@@ -117,8 +117,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.ok(page.includes('nativeNotificationSettings'));
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 24'));
- assert.ok(build.includes("versionName '2.0.4'"));
+ assert.ok(build.includes('versionCode 25'));
+ assert.ok(build.includes("versionName '2.0.5'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -265,4 +265,37 @@ test("first opening asks for notification permission and offers explicit shift s
  assert.match(page,/id="shiftSoundUnsupported"/);
  assert.match(page,/window\.clearTimeout\(shiftProbe\)/);
  assert.match(css,/\.settings-row\[hidden\]\{display:none!important\}/);
+});
+
+test("cartão mostra Ir ao lado do endereço e PIN após Cheguei sem abrir detalhes",()=>{
+ const page=read("painel.html");
+ const android=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
+ const css=read("painel.css");
+ assert.match(page,/card-address-row/);
+ assert.match(page,/element\("a","card-route-link","Ir"\)/);
+ assert.match(page,/data-route-delivery/);
+ assert.doesNotMatch(page,/createAction\("Abrir rota"/);
+ assert.match(page,/Você chegou ao destino/);
+ assert.match(page,/Peça o código de confirmação ao cliente/);
+ assert.match(page,/element\("a","btn secondary card-ifood-confirm","Abrir confirmação no iFood"\)/);
+ assert.match(page,/https:\/\/confirmacao-entrega-propria\.ifood\.com\.br\//);
+ assert.match(android,/confirmacao-entrega-propria\.ifood\.com\.br/);
+ assert.match(page,/pitacco_driver_reconcile_ifood/);
+ assert.match(page,/if\(d\.source==="proprio"\|\|d\.source==="ifood"\)/);
+ assert.match(css,/\.card-address-row\{/);
+});
+test("sequência agrupada aparece somente para lotes válidos e navega por preferência",()=>{
+ const page=read("painel.html");
+ const source=read("route-sequence.mjs");
+ const migration=read("../supabase/migrations/20261118130000_pitacco_driver_route_ifood_reconcile.sql");
+ assert.match(page,/id="routeSuggestions"/);
+ assert.match(page,/suggestedBatchRoutes\(deliveries,routeOrigins\)/);
+ assert.match(page,/pitacco_driver_route_origins/);
+ assert.match(page,/data-route-delivery/);
+ assert.match(source,/Math\.sin/);
+ assert.match(source,/delivery\.batch_id/);
+ assert.match(migration,/pitacco_driver_route_origins/);
+ assert.match(migration,/pitacco_driver_reconcile_ifood/);
+ assert.match(migration,/if v_status is distinct from 'CONCLUDED' or not exists/);
+ assert.doesNotMatch(migration,/set delivery_code_verified_at/);
 });
