@@ -32,8 +32,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * The Android location-type foreground service continues across app background
  * and while Maps/Waze is open, showing an ongoing, stoppable notification.
  * It does NOT silently relaunch after force-stop or a device reboot.
- * Authorization belongs to the authenticated courier (not a service role).
- * Supabase RLS/RPC enforces session, role and online status on every update.
+ * Authorization is a 256-bit courier-scoped capability minted by the
+ * authenticated web session. Only its SHA-256 hash is stored by the server.
+ * It expires automatically and is revoked on offline, disabled or logout.
+ * Browser and service never race to rotate the same Supabase refresh token.
  */
 public final class CourierLocationService extends Service implements LocationListener {
     static final String ACTION_START = "br.com.pitacco.entregador.location.START";
@@ -51,9 +53,7 @@ public final class CourierLocationService extends Service implements LocationLis
     private final AtomicBoolean sending = new AtomicBoolean(false);
     private volatile long lastSubmittedMs = 0L;
     private volatile String apiKey;
-    private volatile String accessToken;
-    private volatile String refreshToken;
-    private volatile long expiresAtSeconds;
+    private volatile String gpsToken;
 
     @Override public IBinder onBind(Intent intent) { return null; }
 
@@ -69,20 +69,14 @@ public final class CourierLocationService extends Service implements LocationLis
         }
         String backend = intent.getStringExtra("backend");
         String key = intent.getStringExtra("apiKey");
-        String access = intent.getStringExtra("access");
-        String refresh = intent.getStringExtra("refresh");
-        long expiry = intent.getLongExtra("expiresAt", 0);
+        String token = intent.getStringExtra("token");
         if (!EXPECTED_BACKEND.equals(backend) || key == null || key.length() < 20 ||
-                access == null || access.length() < 80 ||
-                refresh == null || refresh.length() < 20 ||
-                expiry <= 0) {
+                token == null || !token.matches("[a-f0-9]{64}")) {
             stopSelf();
             return START_NOT_STICKY;
         }
         apiKey = key;
-        accessToken = access;
-        refreshToken = refresh;
-        expiresAtSeconds = expiry;
+        gpsToken = token;
         try {
             ensureChannel();
             if (Build.VERSION.SDK_INT >= 29) {
@@ -171,53 +165,21 @@ public final class CourierLocationService extends Service implements LocationLis
 
     private void submitPosition(double lat, double lng, double accuracy) {
         try {
-            if (System.currentTimeMillis() / 1000 + 90 >= expiresAtSeconds && !refreshSession()) {
-                stopSelf();
-                return;
-            }
             JSONObject body = new JSONObject()
+                    .put("p_token", gpsToken)
                     .put("p_lat", lat).put("p_lng", lng).put("p_accuracy_m", accuracy);
-            ApiResponse result = request("/rest/v1/rpc/pitacco_courier_report_position",
-                    body, "Bearer " + accessToken);
-            if (result.status == 401) {
-                if (!refreshSession()) { stopSelf(); return; }
-                result = request("/rest/v1/rpc/pitacco_courier_report_position",
-                        body, "Bearer " + accessToken);
+            ApiResponse result = request("/rest/v1/rpc/pitacco_courier_background_gps_update", body);
+            if (result.status == 401 || result.status == 403 ||
+                (result.status == 400 && result.body.contains("Requisição de GPS inválida"))) {
+                stopSelf(); // expired/revoked token, off shift or account disabled
             }
-            if (result.status == 401 || result.status == 403) {
-                stopSelf(); // revoked or expired courier session
-            } else if (result.status == 400 &&
-                    result.body.contains("Ative o plantão")) {
-                stopSelf(); // courier went offline elsewhere: stop local tracking
-            }
-            // Offline/transient failures simply retry on the next recent GPS fix.
+            // Offline/transient network failure: retry on the next fresh GPS fix.
         } catch (Exception ignored) {
-            // No tokens, coordinates or private request bodies go to Android logs.
+            // Never log bearer tokens, location or customer data.
         }
     }
 
-    private boolean refreshSession() {
-        try {
-            JSONObject payload = new JSONObject().put("refresh_token", refreshToken);
-            ApiResponse response = request("/auth/v1/token?grant_type=refresh_token",
-                    payload, null);
-            if (response.status != 200) return false;
-            JSONObject parsed = new JSONObject(response.body);
-            String access = parsed.optString("access_token");
-            String refresh = parsed.optString("refresh_token");
-            long expiry = parsed.optLong("expires_at");
-            if (expiry <= 0) expiry = System.currentTimeMillis() / 1000 +
-                    parsed.optLong("expires_in", 3600);
-            if (access.length() < 80 || refresh.length() < 20 || expiry <= 0) return false;
-            accessToken = access;
-            refreshToken = refresh;
-            expiresAtSeconds = expiry;
-            // Tokens are intentionally held in memory only, never logged or persisted.
-            return true;
-        } catch (Exception ignored) { return false; }
-    }
-
-    private ApiResponse request(String path, JSONObject body, String auth) throws Exception {
+    private ApiResponse request(String path, JSONObject body) throws Exception {
         HttpURLConnection connection = (HttpURLConnection)
                 new URL(EXPECTED_BACKEND + path).openConnection();
         connection.setRequestMethod("POST");
@@ -227,7 +189,6 @@ public final class CourierLocationService extends Service implements LocationLis
         connection.setDoOutput(true);
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setRequestProperty("apikey", apiKey);
-        if (auth != null) connection.setRequestProperty("Authorization", auth);
         try {
             byte[] bytes = body.toString().getBytes(StandardCharsets.UTF_8);
             try (OutputStream stream = connection.getOutputStream()) { stream.write(bytes); }
@@ -257,8 +218,7 @@ public final class CourierLocationService extends Service implements LocationLis
         if (locations != null) {
             try { locations.removeUpdates(this); } catch (SecurityException ignored) {}
         }
-        accessToken = null;
-        refreshToken = null;
+        gpsToken = null;
         apiKey = null;
         network.shutdownNow();
         super.onDestroy();
