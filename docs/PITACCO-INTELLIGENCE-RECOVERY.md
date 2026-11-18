@@ -33,6 +33,13 @@ Mesmo quando ambos os sinais forem positivos, só um teste real no Android em se
 pode verificar se a entrega de notificações e o toque funcionam.
 
 A implantação desta função é independente da função de envio `courier-push` e não a substitui.
+
+O Worker do Pitacco Intelligence também consulta essa Edge Function usando a sessão
+já autorizada do proprietário. Ele encaminha ao modelo **somente indicadores booleanos
+permitidos explicitamente** (nunca o JSON bruto), e marca as informações como
+indisponíveis se houver falha. Assim a pergunta sobre notificações funciona no chat
+mesmo enquanto a atualização dos cartões visuais do Admin aguarda a implantação dos assets.
+
 Seu endpoint exige autorização Supabase personalizada e aceita CORS somente de
 `https://admin.pitacco.com.br`.
 
