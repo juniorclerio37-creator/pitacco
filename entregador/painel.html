@@ -189,7 +189,7 @@ import {createClient} from "https://esm.sh/@supabase/supabase-js@2.57.0";
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "./config.mjs";
 import {createDriverAuth} from "./supabase-client.mjs";
 import {createOrderDetailsController} from "./order-details.mjs";
-import {buildNavigationUrl} from "./navigation.mjs";
+import {buildNavigationUrl,buildBatchNavigationUrl} from "./navigation.mjs";
 import {suggestedBatchRoutes} from "./route-sequence.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
@@ -594,6 +594,17 @@ function renderRouteSuggestions(deliveries){
    list.append(item);
   }
   box.append(list);
+  // O iFood ou o PIN Pitacco precisam concluir uma chegada já registrada
+  // antes de propor partir para a próxima entrega.
+  if(!plan.stops.some(stop=>stop.delivery.arrived_at)&&navProvider==="google"){
+   const fullUrl=buildBatchNavigationUrl(plan.stops.map(stop=>stop.delivery),navProvider,navMode);
+   if(fullUrl){
+    const full=element("a","route-plan-go route-plan-all","Ver percurso completo no Google Maps");
+    full.href=fullUrl;
+    full.setAttribute("aria-label","Abrir a rota com todas as paradas deste lote no Google Maps");
+    box.append(full);
+   }
+  }
   target.append(box);
  }
 }
@@ -987,6 +998,7 @@ $("miniEarnings").addEventListener("click",()=>switchView("ganhos"));
 window.addEventListener("hashchange",()=>switchView(location.hash.slice(1)));
 function updateRouteLinks(){
  updateNavPreferences();
+ renderRouteSuggestions(assignedDeliveries);
  for(const route of document.querySelectorAll("[data-route-delivery]")){
   const delivery=assignedDeliveries.find(item=>item.id===route.getAttribute("data-route-delivery"));
   const url=delivery&&buildNavigationUrl(delivery,navProvider,navMode);
