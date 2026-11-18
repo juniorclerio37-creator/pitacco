@@ -627,9 +627,9 @@ try {
       await page.getByRole('button', { name:'Agendados (1)', exact:true }).click();
       await page.locator('.pedidos-card').getByText('Cliente agendado').waitFor();
       await page.getByText(/Aceite liberado às/).waitFor();
-      assert.equal(await page.getByRole('button',{name:'Aceitar pedido',exact:true}).count(),0);
+      assert.equal(await page.getByRole('button',{name:'Aceitar e iniciar preparo',exact:true}).count(),0);
     }
-    await page.getByRole('button', { name:'Pendentes (1)', exact:true }).click();
+    await page.getByRole('button', { name:'Novo (1)', exact:true }).click();
     await page.getByRole('button', { name:'Recusar pedido', exact:true }).click();
     await page.getByLabel('Motivo da recusa').fill('Item indisponível');
     await page.getByRole('button', { name:'Confirmar recusa', exact:true }).click();
@@ -637,9 +637,9 @@ try {
     await page.locator('.pedidos-card').getByText('Cliente do pedido').waitFor();
     if(width===768){
       appointment.scheduled_release_at=new Date(Date.now()-1_000).toISOString();
-      await page.getByRole('button',{name:'Pendentes (1)',exact:true}).click();
+      await page.getByRole('button',{name:'Novo (1)',exact:true}).click();
       await page.locator('.pedidos-card').getByText('Cliente agendado').waitFor();
-      await page.getByRole('button',{name:'Aceitar pedido',exact:true}).waitFor();
+      await page.getByRole('button',{name:'Aceitar e iniciar preparo',exact:true}).waitFor();
     }
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
     await navigation.getByRole('button', { name:'Relatórios', exact:true }).click();
@@ -978,7 +978,7 @@ try {
       await page.getByRole('button',{name:'Tentar novamente',exact:true}).click();
       const ordersRegion=page.getByRole('region',{name:'Central de pedidos',exact:true});
       await ordersRegion.getByText('Solicite acesso de gestor para operar pedidos e configurações.').waitFor();
-      assert.equal(await ordersRegion.getByRole('button',{name:'Aceitar pedido',exact:true}).count(),0);
+      assert.equal(await ordersRegion.getByRole('button',{name:'Aceitar e iniciar preparo',exact:true}).count(),0);
       failFeatureCheck=true;
       await page.goto(dashboard+'/app/?aba=Produtos');
       await page.getByRole('alert').filter({hasText:'Não foi possível carregar as funções da loja.'}).waitFor();
@@ -996,7 +996,7 @@ try {
         receipt:{display_number:'IF-'+number,customer:'Cliente iFood',items:[],ifood_received_at:new Date().toISOString()}});
       const logistics=[['99food','loja','LOJA-23'],['99food','marketplace','99-24'],['ifood','marketplace','IF-25'],['keeta','marketplace','KT-26']];
       logisticsOrders=logistics.map(([source,mode,number],i)=>({id:'30000000-0000-0000-0000-00000000006'+i,store_id:store.id,
-        source,status:'accepted',gross:39,created_at:new Date().toISOString(),receipt:{display_number:number,customer:'Cliente',items:[],logistics:mode}}));
+        source,status:'accepted',preparation_status:'ready',gross:39,created_at:new Date().toISOString(),receipt:{display_number:number,customer:'Cliente',items:[],logistics:mode}}));
       logisticsDeliveries=logisticsOrders.map((order,i)=>({id:'40000000-0000-0000-0000-00000000006'+i,store_id:store.id,
         order_id:order.id,source:order.source,logistics_provider:logistics[i][1],status:'pendente'}));
       const ownCard=liveOrders.getByRole('article',{name:'Card do pedido LOJA-23',exact:true});

@@ -1,4 +1,4 @@
-export const columns=[['analysis','Em análise'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega']];
+export const columns=[['analysis','Novo'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega']];
 export function orderStage(order,delivery){
  if(order.status==='rejected')return 'rejected';
  if(order.status==='cancelled'||delivery?.status==='cancelada')return 'cancelled';

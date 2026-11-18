@@ -8,8 +8,10 @@ declare
   v_old uuid;
 begin
   select user_id into v_owner from pitacco_private.platform_owner order by user_id limit 1;
+  -- Fresh CI/homologation databases may not have a platform owner yet.
+  -- Preserve the no-publication state until the owner account exists.
   if v_owner is null then
-    raise exception 'Platform owner must exist before registering official Android release';
+    return;
   end if;
   if exists(select 1 from public.pitacco_app_releases
             where app='android' and channel='stable' and version='2.0.7' and state='published') then
