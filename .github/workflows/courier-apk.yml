@@ -32,6 +32,7 @@ jobs:
       - name: Prepare test sound without production Firebase credentials
         run: |
           python3 entregador/android-app/generate-alert.py
+          python3 entregador/android-app/verify-voice-alert.py
           # The test APK has a separate application ID, so do not copy the
           # production Firebase registration into this QA-only package.
           # This test validates installation, local notifications, and WebView.
@@ -150,6 +151,7 @@ jobs:
           umask 077
           printf '%s' "$PITACCO_FIREBASE_ANDROID_JSON" > app/google-services.json
           python3 generate-alert.py
+          python3 verify-voice-alert.py
           gradle --no-daemon assembleRelease
       - name: Sign APK and verify official certificate
         working-directory: entregador/android-app
