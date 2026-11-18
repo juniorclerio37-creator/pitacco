@@ -25,5 +25,15 @@
   "vars": {
     "PITACCO_SUPABASE_URL": "https://mdevzehqcpcgxspwbiyz.supabase.co",
     "PITACCO_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_JLIp1y5II26GrztrKDNIyQ_ryETrCuj"
-  }
+  },
+  "ratelimits": [
+    {
+      "name": "INTELLIGENCE_RATE_LIMIT",
+      "namespace_id": "250819",
+      "simple": {
+        "limit": 4,
+        "period": 60
+      }
+    }
+  ]
 }
