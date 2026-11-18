@@ -791,7 +791,7 @@ try {
     await alerts.getByText('Preparo acima do prazo',{exact:true}).waitFor();
     await alerts.getByRole('button',{name:'Atualizar alertas'}).click();
     await alerts.getByRole('button',{name:'Abrir pedidos'}).click();
-    assert.match(await navigation.getByRole('button',{name:'Pedidos',exact:true}).getAttribute('class')||'',/active/);
+    await page.locator('.pitacco-pedidos').first().waitFor({state:'visible'});
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
     await navigation.getByRole('button', { name:'Financeiro', exact:true }).click();
     await page.getByRole('group',{name:'Seções financeiras'}).getByRole('button',{name:'Assinatura',exact:true}).click();
