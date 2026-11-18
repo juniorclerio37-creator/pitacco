@@ -11,6 +11,8 @@ const testStatus={awaiting_confirmation:'Enviado ao spooler; sem confirmação f
 export default function RecoveryPreflight({client,storeId=''}) {
  const [result,setResult]=useState(null),[error,setError]=useState(''),
   [loading,setLoading]=useState(false),[revision,refresh]=useState(0);
+ const [sender,setSender]=useState(null),[senderError,setSenderError]=useState(''),
+  [senderLoading,setSenderLoading]=useState(false);
  useEffect(()=>{
   let live=true;setResult(null);setError('');setLoading(true);
   client.rpc('pitacco_owner_recovery_preflight',{p_store:storeId||null})
@@ -23,9 +25,24 @@ export default function RecoveryPreflight({client,storeId=''}) {
    .finally(()=>{if(live)setLoading(false)});
   return()=>{live=false};
  },[client,storeId,revision]);
+ useEffect(()=>{
+  let live=true;
+  setSender(null);setSenderError('');setSenderLoading(true);
+  client.functions.invoke('pitacco-owner-push-readiness',{method:'POST',body:{check:'presence'}})
+   .then(({data,error})=>{
+    if(!live)return;
+    if(error||!data||typeof data.fcm_service_account_configured!=='boolean'||
+      typeof data.cron_secret_env_configured!=='boolean')
+      throw Error('Credenciais não verificadas');
+    setSender(data);
+   }).catch(()=>{if(live)setSenderError('A verificação das credenciais da função está indisponível. Não considere o Firebase habilitado.');})
+   .finally(()=>{if(live)setSenderLoading(false);});
+  return()=>{live=false};
+ },[client,revision]);
  const push=result?.courier_push||{},windows=result?.windows||{};
  const prerequisites=push.server_enabled===true&&push.cron_active===true&&
-  push.cron_secret_present===true&&push.registered_devices>0&&push.native_protocol_ready===true;
+  push.cron_secret_present===true&&push.registered_devices>0&&push.native_protocol_ready===true&&
+  sender?.fcm_service_account_configured===true&&sender?.cron_secret_env_configured===true;
  return <section className="panel" aria-label="Pré-verificação de recuperação" style={{marginTop:16}}>
   <div className="dispatch-actions" style={{alignItems:'center',justifyContent:'space-between',flexWrap:'wrap'}}>
    <h3 style={{margin:0}}>Pré-verificação de recuperação</h3>
@@ -45,6 +62,14 @@ export default function RecoveryPreflight({client,storeId=''}) {
      <p>Agendamento Firebase: <strong>{label(push.cron_active,'Ativo','Inativo')}</strong></p>
      <p>Segredo do cron: <strong>{label(push.cron_secret_present,'Presente','Ausente')}</strong></p>
      <p>Protocolo Android: <strong>{label(push.native_protocol_ready)}</strong></p>
+     <p>Conta de serviço Firebase na função de envio:
+      {' '}<strong>{sender?label(sender.fcm_service_account_configured,'Configurada','Pendente'):'Não verificada'}</strong></p>
+     <p>Segredo do cron no ambiente da função:
+      {' '}<strong>{sender?label(sender.cron_secret_env_configured,'Presente','Pendente'):'Não verificado'}</strong></p>
+     {senderLoading&&<p role="status">Verificando também as credenciais da função…</p>}
+     {senderError&&<p role="alert">{senderError}</p>}
+     {sender&&<p className="hint">Esta verificação confirma apenas a presença e formato das credenciais.
+      Não testa login no Google, entrega de push ou toque do Android.</p>}
      <p>Dispositivos registrados: <strong>{count(push.registered_devices)}</strong>.
       {' '}Nativos: <strong>{count(push.native_devices)}</strong>.</p>
      <p>{prerequisites?'Requisitos internos detectados, mas a conta Firebase e o som real ainda precisam de teste.':
