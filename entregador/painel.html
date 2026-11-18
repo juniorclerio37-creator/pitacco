@@ -1,5 +1,7 @@
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://esm.sh" crossorigin>
+<link rel="preconnect" href="https://mdevzehqcpcgxspwbiyz.supabase.co" crossorigin>
 <meta name="theme-color" content="#f97316"><meta name="color-scheme" content="light"><title>Pitacco Entregador — Minhas entregas</title>
 <style>
 :root{font-family:Inter,system-ui,sans-serif;color:#1f2937;background:#f6f7fa}
@@ -787,7 +789,13 @@ async function refreshSnapshot(){
  const records=await driver.myCourierRecords();
  if(records.length!==1){await driver.signOut().catch(()=>{});location.replace("./acesso.html");return;}
  courier=records[0];
- const authorized=await driver.myAllowedStores();
+ // Independent, RLS-protected reads run concurrently to shorten launch time.
+ const [authorized,list,badges,originsResult]=await Promise.all([
+  driver.myAllowedStores(),
+  driver.myDeliveries([courier.id]),
+  sb.rpc("pitacco_driver_card_badges"),
+  sb.rpc("pitacco_driver_route_origins")
+ ]);
  permittedStores=new Map(authorized.map(row=>[row.store_id,row.store_name]));
  if(!permittedStores.size)permittedStores.set(courier.store_id,storeName);
  const allNames=[...permittedStores.values()];
@@ -805,10 +813,9 @@ async function refreshSnapshot(){
  $("availableHelp").textContent=courier.available?"Você pode receber pedidos da loja.":"Ative sua disponibilidade para receber pedidos.";
  $("online").textContent=courier.available?"Ficar offline":"Ficar online";
  $("online").disabled=navigator.onLine===false;
- const list=await driver.myDeliveries([courier.id]);
  // A única exceção autorizada usa o mesmo courier_id, sem criar outro cadastro.
  // RLS protege a seleção e as operações, inclusive a loja de testes.
- const {data:labels,error:labelsError}=await sb.rpc("pitacco_driver_card_badges");
+ const {data:labels,error:labelsError}=badges;
  if(labelsError){
   orderCardBadges=new Map();
   message("Números públicos e localizadores indisponíveis no momento. Atualize os pedidos para tentar novamente.");
@@ -828,11 +835,8 @@ async function refreshSnapshot(){
  if(!current.some(d=>d.source==="ifood")
    && /Aguardando o iFood confirmar a entrega/i.test($("notice").textContent||""))message("");
  orderDetails.keepActive(current);
- try{
-  const {data:origins,error}=await sb.rpc("pitacco_driver_route_origins");
-  routeOrigins=new Map(!error&&Array.isArray(origins)?
-   origins.filter(p=>p?.store_id).map(p=>[p.store_id,p]):[]);
- }catch{routeOrigins=new Map();}
+ routeOrigins=new Map(!originsResult.error&&Array.isArray(originsResult.data)?
+  originsResult.data.filter(p=>p?.store_id).map(p=>[p.store_id,p]):[]);
  renderRouteSuggestions(current);
  const target=$("cards");target.replaceChildren();
  if(!current.length){
@@ -841,8 +845,7 @@ async function refreshSnapshot(){
     element("p","","Novos pedidos aparecerão aqui automaticamente assim que a loja atribuir."));
   target.append(empty);
  }else for(const d of current.slice(0,50))target.append(card(d));
- await loadEarnings();
- await loadSafeHistory();
+ await Promise.all([loadEarnings(),loadSafeHistory()]);
 }
 let nativeFirebaseUnavailable=false;
 let pushCheckRequestId=0;
@@ -998,11 +1001,18 @@ function initializeNativePush(){
 }
 async function boot(){
  try{
-  const user=await driver.currentUser();
-  if(!user){location.replace("./acesso.html");return;}
-  const status=await api("status");
-  const {data:ready,error}=await sb.rpc("pitacco_courier_session_ready");
-  if(status.mustChangePassword||error||!ready){location.replace("./acesso.html");return;}
+  const {data:local,error:sessionError}=await sb.auth.getSession();
+  if(sessionError||!local?.session?.access_token){
+   location.replace("./acesso.html");return;
+  }
+  // Both services validate the authenticated courier independently.
+  // Do not block launch on a redundant /auth/v1/user request.
+  const [status,readyResult]=await Promise.all([
+   api("status"),sb.rpc("pitacco_courier_session_ready")
+  ]);
+  if(status.mustChangePassword||readyResult.error||readyResult.data!==true){
+   location.replace("./acesso.html");return;
+  }
   storeName=status?.courier?.storeName||"Minha loja";
   loadNavPreferences();
   initializeNativePush();
