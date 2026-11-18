@@ -655,12 +655,34 @@ async function refreshSnapshot(){
  await loadEarnings();
  await loadSafeHistory();
 }
+let nativeFirebaseUnavailable=false;
+let pushCheckRequestId=0;
 async function checkNativePushStatus(){
  const view=$("nativePushReadiness");
+ const requestId=++pushCheckRequestId;
+ if(nativeFirebaseUnavailable){
+  view.textContent="Este APK de teste não tem Firebase configurado. O registro de notificações reais não é possível nesta versão.";
+  return;
+ }
  view.textContent="Verificando registro de notificações…";
- const {data,error}=await sb.rpc("pitacco_courier_push_readiness").catch(()=>({error:true}));
+ // The network must never leave the diagnostics permanently spinning.
+ // A timed-out RPC may eventually settle, but its late response is ignored.
+ let timer;
+ const response=await Promise.race([
+  sb.rpc("pitacco_courier_push_readiness").catch(()=>({error:true})),
+  new Promise(resolve=>{timer=window.setTimeout(()=>resolve({error:{message:"timeout"}}),7000);})
+ ]);
+ window.clearTimeout(timer);
+ if(requestId!==pushCheckRequestId)return;
+ if(nativeFirebaseUnavailable){
+  view.textContent="Este APK de teste não tem Firebase configurado. O registro de notificações reais não é possível nesta versão.";
+  return;
+ }
+ const {data,error}=response;
  if(error||!data){
-  view.textContent="Não foi possível conferir o registro. Atualize o aplicativo e tente novamente.";
+  view.textContent=error?.message==="timeout"
+   ?"Não foi possível consultar o servidor em 7 segundos. Verifique sua conexão e toque em Verificar novamente."
+   :"Não foi possível conferir o registro. Toque em Verificar novamente.";
   return;
  }
  if(!data.device_registered){
@@ -727,8 +749,13 @@ function initializeNativePush(){
    await checkNativePushStatus();
   }else{
    window.clearTimeout(nativeEnableTimeout);
+   if(value==="unavailable"){
+    nativeFirebaseUnavailable=true;
+    ++pushCheckRequestId;
+    $("nativePushReadiness").textContent="Este APK de teste não tem Firebase configurado. O registro de notificações reais não é possível nesta versão.";
+   }
    status.textContent=value==="permission"?"Permita as notificações do Pitacco nos ajustes do Android."
-    :value==="unavailable"?"Esta versão do aplicativo ainda não está conectada ao serviço de avisos."
+    :value==="unavailable"?"Esta versão TESTE não possui Firebase para receber entregas em segundo plano. Você ainda pode testar o som local após autorizar notificações."
     :"Não foi possível ativar os avisos. Tente novamente.";
   }
  };
