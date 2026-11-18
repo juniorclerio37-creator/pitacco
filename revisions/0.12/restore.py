@@ -147,11 +147,13 @@ subprocess.run([sys.executable,'revisions/0.12/enable_single_test_courier.py'],c
 subprocess.run([sys.executable,'revisions/0.12/ifood_not_completed_on_ready.py'],check=True)
 # Keep the repaired automatic print queue and reprint feedback visible in the Windows app.
 subprocess.run([sys.executable,'revisions/0.12/windows_print_feedback_0126.py'],check=True)
+# Natural locally cached studio/neural voice, imported once by the merchant; existing approved bell unchanged.
+subprocess.run([sys.executable,'revisions/0.12/windows_natural_voice_0127.py'],check=True)
 for relative in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src-tauri/Cargo.toml','src-tauri/Cargo.lock']:
  p=pathlib.Path('web')/relative
  value=p.read_text(encoding='utf-8')
  if relative.endswith('Cargo.lock'):
-  value=value.replace('name = "deliverygestor-desktop"\nversion = "0.12.0"', 'name = "deliverygestor-desktop"\nversion = "0.12.6"')
+  value=value.replace('name = "deliverygestor-desktop"\nversion = "0.12.0"', 'name = "deliverygestor-desktop"\nversion = "0.12.7"')
  else:
-  value=value.replace('"0.12.0"', '"0.12.6"')
+  value=value.replace('"0.12.0"', '"0.12.7"')
  p.write_text(value,encoding='utf-8')
