@@ -4,8 +4,13 @@
     <application android:allowBackup="false" android:usesCleartextTraffic="false"
         android:icon="@drawable/ic_pitacco"
         android:label="Pitacco Entregador" android:theme="@android:style/Theme.Material.Light.NoActionBar">
-        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="pitacco_new_assignment_v1" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="pitacco_new_assignment_loud_v2" />
         <meta-data android:name="firebase_messaging_auto_init_enabled" android:value="false" />
+        <service android:name=".AssignmentMessagingService" android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
