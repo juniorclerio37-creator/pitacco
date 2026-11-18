@@ -148,6 +148,8 @@ a.btn{text-decoration:none}
   <span class="eyebrow">AJUDA E SINCRONIZAÇÃO</span>
   <button type="button" class="settings-row" id="enableNativePush" hidden><span>Ativar avisos no Android</span><span class="setting-arrow">›</span></button>
   <p id="nativePushStatus" role="status" aria-live="polite"></p>
+  <button type="button" class="settings-row" id="checkNativePush"><span>Verificar recebimento de novas entregas</span><span class="setting-arrow">↻</span></button>
+  <p id="nativePushReadiness" role="status" aria-live="polite">Verificação do aparelho disponível após o login.</p>
   <button type="button" class="settings-row" id="nativeNotificationSettings" hidden><span>Configurar volume e notificações do Android</span><span class="setting-arrow">›</span></button>
   <p class="note-inline">O toque de nova entrega pode chegar mesmo com o app em segundo plano. Para ouvi-lo, mantenha os avisos autorizados e o volume de notificações ligado. O modo Não Perturbe e as restrições de bateria podem silenciar ou atrasar o aviso.</p>
   <button type="button" class="settings-row" id="testAssignmentSound"><span>Testar som de nova entrega</span><span class="setting-arrow">♪</span></button>
@@ -203,7 +205,10 @@ function announceAssignments(deliveries,courier){
  assignmentBaseline={courier:courier.id,ids:current};
  if(!fresh)return;
  message("Nova entrega atribuída pela loja.");
- if(!nativePushRegistered)playAssignmentSound();
+ // Keep in-app sound for the already installed WebView version.
+ // Device registration is not proof that FCM is enabled or that an old APK
+ // has native foreground-notification support.
+ if(!document.hidden)playAssignmentSound();
 }
 function playAssignmentSound(){
  if(assignmentAudio?.state!=="running")return false;
@@ -626,6 +631,24 @@ async function refreshSnapshot(){
  await loadEarnings();
  await loadSafeHistory();
 }
+async function checkNativePushStatus(){
+ const view=$("nativePushReadiness");
+ view.textContent="Verificando registro de notificações…";
+ const {data,error}=await sb.rpc("pitacco_courier_push_readiness").catch(()=>({error:true}));
+ if(error||!data){
+  view.textContent="Não foi possível conferir o registro. Atualize o aplicativo e tente novamente.";
+  return;
+ }
+ if(!data.device_registered){
+  view.textContent=window.PitaccoPush?.postMessage
+   ?"Este celular ainda não está registrado. Toque em Ativar avisos no Android."
+   :"Nenhum aparelho registrado nesta sessão. Use o Pitacco Entregador para Android.";
+ }else if(!data.server_enabled){
+  view.textContent="Celular registrado. O servidor de notificações ainda aguarda ativação.";
+ }else{
+  view.textContent="Celular registrado e envio habilitado. Faça uma atribuição de teste com o aplicativo em segundo plano.";
+ }
+}
 function initializeNativePush(){
  const native=window.PitaccoPush;
  if(!native?.postMessage)return;
@@ -648,6 +671,7 @@ function initializeNativePush(){
    const {error}=await sb.rpc("pitacco_register_courier_push",{p_token:value.slice(6)}).catch(()=>({error:true}));
    nativePushRegistered=!error;
    status.textContent=error?"Não foi possível registrar este aparelho.":"Aparelho registrado para receber avisos em segundo plano.";
+   await checkNativePushStatus();
   }else{
    status.textContent=value==="permission"?"Permita as notificações do Pitacco nos ajustes do Android."
     :value==="unavailable"?"Esta versão do aplicativo ainda não está conectada ao serviço de avisos."
@@ -669,6 +693,8 @@ async function boot(){
   storeName=status?.courier?.storeName||"Minha loja";
   loadNavPreferences();
   initializeNativePush();
+  $("checkNativePush").addEventListener("click",checkNativePushStatus);
+  await checkNativePushStatus();
   switchView(location.hash.slice(1));
   await refresh();
   setInterval(()=>{if(!document.hidden&&!busy)refresh().catch(e=>message(String(e.message)))},20000);
