@@ -117,8 +117,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.ok(page.includes('nativeNotificationSettings'));
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 26'));
- assert.ok(build.includes("versionName '2.0.6'"));
+ assert.ok(build.includes('versionCode 27'));
+ assert.ok(build.includes("versionName '2.0.7'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -418,4 +418,21 @@ test('site público é uma página de instalação e app mantém login interno',
  assert.match(page,/auth[.]signIn\(/);
  assert.match(page,/rpc\("pitacco_public_courier_apk"\)/);
  assert.doesNotMatch(page,/Continuar na versão web/);
+});
+
+
+test("courier GPS requires location consent and server-authenticated reporting",()=>{
+ const page=read("painel.html");
+ const manifest=read("android-app/app/src/main/AndroidManifest.xml");
+ const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
+ assert.match(manifest,/android.permission.ACCESS_FINE_LOCATION/);
+ assert.match(manifest,/android.permission.ACCESS_COARSE_LOCATION/);
+ assert.match(activity,/onGeolocationPermissionsShowPrompt/);
+ assert.match(activity,/LOCATION_PERMISSION/);
+ assert.match(activity,/\("https:\/\/" \+ HOST\)\.equalsIgnoreCase\(origin\)/);
+ assert.match(page,/navigator\.geolocation\.watchPosition/);
+ assert.match(page,/pitacco_courier_report_position/);
+ assert.match(page,/syncGpsSharing\(\)/);
+ assert.match(page,/accuracy>100/);
+ assert.match(page,/stopGpsSharing\(\)/);
 });

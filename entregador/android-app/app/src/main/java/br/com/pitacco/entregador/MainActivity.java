@@ -23,6 +23,8 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
 import android.webkit.CookieManager;
+import android.webkit.GeolocationPermissions;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -41,9 +43,12 @@ public class MainActivity extends Activity {
 
     private static final int PUSH_PERMISSION = 94;
     private static final int FIRST_OPEN_NOTIFICATION_PERMISSION = 95;
+    private static final int LOCATION_PERMISSION = 96;
     private static final String INITIAL_SETUP_PREFS = "pitacco_delivery_initial_setup";
     private static final String INITIAL_SETUP_DONE = "completed_v1";
     private JavaScriptReplyProxy pendingPermission;
+    private GeolocationPermissions.Callback pendingLocationCallback;
+    private String pendingLocationOrigin;
     private WebView web;
     private LinearLayout offline;
 
@@ -63,6 +68,7 @@ public class MainActivity extends Activity {
         web = new WebView(this);
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
+        settings.setGeolocationEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
@@ -90,6 +96,28 @@ public class MainActivity extends Activity {
         root.addView(web);
         root.addView(offline, new FrameLayout.LayoutParams(-1, -1));
         setContentView(root);
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override public void onGeolocationPermissionsShowPrompt(
+                    String origin, GeolocationPermissions.Callback callback) {
+                // Only the authenticated courier website can ask for GPS.
+                if (!("https://" + HOST).equalsIgnoreCase(origin)) {
+                    callback.invoke(origin, false, false);
+                    return;
+                }
+                if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED ||
+                    checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    callback.invoke(origin, true, false);
+                    return;
+                }
+                pendingLocationOrigin = origin;
+                pendingLocationCallback = callback;
+                requestPermissions(new String[]{
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION);
+            }
+        });
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 if (!request.isForMainFrame()) return false;
@@ -110,9 +138,9 @@ public class MainActivity extends Activity {
 
     /**
      * Android grants INTERNET and MODIFY_AUDIO_SETTINGS at install time.
-     * POST_NOTIFICATIONS is the runtime permission currently needed by this
-     * native shell. Location/camera must be requested only when those
-     * features actually use them; background location requires a separate flow.
+     * Notification permission is requested for push. Location is requested
+     * only when the logged-in courier activates GPS sharing in the web app.
+     * Background tracking requires a separately approved native service.
      */
     private void showFirstOpenSetup() {
         SharedPreferences prefs = getSharedPreferences(INITIAL_SETUP_PREFS, MODE_PRIVATE);
@@ -290,6 +318,20 @@ public class MainActivity extends Activity {
 
     @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
         super.onRequestPermissionsResult(requestCode, permissions, results);
+        if (requestCode == LOCATION_PERMISSION) {
+            GeolocationPermissions.Callback callback = pendingLocationCallback;
+            String origin = pendingLocationOrigin;
+            pendingLocationCallback = null;
+            pendingLocationOrigin = null;
+            if (callback != null) {
+                boolean granted = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED ||
+                        checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED;
+                callback.invoke(origin, granted, false);
+            }
+            return;
+        }
         if (requestCode == FIRST_OPEN_NOTIFICATION_PERMISSION) {
             finishFirstOpenNotifications();
             return;
