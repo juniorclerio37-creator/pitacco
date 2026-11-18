@@ -8,7 +8,7 @@ const headersFor=(origin)=>({
  'vary':'Origin, Authorization',
  ...(origin===allowedOrigin?{
   'access-control-allow-origin':allowedOrigin,
-  'access-control-allow-headers':'authorization, apikey, content-type',
+  'access-control-allow-headers':'authorization, apikey, content-type, x-client-info, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
   'access-control-allow-methods':'POST, OPTIONS'
  }:{})
 });
