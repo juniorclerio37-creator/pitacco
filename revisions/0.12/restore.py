@@ -153,11 +153,13 @@ subprocess.run([sys.executable,'revisions/0.12/windows_natural_voice_0127.py'],c
 subprocess.run([sys.executable,'revisions/0.12/fix_windows_merchant_alert_0128.py'],check=True)
 # Embed the sole approved merchant voice and 5 bells into the signed Windows executable.
 subprocess.run([sys.executable,'revisions/0.12/embed_merchant_audio_0129.py'],check=True)
+# Move all sound controls to Configurações; keep Pedidos focused on cards.
+subprocess.run([sys.executable,'revisions/0.12/clean_windows_order_screen_0130.py'],check=True)
 for relative in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src-tauri/Cargo.toml','src-tauri/Cargo.lock']:
  p=pathlib.Path('web')/relative
  value=p.read_text(encoding='utf-8')
  if relative.endswith('Cargo.lock'):
-  value=value.replace('name = "deliverygestor-desktop"\nversion = "0.12.0"', 'name = "deliverygestor-desktop"\nversion = "0.12.9"')
+  value=value.replace('name = "deliverygestor-desktop"\nversion = "0.12.0"', 'name = "deliverygestor-desktop"\nversion = "0.12.10"')
  else:
-  value=value.replace('"0.12.0"', '"0.12.9"')
+  value=value.replace('"0.12.0"', '"0.12.10"')
  p.write_text(value,encoding='utf-8')
