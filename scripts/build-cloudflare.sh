@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Cloudflare/site builds do not compile the Windows native audio modules.
+export PITACCO_WEB_ONLY=1
 cd "$(dirname "$0")/.."
 dist_dir=web/dist
 export VITE_PITACCO_HOMOLOGACAO=0
