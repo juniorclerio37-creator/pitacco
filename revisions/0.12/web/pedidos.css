@@ -58,3 +58,15 @@
 .windows-cards-only .pedidos-complete-button:disabled{background:#f3f4f6;color:#808995;border-color:#e5e7eb;opacity:.86;cursor:not-allowed}
 .windows-cards-only .pedidos-card-actions>.pedidos-step-button{min-width:115px}
 .windows-cards-only .pedidos-card-actions>.pedidos-card-print{flex:0 0 40px}
+
+
+/* The merchant navigation already identifies Pedidos. Hide only the repeated
+   large top-page title; keep store switching accessible in a compact row.
+   Applied to web and Windows, without changing order cards or action handlers. */
+.app main:has(.pitacco-pedidos) > header > div:first-child{display:none!important}
+.app main:has(.pitacco-pedidos) > header{display:flex;justify-content:flex-end;min-height:0!important;margin:0 0 5px!important;padding:2px 0 6px!important;gap:6px!important}
+.app main:has(.pitacco-pedidos) > header > select{max-width:260px;min-height:32px;padding:5px 9px;font-size:13px}
+@media (max-width:700px){
+ .app main:has(.pitacco-pedidos) > header{padding:1px 0 5px!important}
+ .app main:has(.pitacco-pedidos) > header > select{max-width:100%;width:100%}
+}
