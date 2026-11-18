@@ -1,5 +1,4 @@
 import React, {useEffect,useState} from 'react';
-import IncidentCenter from './IncidentCenter.jsx';
 
 const labels={
  awaiting_acceptance:'Pedido aguardando aceite',
@@ -58,5 +57,5 @@ export default function OperationalAlerts({client,storeId,onNavigate}){
     </button>
    </li>)}</ul>
   </>}
- </section><IncidentCenter client={client} storeId={storeId}/></>;
+ </section></>;
 }
