@@ -12,15 +12,15 @@ new=""" if(delivery?.status==='entregue')return 'completed';
  // The provider may have closed its order independently of the courier's local proof.
  if(order.source==='ifood'&&order.receipt?.ifood_status==='CONCLUDED')return 'completed';
  // The kitchen finishing preparation MUST NOT mark a delivery as completed.
- if(order.preparation_status==='completed')return 'ready';"""
+ if(order.preparation_status==='completed')return order.source==='proprio'&&order.receipt?.logistics==='retirada'?'completed':'ready';"""
 assert s.count(old)==1,'Unexpected order board status mapping'
 s=s.replace(old,new)
 p.write_text(s,encoding='utf-8')
 
 p=Path('web/Pedidos.jsx');s=p.read_text(encoding='utf-8')
-old="const canAssign=(order,delivery)=>order.status==='accepted'&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id;"
+old="const canAssign=(order,delivery)=>order.status==='accepted'&&order.preparation_status==='ready'&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id;"
 new="""const iFoodProviderClosed=order=>order?.source==='ifood'&&['CONCLUDED','CANCELLED'].includes(order?.receipt?.ifood_status);
-const canAssign=(order,delivery)=>order.status==='accepted'&&!iFoodProviderClosed(order)&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id;"""
+const canAssign=(order,delivery)=>order.status==='accepted'&&order.preparation_status==='ready'&&!iFoodProviderClosed(order)&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id;"""
 assert s.count(old)==1,'Unexpected dispatch business condition'
 s=s.replace(old,new)
 old="{o.receipt?.ifood_manual_cancel==='requested'&&<span role=\"status\">Cancelamento solicitado ao iFood</span>}"
@@ -53,6 +53,11 @@ test('iFood ready never marks a delivery completed',()=>{
  assert.equal(orderStage({...order,preparation_status:'completed'},{status:'pendente'}),'ready');
  assert.equal(orderStage(order,{status:'retirada'}),'delivery');
  assert.equal(orderStage(order,{status:'entregue'}),'completed');
+});
+
+test('own pickup completion ends the order after customer collects',()=>{
+ const order={source:'proprio',status:'accepted',preparation_status:'completed',receipt:{logistics:'retirada'}};
+ assert.equal(orderStage(order,null),'completed');
 });
 
 test('independent iFood CONCLUDED is distinct from a still active courier route',()=>{
