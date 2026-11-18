@@ -1,6 +1,7 @@
 import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {CheckCircle2,Copy,KeyRound,Loader2,Plus,RefreshCw,ShieldCheck,UserRoundCheck,UserRoundX} from 'lucide-react';
 import './CourierAccessManager.css';
+import CourierRemunerationFields,{emptyRemuneration,remunerationLabel,validateRemuneration} from './CourierRemunerationFields.jsx';
 
 // Inside Motoboys > Entregadores. The merchant remains on app.pitacco.com.br.
 // Supabase Edge Function verifies store_members membership before privileged actions.
@@ -28,6 +29,9 @@ export default function CourierAccessManager({client,store,onDataChanged}){
   const [couriers,setCouriers]=useState([]);
   const [name,setName]=useState('');
   const [phone,setPhone]=useState('');
+  const [remuneration,setRemuneration]=useState({...emptyRemuneration});
+  const [editing,setEditing]=useState(null);
+  const [editingPay,setEditingPay]=useState({...emptyRemuneration});
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState('');
@@ -69,12 +73,26 @@ export default function CourierAccessManager({client,store,onDataChanged}){
   async function register(event){
     event.preventDefault();
     if(!name.trim()||!phone.trim())return;
+    const problem=validateRemuneration(remuneration);
+    if(problem){setError(problem);return;}
     const submittedPhone=phone;
     await run(async()=>{
       setCredential(null);
-      const result=await callCourierAccess(client,'create',{storeId:store.id,name:name.trim(),phone:submittedPhone});
+      const result=await callCourierAccess(client,'create',{storeId:store.id,name:name.trim(),phone:submittedPhone,remuneration});
       reveal(result,result.courier?.phone||submittedPhone);
-      setName('');setPhone('');
+      setName('');setPhone('');setRemuneration({...emptyRemuneration});
+    });
+  }
+  async function saveRemuneration(event,courier){
+    event.preventDefault();
+    const problem=validateRemuneration(editingPay);
+    if(problem){setError(problem);return;}
+    await run(async()=>{
+      await callCourierAccess(client,'set-remuneration',{
+        storeId:store.id,courierId:courier.id,remuneration:editingPay
+      });
+      setEditing(null);
+      setMessage('Remuneração atualizada para as próximas entregas. Histórico preservado.');
     });
   }
   async function action(type,courier){
@@ -120,7 +138,10 @@ export default function CourierAccessManager({client,store,onDataChanged}){
         <input type="text" required minLength={2} maxLength={100} autoComplete="off" placeholder="Nome completo" value={name} onChange={e=>setName(e.target.value)}/></label>
       <label className="field">Telefone com DDD
         <input type="tel" required inputMode="tel" autoComplete="off" placeholder="(21) 99999-9999" value={phone} onChange={e=>setPhone(e.target.value)}/></label>
-      <button type="submit" disabled={busy||loading}><Plus size={16}/> Cadastrar entregador</button>
+      <div className="pitacco-driver-registration-pay">
+        <CourierRemunerationFields value={remuneration} onChange={setRemuneration} disabled={busy||loading}/>
+      </div>
+      <button type="submit" disabled={busy||loading}><Plus size={16}/> Cadastrar entregador e remuneração</button>
     </form>
     <div className="pitacco-driver-team">
       <h4>Contas de entregadores ({couriers.length})</h4>
@@ -129,12 +150,25 @@ export default function CourierAccessManager({client,store,onDataChanged}){
         <div className="pitacco-driver-person">
           <strong>{c.name}</strong><span>{c.phone||'Telefone não informado'}</span>
           <small className={c.active?'pitacco-driver-active':'pitacco-driver-inactive'}>{c.active?<><CheckCircle2 size={13}/> Ativo</>:<><UserRoundX size={13}/> Desativado</>}</small>
+          <small className="pitacco-driver-pay-label">{remunerationLabel(c.remuneration)}</small>
         </div>
         <div className="pitacco-driver-access-buttons">
+          <button type="button" className="secondary" disabled={busy}
+            onClick={()=>{setEditing(editing===c.id?null:c.id);setEditingPay(c.remuneration||{...emptyRemuneration});setError('');}}>
+            Editar remuneração
+          </button>
           {c.active?<><button type="button" className="secondary" disabled={busy} onClick={()=>action('reset',c)}><KeyRound size={15}/> Redefinir senha</button>
             <button type="button" className="secondary" disabled={busy} onClick={()=>action('disable',c)}><UserRoundX size={15}/> Desativar</button></>:
             <button type="button" disabled={busy} onClick={()=>action('reactivate',c)}><UserRoundCheck size={15}/> Reativar</button>}
         </div>
+        {editing===c.id&&<form className="pitacco-driver-edit-pay"
+          onSubmit={event=>saveRemuneration(event,c)}>
+          <CourierRemunerationFields value={editingPay} onChange={setEditingPay} disabled={busy}/>
+          <div className="pitacco-driver-access-buttons">
+            <button type="submit" disabled={busy}>Salvar remuneração</button>
+            <button type="button" className="secondary" onClick={()=>setEditing(null)} disabled={busy}>Cancelar</button>
+          </div>
+        </form>}
       </article>)}</div>}
     </div>
     <p className="hint">O motoboy entra no Pitacco Entregador com celular e senha, sem SMS ou e-mail. Para acessos cadastrados antes desta atualização, use “Redefinir senha” uma vez para ativar o novo login. Senha esquecida? Redefina aqui.</p>
