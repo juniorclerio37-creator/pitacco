@@ -453,7 +453,11 @@ async function ifoodDriverAction(delivery,action,code){
   body:JSON.stringify({delivery,action,...(code?{code}:{})})
  });
  const out=await response.json().catch(()=>({}));
- if(!response.ok)throw Error(out.error||"Operação iFood não confirmada");
+ if(!response.ok){
+  const failure=new Error(out.error||"Operação iFood não confirmada");
+  failure.status=response.status;
+  throw failure;
+ }
  return out;
 }
 async function markArrival(d){
@@ -517,7 +521,7 @@ async function verifyCode(d,code){
    let result;
    try{result=await ifoodDriverAction(d.id,"verify",digits);}
    catch(error){
-    if(/iFood não validou esse código|código incorreto|código inválido/i.test(String(error.message))){
+    if(error.status===409 && /iFood não validou esse código|código incorreto|código inválido/i.test(String(error.message))){
      inlineCodeError(d.id,"Código incorreto");return;
     }
     throw error;
