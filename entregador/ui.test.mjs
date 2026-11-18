@@ -405,3 +405,17 @@ test("ganhos de entregas concluídas usam regra individual e valor único para l
  assert.match(finances,/courier_payment/);
  assert.match(page,/sb\.rpc\("pitacco_driver_earnings"/);
 });
+
+test('site público é uma página de instalação e app mantém login interno',()=>{
+ const page=read('acesso.html');
+ assert.match(page,/id="publicInstaller"/);
+ assert.match(page,/id="downloadAndroid"[^>]*Pitacco-Entregador-2\.0\.6[.]apk/);
+ assert.match(page,/html:not\([.]pitacco-native\) #nativeAccessPanel\{display:none/);
+ assert.match(page,/html[.]pitacco-native #publicInstaller\{display:none/);
+ assert.match(page,/window[.]PitaccoPush/);
+ assert.match(page,/if\(document[.]documentElement[.]classList[.]contains\('pitacco-native'\)\)routeSession\(\)/);
+ assert.match(page,/createClient\(SUPABASE_URL/);
+ assert.match(page,/auth[.]signIn\(/);
+ assert.match(page,/rpc\("pitacco_public_courier_apk"\)/);
+ assert.doesNotMatch(page,/Continuar na versão web/);
+});

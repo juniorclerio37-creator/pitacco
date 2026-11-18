@@ -9,7 +9,7 @@ export default function AppDownloads({client}){
  useEffect(()=>{
   let live=true;
   setReleases(null);setError('');
-  client.from('pitacco_app_releases').select('id,app,version,filename,notes,requirements,recommended,published_at,sha256')
+  client.from('pitacco_app_releases').select('id,app,version,filename,notes,requirements,recommended,published_at,sha256,channel,distribution_source,external_download_url')
    .eq('state','published').eq('channel','stable').then(({data,error})=>{
     if(!live)return;
     if(error){setError('Não foi possível consultar os downloads.');setReleases([]);}
@@ -59,7 +59,7 @@ export default function AppDownloads({client}){
     </>}
     {app==='windows'&&releases&&!row&&!publicWindows&&!checkingWindows&&!error&&
      <p>Nenhum instalador Windows disponível no momento.</p>}
-    {app==='android'&&releases&&!row&&!error&&<p>O aplicativo Android está em homologação. Compartilhe o endereço abaixo com seus entregadores.</p>}
+    {app==='android'&&releases&&!row&&!error&&<p>O aplicativo Android ainda não foi publicado no canal estável. Compartilhe o endereço abaixo com seus entregadores.</p>}
     {app==='android'&&<div className="release-detail">
      <p><a href={COURIER_APP_URL} target="_blank" rel="noopener noreferrer">Abrir Pitacco Entregador</a></p>
      <button type="button" className="secondary" onClick={()=>void share()}>{shared?'Link copiado':'Compartilhar acesso'}</button>

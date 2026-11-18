@@ -2,7 +2,7 @@
 <html lang="pt-BR"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f97316">
-<title>Pitacco Entregador — Entrar</title>
+<title>Pitacco Entregador — Baixar aplicativo oficial</title>
 <style>
 :root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#232a33;background:#f7f8fa}
 *{box-sizing:border-box}body{margin:0;min-height:100dvh;padding:24px;display:grid;place-items:center}
@@ -19,19 +19,43 @@ input:focus-visible{border-color:#f97316}.primary{display:block;width:100%;backg
 .error{color:#b91c1c;font-size:13px;line-height:1.4;min-height:18px;margin-top:10px}
 .hidden{display:none!important}.loading{margin-top:13px;color:#6b7280;font-size:13px}
 .footer{text-align:center;color:#88919c;font-size:12px;margin-top:20px}
-</style></head>
+html:not(.pitacco-native) #nativeAccessPanel{display:none!important}
+html.pitacco-native #publicInstaller{display:none!important}
+.install-badge{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#b35b12;font-weight:900}
+.install-steps{padding:0 0 0 20px;color:#5e6b79;font-size:13px;line-height:1.8}
+.install-steps li{padding:3px 0}
+.install-info{font-size:13px;color:#637080;line-height:1.6;margin:14px 0 0}
+.install-info strong{color:#273547}
+.install-link{text-align:center;text-decoration:none}
+.install-link:focus-visible{outline:3px solid #fbbf24;outline-offset:4px}
+.install-security{border-top:1px solid #edf0f4;margin-top:23px;padding-top:15px;font-size:12px;color:#778493;line-height:1.55}
+@media(max-width:480px){body{padding:18px}.panel{padding:24px}}
+</style><script>
+// The official APK injects this bridge before the page loads.
+// Browsers get installation; the installed Android app keeps its login.
+if(window.PitaccoPush && typeof window.PitaccoPush.postMessage==='function')document.documentElement.classList.add('pitacco-native');
+</script></head>
 <body><main>
 <div class="brand"><div class="logo"><img src="./logo-entregador.svg" alt="" width="52" height="52"></div><div><b>Pitacco</b><span>APP DO ENTREGADOR</span></div></div>
-<div class="panel">
+<div class="panel" id="publicInstaller">
+ <p class="install-badge">Aplicativo oficial para Android</p>
+ <h1>Receba entregas pelo aplicativo</h1>
+ <p class="sub">Instale o Pitacco Entregador no celular para receber novas entregas, alertas e acompanhar seus ganhos. O acesso com celular e senha acontece dentro do app.</p>
+ <a class="primary install-link" id="downloadAndroid" href="https://github.com/juniorclerio37-creator/pitacco/releases/download/pitacco-entregador-v2.0.6-4e5c9c2de727/Pitacco-Entregador-2.0.6.apk" download="Pitacco-Entregador-2.0.6.apk">Baixar Pitacco Entregador</a>
+ <p id="androidVersion" class="install-info">Versão oficial 2.0.6 • Android 8 ou superior</p>
+ <p id="downloadStatus" class="install-info" role="status" aria-live="polite"></p>
+ <ol class="install-steps">
+  <li>Toque em <b>Baixar Pitacco Entregador</b>.</li>
+  <li>Abra o arquivo APK no celular e confirme a instalação.</li>
+  <li>Abra o aplicativo e entre com o celular e a senha cadastrados pela loja.</li>
+ </ol>
+ <p class="install-security">Download do arquivo oficial assinado. Se o Android pedir permissão para instalar aplicativos dessa fonte, confira que o arquivo é <b>Pitacco-Entregador</b>.</p>
+</div>
+<div class="panel" id="nativeAccessPanel">
 <section id="loading"><h1>Verificando acesso</h1><p class="sub">Confirmando sua sessão.</p></section>
 <section id="login" class="hidden">
 <h1>Bem-vindo de volta</h1><p class="sub">Entre com o celular e a senha informados pela loja.</p>
-<div id="appDownloadBox" class="notice" hidden>
- <p id="androidVersion"></p>
- <button type="button" class="secondary" id="downloadAndroid">Baixar aplicativo Android</button>
- <button type="button" class="secondary" id="continueWeb">Continuar na versão web</button>
- <p id="downloadStatus" role="status" aria-live="polite"></p>
-</div>
+
 <form id="loginForm">
 <label for="phone">Celular com DDD</label><input id="phone" name="phone" type="tel" autocomplete="username" inputmode="tel" placeholder="(21) 99999-9999" maxlength="20" required>
 <label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" minlength="6" required placeholder="Sua senha">
@@ -67,32 +91,41 @@ function show(name){sections.forEach(s=>$(s).classList.toggle("hidden",s!==name)
 function alertError(id,message){$(id).textContent=message;}
 const sb = createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const auth = createDriverAuth(sb);
+// The stable signed 2.0.6 asset is a fallback if the catalog is unavailable.
+// When a newer verified release exists, use its official download link.
 async function showAppDownload(){
- try {
+ if(document.documentElement.classList.contains('pitacco-native'))return;
+ const link=$("downloadAndroid");
+ try{
   const {data,error}=await sb.rpc("pitacco_public_courier_apk");
-  if(error||!data?.path||!data.filename)return;
-  $("androidVersion").textContent="Pitacco Entregador para Android · versão "+data.version;
-  $("appDownloadBox").hidden=false;
-  $("continueWeb").addEventListener("click",()=>{
-   $("appDownloadBox").hidden=true;
-   $("phone").focus();
-  });
-  $("downloadAndroid").addEventListener("click",async()=>{
-   $("downloadAndroid").disabled=true;
-   $("downloadStatus").textContent="Preparando download…";
-   try{
-    const {data:url,error}=await sb.storage.from("pitacco-installers").createSignedUrl(data.path,60,{download:data.filename});
-    if(error||!url?.signedUrl)throw Error();
-    const link=document.createElement("a");
-    link.href=url.signedUrl;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    $("downloadStatus").textContent="Download iniciado.";
-   }catch{$("downloadStatus").textContent="Download indisponível. Tente novamente ou continue pela web.";}
-   finally{$("downloadAndroid").disabled=false;}
-  });
- }catch{}
+  if(error||!data?.filename)return;
+  const version=String(data.version||'');
+  const url=String(data.url||'');
+  const pattern=/^https:\/\/github[.]com\/juniorclerio37-creator\/pitacco\/releases\/download\/pitacco-entregador-v([0-9]+[.][0-9]+[.][0-9]+)-[a-f0-9]{12}\/Pitacco-Entregador-([0-9]+[.][0-9]+[.][0-9]+)[.]apk$/;
+  const match=url.match(pattern);
+  if(match&&match[1]===version&&match[2]===version&&
+    data.filename==='Pitacco-Entregador-'+version+'.apk'){
+   link.href=url;link.download=data.filename;
+   $("androidVersion").textContent='Versão oficial '+version+' • Android 8 ou superior';
+  }else if(data.path){
+   link.addEventListener('click',async event=>{
+    event.preventDefault();
+    $("downloadStatus").textContent='Preparando download seguro…';
+    try{
+     const {data:result,error:downloadError}=await sb.storage.from('pitacco-installers')
+       .createSignedUrl(data.path,60,{download:data.filename});
+     if(downloadError||!result?.signedUrl)throw Error('Download indisponível');
+     const temp=document.createElement('a');
+     temp.href=result.signedUrl;temp.download=data.filename;
+     document.body.append(temp);temp.click();temp.remove();
+     $("downloadStatus").textContent='Download iniciado.';
+    }catch{$("downloadStatus").textContent='Não foi possível iniciar o download. Tente novamente.';}
+   });
+   $("androidVersion").textContent='Versão oficial '+version+' • Android 8 ou superior';
+  }
+ }catch{
+  // Keep the known, signed APK download available as fallback.
+ }
 }
 void showAppDownload();
 
@@ -154,5 +187,5 @@ $("changeForm").addEventListener("submit",async event=>{
 });
 $("switchAccount").addEventListener("click",async()=>{await auth.signOut().catch(()=>{});show("login");});
 $("tryAgain").addEventListener("click",()=>location.reload());
-routeSession();
+if(document.documentElement.classList.contains('pitacco-native'))routeSession();
 </script></body></html>

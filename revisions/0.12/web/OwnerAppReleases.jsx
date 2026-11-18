@@ -114,6 +114,10 @@ export default function OwnerAppReleases({client}){
    {release&&<div className="release-detail">
     <h4>{release.filename}</h4>
     <p>{states[release.state]} · {release.verified_at?'Integridade verificada':'Aguardando verificação'} · {releaseDate(release.created_at)}</p>
+    {release.distribution_source==='github_official'&&<p className="release-notes">
+     APK Android oficial vinculado ao GitHub Releases, assinado e conferido no pipeline.
+     O botão de download usa o arquivo original publicado, sem nova compilação.
+    </p>}
     <details><summary>Metadados e auditoria</summary>
      <p>SHA-256 <code>{release.sha256}</code></p><p>{release.notes}</p><p>{release.requirements}</p>
      <ul>{history.map((entry,index)=><li key={index}>{events[entry.action]} · {new Date(entry.created_at).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})} · {entry.actor}</li>)}</ul>
