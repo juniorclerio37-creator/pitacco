@@ -29,3 +29,20 @@ test('Missing Firebase configuration cannot consume pending assignments',async()
  assert.equal((await handler(req('secret'))).status,503);
  assert.equal(called,false);
 });
+
+test('FCM native courier uses data-only background delivery for on-device alarm and voice',()=>{
+ const eventId='550e8400-e29b-41d4-a716-446655440000';
+ const output=firebaseMessage({token:'device',event_id:eventId,protocol:'data_only',
+   address:'Rua Particular',phone:'000000000'});
+ assert.equal(output.message.android.priority,'HIGH');
+ assert.equal(output.message.data.kind,'new_assignment');
+ assert.equal(output.message.data.event_id,eventId);
+ assert.equal(output.message.notification,undefined);
+ assert.equal(output.message.android.notification,undefined);
+ assert.doesNotMatch(JSON.stringify(output),/Rua Particular|000000000/);
+});
+test('Unknown and old Android APKs retain background tray notifications',()=>{
+ const output=firebaseMessage({token:'device',event_id:'550e8400-e29b-41d4-a716-446655440000',protocol:'notification'});
+ assert.equal(output.message.notification.title,'Pitacco Entregador');
+ assert.equal(output.message.android.priority,'HIGH');
+});
