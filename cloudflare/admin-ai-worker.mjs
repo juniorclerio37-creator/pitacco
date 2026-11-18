@@ -110,6 +110,11 @@ async function handleAnalyze(request, env) {
     if (!ownerResult.ok) return asJson({ error: 'Não foi possível confirmar sua permissão.' }, 503);
     const isOwner = await ownerResult.json();
     if (isOwner !== true) return asJson({ error: 'Acesso exclusivo do Super Admin.' }, 403);
+    // Limit approximate requests per authenticated owner, independent of question text.
+    // No inference should run when the rate limiting binding is unavailable.
+    if (!env.INTELLIGENCE_RATE_LIMIT?.limit) return asJson({ error: 'Proteção de consumo indisponível.' }, 503);
+    const quota = await env.INTELLIGENCE_RATE_LIMIT.limit({ key: user.id });
+    if (!quota.success) return asJson({ error: 'Limite temporário de consultas atingido. Tente novamente em um minuto.' }, 429);
     const incidentResult = await callSupabase(env, '/rest/v1/rpc/pitacco_incidents', token, {
       body: { p_store: body.storeId || null, p_status: 'open', p_page: 0 }
     });
