@@ -46,6 +46,21 @@ function PlatformIcon({source}){
  const mark=platform==='99food'?'99':platform==='ifood'?'iF':platform==='keeta'?'K':<ShoppingBag size={14} aria-hidden="true"/>;
  return <span className="pedidos-platform-icon" data-platform={platform} role="img" aria-label={'Plataforma '+labels[platform]}>{mark}</span>;
 }
+function cardAddress(receipt){
+ const a=receipt?.address||receipt?.delivery_address;
+ if(typeof a==='string')return a;
+ if(!a||typeof a!=='object')return '';
+ return [a.street||a.logradouro||a.rua,[a.number||a.numero,a.neighborhood||a.bairro].filter(Boolean).join(' · ')].filter(Boolean).join(', ');
+}
+function cardPayment(order){
+ const receipt=order?.receipt||{},status=String(receipt.payment_status||'').toLowerCase();
+ const method=String(receipt.payment_method||receipt.payment||'');
+ if(receipt.payment_confirmed===true||receipt.paid===true||['paid','approved','captured','settled'].includes(status))
+  return {state:'paid',label:'Pago'};
+ if(receipt.payment_on_delivery===true||receipt.collect_on_delivery===true||/dinheiro|cash|na entrega/i.test(method))
+  return {state:'collect',label:'A cobrar'};
+ return {state:'review',label:'Pagamento a conferir'};
+}
 function DeliveryBadge({order,delivery}){
  const {type,label}=deliveryType(order,delivery);
  return <span className="pedidos-delivery-badge" data-delivery={type}>{type==='pickup'?<ShoppingBag size={15} aria-hidden="true"/>:<Bike size={15} aria-hidden="true"/>}{label}</span>;
@@ -113,6 +128,9 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
      <span className="pedidos-card-row"><b className="pedidos-number"><ShoppingBag size={17} aria-hidden="true"/> #{number(o)}</b>
       <small>{o.scheduled_for?'Agendado '+scheduledTime.format(new Date(o.scheduled_for)):o.created_at?new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</small></span>
      <span className="pedidos-card-row"><span>{o.receipt?.customer||'Cliente'}</span><b>{brl(o.gross)}</b></span>
+     {(o.receipt?.phone||o.receipt?.customer_phone)&&<span className="pedidos-card-row pedidos-card-contact"><span>{o.receipt?.phone||o.receipt?.customer_phone}</span></span>}
+     {cardAddress(o.receipt)&&<span className="pedidos-card-row pedidos-card-address"><span>{cardAddress(o.receipt)}</span></span>}
+     <span className="pedidos-card-row pedidos-card-info"><small>{receiptItems(o.receipt).reduce((n,item)=>n+(Number(item.quantity)||1),0)} item(ns)</small><span className="pedidos-payment-pill" data-payment={cardPayment(o).state}>{cardPayment(o).label}</span></span>
      {validLocalizer(badgeByOrder.get(o.id))&&<span className="pedidos-localizer" aria-label="Localizador de ligação do pedido"><strong>LOCALIZADOR</strong><b>{validLocalizer(badgeByOrder.get(o.id))}</b></span>}
      <DeliveryBadge order={o} delivery={delivery}/>
     </button>
