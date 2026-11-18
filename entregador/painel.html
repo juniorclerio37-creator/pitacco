@@ -205,7 +205,10 @@ function announceAssignments(deliveries,courier){
  assignmentBaseline={courier:courier.id,ids:current};
  if(!fresh)return;
  message("Nova entrega atribuída pela loja.");
- if(!nativePushRegistered)playAssignmentSound();
+ // Keep in-app sound for the already installed WebView version.
+ // Device registration is not proof that FCM is enabled or that an old APK
+ // has native foreground-notification support.
+ if(!document.hidden)playAssignmentSound();
 }
 function playAssignmentSound(){
  if(assignmentAudio?.state!=="running")return false;
