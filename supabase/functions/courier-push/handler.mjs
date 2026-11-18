@@ -5,21 +5,22 @@ const encode=bytes=>btoa(String.fromCharCode(...bytes)).replaceAll('+','-').repl
 const segment=value=>encode(encoder.encode(JSON.stringify(value)));
 
 export function firebaseMessage(event) {
- // Keep the installed Android WebView app working without replacing its APK:
- // the Firebase SDK posts notification+data messages automatically while
- // the app is in the background, using its version-specific default channel.
- // v1.0.2 also handles the data in its native service when in the foreground.
+ // The modern Android 2.0 app receives high-priority DATA events in its
+ // native FirebaseMessagingService, including when the WebView is backgrounded.
+ // This is required for the app-side authorized alarm and courier voice.
+ // Legacy installed WebView APKs still need notification+data for system tray.
  // Only an event UUID is sent; no customer or delivery details are exposed.
- const eventId=String(event.event_id);
- return {message:{
+ const eventId=String(event.event_id),native=event.protocol==='data_only';
+ const message={
   token:event.token,
-  notification:{title:'Pitacco Entregador',body:'Você tem uma nova entrega! Abra o aplicativo para conferir.'},
   data:{kind:'new_assignment',event_id:eventId},
-  android:{
-   priority:'HIGH',ttl:'90s',collapse_key:eventId,
-   notification:{tag:eventId}
-  }
- }};
+  android:{priority:'HIGH',ttl:'90s',collapse_key:eventId}
+ };
+ if(!native){
+  message.notification={title:'Pitacco Entregador',body:'Você tem uma nova entrega! Abra o aplicativo para conferir.'};
+  message.android.notification={tag:eventId};
+ }
+ return {message};
 }
 
 export function completionStatus(status, details) {
@@ -67,9 +68,13 @@ export function createCourierPush({url,serviceKey,cronSecret,account,fetcher=fet
    const token=await googleToken();
    const jobs=await rpc('pitacco_claim_courier_push');
    async function deliver(event){
+    // A missing/invalid capability must not downgrade old APKs into a data-only
+    // message they cannot display in background.
+    const protocol=await rpc('pitacco_courier_push_protocol',{p_token:event.token});
     const target='https://fcm.googleapis.com/v1/projects/'+account.project_id+'/messages:send';
     const response=await fetcher(target,{method:'POST',redirect:'error',signal:AbortSignal.timeout(5500),
-     headers:{authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify(firebaseMessage(event))});
+     headers:{authorization:'Bearer '+token,'content-type':'application/json'},
+     body:JSON.stringify(firebaseMessage({...event,protocol}))});
     const payload=response.ok?null:await response.json().catch(()=>null);
     const result=completionStatus(response.status,payload?.error?.details);
     if(result!=='retry')await rpc('pitacco_finish_courier_push',{p_event:event.event_id,p_token:event.token,p_result:result});
