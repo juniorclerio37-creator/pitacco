@@ -81,8 +81,53 @@ jobs:
             entregador/android-app/app/build/outputs/apk/debug/SHA256-ANDROID.txt
           if-no-files-found: error
 
-  stable:
+  release-preflight:
+    name: Verificar credenciais oficiais do Android
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.channel == 'estavel'))
+    runs-on: ubuntu-24.04
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Conferir Firebase e assinatura sem expor segredos
+        id: check
+        shell: bash
+        env:
+          PITACCO_FIREBASE_ANDROID_JSON: ${{ secrets.PITACCO_FIREBASE_ANDROID_JSON }}
+          PITACCO_ANDROID_KEYSTORE_BASE64: ${{ secrets.PITACCO_ANDROID_KEYSTORE_BASE64 }}
+          PITACCO_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.PITACCO_ANDROID_KEYSTORE_PASSWORD }}
+          PITACCO_ANDROID_KEY_ALIAS: ${{ secrets.PITACCO_ANDROID_KEY_ALIAS }}
+          PITACCO_ANDROID_KEY_PASSWORD: ${{ secrets.PITACCO_ANDROID_KEY_PASSWORD }}
+          PITACCO_ANDROID_CERT_SHA256: ${{ vars.PITACCO_ANDROID_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          required=(PITACCO_FIREBASE_ANDROID_JSON PITACCO_ANDROID_KEYSTORE_BASE64
+            PITACCO_ANDROID_KEYSTORE_PASSWORD PITACCO_ANDROID_KEY_ALIAS
+            PITACCO_ANDROID_KEY_PASSWORD PITACCO_ANDROID_CERT_SHA256)
+          missing=()
+          for key in "${required[@]}"; do
+            if [[ -z "${!key:-}" ]]; then missing+=("$key"); fi
+          done
+          if (( ${#missing[@]} != 0 )); then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Publicação Android pendente"
+              echo "O APK de teste será compilado; a versão estável não será publicada sem as credenciais oficiais:"
+              printf -- "- \`%s\`\n" "${missing[@]}"
+              echo "Cadastre os segredos em Settings → Secrets and variables → Actions, sem colocá-los no código ou em mensagens."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::APK estável bloqueado por configuração de assinatura/Firebase incompleta."
+          elif [[ ! "$(printf '%s' "$PITACCO_ANDROID_CERT_SHA256" | tr -d ':[:space:]')" =~ ^[A-Fa-f0-9]{64}$ ]]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Formato de impressão digital do certificado inválido."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "### Credenciais de publicação presentes" >> "$GITHUB_STEP_SUMMARY"
+            echo "O APK ainda será validado e a assinatura oficial será conferida antes da publicação." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  stable:
+    needs: release-preflight
+    if: needs.release-preflight.outputs.ready == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -130,7 +175,7 @@ jobs:
 
   publish-stable:
     name: Publicar APK oficial assinado
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.channel == 'estavel'))
     needs: stable
     runs-on: ubuntu-24.04
     permissions:

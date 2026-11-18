@@ -33,3 +33,26 @@ No aplicativo, use **Ajustes → Ativar avisos no Android** e depois **Testar so
 **Limitações:** a plataforma Android controla o volume de notificações, o modo silencioso/Não Perturbe, a economia de bateria e a entrega de FCM. O Pitacco não altera essas preferências sem autorização e não consegue garantir o toque após uma parada forçada. O teste local comprova somente som/canal; é necessário testar uma atribuição real com o APK em segundo plano para validar o caminho completo.
 
 **Requisitos de ativação no servidor:** sem `PITACCO_FCM_SERVICE_ACCOUNT`, `PITACCO_PUSH_CRON_SECRET`, `pitacco_push_cron_secret` no Vault, dispositivo registrado e cron ativo, não haverá push real. Não habilite `pitacco_private.courier_push_settings.enabled` antes da homologação completa da conta Firebase e do agendamento. A versão do servidor precisa enviar o campo de dados `kind=new_assignment` e o UUID `event_id`, sem conteúdo de clientes.
+
+## Publicação Android estável sem trocar a assinatura dos entregadores
+
+O GitHub gera APK de **teste** mesmo quando as credenciais oficiais estão ausentes. Esse APK não é uma atualização garantida para quem usa o app estável: a assinatura de teste pode ser diferente. Nunca substituir a chave de assinatura oficial existente por uma chave recém-gerada; assinaturas diferentes impedem a atualização direta em instalações existentes.
+
+Antes de liberar um APK estável, configurar em **GitHub → Settings → Secrets and variables → Actions**:
+
+| Tipo | Nome | Conteúdo |
+| --- | --- | --- |
+| Secret | `PITACCO_FIREBASE_ANDROID_JSON` | O `google-services.json` autorizado para `br.com.pitacco.entregador` |
+| Secret | `PITACCO_ANDROID_KEYSTORE_BASE64` | Keystore original de distribuição, codificado em base64 |
+| Secret | `PITACCO_ANDROID_KEYSTORE_PASSWORD` | Senha da keystore oficial |
+| Secret | `PITACCO_ANDROID_KEY_ALIAS` | Alias da chave oficial |
+| Secret | `PITACCO_ANDROID_KEY_PASSWORD` | Senha da chave oficial |
+| Variable | `PITACCO_ANDROID_CERT_SHA256` | SHA-256 público do certificado assinante oficial |
+
+O fluxo **Pitacco Entregador APK** faz uma verificação prévia. Se alguma configuração estiver ausente, a publicação estável é ignorada e o resumo do GitHub informa **apenas os nomes** das pendências. Não inserir chaves no código, no chat ou em `app/google-services.json` versionado. A geração do APK estável verifica que o certificado corresponde a `PITACCO_ANDROID_CERT_SHA256` antes de publicar.
+
+Após cadastrar as credenciais, abra **Actions → Pitacco Entregador APK → Run workflow** no ramo `main`, selecione `estavel`, e confira os artefatos e a release. A primeira instalação ou atualização deve ser testada em um aparelho de homologação sem desinstalar o aplicativo existente.
+
+### Ativação do recebimento em segundo plano
+
+A assinatura do APK e a infraestrutura de notificações são etapas **independentes**. Mesmo com o APK publicado, um aviso de entrega real só chega quando a conta de serviço FCM, o token do cron no Vault, o agendamento e o dispositivo do entregador estiverem configurados e ativos. Faça um pedido de teste e valide com o aplicativo aberto, minimizado e tela bloqueada. O Android ainda pode atrasar/silenciar notificações conforme as preferências e restrições de energia.
