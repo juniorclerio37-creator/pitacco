@@ -30,6 +30,17 @@ jobs:
       - name: Verificar scripts Python
         working-directory: .
         run: python -m compileall -q revisions/0.12
+      - name: Preparar decodificador do áudio oficial no Windows
+        working-directory: .
+        shell: pwsh
+        run: |
+          if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
+            choco install ffmpeg -y --no-progress
+            if ($LASTEXITCODE -ne 0) { throw "Não foi possível instalar o decodificador da voz oficial." }
+          }
+          $env:PATH = "C:\ProgramData\chocolatey\bin;$env:PATH"
+          if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) { throw "ffmpeg não encontrado no runner Windows." }
+          ffmpeg -version
       - name: Restaurar codigo preservado
         working-directory: .
         run: python -X utf8 revisions/0.12/restore.py
@@ -217,6 +228,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Preparar decodificador da voz no banco isolado
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - run: python revisions/0.12/restore.py
       - run: npm ci --prefix web/tests/backend
       - run: npm install --prefix web/tests/backend --no-save --package-lock=false pg@8.16.3
