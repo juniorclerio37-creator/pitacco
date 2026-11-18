@@ -70,6 +70,7 @@ button{font-family:inherit}button:focus-visible,a:focus-visible{outline:3px soli
 .pref-row .btn{min-width:72px}.select-options{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.option-button{background:#f6f7fa;border:1px solid #e7eaf0;padding:12px 13px;border-radius:12px;font-weight:850;color:#6a7687;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px}
 .option-button svg{width:20px;height:20px}.option-button[aria-pressed=true]{background:#fff0e1;border-color:#ed9149;color:#bb5c19}
 .config-subheading{margin-top:23px}.settings-row{width:100%;background:transparent;border:0;padding:15px 0;border-bottom:1px solid #edf0f4;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-weight:700;color:#455567;text-align:left}
+.settings-row[hidden]{display:none!important}#shiftSoundToggle[aria-pressed=true]{color:#126c48}#shiftSoundState{font-size:12px;font-weight:900;border-radius:999px;background:#fff1e4;padding:7px 10px}
 .settings-row:last-child{border-bottom:0}.setting-arrow{font-size:23px;color:#e77c27}
 .version-note{text-align:center;font-size:11px;color:#9ca6b2;margin:22px 0}
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:15;display:flex;align-items:stretch;justify-content:center;gap:0;background:#fff;border-top:1px solid #e8ecf2;padding:6px 10px calc(9px + env(safe-area-inset-bottom));box-shadow:0 -5px 25px #192a3e0a}
