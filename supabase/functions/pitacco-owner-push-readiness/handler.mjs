@@ -55,7 +55,7 @@ export function createOwnerPushReadiness({url,serviceKey,cronSecret,account,fetc
     fcm_service_account_configured:serviceAccountLooksConfigured(account),
     cron_secret_env_configured:typeof cronSecret==='string'&&cronSecret.trim().length>=20,
     database_service_access_configured:true,
-    sender_endpoint_available:true,
+    sender_dispatch_tested:false,
     google_oauth_tested:false,
     fcm_delivery_tested:false,
     android_audio_tested:false,
