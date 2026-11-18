@@ -28,7 +28,7 @@ const wrap=(value,width)=>{
 };
 const platformName=value=>{
  const origin=clean(value).toLowerCase().replace(/\s+/g,'');
- if(/99food|99-food|^99$/.test(origin))return '99Food';
+ if(/^(99food|99-food|99_food|99)$/.test(origin))return '99Food';
  if(origin.includes('ifood'))return 'iFood';
  if(origin.includes('keeta'))return 'Keeta';
  if(/^(own|proprio|próprio|propria|própria|loja|cardapio|cardápio|web|direct|balcao|balcão|counter|site)$/.test(origin)||!origin)return 'Loja';
@@ -156,8 +156,7 @@ export function approvedReceipt(job,width=80,opts={}){
  add('Forma de pagamento: '+method);
  if(isPaid(r)){
   const online=r.payment_online===true||r.paid_online===true||
-   /online|gateway|marketplace|pré.pago|prepaid/i.test(first(r.payment_timing,r.payment_when,r.payment_channel))||
-   !collectionAtDelivery(r,method);
+   /online|gateway|marketplace|pré.pago|prepaid/i.test(first(r.payment_timing,r.payment_when,r.payment_channel));
   add(online?'*** PAGO ONLINE ***':'*** PEDIDO PAGO ***');
   add('NAO COBRAR NA ENTREGA');
  }else if(collectionAtDelivery(r,method)){
