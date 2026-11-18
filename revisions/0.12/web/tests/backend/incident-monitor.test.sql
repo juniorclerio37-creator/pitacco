@@ -93,37 +93,52 @@ begin
 
  proposed:=(public.pitacco_owner_repair_propose(
   '82000000-0000-0000-0000-000000000001')->>'id')::uuid;
- assert (select enabled=false from public.pitacco_store_sound_settings
-  where store_id='82000000-0000-0000-0000-000000000001');
- assert (select status='proposed' from pitacco_private.intelligence_repair_proposals
-  where id=proposed);
- assert (public.pitacco_owner_repairs('82000000-0000-0000-0000-000000000001')->>'eligible')='false';
+ result:=public.pitacco_owner_repairs('82000000-0000-0000-0000-000000000001');
+ assert result->>'eligible'='false';
+ assert (result->'rows'->0->>'status')='proposed';
+ assert (result->'selected_sound'->>'enabled')='false';
+
  result:=public.pitacco_owner_repair_decide(proposed,'apply');
  assert result->>'status'='applied';
- assert (select enabled=true and volume=72 from public.pitacco_store_sound_settings
-  where store_id='82000000-0000-0000-0000-000000000001');
+ result:=public.pitacco_owner_repairs('82000000-0000-0000-0000-000000000001');
+ assert (result->'selected_sound'->>'enabled')='true';
+ assert (result->'selected_sound'->>'volume')='72';
+
  result:=public.pitacco_owner_repair_decide(proposed,'revert');
  assert result->>'status'='reverted';
- assert (select enabled=false and volume=72 from public.pitacco_store_sound_settings
-  where store_id='82000000-0000-0000-0000-000000000001');
- assert (select count(*)=3 from pitacco_private.intelligence_repair_audit
-  where proposal_id=proposed);
+ result:=public.pitacco_owner_repairs('82000000-0000-0000-0000-000000000001');
+ assert (result->'selected_sound'->>'enabled')='false';
+ assert (result->'selected_sound'->>'volume')='72';
 
+ perform set_config('pitacco.test.applied_proposal',proposed::text,true);
  stale:=(public.pitacco_owner_repair_propose(
   '82000000-0000-0000-0000-000000000002')->>'id')::uuid;
- -- A store setting changed after the proposal: stale apply must not override it.
+ perform set_config('pitacco.test.stale_proposal',stale::text,true);
+end $repair$;
+reset role;
+-- Testing private audit and a store change outside a privileged owner RPC.
+do $audit$ begin
+ assert (select count(*)=3 from pitacco_private.intelligence_repair_audit
+  where proposal_id=current_setting('pitacco.test.applied_proposal')::uuid);
  update public.pitacco_store_sound_settings
  set volume=55, updated_at=clock_timestamp()
  where store_id='82000000-0000-0000-0000-000000000002';
+end $audit$;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','81000000-0000-0000-0000-000000000002',true);
+do $stale$
+declare stale uuid:=current_setting('pitacco.test.stale_proposal')::uuid; result jsonb;
+begin
  begin
   perform public.pitacco_owner_repair_decide(stale,'apply');
   raise exception 'Stale settings must block application';
  exception when raise_exception then
-  assert (select status='proposed' from pitacco_private.intelligence_repair_proposals where id=stale);
+  assert (public.pitacco_owner_repairs('82000000-0000-0000-0000-000000000002')
+    ->'rows'->0->>'status')='proposed';
  end;
  result:=public.pitacco_owner_repair_decide(stale,'reject');
  assert result->>'status'='rejected';
-end $repair$;
+end $stale$;
 reset role;
 update public.orders set status='accepted',preparation_status='ready',accepted_at=now()
  where id='83000000-0000-0000-0000-000000000001';
