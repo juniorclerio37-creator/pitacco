@@ -296,6 +296,6 @@ test("sequência agrupada aparece somente para lotes válidos e navega por prefe
  assert.match(source,/delivery\.batch_id/);
  assert.match(migration,/pitacco_driver_route_origins/);
  assert.match(migration,/pitacco_driver_reconcile_ifood/);
- assert.match(migration,/if v_status is distinct from 'CONCLUDED' then/);
+ assert.match(migration,/if v_status is distinct from 'CONCLUDED' or not exists/);
  assert.doesNotMatch(migration,/set delivery_code_verified_at/);
 });
