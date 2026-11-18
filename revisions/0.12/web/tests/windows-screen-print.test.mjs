@@ -38,7 +38,7 @@ test('iFood object modifiers render by name and quantity on 80mm and 58mm notes'
   assert.doesNotMatch(text,/\[object Object\]/);
   assert.doesNotMatch(text,/Rua Teste/);
   assert.doesNotMatch(text,/Campainha/);
-  assert.match(text,/PAGO - NAO COBRAR/);
+  assert.match(text,/NAO COBRAR NA ENTREGA/);
  }
 });
 
