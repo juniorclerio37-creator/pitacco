@@ -774,9 +774,12 @@ function initializeNativePush(){
     :"Notificações não autorizadas. Toque em Ativar avisos no Android.";
    return;
   }
-  if(value.startsWith("token:")){
+  if(value.startsWith("token:")||value.startsWith("token_native:")){
    window.clearTimeout(nativeEnableTimeout);
-   const {error}=await sb.rpc("pitacco_register_courier_push",{p_token:value.slice(6)}).catch(()=>({error:true}));
+   const nativeProtocol=value.startsWith("token_native:");
+   const token=value.slice(nativeProtocol?13:6);
+   const {error}=await sb.rpc(nativeProtocol?"pitacco_register_courier_push_native":"pitacco_register_courier_push",
+     {p_token:token}).catch(()=>({error:true}));
    nativePushRegistered=!error;
    status.textContent=error?"Não foi possível registrar este aparelho.":"Aparelho registrado para receber avisos em segundo plano.";
    await checkNativePushStatus();
