@@ -42,11 +42,11 @@ jobs:
       - name: Verify APK signature and hash
         working-directory: entregador/android-app/app/build/outputs/apk/debug
         run: |
-          mv app-debug.apk Pitacco-Entregador-2.0.0-TESTE-PARALELO.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose Pitacco-Entregador-2.0.0-TESTE-PARALELO.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Pitacco-Entregador-2.0.0-TESTE-PARALELO.apk | head -15
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Pitacco-Entregador-2.0.0-TESTE-PARALELO.apk | grep -q "package: name='br.com.pitacco.entregador.teste'"
-          sha256sum Pitacco-Entregador-2.0.0-TESTE-PARALELO.apk > SHA256-ANDROID.txt
+          mv app-debug.apk Pitacco-Entregador-2.0.1-TESTE-PARALELO.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose Pitacco-Entregador-2.0.1-TESTE-PARALELO.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Pitacco-Entregador-2.0.1-TESTE-PARALELO.apk | head -15
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Pitacco-Entregador-2.0.1-TESTE-PARALELO.apk | grep -q "package: name='br.com.pitacco.entregador.teste'"
+          sha256sum Pitacco-Entregador-2.0.1-TESTE-PARALELO.apk > SHA256-ANDROID.txt
       - name: Exercise release signing with an isolated test certificate
         if: github.event_name == 'pull_request'
         working-directory: entregador/android-app
@@ -78,7 +78,7 @@ jobs:
         with:
           name: Pitacco-Entregador-Android-teste
           path: |
-            entregador/android-app/app/build/outputs/apk/debug/Pitacco-Entregador-2.0.0-TESTE-PARALELO.apk
+            entregador/android-app/app/build/outputs/apk/debug/Pitacco-Entregador-2.0.1-TESTE-PARALELO.apk
             entregador/android-app/app/build/outputs/apk/debug/SHA256-ANDROID.txt
           if-no-files-found: error
 
