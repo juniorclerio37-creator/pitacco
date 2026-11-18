@@ -1012,7 +1012,7 @@ try {
       await ownCard.getByRole('button',{name:'Imprimir no navegador pedido LOJA-23'}).click();
       const printEvidence=await page.evaluate(()=>({html:window.__browserComandas[0],count:window.__browserPrints}));
       assert.equal(printEvidence.count,1);
-      assert.ok(printEvidence.html.includes('Loja Nº LOJA-23'));
+      assert.ok(printEvidence.html.includes('99Food Nº LOJA-23'));
       assert.ok(printEvidence.html.includes('PAGAMENTO A CONFERIR'));
       assert.ok(!printEvidence.html.includes('*** PAGO ONLINE ***'));
       await ownCard.getByRole('button',{name:'Selecionar entregador',exact:true}).click();
