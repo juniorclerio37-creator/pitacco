@@ -60,14 +60,44 @@ new="""async function nativeOrderSound(onlyBell=false){
   }
  }"""
 exactly_one(old,new)
-exactly_one(
- """{manager&&['Painel','Pedidos'].includes(view)&&(desktop?<div className="dispatch-actions">
-   <button type="button" className="secondary" onClick={()=>void nativeOrderSound()}>Testar alerta de pedido</button>""",
- """{manager&&['Painel','Pedidos','Configurações','Alertas'].includes(view)&&(desktop?<div className="dispatch-actions" aria-label="Alertas sonoros do Pitacco Windows">
-   <strong>Alerta de novo pedido — sino e voz natural</strong>
-   <button type="button" className="secondary" onClick={()=>void nativeOrderSound()}>Testar sino e voz</button>
-   <button type="button" className="secondary" onClick={()=>void nativeOrderSound(true)}>Testar somente sino</button>"""
-)
+# Layouts of the existing Windows workspace differ by version, so never
+# depend on the old alerts strip being at one exact JSX position. Insert a
+# self-contained, visible panel at the top of the operational workspace.
+banner='<div className="connection-bar">'
+assert s.count(banner)==1, "Windows operational workspace changed"
+audio_panel="""{manager&&desktop&&['Painel','Pedidos','Configurações','Alertas'].includes(view)&&
+ <section className="panel pitacco-windows-audio-controls" aria-label="Alertas sonoros do Pitacco Windows">
+  <h3>Som de novo pedido</h3>
+  <p>O sino toca primeiro; depois, a voz natural aprovada anuncia o pedido.</p>
+  <div className="quick-actions">
+   <button type="button" onClick={()=>void nativeOrderSound()}>Testar sino e voz</button>
+   <button type="button" className="secondary" onClick={()=>void nativeOrderSound(true)}>Testar somente sino</button>
+  </div>
+  <label className="field" htmlFor="pitacco-audio-bell-volume">Volume do sino
+   <select id="pitacco-audio-bell-volume" value={alertLevel} onChange={event=>{
+    const next=Number(event.target.value);setAlertLevel(next);
+    try{localStorage.setItem('pitacco:native-alert-volume',String(next))}catch{}
+   }}>
+    <option value={1}>Discreto</option><option value={2}>Alto</option><option value={3}>Máximo</option>
+   </select>
+  </label>
+  <label className="field" htmlFor="pitacco-audio-voice-volume">Volume da voz natural
+   <select id="pitacco-audio-voice-volume" value={voiceLevel} onChange={event=>{
+    const next=Number(event.target.value);setVoiceLevel(next);
+    try{localStorage.setItem('pitacco:natural-voice-level',String(next))}catch{}
+   }}>
+    <option value={1}>Original</option><option value={2}>Alto</option><option value={3}>Máximo</option>
+   </select>
+  </label>
+  <label className="field">Importar a gravação natural (uma vez por computador)
+   <input type="file" accept=".wav,audio/wav,audio/x-wav" onChange={event=>void importNaturalVoice(event)}/>
+  </label>
+  <p role="status">{voiceReady?'Voz natural configurada neste Windows.':'Voz ainda não importada neste Windows; o sino continuará funcionando.'}</p>
+  {soundMessage&&<p role="status">{soundMessage}</p>}
+ </section>}
+"""
+s=s.replace(banner,audio_panel+banner,1)
+
 p.write_text(s,encoding="utf-8")
 
 # Preserve the existing embedded bell command for diagnostics and earlier
