@@ -42,34 +42,8 @@ $$;
 revoke all on function public.pitacco_public_courier_apk() from public,anon,authenticated;
 grant execute on function public.pitacco_public_courier_apk() to anon,authenticated;
 
--- Insert a signed stable release only if no Android stable version is
--- already published. Never silently replace a newer version.
-with release as (
- insert into public.pitacco_app_releases(
-  app,channel,version,filename,notes,requirements,recommended,
-  sha256,size_bytes,state,verified_at,published_at,
-  distribution_source,external_download_url
- )
- select
-  'android','stable','2.0.6','Pitacco-Entregador-2.0.6.apk',
-  'Primeira versão oficial do Pitacco Entregador, assinada e compilada com Firebase. '
-  ||'Pedidos e ganhos sincronizados, alertas de entrega e acompanhamento.',
-  'Android 8.0 ou superior. Permita notificações e otimize as configurações de bateria para receber avisos em segundo plano.',
-  true,'577d618ac8bd8977cf3de088a3f1ee8bb5b59a5fb48909cfc6746371999f6f45',2314635,'published',
-  '2026-11-18T15:40:45Z'::timestamptz,
-  '2026-11-18T15:40:45Z'::timestamptz,
-  'github_official','https://github.com/juniorclerio37-creator/pitacco/releases/download/pitacco-entregador-v2.0.6-4e5c9c2de727/Pitacco-Entregador-2.0.6.apk'
- where not exists(
-  select 1 from public.pitacco_app_releases
-  where app='android' and channel='stable' and state='published'
- )
- on conflict (app,channel,version) do nothing
- returning id
-), owner as (
- select user_id from pitacco_private.platform_owner order by user_id limit 1
-)
-insert into public.pitacco_app_release_audit(release_id,actor,action)
-select r.id,o.user_id,event.action
-from release r cross join owner o
-cross join (values ('draft'),('verified'),('published')) as event(action);
+-- An externally hosted release is registered only after its GitHub Actions
+-- signature verification and SHA-256 evidence have been inspected. The single
+-- official 2.0.6 release is registered through a separate audited data action;
+-- do not seed an Android release in every fresh CI test database.
 notify pgrst,'reload schema';
