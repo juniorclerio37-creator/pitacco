@@ -153,6 +153,10 @@ a.btn{text-decoration:none}
   <p class="note-inline">Quando não houver coordenadas verificadas, o aplicativo abre o endereço informado pela loja.</p>
  </section>
  <section class="panel-white pref-panel">
+  <span class="eyebrow">LOCALIZAÇÃO PARA ENTREGAS</span>
+  <button type="button" class="settings-row" id="retryCourierGps"><span>Ativar ou atualizar meu GPS</span><span class="setting-arrow">◎</span></button>
+  <p id="courierGpsStatus" role="status" aria-live="polite">Ative seu plantão para compartilhar sua posição com a loja.</p>
+  <p class="note-inline">O GPS é enviado somente quando você está online. Para atualizar a localização, permita o acesso do Pitacco ao GPS do aparelho. Nesta versão, o acompanhamento pode pausar quando o aplicativo está em segundo plano.</p>
   <span class="eyebrow">AJUDA E SINCRONIZAÇÃO</span>
   <button type="button" class="settings-row" id="enableNativePush" hidden><span>Ativar avisos no Android</span><span class="setting-arrow">›</span></button>
   <p id="nativePushStatus" role="status" aria-live="polite"></p>
@@ -198,6 +202,67 @@ const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshTo
 const driver=createDriverAuth(sb);
 const orderDetails=createOrderDetailsController({supabase:sb,routeFor:delivery=>buildNavigationUrl(delivery,navProvider,navMode)});
 let courier=null, busy=false,routeOrigins=new Map(),lastCompletedBatchStops=new Map();
+let gpsWatchId=null, gpsCourierId=null, gpsLastAttemptAt=0, gpsInFlight=false;
+function gpsStatus(text){
+ const output=$("courierGpsStatus");
+ if(output)output.textContent=text;
+}
+function stopGpsSharing(){
+ if(gpsWatchId!==null&&navigator.geolocation)navigator.geolocation.clearWatch(gpsWatchId);
+ gpsWatchId=null;gpsCourierId=null;
+}
+function syncGpsSharing(){
+ if(!courier?.available||navigator.onLine===false){
+  stopGpsSharing();
+  gpsStatus(courier?.available?"Sem internet para atualizar o GPS.":"Ative seu plantão para compartilhar sua localização.");
+  return;
+ }
+ if(!navigator.geolocation){
+  gpsStatus("Geolocalização indisponível neste aparelho ou navegador.");
+  return;
+ }
+ if(gpsWatchId!==null&&gpsCourierId===courier.id)return;
+ stopGpsSharing();
+ gpsCourierId=courier.id;
+ gpsStatus("Solicitando permissão de localização…");
+ try{
+ gpsWatchId=navigator.geolocation.watchPosition(async point=>{
+  if(!courier?.available||courier.id!==gpsCourierId||navigator.onLine===false)return;
+  const {latitude,longitude,accuracy}=point.coords;
+  if(!Number.isFinite(point.timestamp)||Date.now()-point.timestamp>15000){
+   gpsStatus("GPS antigo. Aguardando localização atual…");return;
+  }
+  if(![latitude,longitude,accuracy].every(Number.isFinite)||
+     Math.abs(latitude)>90||Math.abs(longitude)>180||(!latitude&&!longitude)){
+   gpsStatus("Coordenadas de GPS inválidas. Verifique o aparelho.");return;
+  }
+  if(accuracy<0||accuracy>100){
+   gpsStatus("Precisão insuficiente ("+Math.round(accuracy)+" m). Ative a localização precisa.");return;
+  }
+  const current=Date.now();
+  if(gpsInFlight||current-gpsLastAttemptAt<12000)return;
+  gpsLastAttemptAt=current;gpsInFlight=true;
+  try{
+   const {error}=await sb.rpc("pitacco_courier_report_position",{
+    p_lat:latitude,p_lng:longitude,p_accuracy_m:accuracy
+   });
+   if(error)throw new Error(error.message||"Erro do servidor");
+   gpsStatus("GPS atualizado e sincronizado com a loja · precisão "+Math.round(accuracy)+" m.");
+  }catch(error){
+   gpsStatus("Falha ao sincronizar GPS: "+String(error?.message||"Tente novamente").slice(0,140));
+  }finally{gpsInFlight=false;}
+ },error=>{
+  const description=error.code===1?"Permissão de GPS negada. Autorize o Pitacco nos ajustes do Android."
+   :error.code===2?"A localização está indisponível. Verifique o GPS do aparelho."
+   :"GPS sem resposta. Verifique o sinal e toque em Atualizar meu GPS.";
+  gpsStatus(description);
+  if(error.code===1)stopGpsSharing();
+ },{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+ }catch{
+  stopGpsSharing();gpsStatus("Não foi possível iniciar o GPS. Confira as permissões.");
+ }
+}
+
 function updateConnectionBanner(){
  const offline=navigator.onLine===false;
  $("connectionBanner").hidden=!offline;
@@ -813,6 +878,7 @@ async function refreshSnapshot(){
  $("availableHelp").textContent=courier.available?"Você pode receber pedidos da loja.":"Ative sua disponibilidade para receber pedidos.";
  $("online").textContent=courier.available?"Ficar offline":"Ficar online";
  $("online").disabled=navigator.onLine===false;
+ syncGpsSharing();
  // A única exceção autorizada usa o mesmo courier_id, sem criar outro cadastro.
  // RLS protege a seleção e as operações, inclusive a loja de testes.
  const {data:labels,error:labelsError}=badges;
@@ -1030,6 +1096,9 @@ async function boot(){
   $("cards").replaceChildren(element("div","empty","Não foi possível carregar as entregas."));
  }
 }
+$("retryCourierGps").addEventListener("click",()=>{
+ stopGpsSharing();syncGpsSharing();
+});
 $("online").addEventListener("click",async()=>{
  if(!courier||busy)return;busy=true;$("online").disabled=true;
  try{
@@ -1089,6 +1158,7 @@ document.querySelectorAll("[data-map-mode]").forEach(b=>b.addEventListener("clic
  updateRouteLinks();
 }));
 async function logout(){
+ stopGpsSharing();
  orderDetails.close();
  if(window.PitaccoPush?.postMessage){
   await sb.rpc("pitacco_unregister_courier_push").catch(()=>{});
