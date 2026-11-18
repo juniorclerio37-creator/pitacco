@@ -94,6 +94,7 @@ test('CORS preflight only authorizes official admin origin',async()=>{
  const res=await h.handler(req);
  assert.equal(res.status,204);
  assert.equal(res.headers.get('access-control-allow-origin'),origin);
+ assert.match(res.headers.get('access-control-allow-headers'),/x-client-info/);
  assert.equal(h.calls.length,0);
 });
 test('failed Supabase authentication backend never exposes configuration',async()=>{
