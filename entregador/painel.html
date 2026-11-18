@@ -745,17 +745,23 @@ function initializeNativePush(){
    nativeTestPending=false;
    window.clearTimeout(nativeTestTimeout);
    const result=value.slice("shift_test:".length);
-   $("assignmentSoundStatus").textContent=result==="started"
-    ?"Modo Plantão: o Android iniciou o teste com volume de alarme temporário. Confirme se ouviu o toque no silencioso."
-    :result==="blocked_dnd"?"Modo Não Perturbe impediu o teste. O Pitacco não altera essa configuração."
-    :result==="volume_restricted"?"O Android impediu o aumento temporário do volume."
-    :"Modo Plantão: o Android não conseguiu reproduzir o alerta ("+result+").";
+   $("assignmentSoundStatus").textContent=result==="started_media"
+    ?"Modo Plantão: o Android iniciou sino e voz usando temporariamente o volume de mídia. Confirme se ouviu com os volumes no mínimo."
+    :result==="started_alarm"
+    ?"Modo Plantão: o Android iniciou sino e voz usando temporariamente o volume de alarme. Confirme se ouviu com os volumes no mínimo."
+    :result==="off"
+    ?"Modo Plantão está desligado. Ative-o acima para testar o aumento temporário de volume."
+    :result==="blocked_dnd"?"O modo Não Perturbe pode impedir este alerta. O Pitacco não altera essa configuração automaticamente."
+    :result==="volume_restricted"?"O Android não autorizou o aumento temporário do volume. Não foi possível confirmar som audível."
+    :"Modo Plantão: o Android não conseguiu iniciar o alerta ("+result+").";
    return;
   }
   if(value==="tested"){
    nativeTestPending=false;
    window.clearTimeout(nativeTestTimeout);
-   $("assignmentSoundStatus").textContent="Android confirmou a notificação de teste. Confira o volume de notificações do aparelho.";
+   $("assignmentSoundStatus").textContent=shiftSoundAvailable&&!shiftSoundEnabled
+    ?"Android confirmou o aviso normal, que respeita o silencioso. Para testar com todos os volumes no mínimo, ative Modo Plantão acima."
+    :"Android confirmou a notificação de teste. Confira se o som foi audível.";
    return;
   }
   if((value==="permission"||value==="channel_disabled"||value==="channel_silent")&&nativeTestPending){
