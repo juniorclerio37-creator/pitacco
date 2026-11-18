@@ -209,3 +209,43 @@ test("parallel Android test asks notification permission even without Firebase",
  assert.ok(activity.includes("Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS"));
  assert.ok(manifest.includes('android.permission.POST_NOTIFICATIONS'));
 });
+
+test("delivery Shift Sound is opt-in, restores prior alarm volume, and reserves separate courier voice",()=>{
+ const page=read("painel.html");
+ const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
+ const player=read("android-app/app/src/main/java/br/com/pitacco/entregador/ShiftSoundPlayer.java");
+ const service=read("android-app/app/src/main/java/br/com/pitacco/entregador/AssignmentMessagingService.java");
+ const manifest=read("android-app/app/src/main/AndroidManifest.xml");
+ const generator=read("android-app/generate-alert.py");
+ assert.ok(page.includes('id="shiftSoundToggle"'));
+ assert.ok(page.includes('window.confirm("Ativar Modo Plantão?'));
+ assert.ok(page.includes('native.postMessage("shift_enable")'));
+ assert.ok(page.includes('native.postMessage("shift_disable")'));
+ assert.ok(page.includes('if(value.startsWith("shift_test:"))'));
+ assert.ok(activity.includes('"shift_enable".equals(action)'));
+ assert.ok(activity.includes('ShiftSoundPlayer.setEnabled(this, true)'));
+ assert.ok(activity.includes('token_native:'));
+ assert.ok(player.includes('getBoolean(KEY_ENABLED, false)'));
+ assert.ok(player.includes('AudioManager.STREAM_ALARM'));
+ assert.ok(player.includes('setStreamVolume(AudioManager.STREAM_ALARM, raised, 0)'));
+ assert.ok(player.includes('manager.getStreamVolume(AudioManager.STREAM_ALARM) == temporary'));
+ assert.ok(player.includes('getCurrentInterruptionFilter()'));
+ assert.ok(player.includes('MediaPlayer instance = new MediaPlayer()'));
+ assert.ok(service.includes('SHIFT_CHANNEL_ID'));
+ assert.ok(service.includes('ShiftSoundPlayer.play(context)'));
+ assert.ok(manifest.includes('android.permission.MODIFY_AUDIO_SETTINGS'));
+ assert.ok(generator.includes("assets/voz-entregador.wav"));
+ assert.ok(generator.includes('bell + dedicated courier voice'));
+ assert.ok(generator.includes('bell only'));
+ assert.ok(!generator.includes('novo pedido'));
+ assert.ok(!page.includes('automatically changes Do Not Disturb'));
+});
+test("courier 2.0 registers FCM native payload without removing legacy token registration",()=>{
+ const page=read("painel.html");
+ const migration=read("../supabase/migrations/20261118040000_pitacco_courier_native_voice_push.sql");
+ assert.ok(page.includes('pitacco_register_courier_push_native'));
+ assert.ok(page.includes('pitacco_register_courier_push"'));
+ assert.ok(migration.includes("push_protocol text not null default 'notification'"));
+ assert.ok(migration.includes("push_protocol='data_only'"));
+ assert.ok(migration.includes('grant execute on function public.pitacco_courier_push_protocol(text) to service_role'));
+});
