@@ -24,6 +24,8 @@ h1{font-size:26px;margin:10px 0 4px;letter-spacing:-.6px}.sub{font-size:14px;col
 .info{font-size:13px;color:#657183;background:#fff;border:1px solid #e6e9ef;border-radius:15px;padding:16px;margin:15px 0}
 .topactions{display:flex;gap:8px;align-items:center}
 #notice{color:#b91c1c;font-size:13px;min-height:20px;margin:12px 0}
+#connectionBanner{display:flex;align-items:center;gap:8px;padding:12px 16px;margin:0 auto;max-width:1000px;background:#fff5e6;color:#7c3e0f;border:1px solid #f4cf9f;border-radius:12px;font-size:13px;line-height:1.5;font-weight:650}
+#connectionBanner[hidden]{display:none}
 .hidden{display:none!important}.empty{padding:30px;border:1px dashed #cfd6dd;border-radius:20px;text-align:center;color:#687383}
 a.btn{text-decoration:none}
 
@@ -71,6 +73,9 @@ a.btn{text-decoration:none}
     <div class="header-right"><span class="store-pill" id="storeChip" title="Loja ativa">Minha loja</span><button class="header-refresh" id="refresh" type="button" aria-label="Atualizar informações" title="Atualizar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-5L4 8m0-4v4h4M4 13a8 8 0 0 0 14 5l2-2m0 4v-4h-4"/></svg></button></div>
   </div>
 </header>
+<div id="connectionBanner" role="status" aria-live="polite" hidden>
+ Sem conexão detectada. As entregas já abertas continuam visíveis, mas mudanças de status e confirmações precisam de internet.
+</div>
 <main class="app-shell">
 <section class="app-view" data-view="pedidos" id="viewPedidos">
   <div class="order-header">
@@ -186,6 +191,18 @@ const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshTo
 const driver=createDriverAuth(sb);
 const orderDetails=createOrderDetailsController({supabase:sb,routeFor:delivery=>buildNavigationUrl(delivery,navProvider,navMode)});
 let courier=null, busy=false;
+function updateConnectionBanner(){
+ const offline=navigator.onLine===false;
+ $("connectionBanner").hidden=!offline;
+ if(offline)$("online").disabled=true;
+ else if(courier&&!busy)$("online").disabled=false;
+}
+window.addEventListener("offline",updateConnectionBanner);
+window.addEventListener("online",()=>{
+ updateConnectionBanner();
+ if(courier)refresh().catch(error=>message("A conexão voltou, mas não foi possível sincronizar: "+String(error.message)));
+});
+updateConnectionBanner();
 let orderCardBadges=new Map();
 let lastHistoryRequest=0;
 
@@ -609,7 +626,7 @@ async function refreshSnapshot(){
  $("onlineDot").classList.toggle("online",!!courier.available);
  $("availableHelp").textContent=courier.available?"Você pode receber pedidos da loja.":"Ative sua disponibilidade para receber pedidos.";
  $("online").textContent=courier.available?"Ficar offline":"Ficar online";
- $("online").disabled=false;
+ $("online").disabled=navigator.onLine===false;
  const list=await driver.myDeliveries([courier.id]);
  // A única exceção autorizada usa o mesmo courier_id, sem criar outro cadastro.
  // RLS protege a seleção e as operações, inclusive a loja de testes.
@@ -740,7 +757,7 @@ $("online").addEventListener("click",async()=>{
   if(error)throw new Error(error.message);
   message("");await refresh(true);
  }catch(err){message(String(err?.message??"Falha ao mudar disponibilidade"));}
- finally{busy=false;$("online").disabled=false;}
+ finally{busy=false;$("online").disabled=navigator.onLine===false;}
 });
 $("refresh").addEventListener("click",()=>refresh().catch(e=>message(String(e.message))));
 $("testAssignmentSound").addEventListener("click",async()=>{
