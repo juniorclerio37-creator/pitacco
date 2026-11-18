@@ -207,7 +207,9 @@ public class MainActivity extends Activity {
         if (FirebaseApp.getApps(this).isEmpty()) return;
         FirebaseMessaging.getInstance().getToken().addOnCompleteListener(this, result -> {
             if (!result.isSuccessful() || result.getResult() == null) reply.postMessage("failed");
-            else reply.postMessage("token:" + result.getResult());
+            // Native courier Android 2.0 supports data-only FCM with explicit
+            // notification and audible alarm. Old APKs still send "token:".
+            else reply.postMessage("token_native:" + result.getResult());
         });
     }
 
