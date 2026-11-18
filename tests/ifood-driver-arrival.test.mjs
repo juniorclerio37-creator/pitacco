@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {createIfoodOrders} from '../supabase/functions/ifood-orders/handler.mjs';
 
 const delivery='00000000-0000-0000-0000-000000000090';
@@ -18,6 +19,15 @@ function createHarness(providerStatus=200,providerBody={valid:true},scoped=true)
   fetcher:async (target,options={})=>{
    const path=new URL(target).pathname;
    calls.push({path,body:options.body,headers:options.headers});
+   if(path.endsWith('/pitacco_driver_ifood_dispatch_claim')){
+    assert.equal(options.headers.authorization,'Bearer courier-test-session');
+    return scoped?reply({status:'claimed',lease:'00000000-0000-4000-8000-000000000093',
+      merchant_id:merchant,external_order_id:external,ready_on_ifood:true}):
+      reply({error:'only merchant courier'},403);
+   }
+   if(path.endsWith('/pitacco_ifood_dispatch_result'))return reply(true);
+   if(path.endsWith('/dispatch'))return reply({},202);
+   if(path.endsWith('/readyToPickup'))return reply({},202);
    if(path.endsWith('/pitacco_driver_ifood_action')){
     assert.equal(options.headers.authorization,'Bearer courier-test-session');
     return scoped?reply({already:false,merchant_id:merchant,external_order_id:external}):reply({error:'not authorized'},403);
@@ -93,4 +103,33 @@ test('a 200 response without valid:true never completes delivery',async()=>{
  const response=await call('verify','1234');
  assert.equal(response.status,409);
  assert.equal(calls.some(x=>x.path.endsWith('/pitacco_ifood_driver_result')),false);
+});
+
+test('merchant courier collection calls /dispatch with deliveredBy MERCHANT after scoped claim',async()=>{
+ const {calls,call}=createHarness();
+ const response=await call('dispatch');
+ assert.equal(response.status,202);
+ assert.equal((await response.json()).provider_state,'submitted');
+ const claim=calls.find(x=>x.path.endsWith('/pitacco_driver_ifood_dispatch_claim'));
+ const sent=calls.find(x=>x.path.endsWith('/dispatch'));
+ assert.ok(claim&&sent);
+ assert.equal(sent.path,'/order/v1.0/orders/'+external+'/dispatch');
+ assert.deepEqual(JSON.parse(sent.body),{deliveredBy:'MERCHANT'});
+ assert.equal(calls.filter(x=>x.path.endsWith('/pitacco_ifood_dispatch_result')).length,1);
+});
+
+test('partner-delivery or unscoped courier is rejected before any iFood dispatch',async()=>{
+ const {calls,call}=createHarness(200,{valid:true},false);
+ const response=await call('dispatch');
+ assert.equal(response.status,403);
+ assert.equal(calls.some(x=>x.path.endsWith('/dispatch')),false);
+});
+
+test('only local pickup button invokes provider dispatch on merchant iFood deliveries',()=>{
+ const page=readFileSync(new URL('../entregador/painel.html',import.meta.url),'utf8');
+ assert.match(page,/Efetuei a coleta/);
+ assert.match(page,/sb\.rpc\("pitacco_driver_collect"/);
+ assert.match(page,/if\(d\.source==="ifood"&&d\.logistics_provider==="loja"\)/);
+ assert.match(page,/ifoodDriverAction\(d\.id,"dispatch"\)/);
+ assert.match(page,/Sair para entrega/);
 });
