@@ -156,9 +156,10 @@ a.btn{text-decoration:none}
   <button type="button" class="settings-row" id="checkNativePush"><span>Verificar recebimento de novas entregas</span><span class="setting-arrow">↻</span></button>
   <p id="nativePushReadiness" role="status" aria-live="polite">Verificação do aparelho disponível após o login.</p>
   <button type="button" class="settings-row" id="nativeNotificationSettings" hidden><span>Configurar volume e notificações do Android</span><span class="setting-arrow">›</span></button>
-  <p class="note-inline">O toque de nova entrega pode chegar mesmo com o app em segundo plano. Para ouvi-lo, mantenha os avisos autorizados e o volume de notificações ligado. O modo Não Perturbe e as restrições de bateria podem silenciar ou atrasar o aviso.</p>
-  <button type="button" class="settings-row" id="shiftSoundToggle" hidden><span>Modo Plantão — som forte no silencioso</span><span class="setting-arrow" id="shiftSoundState">DESLIGADO</span></button>
-  <p id="shiftSoundDescription" class="note-inline" hidden>Com sua autorização, o Pitacco poderá elevar temporariamente o volume de alarme para avisar sobre entregas e depois restaurá-lo. Não altera o modo Não Perturbe. O Android ainda pode restringir a reprodução.</p>
+  <p class="note-inline">Para novas entregas em segundo plano, permita as notificações e mantenha o aparelho conectado. Sem o Modo Plantão, o Android pode silenciar o aviso se o volume estiver no mínimo. O Não Perturbe e as restrições de bateria também podem impedir ou atrasar alertas.</p>
+  <button type="button" class="settings-row" id="shiftSoundToggle" aria-pressed="false" hidden><span id="shiftSoundLabel">Modo Plantão — desativado</span><span class="setting-arrow" id="shiftSoundState">ATIVAR</span></button>
+  <p id="shiftSoundDescription" class="note-inline" hidden>Toque em ATIVAR para autorizar sino e voz com aumento temporário do volume de alarme. O Pitacco tenta restaurar o volume original após o alerta, sem alterar o Não Perturbe.</p>
+  <p id="shiftSoundUnsupported" class="note-inline" role="status" hidden>O Modo Plantão precisa da versão Android atualizada. A versão instalada não reconhece o controle de ativação. Atualize o Pitacco Entregador para habilitar o sino e a voz em volume alto.</p>
   <button type="button" class="settings-row" id="testAssignmentSound"><span>Testar som de nova entrega</span><span class="setting-arrow">♪</span></button>
   <p id="assignmentSoundStatus" role="status" aria-live="polite"></p>
   <button type="button" class="settings-row" id="settingsRefresh"><span>Atualizar pedidos e ganhos</span><span class="setting-arrow">↻</span></button>
@@ -707,6 +708,11 @@ function initializeNativePush(){
  settings.hidden=false;
  settings.addEventListener("click",()=>native.postMessage("settings"));
  const shiftToggle=$("shiftSoundToggle"),shiftDescription=$("shiftSoundDescription");
+ // Older APKs have a PitaccoPush bridge, but not the shift_status command.
+ // Do not display a fake "DESLIGADO" control that cannot activate anything.
+ const shiftProbe=window.setTimeout(()=>{
+  if(!shiftSoundAvailable)$("shiftSoundUnsupported").hidden=false;
+ },2500);
  // Keep this control hidden in older APKs that do not support it.
  shiftToggle.addEventListener("click",()=>{
   if(!shiftSoundAvailable){
@@ -734,10 +740,13 @@ function initializeNativePush(){
  native.onmessage=async event=>{
   const value=String(event.data||"");
   if(value.startsWith("shift_sound:")){
+   window.clearTimeout(shiftProbe);
+   $("shiftSoundUnsupported").hidden=true;
    shiftToggle.hidden=false;shiftDescription.hidden=false;
    shiftSoundAvailable=true;
    shiftSoundEnabled=value==="shift_sound:on";
-   $("shiftSoundState").textContent=shiftSoundEnabled?"ATIVADO":"DESLIGADO";
+   $("shiftSoundLabel").textContent=shiftSoundEnabled?"Modo Plantão — ativado":"Modo Plantão — desativado";
+   $("shiftSoundState").textContent=shiftSoundEnabled?"DESATIVAR":"ATIVAR";
    $("shiftSoundToggle").setAttribute("aria-pressed",String(shiftSoundEnabled));
    return;
   }
