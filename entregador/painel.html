@@ -694,18 +694,35 @@ function card(d){
     verify.append(element("strong","card-verify-title","Você chegou ao destino"));
     verify.append(element("p","card-verify-help","Peça o código de confirmação ao cliente."));
     const form=element("form","verify-form"),code=element("input","verify-input");
+    form.noValidate=true;
     code.type="text";code.inputMode="numeric";code.autocomplete="one-time-code";
     code.maxLength=d.source==="proprio"?6:8;
     code.pattern=d.source==="proprio"?"[0-9]{6}":"[0-9]{4,8}";
     code.placeholder=d.source==="proprio"?"Código Pitacco (6 dígitos)":"Código do cliente (iFood)";
-    code.setAttribute("aria-label","Código de entrega fornecido pelo cliente");code.required=true;
+    const draft=codeDrafts.get(d.id)||{value:"",error:""};
+    code.value=draft.value;
+    code.setAttribute("aria-label","Código de entrega fornecido pelo cliente");
+    const fields=element("div","verify-fields");
+    const feedback=element("p","verify-error",draft.error);
+    feedback.id="verify-error-"+d.id;
+    feedback.setAttribute("role","status");
+    feedback.setAttribute("aria-live","polite");
+    feedback.hidden=!draft.error;
+    code.setAttribute("aria-describedby",feedback.id);
+    code.setAttribute("aria-invalid",String(!!draft.error));
+    fields.append(code,feedback);
+    code.addEventListener("input",()=>{
+     codeDrafts.set(d.id,{value:code.value,error:""});
+     feedback.textContent="";feedback.hidden=true;
+     code.setAttribute("aria-invalid","false");
+    });
     const submit=createAction("Confirmar entrega","primary",null);submit.type="submit";
     if(d.source==="ifood"&&!synced){
      verify.append(element("p","card-verify-pending",
       "A chegada foi registrada no Pitacco. Você pode tentar validar o código pelo iFood, mesmo se o aviso de chegada ainda estiver pendente."));
     }
     form.addEventListener("submit",event=>{event.preventDefault();verifyCode(d,code.value)});
-    form.append(code,submit);verify.append(form);
+    form.append(fields,submit);verify.append(form);
     if(d.source==="ifood"){
      verify.append(element("p","card-ifood-fallback","Não conseguiu confirmar pelo código?"));
      const officialUrl="https://confirmacao-entrega-propria.ifood.com.br/";
@@ -799,6 +816,11 @@ async function refreshSnapshot(){
  // Finished deliveries are never included in the raw private order list.
  announceAssignments(current,courier);
  assignedDeliveries=current;
+ for(const id of codeDrafts.keys()){
+  if(!current.some(d=>d.id===id))codeDrafts.delete(id);
+ }
+ if(!current.some(d=>d.source==="ifood")
+   && /Aguardando o iFood confirmar a entrega/i.test($("notice").textContent||""))message("");
  orderDetails.keepActive(current);
  try{
   const {data:origins,error}=await sb.rpc("pitacco_driver_route_origins");
