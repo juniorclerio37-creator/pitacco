@@ -166,3 +166,15 @@ test('same installed Windows app keeps order cards and guarded conclusion next t
  assert.match(css,/pedidos-complete-button/);
  assert.doesNotMatch(orders,/applicationId\s*:/);
 });
+
+
+test('each merchant order card labels its platform with an offline icon',()=>{
+ const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../pedidos.css',import.meta.url),'utf8');
+ assert.match(orders,/function PlatformIcon\(\{source\}\)/);
+ assert.match(orders,/<PlatformIcon source=\{o\.source\}\/>/);
+ for(const platform of ['99food','ifood','keeta','loja']){
+   assert.ok(orders.includes("platform==='"+platform+"'")||orders.includes("platform='"+platform+"'"),platform);
+   assert.ok(css.includes('data-platform="'+platform+'"'),platform);
+ }
+});
