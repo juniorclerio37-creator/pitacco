@@ -32,6 +32,8 @@ on:
       - 'supabase/config.toml'
       - '.github/workflows/site-validation.yml'
   workflow_dispatch:
+env:
+  PITACCO_WEB_ONLY: '1'
 jobs:
   postgres:
     name: Validar migrações no PostgreSQL 17
@@ -53,8 +55,6 @@ jobs:
       DATABASE_URL: postgres://postgres:isolated-ci-password@localhost:5432/postgres
     steps:
       - uses: actions/checkout@v4
-      - name: Preparar voz oficial embutida nos testes
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -69,8 +69,6 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Preparar voz oficial embutida nos testes
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
