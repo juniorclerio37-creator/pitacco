@@ -155,6 +155,10 @@ test('diagnostic telemetry is allowlisted and does not leak tokens or order data
  const payload=await response.json();
  assert.equal(payload.signalsAvailable,true);
  assert.equal(h.called.length,6);
+ const readinessRequest=h.called.find(call=>call.url.endsWith('/functions/v1/pitacco-owner-push-readiness'));
+ assert.ok(readinessRequest);
+ assert.equal(readinessRequest.init.headers.authorization,'Bearer session-valid');
+ assert.equal(readinessRequest.init.headers.apikey,'sb_publishable_fixture');
  assert.equal(h.calls.length,1);
  const prompt=h.calls[0].args.messages[1].content;
  assert.match(prompt,/"jobs_24h":5/);
