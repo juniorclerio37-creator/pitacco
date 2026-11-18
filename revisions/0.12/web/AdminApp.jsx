@@ -1,7 +1,7 @@
 import React,{useEffect,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {createClient} from '@supabase/supabase-js';
-import {LayoutDashboard, Store, Package, CreditCard, ClipboardCheck, LogOut, Settings, ShoppingBag, Bike, ListChecks, Menu, Sun, Moon} from 'lucide-react';
+import {LayoutDashboard, Store, Package, CreditCard, ClipboardCheck, LogOut, Settings, ShoppingBag, Bike, ListChecks, Menu, Sun, Moon, Activity} from 'lucide-react';
 import {connectionConfig} from './config.mjs';
 import OwnerSubscriptions from './OwnerSubscriptions.jsx';
 import OwnerDashboard from './OwnerDashboard.jsx';
@@ -19,6 +19,7 @@ import OwnerOperations from './OwnerOperations.jsx';
 import OwnerAppReleases from './OwnerAppReleases.jsx';
 import SupportCenter from './SupportCenter.jsx';
 import IncidentCenter from './IncidentCenter.jsx';
+import OwnerIncidentNotifier from './OwnerIncidentNotifier.jsx';
 import './style.css';
 import './super-admin.css';
 
@@ -34,7 +35,7 @@ const groups=[
  ['Operação',[['Estabelecimentos',Store],['Pedidos',ShoppingBag],['Entregadores',Bike]]],
  ['Gestão comercial',[['Assinaturas',CreditCard],['Plano Pitacco',Package],['Financeiro do Pitacco',CreditCard]]],
  ['Administração',[['Módulos do lojista',Package],['Homologação',ClipboardCheck]]],
- ['Sistema',[['Auditoria',ListChecks],['Suporte e incidentes',ClipboardCheck],['Central de Aplicativos',Settings]]]
+ ['Sistema',[['Auditoria',ListChecks],['Central de Diagnósticos',Activity],['Suporte e incidentes',ClipboardCheck],['Central de Aplicativos',Settings]]]
 ];
 const operations={Pedidos:'orders',Entregadores:'couriers',Auditoria:'audit'};
 function initialTheme(){
@@ -151,6 +152,7 @@ function AdminApp(){
     <div><button type="button" className="secondary" aria-label="Menu administrativo" aria-controls="admin-sidebar" aria-expanded={sidebar} onClick={()=>setSidebar(value=>!value)}><Menu size={18}/></button>
     <h2>{page}</h2></div>
     <div className="admin-top-actions">
+     <OwnerIncidentNotifier client={client} onOpen={()=>changePage('Central de Diagnósticos')}/>
      <details className="admin-search"><summary>Buscar loja</summary>
       <label className="field">Nome da loja<input type="search" value={storeSearch} onChange={event=>setStoreSearch(event.target.value)}/></label>
       {results.length===0?<p>Nenhuma loja encontrada.</p>:<label className="field">Resultados<select value="" onChange={event=>{
@@ -169,7 +171,8 @@ function AdminApp(){
    {page==='Assinaturas'&&<OwnerSubscriptions client={client}/>}
    {page==='Módulos do lojista'&&<OwnerFeatures client={client} stores={stores}/>}
    {page==='Central de Aplicativos'&&<OwnerAppReleases client={client}/>}
-   {page==='Suporte e incidentes'&&<><SupportCenter client={client} stores={stores} owner/><IncidentCenter client={client} stores={stores} owner/></>}
+   {page==='Suporte e incidentes'&&<SupportCenter client={client} stores={stores} owner/>}
+   {page==='Central de Diagnósticos'&&<IncidentCenter client={client} stores={stores} owner/>}
    {page==='Homologação'&&<>
     <OwnerIfood client={client} stores={stores}/>
     <Owner99Food client={client} stores={stores}/>

@@ -20,16 +20,29 @@ do $test$ begin
  assert (select detections>=2 from public.pitacco_operational_incidents
   where store_id='82000000-0000-0000-0000-000000000001' and code='acceptance_late');
 end $test$;
+-- Explicit payment failures are captured by a trigger, without waiting for cron.
+update public.orders set receipt='{"display_number":"D-101","payment_status":"failed"}'::jsonb
+ where id='83000000-0000-0000-0000-000000000001';
+do $test$ begin
+ assert exists(
+  select 1 from public.pitacco_operational_incidents
+  where code='payment_failed' and entity_id='83000000-0000-0000-0000-000000000001'
+   and status='open'
+ );
+end $test$;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','81000000-0000-0000-0000-000000000001',true);
 do $test$
 declare incident uuid;
 begin
- assert jsonb_array_length(public.pitacco_incidents('82000000-0000-0000-0000-000000000001')->'rows')>=1;
- incident:=(public.pitacco_incidents('82000000-0000-0000-0000-000000000001')->'rows'->0->>'id')::uuid;
  begin
-  perform public.pitacco_incidents('82000000-0000-0000-0000-000000000002');
-  raise exception 'Foreign store access must be rejected';
+  perform public.pitacco_incidents('82000000-0000-0000-0000-000000000001');
+  raise exception 'Managers must not read technical diagnostics';
+ exception when insufficient_privilege then null;end;
+ incident:='83000000-0000-0000-0000-000000000001';
+ begin
+  perform public.pitacco_owner_incident_pulse();
+  raise exception 'Managers must not read global notification pulse';
  exception when insufficient_privilege then null;end;
  begin
   perform public.pitacco_owner_acknowledge_incident(incident,'Recebido pelo lojista');
@@ -41,6 +54,8 @@ do $test$
 declare incident uuid; result jsonb;
 begin
  incident:=(public.pitacco_incidents(null)->'rows'->0->>'id')::uuid;
+ assert (public.pitacco_owner_incident_pulse()->>'open')::integer>=1;
+ assert (public.pitacco_owner_incident_pulse()->>'urgent')::integer>=1;
  result:=public.pitacco_owner_acknowledge_incident(incident,'Incidente recebido e atribuído ao suporte');
  assert result->>'acknowledged'='true';
  assert (public.pitacco_incidents(null)->'rows'->0->>'acknowledged_at') is not null;

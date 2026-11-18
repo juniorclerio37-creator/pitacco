@@ -1,0 +1,10 @@
+.owner-alerts-header{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.owner-alerts-header button{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;min-height:38px}
+.owner-alerts-indicator--urgent{border-color:#d97706!important;color:#b45309!important;font-weight:800}
+.owner-alerts-error{color:#dc2626;font-size:12px;font-weight:650}
+.owner-alerts-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:840px){
+ .owner-alerts-header{max-width:100%;order:2}
+ .owner-alerts-header button{padding:8px;font-size:12px}
+ .owner-alerts-header button span{max-width:135px;overflow:hidden;text-overflow:ellipsis}
+}
