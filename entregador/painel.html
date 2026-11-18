@@ -209,6 +209,8 @@ window.addEventListener("online",()=>{
 });
 updateConnectionBanner();
 let orderCardBadges=new Map();
+// Confirmation drafts are ephemeral: never stored on disk or localStorage.
+const codeDrafts=new Map();
 let lastHistoryRequest=0;
 
 let earnPeriod="hoje", earnRequest=0, lastEarningsReport=null;
@@ -463,7 +465,7 @@ async function markArrival(d){
   if(d.source==="ifood"){
    try{
     const result=await ifoodDriverAction(d.id,"arrival");
-    if(result.provider_state==="submitted")info="Chegada enviada ao iFood, aguardando confirmação da plataforma. Peça o código ao cliente.";
+    if(result.provider_state==="submitted")info="Chegada registrada. Peça o código ao cliente.";
    }catch(error){info+=" Aviso iFood ainda não confirmado: "+String(error.message);}
   }else if(d.source==="99food")info+=" Aviso à 99Food ainda não homologado; não há confirmação de notificação ao cliente.";
   else if(d.source==="keeta")info+=" Aviso à Keeta ainda não homologado.";
@@ -486,27 +488,54 @@ function rememberCompletedBatchStop(d){
     (latitude===0&&longitude===0))return;
  lastCompletedBatchStops.set(String(d.store_id)+":"+String(d.batch_id),{latitude,longitude});
 }
+function inlineCodeError(deliveryId,errorText){
+ const draft=codeDrafts.get(deliveryId)||{value:"",error:""};
+ draft.error=errorText;
+ codeDrafts.set(deliveryId,draft);
+ const card=[...document.querySelectorAll(".card[data-delivery-id]")]
+  .find(node=>node.getAttribute("data-delivery-id")===deliveryId);
+ const feedback=card?.querySelector(".verify-error"),input=card?.querySelector(".verify-input");
+ if(feedback){feedback.textContent=errorText;feedback.hidden=!errorText;}
+ if(input)input.setAttribute("aria-invalid",String(!!errorText));
+}
 async function verifyCode(d,code){
  if(busy)return;busy=true;message("");
  try{
   if(!d.arrived_at)throw Error("Registre primeiro a chegada ao cliente");
   const digits=String(code||"").trim();
   if(d.source==="proprio"){
-   if(!/^[0-9]{6}$/.test(digits))throw Error("Informe o código Pitacco de seis dígitos");
+   if(!/^[0-9]{6}$/.test(digits)){
+    inlineCodeError(d.id,"Código incorreto");return;
+   }
    const {data,error}=await sb.rpc("pitacco_driver_verify_own_code",{p_delivery:d.id,p_code:digits});
    if(error)throw Error(error.message||"Código não validado");
-   if(!data?.verified)throw Error("Código incorreto. Tentativas restantes: "+String(data?.remaining??0));
+   if(!data?.verified){inlineCodeError(d.id,"Código incorreto");return;}
   }else if(d.source==="ifood"){
-   if(!/^[0-9]{4,8}$/.test(digits))throw Error("Informe o código numérico do iFood");
-   const result=await ifoodDriverAction(d.id,"verify",digits);
-   if(!result?.verified)throw Error("O iFood não confirmou o código");
+   if(!/^[0-9]{4,8}$/.test(digits)){
+    inlineCodeError(d.id,"Código incorreto");return;
+   }
+   let result;
+   try{result=await ifoodDriverAction(d.id,"verify",digits);}
+   catch(error){
+    if(/iFood não validou esse código|código incorreto|código inválido/i.test(String(error.message))){
+     inlineCodeError(d.id,"Código incorreto");return;
+    }
+    throw error;
+   }
+   if(!result?.verified){inlineCodeError(d.id,"Código incorreto");return;}
   }else throw Error("A validação oficial desta plataforma ainda depende de homologação");
+  codeDrafts.delete(d.id);
   orderDetails.close();
   rememberCompletedBatchStop(d);
   await refresh(true);
-  message("Entrega concluída! Os dados completos do cliente não ficam no histórico do entregador.");
- }catch(error){message(String(error.message||"A entrega não foi concluída"))}
- finally{busy=false}
+  message("Entrega concluída! Ganho registrado conforme o valor configurado pela loja.");
+ }catch(error){
+  const details=String(error?.message||"Erro ao confirmar a entrega");
+  inlineCodeError(d.id,/tentativas esgotadas/i.test(details)?
+   "Tentativas esgotadas. Solicite ajuda à loja.":
+   /Registre primeiro a chegada/.test(details)?details:
+   "Não foi possível confirmar a entrega. Verifique a conexão e tente novamente.");
+ }finally{busy=false;}
 }
 async function loadSafeHistory(){
  const key=++lastHistoryRequest,target=$("safeHistory");
