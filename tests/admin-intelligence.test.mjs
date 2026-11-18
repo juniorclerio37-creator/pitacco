@@ -140,7 +140,7 @@ test('diagnostic telemetry is allowlisted and does not leak tokens or order data
  assert.equal(payload.signalsAvailable,true);
  assert.equal(h.called.length,4);
  assert.equal(h.calls.length,1);
- const prompt=JSON.stringify(h.calls[0].args.messages);
+ const prompt=h.calls[0].args.messages[1].content;
  assert.match(prompt,/"jobs_24h":5/);
  assert.match(prompt,/"late_over_10m":1/);
  assert.match(prompt,/"99food_rejected_24h":1/);
