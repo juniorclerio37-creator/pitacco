@@ -22,6 +22,7 @@ function harness({owner=true,auth=true,incidents=[],ai=true}={}){
  };
  const calls=[];
  const env={
+  INTELLIGENCE_RATE_LIMIT:{limit:async()=>({success:true})},
   PITACCO_SUPABASE_URL:'https://test.supabase.co',
   PITACCO_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_fixture',
   ASSETS:{fetch:async()=>new Response('ADMIN_ASSET')},
@@ -78,6 +79,16 @@ test('unexpected origin and invalid payloads fail closed',async()=>{
  assert.equal((await worker.fetch(request('a'.repeat(1501)),h.env)).status,400);
  assert.equal((await worker.fetch(request('Diagnóstico',{body:{storeId:'not-an-id'}}),h.env)).status,400);
  assert.equal(h.called.length,0);
+});
+test('rate limiting prevents inference and incident query',async()=>{
+ const h=harness();h.env.INTELLIGENCE_RATE_LIMIT={limit:async()=>({success:false})};
+ const response=await worker.fetch(request(),h.env);
+ assert.equal(response.status,429);assert.equal(h.called.length,2);assert.equal(h.calls.length,0);
+});
+test('missing rate limiter fails closed',async()=>{
+ const h=harness();delete h.env.INTELLIGENCE_RATE_LIMIT;
+ const response=await worker.fetch(request(),h.env);
+ assert.equal(response.status,503);assert.equal(h.called.length,2);assert.equal(h.calls.length,0);
 });
 test('requires a configured AI binding',async()=>{
  const h=harness({ai:false});
