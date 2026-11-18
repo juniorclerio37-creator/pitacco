@@ -694,7 +694,8 @@ async function boot(){
   loadNavPreferences();
   initializeNativePush();
   $("checkNativePush").addEventListener("click",checkNativePushStatus);
-  await checkNativePushStatus();
+  // Network diagnostics must never delay the dispatch / delivery screen.
+  void checkNativePushStatus();
   switchView(location.hash.slice(1));
   await refresh();
   setInterval(()=>{if(!document.hidden&&!busy)refresh().catch(e=>message(String(e.message)))},20000);
