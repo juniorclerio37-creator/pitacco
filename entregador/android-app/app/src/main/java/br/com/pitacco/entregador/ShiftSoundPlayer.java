@@ -12,7 +12,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 /**
- * Opt-in courier shift alert. For a single 1.8s order chime only, request
+ * Opt-in courier shift alert. For a single bell + optional voice alert, request
  * a temporary alarm-stream volume increase, then restore it. Never alter
  * ringer mode, DND settings, or the notification policy.
  * Android can deny audio/volume changes; audibility cannot be guaranteed.
@@ -157,9 +157,13 @@ public final class ShiftSoundPlayer {
                 return true;
             });
             instance.prepare();
+            // The bundled alert may include a spoken courier message
+            // following the bell. Keep volume raised through both.
+            int playbackTimeMs = instance.getDuration();
             instance.start();
             timeoutTask = ShiftSoundPlayer::stopAndRestore;
-            HANDLER.postDelayed(timeoutTask, 3100);
+            HANDLER.postDelayed(timeoutTask, Math.max(3100,
+                    Math.min(14500, playbackTimeMs > 0 ? playbackTimeMs + 1200 : 3100)));
             return (lastResult = "started");
         } catch (Exception error) {
             stopAndRestore();
