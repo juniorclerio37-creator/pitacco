@@ -28,3 +28,26 @@
 .operations-order-localizer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0;padding:10px 12px;border:1px solid #f5c991;background:#fff3e1;color:#864610;border-radius:10px}
 .operations-order-localizer small{font-size:.68rem;letter-spacing:.065em;font-weight:850}
 .operations-order-localizer strong{font-size:1.03rem;letter-spacing:.075em;font-weight:950;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+
+/* Windows: compact order workspace, card grid, no duplicated KPIs or side panel. */
+.pitacco-pedidos.windows-cards-only{gap:13px}
+.windows-cards-only .pedidos-heading>span,
+.windows-cards-only .pedidos-kpis{display:none}
+.windows-cards-only .pedidos-heading h2{font-size:22px}
+.windows-cards-only .pedidos-heading p{font-size:12px}
+.windows-cards-only .pedidos-tabs{display:flex;flex-wrap:wrap;gap:7px}
+.windows-cards-only .pedidos-tabs button{font-weight:650}
+.windows-cards-only .pedidos-tabs button.selected{background:#eb7925;border-color:#eb7925}
+.windows-cards-only .pedidos-split{display:block}
+.windows-cards-only .pedidos-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,285px),1fr));align-content:start;align-items:stretch;gap:13px;overflow:visible;max-height:none;padding:3px}
+.windows-cards-only .pedidos-card{height:100%;border-radius:13px;box-shadow:0 2px 8px rgba(15,23,42,.07)}
+.windows-cards-only .pedidos-card-actions{margin-top:auto;padding:9px 12px 12px;border-top:1px solid #edf0f5}
+.windows-cards-only .pedidos-step-button{flex:1;text-align:center;justify-content:center;background:#ec7720!important;border-color:#ec7720!important;color:white!important;font-weight:800}
+.windows-cards-only .pedidos-card-select{padding:13px;gap:9px}
+.windows-cards-only .pedidos-card.selected{outline:2px solid #ec7720}
+.windows-cards-only .pedidos-modal-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.58);z-index:500}
+.windows-cards-only .pedidos-detail-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:501;width:min(760px,calc(100vw - 44px));max-height:min(85vh,850px);overflow:auto;box-shadow:0 24px 72px rgba(0,0,0,.3);border:1px solid #eceff4}
+.windows-cards-only .pedidos-modal-close{margin-left:auto;white-space:nowrap}
+.windows-cards-only .pedidos-detail-heading{flex-wrap:wrap}
+.windows-cards-only .pedidos-detail-heading .store-stage{margin-left:0}
+@media (max-width:720px){.windows-cards-only .pedidos-list{grid-template-columns:1fr}.windows-cards-only .pedidos-detail-modal{width:calc(100vw - 20px);max-height:92vh}}
