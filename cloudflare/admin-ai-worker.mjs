@@ -127,7 +127,7 @@ export function safeRecoveryContext(raw){
  if (!raw || !['all_stores','selected_store'].includes(raw.scope)) return null;
  const clean={
   scope:raw.scope,
-  observed_at:/^\\d{4}-\\d{2}-\\d{2}T/.test(String(raw.observed_at||''))?
+  observed_at:/^\d{4}-\d{2}-\d{2}T/.test(String(raw.observed_at||''))?
    String(raw.observed_at).slice(0,19):'desconhecido',
   courier_push:{},
   windows:{},
@@ -147,7 +147,7 @@ export function safeRecoveryContext(raw){
  const outcomes=new Set(['awaiting_confirmation','printed','failed','uncertain']);
  clean.windows.latest_operator_test=outcomes.has(test?.outcome)?{
   outcome:test.outcome,
-  submitted_at:/^\\d{4}-\\d{2}-\\d{2}T/.test(String(test.submitted_at||''))?
+  submitted_at:/^\d{4}-\d{2}-\d{2}T/.test(String(test.submitted_at||''))?
    String(test.submitted_at).slice(0,19):'desconhecido'
  }:null;
  return clean;
