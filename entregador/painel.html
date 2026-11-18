@@ -114,7 +114,7 @@ a.btn{text-decoration:none}
    <div class="earn-total-proxy" aria-hidden="true"><span id="earnToday">R$ 0,00</span><span id="earnTodayCount">0 entregas</span><span id="earnWeek">R$ 0,00</span><span id="earnWeekCount">0 entregas</span><span id="earnMonth">R$ 0,00</span><span id="earnMonthCount">0 entregas</span></div>
    <div class="earn-composition panel-white"><h2>Composição</h2>
      <div class="composition-row"><span>Taxas por entrega</span><strong id="earnDeliveryComponent">R$ 0,00</strong></div>
-     <div class="composition-row"><span>Diárias e adicionais</span><strong>Não incluídos</strong></div>
+     <div class="composition-row"><span>Diárias registradas</span><strong id="earnDailyAllowance">R$ 0,00</strong></div>
      <div class="composition-row total"><span>Total registrado</span><strong id="earnTotal">R$ 0,00</strong></div>
    </div>
    <div class="earn-days panel-white"><div class="earn-panel-head"><h2>Por dia</h2><span>Toque em um dia para ver os pedidos</span></div><div id="earnDailyRows" class="earn-daily-rows"><div class="earn-empty">Carregando dias...</div></div></div>
@@ -123,7 +123,7 @@ a.btn{text-decoration:none}
    <div class="earn-history-panel panel-white"><div class="earn-panel-head"><h2>Histórico protegido</h2><span>Até 30 entregas</span></div><p class="earn-footnote">Após concluir, o cliente aparece somente pela inicial, endereço resumido e sem telefone.</p><div id="safeHistory" class="earn-history"><div class="earn-empty">Carregando...</div></div></div>
    <div class="earn-updated" id="earnUpdated">Carregando...</div>
    <p class="earn-error" id="earnError" role="alert" hidden></p>
-   <p class="earn-footnote">Os ganhos consideram somente entregas concluídas e os valores registrados pela loja. Isso não representa o valor do pedido nem confirma pagamento recebido. Diárias e adicionais dependem de lançamentos específicos.</p>
+   <p class="earn-footnote">Os ganhos incluem entregas concluídas e diárias registradas por dia trabalhado. Frete grátis por desconto não diminui a taxa original da entrega. Cancelamentos não geram ganhos. Ganho registrado não significa pagamento já recebido.</p>
   </section>
 </section>
 
@@ -341,7 +341,9 @@ function renderEarnings(report){
  $("earnPeriodTitle").textContent="VOCÊ GANHOU "+selectedName();
  $("earnSelectedAmount").textContent=brl.format(numValue(selected.amount));
  $("earnTotal").textContent=brl.format(numValue(selected.amount));
- $("earnDeliveryComponent").textContent=brl.format(numValue(selected.amount));
+ const dailyAllowance=numValue(selected.daily_allowance);
+ $("earnDeliveryComponent").textContent=brl.format(Math.max(0,numValue(selected.amount)-dailyAllowance));
+ $("earnDailyAllowance").textContent=brl.format(dailyAllowance);
  $("earnSelectedCount").textContent=String(Number(selected.count??0));
  $("earnWorkedDays").textContent=String(Number(report.worked_days??0));
  const from=report.period_start?shortDate(report.period_start):"";
