@@ -130,3 +130,5 @@ button{font-family:inherit}button:focus-visible,a:focus-visible{outline:3px soli
 .app-logo img{display:block;width:100%;height:100%;object-fit:contain}
 .route-plan-arrived{color:#167048!important;font-weight:900}
 .route-plan-all{display:flex;margin-top:11px;background:#e9f8ef;border-color:#bce4cb;color:#166b43;min-height:42px;text-align:center;justify-content:center}
+.card-ifood-copy{display:block;width:100%;margin-top:7px;min-height:39px;background:#f5f6fa;color:#53657b;border:1px solid #e0e5ee;border-radius:11px;font-size:12px}
+.history-cancelled-amount{color:#7f8998!important}

@@ -486,20 +486,6 @@ function rememberCompletedBatchStop(d){
     (latitude===0&&longitude===0))return;
  lastCompletedBatchStops.set(String(d.store_id)+":"+String(d.batch_id),{latitude,longitude});
 }
-async function reconcileIfoodConfirmation(d){
- if(busy)return;busy=true;message("");
- try{
-  if(!navigator.onLine)throw Error("Sem conexão. Tente novamente quando a internet voltar.");
-  const {data,error}=await sb.rpc("pitacco_driver_reconcile_ifood",{p_delivery:d.id});
-  if(error)throw Error(error.message||"Não foi possível conferir a entrega no iFood");
-  if(data?.confirmed){
-   rememberCompletedBatchStop(d);
-   await refresh(true);
-   message("Entrega concluída após confirmação oficial recebida do iFood.");
-  }else message("Aguardando o iFood confirmar a entrega. Acompanhe a página oficial e tente atualizar novamente.");
- }catch(error){message(String(error.message||"Não foi possível confirmar a entrega"))}
- finally{busy=false}
-}
 async function verifyCode(d,code){
  if(busy)return;busy=true;message("");
  try{
@@ -532,11 +518,14 @@ async function loadSafeHistory(){
   if(!data.length){target.append(element("div","earn-empty","Nenhuma entrega concluída."));return;}
   for(const x of data){
    const line=element("div","earn-history-item"),label=element("div");
-   label.append(element("b","","Pedido #"+String(x.number||"Número indisponível")));
+   const canceled=x.status==="cancelada";
+   label.append(element("b","",
+     (canceled?"Cancelado • Pedido #":"Entregue • Pedido #")+
+     String(x.number||"Número indisponível")));
    label.append(element("small","",String(x.initial||"C.")+" • "+String(x.address_hint||"Endereço resumido")));
    const value=element("div","safe-history-meta");
-   value.append(element("strong","",brl.format(Number(x.amount)||0)));
-   const when=x.completed_at?new Date(x.completed_at).toLocaleString("pt-BR",{
+   value.append(element("strong",canceled?"history-cancelled-amount":"",canceled?"R$ 0,00":brl.format(Number(x.amount)||0)));
+   const when=(x.finished_at||x.completed_at)?new Date(x.finished_at||x.completed_at).toLocaleString("pt-BR",{
     timeZone:"America/Sao_Paulo",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}):"";
    value.append(element("small","",when));
    line.append(label,value);target.append(line);
@@ -690,17 +679,33 @@ function card(d){
     form.append(code,submit);verify.append(form);
     if(d.source==="ifood"){
      verify.append(element("p","card-ifood-fallback","Não conseguiu confirmar pelo código?"));
+     const officialUrl="https://confirmacao-entrega-propria.ifood.com.br/";
      const external=element("a","btn secondary card-ifood-confirm","Abrir confirmação no iFood");
-     external.href="https://confirmacao-entrega-propria.ifood.com.br/";
-     external.setAttribute("aria-label","Abrir página oficial de confirmação de entrega própria do iFood");
+     external.href=officialUrl;
+     // WebView: navegar na janela principal abre o navegador Android.
+     // Navegador comum: abrir em outra aba, sem perder o Pitacco.
+     external.target=window.PitaccoPush?.postMessage?"_self":"_blank";
+     external.rel="noopener noreferrer";
+     external.setAttribute("aria-label","Abrir confirmação oficial do iFood no navegador");
+     external.addEventListener("click",event=>{
+      if(!window.PitaccoPush?.postMessage)return;
+      event.preventDefault();
+      window.location.assign(officialUrl);
+     });
      verify.append(external);
+     const copy=createAction("Copiar link para o navegador","ghost card-ifood-copy",async()=>{
+      try{
+       await navigator.clipboard.writeText(officialUrl);
+       message("Link oficial do iFood copiado. Abra o navegador e cole o endereço.");
+      }catch{
+       window.prompt("Copie o endereço e abra no navegador:",officialUrl);
+      }
+     });
+     verify.append(copy);
      verify.append(element("p","card-verify-help",
-      "Na página do iFood, use o localizador do pedido na comanda e o código do cliente. O localizador de ligação é diferente."));
-     const check=createAction("Já confirmei no iFood • Atualizar","secondary",()=>reconcileIfoodConfirmation(d));
-     check.classList.add("card-ifood-recheck");
-     verify.append(check);
+      "Se a página não abrir no aparelho, copie o link e cole no Chrome. Use o localizador da comanda do iFood e o código do cliente, não o localizador de ligação."));
      verify.append(element("p","card-verify-help",
-      "A confirmação externa não finaliza automaticamente no Pitacco até o evento oficial CONCLUDED ser recebido. Toque em Atualizar para conferir."));
+      "O Pitacco retira o pedido automaticamente após receber a confirmação oficial do iFood. Não é necessário atualizar manualmente."));
     }
     box.append(verify);
    }
@@ -949,7 +954,7 @@ async function boot(){
   void checkNativePushStatus();
   switchView(location.hash.slice(1));
   await refresh();
-  setInterval(()=>{if(!document.hidden&&!busy)refresh().catch(e=>message(String(e.message)))},20000);
+  setInterval(()=>{if(!document.hidden&&!busy)refresh().catch(e=>message(String(e.message)))},15000);
   document.addEventListener("visibilitychange",()=>{
    if(!document.hidden&&!busy)refresh().catch(e=>message(String(e.message)));
   });

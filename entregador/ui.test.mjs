@@ -280,7 +280,7 @@ test("cartão mostra Ir ao lado do endereço e PIN após Cheguei sem abrir detal
  assert.match(page,/element\("a","btn secondary card-ifood-confirm","Abrir confirmação no iFood"\)/);
  assert.match(page,/https:\/\/confirmacao-entrega-propria\.ifood\.com\.br\//);
  assert.match(android,/confirmacao-entrega-propria\.ifood\.com\.br/);
- assert.match(page,/pitacco_driver_reconcile_ifood/);
+ assert.doesNotMatch(page,/pitacco_driver_reconcile_ifood/);
  assert.match(page,/if\(d\.source==="proprio"\|\|d\.source==="ifood"\)/);
  assert.match(css,/\.card-address-row\{/);
 });
@@ -323,7 +323,7 @@ test("roteiro avança do último ponto apenas quando entrega realmente foi confi
  const route=read("route-sequence.mjs");
  assert.match(page,/lastCompletedBatchStops=new Map/);
  assert.match(page,/function rememberCompletedBatchStop\(d\)/);
- assert.match(page,/if\(data\?\.confirmed\)\{\s*rememberCompletedBatchStop\(d\)/);
+ assert.doesNotMatch(page,/async function reconcileIfoodConfirmation\(d\)/);
  assert.match(page,/orderDetails\.close\(\);\s*rememberCompletedBatchStop\(d\)/);
  assert.match(page,/suggestedBatchRoutes\(deliveries,routeOrigins,lastCompletedBatchStops\)/);
  assert.match(page,/Confirme esta entrega antes de seguir/);
@@ -341,4 +341,29 @@ test("múltiplas paradas têm opção de percurso Maps só quando não há chega
  assert.match(page,/renderRouteSuggestions\(assignedDeliveries\)/);
  assert.match(navigation,/deliveries\.length>4/);
  assert.match(navigation,/provider!=='google'/);
+});
+
+test("iFood external confirmation opens a browser or offers a copy fallback",()=>{
+ const page=read("painel.html"),css=read("painel.css");
+ assert.match(page,/external\.target=window\.PitaccoPush\?\.postMessage\?"_self":"_blank"/);
+ assert.match(page,/window\.location\.assign\(officialUrl\)/);
+ assert.match(page,/navigator\.clipboard\.writeText\(officialUrl\)/);
+ assert.doesNotMatch(page,/Já confirmei no iFood • Atualizar/);
+ assert.match(css,/\.card-ifood-copy\{/);
+});
+test("servidor encerra pedidos iFood oficiais e cancelados sem contabilizar ganhos",()=>{
+ const sql=read("../supabase/migrations/20261118171000_pitacco_courier_terminal_status_sync.sql");
+ const page=read("painel.html");
+ assert.match(sql,/after update of done_at on pitacco_private\.ifood_events/);
+ assert.match(sql,/where l\.external_id=new\.order_id and l\.merchant_id=new\.merchant_id/);
+ assert.match(sql,/e\.code='CONCLUDED' and e\.done_at is not null/);
+ assert.match(sql,/external_delivery_status='CONCLUDED'/);
+ assert.match(sql,/courier_payment=0/);
+ assert.match(sql,/after update of status on public\.orders/);
+ assert.match(sql,/new\.source='proprio' and new\.status='cancelled'/);
+ assert.match(sql,/d\.status in \('entregue','cancelada'\)/);
+ assert.match(sql,/case when d\.status='entregue' then d\.courier_payment else 0 end/);
+ assert.match(page,/const canceled=x\.status==="cancelada"/);
+ assert.match(page,/canceled\?"R\$ 0,00"/);
+ assert.match(page,/\.filter\(d=>!\["entregue","cancelada"\]\.includes\(d\.status\)\)/);
 });
