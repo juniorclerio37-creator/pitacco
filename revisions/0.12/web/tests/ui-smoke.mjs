@@ -67,7 +67,7 @@ smokeStage='order acceptance';
  await page.getByRole('button',{name:'Aceitar e iniciar preparo',exact:true}).click();await page.waitForTimeout(5500);
  assert.ok(await page.locator('.pedidos-card').filter({hasText:'Ana · exemplo'}).count(),'Pedido aceito continua listado');
  await page.locator('.pedidos-card').filter({hasText:'Bruno · exemplo'}).click();
- await page.getByRole('button',{name:'Marcar pedido pronto',exact:true}).click();await page.waitForTimeout(5500);
+ await page.locator('.pedidos-detail').getByRole('button',{name:'Marcar pedido pronto',exact:true}).click();await page.waitForTimeout(5500);
  assert.ok(await page.locator('.pedidos-card').filter({hasText:'Bruno · exemplo'}).count(),'Pedido pronto continua listado');
  await page.getByRole('textbox',{name:'Buscar pedido, cliente ou item'}).fill('Carla');assert.equal(await page.locator('.pedidos-card').count(),1);await page.getByRole('textbox',{name:'Buscar pedido, cliente ou item'}).fill('');
  await fs.mkdir('ui-evidence',{recursive:true});await page.screenshot({path:'ui-evidence/pedidos.png',fullPage:true});
