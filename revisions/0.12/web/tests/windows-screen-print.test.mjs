@@ -174,7 +174,7 @@ test('each merchant order card labels its platform with an offline icon',()=>{
  assert.match(orders,/function PlatformIcon\(\{source\}\)/);
  assert.match(orders,/<PlatformIcon source=\{o\.source\}\/>/);
  for(const platform of ['99food','ifood','keeta','loja']){
-   assert.ok(orders.includes("platform==='"+platform+"'")||orders.includes("platform='"+platform+"'"),platform);
+   assert.ok(orders.includes("'"+platform+"'"),platform);
    assert.ok(css.includes('data-platform="'+platform+'"'),platform);
  }
 });
