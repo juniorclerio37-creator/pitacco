@@ -651,9 +651,8 @@ function card(d){
     code.setAttribute("aria-label","Código de entrega fornecido pelo cliente");code.required=true;
     const submit=createAction("Confirmar entrega","primary",null);submit.type="submit";
     if(d.source==="ifood"&&!synced){
-     submit.disabled=true;
      verify.append(element("p","card-verify-pending",
-      "Aguardando confirmação da chegada pelo iFood para habilitar o código. Você pode usar a confirmação oficial abaixo."));
+      "A chegada foi registrada no Pitacco. Você pode tentar validar o código pelo iFood, mesmo se o aviso de chegada ainda estiver pendente."));
     }
     form.addEventListener("submit",event=>{event.preventDefault();verifyCode(d,code.value)});
     form.append(code,submit);verify.append(form);
