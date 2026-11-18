@@ -104,3 +104,4 @@ export default function IntelligenceRepairs({client,storeId='',stores=[]}){
    continuam <strong>somente investigativas</strong> até existir um executor específico com testes,
    confirmação do serviço externo e plano de reversão.</p>
  </section>;
+}
