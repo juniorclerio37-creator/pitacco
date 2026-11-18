@@ -68,3 +68,35 @@ end $$;
 revoke all on function public.pitacco_driver_reconcile_ifood(uuid) from public,anon;
 grant execute on function public.pitacco_driver_reconcile_ifood(uuid) to authenticated;
 notify pgrst,'reload schema';
+
+-- Delivery owned by the store is verified with the Order API. This API does
+-- not require the separate Logistics "arrivedAtDestination" handshake.
+-- Keep the local arrival and ownership checks; only remove that extra gate.
+do $patch$
+declare
+ v_oid oid;
+ v_body text;
+ v_old text;
+begin
+ v_oid:=pg_catalog.to_regprocedure('public.pitacco_driver_ifood_action(uuid,text)');
+ if v_oid is null then raise exception 'Função iFood de autorização ausente'; end if;
+ v_body:=pg_catalog.pg_get_functiondef(v_oid);
+ v_old:=$needle$ if p_action='verify' and d.arrival_provider_state not in ('submitted','confirmed') then
+   raise exception 'Aguarde envio da chegada ao iFood antes do código' using errcode='22023'; end if;
+$needle$;
+ if pg_catalog.strpos(v_body,v_old)=0 then
+   raise exception 'Guard de chegada iFood diferente do esperado; abortando alteração segura';
+ end if;
+ execute pg_catalog.replace(v_body,v_old,'');
+ v_oid:=pg_catalog.to_regprocedure('public.pitacco_ifood_driver_result(uuid,uuid,text,boolean,boolean)');
+ if v_oid is null then raise exception 'Função iFood de resultado ausente'; end if;
+ v_body:=pg_catalog.pg_get_functiondef(v_oid);
+ v_old:=$needle$if p_action='verify' and p_success and d.status='retirada'
+    and d.arrival_provider_state in ('submitted','confirmed') then$needle$;
+ if pg_catalog.strpos(v_body,v_old)=0 then
+   raise exception 'Guard de resultado iFood diferente do esperado; abortando alteração segura';
+ end if;
+ execute pg_catalog.replace(v_body,v_old,
+   $needle$if p_action='verify' and p_success and d.status='retirada' then$needle$);
+end
+$patch$;
