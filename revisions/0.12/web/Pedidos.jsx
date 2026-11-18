@@ -6,7 +6,7 @@ import {receiptItems} from './receiptItems.mjs';
 import {publicOrderNumber,validLocalizer} from './orderDisplay.mjs';
 const scheduledTime=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'});
 const stages=[['scheduled','Agendados'],['analysis','Novo'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega'],['completed','Concluído'],['cancelled','Cancelados'],['rejected','Recusados']];
-const summary=[['analysis','Pendentes',Clock3],['preparing','Em preparo',ChefHat],['ready','Prontos',ShoppingBag],['delivery','Em entrega',Bike],['completed','Concluídos',CheckCircle2]];
+const summary=[['analysis','Novo',Clock3],['preparing','Em preparo',ChefHat],['ready','Prontos',ShoppingBag],['delivery','Em entrega',Bike],['completed','Concluídos',CheckCircle2]];
 const terminal=new Set(['completed','cancelled','rejected']);
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const ifoodAcceptExpired=order=>order?.source==='ifood'&&Number.isFinite(Date.parse(order?.created_at))&&Date.now()-Date.parse(order.created_at)>=8*60*1000;
@@ -28,7 +28,7 @@ const deliveryType=(order,delivery)=>{
 };
 const canAssign=(order,delivery)=>order.status==='accepted'&&order.preparation_status==='ready'&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id;
 const isAutomaticDispatch=mode=>mode==='automatico';
-const canDispatch=(order,delivery,mode)=>canAssign(order,delivery)&&!isAutomaticDispatch(mode);
+const canDispatch=(order,delivery)=>canAssign(order,delivery);
 function DeliveryBadge({order,delivery}){
  const {type,label}=deliveryType(order,delivery);
  return <span className="pedidos-delivery-badge" data-delivery={type}>{type==='pickup'?<ShoppingBag size={15} aria-hidden="true"/>:<Bike size={15} aria-hidden="true"/>}{label}</span>;
@@ -94,7 +94,7 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
      {stage(o)==='preparing'&&<button type="button" className="primary pedidos-step-button" disabled={busy} onClick={()=>onReady(o.id)}>Marcar pedido pronto</button>}
      {stage(o)==='ready'&&o.source==='proprio'&&o.receipt?.logistics==='retirada'&&<button type="button" className="primary pedidos-step-button" disabled={busy||!onPickup} onClick={()=>onPickup?.(o.id)}>Confirmar retirada</button>}
      {stage(o)==='ready'&&canDispatch(o,delivery,dispatchMode)&&<button type="button" className="primary pedidos-step-button" disabled={busy} onClick={()=>onAssign(o)}>Selecionar entregador</button>}
-     {stage(o)==='ready'&&canAssign(o,delivery)&&isAutomaticDispatch(dispatchMode)&&<span role="status">Aguardando alocação automática da loja</span>}
+     {stage(o)==='ready'&&canAssign(o,delivery)&&isAutomaticDispatch(dispatchMode)&&<span role="status">Atribuição automática ativa · seleção manual também disponível</span>}
      {stage(o)==='ready'&&delivery?.courier_id&&<span role="status">Entregador selecionado · aguardando saída</span>}
      {stage(o)==='ready'&&delivery?.logistics_provider==='marketplace'&&<span role="status">Aguardando coleta pelo parceiro</span>}
      {stage(o)==='delivery'&&o.source==='proprio'&&<button type="button" className="primary pedidos-step-button" disabled={busy||!onConclude} onClick={()=>onConclude?.(o.id)}>Concluir entrega</button>}
@@ -115,7 +115,7 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
 {stage(current)==='ready'&&currentDelivery?.logistics_provider==='marketplace'&&<span role="status">Aguardando retirada pelo parceiro</span>}
 {stage(current)==='delivery'&&current.source==='proprio'&&<button className="primary" disabled={busy||!onConclude} onClick={()=>onConclude?.(current.id)}>Concluir entrega</button>}
 {stage(current)==='delivery'&&<span role="status">A conclusão exige chegada e comprovação registradas pelo entregador; pedidos de marketplaces aguardam a confirmação oficial.</span>}
-{canAssign(current,currentDelivery)&&isAutomaticDispatch(dispatchMode)&&<span role="status">Aguardando alocação automática</span>}
+{canAssign(current,currentDelivery)&&isAutomaticDispatch(dispatchMode)&&<span role="status">Atribuição automática ativa · você pode selecionar manualmente</span>}
 {canDecide&&<>
  {stage(current)==='scheduled'
   ? <p>Aceite liberado às {scheduledTime.format(new Date(current.scheduled_release_at))}.</p>
