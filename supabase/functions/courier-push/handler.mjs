@@ -5,14 +5,20 @@ const encode=bytes=>btoa(String.fromCharCode(...bytes)).replaceAll('+','-').repl
 const segment=value=>encode(encoder.encode(JSON.stringify(value)));
 
 export function firebaseMessage(event) {
- // Data-only high-priority messages wake the native FirebaseMessagingService
- // in the foreground and background. The service always posts a visible
- // notification to Android's separate loud-assignment channel.
- // No customer, address, order, or courier information is included.
+ // Keep the installed Android WebView app working without replacing its APK:
+ // the Firebase SDK posts notification+data messages automatically while
+ // the app is in the background, using its version-specific default channel.
+ // v1.0.2 also handles the data in its native service when in the foreground.
+ // Only an event UUID is sent; no customer or delivery details are exposed.
+ const eventId=String(event.event_id);
  return {message:{
   token:event.token,
-  data:{kind:'new_assignment',event_id:String(event.event_id)},
-  android:{priority:'HIGH',ttl:'90s',collapse_key:String(event.event_id)}
+  notification:{title:'Pitacco Entregador',body:'Você tem uma nova entrega! Abra o aplicativo para conferir.'},
+  data:{kind:'new_assignment',event_id:eventId},
+  android:{
+   priority:'HIGH',ttl:'90s',collapse_key:eventId,
+   notification:{tag:eventId}
+  }
  }};
 }
 

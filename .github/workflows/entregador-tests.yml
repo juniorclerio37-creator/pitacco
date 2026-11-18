@@ -4,6 +4,8 @@ on:
     paths:
       - 'entregador/**'
       - 'supabase/functions/pitacco-courier-access/**'
+      - 'supabase/functions/courier-push/**'
+      - 'tests/courier-push.test.mjs'
       - 'docs/sql/entregador-*'
       - 'docs/sql/driver-earnings-dashboard.sql'
       - 'tests/driver-earnings-dashboard.test.mjs'
@@ -32,6 +34,8 @@ on:
     paths:
       - 'entregador/**'
       - 'supabase/functions/pitacco-courier-access/**'
+      - 'supabase/functions/courier-push/**'
+      - 'tests/courier-push.test.mjs'
       - 'docs/sql/entregador-*'
       - 'docs/sql/driver-earnings-dashboard.sql'
       - 'tests/driver-earnings-dashboard.test.mjs'
@@ -65,4 +69,4 @@ jobs:
         with:
           node-version: '22'
       - name: Testar regras de acesso e entregas
-        run: node --test entregador/*.test.mjs tests/driver-earnings-dashboard.test.mjs tests/driver-mobile-redesign.test.mjs tests/driver-order-details.test.mjs tests/order-public-labels.test.mjs tests/driver-arrival-privacy.test.mjs tests/ifood-driver-arrival.test.mjs
+        run: node --test tests/courier-push.test.mjs entregador/*.test.mjs tests/driver-earnings-dashboard.test.mjs tests/driver-mobile-redesign.test.mjs tests/driver-order-details.test.mjs tests/order-public-labels.test.mjs tests/driver-arrival-privacy.test.mjs tests/ifood-driver-arrival.test.mjs
