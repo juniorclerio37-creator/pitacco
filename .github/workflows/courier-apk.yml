@@ -183,7 +183,10 @@ jobs:
           "$aapt" dump permissions "$apk" | grep -F "android.permission.ACCESS_FINE_LOCATION"
           "$aapt" dump permissions "$apk" | grep -F "android.permission.ACCESS_COARSE_LOCATION"
           "$aapt" dump permissions "$apk" | grep -F "android.permission.POST_NOTIFICATIONS"
-          echo "APK oficial usa a identidade existente e declara GPS e notificações."
+          "$aapt" dump permissions "$apk" | grep -F "android.permission.FOREGROUND_SERVICE"
+          "$aapt" dump permissions "$apk" | grep -F "android.permission.FOREGROUND_SERVICE_LOCATION"
+          "$aapt" dump xmltree "$apk" AndroidManifest.xml | grep -F "CourierLocationService"
+          echo "APK oficial mantém a identidade existente e declara GPS de plantão em foreground service."
       - uses: actions/upload-artifact@v4
         with:
           name: Pitacco-Entregador-Android-estavel
