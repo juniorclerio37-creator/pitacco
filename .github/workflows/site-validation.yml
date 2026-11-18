@@ -32,6 +32,8 @@ on:
       - 'supabase/config.toml'
       - '.github/workflows/site-validation.yml'
   workflow_dispatch:
+env:
+  PITACCO_WEB_ONLY: '1'
 jobs:
   postgres:
     name: Validar migrações no PostgreSQL 17

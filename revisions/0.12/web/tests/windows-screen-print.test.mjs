@@ -44,7 +44,7 @@ test('iFood object modifiers render by name and quantity on 80mm and 58mm notes'
 
 test('Windows navigation makes printing independently clickable and identifies installed version',()=>{
  const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
- assert.match(source,/Pitacco Windows v0\.12\.8/);
+ assert.match(source,/Pitacco Windows v0\.12\.9/);
  assert.match(source,/aria-label="Configurar impressão e visualizar nota"/);
  assert.match(source,/onClick=\{\(\)=>\{setTab\('Configurações'\)/);
  assert.match(source,/tab==='Aplicativos e Downloads'&&<AppDownloads/);
@@ -73,28 +73,28 @@ test('Windows gives truthful feedback after queueing a reprint, not paper confir
  assert.match(source,/ingestJobs\(/);
 });
 
-test('Windows alerts use an imported natural audio file, not robotic SAPI',()=>{
+test('Windows alerts use the fixed embedded natural voice, not robotic SAPI',()=>{
  const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
  const rust=readFileSync(new URL('../src-tauri/src/main.rs',import.meta.url),'utf8');
  assert.match(operations,/invoke\('play_order_voice'/);
  assert.match(operations,/invoke\('order_voice_status'/);
  assert.match(operations,/invoke\('play_order_alert_combo'/);
- assert.match(operations,/Voz natural ainda não configurada neste computador/);
- assert.match(operations,/O sino continuará funcionando, sem voz robótica/);
+ assert.match(operations,/Voz natural já incluída no Pitacco Windows/);
+ assert.match(operations,/Nenhuma importação é necessária/);
  assert.match(operations,/invoke\('save_order_voice'/);
  assert.match(operations,/Volume da voz natural/);
  assert.ok(operations.includes('Normal (áudio original, sem amplificação)'));
  assert.ok(operations.includes('return [1,2,3].includes(level)?level:3'));
  assert.ok(rust.includes('let selected=match level.unwrap_or(1)'));
  assert.match(rust,/if level!=1/);
- assert.match(operations,/Testar somente voz/);
+ assert.match(operations,/Testar sino \+ voz/);
  assert.doesNotMatch(rust,/System\.Speech|SpeechSynthesizer|System\.Media\.Speech/);
  assert.match(rust,/fn play_order_voice/);
  assert.match(rust,/fn order_voice_status/);
  assert.match(rust,/play_order_alert_combo,save_order_voice,play_order_voice,order_voice_status,check_update/);
  assert.match(rust,/fn save_order_voice/);
  assert.match(rust,/pitacco_voice_payload/);
- assert.match(operations,/invoke\('play_order_alert'/);
+ assert.match(operations,/invoke\('play_order_bell'/);
 });
 
 
@@ -102,9 +102,9 @@ test('merchant Windows order alerts provide bell and voice volume in each settin
  const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
  const rust=readFileSync(new URL('../src-tauri/src/main.rs',import.meta.url),'utf8');
  assert.match(operations,/\['Painel','Pedidos','Configurações','Alertas'\]/);
- assert.match(operations,/Testar sino e voz/);
- assert.match(operations,/Testar somente sino/);
- assert.match(operations,/pitacco-native-order-volume/);
+ assert.match(operations,/Testar sino \+ voz/);
+ assert.match(operations,/Ouvir sino/);
+ assert.match(operations,/pitacco-audio-bell-volume/);
  assert.match(operations,/pitacco-natural-voice-level/);
  assert.match(operations,/alertLevelRef\.current=alertLevel/);
  assert.match(operations,/voiceLevelRef\.current=voiceLevel/);
@@ -112,7 +112,34 @@ test('merchant Windows order alerts provide bell and voice volume in each settin
  assert.match(operations,/notify_new_order/);
  assert.match(rust,/fn play_order_alert_combo\(/);
  assert.match(rust,/std::thread::spawn\(move \|\|/);
- assert.match(rust,/PlaySoundA\(bell\.as_ptr\(\)/);
- assert.match(rust,/PlaySoundW\(path\.as_ptr\(\)/);
+ assert.match(rust,/PlaySoundA\(bell_wav\.as_ptr\(\)/);
+ assert.match(rust,/PlaySoundA\(voice_wav\.as_ptr\(\)/);
  assert.match(rust,/play_order_alert_combo,save_order_voice/);
+});
+
+test('exactly one bundled merchant voice and five distinct native bells are selectable per store',()=>{
+ const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
+ const rust=readFileSync(new URL('../src-tauri/src/main.rs',import.meta.url),'utf8');
+ assert.match(operations,/pitacco:bell-choice:'\+storeId/);
+ assert.match(operations,/pitacco:native-alert-volume:'\+storeId/);
+ assert.match(operations,/pitacco:natural-voice-level:'\+storeId/);
+ for(const [id,label] of [['original','Pitacco Original'],['moderno','Moderno'],['classico','Clássico'],['duplo','Duplo'],['intenso','Intenso']]){
+  assert.ok(operations.includes('<option value="'+id+'">'+label+'</option>'),label);
+ }
+ assert.match(operations,/invoke\('play_order_bell'/);
+ assert.match(operations,/invoke\('play_order_alert_combo'/);
+ assert.match(rust,/fn merchant_bell_bytes/);
+ assert.match(rust,/fn merchant_voice_bytes/);
+ assert.match(rust,/fn play_order_alert_combo/);
+ assert.match(rust,/fn play_order_bell/);
+ for(const [sound] of [['moderno'],['classico'],['duplo'],['intenso']]){
+  for(const level of [1,2,3]){
+   assert.ok(rust.includes('include_bytes!("order-bell-'+sound+'-'+level+'.wav")'));
+  }
+ }
+ for(const level of [1,2,3]){
+  assert.ok(rust.includes('include_bytes!("order-merchant-voice-'+level+'.wav")'));
+ }
+ assert.match(operations,/Nenhuma importação é necessária/);
+ assert.doesNotMatch(operations,/<input type="file" accept="\.wav/);
 });

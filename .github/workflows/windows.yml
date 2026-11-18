@@ -30,6 +30,17 @@ jobs:
       - name: Verificar scripts Python
         working-directory: .
         run: python -m compileall -q revisions/0.12
+      - name: Preparar decodificador do áudio oficial no Windows
+        working-directory: .
+        shell: pwsh
+        run: |
+          if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
+            choco install ffmpeg -y --no-progress
+            if ($LASTEXITCODE -ne 0) { throw "Não foi possível instalar o decodificador da voz oficial." }
+          }
+          $env:PATH = "C:\ProgramData\chocolatey\bin;$env:PATH"
+          if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) { throw "ffmpeg não encontrado no runner Windows." }
+          ffmpeg -version
       - name: Restaurar codigo preservado
         working-directory: .
         run: python -X utf8 revisions/0.12/restore.py
@@ -46,10 +57,14 @@ jobs:
               'backend oficial no Windows': 'const useOfficial=' in app,
               'gestor validado por loja': 'useStoreManagerAccess(supabase,session?.user?.id,selected)' in app,
               'pedidos filtrados por loja': "eq('store_id',storeId)" in orders and 'order.store_id===storeId' in orders,
-              'alerta nativo': "invoke('play_order_alert',{level:alertLevelRef.current})" in orders and "invoke('play_order_alert_combo'" in orders and 'fn play_order_alert_combo' in native and all(f'include_bytes!("order-alert{suffix}.wav")' in native for suffix in ('','-high','-soft')),
+              'alerta nativo': all(x in orders for x in ('pitacco:bell-choice:',"invoke('play_order_alert_combo'",'Pitacco Original','Moderno','Clássico','Duplo','Intenso')) and all(x in native for x in ('fn merchant_voice_bytes','fn merchant_bell_bytes','fn play_order_alert_combo','fn play_order_bell','order-merchant-voice-1.wav')),
               'fila e teste de impressão existentes': all(name in native for name in ('enqueue_job','retry_job','test_printer')),
               'central separada': "page==='Central de Aplicativos'" in admin and 'pitacco-admin-shell' not in app,
           }
+          expected_ui=('pitacco:bell-choice:',"invoke('play_order_alert_combo'",'Pitacco Original','Moderno','Clássico','Duplo','Intenso')
+          expected_native=('fn merchant_voice_bytes','fn merchant_bell_bytes','fn play_order_alert_combo','fn play_order_bell','order-merchant-voice-1.wav')
+          for token in expected_ui: print("ALERT UI",repr(token),token in orders,flush=True)
+          for token in expected_native: print("ALERT RUST",repr(token),token in native,flush=True)
           for label, ok in checks.items():
               print(f'{label}: {ok}', flush=True)
           if not all(checks.values()):
@@ -217,6 +232,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Preparar decodificador da voz no banco isolado
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - run: python revisions/0.12/restore.py
       - run: npm ci --prefix web/tests/backend
       - run: npm install --prefix web/tests/backend --no-save --package-lock=false pg@8.16.3
