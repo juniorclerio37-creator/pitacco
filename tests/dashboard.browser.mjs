@@ -629,7 +629,7 @@ try {
       await page.getByText(/Aceite liberado às/).waitFor();
       assert.equal(await page.getByRole('button',{name:'Aceitar e iniciar preparo',exact:true}).count(),0);
     }
-    await page.getByRole('button', { name:'Novo (1)', exact:true }).click();
+    await page.getByRole('button', { name:'Em análise (1)', exact:true }).click();
     await page.getByRole('button', { name:'Recusar pedido', exact:true }).click();
     await page.getByLabel('Motivo da recusa').fill('Item indisponível');
     await page.getByRole('button', { name:'Confirmar recusa', exact:true }).click();
@@ -637,7 +637,7 @@ try {
     await page.locator('.pedidos-card').getByText('Cliente do pedido').waitFor();
     if(width===768){
       appointment.scheduled_release_at=new Date(Date.now()-1_000).toISOString();
-      await page.getByRole('button',{name:'Novo (1)',exact:true}).click();
+      await page.getByRole('button',{name:'Em análise (1)',exact:true}).click();
       await page.locator('.pedidos-card').getByText('Cliente agendado').waitFor();
       await page.getByRole('button',{name:'Aceitar e iniciar preparo',exact:true}).waitFor();
     }
@@ -791,7 +791,7 @@ try {
     await alerts.getByText('Preparo acima do prazo',{exact:true}).waitFor();
     await alerts.getByRole('button',{name:'Atualizar alertas'}).click();
     await alerts.getByRole('button',{name:'Abrir pedidos'}).click();
-    await page.getByRole('heading',{name:'Pedidos',exact:true}).first().waitFor();
+    await page.locator('.pitacco-pedidos').first().waitFor({state:'visible'});
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
     await navigation.getByRole('button', { name:'Financeiro', exact:true }).click();
     await page.getByRole('group',{name:'Seções financeiras'}).getByRole('button',{name:'Assinatura',exact:true}).click();
@@ -1012,8 +1012,9 @@ try {
       await ownCard.getByRole('button',{name:'Imprimir no navegador pedido LOJA-23'}).click();
       const printEvidence=await page.evaluate(()=>({html:window.__browserComandas[0],count:window.__browserPrints}));
       assert.equal(printEvidence.count,1);
-      assert.ok(printEvidence.html.includes('PEDIDO LOJA-23'));
-      assert.ok(printEvidence.html.includes('COBRAR NA ENTREGA'));
+      assert.ok(printEvidence.html.includes('99Food Nº LOJA-23'));
+      assert.ok(printEvidence.html.includes('PAGAMENTO A CONFERIR'));
+      assert.ok(!printEvidence.html.includes('*** PAGO ONLINE ***'));
       await ownCard.getByRole('button',{name:'Selecionar entregador',exact:true}).click();
       await page.getByRole('dialog').getByRole('heading',{name:'Motoboy próprio',exact:true}).waitFor();
       await page.getByRole('dialog').getByRole('button',{name:'Fechar detalhes',exact:true}).click();

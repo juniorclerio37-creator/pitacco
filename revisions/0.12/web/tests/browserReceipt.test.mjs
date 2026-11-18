@@ -11,10 +11,10 @@ const order={
 };
 test('browser receipt preserves actual items without falsely claiming paid',()=>{
  const text=browserReceiptText(order,'D-52','Pitacco Loja');
- assert.match(text,/PEDIDO D-52/);
+ assert.match(text,/Loja Nº D-52/);
  assert.match(text,/Açaí 500ml/);
  assert.match(text,/2x Banana/);
- assert.doesNotMatch(text,/PAGO - NAO COBRAR/);
+ assert.doesNotMatch(text,/NAO COBRAR NA ENTREGA/);
  assert.match(text,/COBRAR NA ENTREGA/);
 });
 test('browser receipt HTML escapes customer content; no active HTML from orders',()=>{
@@ -37,7 +37,7 @@ test('explicit user click opens browser print dialog, not a backend print job',(
  assert.equal(closed,0);
  assert.equal(delay,200);
  assert.equal(focused,true);
- assert.match(written,/PEDIDO D-52/);
+ assert.match(written,/Loja Nº D-52/);
 });
 test('blocked browser popup reports actionable error',()=>{
  assert.throws(()=>openBrowserPrint(order,'D-52','',()=>null),/bloqueou/);

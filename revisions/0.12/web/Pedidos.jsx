@@ -5,8 +5,8 @@ import {deliveryLabel,sourceLabel} from './DeliveryDialog.jsx';
 import {receiptItems} from './receiptItems.mjs';
 import {publicOrderNumber,validLocalizer} from './orderDisplay.mjs';
 const scheduledTime=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'});
-const stages=[['scheduled','Agendados'],['analysis','Novo'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega'],['completed','Concluído'],['cancelled','Cancelados'],['rejected','Recusados']];
-const summary=[['analysis','Novo',Clock3],['preparing','Em preparo',ChefHat],['ready','Prontos',ShoppingBag],['delivery','Em entrega',Bike],['completed','Concluídos',CheckCircle2]];
+const stages=[['scheduled','Agendados'],['analysis','Em análise'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega'],['completed','Concluído'],['cancelled','Cancelados'],['rejected','Recusados']];
+const summary=[['analysis','Em análise',Clock3],['preparing','Em preparo',ChefHat],['ready','Prontos',ShoppingBag],['delivery','Em entrega',Bike],['completed','Concluídos',CheckCircle2]];
 const terminal=new Set(['completed','cancelled','rejected']);
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const ifoodAcceptExpired=order=>order?.source==='ifood'&&Number.isFinite(Date.parse(order?.created_at))&&Date.now()-Date.parse(order.created_at)>=8*60*1000;
@@ -38,6 +38,29 @@ const canExecuteConclusion=(order,delivery,step)=>(
  order?.receipt?.logistics==='retirada'?step==='ready':
  step==='delivery'&&delivery?.logistics_provider==='loja'
 );
+// Identidade de origem local: sem imagens externas ou logotipos com carregamento remoto.
+function PlatformIcon({source}){
+ const value=String(source||'').toLowerCase();
+ const platform=['99food','99','99_food','99-food'].includes(value)?'99food':value==='ifood'?'ifood':value==='keeta'?'keeta':value==='proprio'||value==='loja'||value==='cardapio'?'loja':'outros';
+ const labels={ '99food':'99Food',ifood:'iFood',keeta:'Keeta',loja:'Loja',outros:'Outra origem'};
+ const mark=platform==='99food'?'99':platform==='ifood'?'iF':platform==='keeta'?'K':<ShoppingBag size={14} aria-hidden="true"/>;
+ return <span className="pedidos-platform-icon" data-platform={platform} role="img" aria-label={'Plataforma '+labels[platform]}>{mark}</span>;
+}
+function cardAddress(receipt){
+ const a=receipt?.address||receipt?.delivery_address;
+ if(typeof a==='string')return a;
+ if(!a||typeof a!=='object')return '';
+ return [a.street||a.logradouro||a.rua,[a.number||a.numero,a.neighborhood||a.bairro].filter(Boolean).join(' · ')].filter(Boolean).join(', ');
+}
+function cardPayment(order){
+ const receipt=order?.receipt||{},status=String(receipt.payment_status||'').toLowerCase();
+ const method=String(receipt.payment_method||receipt.payment||'');
+ if(receipt.payment_confirmed===true||receipt.paid===true||['paid','approved','captured','settled'].includes(status))
+  return {state:'paid',label:'Pago'};
+ if(receipt.payment_on_delivery===true||receipt.collect_on_delivery===true||/dinheiro|cash|na entrega/i.test(method))
+  return {state:'collect',label:'A cobrar'};
+ return {state:'review',label:'Pagamento a conferir'};
+}
 function DeliveryBadge({order,delivery}){
  const {type,label}=deliveryType(order,delivery);
  return <span className="pedidos-delivery-badge" data-delivery={type}>{type==='pickup'?<ShoppingBag size={15} aria-hidden="true"/>:<Bike size={15} aria-hidden="true"/>}{label}</span>;
@@ -72,7 +95,17 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
   }
  }
  const decisionApplies=canDecide&&decision?.id===current.id;
- const total=orders.filter(o=>!['cancelled','rejected'].includes(stage(o))).reduce((sum,o)=>sum+Number(o.gross||0),0);
+ const total=orders.filter(o=>!['cancelled','rejected'].includes(stage(o))).reduce((sum,o)=>sum+Number(o.gross||0),0); 
+ // Agrupamento visual por etapa; a classificação continua sendo calculada a
+ // partir dos estados confirmados do pedido e da coleta, não por drag-and-drop.
+ const boardStages=[['analysis','Em análise'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega']];
+ const auxiliaryStages=[['scheduled','Agendados'],['historical','Outros']];
+ const boardGroups=popupLayout&&filter==='all'?
+  [...boardStages,...auxiliaryStages.filter(([key])=>filtered.some(o=>stage(o)===key))].map(([id,label])=>({
+   id,label,items:filtered.filter(o=>stage(o)===id)
+  })):
+  [{id:'all',label:'',items:filtered}];
+
  return <div className={"pitacco-pedidos"+(popupLayout?" windows-cards-only":"")}>
   <header className="pedidos-heading"><div><h2>Pedidos</h2><p>Acompanhe e processe os pedidos da sua loja.</p></div><span>Pedidos sincronizados com a loja</span></header>
   {merchantLayout?<div className="pedidos-kpis">{summary.map(([key,label,Icon])=><button key={key} className={'pedidos-kpi '+(filter===key?'selected':'')} onClick={()=>setFilter(key)}>
@@ -80,16 +113,24 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
   </button>)}<div className="pedidos-kpi"><TrendingUp size={23} aria-hidden="true"/><span><strong>{brl(total)}</strong>Total registrado*</span></div></div>:
   <div className="pedidos-kpis">{stages.map(([key,label])=><button key={key} className={'pedidos-kpi '+(filter===key?'selected':'')} onClick={()=>setFilter(key)}><strong>{counts[key]}</strong><span>{label}</span></button>)}<div className="pedidos-kpi"><strong>{brl(total)}</strong><span>Total registrado*</span></div></div>}
   <div className="pedidos-tabs"><button className={filter==='all'?'selected':''} onClick={()=>setFilter('all')}>Em andamento</button>{(popupLayout?stages.filter(([key])=>['analysis','preparing','ready','delivery','completed'].includes(key)):stages).map(([key,label])=><button key={key} className={filter===key?'selected':''} onClick={()=>setFilter(key)}>{label} ({counts[key]})</button>)}<input aria-label="Buscar pedido, cliente ou item" placeholder="Buscar nome, telefone ou código…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
-  <div className="pedidos-split"><div className="pedidos-list">{filtered.length===0&&<p>Nenhum pedido encontrado.</p>}{filtered.map(o=>{
+  <div className="pedidos-split"><div className={"pedidos-list"+(popupLayout&&filter==='all'?" pedidos-kanban":"")}>
+   {filtered.length===0&&<p>Nenhum pedido encontrado.</p>}
+   {boardGroups.map(group=><section className="pedidos-stage-column" data-stage={group.id} key={group.id}>
+    {popupLayout&&filter==='all'&&<header className="pedidos-stage-title"><strong>{group.label}</strong><span>{group.items.length}</span></header>}
+    {popupLayout&&filter==='all'&&group.items.length===0&&<p className="pedidos-stage-empty">Nenhum pedido aqui</p>}
+    {group.items.map(o=>{
    const delivery=deliveriesByOrder.get(o.id);
    const source=sourceLabel(o.source)||o.channel||'Loja';
    return <article key={o.id} aria-label={'Card do pedido '+number(o)} data-source={o.source}
     className={'pedidos-card order-card '+(current?.id===o.id?'selected':'')}>
     <button type="button" className="pedidos-card-select" aria-pressed={current?.id===o.id} onClick={()=>setSelected(o.id)}>
-     <span className="pedidos-card-row"><b className="pedidos-origin">{source}</b><span className="store-stage" data-stage={stage(o)}>{stages.find(([id])=>id===stage(o))?.[1]||'Em andamento'}</span></span>
+     <span className="pedidos-card-row"><b className="pedidos-origin"><PlatformIcon source={o.source}/><span>{source}</span></b><span className="store-stage" data-stage={stage(o)}>{stages.find(([id])=>id===stage(o))?.[1]||'Em andamento'}</span></span>
      <span className="pedidos-card-row"><b className="pedidos-number"><ShoppingBag size={17} aria-hidden="true"/> #{number(o)}</b>
       <small>{o.scheduled_for?'Agendado '+scheduledTime.format(new Date(o.scheduled_for)):o.created_at?new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</small></span>
      <span className="pedidos-card-row"><span>{o.receipt?.customer||'Cliente'}</span><b>{brl(o.gross)}</b></span>
+     {(o.receipt?.phone||o.receipt?.customer_phone)&&<span className="pedidos-card-row pedidos-card-contact"><span>{o.receipt?.phone||o.receipt?.customer_phone}</span></span>}
+     {cardAddress(o.receipt)&&<span className="pedidos-card-row pedidos-card-address"><span>{cardAddress(o.receipt)}</span></span>}
+     <span className="pedidos-card-row pedidos-card-info"><small>{receiptItems(o.receipt).reduce((n,item)=>n+(Number(item.quantity)||1),0)} item(ns)</small><span className="pedidos-payment-pill" data-payment={cardPayment(o).state}>{cardPayment(o).label}</span></span>
      {validLocalizer(badgeByOrder.get(o.id))&&<span className="pedidos-localizer" aria-label="Localizador de ligação do pedido"><strong>LOCALIZADOR</strong><b>{validLocalizer(badgeByOrder.get(o.id))}</b></span>}
      <DeliveryBadge order={o} delivery={delivery}/>
     </button>
@@ -125,7 +166,7 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
      <button type="button" className="secondary pedidos-card-print" aria-label={(manualPrint?"Imprimir no navegador pedido ":"Reimprimir comanda do pedido ")+number(o)} disabled={busy} onClick={()=>onReprint(o.id)}><Printer size={16} aria-hidden="true"/></button>
     </div>}
    </article>;
-  })}</div>
+  })}</section>)}</div>
   {popupLayout&&current&&<div className="pedidos-modal-backdrop" aria-hidden="true" onClick={()=>{setSelected(null);setDecision(null)}}/>}
   {current?<article className={"pedidos-detail"+(popupLayout?" pedidos-detail-modal":"")} role={popupLayout?"dialog":undefined} aria-modal={popupLayout?"true":undefined} aria-label={popupLayout?"Detalhes do pedido "+number(current):undefined}><div className="pedidos-detail-heading"><h3><ShoppingBag size={23} aria-hidden="true"/> Pedido #{number(current)}</h3>{popupLayout&&<button className="secondary pedidos-modal-close" type="button" onClick={()=>{setSelected(null);setDecision(null)}}>Fechar ✕</button>}<span className="store-stage" data-stage={stage(current)}>{stages.find(([id])=>id===stage(current))?.[1]||'Em andamento'}</span></div>{currentLocalizer&&<div className="pedidos-localizer pedidos-localizer-detail"><strong>LOCALIZADOR DE LIGAÇÃO</strong><b>{currentLocalizer}</b></div>}<div className="pedidos-detail-pair"><section><h4><UserRound size={17} aria-hidden="true"/> Cliente</h4><strong>{current.receipt?.customer||'Não informado'}</strong><p>{current.receipt?.phone||''}</p><p>{current.receipt?.address||''}</p></section><section><h4><CreditCard size={17} aria-hidden="true"/> Pagamento</h4><p>{current.receipt?.payment||'Não informado'}</p><DeliveryBadge order={current} delivery={currentDelivery}/></section></div><section className="pedidos-items"><h4><ShoppingBag size={17} aria-hidden="true"/> Itens do pedido</h4>{receiptItems(current.receipt).map((item,i)=><div key={i}><span>{item.quantity||1} × {item.name}<small>{Array.isArray(item.modifiers)?readableModifiers(item.modifiers):''}</small></span><span>{item.total!=null?brl(item.total):''}</span></div>)}{current.receipt?.subtotal!=null&&<div><span>Subtotal</span><strong>{brl(current.receipt.subtotal)}</strong></div>}
   {current.receipt?.delivery_fee!=null&&<div><span>Taxa de entrega</span><strong>{brl(current.receipt.delivery_fee)}</strong></div>}

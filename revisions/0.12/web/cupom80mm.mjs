@@ -35,11 +35,10 @@ html,body { margin:0!important; padding:0!important; width:100%!important; backg
 <div class="separador"></div>
 <div class="titulo">CUPOM NÃO FISCAL</div>
 <div class="separador"></div>
-<div class="center">{{ORIGIN}}</div>
-<div class="separador"></div>
-<div class="secao">PEDIDO</div>
-<div class="pedido-numero">**** Nº {{ORDER_ID}} ****</div>
+<div class="pedido-numero">{{ORIGIN}} Nº {{ORDER_ID}}</div>
 <div class="cliente-pedido">Cliente: {{CUSTOMER_NAME}}</div>
+<div class="pequeno">{{CUSTOMER_PHONE}}</div>
+<div class="pequeno">{{ORDER_LOCALIZER}}</div>
 <div class="espaco"></div>
 <div class="linha"><div>Criado em:</div><div>{{DATE}}</div></div>
 <div class="separador"></div>

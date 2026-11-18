@@ -38,13 +38,13 @@ test('iFood object modifiers render by name and quantity on 80mm and 58mm notes'
   assert.doesNotMatch(text,/\[object Object\]/);
   assert.doesNotMatch(text,/Rua Teste/);
   assert.doesNotMatch(text,/Campainha/);
-  assert.match(text,/PAGO - NAO COBRAR/);
+  assert.match(text,/NAO COBRAR NA ENTREGA/);
  }
 });
 
 test('Windows navigation makes printing independently clickable and identifies installed version',()=>{
  const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
- assert.match(source,/Pitacco Windows v0\.12\.10/);
+ assert.match(source,/Pitacco Windows v0\.12\.11/);
  assert.match(source,/aria-label="Configurar impressão e visualizar nota"/);
  assert.match(source,/onClick=\{\(\)=>\{setTab\('Configurações'\)/);
  assert.match(source,/tab==='Aplicativos e Downloads'&&<AppDownloads/);
@@ -165,4 +165,16 @@ test('same installed Windows app keeps order cards and guarded conclusion next t
  assert.match(css,/pedidos-card-actions/);
  assert.match(css,/pedidos-complete-button/);
  assert.doesNotMatch(orders,/applicationId\s*:/);
+});
+
+
+test('each merchant order card labels its platform with an offline icon',()=>{
+ const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../pedidos.css',import.meta.url),'utf8');
+ assert.match(orders,/function PlatformIcon\(\{source\}\)/);
+ assert.match(orders,/<PlatformIcon source=\{o\.source\}\/>/);
+ for(const platform of ['99food','ifood','keeta','loja']){
+   assert.ok(orders.includes("'"+platform+"'"),platform);
+   assert.ok(css.includes('data-platform="'+platform+'"'),platform);
+ }
 });
