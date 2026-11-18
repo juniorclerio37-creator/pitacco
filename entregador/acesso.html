@@ -3,6 +3,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f97316">
 <title>Pitacco Entregador — Baixar aplicativo oficial</title>
+<link rel="preconnect" href="https://esm.sh" crossorigin>
+<link rel="preconnect" href="https://mdevzehqcpcgxspwbiyz.supabase.co" crossorigin>
 <style>
 :root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#232a33;background:#f7f8fa}
 *{box-sizing:border-box}body{margin:0;min-height:100dvh;padding:24px;display:grid;place-items:center}
@@ -59,7 +61,7 @@ if(window.PitaccoPush && typeof window.PitaccoPush.postMessage==='function')docu
 <form id="loginForm">
 <label for="phone">Celular com DDD</label><input id="phone" name="phone" type="tel" autocomplete="username" inputmode="tel" placeholder="(21) 99999-9999" maxlength="20" required>
 <label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" minlength="6" required placeholder="Sua senha">
-<button class="primary" id="loginButton" type="submit">Entrar</button>
+<button class="primary" id="loginButton" type="submit" disabled>Preparando acesso…</button>
 <p class="error" id="loginError" role="alert" aria-live="polite"></p>
 </form>
 <p class="hint"><b>Esqueceu sua senha?</b> Solicite uma nova senha diretamente à sua loja. O cadastro do entregador é feito somente pelo estabelecimento.</p>
@@ -81,6 +83,19 @@ if(window.PitaccoPush && typeof window.PitaccoPush.postMessage==='function')docu
 </div>
 <div class="footer">Pitacco • Seja qual for, tá na mão!</div>
 </main>
+<script>
+// Render first-use login immediately, while the authenticated module loads.
+// Local storage is ONLY a visual hint, not authentication. Real session
+// validation still happens on the server before access to deliveries.
+if(document.documentElement.classList.contains('pitacco-native')){
+ try{
+  if(!localStorage.getItem('sb-mdevzehqcpcgxspwbiyz-auth-token')){
+   document.getElementById('loading').classList.add('hidden');
+   document.getElementById('login').classList.remove('hidden');
+  }
+ }catch{}
+}
+</script>
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.0";
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./config.mjs";
@@ -91,6 +106,8 @@ function show(name){sections.forEach(s=>$(s).classList.toggle("hidden",s!==name)
 function alertError(id,message){$(id).textContent=message;}
 const sb = createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const auth = createDriverAuth(sb);
+$("loginButton").disabled=false;
+$("loginButton").textContent="Entrar";
 // The stable signed 2.0.6 asset is a fallback if the catalog is unavailable.
 // When a newer verified release exists, use its official download link.
 async function showAppDownload(){
@@ -144,12 +161,18 @@ async function call(action,payload={}){
 }
 async function routeSession(){
  try {
-   const user=await auth.currentUser();
-   if(!user){show("login");return;}
-   const status=await call("status");
+   // getSession reuses the locally persisted token. Both following server
+   // checks validate that token and are independent: run them concurrently.
+   const {data:local,error:sessionError}=await sb.auth.getSession();
+   if(sessionError)throw sessionError;
+   if(!local?.session?.access_token){show("login");return;}
+   show("loading");
+   const [status,readyResult]=await Promise.all([
+     call("status"),sb.rpc("pitacco_courier_session_ready")
+   ]);
    if(status.mustChangePassword){show("change");return;}
-   const {data,error}=await sb.rpc("pitacco_courier_session_ready");
-   if(error||data!==true) throw new Error("Sessão não autorizada. Entre novamente.");
+   if(readyResult.error||readyResult.data!==true)
+     throw new Error("Sessão não autorizada. Entre novamente.");
    window.location.assign("./painel.html");
  } catch(err) {
    await auth.signOut().catch(()=>{});
