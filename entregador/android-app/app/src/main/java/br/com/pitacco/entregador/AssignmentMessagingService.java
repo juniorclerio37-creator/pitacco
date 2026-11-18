@@ -40,6 +40,22 @@ public final class AssignmentMessagingService extends FirebaseMessagingService {
         manager.createNotificationChannel(channel);
     }
 
+    /** Native alert availability; does not claim audio was physically heard. */
+    public static String notificationStatus(Context context) {
+        if (Build.VERSION.SDK_INT >= 33 &&
+                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                        != PackageManager.PERMISSION_GRANTED) return "permission";
+        NotificationManager manager = context.getSystemService(NotificationManager.class);
+        if (manager == null || !manager.areNotificationsEnabled()) return "permission";
+        ensureChannel(context);
+        NotificationChannel channel = manager.getNotificationChannel(CHANNEL_ID);
+        if (channel == null || channel.getImportance() == NotificationManager.IMPORTANCE_NONE)
+            return "channel_disabled";
+        if (channel.getImportance() < NotificationManager.IMPORTANCE_DEFAULT ||
+                channel.getSound() == null) return "channel_silent";
+        return "ready";
+    }
+
     public static boolean showAssignment(Context context, String eventId) {
         if (Build.VERSION.SDK_INT >= 33 &&
                 context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
@@ -47,7 +63,11 @@ public final class AssignmentMessagingService extends FirebaseMessagingService {
         NotificationManager manager = context.getSystemService(NotificationManager.class);
         if (!manager.areNotificationsEnabled()) return false;
         ensureChannel(context);
+        NotificationChannel channel = manager.getNotificationChannel(CHANNEL_ID);
+        if (channel == null ||
+                channel.getImportance() == NotificationManager.IMPORTANCE_NONE) return false;
         Intent launch = new Intent(context, MainActivity.class);
+        launch.putExtra("pitacco_assignment_alert", true);
         launch.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent click = PendingIntent.getActivity(context, 1, launch,
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);

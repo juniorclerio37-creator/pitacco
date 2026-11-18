@@ -214,7 +214,7 @@ let nativeTestPending=false, nativeTestTimeout=0, nativeEnableTimeout=0;
 function playWebSoundWhenNativeFails(reason){
  const sounded=playAssignmentSound();
  $("assignmentSoundStatus").textContent=sounded
-  ?reason+" O sino da tela foi reproduzido. Avisos com o aplicativo fechado exigem configuração nativa e Firebase."
+  ?reason+" O teste de sino pela tela foi iniciado; confirme se você o ouviu. Avisos em segundo plano exigem Firebase ativo."
   :reason+" O som da tela também não pôde tocar. Confira o volume de mídia.";
 }
 async function enableAssignmentSound(){
@@ -702,10 +702,21 @@ function initializeNativePush(){
    $("assignmentSoundStatus").textContent="Android confirmou a notificação de teste. Confira o volume de notificações do aparelho.";
    return;
   }
-  if(value==="permission"&&nativeTestPending){
+  if((value==="permission"||value==="channel_disabled"||value==="channel_silent")&&nativeTestPending){
    nativeTestPending=false;
    window.clearTimeout(nativeTestTimeout);
-   playWebSoundWhenNativeFails("O Android bloqueou a notificação de teste.");
+   const cause=value==="permission"?"As notificações estão sem permissão."
+    :value==="channel_disabled"?"O canal de novas entregas foi desativado nas configurações do Android."
+    :"O canal de novas entregas está no silencioso.";
+   playWebSoundWhenNativeFails(cause);
+   return;
+  }
+  if(value.startsWith("notification_status:")){
+   const state=value.slice("notification_status:".length);
+   status.textContent=state==="ready"?"Notificações do Android autorizadas. Faça o teste de som."
+    :state==="channel_silent"?"Canal de notificações sem som. Toque em Configurar volume e notificações do Android."
+    :state==="channel_disabled"?"Canal de novas entregas desativado. Abra as configurações do Android."
+    :"Notificações não autorizadas. Toque em Ativar avisos no Android.";
    return;
   }
   if(value.startsWith("token:")){
@@ -722,8 +733,9 @@ function initializeNativePush(){
   }
  };
  native.postMessage("refresh");
+ native.postMessage("status");
  document.addEventListener("visibilitychange",()=>{
-  if(!document.hidden)native.postMessage("refresh");
+  if(!document.hidden){native.postMessage("refresh");native.postMessage("status");}
  });
 }
 async function boot(){

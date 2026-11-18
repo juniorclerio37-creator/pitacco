@@ -117,8 +117,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.ok(page.includes('nativeNotificationSettings'));
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 3'));
- assert.ok(build.includes("versionName '1.0.2'"));
+ assert.ok(build.includes('versionCode 20'));
+ assert.ok(build.includes("versionName '2.0.0'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -149,7 +149,7 @@ test("installed Android app with outdated native bridge falls back to audible we
  assert.match(page,/nativeTestPending=false/);
  assert.match(page,/O Android não respondeu ao teste nativo/);
  assert.match(page,/Sem resposta do Android/);
- assert.match(page,/Avisos com o aplicativo fechado exigem configuração nativa e Firebase/);
+ assert.match(page,/Avisos em segundo plano exigem Firebase ativo/);
 });
 
 test("courier continues to show opened deliveries offline without unsafe queued completion",()=>{
@@ -162,4 +162,22 @@ test("courier continues to show opened deliveries offline without unsafe queued 
  assert.match(page,/confirmações precisam de internet/);
  // No customer/address snapshots in unencrypted browser persistence.
  assert.doesNotMatch(page,/localStorage\.setItem\([^)]*assignedDeliveries/);
+});
+
+test("Pitacco Entregador 2.0 responds to native notification restrictions without claiming audible playback",()=>{
+ const service=read("android-app/app/src/main/java/br/com/pitacco/entregador/AssignmentMessagingService.java");
+ const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
+ const page=read("painel.html");
+ assert.ok(service.includes('notificationStatus(Context context)'));
+ assert.ok(service.includes('channel_silent'));
+ assert.ok(service.includes('channel_disabled'));
+ assert.ok(service.includes('NotificationManager.IMPORTANCE_NONE'));
+ assert.ok(activity.includes('notification_status:'));
+ assert.ok(activity.includes('AssignmentMessagingService.notificationStatus(this)'));
+ assert.ok(activity.includes('onNewIntent(Intent intent)'));
+ assert.ok(activity.includes('pitacco_assignment_alert'));
+ assert.ok(page.includes('native.postMessage("status")'));
+ assert.ok(page.includes('canal de novas entregas'.toLowerCase())||page.includes('Canal de novas entregas'));
+ assert.ok(page.includes('O teste de sino pela tela foi iniciado'));
+ assert.ok(!page.includes('O sino da tela foi reproduzido.'));
 });

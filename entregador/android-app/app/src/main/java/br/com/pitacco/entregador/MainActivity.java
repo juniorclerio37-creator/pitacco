@@ -111,9 +111,18 @@ public class MainActivity extends Activity {
                     if ("enable".equals(action)) enablePush(reply);
                     else if ("refresh".equals(action) && pushEnabled()) sendToken(reply);
                     else if ("test".equals(action)) {
-                        boolean played = AssignmentMessagingService.showAssignment(this,
-                                "00000000-0000-4000-8000-000000000001");
-                        reply.postMessage(played ? "tested" : "permission");
+                        String status = AssignmentMessagingService.notificationStatus(this);
+                        if ("ready".equals(status) || "channel_silent".equals(status)) {
+                            boolean posted = AssignmentMessagingService.showAssignment(this,
+                                    "00000000-0000-4000-8000-000000000001");
+                            reply.postMessage(posted ?
+                                    ("ready".equals(status) ? "tested" : "channel_silent") :
+                                    "channel_disabled");
+                        } else reply.postMessage(status);
+                    }
+                    else if ("status".equals(action)) {
+                        reply.postMessage("notification_status:" +
+                                AssignmentMessagingService.notificationStatus(this));
                     }
                     else if ("settings".equals(action)) {
                         Intent settings = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
@@ -174,12 +183,15 @@ public class MainActivity extends Activity {
     }
 
     private boolean handleLink(Uri uri) {
+        if (uri == null) return true;
         String host = uri.getHost();
         if (isHttps(uri) && HOST.equalsIgnoreCase(host)) return false;
         String path = uri.getPath();
         if (isHttps(uri) && path != null && (
-                ("www.google.com".equalsIgnoreCase(host) && path.startsWith("/maps/dir/"))
-                || ("waze.com".equalsIgnoreCase(host) && "/ul".equals(path))
+                (("www.google.com".equalsIgnoreCase(host) || "maps.google.com".equalsIgnoreCase(host))
+                    && (path.startsWith("/maps/dir/") || path.startsWith("/maps/")))
+                || (("waze.com".equalsIgnoreCase(host) || "www.waze.com".equalsIgnoreCase(host))
+                    && "/ul".equals(path))
                 || ("wa.me".equalsIgnoreCase(host) && path.matches("/[0-9]+"))
                 || ("app.pitacco.com.br".equalsIgnoreCase(host) && path.startsWith("/app/")))) {
             openExternal(new Intent(Intent.ACTION_VIEW, uri));
@@ -201,6 +213,19 @@ public class MainActivity extends Activity {
     private void showOffline() {
         web.setVisibility(View.GONE);
         offline.setVisibility(View.VISIBLE);
+    }
+
+    /** Recheck orders when the driver taps a native delivery notification. */
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (web != null && intent != null &&
+                intent.getBooleanExtra("pitacco_assignment_alert", false)) {
+            web.evaluateJavascript(
+                    "(function(){var button=document.getElementById('refresh');" +
+                    "if(button)button.click();})()", null);
+            intent.removeExtra("pitacco_assignment_alert");
+        }
     }
 
     @Override protected void onSaveInstanceState(Bundle state) {
