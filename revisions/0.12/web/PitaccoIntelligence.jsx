@@ -62,3 +62,4 @@ export default function PitaccoIntelligence({client,stores=[]}){
     A orientação não significa que uma correção foi executada.</small>
   </article>}
  </section>;
+}
