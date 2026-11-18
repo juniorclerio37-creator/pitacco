@@ -39,7 +39,7 @@ test('vizinho mais próximo evita voltar à loja entre as entregas',()=>{
  const origins=new Map([[store,{latitude:-22.75,longitude:-43.45}]]);
  const plans=suggestedBatchRoutes([
    entry('perto-norte',-22.749,-43.45),
-   entry('sul',-22.751,-43.45),
+   entry('sul',-22.7512,-43.45),
    entry('norte-leste',-22.749,-43.449)
  ],origins);
  assert.deepEqual(plans[0].stops.map(x=>x.delivery.id),
