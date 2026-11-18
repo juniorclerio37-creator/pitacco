@@ -117,8 +117,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.ok(page.includes('nativeNotificationSettings'));
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 28'));
- assert.ok(build.includes("versionName '2.0.8'"));
+ assert.ok(build.includes('versionCode 29'));
+ assert.ok(build.includes("versionName '2.0.9'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -459,7 +459,7 @@ test("Android GPS authorization remains part of the original courier app upgrade
  const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
  const screen=read("painel.html");
  assert.match(app,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(app,/versionCode 28/);
+ assert.match(app,/versionCode 29/);
  assert.match(app,/versionName '2\.0\.8'/);
  assert.match(activity,/registerGpsBridge\(\)/);
  assert.match(activity,/WebViewCompat\.addWebMessageListener\(web, "PitaccoGps"/);
