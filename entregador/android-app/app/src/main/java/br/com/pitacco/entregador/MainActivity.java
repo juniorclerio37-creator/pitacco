@@ -125,9 +125,19 @@ public class MainActivity extends Activity {
                                 AssignmentMessagingService.notificationStatus(this));
                     }
                     else if ("settings".equals(action)) {
-                        Intent settings = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
-                        settings.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
-                        settings.putExtra(Settings.EXTRA_CHANNEL_ID, AssignmentMessagingService.CHANNEL_ID);
+                        // If Android has not granted global notification permission,
+                        // open the app's main notification settings instead of the
+                        // disabled category-level switch.
+                        String state = AssignmentMessagingService.notificationStatus(this);
+                        Intent settings;
+                        if ("permission".equals(state)) {
+                            settings = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+                            settings.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+                        } else {
+                            settings = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
+                            settings.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+                            settings.putExtra(Settings.EXTRA_CHANNEL_ID, AssignmentMessagingService.CHANNEL_ID);
+                        }
                         startActivity(settings);
                     }
                     else if ("disable".equals(action)) {
@@ -145,10 +155,9 @@ public class MainActivity extends Activity {
     }
 
     private void enablePush(JavaScriptReplyProxy reply) {
-        if (FirebaseApp.getApps(this).isEmpty()) {
-            reply.postMessage("unavailable");
-            return;
-        }
+        // Notification permission is independent of Firebase. The parallel QA
+        // app intentionally has no FCM registration, but must still request
+        // POST_NOTIFICATIONS to test its native chime on Android 13+.
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             pendingPermission = reply;
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, PUSH_PERMISSION);
@@ -160,6 +169,13 @@ public class MainActivity extends Activity {
     }
 
     private void finishPushEnable(JavaScriptReplyProxy reply) {
+        AssignmentMessagingService.ensureChannel(this);
+        if (FirebaseApp.getApps(this).isEmpty()) {
+            // Local notification test can now work. Background FCM remains
+            // unavailable until the QA app is registered in Firebase.
+            reply.postMessage("unavailable");
+            return;
+        }
         FirebaseMessaging.getInstance().setAutoInitEnabled(true);
         getPreferences(MODE_PRIVATE).edit().putBoolean("push_enabled", true).apply();
         sendToken(reply);
