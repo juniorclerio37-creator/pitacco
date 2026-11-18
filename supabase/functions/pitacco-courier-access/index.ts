@@ -20,12 +20,12 @@ function temporaryPassword() {
   crypto.getRandomValues(random);
   return Array.from(random, number => chars[number % chars.length]).join("");
 }
-function validRemuneration(value: unknown) {
+function validRemuneration(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  const body = value as Record<string, unknown>;
+  const body = value;
   const allowed = new Set(['customer_fee','per_delivery','per_km','daily','mixed']);
   if (typeof body.mode !== 'string' || !allowed.has(body.mode)) return null;
-  const valueOf = (key: string) => {
+  const valueOf = (key) => {
     const raw=body[key] ?? 0;
     if (typeof raw!=='number' && (typeof raw!=='string' || !raw.trim()))return NaN;
     const n=Number(raw);
