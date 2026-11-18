@@ -367,3 +367,41 @@ test("servidor encerra pedidos iFood oficiais e cancelados sem contabilizar ganh
  assert.match(page,/canceled\?"R\$ 0,00"/);
  assert.match(page,/\.filter\(d=>!\["entregue","cancelada"\]\.includes\(d\.status\)\)/);
 });
+
+test("código incorreto aparece só sob campo, não no topo, e some ao editar",()=>{
+ const page=read("painel.html"),css=read("painel.css");
+ assert.match(page,/const codeDrafts=new Map\(\)/);
+ assert.match(page,/function inlineCodeError\(deliveryId,errorText\)/);
+ assert.match(page,/const feedback=element\("p","verify-error",draft\.error\)/);
+ assert.match(page,/feedback\.setAttribute\("aria-live","polite"\)/);
+ assert.match(page,/fields\.append\(code,feedback\)/);
+ assert.match(page,/feedback\.textContent="";feedback\.hidden=true/);
+ assert.match(page,/code\.setAttribute\("aria-invalid","false"\)/);
+ assert.match(page,/inlineCodeError\(d\.id,"Código incorreto"\)/);
+ assert.match(page,/form\.noValidate=true/);
+ assert.match(css,/\.verify-error\[hidden\]\{display:none!important\}/);
+ const block=page.slice(page.indexOf("async function verifyCode(d,code){"),
+     page.indexOf("async function loadSafeHistory(){"));
+ assert.doesNotMatch(block,/catch\(error\)\{message\(/);
+ assert.doesNotMatch(block,/Tentativas restantes:/);
+ assert.match(page,/codeDrafts\.delete\(id\)/);
+ assert.doesNotMatch(page,/Aguardando o iFood confirmar a entrega\. Acompanhe a página oficial e tente atualizar novamente\./);
+});
+test("ganhos de entregas concluídas usam regra individual e valor único para loja e motoboy",()=>{
+ const sql=read("../supabase/migrations/20261118174000_pitacco_courier_completion_earnings.sql");
+ const manager=read("../revisions/0.12/web/CourierWorkspace.jsx");
+ const finances=read("../revisions/0.12/web/CourierFinance.jsx");
+ const page=read("painel.html");
+ assert.match(sql,/new\.status='cancelada'/);
+ assert.match(sql,/new\.courier_payment:=0/);
+ assert.match(sql,/r\.store_id=new\.store_id and r\.courier_id=new\.courier_id/);
+ assert.match(sql,/v_rule\.include_customer_fee/);
+ assert.match(sql,/new\.courier_payment:=v_amount/);
+ assert.match(sql,/coalesce\(new\.courier_payment,0\)>0/);
+ assert.match(sql,/v_rule\.mode='daily' then return new/);
+ assert.match(manager,/d\.status==='entregue'/);
+ assert.match(manager,/d\.courier_payment/);
+ assert.match(finances,/\.eq\('status','entregue'\)/);
+ assert.match(finances,/courier_payment/);
+ assert.match(page,/sb\.rpc\("pitacco_driver_earnings"/);
+});
