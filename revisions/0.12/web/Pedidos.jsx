@@ -33,7 +33,7 @@ function DeliveryBadge({order,delivery}){
  const {type,label}=deliveryType(order,delivery);
  return <span className="pedidos-delivery-badge" data-delivery={type}>{type==='pickup'?<ShoppingBag size={15} aria-hidden="true"/>:<Bike size={15} aria-hidden="true"/>}{label}</span>;
 }
-export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccept,onAcceptIfood,onGetIfoodReasons,onRejectIfood,onDecision,onReady,onPickup,onDetail,onAssign,onReprint,busy=false,merchantLayout=false,manualPrint=false,acceptMode='manual',dispatchMode='manual'}){
+export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccept,onAcceptIfood,onGetIfoodReasons,onRejectIfood,onDecision,onReady,onPickup,onConclude,onDetail,onAssign,onReprint,busy=false,merchantLayout=false,manualPrint=false,acceptMode='manual',dispatchMode='manual'}){
  const [filter,setFilter]=useState('all'),[search,setSearch]=useState(''),[selected,setSelected]=useState(null),[decision,setDecision]=useState(null);
  const badgeByOrder=useMemo(()=>new Map(badges.map(b=>[b.order_id,b])),[badges]);
  const number=o=>publicOrderNumber(o,badgeByOrder.get(o?.id));
@@ -97,6 +97,7 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
      {stage(o)==='ready'&&canAssign(o,delivery)&&isAutomaticDispatch(dispatchMode)&&<span role="status">Aguardando alocação automática da loja</span>}
      {stage(o)==='ready'&&delivery?.courier_id&&<span role="status">Entregador selecionado · aguardando saída</span>}
      {stage(o)==='ready'&&delivery?.logistics_provider==='marketplace'&&<span role="status">Aguardando coleta pelo parceiro</span>}
+     {stage(o)==='delivery'&&o.source==='proprio'&&<button type="button" className="primary pedidos-step-button" disabled={busy||!onConclude} onClick={()=>onConclude?.(o.id)}>Concluir entrega</button>}
      {stage(o)==='delivery'&&<button type="button" className="secondary pedidos-step-button" disabled={busy} onClick={()=>onDetail(o)}>Acompanhar entrega</button>}
      <button type="button" className="secondary pedidos-card-print" aria-label={(manualPrint?"Imprimir no navegador pedido ":"Reimprimir comanda do pedido ")+number(o)} disabled={busy} onClick={()=>onReprint(o.id)}><Printer size={16} aria-hidden="true"/></button>
     </div>}
@@ -112,7 +113,8 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
 {stage(current)==='ready'&&canDispatch(current,currentDelivery,dispatchMode)&&<button className="primary" disabled={busy} onClick={()=>onAssign(current)}>Selecionar entregador</button>}
 {stage(current)==='ready'&&currentDelivery?.courier_id&&<span role="status">Entregador atribuído · aguardando saída</span>}
 {stage(current)==='ready'&&currentDelivery?.logistics_provider==='marketplace'&&<span role="status">Aguardando retirada pelo parceiro</span>}
-{stage(current)==='delivery'&&<span role="status">A entrega será concluída após a confirmação pelo aplicativo do motoboy ou pelo marketplace.</span>}
+{stage(current)==='delivery'&&current.source==='proprio'&&<button className="primary" disabled={busy||!onConclude} onClick={()=>onConclude?.(current.id)}>Concluir entrega</button>}
+{stage(current)==='delivery'&&<span role="status">A conclusão exige chegada e comprovação registradas pelo entregador; pedidos de marketplaces aguardam a confirmação oficial.</span>}
 {canAssign(current,currentDelivery)&&isAutomaticDispatch(dispatchMode)&&<span role="status">Aguardando alocação automática</span>}
 {canDecide&&<>
  {stage(current)==='scheduled'
