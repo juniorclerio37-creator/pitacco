@@ -55,7 +55,15 @@ begin
  select o.receipt->>'ifood_status' into v_status
  from public.orders o
  where o.id=d.order_id and o.store_id=d.store_id and o.source='ifood';
- if v_status is distinct from 'CONCLUDED' then
+ -- Double proof: only a processed iFood CONCLUDED event from the private
+ -- verified event queue for this linked merchant/order may complete externally.
+ if v_status is distinct from 'CONCLUDED' or not exists(
+   select 1 from pitacco_private.ifood_order_links l
+   join pitacco_private.ifood_events e
+      on e.order_id=l.external_id and e.merchant_id=l.merchant_id
+   where l.order_id=d.order_id and e.code='CONCLUDED'
+     and e.done_at is not null and e.event_at>=d.arrived_at
+ ) then
    return pg_catalog.jsonb_build_object('confirmed',false,'pending',true);
  end if;
  update public.deliveries set status='entregue',updated_at=pg_catalog.now()
