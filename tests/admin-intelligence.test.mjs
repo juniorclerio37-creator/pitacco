@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import worker from '../cloudflare/admin-ai-worker.mjs';
+import worker,{safeDiagnosticSignals} from '../cloudflare/admin-ai-worker.mjs';
 
 const endpoint='https://admin.pitacco.com.br/api/intelligence/analyze';
 const originalFetch=globalThis.fetch;
@@ -11,7 +11,7 @@ function request(question='A impressão no Windows falha',changes={}){
   body:JSON.stringify({question,storeId:null,...changes.body})
  });
 }
-function harness({owner=true,auth=true,incidents=[],ai=true,metrics={registered:5,active:2,trial:2,courtesy:1}}={}){
+function harness({owner=true,auth=true,incidents=[],ai=true,metrics={registered:5,active:2,trial:2,courtesy:1},telemetry=true}={}){
  const called=[];
  globalThis.fetch=async (url,init)=>{
   called.push({url,init});
@@ -19,6 +19,13 @@ function harness({owner=true,auth=true,incidents=[],ai=true,metrics={registered:
   if(url.endsWith('/rest/v1/rpc/pitacco_is_platform_owner'))return Response.json(owner);
   if(url.endsWith('/rest/v1/rpc/pitacco_incidents'))return Response.json({rows:incidents,has_more:false});
   if(url.endsWith('/rest/v1/rpc/pitacco_subscription_overview'))return Response.json(metrics);
+  if(url.endsWith('/rest/v1/rpc/pitacco_owner_diagnostic_snapshot'))return telemetry?
+    Response.json({scope:'all_stores',observed_at:'2026-11-18T02:20:00Z',
+      printing:{jobs_24h:5,error:2,submitted:2,pending:1,secret_receipt:'CREDIT_CARD_SECRET'},
+      courier_notifications:{server_enabled:true,sent_24h:4,unsent_24h:1,token:'PUSH_SECRET'},
+      ifood:{events_24h:7,processed_24h:6,late_over_10m:1,private_order:'ORDER_SECRET'},
+      marketplace_acceptance:{'99food_rejected_24h':1},
+      private_customer:'CUSTOMER_SECRET'}):Response.json({message:'unavailable'},{status:503});
   throw new Error('Unexpected URL '+url);
  };
  const calls=[];
@@ -66,7 +73,7 @@ test('authorized diagnosis excludes identifiers and credentials from AI context'
  assert.match(payload.answer,/Diagnóstico consultivo/);
  assert.equal(payload.incidentsConsidered,1);
  assert.equal(payload.mode,'diagnostico');
- assert.equal(h.called.length,3);
+ assert.equal(h.called.length,4);
  assert.equal(h.calls.length,1);
  assert.equal(h.calls[0].model,'@cf/meta/llama-3.1-8b-instruct-fast');
  const prompt=JSON.stringify(h.calls[0].args.messages);
@@ -95,7 +102,7 @@ test('missing rate limiter fails closed',async()=>{
 test('requires a configured AI binding',async()=>{
  const h=harness({ai:false});
  const response=await worker.fetch(request(),h.env);
- assert.equal(response.status,503);assert.equal(h.called.length,3);
+ assert.equal(response.status,503);assert.equal(h.called.length,4);
 });
 
 test('reported active stores comes from protected Supabase overview, not model inference',async()=>{
@@ -123,4 +130,35 @@ test('text is extracted from real Workers AI chat-completions response',async()=
  assert.equal(response.status,200);
  const answer=(await response.json()).answer;
  assert.match(answer,/permissão de notificações/);
+});
+
+test('diagnostic telemetry is allowlisted and does not leak tokens or order data',async()=>{
+ const h=harness();
+ const response=await worker.fetch(request('Por que a impressão e as notificações falham?'),h.env);
+ assert.equal(response.status,200);
+ const payload=await response.json();
+ assert.equal(payload.signalsAvailable,true);
+ assert.equal(h.called.length,4);
+ assert.equal(h.calls.length,1);
+ const prompt=h.calls[0].args.messages[1].content;
+ assert.match(prompt,/"jobs_24h":5/);
+ assert.match(prompt,/"late_over_10m":1/);
+ assert.match(prompt,/"99food_rejected_24h":1/);
+ assert.doesNotMatch(prompt,/PUSH_SECRET|CREDIT_CARD_SECRET|ORDER_SECRET|CUSTOMER_SECRET/);
+});
+test('diagnosis degrades explicitly if snapshot RPC is temporarily unavailable',async()=>{
+ const h=harness({telemetry:false});
+ const response=await worker.fetch(request(),h.env);
+ assert.equal(response.status,200);
+ const payload=await response.json();
+ assert.equal(payload.signalsAvailable,false);
+ assert.match(JSON.stringify(h.calls[0].args.messages),/indisponíveis/);
+});
+test('malformed telemetry fields remain unknown; never invent zero counts',()=>{
+ const data=safeDiagnosticSignals({scope:'all_stores',observed_at:'2026-11-18T03:20:00Z',
+  printing:{error:'0'},courier_notifications:{server_enabled:'yes'}});
+ assert.equal(data.printing.error,null);
+ assert.equal(data.courier_notifications.server_enabled,null);
+ assert.equal(data.marketplace_acceptance['99food_rejected_24h'],null);
+ assert.equal(safeDiagnosticSignals({scope:'evil',printing:{error:0}}),null);
 });
