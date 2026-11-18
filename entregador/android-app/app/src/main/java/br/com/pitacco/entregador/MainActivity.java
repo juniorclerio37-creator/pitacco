@@ -171,8 +171,18 @@ public class MainActivity extends Activity {
                 });
     }
 
+    /**
+     * Activity.getPreferences(MODE_PRIVATE) uses the local class name ("MainActivity").
+     * Use this same preference from FirebaseMessagingService so a stale FCM token
+     * cannot play a delivery alert after courier opt-out or logout.
+     */
+    public static boolean isPushOptedIn(android.content.Context context) {
+        return context.getSharedPreferences(MainActivity.class.getSimpleName(),
+                MODE_PRIVATE).getBoolean("push_enabled", false);
+    }
+
     private boolean pushEnabled() {
-        return getPreferences(MODE_PRIVATE).getBoolean("push_enabled", false)
+        return isPushOptedIn(this)
                 && getSystemService(NotificationManager.class).areNotificationsEnabled();
     }
 
