@@ -23,7 +23,7 @@ test('Cadastro do motoboy salva a remuneracao junto do telefone, sem chave priva
  assert.match(api,/if\(!remuneration\)return \[400/);
  assert.match(api,/\.insert\(\{store_id:storeId,courier_id:courier.id,\.\.\.remuneration\}\)/);
  assert.match(api,/admin\.auth\.admin\.deleteUser\(userId\)/);
- assert.match(api,/if\(action==="set-remuneration"\)/);
+ assert.match(api,/if\s*\(action==="set-remuneration"\)/);
  assert.match(api,/await authorizeStore\(actor,storeId\)/);
  assert.doesNotMatch(manager,/SUPABASE_SERVICE_ROLE_KEY/);
 });
