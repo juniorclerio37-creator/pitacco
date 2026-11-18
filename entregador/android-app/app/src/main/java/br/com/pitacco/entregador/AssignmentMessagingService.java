@@ -107,6 +107,10 @@ public final class AssignmentMessagingService extends FirebaseMessagingService {
     }
 
     @Override public void onMessageReceived(RemoteMessage message) {
+        // Opt-out and logout must prevent audible/native delivery alerts, even
+        // when an old token remains registered while the device is offline.
+        // The production app sends data-only FCM events to this native handler.
+        if (!MainActivity.isPushOptedIn(this)) return;
         if (!TYPE.equals(message.getData().get("kind"))) return;
         String eventId = message.getData().get("event_id");
         if (eventId == null || !eventId.matches(UUID_PATTERN)) return;
