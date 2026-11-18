@@ -37,7 +37,23 @@ for index in range(round(duration * rate)):
     # Smooth limiting, not hard clipping. Peak stays below 0 dBFS.
     sample = 0.985 * math.tanh(4.2 * signal) * fade
     frames.extend(struct.pack('<h', max(-32767, min(32767, round(32767 * sample)))))
+# Optionally append a *separate* recorded courier voice. Do NOT reuse the
+# merchant's "novo pedido" recording for couriers. The approved spoken line is
+# "Pitacco! Você tem uma nova entrega!", with a short pause after the bell.
+# A WAV is intentionally required so its audio stays on-device and offline.
+voice = Path(__file__).parent / 'assets/voz-entregador.wav'
+if voice.exists():
+    with wave.open(str(voice), 'rb') as source:
+        if (source.getnchannels(), source.getsampwidth(), source.getframerate()) != (1, 2, rate):
+            raise ValueError('voz-entregador.wav must be mono PCM16 24000 Hz')
+        if source.getnframes() > rate * 12 or source.getnframes() == 0:
+            raise ValueError('Unexpected courier voice duration')
+        frames.extend(bytes(round(rate * .22) * 2))
+        frames.extend(source.readframes(source.getnframes()))
+    print('Pitacco Entregador: bell + dedicated courier voice; local/offline playback')
+else:
+    print('Pitacco Entregador: bell only — courier voice file has not been supplied')
 with wave.open(str(output), 'wb') as wav:
     wav.setparams((1, 2, rate, 0, 'NONE', 'not compressed'))
     wav.writeframes(frames)
-print(f'Generated stronger assignment alert: {duration:.2f} seconds')
+print(f'Generated assignment alert: {len(frames)/(rate*2):.2f} seconds')
