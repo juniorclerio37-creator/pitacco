@@ -541,6 +541,31 @@ async function ifoodDriverAction(delivery,action,code){
  }
  return out;
 }
+async function collectCourierOrder(d){
+ if(busy)return;busy=true;message("");
+ try{
+  // The local pickup is always saved first; network issues must never erase
+  // the courier's physical collection. Only merchant-owned iFood deliveries
+  // are dispatched to the provider. Partner-driver orders belong to iFood.
+  const {error}=await sb.rpc("pitacco_driver_collect",{p_delivery:d.id});
+  if(error)throw Error(error.message||"Não foi possível confirmar a coleta");
+  let notice="Coleta registrada no Pitacco. Confirme a saída da rota quando todos os pedidos estiverem coletados.";
+  if(d.source==="ifood"&&d.logistics_provider==="loja"){
+   try{
+    const result=await ifoodDriverAction(d.id,"dispatch");
+    notice=result.provider_state==="submitted"
+     ?"Coleta confirmada e despacho enviado ao iFood. Aguardando evento DISPATCHED."
+     :result.provider_state==="confirmed"
+      ?"O iFood já confirmou o despacho deste pedido."
+      :"Coleta confirmada. Despacho ao iFood ainda pendente de confirmação.";
+   }catch(err){
+    notice+=" Atenção: envio ao iFood não confirmado: "+String(err?.message||err);
+   }
+  }
+  await refresh(true);message(notice);
+ }catch(err){message(String(err?.message||"Não foi possível confirmar a coleta"))}
+ finally{busy=false}
+}
 async function markArrival(d){
  if(busy)return;busy=true;message("");
  try{
@@ -747,7 +772,19 @@ function card(d){
  box.append(element("div","pay","Cobrança: a confirmar com a loja. Não presuma pagamento aprovado."));
  const actions=element("div","actions");
  const collecting=d.status==="atribuida"||(d.status==="aceita"&&!d.collected_at);
- if(collecting)actions.append(createAction("Coletar pedido","primary",()=>rpc("pitacco_driver_collect",{p_delivery:d.id})));
+ if(collecting)actions.append(createAction("Efetuei a coleta","primary",()=>collectCourierOrder(d)));
+ if(d.status==="aceita"&&d.collected_at&&d.source==="ifood"&&d.logistics_provider==="loja"){
+  actions.append(createAction("Sincronizar despacho com iFood","secondary",async()=>{
+   if(busy)return;busy=true;message("");
+   try{
+    const result=await ifoodDriverAction(d.id,"dispatch");
+    message(result.provider_state==="submitted"?"Despacho enviado ao iFood; aguardando DISPATCHED.":
+      result.provider_state==="confirmed"?"O iFood já confirmou o despacho.":
+      "Despacho iFood aguardando confirmação.");
+   }catch(err){message(String(err?.message||"Não foi possível sincronizar o despacho"))}
+   finally{busy=false}
+  }));
+ }
  if(d.status==="aceita"&&d.collected_at&&d.batch_id)
   actions.append(createAction("Sair para entrega","primary",()=>rpc("pitacco_driver_depart",{p_batch:d.batch_id})));
  if(d.status==="retirada"){

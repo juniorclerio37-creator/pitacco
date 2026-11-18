@@ -180,13 +180,80 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
   if(raw.length>4096)return reply(413,{error:'Solicitação inválida'});
   let input;
   try{input=JSON.parse(raw)}catch{return reply(400,{error:'Dados inválidos'})}
-  if(!uuid.test(input?.delivery??'')||!['arrival','verify'].includes(input?.action)){
+  if(!uuid.test(input?.delivery??'')||!['arrival','verify','dispatch'].includes(input?.action)){
    return reply(400,{error:'Entrega ou ação inválida'});
   }
   if(input.action==='verify' && (typeof input.code!=='string'||! /^\d{4,8}$/.test(input.code))) {
    return reply(400,{error:'Informe o código numérico do cliente'});
   }
   try{
+   if(input.action==='dispatch'){
+    // Only the authenticated courier who already collected a READY order
+    // can claim this operation. iFood partner-delivery never passes the RPC.
+    const claimed=await fetcher(new URL('/rest/v1/rpc/pitacco_driver_ifood_dispatch_claim',supabaseUrl),{
+     method:'POST',headers:{apikey:publicKey,authorization,'content-type':'application/json'},
+     body:JSON.stringify({p_delivery:input.delivery}),signal:AbortSignal.timeout(5500),redirect:'error'
+    });
+    if(!claimed.ok)return reply(claimed.status===401?401:claimed.status===403?403:409,{
+     error:'Apenas o motoboy responsável pode despachar um pedido pronto de entrega própria após confirmar a coleta.'
+    });
+    const claim=await claimed.json();
+    if(claim.status==='already_confirmed')return reply(200,{provider_state:'confirmed',already:true});
+    if(claim.status==='submitted')return reply(202,{provider_state:'submitted',already:true});
+    if(claim.status==='pending')return reply(202,{provider_state:'pending',already:true});
+    if(claim.status==='uncertain')return reply(409,{provider_state:'uncertain',
+     error:'A situação do despacho está incerta. Confira o iFood antes de tentar novamente.'});
+    if(claim.status!=='claimed'||!uuid.test(claim.lease)||!uuid.test(claim.external_order_id)||
+       !uuid.test(claim.merchant_id))return reply(409,{error:'Despacho não autorizado.'});
+    const finish=async(state,status)=>{
+     try{return await rpc('pitacco_ifood_dispatch_result',{
+      p_delivery:input.delivery,p_lease:claim.lease,p_state:state,p_http_status:status
+     })===true}catch{return false}
+    };
+    let contactedProvider=false;
+    try{
+     const access=await distributed.accessFor(claim.merchant_id) ??
+        (clientId&&clientSecret?await token():null);
+     if(!access){
+      await finish('rejected',0);
+      return reply(503,{provider_state:'rejected',
+       error:'Integração iFood indisponível. A coleta foi registrada somente no Pitacco.'});
+     }
+     const url=origin+'/order/v1.0/orders/'+claim.external_order_id;
+     const headers={authorization:'Bearer '+access,'content-type':'application/json'};
+     if(claim.ready_on_ifood!==true){
+      contactedProvider=true;
+      const ready=await fetcher(url+'/readyToPickup',{
+       method:'POST',headers,signal:AbortSignal.timeout(9000),redirect:'error'
+      });
+      if(ready.status!==202){
+       const state=[400,403,404,409,412,422].includes(ready.status)?'rejected':'uncertain';
+       await finish(state,ready.status);
+       return reply(state==='uncertain'?503:409,{provider_state:state,
+        error:'O iFood ainda não aceitou o status Pronto. Despacho não enviado.'});
+      }
+     }
+     contactedProvider=true;
+     const dispatched=await fetcher(url+'/dispatch',{
+      method:'POST',headers,body:JSON.stringify({deliveredBy:'MERCHANT'}),
+      signal:AbortSignal.timeout(9000),redirect:'error'
+     });
+     const state=dispatched.status===202?'submitted':
+       [400,403,404,409,412,422].includes(dispatched.status)?'rejected':'uncertain';
+     if(!await finish(state,dispatched.status))return reply(503,{provider_state:'uncertain',
+      error:'O iFood respondeu, mas não foi possível registrar a resposta. Consulte a plataforma.'});
+     if(state!=='submitted')return reply(state==='uncertain'?503:409,{provider_state:state,
+      error:'O iFood não confirmou o despacho. A coleta continua registrada no Pitacco.'});
+     return reply(202,{provider_state:'submitted',
+      message:'Despacho enviado ao iFood após a coleta. Aguardando o evento oficial DISPATCHED.'});
+    }catch{
+     await finish(contactedProvider?'uncertain':'rejected',0);
+     return reply(503,{provider_state:contactedProvider?'uncertain':'rejected',
+      error:contactedProvider?
+       'Resultado incerto. Verifique o iFood antes de reenviar o despacho.':
+       'iFood indisponível. Coleta registrada apenas no Pitacco.'});
+    }
+   }
    const permission=await fetcher(new URL('/rest/v1/rpc/pitacco_driver_ifood_action',supabaseUrl),{
     method:'POST',
     headers:{apikey:publicKey,authorization,'content-type':'application/json'},
