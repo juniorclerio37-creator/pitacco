@@ -89,7 +89,7 @@ export function safeDiagnosticSignals(snapshot) {
       !['all_stores','selected_store'].includes(snapshot.scope)) return null;
   const signals = {
     scope: snapshot.scope,
-    observed_at: /^\\d{4}-\\d{2}-\\d{2}T/.test(String(snapshot.observed_at || '')) ?
+    observed_at: /^\d{4}-\d{2}-\d{2}T/.test(String(snapshot.observed_at || '')) ?
       String(snapshot.observed_at).slice(0, 19) : 'desconhecido',
     limits: 'Números agregados de 24 h, exceto testes Windows (7 dias). Sem coleta de áudio do Android, evidência de papel impresso, confirmação de entrega ou disponibilidade atual das APIs.'
   };
