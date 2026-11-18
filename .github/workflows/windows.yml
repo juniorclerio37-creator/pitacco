@@ -227,13 +227,12 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgres://postgres:isolated-ci-password@localhost:5432/postgres
+      PITACCO_WEB_ONLY: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Preparar decodificador da voz no banco isolado
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - run: python revisions/0.12/restore.py
       - run: npm ci --prefix web/tests/backend
       - run: npm install --prefix web/tests/backend --no-save --package-lock=false pg@8.16.3
