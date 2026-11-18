@@ -170,6 +170,7 @@ jobs:
           printf '%s' "$PITACCO_ANDROID_KEYSTORE_BASE64" | base64 --decode > "$PITACCO_ANDROID_KEYSTORE"
           unset PITACCO_ANDROID_KEYSTORE_BASE64
           bash sign-release.sh app/build/outputs/apk/release/app-release-unsigned.apk distribution
+      # A validação precisa inspecionar o APK final, não apenas o AndroidManifest.xml.
       - name: Conferir permissões e identidade do APK oficial
         working-directory: entregador/android-app
         shell: bash
