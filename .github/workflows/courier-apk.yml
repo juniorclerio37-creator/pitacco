@@ -116,7 +116,7 @@ jobs:
               echo "Cadastre os segredos em Settings → Secrets and variables → Actions, sem colocá-los no código ou em mensagens."
             } >> "$GITHUB_STEP_SUMMARY"
             echo "::warning::APK estável bloqueado por configuração de assinatura/Firebase incompleta."
-          elif [[ ! "$PITACCO_ANDROID_CERT_SHA256" =~ ^[A-Fa-f0-9:[:space:]]+$ ]]; then
+          elif [[ ! "$(printf '%s' "$PITACCO_ANDROID_CERT_SHA256" | tr -d ':[:space:]')" =~ ^[A-Fa-f0-9]{64}$ ]]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Formato de impressão digital do certificado inválido."
           else
