@@ -317,3 +317,17 @@ test("identidade de motinho laranja aprovada aparece no acesso, painel e ícone 
  assert.match(android,/android:fillType="evenOdd"/);
  assert.match(manifest,/android:icon="@drawable\/ic_pitacco"/);
 });
+
+test("roteiro avança do último ponto apenas quando entrega realmente foi confirmada",()=>{
+ const page=read("painel.html");
+ const route=read("route-sequence.mjs");
+ assert.match(page,/lastCompletedBatchStops=new Map/);
+ assert.match(page,/function rememberCompletedBatchStop\(d\)/);
+ assert.match(page,/if\(data\?\.confirmed\)\{\s*rememberCompletedBatchStop\(d\)/);
+ assert.match(page,/orderDetails\.close\(\);\s*rememberCompletedBatchStop\(d\)/);
+ assert.match(page,/suggestedBatchRoutes\(deliveries,routeOrigins,lastCompletedBatchStops\)/);
+ assert.match(page,/Confirme esta entrega antes de seguir/);
+ assert.match(route,/while\(remaining\.length\)/);
+ assert.match(route,/distanceKm\(cursor,point\(remaining\[i\]\)\)/);
+ assert.doesNotMatch(page,/localStorage\.setItem\([^)]*lastCompletedBatchStops/);
+});
