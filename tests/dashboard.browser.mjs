@@ -629,7 +629,7 @@ try {
       await page.getByText(/Aceite liberado às/).waitFor();
       assert.equal(await page.getByRole('button',{name:'Aceitar e iniciar preparo',exact:true}).count(),0);
     }
-    await page.getByRole('button', { name:'Novo (1)', exact:true }).click();
+    await page.getByRole('button', { name:'Em análise (1)', exact:true }).click();
     await page.getByRole('button', { name:'Recusar pedido', exact:true }).click();
     await page.getByLabel('Motivo da recusa').fill('Item indisponível');
     await page.getByRole('button', { name:'Confirmar recusa', exact:true }).click();
@@ -637,7 +637,7 @@ try {
     await page.locator('.pedidos-card').getByText('Cliente do pedido').waitFor();
     if(width===768){
       appointment.scheduled_release_at=new Date(Date.now()-1_000).toISOString();
-      await page.getByRole('button',{name:'Novo (1)',exact:true}).click();
+      await page.getByRole('button',{name:'Em análise (1)',exact:true}).click();
       await page.locator('.pedidos-card').getByText('Cliente agendado').waitFor();
       await page.getByRole('button',{name:'Aceitar e iniciar preparo',exact:true}).waitFor();
     }
