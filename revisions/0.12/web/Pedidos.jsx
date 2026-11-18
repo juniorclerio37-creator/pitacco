@@ -38,6 +38,14 @@ const canExecuteConclusion=(order,delivery,step)=>(
  order?.receipt?.logistics==='retirada'?step==='ready':
  step==='delivery'&&delivery?.logistics_provider==='loja'
 );
+// Identidade de origem local: sem imagens externas ou logotipos com carregamento remoto.
+function PlatformIcon({source}){
+ const value=String(source||'').toLowerCase();
+ const platform=['99food','99','99_food','99-food'].includes(value)?'99food':value==='ifood'?'ifood':value==='keeta'?'keeta':value==='proprio'||value==='loja'||value==='cardapio'?'loja':'outros';
+ const labels={ '99food':'99Food',ifood:'iFood',keeta:'Keeta',loja:'Loja',outros:'Outra origem'};
+ const mark=platform==='99food'?'99':platform==='ifood'?'iF':platform==='keeta'?'K':<ShoppingBag size={14} aria-hidden="true"/>;
+ return <span className="pedidos-platform-icon" data-platform={platform} role="img" aria-label={'Plataforma '+labels[platform]}>{mark}</span>;
+}
 function DeliveryBadge({order,delivery}){
  const {type,label}=deliveryType(order,delivery);
  return <span className="pedidos-delivery-badge" data-delivery={type}>{type==='pickup'?<ShoppingBag size={15} aria-hidden="true"/>:<Bike size={15} aria-hidden="true"/>}{label}</span>;
@@ -86,7 +94,7 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
    return <article key={o.id} aria-label={'Card do pedido '+number(o)} data-source={o.source}
     className={'pedidos-card order-card '+(current?.id===o.id?'selected':'')}>
     <button type="button" className="pedidos-card-select" aria-pressed={current?.id===o.id} onClick={()=>setSelected(o.id)}>
-     <span className="pedidos-card-row"><b className="pedidos-origin">{source}</b><span className="store-stage" data-stage={stage(o)}>{stages.find(([id])=>id===stage(o))?.[1]||'Em andamento'}</span></span>
+     <span className="pedidos-card-row"><b className="pedidos-origin"><PlatformIcon source={o.source}/><span>{source}</span></b><span className="store-stage" data-stage={stage(o)}>{stages.find(([id])=>id===stage(o))?.[1]||'Em andamento'}</span></span>
      <span className="pedidos-card-row"><b className="pedidos-number"><ShoppingBag size={17} aria-hidden="true"/> #{number(o)}</b>
       <small>{o.scheduled_for?'Agendado '+scheduledTime.format(new Date(o.scheduled_for)):o.created_at?new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</small></span>
      <span className="pedidos-card-row"><span>{o.receipt?.customer||'Cliente'}</span><b>{brl(o.gross)}</b></span>
