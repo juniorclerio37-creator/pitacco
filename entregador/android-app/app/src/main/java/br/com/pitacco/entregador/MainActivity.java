@@ -49,6 +49,7 @@ public class MainActivity extends Activity {
     private JavaScriptReplyProxy pendingPermission;
     private GeolocationPermissions.Callback pendingLocationCallback;
     private String pendingLocationOrigin;
+    private JavaScriptReplyProxy pendingGpsReply;
     private WebView web;
     private LinearLayout offline;
 
@@ -132,6 +133,7 @@ public class MainActivity extends Activity {
         });
         ShiftSoundPlayer.recover(this);
         preparePush();
+        registerGpsBridge();
         if (state == null || web.restoreState(state) == null) web.loadUrl(HOME);
         if (state == null) showFirstOpenSetup();
     }
@@ -193,6 +195,58 @@ public class MainActivity extends Activity {
                 })
                 .setNegativeButton("Manter desligado", (dialog, which) -> {})
                 .show();
+    }
+
+
+    // Runtime GPS authorization is independent of the online shift state.
+    // Only the authenticated courier page may trigger this bridge.
+    private void registerGpsBridge() {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return;
+        WebViewCompat.addWebMessageListener(web, "PitaccoGps",
+                Collections.singleton("https://" + HOST),
+                (view, message, origin, mainFrame, reply) -> {
+                    if (!mainFrame || !isHttps(origin) ||
+                            !HOST.equalsIgnoreCase(origin.getHost())) return;
+                    String action = message.getData();
+                    if ("status".equals(action)) {
+                        reply.postMessage(locationPermissionState());
+                    } else if ("request".equals(action)) {
+                        String state = locationPermissionState();
+                        if (!"denied".equals(state)) {
+                            reply.postMessage(state);
+                            return;
+                        }
+                        if (pendingGpsReply != null) {
+                            reply.postMessage("request_running");
+                            return;
+                        }
+                        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+                        boolean asked = prefs.getBoolean("gps_permission_requested", false);
+                        if (asked &&
+                                !shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) &&
+                                !shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                            reply.postMessage("settings");
+                            return;
+                        }
+                        pendingGpsReply = reply;
+                        prefs.edit().putBoolean("gps_permission_requested", true).apply();
+                        requestPermissions(new String[]{
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION);
+                    } else if ("settings".equals(action)) {
+                        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:" + getPackageName()));
+                        openExternal(intent);
+                    }
+                });
+    }
+
+    private String locationPermissionState() {
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) return "granted";
+        if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) return "approximate";
+        return "denied";
     }
 
     private void preparePush() {
@@ -319,16 +373,22 @@ public class MainActivity extends Activity {
     @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
         super.onRequestPermissionsResult(requestCode, permissions, results);
         if (requestCode == LOCATION_PERMISSION) {
+            String state = locationPermissionState();
             GeolocationPermissions.Callback callback = pendingLocationCallback;
             String origin = pendingLocationOrigin;
             pendingLocationCallback = null;
             pendingLocationOrigin = null;
             if (callback != null) {
-                boolean granted = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                        == PackageManager.PERMISSION_GRANTED ||
-                        checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
-                        == PackageManager.PERMISSION_GRANTED;
-                callback.invoke(origin, granted, false);
+                callback.invoke(origin, "granted".equals(state) || "approximate".equals(state), false);
+            }
+            JavaScriptReplyProxy gpsReply = pendingGpsReply;
+            pendingGpsReply = null;
+            if (gpsReply != null) {
+                if ("denied".equals(state) &&
+                        !shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) &&
+                        !shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                    gpsReply.postMessage("settings");
+                } else gpsReply.postMessage(state);
             }
             return;
         }
