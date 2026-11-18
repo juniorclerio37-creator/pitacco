@@ -70,7 +70,9 @@ async function registerDriver(body, actor) {
   const {storeId, name} = body;
   const cleanedName = String(name ?? "").trim();
   const phone = normalizeBrazilPhone(body.phone);
-  const remuneration=validRemuneration(body.remuneration);
+  // The older merchant page only sends name and phone until the new bundle
+  // is published. Preserve registration with the agreed default.
+  const remuneration=validRemuneration(body.remuneration ?? {mode:"customer_fee"});
   if(!remuneration)return [400,{error:"Selecione o modelo e informe valores de remuneração válidos."}];
   const email = await courierEmailAlias(phone);
   if (!idPattern.test(String(storeId ?? "")) || cleanedName.length < 2 || cleanedName.length > 100) {
