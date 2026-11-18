@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import worker,{safeDiagnosticSignals} from '../cloudflare/admin-ai-worker.mjs';
+import worker,{safeDiagnosticSignals,safeRecoveryContext} from '../cloudflare/admin-ai-worker.mjs';
 
 const endpoint='https://admin.pitacco.com.br/api/intelligence/analyze';
 const originalFetch=globalThis.fetch;
@@ -11,7 +11,7 @@ function request(question='A impressão no Windows falha',changes={}){
   body:JSON.stringify({question,storeId:null,...changes.body})
  });
 }
-function harness({owner=true,auth=true,incidents=[],ai=true,metrics={registered:5,active:2,trial:2,courtesy:1},telemetry=true}={}){
+function harness({owner=true,auth=true,incidents=[],ai=true,metrics={registered:5,active:2,trial:2,courtesy:1},telemetry=true,preflight=true}={}){
  const called=[];
  globalThis.fetch=async (url,init)=>{
   called.push({url,init});
@@ -26,6 +26,16 @@ function harness({owner=true,auth=true,incidents=[],ai=true,metrics={registered:
       ifood:{events_24h:7,processed_24h:6,late_over_10m:1,private_order:'ORDER_SECRET'},
       marketplace_acceptance:{'99food_rejected_24h':1},
       private_customer:'CUSTOMER_SECRET'}):Response.json({message:'unavailable'},{status:503});
+  if(url.endsWith('/rest/v1/rpc/pitacco_owner_recovery_preflight'))return preflight?
+    Response.json({scope:'all_stores',observed_at:'2026-11-18T03:10:00Z',
+     courier_push:{server_enabled:false,cron_active:false,cron_secret_present:false,
+      registered_devices:0,native_devices:0,native_protocol_ready:true,token:'SECRET_FCM_TOKEN',
+      api_key:'SECRET_SERVICE_ACCOUNT'},
+     windows:{registered_computers:2,recently_connected_computers:0,bound_print_computers:2,
+      print_error_jobs_24h:0,waiting_over_10m_24h:0,device_id:'SECRET_WINDOWS_DEVICE',
+      latest_operator_test:{outcome:'awaiting_confirmation',submitted_at:'2026-11-17T21:13:22Z',
+       printer_name:'SECRET_PRINTER_NAME'}}
+    }):Response.json({error:'unavailable'},{status:503});
   throw new Error('Unexpected URL '+url);
  };
  const calls=[];
@@ -73,7 +83,7 @@ test('authorized diagnosis excludes identifiers and credentials from AI context'
  assert.match(payload.answer,/Diagnóstico consultivo/);
  assert.equal(payload.incidentsConsidered,1);
  assert.equal(payload.mode,'diagnostico');
- assert.equal(h.called.length,4);
+ assert.equal(h.called.length,5);
  assert.equal(h.calls.length,1);
  assert.equal(h.calls[0].model,'@cf/meta/llama-3.1-8b-instruct-fast');
  const prompt=JSON.stringify(h.calls[0].args.messages);
@@ -102,7 +112,7 @@ test('missing rate limiter fails closed',async()=>{
 test('requires a configured AI binding',async()=>{
  const h=harness({ai:false});
  const response=await worker.fetch(request(),h.env);
- assert.equal(response.status,503);assert.equal(h.called.length,4);
+ assert.equal(response.status,503);assert.equal(h.called.length,5);
 });
 
 test('reported active stores comes from protected Supabase overview, not model inference',async()=>{
@@ -138,7 +148,7 @@ test('diagnostic telemetry is allowlisted and does not leak tokens or order data
  assert.equal(response.status,200);
  const payload=await response.json();
  assert.equal(payload.signalsAvailable,true);
- assert.equal(h.called.length,4);
+ assert.equal(h.called.length,5);
  assert.equal(h.calls.length,1);
  const prompt=h.calls[0].args.messages[1].content;
  assert.match(prompt,/"jobs_24h":5/);
@@ -161,4 +171,43 @@ test('malformed telemetry fields remain unknown; never invent zero counts',()=>{
  assert.equal(data.courier_notifications.server_enabled,null);
  assert.equal(data.marketplace_acceptance['99food_rejected_24h'],null);
  assert.equal(safeDiagnosticSignals({scope:'evil',printing:{error:0}}),null);
+});
+
+test('recovery preflight reaches the AI only as allowlisted, coarse operational evidence',async()=>{
+ const h=harness();
+ const response=await worker.fetch(request('Por que o entregador não recebe o alerta?'),h.env);
+ assert.equal(response.status,200);
+ const payload=await response.json();
+ assert.equal(payload.recoveryAvailable,true);
+ assert.equal(h.called.length,5);
+ assert.equal(h.calls.length,1);
+ const text=h.calls[0].args.messages[1].content;
+ assert.match(text,/"cron_active":false/);
+ assert.match(text,/"cron_secret_present":false/);
+ assert.match(text,/"registered_devices":0/);
+ assert.match(text,/"recently_connected_computers":0/);
+ assert.match(text,/"outcome":"awaiting_confirmation"/);
+ assert.doesNotMatch(text,/SECRET_FCM_TOKEN|SECRET_SERVICE_ACCOUNT|SECRET_WINDOWS_DEVICE|SECRET_PRINTER_NAME/);
+});
+test('unavailable preflight does not infer readiness',async()=>{
+ const h=harness({preflight:false});
+ const response=await worker.fetch(request(),h.env);
+ assert.equal(response.status,200);
+ const payload=await response.json();
+ assert.equal(payload.recoveryAvailable,false);
+ assert.match(h.calls[0].args.messages[1].content,/indisponível; não conclua que o serviço está pronto/);
+});
+test('malformed preflight fields are unknown, not converted to success',()=>{
+ const value=safeRecoveryContext({scope:'all_stores',observed_at:'2026-11-18T04:00:00Z',
+  courier_push:{cron_active:'true',cron_secret_present:false,registered_devices:'999',api_key:'SECRET'},
+  windows:{recently_connected_computers:-3,latest_operator_test:{outcome:'printed',
+    submitted_at:'2026-11-17T21:13:22Z',receipt:'SECRET_RECEIPT'}}});
+ assert.equal(value.courier_push.cron_active,null);
+ assert.equal(value.courier_push.cron_secret_present,false);
+ assert.equal(value.courier_push.registered_devices,null);
+ assert.equal(value.windows.recently_connected_computers,null);
+ assert.equal(value.windows.latest_operator_test.outcome,'printed');
+ assert.match(value.observed_at,/^2026-11-18T04:00:00/);
+ assert.doesNotMatch(JSON.stringify(value),/SECRET|api_key|receipt/);
+ assert.equal(safeRecoveryContext({scope:'not_authorized'}),null);
 });
