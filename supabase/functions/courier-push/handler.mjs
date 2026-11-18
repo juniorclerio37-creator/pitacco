@@ -5,10 +5,14 @@ const encode=bytes=>btoa(String.fromCharCode(...bytes)).replaceAll('+','-').repl
 const segment=value=>encode(encoder.encode(JSON.stringify(value)));
 
 export function firebaseMessage(event) {
+ // Data-only high-priority messages wake the native FirebaseMessagingService
+ // in the foreground and background. The service always posts a visible
+ // notification to Android's separate loud-assignment channel.
+ // No customer, address, order, or courier information is included.
  return {message:{
   token:event.token,
-  notification:{title:'Pitacco Entregador',body:'A loja atribuiu uma nova entrega para você.'},
-  android:{priority:'HIGH',ttl:'90s',notification:{channel_id:'pitacco_new_assignment_v1',tag:event.event_id}}
+  data:{kind:'new_assignment',event_id:String(event.event_id)},
+  android:{priority:'HIGH',ttl:'90s',collapse_key:String(event.event_id)}
  }};
 }
 

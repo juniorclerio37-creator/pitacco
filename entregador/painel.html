@@ -148,6 +148,8 @@ a.btn{text-decoration:none}
   <span class="eyebrow">AJUDA E SINCRONIZAÇÃO</span>
   <button type="button" class="settings-row" id="enableNativePush" hidden><span>Ativar avisos no Android</span><span class="setting-arrow">›</span></button>
   <p id="nativePushStatus" role="status" aria-live="polite"></p>
+  <button type="button" class="settings-row" id="nativeNotificationSettings" hidden><span>Configurar volume e notificações do Android</span><span class="setting-arrow">›</span></button>
+  <p class="note-inline">O toque de nova entrega pode chegar mesmo com o app em segundo plano. Para ouvi-lo, mantenha os avisos autorizados e o volume de notificações ligado. O modo Não Perturbe e as restrições de bateria podem silenciar ou atrasar o aviso.</p>
   <button type="button" class="settings-row" id="testAssignmentSound"><span>Testar som de nova entrega</span><span class="setting-arrow">♪</span></button>
   <p id="assignmentSoundStatus" role="status" aria-live="polite"></p>
   <button type="button" class="settings-row" id="settingsRefresh"><span>Atualizar pedidos e ganhos</span><span class="setting-arrow">↻</span></button>
@@ -188,7 +190,7 @@ let lastHistoryRequest=0;
 let earnPeriod="hoje", earnRequest=0, lastEarningsReport=null;
 let storeName="Minha loja", navProvider="google", navMode="address", assignedDeliveries=[];
 let permittedStores=new Map();
-let assignmentAudio, assignmentBaseline;
+let assignmentAudio, assignmentBaseline, nativePushRegistered=false;
 async function enableAssignmentSound(){
  const Audio=window.AudioContext||window.webkitAudioContext;
  if(!Audio)return;
@@ -201,7 +203,7 @@ function announceAssignments(deliveries,courier){
  assignmentBaseline={courier:courier.id,ids:current};
  if(!fresh)return;
  message("Nova entrega atribuída pela loja.");
- playAssignmentSound();
+ if(!nativePushRegistered)playAssignmentSound();
 }
 function playAssignmentSound(){
  if(assignmentAudio?.state!=="running")return false;
@@ -628,16 +630,24 @@ function initializeNativePush(){
  const native=window.PitaccoPush;
  if(!native?.postMessage)return;
  const button=$("enableNativePush"),status=$("nativePushStatus");
+ const settings=$("nativeNotificationSettings");
  button.hidden=false;
+ settings.hidden=false;
+ settings.addEventListener("click",()=>native.postMessage("settings"));
  button.addEventListener("click",()=>{
   status.textContent="Verificando avisos do Android…";
   native.postMessage("enable");
  });
  native.onmessage=async event=>{
   const value=String(event.data||"");
+  if(value==="tested"){
+   $("assignmentSoundStatus").textContent="Aviso enviado ao Android. Confira o som e a vibração.";
+   return;
+  }
   if(value.startsWith("token:")){
    const {error}=await sb.rpc("pitacco_register_courier_push",{p_token:value.slice(6)}).catch(()=>({error:true}));
-   status.textContent=error?"Não foi possível registrar este aparelho.":"Aparelho registrado para receber avisos.";
+   nativePushRegistered=!error;
+   status.textContent=error?"Não foi possível registrar este aparelho.":"Aparelho registrado para receber avisos em segundo plano.";
   }else{
    status.textContent=value==="permission"?"Permita as notificações do Pitacco nos ajustes do Android."
     :value==="unavailable"?"Esta versão do aplicativo ainda não está conectada ao serviço de avisos."
@@ -681,6 +691,11 @@ $("online").addEventListener("click",async()=>{
 });
 $("refresh").addEventListener("click",()=>refresh().catch(e=>message(String(e.message))));
 $("testAssignmentSound").addEventListener("click",async()=>{
+ if(window.PitaccoPush?.postMessage){
+  $("assignmentSoundStatus").textContent="Solicitando teste do aviso nativo do Android…";
+  window.PitaccoPush.postMessage("test");
+  return;
+ }
  await enableAssignmentSound();
  $("assignmentSoundStatus").textContent=playAssignmentSound()
   ?"Som de nova entrega ativado enquanto esta tela estiver aberta."
@@ -712,6 +727,8 @@ async function logout(){
  orderDetails.close();
  if(window.PitaccoPush?.postMessage){
   await sb.rpc("pitacco_unregister_courier_push").catch(()=>{});
+  nativePushRegistered=false;
+  window.PitaccoPush.postMessage("disable");
  }
  await driver.signOut().catch(()=>{});location.replace("./acesso.html");}
 $("profileLogout").addEventListener("click",logout);

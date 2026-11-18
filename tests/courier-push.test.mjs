@@ -2,11 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {firebaseMessage, completionStatus, createCourierPush} from '../supabase/functions/courier-push/handler.mjs';
 
-test('FCM notification uses the Android channel and carries no delivery information',()=>{
- const output=firebaseMessage({token:'device',event_id:'event-id',address:'Rua Particular',phone:'000000000'});
- assert.equal(output.message.android.notification.channel_id,'pitacco_new_assignment_v1');
+test('FCM data-only high-priority assignment wakes native Android notification and preserves privacy',()=>{
+ const output=firebaseMessage({token:'device',event_id:'550e8400-e29b-41d4-a716-446655440000',address:'Rua Particular',phone:'000000000'});
  assert.equal(output.message.android.priority,'HIGH');
- assert.equal(output.message.notification.title,'Pitacco Entregador');
+ assert.equal(output.message.data.kind,'new_assignment');
+ assert.equal(output.message.data.event_id,'550e8400-e29b-41d4-a716-446655440000');
+ assert.equal(output.message.android.ttl,'90s');
+ assert.equal(output.message.notification,undefined);
  assert.doesNotMatch(JSON.stringify(output),/Rua Particular|000000000/);
 });
 test('Invalid devices are retired, while service and network errors can be retried',()=>{
