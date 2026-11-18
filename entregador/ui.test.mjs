@@ -266,3 +266,36 @@ test("first opening asks for notification permission and offers explicit shift s
  assert.match(page,/window\.clearTimeout\(shiftProbe\)/);
  assert.match(css,/\.settings-row\[hidden\]\{display:none!important\}/);
 });
+
+test("cartão mostra Ir ao lado do endereço e PIN após Cheguei sem abrir detalhes",()=>{
+ const page=read("painel.html");
+ const android=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
+ const css=read("painel.css");
+ assert.match(page,/card-address-row/);
+ assert.match(page,/element\("a","card-route-link","Ir"\)/);
+ assert.match(page,/data-route-delivery/);
+ assert.doesNotMatch(page,/createAction\("Abrir rota"/);
+ assert.match(page,/Você chegou ao destino/);
+ assert.match(page,/Peça o código de confirmação ao cliente/);
+ assert.match(page,/element\("a","btn secondary card-ifood-confirm","Abrir confirmação no iFood"\)/);
+ assert.match(page,/https:\/\/confirmacao-entrega-propria\.ifood\.com\.br\//);
+ assert.match(android,/confirmacao-entrega-propria\.ifood\.com\.br/);
+ assert.match(page,/pitacco_driver_reconcile_ifood/);
+ assert.match(page,/if\(d\.source==="proprio"\|\|d\.source==="ifood"\)/);
+ assert.match(css,/\.card-address-row\{/);
+});
+test("sequência agrupada aparece somente para lotes válidos e navega por preferência",()=>{
+ const page=read("painel.html");
+ const source=read("route-sequence.mjs");
+ const migration=read("../supabase/migrations/20261118130000_pitacco_driver_route_ifood_reconcile.sql");
+ assert.match(page,/id="routeSuggestions"/);
+ assert.match(page,/suggestedBatchRoutes\(deliveries,routeOrigins\)/);
+ assert.match(page,/pitacco_driver_route_origins/);
+ assert.match(page,/data-route-delivery/);
+ assert.match(source,/Math\.sin/);
+ assert.match(source,/delivery\.batch_id/);
+ assert.match(migration,/pitacco_driver_route_origins/);
+ assert.match(migration,/pitacco_driver_reconcile_ifood/);
+ assert.match(migration,/if v_status is distinct from 'CONCLUDED' then/);
+ assert.doesNotMatch(migration,/set delivery_code_verified_at/);
+});
