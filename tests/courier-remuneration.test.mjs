@@ -64,3 +64,12 @@ test('Diarias nao se multiplicam pelo numero de entregas e entram no balanco dos
  assert.match(manager,/todayAllowances/);
  assert.match(finance,/\.eq\('status','entregue'\)/);
 });
+
+test('regra da loja de origem só vale na loja de testes com acesso explícito',()=>{
+ const sql=read('supabase/migrations/20261118201500_courier_shared_test_pay_rule.sql');
+ assert.match(sql,/public\.pitacco_courier_test_access\(new\.courier_id,new\.store_id\)/);
+ assert.match(sql,/r\.store_id=\(select c\.store_id from public\.couriers c/);
+ assert.match(sql,/c\.id=new\.courier_id and c\.active/);
+ assert.match(sql,/order by \(r\.store_id=new\.store_id\) desc limit 1/);
+ assert.match(sql,/rules\.store_id=\(select c\.store_id from public\.couriers c/);
+});
