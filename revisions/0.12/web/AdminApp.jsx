@@ -19,6 +19,7 @@ import OwnerOperations from './OwnerOperations.jsx';
 import OwnerAppReleases from './OwnerAppReleases.jsx';
 import SupportCenter from './SupportCenter.jsx';
 import IncidentCenter from './IncidentCenter.jsx';
+import PitaccoIntelligence from './PitaccoIntelligence.jsx';
 import OwnerIncidentNotifier from './OwnerIncidentNotifier.jsx';
 import './style.css';
 import './super-admin.css';
@@ -35,7 +36,7 @@ const groups=[
  ['Operação',[['Estabelecimentos',Store],['Pedidos',ShoppingBag],['Entregadores',Bike]]],
  ['Gestão comercial',[['Assinaturas',CreditCard],['Plano Pitacco',Package],['Financeiro do Pitacco',CreditCard]]],
  ['Administração',[['Módulos do lojista',Package],['Homologação',ClipboardCheck]]],
- ['Sistema',[['Auditoria',ListChecks],['Central de Diagnósticos',Activity],['Suporte e incidentes',ClipboardCheck],['Central de Aplicativos',Settings]]]
+ ['Sistema',[['Auditoria',ListChecks],['Central de Diagnósticos',Activity],['Pitacco Intelligence',ClipboardCheck],['Suporte e incidentes',ClipboardCheck],['Central de Aplicativos',Settings]]]
 ];
 const operations={Pedidos:'orders',Entregadores:'couriers',Auditoria:'audit'};
 function initialTheme(){
@@ -173,6 +174,7 @@ function AdminApp(){
    {page==='Central de Aplicativos'&&<OwnerAppReleases client={client}/>}
    {page==='Suporte e incidentes'&&<SupportCenter client={client} stores={stores} owner/>}
    {page==='Central de Diagnósticos'&&<IncidentCenter client={client} stores={stores} owner/>}
+   {page==='Pitacco Intelligence'&&<><PitaccoIntelligence client={client} stores={stores}/><IncidentCenter client={client} stores={stores} owner/></>}
    {page==='Homologação'&&<>
     <OwnerIfood client={client} stores={stores}/>
     <Owner99Food client={client} stores={stores}/>

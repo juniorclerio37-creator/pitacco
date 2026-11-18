@@ -4,6 +4,36 @@
   "compatibility_date": "2026-11-14",
   "workers_dev": false,
   "preview_urls": false,
-  "routes": [{"pattern": "admin.pitacco.com.br", "custom_domain": true}],
-  "assets": {"directory": "./web/dist-admin", "not_found_handling": "single-page-application"}
+  "routes": [
+    {
+      "pattern": "admin.pitacco.com.br",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "directory": "./web/dist-admin",
+    "not_found_handling": "single-page-application",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/intelligence/*"
+    ]
+  },
+  "main": "cloudflare/admin-ai-worker.mjs",
+  "ai": {
+    "binding": "AI"
+  },
+  "vars": {
+    "PITACCO_SUPABASE_URL": "https://mdevzehqcpcgxspwbiyz.supabase.co",
+    "PITACCO_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_JLIp1y5II26GrztrKDNIyQ_ryETrCuj"
+  },
+  "ratelimits": [
+    {
+      "name": "INTELLIGENCE_RATE_LIMIT",
+      "namespace_id": "250819",
+      "simple": {
+        "limit": 4,
+        "period": 60
+      }
+    }
+  ]
 }
