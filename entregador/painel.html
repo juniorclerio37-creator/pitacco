@@ -304,10 +304,22 @@ function announceAssignments(deliveries,courier){
  assignmentBaseline={courier:courier.id,ids:current};
  if(!fresh)return;
  message("Nova entrega atribuída pela loja.");
- // Keep in-app sound for the already installed WebView version.
- // Device registration is not proof that FCM is enabled or that an old APK
- // has native foreground-notification support.
- if(!document.hidden)playAssignmentSound();
+ // Native WebView must use the very same bundled bell+voice alert that the
+ // Android "Testar som" action uses. A synthesized browser bell is not
+ // the approved sound. Existing signed APKs already support "test".
+ // Foreground only; background FCM is handled by the native service.
+ if(document.hidden)return;
+ const native=window.PitaccoPush;
+ if(native?.postMessage){
+  try{
+   native.postMessage("test");
+   return;
+  }catch{
+   message("A notificação Android falhou; confira as permissões do aplicativo.");
+  }
+ }
+ // Browser-only fallback; web has no native sound bridge.
+ playAssignmentSound();
 }
 function playAssignmentSound(){
  if(assignmentAudio?.state!=="running")return false;
