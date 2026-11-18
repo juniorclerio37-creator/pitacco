@@ -129,7 +129,10 @@ test("courier can check Android push registration without exposing device tokens
  assert.match(page,/id="nativePushReadiness"/);
  assert.match(page,/pitacco_courier_push_readiness/);
  assert.match(page,/await checkNativePushStatus\(\)/);
- assert.ok(page.includes('if(!document.hidden)playAssignmentSound()'));
+ assert.match(page,/native\.postMessage\("test"\)/);
+ assert.match(page,/if\(document\.hidden\)return/);
+ assert.match(page,/native\?\.postMessage/);
+ assert.doesNotMatch(page,/if\(!document\.hidden\)playAssignmentSound\(\)/);
  assert.doesNotMatch(page,/if\(!nativePushRegistered\)playAssignmentSound\(\)/);
  assert.match(migration,/public\.pitacco_courier_session_ready\(\)/);
  assert.match(migration,/d\.session_id::text=v_session/);
@@ -435,4 +438,18 @@ test("courier GPS requires location consent and server-authenticated reporting",
  assert.match(page,/syncGpsSharing\(\)/);
  assert.match(page,/accuracy>100/);
  assert.match(page,/stopGpsSharing\(\)/);
+});
+
+test("real courier assignment reuses the exact native bell and voice test, without browser chime",()=>{
+ const page=read("painel.html");
+ const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
+ const native=read("android-app/app/src/main/java/br/com/pitacco/entregador/AssignmentMessagingService.java");
+ const audio=read("android-app/app/src/main/java/br/com/pitacco/entregador/ShiftSoundPlayer.java");
+ assert.match(page,/function announceAssignments\(deliveries,courier\)/);
+ assert.match(page,/native\.postMessage\("test"\)/);
+ assert.match(activity,/if \("test"\.equals\(action\)\)/);
+ assert.match(activity,/AssignmentMessagingService\.showAssignment/);
+ assert.match(native,/ShiftSoundPlayer\.play\(context\)/);
+ assert.match(audio,/raw\/pitacco_assignment/);
+ assert.match(page,/if\(document\.hidden\)return/);
 });
