@@ -1037,7 +1037,7 @@ try {
           if(command==='list_printers'||command==='list_jobs')return [];
           if(command==='get_autostart')return false;
           if(command==='notify_new_order')window.nativeNotices.push(args.message);
-          if(command==='play_order_alert')window.nativeOrderSounds++;
+          if(command==='play_order_alert'||command==='play_order_alert_combo')window.nativeOrderSounds++;
           return null;
         }}};
       },dashboard);

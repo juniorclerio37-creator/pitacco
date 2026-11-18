@@ -10,7 +10,7 @@ p=Path("web/Operations.jsx")
 s=p.read_text(encoding="utf-8")
 old=" const observeOrders=useMemo(()=>newOrderTracker(storeId),[client,storeId,manager]);"
 new=""" const [voiceLevel,setVoiceLevel]=useState(()=>{
-  try { const level=Number(localStorage.getItem('pitacco:natural-voice-level'));return [1,2,3].includes(level)?level:1; }
+  try { const level=Number(localStorage.getItem('pitacco:natural-voice-level'));return [1,2,3].includes(level)?level:3; }
   catch{return 1;}
  });
  const [voiceReady,setVoiceReady]=useState(false);
