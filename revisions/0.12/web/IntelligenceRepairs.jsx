@@ -1,4 +1,5 @@
 import React,{useEffect,useState} from 'react';
+import RecoveryPreflight from './RecoveryPreflight.jsx';
 
 const kindLabels={
  enable_store_order_sound:'Reativar o som de novos pedidos do painel da loja'
@@ -103,5 +104,6 @@ export default function IntelligenceRepairs({client,storeId='',stores=[]}){
   <p className="hint">Correções de impressão, iFood, 99Food, Keeta, Firebase e pagamento
    continuam <strong>somente investigativas</strong> até existir um executor específico com testes,
    confirmação do serviço externo e plano de reversão.</p>
+  <RecoveryPreflight client={client} storeId={storeId}/>
  </section>;
 }
