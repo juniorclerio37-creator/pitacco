@@ -236,7 +236,9 @@ fn order_voice_status()->Result<bool,String>{
 # Preserve previous native command for compatibility, but always replay the
 # fixed packaged recording rather than a workstation-imported voice.
 i=s.index('#[tauri::command]\nfn play_order_voice(level:Option<u8>)')
-j=s.index('\n#[tauri::command]',i+5)
+# The next command is preceded by the helper routines for all bundled
+# sounds. Preserve both helpers when replacing the older voice command.
+j=s.index('// Only five authored Pitacco bells',i)
 s=s[:i]+'''#[tauri::command]
 fn play_order_voice(level:Option<u8>)->Result<(),String>{
  #[cfg(windows)]{
