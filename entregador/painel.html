@@ -267,26 +267,28 @@ function handleAndroidGpsReply(status){
 if(window.PitaccoGps){
  window.PitaccoGps.onmessage=event=>handleAndroidGpsReply(String(event?.data||"denied"));
  try{window.PitaccoGps.postMessage("tracking_status");}catch{}
+ document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden)window.PitaccoGps?.postMessage?.("tracking_status");
+ });
 }
 async function startNativeGpsTracking(){
  if(!courier?.available){gpsStatus("Fique online antes de ativar o rastreamento contínuo.");return}
  const bridge=window.PitaccoGps;
  if(!bridge?.postMessage){gpsStatus("Atualize o aplicativo Android para ativar GPS em segundo plano.");return}
- const {data,error}=await sb.auth.getSession();
- const session=data?.session;
- if(error||!session?.access_token||!session?.refresh_token||!session?.expires_at){
-  gpsStatus("Sessão expirada. Entre novamente antes de ativar o GPS.");return;
+ const {data:token,error}=await sb.rpc("pitacco_courier_background_gps_start");
+ if(error||typeof token!=="string"||!(/^[a-f0-9]{64}$/).test(token)){
+  gpsStatus("Não foi possível autorizar o rastreamento seguro do plantão. Confira sua sessão.");return;
  }
- // Sent only to the origin-restricted native bridge; not to other websites.
+ // 256-bit shift-only capability: never sends login/refresh credentials native.
  bridge.postMessage("start:"+JSON.stringify({
-  backend:SUPABASE_URL,apiKey:SUPABASE_PUBLISHABLE_KEY,
-  access:session.access_token,refresh:session.refresh_token,
-  expiresAt:session.expires_at
+  backend:SUPABASE_URL,apiKey:SUPABASE_PUBLISHABLE_KEY,token
  }));
 }
-function stopNativeGpsTracking(){
+async function stopNativeGpsTracking(){
  nativeGpsRunning=false;
  if(window.PitaccoGps?.postMessage)window.PitaccoGps.postMessage("stop");
+ // Revoke the capability even if Android loses connectivity later.
+ await sb.rpc("pitacco_courier_background_gps_revoke").catch(()=>{});
 }
 
 function stopGpsSharing(){
@@ -1232,7 +1234,7 @@ async function boot(){
   initializeNativePush();
   $("startNativeGps").addEventListener("click",()=>startNativeGpsTracking().catch(()=>gpsStatus("Não foi possível iniciar o GPS.")));
   $("stopNativeGps").addEventListener("click",()=>{
-   stopNativeGpsTracking();
+   void stopNativeGpsTracking();
    gpsStatus("Rastreamento contínuo interrompido. Use Ativar para voltar a compartilhar em segundo plano.");
   });
   $("pushBannerEnable").addEventListener("click",()=>{
@@ -1282,7 +1284,7 @@ $("online").addEventListener("click",async()=>{
   if(error)throw new Error(error.message);
   courier={...courier,available:nextOnline};
   if(nextOnline && nativeGpsSupported) await startNativeGpsTracking();
-  if(!nextOnline){stopNativeGpsTracking();stopGpsSharing();}
+  if(!nextOnline){await stopNativeGpsTracking();stopGpsSharing();}
   message("");await refresh(true);
  }catch(err){message(String(err?.message??"Falha ao mudar disponibilidade"));}
  finally{busy=false;$("online").disabled=navigator.onLine===false;}
@@ -1337,7 +1339,7 @@ document.querySelectorAll("[data-map-mode]").forEach(b=>b.addEventListener("clic
  updateRouteLinks();
 }));
 async function logout(){
- stopNativeGpsTracking();
+ await stopNativeGpsTracking();
  stopGpsSharing();
  orderDetails.close();
  if(window.PitaccoPush?.postMessage){
