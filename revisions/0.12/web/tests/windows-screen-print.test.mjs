@@ -73,7 +73,7 @@ test('Windows gives truthful feedback after queueing a reprint, not paper confir
  assert.match(source,/ingestJobs\(/);
 });
 
-test('Windows alerts use an imported natural audio file, not robotic SAPI',()=>{
+test('Windows alerts use the fixed embedded natural voice, not robotic SAPI',()=>{
  const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
  const rust=readFileSync(new URL('../src-tauri/src/main.rs',import.meta.url),'utf8');
  assert.match(operations,/invoke\('play_order_voice'/);
@@ -94,7 +94,7 @@ test('Windows alerts use an imported natural audio file, not robotic SAPI',()=>{
  assert.match(rust,/play_order_alert_combo,save_order_voice,play_order_voice,order_voice_status,check_update/);
  assert.match(rust,/fn save_order_voice/);
  assert.match(rust,/pitacco_voice_payload/);
- assert.match(operations,/invoke\('play_order_alert'/);
+ assert.match(operations,/invoke\('play_order_bell'/);
 });
 
 
@@ -112,8 +112,8 @@ test('merchant Windows order alerts provide bell and voice volume in each settin
  assert.match(operations,/notify_new_order/);
  assert.match(rust,/fn play_order_alert_combo\(/);
  assert.match(rust,/std::thread::spawn\(move \|\|/);
- assert.match(rust,/PlaySoundA\(bell\.as_ptr\(\)/);
- assert.match(rust,/PlaySoundW\(path\.as_ptr\(\)/);
+ assert.match(rust,/PlaySoundA\(bell_wav\.as_ptr\(\)/);
+ assert.match(rust,/PlaySoundA\(voice_wav\.as_ptr\(\)/);
  assert.match(rust,/play_order_alert_combo,save_order_voice/);
 });
 
