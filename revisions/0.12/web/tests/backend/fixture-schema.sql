@@ -39,3 +39,14 @@ create table public.marketplace_acceptance_requests (
  provider_confirmation_id text, provider_message text,
  created_at timestamptz not null default now(), confirmed_at timestamptz
 );
+
+-- Production already contains this store sound setting table; the isolated CI
+-- schema needs a representative fixture so repair RPC tests can exercise it.
+create table public.pitacco_store_sound_settings (
+ store_id uuid primary key references public.stores(id) on delete cascade,
+ enabled boolean not null default false,
+ volume integer not null default 60 check (volume between 0 and 100),
+ updated_at timestamptz not null default now()
+);
+alter table public.pitacco_store_sound_settings enable row level security;
+revoke all on public.pitacco_store_sound_settings from public,anon,authenticated;

@@ -9,6 +9,7 @@ on:
       - 'revisions/0.12/web/owner-incident-notifier.css'
       - 'revisions/0.12/web/IncidentCenter.jsx'
       - 'revisions/0.12/web/PitaccoIntelligence.jsx'
+      - 'revisions/0.12/web/IntelligenceRepairs.jsx'
       - 'cloudflare/admin-ai-worker.mjs'
       - 'wrangler.admin.jsonc'
       - 'revisions/0.12/web/super-admin.css'
@@ -59,6 +60,7 @@ jobs:
           test -s web/dist-admin/index.html
           grep -Rql 'pitacco_owner_incident_pulse' web/dist-admin/assets
           grep -Rql 'pitacco_owner_diagnostic_snapshot' web/dist-admin/assets
+          grep -Rql 'pitacco_owner_repair_decide' web/dist-admin/assets
       - name: Publicar no Worker existente
         shell: bash
         env:
