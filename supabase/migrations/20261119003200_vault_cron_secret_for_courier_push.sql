@@ -3,6 +3,9 @@
 -- the Android application or the chat transcript.
 do $create$
 begin
+ -- The repository's isolated PostgreSQL test runner does not install the
+ -- Supabase Vault extension. Production has Vault and provisions the token.
+ if to_regclass('vault.secrets') is null then return;end if;
  if not exists (select 1 from vault.secrets where name='pitacco_push_cron_secret') then
   perform vault.create_secret(
    encode(extensions.gen_random_bytes(32),'hex'),
