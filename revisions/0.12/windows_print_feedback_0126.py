@@ -15,10 +15,10 @@ s=s.replace(old," async function reprint(orderId){setPrintRequestFeedback('');co
 old="reprintRequests.current.delete(key)}"
 assert s.count(old)==1,'Windows reprint completion changed'
 s=s.replace(old,"reprintRequests.current.delete(key);setPrintRequestFeedback('Comanda solicitada à fila do Pitacco. O envio não confirma impressão física; confira o papel da impressora.');}",1)
-old="{manager&&view==='Pedidos'&&<Pedidos merchantLayout={!desktop} orders={orders}"
+old="{manager&&view==='Pedidos'&&<Pedidos merchantLayout={!desktop} client={client} storeId={storeId} orders={orders}"
 assert s.count(old)==1,'Merchant Pedidos mounting changed'
 new="""{manager&&view==='Pedidos'&&printRequestFeedback&&<p role="status" className="notice">{printRequestFeedback}</p>}
- {manager&&view==='Pedidos'&&<Pedidos merchantLayout={!desktop} orders={orders}"""
+ {manager&&view==='Pedidos'&&<Pedidos merchantLayout={!desktop} client={client} storeId={storeId} orders={orders}"""
 s=s.replace(old,new,1)
 p.write_text(s,encoding='utf-8')
 print('Order printing keeps native queue and shows truthful reprint feedback')
