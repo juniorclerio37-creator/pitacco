@@ -44,7 +44,7 @@ test('iFood object modifiers render by name and quantity on 80mm and 58mm notes'
 
 test('Windows navigation makes printing independently clickable and identifies installed version',()=>{
  const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
- assert.match(source,/Pitacco Windows v0\.12\.11/);
+ assert.match(source,/Pitacco Windows v0\.12\.12/);
  assert.match(source,/aria-label="Configurar impressão e visualizar nota"/);
  assert.match(source,/onClick=\{\(\)=>\{setTab\('Configurações'\)/);
  assert.match(source,/tab==='Aplicativos e Downloads'&&<AppDownloads/);
@@ -177,4 +177,29 @@ test('each merchant order card labels its platform with an offline icon',()=>{
    assert.ok(orders.includes("'"+platform+"'"),platform);
    assert.ok(css.includes('data-platform="'+platform+'"'),platform);
  }
+});
+
+test('native Windows order alarm continues without visible or foreground WebView',()=>{
+ const rust=readFileSync(new URL('../src-tauri/src/main.rs',import.meta.url),'utf8');
+ const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
+ const cargo=readFileSync(new URL('../src-tauri/Cargo.toml',import.meta.url),'utf8');
+ const migration=readFileSync(new URL('../../../supabase/migrations/20261119001000_windows_native_background_watch.sql',import.meta.url),'utf8');
+ assert.match(rust,/fn start_background_order_watch/);
+ assert.match(rust,/fn stop_background_order_watch/);
+ assert.match(rust,/PITACCO_BACKGROUND_WATCH/);
+ assert.match(rust,/reqwest::blocking::Client/);
+ assert.match(rust,/play_order_alert_combo\(Some\(cfg\.level\)/);
+ assert.match(rust,/get_webview_window\("main"\)/);
+ assert.match(rust,/fn notify_new_order/);
+ assert.match(operations,/pitacco_windows_watch_start/);
+ assert.match(operations,/pitacco_windows_watch_stop/);
+ assert.match(operations,/invoke\('start_background_order_watch'/);
+ assert.match(operations,/invoke\('stop_background_order_watch'/);
+ assert.match(operations,/document\.hasFocus\(\)/);
+ assert.match(cargo,/reqwest = /);
+ assert.match(migration,/public\.is_store_manager\(p_store\)/);
+ assert.match(migration,/extensions\.digest\(p_token,'sha256'\)/);
+ assert.match(migration,/auth\.sessions/);
+ assert.match(migration,/interval '18 hours'/);
+ assert.doesNotMatch(rust,/SUPABASE_SERVICE_ROLE_KEY/);
 });
