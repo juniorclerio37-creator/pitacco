@@ -66,3 +66,91 @@ export function currentLocation() {
     );
   });
 }
+
+
+// Map for the merchant's live fleet. Reuses the same pinned Leaflet dependency
+// and tile layer as the existing delivery-area map; does not alter dispatch logic.
+export async function mountFleetMap(container) {
+  const L = await leaflet();
+  if (!container.isConnected) throw new Error('A tela do mapa foi fechada.');
+  const map = L.map(container, {scrollWheelZoom: false, preferCanvas: true}).setView([-14.24, -51.93], 4);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  }).addTo(map);
+  const markers = L.layerGroup().addTo(map);
+  let fitted = false;
+  const valid = item => item && item.latitude != null && item.longitude != null &&
+    Number.isFinite(Number(item.latitude)) && Number.isFinite(Number(item.longitude)) &&
+    Number(item.latitude) >= -90 && Number(item.latitude) <= 90 &&
+    Number(item.longitude) >= -180 && Number(item.longitude) <= 180;
+  const point = item => [Number(item.latitude), Number(item.longitude)];
+  function popup(label, details) {
+    const node = document.createElement('div');
+    const title = document.createElement('strong');
+    title.textContent = label;
+    const description = document.createElement('div');
+    description.textContent = details;
+    node.append(title, description);
+    return node;
+  }
+  function icon(kind, active) {
+    const html = kind === 'store' ? '<span>🏪</span>' : '<span>🛵</span>';
+    return L.divIcon({
+      html,
+      className: 'fleet-map-pin fleet-map-pin-' + kind + (active ? ' fleet-map-pin-active' : ''),
+      iconSize: [38, 38], iconAnchor: [19, 19],
+    });
+  }
+  function update({store, couriers = [], deliveries = [], selectedRoute = '', selectedCourier = ''} = {}) {
+    markers.clearLayers();
+    const bounds = [];
+    if (valid(store)) {
+      L.marker(point(store), {icon: icon('store', false)}).bindPopup(popup(store.name || 'Loja', 'Ponto de saída')).addTo(markers);
+      bounds.push(point(store));
+    }
+    for (const courier of couriers) {
+      if (!valid(courier.position)) continue;
+      const coords = point(courier.position);
+      const fresh = courier.signal === 'online';
+      const focused = courier.id === selectedCourier;
+      const marker = L.marker(coords, {icon: icon(fresh ? 'online' : 'stale', focused)})
+        .bindPopup(popup(courier.name || 'Motoboy',
+          (fresh ? 'GPS atualizado' : 'Última localização (sem sinal atual)') + ' · ' + (courier.phase || ''))).addTo(markers);
+      if (focused) marker.openPopup();
+      bounds.push(coords);
+      if (fresh && Number(courier.position.accuracy_m) > 0 && Number(courier.position.accuracy_m) < 500) {
+        L.circle(coords, {radius: Number(courier.position.accuracy_m), color: '#f97316',
+          fillOpacity: .05, weight: 1, interactive: false}).addTo(markers);
+      }
+    }
+    const routePoints = [];
+    for (const delivery of deliveries) {
+      if (!valid(delivery)) continue;
+      const focused = Boolean(selectedRoute && (delivery.batch_id || 'avulsa:' + delivery.id) === selectedRoute);
+      const isDim = Boolean(selectedRoute && !focused);
+      const coords = point(delivery);
+      L.circleMarker(coords, {radius: focused ? 10 : 8, color: isDim ? '#aeb5c0' : '#f97316',
+        weight: 3, fillColor: isDim ? '#cbd5e1' : '#fff7ed', fillOpacity: .95})
+        .bindPopup(popup(delivery.customer_name || 'Ponto de entrega', delivery.address || 'Endereço não informado')).addTo(markers);
+      if (!isDim) bounds.push(coords);
+      if (focused) routePoints.push(coords);
+    }
+    if (selectedRoute && routePoints.length && valid(store)) {
+      L.polyline([point(store), ...routePoints], {
+        color: '#f97316', weight: 3, opacity: .7, dashArray: '7 9', interactive: false,
+      }).addTo(markers);
+    }
+    if (!fitted && bounds.length) {
+      fitted = true;
+      if (bounds.length === 1) map.setView(bounds[0], 15);
+      else map.fitBounds(bounds, {padding: [35, 35], maxZoom: 15});
+    }
+    map.invalidateSize();
+  }
+  return {
+    update,
+    resize() {map.invalidateSize();},
+    remove() {map.remove();},
+  };
+}
