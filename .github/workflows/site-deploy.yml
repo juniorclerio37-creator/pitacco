@@ -1,0 +1,93 @@
+name: Pitacco Site — publicar painel e cardápio na Cloudflare
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'revisions/0.12/web/**'
+      - 'revisions/0.12/*.py'
+      - 'scripts/build-cloudflare.sh'
+      - 'marketing/**'
+      - 'cloudflare/storefront.mjs'
+      - 'wrangler.jsonc'
+      - '.github/workflows/site-deploy.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pitacco-site-production
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Verificar autorização de publicação
+    runs-on: ubuntu-24.04
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Conferir token de implantação sem expô-lo
+        id: check
+        shell: bash
+        env:
+          PITACCO_SITE_TOKEN: ${{ secrets.PITACCO_SITE_CLOUDFLARE_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$PITACCO_SITE_TOKEN" ]]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Publicação aguardando autorização"
+              echo "Configure no repositório o segredo \`PITACCO_SITE_CLOUDFLARE_API_TOKEN\` com permissão limitada a Workers Scripts Edit e a conta do Pitacco."
+              echo "O aplicativo em produção permanece intacto até a credencial existir."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::Token de publicação do Pitacco Site não configurado no GitHub."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish:
+    name: Construir, validar e atualizar o Worker pitacco
+    needs: preflight
+    if: needs.preflight.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PITACCO_WEB_ONLY: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Construir o painel real e o cardápio no bundle existente
+        run: |
+          bash scripts/build-cloudflare.sh
+          test -s web/dist/index.html
+          test -s web/dist/app/index.html
+          test -s web/dist/cardapio/index.html
+          grep -Rql "Roteirização e mapa" web/dist/assets
+          grep -Rql "GPS atualizado" web/dist/assets
+      - name: Impedir publicação de código administrativo no painel lojista
+        shell: bash
+        run: |
+          if grep -rqE 'platform-owner-login|pitacco_is_platform_owner|pitacco_admin_homologation_results|pitacco_owner_set_feature' web/dist/assets; then
+            echo "Bundle dos lojistas contém funcionalidades exclusivas do Super Admin." >&2
+            exit 1
+          fi
+      - name: Publicar somente o Worker existente e seus arquivos
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: f6dc4301a05e5b950e9766e68354f1ac
+          CLOUDFLARE_API_TOKEN: ${{ secrets.PITACCO_SITE_CLOUDFLARE_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          npx --yes wrangler@4.162.0 deploy --config wrangler.jsonc --keep-vars
+      - name: Verificar disponibilidade das páginas oficiais
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --retry 3 --retry-all-errors --retry-delay 2 \
+            --output /tmp/pitacco-site.html https://pitacco.com.br/
+          curl --fail --silent --show-error --location --retry 3 --retry-all-errors --retry-delay 2 \
+            --output /tmp/pitacco-app.html https://app.pitacco.com.br/app/
+          grep -Eq '/assets/|type="module"' /tmp/pitacco-app.html
+          echo "Página principal e painel responderam. A validação de login e dados GPS permanece separada."
