@@ -154,3 +154,59 @@ export async function mountFleetMap(container) {
     remove() {map.remove();},
   };
 }
+
+
+/**
+ * Customer-facing approximate courier location.
+ * Use ONLY the coordinates from pitacco_track_public_order(token), which
+ * returns a rounded, 90-second-fresh point for the current own delivery.
+ * This map never reads courier_positions or other orders from the browser.
+ */
+export async function mountCustomerTrackingMap(container) {
+  const L = await leaflet();
+  if (!container.isConnected) throw new Error('O acompanhamento foi fechado.');
+  const map = L.map(container, {scrollWheelZoom: false, preferCanvas: true, zoomControl: true})
+    .setView([-14.24, -51.93], 4);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  }).addTo(map);
+  const markerIcon = L.divIcon({
+    className: 'pitacco-customer-courier-pin',
+    html: '<span aria-hidden="true">🛵</span>',
+    iconSize: [42, 42],
+    iconAnchor: [21, 21],
+  });
+  let marker = null, uncertainty = null, firstPoint = true;
+  const validPoint = p => p && p.latitude != null && p.longitude != null &&
+    Number.isFinite(Number(p.latitude)) && Number.isFinite(Number(p.longitude)) &&
+    Number(p.latitude) >= -90 && Number(p.latitude) <= 90 &&
+    Number(p.longitude) >= -180 && Number(p.longitude) <= 180;
+  return {
+    update(position) {
+      if (!validPoint(position)) return false;
+      const next = L.latLng(Number(position.latitude), Number(position.longitude));
+      if (!marker) {
+        marker = L.marker(next, {icon: markerIcon, title: 'Posição aproximada do entregador'}).addTo(map);
+        marker.bindPopup('Posição aproximada do entregador');
+        uncertainty = L.circle(next, {
+          radius: 140, color: '#ea580c', weight: 1.5, fillColor: '#fdba74',
+          fillOpacity: 0.12, interactive: false,
+        }).addTo(map);
+      } else {
+        marker.setLatLng(next);
+        uncertainty.setLatLng(next);
+      }
+      map.invalidateSize();
+      if (firstPoint) {
+        map.setView(next, 15);
+        firstPoint = false;
+      } else if (!map.getBounds().contains(next)) {
+        map.panTo(next);
+      }
+      return true;
+    },
+    resize() { map.invalidateSize(); },
+    remove() { map.remove(); },
+  };
+}
