@@ -29,7 +29,7 @@ export function completionStatus(status, details) {
  return status===400?'rejected':'retry';
 }
 
-export function createCourierPush({url,serviceKey,cronSecret,account,fetcher=fetch,now=()=>Date.now()}) {
+export function createCourierPush({url,serviceKey,cronSecret,verifyCron,account,fetcher=fetch,now=()=>Date.now()}) {
  let savedToken;
  async function rpc(name,body={}) {
   const response=await fetcher(new URL('/rest/v1/rpc/'+name,url),{
@@ -59,7 +59,16 @@ export function createCourierPush({url,serviceKey,cronSecret,account,fetcher=fet
  }
  return async req=>{
   if(req.method!=='POST')return new Response(null,{status:405});
-  if(!cronSecret||req.headers.get('authorization')!=='Bearer '+cronSecret)return new Response(null,{status:401});
+  const authorization=req.headers.get('authorization')||'';
+  const candidate=authorization.startsWith('Bearer ')?authorization.slice(7):'';
+  // Supports legacy Edge secret and the Vault-backed pg_cron secret. The
+  // latter is verified server-to-server via a service_role-only PostgREST RPC.
+  // Never expose the Vault secret to Android, the browser or logs.
+  let authorized=Boolean(cronSecret&&candidate&&candidate===cronSecret);
+  if(!authorized&&candidate&&typeof verifyCron==='function'){
+   try{authorized=await verifyCron(candidate)===true;}catch{authorized=false;}
+  }
+  if(!authorized)return new Response(null,{status:401});
   if(!url||!serviceKey||!account?.private_key||!account?.client_email||!/^[-a-z0-9]+$/.test(account?.project_id||'')){
    return Response.json({error:'FCM ainda não configurado'},{status:503});
   }
