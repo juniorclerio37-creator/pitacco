@@ -555,3 +555,16 @@ test("courier receives native shift alerts with webview background even when Fir
  assert.match(migration,/auth\.sessions/);
  assert.doesNotMatch(migration,/customer_name|customer_phone|delivery_address/);
 });
+
+test("Firebase courier device automatically retries session-scoped enrollment and stops after logout",()=>{
+ const panel=read("painel.html");
+ assert.match(panel,/nativePushRetryAttempts=0/);
+ assert.match(panel,/nativePushRegistrationInFlight=true/);
+ assert.match(panel,/nativePushRetryAttempts<5/);
+ assert.match(panel,/\[2000,5000,12000,30000,60000\]/);
+ assert.match(panel,/pitacco_register_courier_push_native/);
+ assert.match(panel,/window\.PitaccoPush\?\.postMessage\?\.\("refresh"\)/);
+ const logout=panel.slice(panel.indexOf('async function logout(){'));
+ assert.match(logout,/window\.clearTimeout\(nativePushRetryTimer\)/);
+ assert.match(logout,/pitacco_unregister_courier_push/);
+});
