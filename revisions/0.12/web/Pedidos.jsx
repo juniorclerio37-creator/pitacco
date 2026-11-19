@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {Bike, CheckCircle2, ChefHat, Clock3, CreditCard, Printer, ShoppingBag, TrendingUp, UserRound} from 'lucide-react';
 import './pedidos.css';
+import FleetTracking from './FleetTracking.jsx';
 import {deliveryLabel,sourceLabel} from './DeliveryDialog.jsx';
 import {receiptItems} from './receiptItems.mjs';
 import {publicOrderNumber,validLocalizer} from './orderDisplay.mjs';
@@ -65,8 +66,9 @@ function DeliveryBadge({order,delivery}){
  const {type,label}=deliveryType(order,delivery);
  return <span className="pedidos-delivery-badge" data-delivery={type}>{type==='pickup'?<ShoppingBag size={15} aria-hidden="true"/>:<Bike size={15} aria-hidden="true"/>}{label}</span>;
 }
-export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccept,onAcceptIfood,onGetIfoodReasons,onRejectIfood,onDecision,onReady,onPickup,onConclude,onDetail,onAssign,onReprint,busy=false,merchantLayout=false,popupLayout=false,manualPrint=false,acceptMode='manual',dispatchMode='manual'}){
+export default function Pedidos({client,storeId,orders=[],deliveries=[],badges=[],stage,onAccept,onAcceptIfood,onGetIfoodReasons,onRejectIfood,onDecision,onReady,onPickup,onConclude,onDetail,onAssign,onReprint,busy=false,merchantLayout=false,popupLayout=false,manualPrint=false,acceptMode='manual',dispatchMode='manual'}){
  const [filter,setFilter]=useState('all'),[search,setSearch]=useState(''),[selected,setSelected]=useState(null),[decision,setDecision]=useState(null);
+ const [layout,setLayout]=useState('columns');
  const badgeByOrder=useMemo(()=>new Map(badges.map(b=>[b.order_id,b])),[badges]);
  const number=o=>publicOrderNumber(o,badgeByOrder.get(o?.id));
  const counts=useMemo(()=>Object.fromEntries(stages.map(([id])=>[id,orders.filter(o=>stage(o)===id).length])),[orders,stage]);
@@ -106,8 +108,14 @@ export default function Pedidos({orders=[],deliveries=[],badges=[],stage,onAccep
   })):
   [{id:'all',label:'',items:filtered}];
 
- return <div className={"pitacco-pedidos"+(popupLayout?" windows-cards-only":"")}>
+ return <div className={"pitacco-pedidos"+(popupLayout?" windows-cards-only":"")} data-layout={!popupLayout&&client&&storeId?layout:"columns"}>
   <header className="pedidos-heading"><div><h2>Pedidos</h2><p>Acompanhe e processe os pedidos da sua loja.</p></div><span>Pedidos sincronizados com a loja</span></header>
+  {!popupLayout&&client&&storeId&&<nav className="pedidos-layout-switch" aria-label="Visualização dos pedidos">
+   <button type="button" className={layout==='columns'?'active':''} aria-pressed={layout==='columns'} onClick={()=>setLayout('columns')}>Colunas</button>
+   <button type="button" className={layout==='routes'?'active':''} aria-pressed={layout==='routes'} onClick={()=>setLayout('routes')}>Roteirização</button>
+  </nav>}
+  {!popupLayout&&client&&storeId&&layout==='routes'&&<FleetTracking client={client} storeId={storeId} onBack={()=>setLayout('columns')}/>}
+
   {merchantLayout?<div className="pedidos-kpis">{summary.map(([key,label,Icon])=><button key={key} className={'pedidos-kpi '+(filter===key?'selected':'')} onClick={()=>setFilter(key)}>
    <Icon size={23} aria-hidden="true"/><span><strong>{counts[key]}</strong>{label}</span>
   </button>)}<div className="pedidos-kpi"><TrendingUp size={23} aria-hidden="true"/><span><strong>{brl(total)}</strong>Total registrado*</span></div></div>:
