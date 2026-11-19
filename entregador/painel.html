@@ -1049,6 +1049,9 @@ async function refreshSnapshot(){
 }
 let nativeFirebaseUnavailable=false;
 let pushCheckRequestId=0;
+let nativePushRetryTimer=null;
+let nativePushRetryAttempts=0;
+let nativePushRegistrationInFlight=false;
 function showPushBanner(text, enable){
  const banner=$("pushBanner"),label=$("pushBannerText"),button=$("pushBannerEnable");
  if(!banner||!label||!button)return;
@@ -1190,13 +1193,33 @@ function initializeNativePush(){
   }
   if(value.startsWith("token:")||value.startsWith("token_native:")){
    window.clearTimeout(nativeEnableTimeout);
-   const nativeProtocol=value.startsWith("token_native:");
-   const token=value.slice(nativeProtocol?13:6);
-   const {error}=await sb.rpc(nativeProtocol?"pitacco_register_courier_push_native":"pitacco_register_courier_push",
-     {p_token:token}).catch(()=>({error:true}));
-   nativePushRegistered=!error;
-   status.textContent=error?"Não foi possível registrar este aparelho.":"Aparelho registrado para receber avisos em segundo plano.";
-   await checkNativePushStatus();
+   if(nativePushRegistrationInFlight)return;
+   nativePushRegistrationInFlight=true;
+   try{
+    const nativeProtocol=value.startsWith("token_native:");
+    const token=value.slice(nativeProtocol?13:6);
+    const {error}=await sb.rpc(nativeProtocol?"pitacco_register_courier_push_native":"pitacco_register_courier_push",
+      {p_token:token}).catch(()=>({error:true}));
+    nativePushRegistered=!error;
+    if(error){
+     status.textContent="Não foi possível registrar este aparelho. Nova tentativa automática após reconexão.";
+     // The Firebase token may arrive before the web-auth session settles.
+     // Retry only in the authenticated visible panel; never after logout.
+     if(nativePushRetryAttempts<5){
+      const delay=[2000,5000,12000,30000,60000][nativePushRetryAttempts++];
+      window.clearTimeout(nativePushRetryTimer);
+      nativePushRetryTimer=window.setTimeout(()=>{
+       if(!document.hidden&&navigator.onLine!==false)
+        window.PitaccoPush?.postMessage?.("refresh");
+      },delay);
+     }
+    }else{
+     nativePushRetryAttempts=0;
+     window.clearTimeout(nativePushRetryTimer);
+     status.textContent="Aparelho registrado para receber avisos em segundo plano.";
+    }
+    await checkNativePushStatus();
+   }finally{nativePushRegistrationInFlight=false}
   }else{
    window.clearTimeout(nativeEnableTimeout);
    if(value==="unavailable"){
@@ -1339,6 +1362,8 @@ document.querySelectorAll("[data-map-mode]").forEach(b=>b.addEventListener("clic
  updateRouteLinks();
 }));
 async function logout(){
+ window.clearTimeout(nativePushRetryTimer);
+ nativePushRetryAttempts=5;
  await stopNativeGpsTracking();
  stopGpsSharing();
  orderDetails.close();
