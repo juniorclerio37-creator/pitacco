@@ -183,7 +183,7 @@ test('native Windows order alarm continues without visible or foreground WebView
  const rust=readFileSync(new URL('../src-tauri/src/main.rs',import.meta.url),'utf8');
  const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
  const cargo=readFileSync(new URL('../src-tauri/Cargo.toml',import.meta.url),'utf8');
- const migration=readFileSync(new URL('../../../supabase/migrations/20261119001000_windows_native_background_watch.sql',import.meta.url),'utf8');
+ const migration=readFileSync(new URL('../../supabase/migrations/20261119001000_windows_native_background_watch.sql',import.meta.url),'utf8');
  assert.match(rust,/fn start_background_order_watch/);
  assert.match(rust,/fn stop_background_order_watch/);
  assert.match(rust,/PITACCO_BACKGROUND_WATCH/);
