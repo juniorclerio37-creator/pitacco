@@ -117,8 +117,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.ok(page.includes('nativeNotificationSettings'));
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 30'));
- assert.ok(build.includes("versionName '2.0.10'"));
+ assert.ok(build.includes('versionCode 31'));
+ assert.ok(build.includes("versionName '2.0.11'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -459,8 +459,8 @@ test("Android GPS authorization remains part of the original courier app upgrade
  const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
  const screen=read("painel.html");
  assert.match(app,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(app,/versionCode 30/);
- assert.match(app,/versionName '2\.0\.10'/);
+ assert.match(app,/versionCode 31/);
+ assert.match(app,/versionName '2\.0\.11'/);
  assert.match(activity,/registerGpsBridge\(\)/);
  assert.match(activity,/WebViewCompat\.addWebMessageListener\(web, "PitaccoGps"/);
  assert.match(activity,/requestPermissions\(new String\[\]\{/);
@@ -477,8 +477,8 @@ test("Android 2.0.9 upgrade prompts for GPS and keeps notification registration 
  const workflow=read("../.github/workflows/courier-apk.yml");
  const panel=read("painel.html");
  assert.match(build,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(build,/versionCode 30/);
- assert.match(build,/versionName '2\.0\.10'/);
+ assert.match(build,/versionCode 31/);
+ assert.match(build,/versionName '2\.0\.11'/);
  for(const name of ["ACCESS_FINE_LOCATION","ACCESS_COARSE_LOCATION","POST_NOTIFICATIONS"])
   assert.ok(manifest.includes("android.permission."+name));
  assert.match(main,/GPS_SETUP_DONE = "gps_permission_explained_209"/);
