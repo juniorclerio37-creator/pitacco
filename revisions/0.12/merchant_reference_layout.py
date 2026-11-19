@@ -27,7 +27,7 @@ path.write_text(source, encoding='utf-8')
 operations = Path('web/Operations.jsx')
 source = operations.read_text(encoding='utf-8')
 source = "import {readPrintPreferences,savePrintPreference} from './printPreferences.mjs';\nimport {receiptItems} from './receiptItems.mjs';\n" + source
-replace('<Pedidos orders={orders}', '<Pedidos merchantLayout={!desktop} orders={orders}')
+replace('<Pedidos client={client} storeId={storeId} orders={orders}', '<Pedidos merchantLayout={!desktop} client={client} storeId={storeId} orders={orders}')
 # The active receipt editor persists templates on the server and does not use
 # the old local cache. Avoid touching that cache on every merchant screen.
 replace("const [editingSector,setEditingSector]=useState(null),[templateHtml,setTemplateHtml]=useState(''),[templatePreview,setTemplatePreview]=useState(false);",
