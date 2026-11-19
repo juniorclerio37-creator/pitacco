@@ -6,6 +6,20 @@ const [menuPage, trackingPage] = await Promise.all(
   ['cardapio', 'acompanhar'].map(name => readFile(new URL(`../marketing/${name}.html`, import.meta.url), 'utf8'))
 );
 const deliveryMapScript = await readFile(new URL('../revisions/0.12/web/deliveryMap.mjs',import.meta.url),'utf8');
+assert.match(deliveryMapScript,/export async function mountCustomerTrackingMap/);
+const mapFixture = `
+ export async function mountDeliveryMap(container,{onSelect}) {
+  return {setArea(){},setPoint(){},clearPoint(){},showPoint(point){onSelect(point)},resize(){},remove(){}};
+ }
+ export function currentLocation(){
+  return new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(
+   ({coords})=>resolve([Number(coords.latitude.toFixed(6)),Number(coords.longitude.toFixed(6))]),reject));
+ }
+ export async function mountCustomerTrackingMap(container){
+  container.dataset.initialized='true';
+  return {update(point){container.dataset.latitude=String(point.latitude);
+   container.dataset.longitude=String(point.longitude)},resize(){},remove(){}};
+ }`;
 const browser = await chromium.launch({ executablePath: process.env.PITACCO_CHROMIUM });
 const origin = 'http://localhost:4179';
 const orderId = '10000000-0000-0000-0000-000000000001';
@@ -34,7 +48,7 @@ try {
         return route.fulfill({ contentType: 'text/html', body: menuPage });
       }
       if (routeOrigin === origin && pathname === '/assets/delivery-map.mjs') {
-        return route.fulfill({contentType:'text/javascript',body:deliveryMapScript});
+        return route.fulfill({contentType:'text/javascript',body:mapFixture});
       }
       if (routeOrigin === origin && pathname === '/acompanhar/') {
         return route.fulfill({ contentType: 'text/html', body: trackingPage });
@@ -176,6 +190,10 @@ try {
       await page.locator('#scheduledFor').filter({hasText:'Agendado para'}).waitFor();
       const map=page.getByRole('link',{name:'Abrir localização aproximada no mapa'});
       await map.waitFor();
+      const inlineMap=page.locator('#courierLiveMap');
+      await page.locator('#courierLiveMap[data-latitude="-22.851"][data-longitude="-43.453"]').waitFor();
+      assert.equal(await inlineMap.isVisible(),true);
+      assert.match(await page.locator('#courierLocationStatus').innerText(),/Localização aproximada/);
       const mapUrl=new URL(await map.getAttribute('href'));
       assert.equal(mapUrl.hostname,'www.openstreetmap.org');
       assert.equal(mapUrl.searchParams.get('mlat'),'-22.851');
@@ -184,6 +202,7 @@ try {
       await page.clock.fastForward(15001);
       await page.getByText(/rota com outras paradas/).waitFor();
       assert.equal(await map.isVisible(),false);
+      assert.equal(await inlineMap.isVisible(),false);
     }
     if (width === 375) assert.equal(await page.locator('#steps li').count(), 0);
     assert.deepEqual(errors, []);
