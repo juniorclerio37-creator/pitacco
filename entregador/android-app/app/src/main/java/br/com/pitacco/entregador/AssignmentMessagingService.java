@@ -12,6 +12,9 @@ import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
@@ -20,6 +23,19 @@ public final class AssignmentMessagingService extends FirebaseMessagingService {
     public static final String CHANNEL_ID = "pitacco_new_assignment_loud_v2";
     public static final String SHIFT_CHANNEL_ID = "pitacco_new_assignment_shift_v1";
     private static final String TYPE = "new_assignment";
+    private static final HashMap<String,Long> recentlyNotified = new HashMap<>();
+    private static synchronized boolean firstAlertForEvent(String id) {
+        // Local test is repeatable, unlike a real delivery.
+        if ("00000000-0000-4000-8000-000000000001".equals(id)) return true;
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (recentlyNotified.size() > 200) {
+            recentlyNotified.clear();
+        }
+        Long last = recentlyNotified.get(id);
+        if (last != null && now - last < 120_000L) return false;
+        recentlyNotified.put(id, now);
+        return true;
+    }
     private static final String UUID_PATTERN =
             "(?i)[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}";
 
@@ -99,8 +115,9 @@ public final class AssignmentMessagingService extends FirebaseMessagingService {
                 .setAutoCancel(true)
                 .setContentIntent(click)
                 .build();
-        // Stable per-event id prevents duplicate display on FCM retry without
-        // collapsing notifications for two distinct deliveries.
+        // The foreground-service fallback and Firebase use the SAME event UUID.
+        // Never play twice if both deliver the same assignment.
+        if (!firstAlertForEvent(eventId)) return true;
         manager.notify(eventId.hashCode(), notice);
         if (shiftMode) ShiftSoundPlayer.play(context);
         return true;

@@ -117,8 +117,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.ok(page.includes('nativeNotificationSettings'));
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 30'));
- assert.ok(build.includes("versionName '2.0.10'"));
+ assert.ok(build.includes('versionCode 31'));
+ assert.ok(build.includes("versionName '2.0.11'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -459,8 +459,8 @@ test("Android GPS authorization remains part of the original courier app upgrade
  const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
  const screen=read("painel.html");
  assert.match(app,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(app,/versionCode 30/);
- assert.match(app,/versionName '2\.0\.10'/);
+ assert.match(app,/versionCode 31/);
+ assert.match(app,/versionName '2\.0\.11'/);
  assert.match(activity,/registerGpsBridge\(\)/);
  assert.match(activity,/WebViewCompat\.addWebMessageListener\(web, "PitaccoGps"/);
  assert.match(activity,/requestPermissions\(new String\[\]\{/);
@@ -477,8 +477,8 @@ test("Android 2.0.9 upgrade prompts for GPS and keeps notification registration 
  const workflow=read("../.github/workflows/courier-apk.yml");
  const panel=read("painel.html");
  assert.match(build,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(build,/versionCode 30/);
- assert.match(build,/versionName '2\.0\.10'/);
+ assert.match(build,/versionCode 31/);
+ assert.match(build,/versionName '2\.0\.11'/);
  for(const name of ["ACCESS_FINE_LOCATION","ACCESS_COARSE_LOCATION","POST_NOTIFICATIONS"])
   assert.ok(manifest.includes("android.permission."+name));
  assert.match(main,/GPS_SETUP_DONE = "gps_permission_explained_209"/);
@@ -530,4 +530,28 @@ test("Pitacco courier GPS continues in Android background only under a visible l
  assert.match(migration,/expires_at>v_time/);
  assert.match(migration,/pitacco_revoke_offline_background_gps/);
  assert.match(migration,/revoke all on pitacco_private\.courier_gps_capabilities from public,anon,authenticated/);
+});
+
+test("courier receives native shift alerts with webview background even when Firebase sender is disabled",()=>{
+ const service=read("android-app/app/src/main/java/br/com/pitacco/entregador/CourierLocationService.java");
+ const notification=read("android-app/app/src/main/java/br/com/pitacco/entregador/AssignmentMessagingService.java");
+ const migration=read("../supabase/migrations/20261119002000_courier_native_shift_assignment_watch.sql");
+ const manifest=read("android-app/app/src/main/AndroidManifest.xml");
+ assert.match(service,/private final Runnable orderWatch/);
+ assert.match(service,/watchHandler\.postDelayed\(this, ORDER_WATCH_MS\)/);
+ assert.match(service,/pitacco_courier_background_assignments/);
+ assert.match(service,/MainActivity\.isPushOptedIn\(this\)/);
+ assert.match(service,/AssignmentMessagingService\.showAssignment\(this, eventId\)/);
+ assert.match(service,/watchHandler\.removeCallbacks\(orderWatch\)/);
+ assert.match(notification,/firstAlertForEvent\(eventId\)/);
+ assert.match(notification,/ShiftSoundPlayer\.play\(context\)/);
+ assert.match(notification,/pitacco_assignment/);
+ assert.match(manifest,/android:foregroundServiceType="location"/);
+ assert.match(migration,/pitacco_private\.courier_gps_capabilities/);
+ assert.match(migration,/d\.logistics_provider='loja'/);
+ assert.match(migration,/d\.status='atribuida'/);
+ assert.match(migration,/c\.active and c\.available/);
+ assert.match(migration,/extensions\.digest\(p_token,'sha256'\)/);
+ assert.match(migration,/auth\.sessions/);
+ assert.doesNotMatch(migration,/customer_name|customer_phone|delivery_address/);
 });

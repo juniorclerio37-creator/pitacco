@@ -15,14 +15,17 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.Handler;
 import android.os.SystemClock;
 import org.json.JSONObject;
+import org.json.JSONArray;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -44,6 +47,7 @@ public final class CourierLocationService extends Service implements LocationLis
     static final String EXPECTED_BACKEND = "https://mdevzehqcpcgxspwbiyz.supabase.co";
     private static final int NOTIFICATION_ID = 20811;
     private static final long INTERVAL_MS = 12_000L;
+    private static final long ORDER_WATCH_MS = 8_000L;
     private static volatile boolean running = false;
 
     static boolean isRunning() { return running; }
@@ -51,6 +55,26 @@ public final class CourierLocationService extends Service implements LocationLis
     private LocationManager locations;
     private final ExecutorService network = Executors.newSingleThreadExecutor();
     private final AtomicBoolean sending = new AtomicBoolean(false);
+    private final AtomicBoolean checkingOrders = new AtomicBoolean(false);
+    private final Handler watchHandler = new Handler(Looper.getMainLooper());
+    private final HashSet<String> seenAssigned = new HashSet<>();
+    private boolean ordersInitialized = false;
+    private final Runnable orderWatch = new Runnable() {
+        @Override public void run() {
+            if (!running) return;
+            if (checkingOrders.compareAndSet(false, true)) {
+                try {
+                    network.execute(() -> {
+                        try { checkNewAssignments(); }
+                        finally { checkingOrders.set(false); }
+                    });
+                } catch (java.util.concurrent.RejectedExecutionException ignored) {
+                    checkingOrders.set(false);
+                }
+            }
+            if (running) watchHandler.postDelayed(this, ORDER_WATCH_MS);
+        }
+    };
     private volatile long lastSubmittedMs = 0L;
     private volatile String apiKey;
     private volatile String gpsToken;
@@ -102,6 +126,8 @@ public final class CourierLocationService extends Service implements LocationLis
             }
             if (!listening) throw new IllegalStateException("Location provider disabled");
             running = true;
+            watchHandler.removeCallbacks(orderWatch);
+            watchHandler.post(orderWatch);
             return START_NOT_STICKY;
         } catch (RuntimeException e) {
             // Missing location permission or provider -> never claim tracking is on.
@@ -179,6 +205,46 @@ public final class CourierLocationService extends Service implements LocationLis
         }
     }
 
+    /**
+     * Notification fallback when Firebase is not yet configured server-side.
+     * This thread runs in Android's already-consented GPS foreground service,
+     * not in the WebView. It sees only UUIDs of deliveries assigned to THIS
+     * logged-in, online courier. Never poll for platform-partner deliveries.
+     */
+    private void checkNewAssignments() {
+        if (!MainActivity.isPushOptedIn(this) || gpsToken == null) return;
+        try {
+            JSONObject payload = new JSONObject().put("p_token", gpsToken);
+            ApiResponse response = request("/rest/v1/rpc/pitacco_courier_background_assignments", payload);
+            if (response.status == 401 || response.status == 403) {
+                stopSelf(); // revoked, logged out or offline
+                return;
+            }
+            if (response.status != 200) return;
+            JSONArray assigned = new JSONArray(response.body);
+            HashSet<String> currentIds = new HashSet<>();
+            for (int i = 0; i < assigned.length(); i++) {
+                JSONObject entry = assigned.optJSONObject(i);
+                if (entry == null) continue;
+                String id = entry.optString("id");
+                String eventId = entry.optString("event_id");
+                if (!id.matches("(?i)[a-f0-9-]{36}") ||
+                        !eventId.matches("(?i)[a-f0-9-]{36}")) continue;
+                currentIds.add(id);
+                // Initial synchronization never floods the phone with
+                // deliveries that were assigned before opening the shift.
+                if (ordersInitialized && !seenAssigned.contains(id)) {
+                    AssignmentMessagingService.showAssignment(this, eventId);
+                }
+            }
+            seenAssigned.addAll(currentIds);
+            ordersInitialized = true;
+        } catch (Exception ignored) {
+            // No customer identifiers, tokens or network failures in logs.
+            // Retry with the next poll; do not mark failed events as delivered.
+        }
+    }
+
     private ApiResponse request(String path, JSONObject body) throws Exception {
         HttpURLConnection connection = (HttpURLConnection)
                 new URL(EXPECTED_BACKEND + path).openConnection();
@@ -215,6 +281,7 @@ public final class CourierLocationService extends Service implements LocationLis
 
     @Override public void onDestroy() {
         running = false;
+        watchHandler.removeCallbacks(orderWatch);
         if (locations != null) {
             try { locations.removeUpdates(this); } catch (SecurityException ignored) {}
         }
