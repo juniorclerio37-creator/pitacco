@@ -107,3 +107,9 @@
 
 /* Web portal retains the existing stacked list; only Windows gets Kanban columns. */
 .pitacco-pedidos:not(.windows-cards-only) .pedidos-list>.pedidos-stage-column{display:contents}
+
+/* The routing tab is a web-only alternative view; existing order actions remain mounted. */
+.pitacco-pedidos[data-layout="routes"]>.pedidos-kpis,
+.pitacco-pedidos[data-layout="routes"]>.pedidos-tabs,
+.pitacco-pedidos[data-layout="routes"]>.pedidos-split,
+.pitacco-pedidos[data-layout="routes"]>small{display:none}
