@@ -1143,7 +1143,7 @@ async function checkNativePushStatus(){
  // A timed-out RPC may eventually settle, but its late response is ignored.
  let timer;
  const response=await Promise.race([
-  sb.rpc("pitacco_courier_push_readiness").catch(()=>({error:true})),
+  Promise.resolve(sb.rpc("pitacco_courier_push_readiness")).catch(()=>({error:true})),
   new Promise(resolve=>{timer=window.setTimeout(()=>resolve({error:{message:"timeout"}}),7000);})
  ]);
  window.clearTimeout(timer);
@@ -1269,8 +1269,8 @@ function initializeNativePush(){
    try{
     const nativeProtocol=value.startsWith("token_native:");
     const token=value.slice(nativeProtocol?13:6);
-    const {error}=await sb.rpc(nativeProtocol?"pitacco_register_courier_push_native":"pitacco_register_courier_push",
-      {p_token:token}).catch(()=>({error:true}));
+    const {error}=await Promise.resolve(sb.rpc(nativeProtocol?"pitacco_register_courier_push_native":"pitacco_register_courier_push",
+      {p_token:token})).catch(()=>({error:true}));
     nativePushRegistered=!error;
     if(error){
      status.textContent="Não foi possível registrar este aparelho. Nova tentativa automática após reconexão.";
@@ -1455,7 +1455,7 @@ async function logout(){
  stopGpsSharing();
  orderDetails.close();
  if(window.PitaccoPush?.postMessage){
-  await sb.rpc("pitacco_unregister_courier_push").catch(()=>{});
+  await Promise.resolve(sb.rpc("pitacco_unregister_courier_push")).catch(()=>{});
   nativePushRegistered=false;
   window.PitaccoPush.postMessage("disable");
  }
