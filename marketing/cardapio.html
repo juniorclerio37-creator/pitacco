@@ -249,13 +249,14 @@ $('address').addEventListener('input',()=>{
 });
 $('showDeliveryMap').onclick=async()=>{
  const button=$('showDeliveryMap'),container=$('deliveryMap');
- const {latitude,longitude,radius_m,coverage_type,polygon}=menu.store.delivery_area;
+ const {latitude,longitude,radius_m,coverage_type,polygon,polygons}=menu.store.delivery_area;
  container.hidden=false;button.disabled=true;
  try{
   const {mountDeliveryMap}=await import('/assets/delivery-map.mjs');
   deliveryMap=await mountDeliveryMap(container,{
    center:[latitude,longitude],radius:radius_m,mode:coverage_type,
-   polygon:Array.isArray(polygon)?polygon:[],onSelect:selectDeliveryPoint,
+   polygon:Array.isArray(polygon)?polygon:[],
+   polygons:Array.isArray(polygons)?polygons:[],onSelect:selectDeliveryPoint,
   });
   if(deliveryPoint)deliveryMap.showPoint(deliveryPoint);
   button.hidden=true;
