@@ -42,8 +42,8 @@ test('Pitacco Android declares separate opt-in background GPS and preserves one 
  assert.match(manifest,/android:foregroundServiceType="location"/);
  assert.match(manifest,/android:stopWithTask="false"/);
  assert.match(gradle,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(gradle,/versionCode 32/);
- assert.match(gradle,/versionName '2\.0\.12'/);
+ assert.match(gradle,/versionCode 33/);
+ assert.match(gradle,/versionName '2\.0\.13'/);
 });
 test('Android 11+ requests all-the-time permission separately with driver disclosure',()=>{
  assert.match(main,/private void showBackgroundLocationDisclosure\(JavaScriptReplyProxy reply\)/);
@@ -78,4 +78,24 @@ test('Location service stays user-stoppable and shift-scoped',()=>{
  assert.match(panel,/pitacco_courier_background_gps_start/);
  assert.match(panel,/pitacco_courier_background_gps_revoke/);
  assert.match(panel,/if\(!nextOnline\)\{await stopNativeGpsTracking\(\)/);
+});
+
+
+test('physical activity permission remains opt-in and never controls whether GPS may run',()=>{
+ const manifest=readFileSync(new URL('../entregador/android-app/app/src/main/AndroidManifest.xml',import.meta.url),'utf8');
+ const service=readFileSync(new URL('../entregador/android-app/app/src/main/java/br/com/pitacco/entregador/CourierLocationService.java',import.meta.url),'utf8');
+ const receiver=readFileSync(new URL('../entregador/android-app/app/src/main/java/br/com/pitacco/entregador/CourierMotionReceiver.java',import.meta.url),'utf8');
+ assert.match(manifest,/android.permission.ACTIVITY_RECOGNITION/);
+ assert.match(manifest,/CourierMotionReceiver" android:exported="false"/);
+ assert.match(main,/motion_permission_request/);
+ assert.match(main,/ACTIVITY_PERMISSION = 98/);
+ assert.match(main,/showMotionPermissionDisclosure\(JavaScriptReplyProxy reply\)/);
+ assert.match(main,/O tipo de movimento não é enviado à loja nem ao cliente/);
+ assert.match(service,/!motionPermissionGranted\(\)/);
+ assert.match(service,/return INTERVAL_MS/);
+ assert.match(service,/STILL_INTERVAL_MS = 45_000L/);
+ assert.match(service,/requestActivityTransitionUpdates\(/);
+ assert.match(service,/removeActivityTransitionUpdates\(/);
+ assert.match(receiver,/!CourierLocationService.isRunning\(\)/);
+ assert.match(panel,/postMessage\("motion_permission_request"\)/);
 });
