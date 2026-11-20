@@ -31,31 +31,31 @@ declare
  replay jsonb;
  tracking jsonb;
 begin
- result:=public.checkout_public_order('checkout-fixture',key,'Cliente','11999999999','Rua de teste 123',jsonb_build_array(first_line,second_line),'delivery','pix_manual');
- assert (result->>'total')::numeric=73, 'Prices and modifiers are calculated per variant, with delivery';
+ result:=public.checkout_public_order('checkout-fixture',key,'Cliente','11999999999','Rua de teste 123',jsonb_build_array(first_line,second_line),'pickup','pix_manual');
+ assert (result->>'total')::numeric=68, 'Prices and modifiers are calculated per variant; pickup has no freight';
  assert result->>'payment_status'='pending', 'Manual Pix remains pending';
- replay:=public.checkout_public_order('checkout-fixture',key,'Cliente','11999999999','Rua de teste 123',jsonb_build_array(second_line,first_line),'delivery','pix_manual');
+ replay:=public.checkout_public_order('checkout-fixture',key,'Cliente','11999999999','Rua de teste 123',jsonb_build_array(second_line,first_line),'pickup','pix_manual');
  assert replay=result, 'Reordered variants retry the same order';
  tracking:=public.pitacco_track_public_order((result->>'tracking_token')::uuid);
  assert jsonb_array_length(tracking->'items')=2 and not tracking ? 'phone', 'Tracking includes both variants without the phone';
 
  begin
-  perform public.checkout_public_order('checkout-fixture',gen_random_uuid(),'Cliente','11999999999','Rua de teste 123',jsonb_build_array(first_line,first_line),'delivery','pix_manual');
+  perform public.checkout_public_order('checkout-fixture',gen_random_uuid(),'Cliente','11999999999','Rua de teste 123',jsonb_build_array(first_line,first_line),'pickup','pix_manual');
   raise exception 'Expected duplicate line rejection';
  exception when raise_exception then
   if sqlerrm <> 'Combine itens com os mesmos complementos em uma única linha' then raise; end if;
  end;
  begin
-  perform public.checkout_public_order('checkout-fixture',gen_random_uuid(),'Cliente','11999999999','Rua de teste 123',jsonb_build_array(first_line-'options'),'delivery','pix_manual');
+  perform public.checkout_public_order('checkout-fixture',gen_random_uuid(),'Cliente','11999999999','Rua de teste 123',jsonb_build_array(first_line-'options'),'pickup','pix_manual');
   raise exception 'Expected required modifier rejection';
  exception when raise_exception then
   if sqlerrm not like 'Quantidade de escolhas inválida no grupo %' then raise; end if;
  end;
 
  key:=gen_random_uuid();
- result:=public.checkout_public_order_coupon('checkout-fixture',key,'Cliente','11999999999','Rua de teste 123',jsonb_build_array(first_line,second_line),'delivery','pix_manual','','TESTE10');
- assert (result->>'total')::numeric=66.20, 'The coupon applies to the server-calculated subtotal';
- replay:=public.checkout_public_order_coupon('checkout-fixture',key,'Cliente','11999999999','Rua de teste 123',jsonb_build_array(second_line,first_line),'delivery','pix_manual','','TESTE10');
+ result:=public.checkout_public_order_coupon('checkout-fixture',key,'Cliente','11999999999','Rua de teste 123',jsonb_build_array(first_line,second_line),'pickup','pix_manual','','TESTE10');
+ assert (result->>'total')::numeric=61.20, 'The coupon applies to the server-calculated subtotal';
+ replay:=public.checkout_public_order_coupon('checkout-fixture',key,'Cliente','11999999999','Rua de teste 123',jsonb_build_array(second_line,first_line),'pickup','pix_manual','','TESTE10');
  assert replay=result, 'Replay does not use the coupon twice';
 end;
 $regression$;
