@@ -77,11 +77,12 @@ export default function FleetTracking({client, storeId, onBack}) {
         const failure = storeResult.error || couriersResult.error || deliveriesResult.error;
         if (failure) throw failure;
         const couriers = couriersResult.data || [];
-        const ids = couriers.map(c => c.id);
-        const positionsResult = ids.length
-          ? await client.from('courier_positions')
-              .select('courier_id,latitude,longitude,observed_at,accuracy_m').in('courier_id', ids)
-          : {data: [], error: null};
+        // Separate GPS RPC is checked against the SAME selected store on the
+        // server. A shared courier can have a different primary store_id, and
+        // raw courier_positions RLS must not be broadened globally.
+        const positionsResult = await client.rpc('pitacco_store_courier_positions', {
+          p_store: storeId,
+        });
         if (positionsResult.error) throw positionsResult.error;
         if (alive) {
           setState({store: storeResult.data, couriers, deliveries: deliveriesResult.data || [], positions: positionsResult.data || []});
