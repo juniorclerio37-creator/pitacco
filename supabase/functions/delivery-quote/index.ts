@@ -59,13 +59,20 @@ function originMatchesGoogle(g:Geo,store:any):boolean{
  return true;
 }
 async function approximateStoreAddress(store:any,db:any):Promise<Geo & {approximate:boolean}>{
+ // Overall throttle protects the free provider against sustained requests.
  const cap=await db.rpc('pitacco_service_delivery_quote_limit',{
-  p_scope:'pitacco-osm-geocode-global-minute',p_max:1,p_minutes:1
+  p_scope:'pitacco-osm-geocode-global-minute',p_max:12,p_minutes:1
  });
  if(cap.error)throw Error('A verificação do serviço de localização está temporariamente indisponível.');
- if(cap.data!==true)throw Error('Serviço de localização ocupado. Tente novamente em um minuto.');
- // A broad search of the city must never be used as the shop location.
- const query=[store.address,store.neighborhood,store.city,store.state,'Brasil']
+ if(cap.data!==true)throw Error('Serviço de localização ocupado. Tente novamente mais tarde.');
+ // Global atomic 1 request/second cap follows Nominatim's public usage policy.
+ const slot=await db.rpc('pitacco_service_nominatim_second_slot');
+ if(slot.error)throw Error('A verificação do serviço de localização está temporariamente indisponível.');
+ if(slot.data!==true)throw Error('Serviço de localização ocupado. Tente novamente em alguns segundos.');
+ // Use the full saved address, including number and CEP; never search the
+ // municipality alone or save its generic centre as a shop entrance.
+ const street=[store.address,store.address_number].filter(Boolean).map((v:string)=>String(v).trim()).join(', ');
+ const query=[street,store.neighborhood,store.city,store.state,store.postal_code,'Brasil']
   .filter(Boolean).map((value:string)=>String(value).trim()).join(', ');
  const endpoint=new URL('https://nominatim.openstreetmap.org/search');
  endpoint.searchParams.set('q',query);
