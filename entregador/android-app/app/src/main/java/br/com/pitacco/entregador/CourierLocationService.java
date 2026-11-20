@@ -51,6 +51,18 @@ public final class CourierLocationService extends Service implements LocationLis
     private static volatile boolean running = false;
 
     static boolean isRunning() { return running; }
+    private static volatile long startedElapsedMs = 0;
+    private static volatile long lastConfirmedUploadElapsedMs = 0;
+
+    /** Native diagnostic: do not report tracking ON without a recent accepted GPS. */
+    static String trackingState() {
+        if (!running) return "off";
+        final long now = SystemClock.elapsedRealtime();
+        if (lastConfirmedUploadElapsedMs > 0 &&
+                now - lastConfirmedUploadElapsedMs <= 90_000L) return "on";
+        if (now - startedElapsedMs < 45_000L) return "waiting";
+        return "stale";
+    }
 
     private LocationManager locations;
     private final ExecutorService network = Executors.newSingleThreadExecutor();
@@ -125,6 +137,8 @@ public final class CourierLocationService extends Service implements LocationLis
                 listening = true;
             }
             if (!listening) throw new IllegalStateException("Location provider disabled");
+            lastConfirmedUploadElapsedMs = 0;
+            startedElapsedMs = SystemClock.elapsedRealtime();
             running = true;
             watchHandler.removeCallbacks(orderWatch);
             watchHandler.post(orderWatch);
@@ -195,6 +209,9 @@ public final class CourierLocationService extends Service implements LocationLis
                     .put("p_token", gpsToken)
                     .put("p_lat", lat).put("p_lng", lng).put("p_accuracy_m", accuracy);
             ApiResponse result = request("/rest/v1/rpc/pitacco_courier_background_gps_update", body);
+            if (result.status >= 200 && result.status < 300) {
+                lastConfirmedUploadElapsedMs = SystemClock.elapsedRealtime();
+            }
             if (result.status == 401 || result.status == 403 ||
                 (result.status == 400 && result.body.contains("Requisição de GPS inválida"))) {
                 stopSelf(); // expired/revoked token, off shift or account disabled
@@ -281,6 +298,8 @@ public final class CourierLocationService extends Service implements LocationLis
 
     @Override public void onDestroy() {
         running = false;
+        startedElapsedMs = 0;
+        lastConfirmedUploadElapsedMs = 0;
         watchHandler.removeCallbacks(orderWatch);
         if (locations != null) {
             try { locations.removeUpdates(this); } catch (SecurityException ignored) {}
