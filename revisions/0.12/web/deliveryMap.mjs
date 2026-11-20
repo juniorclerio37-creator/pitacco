@@ -56,6 +56,49 @@ export async function mountDeliveryMap(container, { center, radius, onSelect }) 
   };
 }
 
+
+/**
+ * Editable store pin in Dados da loja. All coordinates are internal:
+ * the merchant sees a draggable shop marker, never numeric coordinates.
+ */
+export async function mountStorePointPicker(container,{center,onSelect}){
+ const L=await leaflet();
+ if(!container.isConnected)throw Error('Mapa fechado.');
+ const map=L.map(container,{scrollWheelZoom:false}).setView(center||[-14.24,-51.93],center?17:4);
+ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+ }).addTo(map);
+ const icon=L.divIcon({
+  className:'pitacco-store-picker-pin',
+  html:'<span aria-hidden="true">🏪</span>',iconSize:[46,46],iconAnchor:[23,23]
+ });
+ let marker;
+ const set=(point,notify=false)=>{
+  if(!Array.isArray(point)||point.length!==2)return;
+  const lat=Number(point[0]),lng=Number(point[1]);
+  if(!Number.isFinite(lat)||!Number.isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180)return;
+  const rounded=[Number(lat.toFixed(6)),Number(lng.toFixed(6))];
+  if(!marker){
+   marker=L.marker(rounded,{icon,draggable:true,title:'Arraste para marcar a entrada da loja'})
+    .bindPopup('Entrada da sua loja').addTo(map);
+   marker.on('dragend',()=>{
+    const next=marker.getLatLng();
+    set([next.lat,next.lng],true);
+   });
+  }else marker.setLatLng(rounded);
+  map.panTo(rounded);
+  if(notify)onSelect?.(rounded);
+ };
+ map.on('click',({latlng})=>set([latlng.lat,latlng.lng],true));
+ if(center)set(center,false);
+ map.invalidateSize();
+ return{
+  setPoint(point,focus=true){set(point,false);if(focus)map.setView(point,17)},
+  resize(){map.invalidateSize()},
+  remove(){map.remove()}
+ };
+}
+
 export function currentLocation() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error('Este dispositivo não fornece localização.'));
