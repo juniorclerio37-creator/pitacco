@@ -41,7 +41,7 @@ test('delivery area map always renders and polygon/circle inputs remain availabl
  const areas=read('revisions/0.12/web/StorefrontSettings.jsx');
  const map=read('revisions/0.12/web/deliveryMap.mjs');
  assert.match(areas,/locateStoreByAddress\(client,store.id\)/);
- assert.match(areas,/const origin=savedPoint\|\|automaticPoint/);
+ assert.match(areas,/automaticPoint\?\.storeId===store.id\?automaticPoint.point:null/);
  assert.match(areas,/fieldset disabled=\{busy\}/);
  assert.match(areas,/<div ref=\{container\} className="storefront-map delivery-zone-map"/);
  assert.doesNotMatch(areas,/\{origin&&<div ref=\{container\}/);
