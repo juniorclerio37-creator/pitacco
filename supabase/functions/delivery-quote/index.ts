@@ -41,12 +41,12 @@ async function geocode(address:string,key:string):Promise<Geo>{
 // Keep only results verified against the actual street AND city and either
 // neighborhood or postal code. Never replace the real shop with a city center.
 const sameRoad=(a:unknown,b:unknown)=>{
- const clean=(v:unknown)=>normalize(String(v||'')).replace(/^(rua|r\\.?|avenida|av\\.?|travessa|tv\\.?)\\s+/,'')
-  .replace(/[^a-z0-9 ]+/g,' ').replace(/\\s+/g,' ').trim();
+ const clean=(v:unknown)=>normalize(String(v||'')).replace(/^(rua|r\.?|avenida|av\.?|travessa|tv\.?)\s+/,'')
+  .replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
  return !!clean(a)&&clean(a)===clean(b);
 };
 const samePostal=(a:unknown,b:unknown)=>{
- const digits=(v:unknown)=>String(v||'').replace(/\\D/g,'');
+ const digits=(v:unknown)=>String(v||'').replace(/\D/g,'');
  return digits(a).length===8 && digits(a)===digits(b);
 };
 function originMatchesGoogle(g:Geo,store:any):boolean{
@@ -74,24 +74,37 @@ async function approximateStoreAddress(store:any,db:any):Promise<Geo & {approxim
  const street=[store.address,store.address_number].filter(Boolean).map((v:string)=>String(v).trim()).join(', ');
  const query=[street,store.neighborhood,store.city,store.state,store.postal_code,'Brasil']
   .filter(Boolean).map((value:string)=>String(value).trim()).join(', ');
- const endpoint=new URL('https://nominatim.openstreetmap.org/search');
- endpoint.searchParams.set('q',query);
- endpoint.searchParams.set('format','jsonv2');
- endpoint.searchParams.set('addressdetails','1');
- endpoint.searchParams.set('limit','8');
- endpoint.searchParams.set('countrycodes','br');
- let items:any[];
- try{
+ const search=async(q:string)=>{
+  const endpoint=new URL('https://nominatim.openstreetmap.org/search');
+  endpoint.searchParams.set('q',q);
+  endpoint.searchParams.set('format','jsonv2');
+  endpoint.searchParams.set('addressdetails','1');
+  endpoint.searchParams.set('limit','10');
+  endpoint.searchParams.set('countrycodes','br');
   const result=await fetch(endpoint,{
    headers:{'User-Agent':'Pitacco-delivery/1.0 (https://pitacco.com.br)',
     'Referer':'https://pitacco.com.br/'},
    signal:AbortSignal.timeout(9000)
   });
-  if(!result.ok)throw Error('Serviço de geocodificação não respondeu.');
+  if(!result.ok)throw Error('Provedor público não respondeu.');
   const data=await result.json();
   if(!Array.isArray(data))throw Error('Resposta inválida de geocodificação.');
-  items=data;
- }catch{throw Error('Provedor de localização indisponível. Tente novamente mais tarde.');}
+  return data;
+ };
+ let items:any[];
+ try{items=await search(query);}
+ catch{throw Error('Provedor de localização indisponível. Tente novamente mais tarde.');}
+ if(items.length===0){
+  // A second, simplified lookup helps OSM street records without house
+  // numbers/CEPs. Reserve another rate-limited slot one second later.
+  await new Promise(resolve=>setTimeout(resolve,1100));
+  const retry=await db.rpc('pitacco_service_nominatim_second_slot');
+  if(!retry.error&&retry.data===true){
+   const relaxed=[store.address,store.neighborhood,store.city,store.state,'Brasil']
+    .filter(Boolean).map((v:string)=>String(v).trim()).join(', ');
+   try{items=await search(relaxed);}catch{/* No unsafe fallback. */}
+  }
+ }
  const first=items.find((item:any)=>{
   const a=item.address||{};
   if(a.country_code!=='br'||!finiteBrazil(Number(item.lat),Number(item.lon)))return false;
@@ -99,7 +112,7 @@ async function approximateStoreAddress(store:any,db:any):Promise<Geo & {approxim
   if(!sameRoad(road,store.address))return false;
   const cities=[a.city,a.town,a.municipality,a.county,a.village].filter(Boolean);
   if(!cities.some((city:any)=>normalize(String(city))===normalize(store.city)))return false;
-  const expectedZip=String(store.postal_code||'').replace(/\\D/g,'');
+  const expectedZip=String(store.postal_code||'').replace(/\D/g,'');
   if(a.postcode&&expectedZip.length===8&&!samePostal(a.postcode,expectedZip))return false;
   if(a.house_number&&store.address_number&&
    String(a.house_number).trim()!==String(store.address_number).trim())return false;
@@ -110,7 +123,7 @@ async function approximateStoreAddress(store:any,db:any):Promise<Geo & {approxim
   const sameZip=expectedZip.length===8&&samePostal(a.postcode,expectedZip);
   return sameDistrict||sameZip;
  });
- if(!first)throw Error('Endereço não localizado com segurança. Não foi possível confirmar rua, bairro e cidade. Ajuste o ponto manualmente ou configure um provedor de localização preciso.');
+ if(!first)throw Error('Endereço não localizado com segurança: o mapa gratuito não possui um ponto confiável para esta rua. Use o GPS na entrada da loja ou conecte um geocodificador preciso.');
  return {lat:Number(first.lat),lng:Number(first.lon),country:'BR',city:store.city,
   neighborhood:store.neighborhood||'',approximate:!Boolean(first.address?.house_number)};
 }
@@ -187,7 +200,7 @@ Deno.serve(async request=>{
      approximate:false,cached:true},origin);
    }
    const limiter=await db.rpc('pitacco_service_delivery_quote_limit',{
-    p_scope:'origin-hour-'+storeId,p_max:10,p_minutes:60
+    p_scope:'origin-hour-'+storeId,p_max:24,p_minutes:60
    });
    if(limiter.error)return problem(503,'A busca automática do endereço está temporariamente indisponível.',origin);
    if(!limiter.data)return problem(429,'Aguarde antes de localizar sua loja novamente.',origin);
@@ -207,11 +220,17 @@ Deno.serve(async request=>{
     if(detail.includes('ocupado')||detail.includes('Aguarde'))
      return problem(429,'A localização automática está ocupada. O Pitacco fará outra tentativa.',origin);
     if(detail.includes('Não encontramos')||detail.includes('Endereço não localizado'))
-     return problem(422,'Não encontramos um ponto confiável para este endereço. Confira rua, número, bairro e CEP.',origin);
+     return problem(422,'Não foi possível localizar esta rua com segurança no mapa gratuito. Use o GPS na entrada da loja para marcar o ponto exato.',origin);
     return problem(503,'O provedor de localização não respondeu. O Pitacco tentará novamente automaticamente.',origin);
    }
    if(location.country!=='BR'||!finiteBrazil(location.lat,location.lng))
     return problem(422,'Endereço fora da região atendida.',origin);
+   // Only a verified building may become a freight origin automatically.
+   // Street-level guesses are preview-only until the merchant confirms.
+   if(location.approximate){
+    return response(200,{latitude:location.lat,longitude:location.lng,
+     approximate:true,saved:false,requires_confirmation:true},origin);
+   }
    // Geocoding can take several seconds. If the merchant edited their
    // address while the provider was working, NEVER save the old address's
    // coordinates onto the newly saved address (freight uses this origin).
