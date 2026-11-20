@@ -333,68 +333,127 @@ export async function mountCustomerTrackingMap(container) {
  * In polygon mode, click to add vertices, drag a vertex to correct it, then
  * click Save in the merchant portal. Coordinates remain internal to the UI.
  */
-export async function mountDeliveryCoverageMap(container,{center,mode='circle',radiusKm=5,vertices=[],onVerticesChange}={}){
+export async function mountDeliveryCoverageMap(container,{
+ center,mode='circle',radiusKm=5,vertices=[],regions=[],activeRegionId=null,
+ onVerticesChange,onSelectRegion
+}={}){
  const L=await leaflet();
  if(!container.isConnected)throw Error('O mapa foi fechado.');
- const hasOrigin=Array.isArray(center)&&center.length===2&&
-  center.every(x=>Number.isFinite(Number(x)));
+ const hasOrigin=Array.isArray(center)&&center.length===2&&center.every(x=>Number.isFinite(Number(x)));
  const point=hasOrigin?center:[-14.24,-51.93];
  const map=L.map(container,{scrollWheelZoom:false,zoomControl:true})
   .setView(point,hasOrigin?14:4);
  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
  }).addTo(map);
  const shopIcon=illustratedShopIcon(L);
  if(hasOrigin)L.marker(point,{icon:shopIcon,interactive:true,
   title:'Sua loja — centro da área de entrega'})
   .bindPopup('Sua loja: ponto de partida das entregas').addTo(map);
  const coverage=L.layerGroup().addTo(map);
- let selectedMode=mode,km=radiusKm,polygon=vertices.map(v=>[Number(v[0]),Number(v[1])]);
+ const palette=['#ea580c','#2563eb','#059669','#9333ea','#d97706',
+  '#db2777','#0e7490','#be123c','#64748b','#0d9488','#7c3aed','#ca8a04'];
  const valid=v=>Array.isArray(v)&&v.length===2&&Number.isFinite(Number(v[0]))&&Number.isFinite(Number(v[1]))&&
   Number(v[0])>=-90&&Number(v[0])<=90&&Number(v[1])>=-180&&Number(v[1])<=180;
+ const copyVertices=vertices=>(Array.isArray(vertices)?vertices:[])
+  .filter(valid).map(v=>[Number(v[0]),Number(v[1])]);
+ const cloneRegions=items=>(Array.isArray(items)?items:[]).map((item,i)=>({
+  id:String(item.id||i),name:String(item.name||'Região '+(i+1)),
+  vertices:copyVertices(item.vertices),fee:Number(item.fee||0)
+ }));
+ let selectedMode=mode,km=radiusKm;
+ let polygonRegions=cloneRegions(regions);
+ let selectedId=activeRegionId;
+ if(!polygonRegions.length&&vertices.length){
+  polygonRegions=[{id:'legacy',name:'Região 1',vertices:copyVertices(vertices),fee:0}];
+  selectedId='legacy';
+ }
+ const selected=()=>polygonRegions.find(region=>region.id===selectedId)||null;
  function render(focus=false){
   coverage.clearLayers();
   if(selectedMode==='circle'){
-   // Never draw an apparently real store radius around the fallback world
-   // map center while the address is still being geocoded.
    if(hasOrigin){
     const circle=L.circle(point,{radius:km*1000,color:'#ea580c',weight:3,opacity:.95,
      fillColor:'#fb923c',fillOpacity:.12}).addTo(coverage);
     if(focus)map.fitBounds(circle.getBounds(),{padding:[22,22],maxZoom:16});
    }
   }else{
-   if(polygon.length>=3)L.polygon(polygon,{color:'#ea580c',weight:3,
-    fillColor:'#fb923c',fillOpacity:.16}).addTo(coverage);
-   else if(polygon.length>=2)L.polyline(polygon,{color:'#ea580c',weight:3}).addTo(coverage);
-   polygon.forEach((vertex,index)=>{
-    // Visible draggable handles work with touch as well as a mouse.
-    const handle=L.marker(vertex,{
-     icon:L.divIcon({className:'pitacco-polygon-handle',
-      html:'<span aria-hidden="true">'+(index+1)+'</span>',
-      iconSize:[30,30],iconAnchor:[15,15]}),
-     draggable:true,title:'Arraste o ponto '+(index+1)
+   polygonRegions.forEach((region,index)=>{
+    const color=palette[index%palette.length];
+    const active=region.id===selectedId;
+    const pts=region.vertices;
+    let geometry;
+    if(pts.length>=3)geometry=L.polygon(pts,{
+     color,weight:active?4:2.5,
+     fillColor:color,fillOpacity:active?.22:.09,
+     interactive:!active
     }).addTo(coverage);
-    handle.bindTooltip('Arraste o ponto '+(index+1),{direction:'top'});
-    handle.on('dragend',()=>{
-     const p=handle.getLatLng();
-     polygon[index]=[Number(p.lat.toFixed(6)),Number(p.lng.toFixed(6))];
-     render();onVerticesChange?.(polygon.map(v=>[...v]));
+    else if(pts.length>=2)geometry=L.polyline(pts,{
+     color,weight:active?4:2.5,dashArray:'6 5',interactive:!active
+    }).addTo(coverage);
+    if(geometry){
+     geometry.bindTooltip(region.name+' — R$ '+Number(region.fee||0).toFixed(2).replace('.',','),{
+      direction:'top',sticky:true
+     });
+     if(!active){
+      geometry.on('click',e=>{
+       if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);
+       selectedId=region.id;
+       onSelectRegion?.(region.id);
+       render(false);
+      });
+     }
+    }
+    if(!active)return;
+    pts.forEach((vertex,vertexIndex)=>{
+     const handle=L.marker(vertex,{
+      icon:L.divIcon({className:'pitacco-polygon-handle',
+       html:'<span aria-hidden="true">'+(vertexIndex+1)+'</span>',
+       iconSize:[30,30],iconAnchor:[15,15]}),
+      draggable:true,title:'Arraste o ponto '+(vertexIndex+1)
+     }).addTo(coverage);
+     handle.bindTooltip('Arraste o ponto '+(vertexIndex+1),{direction:'top'});
+     handle.on('dragend',()=>{
+      const p=handle.getLatLng();
+      region.vertices[vertexIndex]=[Number(p.lat.toFixed(6)),Number(p.lng.toFixed(6))];
+      render(false);
+      onVerticesChange?.(region.vertices.map(v=>[...v]),region.id);
+     });
     });
    });
-   if(focus&&polygon.length)map.fitBounds(polygon,{padding:[24,24],maxZoom:16});
+   const current=selected();
+   if(focus&&current?.vertices.length)map.fitBounds(current.vertices,{
+    padding:[24,24],maxZoom:16
+   });
   }
   map.invalidateSize();
  }
  map.on('click',({latlng})=>{
-  if(selectedMode!=='polygon'||polygon.length>=30)return;
-  polygon.push([Number(latlng.lat.toFixed(6)),Number(latlng.lng.toFixed(6))]);
-  render();onVerticesChange?.(polygon.map(v=>[...v]));
+  if(selectedMode!=='polygon')return;
+  const region=selected();
+  if(!region||region.vertices.length>=30)return;
+  region.vertices.push([Number(latlng.lat.toFixed(6)),Number(latlng.lng.toFixed(6))]);
+  render(false);
+  onVerticesChange?.(region.vertices.map(v=>[...v]),region.id);
  });
  render(true);
  return{
   setMode(next){selectedMode=next;render(true)},
   setRadius(next){km=Number(next);render(true)},
-  setVertices(next){polygon=(Array.isArray(next)?next:[]).filter(valid).map(v=>[...v]);render(false)},
+  setRegions(next,nextActiveId){
+   polygonRegions=cloneRegions(next);
+   selectedId=nextActiveId;
+   render(false);
+  },
+  // Compatible with the original one-polygon editor.
+  setVertices(next){
+   const region=selected();
+   if(region){region.vertices=copyVertices(next);render(false);}
+  },
+  focusRegion(id){
+   const region=polygonRegions.find(r=>r.id===id);
+   if(region?.vertices.length)map.fitBounds(region.vertices,{padding:[24,24],maxZoom:16});
+  },
   resize(){map.invalidateSize()},
   remove(){map.remove()}
  };
