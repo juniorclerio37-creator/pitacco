@@ -162,6 +162,9 @@ a.btn{text-decoration:none}
   <button type="button" class="settings-row" id="retryCourierGps"><span>Autorizar localização no Android / Atualizar GPS</span><span class="setting-arrow">◎</span></button>
   <button type="button" class="btn secondary" id="openAndroidGpsSettings" hidden>Abrir permissões de localização no Android</button>
   <p id="courierGpsStatus" role="status" aria-live="polite">Ative seu plantão para compartilhar sua posição com a loja.</p>
+  <button type="button" class="settings-row" id="requestBackgroundGps" hidden><span>Permitir localização o tempo todo no Android</span><span class="setting-arrow">›</span></button>
+  <p id="courierBackgroundGpsStatus" class="note-inline" role="status" aria-live="polite"></p>
+  <button type="button" class="settings-row" id="verifyGpsUpload" hidden><span>Verificar envio real do GPS</span><span class="setting-arrow">↻</span></button>
   <button type="button" class="settings-row" id="startNativeGps" hidden><span>Ativar GPS em segundo plano durante o plantão</span><span class="setting-arrow">▶</span></button>
   <button type="button" class="settings-row" id="stopNativeGps" hidden><span>Parar GPS em segundo plano</span><span class="setting-arrow">■</span></button>
   <p class="note-inline">O rastreamento contínuo funciona enquanto você estiver online e a notificação persistente “GPS ativo” estiver visível. Ao ficar offline ou sair da conta, o serviço é encerrado. O Android pode interromper o serviço por bateria, falta de GPS ou encerramento forçado.</p>
@@ -221,15 +224,37 @@ function showAndroidGpsSettings(show){
  if(button)button.hidden=!show;
 }
 function handleAndroidGpsReply(status){
+ if(status.startsWith("background:")){
+  const mode=status.slice("background:".length);
+  const button=$("requestBackgroundGps"),indicator=$("courierBackgroundGpsStatus");
+  button.hidden=mode==="granted";
+  if(mode==="granted"){
+   indicator.textContent="Permissão de localização o tempo todo autorizada. O GPS só é enviado durante seu plantão.";
+  }else if(mode==="settings"){
+   indicator.textContent="Nas configurações do Pitacco Entregador, abra Permissões → Localização → Permitir o tempo todo. Depois retorne ao aplicativo.";
+  }else if(mode==="foreground_required"){
+   indicator.textContent="Primeiro autorize a localização precisa no Android; depois permita o rastreamento em segundo plano.";
+  }else{
+   indicator.textContent="Para manter o rastreio mesmo com o app minimizado, toque em Permitir localização o tempo todo. O acesso é opcional e só será usado durante o plantão.";
+  }
+  return;
+ }
  if(status.startsWith("tracking:")){
   nativeGpsSupported=true;
   const state=status.slice("tracking:".length);
-  nativeGpsRunning=state==="on"||state==="starting";
+  nativeGpsRunning=["on","starting","waiting","stale"].includes(state);
+  $("verifyGpsUpload").hidden=false;
   $("startNativeGps").hidden=false;
   $("stopNativeGps").hidden=!nativeGpsRunning;
   if(state==="on"){
    stopGpsSharing();
    gpsStatus("GPS ativo em segundo plano. A notificação do Android confirma o rastreamento durante o plantão.");
+  }else if(state==="waiting"){
+   stopGpsSharing();
+   gpsStatus("Serviço Android ativo. Aguardando confirmação do primeiro envio de GPS ao servidor.");
+  }else if(state==="stale"){
+   stopGpsSharing();
+   gpsStatus("O serviço está ativo, mas o servidor não confirma localização recente. Verifique internet, GPS, bateria e permissões.");
   }else if(state==="starting"){
    stopGpsSharing();
    gpsStatus("Iniciando rastreamento contínuo do Android…");
@@ -266,9 +291,19 @@ function handleAndroidGpsReply(status){
 }
 if(window.PitaccoGps){
  window.PitaccoGps.onmessage=event=>handleAndroidGpsReply(String(event?.data||"denied"));
- try{window.PitaccoGps.postMessage("tracking_status");}catch{}
+ try{
+  window.PitaccoGps.postMessage("tracking_status");
+  window.PitaccoGps.postMessage("background_status");
+ }catch{}
  document.addEventListener("visibilitychange",()=>{
-  if(!document.hidden)window.PitaccoGps?.postMessage?.("tracking_status");
+  if(!document.hidden){
+   window.PitaccoGps?.postMessage?.("tracking_status");
+   window.PitaccoGps?.postMessage?.("background_status");
+  }
+ });
+ window.addEventListener("focus",()=>{
+  window.PitaccoGps?.postMessage?.("background_status");
+  window.PitaccoGps?.postMessage?.("tracking_status");
  });
 }
 async function startNativeGpsTracking(){
@@ -1256,6 +1291,12 @@ async function boot(){
   loadNavPreferences();
   initializeNativePush();
   $("startNativeGps").addEventListener("click",()=>startNativeGpsTracking().catch(()=>gpsStatus("Não foi possível iniciar o GPS.")));
+  $("requestBackgroundGps").addEventListener("click",()=>{
+   if(!window.PitaccoGps?.postMessage)return;
+   $("courierBackgroundGpsStatus").textContent="Verificando autorização para localização durante o plantão…";
+   window.PitaccoGps.postMessage("background_request");
+  });
+  $("verifyGpsUpload").addEventListener("click",()=>window.PitaccoGps?.postMessage?.("tracking_status"));
   $("stopNativeGps").addEventListener("click",()=>{
    void stopNativeGpsTracking();
    gpsStatus("Rastreamento contínuo interrompido. Use Ativar para voltar a compartilhar em segundo plano.");
