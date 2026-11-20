@@ -118,6 +118,7 @@ export function StorefrontPayments({client,storeId,resource}){
 export function StoreDeliveryArea({client,store}){
  const [automaticPoint,setAutomaticPoint]=useState(null);
  const [locationState,setLocationState]=useState('idle');
+ const [locationRetry,setLocationRetry]=useState(0);
  const [locationMessage,setLocationMessage]=useState('');
  const locationAttempts=useRef(null);
  const savedPoint=shopPoint(store);
@@ -169,7 +170,6 @@ export function StoreDeliveryArea({client,store}){
    store?.city,store?.state,store?.postal_code,savedPoint?.[0],savedPoint?.[1],locationRetry]);
  function retryLocation(){locationAttempts.current=null;setLocationState('idle');setAutomaticPoint(null);
   setLocationMessage('');setLocationRetry(n=>n+1);}
- const [locationRetry,setLocationRetry]=useState(0);
  useEffect(()=>{
   let live=true;
   setStatus('loading');setError('');
