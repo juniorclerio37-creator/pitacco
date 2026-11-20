@@ -643,7 +643,13 @@ public class MainActivity extends Activity {
                 "window.PitaccoGps?.postMessage?.('tracking_status');" +
                 "window.PitaccoGps?.postMessage?.('background_status');" +
                 "window.PitaccoGps?.postMessage?.('motion_permission_status');" +
-                "window.PitaccoGps?.postMessage?.('motion_status')", null);
+                "window.PitaccoGps?.postMessage?.('motion_status');" +
+                // Always resync the newest Firebase token after returning from
+                // Android permissions or navigation. The web bridge registers
+                // it against the current authenticated courier session only
+                // when the courier previously opted in.
+                "window.PitaccoPush?.postMessage?.('refresh');" +
+                "window.PitaccoPush?.postMessage?.('status')", null);
         }
     }
 
