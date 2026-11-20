@@ -95,6 +95,8 @@ export async function mountCourierSharedMap(container,{onOpenOrder,onNavigate}={
    const url=onNavigate?.(d);
    if(typeof url==='string'&&url.startsWith('https://')){
     const link=el(actions,'a','Ir');link.href=url;link.rel='noopener noreferrer';
+    link.addEventListener('click',()=>{const latest=onNavigate?.(d);
+     if(typeof latest==='string'&&latest.startsWith('https://'))link.href=latest;});
    }
    if(onOpenOrder){const btn=el(actions,'button','Ver pedido');btn.type='button';
     btn.addEventListener('click',()=>onOpenOrder(d));}
