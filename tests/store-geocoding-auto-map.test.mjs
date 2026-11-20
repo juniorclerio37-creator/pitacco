@@ -55,10 +55,40 @@ test('delivery area map always renders and polygon/circle inputs remain availabl
 test('Google key optional for shop origin only; fallback is throttled and address-scoped',()=>{
  const edge=read('supabase/functions/delivery-quote/index.ts');
  assert.match(edge,/pitacco-osm-geocode-global-minute/);
- assert.match(edge,/p_max:1,p_minutes:1/);
+ assert.match(edge,/p_max:12,p_minutes:1/);
+ assert.match(edge,/pitacco_service_nominatim_second_slot/);
+ assert.match(edge,/store\.postal_code,'Brasil'/);
  assert.match(edge,/User-Agent':'Pitacco-delivery\/1\.0/);
  assert.match(edge,/nominatim\.openstreetmap\.org\/search/);
  assert.match(edge,/latitude:Number\(location.lat.toFixed\(6\)\)/);
  assert.match(edge,/approximate:Boolean\(location.approximate\)/);
  assert.doesNotMatch(edge,/if\(!key\)return problem\(503,'A localização automática/);
+});
+
+test('the shop marker is a consistent illustrated storefront (no emoji marker)',()=>{
+ const map=read('revisions/0.12/web/deliveryMap.mjs');
+ assert.match(map,/export function illustratedShopIcon\(L\)/);
+ assert.match(map,/<svg[^>]+viewBox="0 0 58 68"/);
+ assert.match(map,/const icon=illustratedShopIcon\(L\)/);
+ assert.match(map,/const shopIcon=illustratedShopIcon\(L\)/);
+ assert.match(map,/if\(kind==='store'\)return illustratedShopIcon\(L\)/);
+ assert.doesNotMatch(map,/html:'<span aria-hidden="true">🏪<\/span>'/);
+});
+
+test('deduplicates concurrent merchant origin requests',async()=>{
+ let release;
+ const waiting=new Promise(resolve=>{release=resolve;});
+ let requests=0;
+ const client={functions:{invoke:async()=>{
+  requests++;
+  await waiting;
+  return {data:{latitude:-22.74,longitude:-43.47,approximate:true},error:null};
+ }}};
+ const a=locateStoreByAddress(client,'same-store');
+ const b=locateStoreByAddress(client,'same-store');
+ release();
+ assert.deepEqual(await a,await b);
+ assert.equal(requests,1);
+ await locateStoreByAddress(client,'same-store');
+ assert.equal(requests,2);
 });
