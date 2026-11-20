@@ -100,13 +100,13 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
    // Ignore slow responses for a store/address no longer shown.
    if(requestedAddress!==currentAddressRef.current)return;
    if(approximate){
-    // Provider located a street, not the exact doorway. Never imply that
-    // this preview is saved or ready for freight calculations.
-    setSuggestedPoint(p);
+    // Never let an asynchronous lookup replace a GPS or manually selected
+    // point, particularly on browsers with slower device geolocation.
     if(selectionVersion.current===pickedBefore){
+     setSuggestedPoint(p);
      setPicked(p);map.current?.setPoint(p);
+     setMessage('O mapa encontrou apenas uma posição estimada. Confira a entrada da loja e clique em "Salvar ponto da loja" para confirmar.');
     }
-    setMessage('O mapa encontrou apenas uma posição estimada. Confira a entrada da loja e clique em "Salvar ponto da loja" para confirmar.');
    }else{
     setPoint(p);setSuggestedPoint(null);
     if(selectionVersion.current===pickedBefore){
