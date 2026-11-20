@@ -7,8 +7,8 @@ test('merchant map includes authorized shared couriers and their positions',()=>
  const source=read('revisions/0.12/web/FleetTracking.jsx');
  assert.match(source,/rpc\('pitacco_store_couriers',\s*\{p_store:\s*storeId\}\)/);
  assert.doesNotMatch(source,/from\('couriers'\)\.select\('id,name,active,available'\)\.eq\('store_id'/);
- assert.match(source,/from\('courier_positions'\)/);
- assert.match(source,/\.in\('courier_id', ids\)/);
+ assert.match(source,/rpc\('pitacco_store_courier_positions'/);
+ assert.doesNotMatch(source,/from\('courier_positions'\)/);
  assert.match(source,/gpsStatus\(c, position\)/);
  assert.match(source,/10000/);
  assert.match(source,/body:\s*\{action:'store-origin',\s*store_id:storeId\}/);
@@ -54,4 +54,9 @@ test('store location backend checks store membership before writes',()=>{
  assert.match(migration,/is distinct from/);
  assert.match(migration,/new\.latitude := null/);
  assert.match(migration,/new\.longitude := null/);
+ const scoped=read('supabase/migrations/20261120120500_store_scoped_shared_courier_map.sql');
+ assert.match(scoped,/pitacco_store_courier_positions/);
+ assert.match(scoped,/pitacco_can_manage_courier_store/);
+ assert.match(scoped,/pitacco_courier_test_access/);
+ assert.match(scoped,/grant execute on function public\.pitacco_store_courier_positions/);
 });
