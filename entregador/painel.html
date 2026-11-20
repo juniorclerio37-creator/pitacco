@@ -1394,7 +1394,7 @@ $("online").addEventListener("click",async()=>{
   if(error)throw new Error(error.message);
   courier={...courier,available:nextOnline};
   if(nextOnline && nativeGpsSupported) await startNativeGpsTracking();
-  if(!nextOnline){await stopNativeGpsTracking();stopGpsSharing();}
+  if(!nextOnline){stopGpsSharing();await stopNativeGpsTracking();}
   message("");await refresh(true);
  }catch(err){message(String(err?.message??"Falha ao mudar disponibilidade"));}
  finally{busy=false;$("online").disabled=navigator.onLine===false;}
