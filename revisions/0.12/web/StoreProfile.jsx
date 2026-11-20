@@ -46,7 +46,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
    else instance.remove();
   }).catch(err=>{if(alive)setError('O mapa não pôde ser aberto: '+err.message)});
   return()=>{alive=false;map.current?.remove();map.current=null};
- },[store?.id,Boolean(point)]);
+ },[store?.id,Boolean(point),Boolean(viewCenter)]);
  // Start near an authorized on-shift driver if address lookup is unavailable.
  // Never save the driver's coordinates as the shop by default.
  useEffect(()=>{
