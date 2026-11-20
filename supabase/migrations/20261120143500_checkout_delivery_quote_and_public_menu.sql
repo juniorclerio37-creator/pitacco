@@ -17,23 +17,43 @@ AS $function$ declare cfg public.public_menu_settings%rowtype; items jsonb; begi
    where r.store_id=cfg.store_id and r.enabled and cfg.delivery_enabled),'logo_url',(select logo_url from public.store_customer_branding where store_id=cfg.store_id),'secondary_color',coalesce((select secondary_color from public.store_customer_branding where store_id=cfg.store_id),'#6d145f'),'banner_url',(select banner_url from public.store_customer_branding where store_id=cfg.store_id),'primary_color',coalesce((select primary_color from public.store_customer_branding where store_id=cfg.store_id),'#db482f'),'appearance',pitacco_private.storefront_public_design(cfg.store_id),'profile_logo_path',(select to_jsonb(profile_store)->>'logo_path' from public.stores profile_store where id=cfg.store_id),'opening_hours',pitacco_private.store_opening_status(cfg.store_id,now()),'delivery_enabled',(cfg.delivery_enabled and exists (select 1 from public.pitacco_delivery_pricing r where r.store_id=cfg.store_id and r.enabled)),'pickup_enabled',cfg.pickup_enabled,'delivery_fee',0,'payment_methods',cfg.payment_methods,'pix_instructions',cfg.pix_instructions),'products',items);
 end $function$
 ;
+
+-- Narrow, read-only, checked helper: the public checkout wrapper is a SECURITY
+-- INVOKER and cannot read the private quote table directly. Do not give anon
+-- direct SELECT permissions on quotes or make the checkout wrapper definer.
+create or replace function public.pitacco_delivery_quote_point(
+ p_quote uuid,p_request uuid,p_address text
+) returns jsonb language sql stable security definer set search_path to ''
+as $func$
+ select jsonb_build_object('latitude',q.destination_latitude,
+                           'longitude',q.destination_longitude)
+ from public.pitacco_delivery_route_quotes q
+ where q.id=p_quote and q.request_id=p_request
+  and q.destination_address=trim(p_address)
+  and q.expires_at>now()
+  and q.destination_latitude between -34 and 6
+  and q.destination_longitude between -75 and -32
+  and exists(select 1 from public.pitacco_delivery_pricing p
+   where p.store_id=q.store_id and p.enabled and p.updated_at=q.pricing_updated_at)
+ limit 1;
+$func$;
+revoke all on function public.pitacco_delivery_quote_point(uuid,uuid,text) from public;
+grant execute on function public.pitacco_delivery_quote_point(uuid,uuid,text) to anon,authenticated;
+
 CREATE OR REPLACE FUNCTION public.pitacco_checkout_quoted_delivery(p_slug text, p_request uuid, p_customer text, p_phone text, p_address text, p_items jsonb, p_fulfillment text, p_payment text, p_notes text, p_quote uuid, p_scheduled_for timestamp with time zone DEFAULT NULL::timestamp with time zone)
  RETURNS jsonb
  LANGUAGE plpgsql
  SET search_path TO ''
 AS $function$
 declare result jsonb;
- v_lat double precision;v_lng double precision;
+ v_point jsonb;
 begin
  if p_quote is null or p_fulfillment<>'delivery' then raise exception 'Cotação de entrega obrigatória'; end if;
 
- select destination_latitude,destination_longitude into v_lat,v_lng
- from public.pitacco_delivery_route_quotes
- where id=p_quote and request_id=p_request and destination_address=trim(p_address);
- if v_lat is null or v_lng is null then raise exception 'Recalcule a localização do frete';end if;
+ v_point:=public.pitacco_delivery_quote_point(p_quote,p_request,p_address);
+ if v_point is null then raise exception 'Recalcule a localização do frete';end if;
  perform set_config('pitacco.checkout_delivery_quote',p_quote::text,true);
- perform set_config('pitacco.checkout_delivery_point',
-  jsonb_build_object('latitude',v_lat,'longitude',v_lng)::text,true);
+ perform set_config('pitacco.checkout_delivery_point',v_point::text,true);
  if p_scheduled_for is null then
   result:=public.checkout_public_order(p_slug,p_request,p_customer,p_phone,p_address,p_items,p_fulfillment,p_payment,p_notes);
  else
