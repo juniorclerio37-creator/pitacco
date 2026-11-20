@@ -123,3 +123,12 @@ test('offline cleanup handles a real PostgrestBuilder-like thenable without .cat
   assert.equal(messages.length,networkError?1:0);
  }
 });
+
+
+test('all courier Supabase RPC fallbacks use real Promises, not .catch on builders',()=>{
+ assert.match(panel,/Promise\.resolve\(sb\.rpc\("pitacco_courier_push_readiness"\)\)\.catch/);
+ assert.match(panel,/Promise\.resolve\(sb\.rpc\(nativeProtocol\?/);
+ assert.match(panel,/Promise\.resolve\(sb\.rpc\("pitacco_unregister_courier_push"\)\)\.catch/);
+ assert.doesNotMatch(panel,/sb\.rpc\("pitacco_courier_push_readiness"\)\.catch/);
+ assert.doesNotMatch(panel,/sb\.rpc\("pitacco_unregister_courier_push"\)\.catch/);
+});
