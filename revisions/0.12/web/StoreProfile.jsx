@@ -52,7 +52,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
  useEffect(()=>{
   if(point||!manager||!store?.id)return;
   let active=true;
-  client.rpc('pitacco_store_courier_positions',{p_store:store.id})
+  Promise.resolve(client.rpc('pitacco_store_courier_positions',{p_store:store.id}))
    .then(({data,error})=>{
     if(!active||error)return;
     const p=(data||[]).find(row=>row.latitude!=null&&row.longitude!=null&&
