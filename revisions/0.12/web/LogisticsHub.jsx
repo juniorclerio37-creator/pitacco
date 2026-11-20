@@ -2,7 +2,7 @@ import React,{useEffect,useState} from 'react';
 import DeliveryDialog,{deliveryLabel} from './DeliveryDialog.jsx';
 export default function LogisticsHub({client,store,view,onRefresh}){
  const [rows,setRows]=useState([]),[couriers,setCouriers]=useState([]),[selected,setSelected]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
- const load=async()=>{const [d,c]=await Promise.all([client.from('deliveries').select('*').eq('store_id',store.id).order('created_at',{ascending:false}).limit(200),client.from('couriers').select('*').eq('store_id',store.id).order('name')]);if(d.error||c.error)throw d.error||c.error;setRows(d.data);setCouriers(c.data)};
+ const load=async()=>{const [d,c]=await Promise.all([client.from('deliveries').select('*').eq('store_id',store.id).order('created_at',{ascending:false}).limit(200),client.rpc('pitacco_store_couriers',{p_store:store.id})]);if(d.error||c.error)throw d.error||c.error;setRows(d.data);setCouriers(c.data)};
  useEffect(()=>{let live=true;const refresh=()=>load().catch(e=>live&&setError(e.message));refresh();const t=setInterval(refresh,5000);return()=>{live=false;clearInterval(t)}},[store.id]);
  async function rpc(name,args){setBusy(true);setError('');setNotice('');try{const r=await client.rpc(name,args);if(r.error)throw r.error;await load();await onRefresh?.();setNotice('Alteração salva.')}catch(e){setError(e.message)}finally{setBusy(false)}}
  return <>{error&&<p className="notice error" role="alert">{error}</p>}{notice&&<p className="notice" role="status">{notice}</p>}
