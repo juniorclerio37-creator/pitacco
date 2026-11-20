@@ -42,3 +42,10 @@
  color:#8a4515;border-radius:11px;margin:8px 0;line-height:1.55}
 @media(max-width:620px){.delivery-zone-map{height:350px;min-height:280px}
  .delivery-zone-mode{grid-template-columns:1fr}.delivery-zone-polygon-actions button{flex:1}}
+
+/* Clearly draggable polygon points (works with touch on Android). */
+.pitacco-polygon-handle{display:flex;align-items:center;justify-content:center;
+ width:30px;height:30px;box-sizing:border-box;border:3px solid #ea580c;
+ background:white;color:#9a3412;border-radius:50%;font-size:13px;
+ font-weight:900;box-shadow:0 3px 9px #0003;cursor:grab;touch-action:none}
+.pitacco-polygon-handle:active{cursor:grabbing}
