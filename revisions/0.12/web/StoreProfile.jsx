@@ -108,8 +108,12 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance}
    if(!draft.name?.trim())throw Error('Informe o nome da loja.');
    const row={...draft,name:draft.name.trim(),updated_at:new Date().toISOString()};
    if(logo)row.logo_path=await uploadStoreImage(client,store.id,logo,'stores');
-   const {data,error}=await client.from('stores').update(row).eq('id',store.id).select('id').single();
-   if(error)throw error;if(data.id!==store.id)throw Error('Loja incorreta.');
+   // Authorized for both store managers and platform administrators; direct
+   // stores UPDATE is restricted by RLS for normal merchant accounts.
+   const {error}=await client.rpc('pitacco_update_store_identity',{
+    p_store_id:store.id,p_data:row,
+   });
+   if(error)throw error;
    setLogo(null);setMessage('Dados da sua loja atualizados.');onSaved?.();
   }catch(err){setMessage(err.message||String(err))}finally{setBusy(false)}
  }
