@@ -23,7 +23,16 @@ export async function locateStoreByAddress(client,storeId){
  const {data,error}=await client.functions.invoke('delivery-quote',{
   body:{action:'store-origin',store_id:storeId}
  });
- if(error)throw Error(await edgeErrorMessage(error));
+ if(error){
+  const failure=new Error(await edgeErrorMessage(error,
+    'O serviço de localização do endereço está indisponível. Tente novamente mais tarde.'));
+  // Supabase FunctionsHttpError exposes a Response at error.context.
+  // Network errors may have no status and can be retried once.
+  const status=Number(error.context?.status||0);
+  failure.status=status;
+  failure.retryable=!status||status===429||status>=500;
+  throw failure;
+ }
  const latitude=Number(data?.latitude),longitude=Number(data?.longitude);
  if(data?.latitude==null||data?.longitude==null||
     !Number.isFinite(latitude)||!Number.isFinite(longitude)||
