@@ -163,7 +163,7 @@ try {
     await product.getByRole('button',{name:/Salvar alterações/}).click();
     await cart.getByText('Item atualizado na sacola.',{exact:true}).waitFor();
     assert.match(await cart.locator('#total').innerText(),/69,00/);
-    assert.match(await cart.locator('#total').innerText(),/Calcule o frete/);
+    assert.match(await cart.locator('#total').innerText(),/calcule o frete/i);
     await firstLine.getByText(/Morango · Granola/).waitFor();
     await firstLine.getByRole('button',{name:'Editar complementos',exact:true}).click();
     await product.getByRole('checkbox',{name:/Granola/}).uncheck();
