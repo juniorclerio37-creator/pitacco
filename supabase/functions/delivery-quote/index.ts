@@ -42,6 +42,55 @@ async function roadDistance(origin:Geo,destination:Geo,key:string):Promise<numbe
  if(!Number.isSafeInteger(meters)||meters<0)throw Error('Não há rota disponível para esse endereço.');
  return meters;
 }
+// All delivery area decisions happen on this server, never in client-side JS.
+const finiteBrazil=(lat:number,lng:number)=>Number.isFinite(lat)&&Number.isFinite(lng)
+ &&lat>=-34&&lat<=6&&lng>=-75&&lng<=-32;
+const directDistance=(a:[number,number],b:[number,number])=>{
+ const rad=Math.PI/180;
+ const dLat=(b[0]-a[0])*rad,dLng=(b[1]-a[1])*rad;
+ const h=Math.sin(dLat/2)**2+Math.cos(a[0]*rad)*Math.cos(b[0]*rad)*Math.sin(dLng/2)**2;
+ return Math.round(12742000*Math.asin(Math.sqrt(Math.min(1,h))));
+};
+type Point=[number,number];
+const cross=(a:Point,b:Point,p:Point)=>(b[1]-a[1])*(p[0]-a[0])-(b[0]-a[0])*(p[1]-a[1]);
+function segmentContains(p:Point,a:Point,b:Point){
+ return Math.abs(cross(a,b,p))<1e-10&&
+  p[0]>=Math.min(a[0],b[0])-1e-10&&p[0]<=Math.max(a[0],b[0])+1e-10&&
+  p[1]>=Math.min(a[1],b[1])-1e-10&&p[1]<=Math.max(a[1],b[1])+1e-10;
+}
+function polygonValid(vertices:Point[]){
+ if(vertices.length<3||vertices.length>30)return false;
+ if(vertices.some(p=>!Array.isArray(p)||p.length!==2||!finiteBrazil(p[0],p[1])))return false;
+ // Consecutive duplicate vertices and self-intersecting outlines are invalid.
+ const n=vertices.length;
+ for(let i=0;i<n;i++){
+  const a=vertices[i],b=vertices[(i+1)%n];
+  if(a[0]===b[0]&&a[1]===b[1])return false;
+  for(let j=i+2;j<n;j++){
+   if(i===0&&j===n-1)continue;
+   const c=vertices[j],d=vertices[(j+1)%n];
+   const s1=cross(a,b,c),s2=cross(a,b,d),s3=cross(c,d,a),s4=cross(c,d,b);
+   if((s1*s2<0&&s3*s4<0)||
+     segmentContains(a,c,d)||segmentContains(b,c,d)||
+     segmentContains(c,a,b)||segmentContains(d,a,b))return false;
+  }
+ }
+ const area=vertices.reduce((sum,p,i)=>sum+p[1]*vertices[(i+1)%n][0]-vertices[(i+1)%n][1]*p[0],0);
+ return Math.abs(area)>1e-9;
+}
+function withinPolygon(p:Point,v:Point[]){
+ let inside=false;
+ for(let i=0,j=v.length-1;i<v.length;j=i++){
+  const a=v[i],b=v[j];
+  if(segmentContains(p,a,b))return true;
+  if((a[0]>p[0])!==(b[0]>p[0])){
+   const x=(b[1]-a[1])*(p[0]-a[0])/(b[0]-a[0])+a[1];
+   if(p[1]<x)inside=!inside;
+  }
+ }
+ return inside;
+}
+
 async function ipHash(request:Request,secret:string){
  const ip=request.headers.get('cf-connecting-ip')||request.headers.get('x-real-ip')||request.headers.get('x-forwarded-for')?.split(',')[0]||'unknown';
  const bytes=new TextEncoder().encode(secret+'|'+ip);
@@ -107,43 +156,92 @@ Deno.serve(async request=>{
    if(updateError)throw Error('Não foi possível registrar a localização da loja.');
    return response(200,{latitude:location.lat,longitude:location.lng,address},origin);
   }
-  if(!key)return problem(503,'Cálculo de rotas ainda não homologado.',origin);
   const slug=String(body.slug||'').trim(),address=String(body.address||'').trim();
   const requestId=String(body.request_id||'');
   if(!slugPattern.test(slug)||address.length<12||address.length>500||!uuid.test(requestId))
    return problem(400,'Informe o endereço completo e uma solicitação válida.',origin);
-  const {data:menu,error:menuError}=await db.from('public_menu_settings').select('store_id,delivery_enabled,enabled').eq('slug',slug).maybeSingle();
-  if(menuError||!menu?.enabled||!menu.delivery_enabled)return problem(404,'Cardápio indisponível.',origin);
-  const {data:rules,error:rulesError}=await db.from('pitacco_delivery_pricing').select('*').eq('store_id',menu.store_id).maybeSingle();
-  if(rulesError||!rules?.enabled)return problem(409,'Cálculo automático ainda não habilitado nesta loja.',origin);
+  const {data:menu,error:menuError}=await db.from('public_menu_settings')
+   .select('store_id,delivery_enabled,enabled').eq('slug',slug).maybeSingle();
+  if(menuError||!menu?.enabled||!menu.delivery_enabled)
+   return problem(404,'Entrega indisponível nesta loja.',origin);
+  const {data:rules,error:rulesError}=await db.from('pitacco_delivery_pricing')
+   .select('*').eq('store_id',menu.store_id).maybeSingle();
+  if(rulesError||!rules?.enabled)
+   return problem(409,'A loja ainda não configurou a área e o valor de entrega.',origin);
   const hash=await ipHash(request,serviceKey.slice(0,32));
   const limits=[
    {scope:'ip-min-'+menu.store_id+'-'+hash,max:10,minutes:1},
    {scope:'store-day-'+menu.store_id,max:500,minutes:1440}
   ];
   for(const l of limits){
-   const {data,error}=await db.rpc('pitacco_service_delivery_quote_limit',{p_scope:l.scope,p_max:l.max,p_minutes:l.minutes});
+   const {data,error}=await db.rpc('pitacco_service_delivery_quote_limit',{
+    p_scope:l.scope,p_max:l.max,p_minutes:l.minutes
+   });
    if(error)return problem(503,'Limite de cotações temporariamente indisponível.',origin);
    if(!data)return problem(429,'Muitas cotações. Tente novamente mais tarde.',origin);
   }
-  const {data:store,error:storeError}=await db.from('stores').select('address,address_number,neighborhood,city,state,postal_code').eq('id',menu.store_id).single();
-  if(storeError||!store?.address||!store.city||!store.state)return problem(409,'A loja precisa validar seu endereço.',origin);
-  const storeAddress=[store.address,store.address_number,store.neighborhood,store.city,store.state,store.postal_code,'Brasil'].filter(Boolean).join(', ');
-  const [from,to]=await Promise.all([geocode(storeAddress,key),geocode(address+', Brasil',key)]);
-  if(from.country!=='BR'||to.country!=='BR')return problem(422,'Endereço fora da região atendida.',origin);
-  const meters=await roadDistance(from,to,key);
-  if(meters>rules.max_radius_km*1000)return problem(422,'Endereço fora da área de entrega desta loja.',origin);
-  const override=(rules.neighborhood_fees||[]).find((v:any)=>normalize(v.bairro||'')===normalize(to.neighborhood)&&normalize(v.cidade||'')===normalize(to.city));
-  const km=Math.max(1,Math.ceil(meters/1000));
-  const fee=Number(override?override.taxa:rules.distance_fees?.[km-1]);
-  if(!Number.isFinite(fee)||fee<0||fee>999.99)throw Error('Tabela de frete inválida.');
+  const {data:store,error:storeError}=await db.from('stores')
+   .select('latitude,longitude,address,address_number,neighborhood,city,state,postal_code')
+   .eq('id',menu.store_id).single();
+  if(storeError||store?.latitude==null||store?.longitude==null||
+     !finiteBrazil(Number(store.latitude),Number(store.longitude)))
+   return problem(409,'A loja precisa marcar o ponto de partida em Dados e identidade.',origin);
+  const from:Point=[Number(store.latitude),Number(store.longitude)];
+  const mode=rules.coverage_type||'road';
+  let to:Point,meters:number,fee:number;
+  if(mode==='circle'||mode==='polygon'){
+   // Customer confirms their drop-off on the same map the store configured.
+   // This pin (NOT just text address) is saved in the protected order quote.
+   const lat=body.latitude,lng=body.longitude;
+   if(typeof lat!=='number'||typeof lng!=='number'||!finiteBrazil(lat,lng))
+    return problem(422,'Marque e confirme o ponto exato da entrega no mapa.',origin);
+   to=[lat,lng];
+   meters=directDistance(from,to);
+   if(mode==='circle'){
+    if(meters>rules.max_radius_km*1000)
+     return problem(422,'Este endereço está fora do círculo de entregas da loja.',origin);
+    const bracket=Math.max(1,Math.ceil(meters/1000));
+    fee=Number(rules.distance_fees?.[bracket-1]);
+   }else{
+    const polygon:Point[]=rules.polygon;
+    if(!Array.isArray(polygon)||!polygonValid(polygon)||
+       polygon.some(p=>directDistance(from,p)>30000))
+     return problem(409,'O polígono da loja precisa ser corrigido em Área de Entrega.',origin);
+    if(!withinPolygon(to,polygon))
+     return problem(422,'Este endereço está fora do polígono atendido pela loja.',origin);
+    fee=Number(rules.polygon_fee);
+   }
+  }else if(mode==='road'){
+   // Preserve the optional existing road-routing mode for shops with a
+   // homologated provider. New visual modes above need no maps API key.
+   if(!key)return problem(503,'Distância por trajeto indisponível nesta loja.',origin);
+   const shopAddress=[store.address,store.address_number,store.neighborhood,
+    store.city,store.state,store.postal_code,'Brasil'].filter(Boolean).join(', ');
+   const destination=await geocode(address+', Brasil',key);
+   if(destination.country!=='BR')return problem(422,'Endereço fora do Brasil.',origin);
+   to=[destination.lat,destination.lng];
+   meters=await roadDistance({
+    lat:from[0],lng:from[1],country:'BR',city:store.city,neighborhood:store.neighborhood
+   },destination,key);
+   if(meters>rules.max_radius_km*1000)
+    return problem(422,'Endereço fora da área de entrega desta loja.',origin);
+   const override=(rules.neighborhood_fees||[]).find((v:any)=>
+    normalize(v.bairro||'')===normalize(destination.neighborhood)&&
+    normalize(v.cidade||'')===normalize(destination.city));
+   fee=Number(override?override.taxa:rules.distance_fees?.[Math.max(1,Math.ceil(meters/1000))-1]);
+  }else return problem(409,'Modo de entrega não reconhecido.',origin);
+  if(!Number.isFinite(fee)||fee<0||fee>999.99)
+   return problem(409,'As taxas de entrega da loja precisam ser corrigidas.',origin);
   const expiresAt=new Date(Date.now()+5*60*1000).toISOString();
   const {data:quote,error:insertError}=await db.from('pitacco_delivery_route_quotes').insert({
    store_id:menu.store_id,request_id:requestId,destination_address:address,
+   destination_latitude:Number(to[0].toFixed(6)),
+   destination_longitude:Number(to[1].toFixed(6)),
    distance_m:meters,fee,pricing_updated_at:rules.updated_at,expires_at:expiresAt
   }).select('id').single();
-  if(insertError)return problem(409,'Esta solicitação já possui cotação. Recomece a conferência do frete.',origin);
-  return response(200,{quote_id:quote.id,request_id:requestId,distance_m:meters,fee,expires_at:expiresAt},origin);
+  if(insertError)return problem(409,'Esta solicitação já possui cotação. Recomece o cálculo do frete.',origin);
+  return response(200,{quote_id:quote.id,request_id:requestId,distance_m:meters,
+   distance_type:mode==='road'?'road':'straight',fee,expires_at:expiresAt},origin);
  }catch(error){
   const message=error instanceof Error?error.message:'Falha ao calcular a entrega.';
   const status=message.includes('impreciso')||message.includes('localizado')?422:503;
