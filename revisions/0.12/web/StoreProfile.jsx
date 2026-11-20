@@ -117,7 +117,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
     retryTimer.current=setTimeout(()=>{
      retryTimer.current=null;
      setRetryAttempt(n=>n+1);
-    },75_000);
+    },Number(err.retryAfterMs)||75_000);
    }
   }finally{setBusy(false)}
  }
