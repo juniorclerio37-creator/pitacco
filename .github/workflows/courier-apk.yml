@@ -43,11 +43,11 @@ jobs:
       - name: Verify APK signature and hash
         working-directory: entregador/android-app/app/build/outputs/apk/debug
         run: |
-          mv app-debug.apk Pitacco-Entregador-2.0.12-TESTE-PARALELO.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose Pitacco-Entregador-2.0.12-TESTE-PARALELO.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Pitacco-Entregador-2.0.12-TESTE-PARALELO.apk | head -15
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Pitacco-Entregador-2.0.12-TESTE-PARALELO.apk | grep -q "package: name='br.com.pitacco.entregador.teste'"
-          sha256sum Pitacco-Entregador-2.0.12-TESTE-PARALELO.apk > SHA256-ANDROID.txt
+          mv app-debug.apk Pitacco-Entregador-2.0.13-TESTE-PARALELO.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose Pitacco-Entregador-2.0.13-TESTE-PARALELO.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Pitacco-Entregador-2.0.13-TESTE-PARALELO.apk | head -15
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Pitacco-Entregador-2.0.13-TESTE-PARALELO.apk | grep -q "package: name='br.com.pitacco.entregador.teste'"
+          sha256sum Pitacco-Entregador-2.0.13-TESTE-PARALELO.apk > SHA256-ANDROID.txt
       - name: Exercise release signing with an isolated test certificate
         if: github.event_name == 'pull_request'
         working-directory: entregador/android-app
@@ -79,7 +79,7 @@ jobs:
         with:
           name: Pitacco-Entregador-Android-teste
           path: |
-            entregador/android-app/app/build/outputs/apk/debug/Pitacco-Entregador-2.0.12-TESTE-PARALELO.apk
+            entregador/android-app/app/build/outputs/apk/debug/Pitacco-Entregador-2.0.13-TESTE-PARALELO.apk
             entregador/android-app/app/build/outputs/apk/debug/SHA256-ANDROID.txt
           if-no-files-found: error
 
@@ -176,13 +176,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          apk=distribution/Pitacco-Entregador-2.0.12.apk
+          apk=distribution/Pitacco-Entregador-2.0.13.apk
           aapt="$ANDROID_HOME/build-tools/35.0.0/aapt"
           test -s "$apk"
-          "$aapt" dump badging "$apk" | grep -F "package: name='br.com.pitacco.entregador'" | grep -F "versionCode='32'"
+          "$aapt" dump badging "$apk" | grep -F "package: name='br.com.pitacco.entregador'" | grep -F "versionCode='33'"
           "$aapt" dump permissions "$apk" | grep -F "android.permission.ACCESS_FINE_LOCATION"
           "$aapt" dump permissions "$apk" | grep -F "android.permission.ACCESS_COARSE_LOCATION"
           "$aapt" dump permissions "$apk" | grep -F "android.permission.ACCESS_BACKGROUND_LOCATION"
+          "$aapt" dump permissions "$apk" | grep -F "android.permission.ACTIVITY_RECOGNITION"
+          "$aapt" dump xmltree "$apk" AndroidManifest.xml | grep -F "CourierMotionReceiver"
           "$aapt" dump permissions "$apk" | grep -F "android.permission.POST_NOTIFICATIONS"
           "$aapt" dump permissions "$apk" | grep -F "android.permission.FOREGROUND_SERVICE"
           "$aapt" dump permissions "$apk" | grep -F "android.permission.FOREGROUND_SERVICE_LOCATION"
