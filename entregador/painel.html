@@ -94,6 +94,21 @@ a.btn{text-decoration:none}
     <div class="stat"><span class="stat-icon orange">↗</span><strong id="active">—</strong><span>Entregas em andamento</span></div>
     <div class="stat"><span class="stat-icon green">✓</span><strong id="done">—</strong><span>Concluídas hoje</span></div>
   </div>
+  <section class="courier-shared-map panel-white" aria-label="Mapa compartilhado das entregas">
+    <header class="courier-shared-map-header">
+      <div><span class="eyebrow">MAPA DAS ENTREGAS</span><h2>Loja, sua moto e destinos</h2></div>
+      <div class="courier-shared-map-actions">
+        <button type="button" class="btn secondary" id="courierMapAll">Ver tudo</button>
+        <button type="button" class="btn secondary" id="courierMapGps">Minha posição</button>
+      </div>
+    </header>
+    <div id="courierMap" class="courier-shared-map-canvas"
+      role="region" aria-label="Mapa interativo com loja, GPS e destinos dos pedidos atribuídos"></div>
+    <p id="courierMapStatus" class="courier-shared-map-status" role="status" aria-live="polite">Preparando mapa das entregas…</p>
+    <div class="courier-shared-map-legend" aria-label="Legenda">
+      <span>🏪 Loja</span><span>🛵 Seu GPS</span><span><b class="courier-map-mini-number">1</b> Entrega</span>
+    </div>
+  </section>
   <p id="notice" role="alert" aria-live="polite"></p>
   <h2 class="section-title">Seus pedidos <span class="auto-pill">Atualiza automaticamente</span></h2>
   <section id="routeSuggestions" class="route-suggestions" aria-label="Sequência de entregas agrupadas" hidden></section>
@@ -208,11 +223,13 @@ import {createDriverAuth} from "./supabase-client.mjs";
 import {createOrderDetailsController} from "./order-details.mjs";
 import {buildNavigationUrl,buildBatchNavigationUrl} from "./navigation.mjs";
 import {suggestedBatchRoutes} from "./route-sequence.mjs";
+import {mountCourierSharedMap,freshGps} from "./dispatch-map.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
 const orderDetails=createOrderDetailsController({supabase:sb,routeFor:delivery=>buildNavigationUrl(delivery,navProvider,navMode)});
 let courier=null, busy=false,routeOrigins=new Map(),lastCompletedBatchStops=new Map();
+let sharedCourierMap=null,mapLoadPromise=null,mapLastAttempt=0,mapLastGps=null;
 let gpsWatchId=null, gpsCourierId=null, gpsLastAttemptAt=0, gpsInFlight=false;
 let nativeGpsSupported=false, nativeGpsRunning=false;
 function gpsStatus(text){
@@ -349,6 +366,11 @@ function syncGpsSharing(){
  gpsWatchId=navigator.geolocation.watchPosition(async point=>{
   if(!courier?.available||courier.id!==gpsCourierId||navigator.onLine===false)return;
   const {latitude,longitude,accuracy}=point.coords;
+  if(Number.isFinite(point.timestamp)&&[latitude,longitude,accuracy].every(Number.isFinite)){
+   const local={latitude,longitude,accuracy_m:accuracy,
+    observed_at:new Date(point.timestamp).toISOString()};
+   if(freshGps(local)){mapLastGps=local;sharedCourierMap?.setGps(local);}
+  }
   if(!Number.isFinite(point.timestamp)||Date.now()-point.timestamp>15000){
    gpsStatus("GPS antigo. Aguardando localização atual…");return;
   }
@@ -467,6 +489,7 @@ function switchView(view){
   if(btn.dataset.tab===next)btn.setAttribute("aria-current","page");else btn.removeAttribute("aria-current");
  }
  if(location.hash!=="#"+next)history.replaceState(null,"","#"+next);
+ if(next==="pedidos"&&sharedCourierMap)requestAnimationFrame(()=>sharedCourierMap.resize());
  window.scrollTo({top:0,behavior:"instant"});
 }
 
@@ -1005,6 +1028,44 @@ function card(d){
  if(actions.children.length)box.append(actions);
  return box;
 }
+
+function courierMapStatus(){
+ if(!sharedCourierMap)return;
+ const summary=sharedCourierMap.setData({
+  origins:[...routeOrigins.values()].map(point=>({...point,
+   name:permittedStores.get(point.store_id)||'Loja de origem'})),
+  deliveries:assignedDeliveries,
+  numbers:Object.fromEntries([...orderCardBadges.entries()].map(([id,badge])=>[
+   id,String(badge?.public_number||'')
+  ]))
+ });
+ const captions=[];
+ if(summary.stores)captions.push(summary.stores===1?'Loja localizada':'Lojas localizadas: '+summary.stores);
+ else captions.push('A loja ainda precisa confirmar o ponto no mapa do lojista');
+ if(summary.deliveries)captions.push(summary.deliveries+' destino(s) com ponto confirmado');
+ if(summary.missing)captions.push(summary.missing+' entrega(s) sem coordenadas: abra a rota pelo endereço no cartão');
+ if(!assignedDeliveries.length)captions.push('Nenhuma entrega em andamento');
+ $('courierMapStatus').textContent=captions.join(' · ')+'.';
+}
+function mountCourierMapIfNeeded(){
+ if(sharedCourierMap){courierMapStatus();return;}
+ if(mapLoadPromise||Date.now()-mapLastAttempt<60000)return;
+ mapLastAttempt=Date.now();
+ const holder=$('courierMap');
+ mapLoadPromise=mountCourierSharedMap(holder,{
+  onOpenOrder:delivery=>orderDetails.open(delivery),
+  onNavigate:delivery=>buildNavigationUrl(delivery,navProvider,navMode)
+ }).then(map=>{
+  sharedCourierMap=map;
+  if(mapLastGps)map.setGps(mapLastGps);
+  courierMapStatus();
+  map.resize();
+ }).catch(err=>{
+  $('courierMapStatus').textContent='O mapa não pôde ser carregado: '+String(err?.message||err)+
+   '. Os pedidos e os botões de navegação continuam disponíveis.';
+ }).finally(()=>{mapLoadPromise=null;});
+}
+
 let refreshTask=null,refreshRequested=false;
 function refresh(afterMutation=false){
  if(refreshTask){
@@ -1024,11 +1085,13 @@ async function refreshSnapshot(){
  if(records.length!==1){await driver.signOut().catch(()=>{});location.replace("./acesso.html");return;}
  courier=records[0];
  // Independent, RLS-protected reads run concurrently to shorten launch time.
- const [authorized,list,badges,originsResult]=await Promise.all([
+ const [authorized,list,badges,originsResult,gpsResult]=await Promise.all([
   driver.myAllowedStores(),
   driver.myDeliveries([courier.id]),
   sb.rpc("pitacco_driver_card_badges"),
-  sb.rpc("pitacco_driver_route_origins")
+  sb.rpc("pitacco_driver_route_origins"),
+  sb.from('courier_positions').select('latitude,longitude,accuracy_m,observed_at')
+   .eq('courier_id',courier.id).maybeSingle()
  ]);
  permittedStores=new Map(authorized.map(row=>[row.store_id,row.store_name]));
  if(!permittedStores.size)permittedStores.set(courier.store_id,storeName);
@@ -1072,6 +1135,11 @@ async function refreshSnapshot(){
  orderDetails.keepActive(current);
  routeOrigins=new Map(!originsResult.error&&Array.isArray(originsResult.data)?
   originsResult.data.filter(p=>p?.store_id).map(p=>[p.store_id,p]):[]);
+ if(!gpsResult.error&&freshGps(gpsResult.data)){
+  mapLastGps=gpsResult.data;
+  sharedCourierMap?.setGps(mapLastGps);
+ }
+ mountCourierMapIfNeeded();
  renderRouteSuggestions(current);
  const target=$("cards");target.replaceChildren();
  if(!current.length){
@@ -1325,6 +1393,35 @@ async function boot(){
   $("cards").replaceChildren(element("div","empty","Não foi possível carregar as entregas."));
  }
 }
+$("courierMapAll").addEventListener("click",()=>{
+ if(!sharedCourierMap?.fitAll())
+  $('courierMapStatus').textContent='Ainda não há coordenadas confirmadas para centralizar o mapa.';
+});
+$("courierMapGps").addEventListener("click",()=>{
+ if(sharedCourierMap?.focusGps())return;
+ if(!navigator.geolocation){
+  $('courierMapStatus').textContent='Localização do aparelho indisponível. Confira as permissões do Android.';
+  return;
+ }
+ $('courierMapStatus').textContent='Obtendo sua localização com permissão do dispositivo…';
+ navigator.geolocation.getCurrentPosition(pos=>{
+  const gps={latitude:pos.coords.latitude,longitude:pos.coords.longitude,
+   accuracy_m:pos.coords.accuracy,observed_at:new Date(pos.timestamp).toISOString()};
+  if(!freshGps(gps)){
+   $('courierMapStatus').textContent='O dispositivo retornou uma localização desatualizada ou imprecisa.';
+   return;
+  }
+  mapLastGps=gps;
+  if(sharedCourierMap){
+   sharedCourierMap.setGps(gps);sharedCourierMap.focusGps();
+  }else mountCourierMapIfNeeded();
+  courierMapStatus();
+ },error=>{
+  $('courierMapStatus').textContent=error.code===1
+   ?'Autorize o GPS nas permissões do Pitacco Entregador.'
+   :'Não foi possível obter a localização. Ative o GPS e tente novamente.';
+ },{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+});
 $("retryCourierGps").addEventListener("click",()=>{
  const bridge=window.PitaccoGps;
  if(bridge?.postMessage){
