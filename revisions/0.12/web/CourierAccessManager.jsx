@@ -73,6 +73,12 @@ export default function CourierAccessManager({client,store,onDataChanged}){
   async function register(event){
     event.preventDefault();
     if(!name.trim()||!phone.trim())return;
+    const digits=phone.replace(/\D/g,'');
+    const national=digits.startsWith('55')&&digits.length===13?digits.slice(2):digits;
+    if(!/^[1-9][0-9]9[0-9]{8}$/.test(national)){
+      setError('Informe um celular com DDD válido, como (21) 99999-9999 (11 dígitos).');
+      return;
+    }
     const problem=validateRemuneration(remuneration);
     if(problem){setError(problem);return;}
     const submittedPhone=phone;
@@ -150,6 +156,7 @@ export default function CourierAccessManager({client,store,onDataChanged}){
         <div className="pitacco-driver-person">
           <strong>{c.name}</strong><span>{c.phone||'Telefone não informado'}</span>
           <small className={c.active?'pitacco-driver-active':'pitacco-driver-inactive'}>{c.active?<><CheckCircle2 size={13}/> Ativo</>:<><UserRoundX size={13}/> Desativado</>}</small>
+          {c.shared&&<small className="pitacco-driver-active">Compartilhado com esta loja (teste autorizado)</small>}
           <small className="pitacco-driver-pay-label">{remunerationLabel(c.remuneration)}</small>
         </div>
         <div className="pitacco-driver-access-buttons">
@@ -157,9 +164,9 @@ export default function CourierAccessManager({client,store,onDataChanged}){
             onClick={()=>{setEditing(editing===c.id?null:c.id);setEditingPay(c.remuneration||{...emptyRemuneration});setError('');}}>
             Editar remuneração
           </button>
-          {c.active?<><button type="button" className="secondary" disabled={busy} onClick={()=>action('reset',c)}><KeyRound size={15}/> Redefinir senha</button>
+          {!c.shared&&(c.active?<><button type="button" className="secondary" disabled={busy} onClick={()=>action('reset',c)}><KeyRound size={15}/> Redefinir senha</button>
             <button type="button" className="secondary" disabled={busy} onClick={()=>action('disable',c)}><UserRoundX size={15}/> Desativar</button></>:
-            <button type="button" disabled={busy} onClick={()=>action('reactivate',c)}><UserRoundCheck size={15}/> Reativar</button>}
+            <button type="button" disabled={busy} onClick={()=>action('reactivate',c)}><UserRoundCheck size={15}/> Reativar</button>)}
         </div>
         {editing===c.id&&<form className="pitacco-driver-edit-pay"
           onSubmit={event=>saveRemuneration(event,c)}>
