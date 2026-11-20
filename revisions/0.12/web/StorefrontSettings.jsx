@@ -115,6 +115,11 @@ export function StorefrontPayments({client,storeId,resource}){
 }
 
 
+
+const MAX_DELIVERY_POLYGONS=12;
+const deliveryRegionColors=['#ea580c','#2563eb','#059669','#9333ea','#d97706',
+ '#db2777','#0e7490','#be123c','#64748b','#0d9488','#7c3aed','#ca8a04'];
+
 export function StoreDeliveryArea({client,store}){
  const [automaticPoint,setAutomaticPoint]=useState(null);
  const [locationState,setLocationState]=useState('idle');
@@ -122,17 +127,15 @@ export function StoreDeliveryArea({client,store}){
  const [locationMessage,setLocationMessage]=useState('');
  const locationAttempts=useRef(null);
  const savedPoint=shopPoint(store);
- // Never use a geocoder's street-level suggestion as the freight origin.
- // Exact geocoding is persisted by the server; unverified results only
- // appear in Dados e identidade for manual confirmation.
+ // Unverified address-centre suggestions must never be used to charge freight.
  const origin=savedPoint||(automaticPoint?.storeId===store.id&&!automaticPoint.approximate?automaticPoint.point:null);
  const address=[store.address,store.address_number,store.neighborhood,
-   store.city,store.state,store.postal_code].filter(Boolean).join(', ');
+  store.city,store.state,store.postal_code].filter(Boolean).join(', ');
  const [mode,setMode]=useState('circle');
  const [radius,setRadius]=useState(5);
  const [rates,setRates]=useState(Array(10).fill(0));
- const [polygon,setPolygon]=useState([]);
- const [polygonFee,setPolygonFee]=useState(0);
+ const [regions,setRegions]=useState([]);
+ const [activeRegionId,setActiveRegionId]=useState(null);
  const [status,setStatus]=useState('loading');
  const [error,setError]=useState(''),[notice,setNotice]=useState('');
  const [busy,setBusy]=useState(false);
@@ -140,11 +143,11 @@ export function StoreDeliveryArea({client,store}){
  const [revision,setRevision]=useState(0);
  const [reloadAreas,setReloadAreas]=useState(0);
  const container=useRef(null),map=useRef(null);
- // Keep the latest selection while Leaflet loads asynchronously on mobile.
- const liveMapOptions=useRef({mode,radius,polygon});
- liveMapOptions.current={mode,radius,polygon};
- // Opening Áreas de Entrega must resolve the merchant's SAVED street address.
- // It must not require manually visiting another tab or filling coordinates.
+ const activeRegion=regions.find(region=>region.id===activeRegionId)||null;
+ const polygon=activeRegion?.vertices||[];
+ const liveMapOptions=useRef({mode,radius,regions,activeRegionId});
+ liveMapOptions.current={mode,radius,regions,activeRegionId};
+
  useEffect(()=>{
   if(savedPoint||!store?.id)return;
   if(!store.address?.trim()||!store.city?.trim()||!store.state?.trim()){
@@ -165,33 +168,45 @@ export function StoreDeliveryArea({client,store}){
    setLocationMessage(approximate
     ?'Endereço encontrado apenas de forma aproximada. Confirme a entrada da loja em Dados e identidade antes de configurar o frete.'
     :'Loja localizada automaticamente pelo endereço cadastrado.');
-  }).catch(error=>{
+  }).catch(failure=>{
    if(!alive)return;
    setLocationState('error');
-   setLocationMessage('Não conseguimos localizar a loja automaticamente: '+(error.message||String(error))+
+   setLocationMessage('Não conseguimos localizar a loja automaticamente: '+(failure.message||String(failure))+
     '. O mapa continua disponível e você pode marcar a entrada em Dados e identidade.');
   });
   return()=>{alive=false;};
  },[client,store?.id,store?.address,store?.address_number,store?.neighborhood,
    store?.city,store?.state,store?.postal_code,savedPoint?.[0],savedPoint?.[1],locationRetry]);
- function retryLocation(){locationAttempts.current=null;setLocationState('idle');setAutomaticPoint(null);
-  setLocationMessage('');setLocationRetry(n=>n+1);}
+ function retryLocation(){
+  locationAttempts.current=null;setLocationState('idle');setAutomaticPoint(null);
+  setLocationMessage('');setLocationRetry(n=>n+1);
+ }
+
  useEffect(()=>{
   let live=true;
   setStatus('loading');setError('');
   (async()=>{
    try{
     const {data,error}=await client.from('pitacco_delivery_pricing')
-     .select('coverage_type,max_radius_km,distance_fees,polygon,polygon_fee,enabled')
+     .select('coverage_type,max_radius_km,distance_fees,polygon,polygon_fee,polygons,enabled')
      .eq('store_id',store.id).maybeSingle();
     if(error)throw error;
     if(!live)return;
-    setMode(data?.coverage_type==='polygon'?'polygon':'circle');
+    const isPolygon=data?.coverage_type==='polygon'||data?.coverage_type==='polygons';
+    const stored=Array.isArray(data?.polygons)&&data.polygons.length
+     ?data.polygons:Array.isArray(data?.polygon)&&data.polygon.length>=3
+      ?[{id:'legacy-'+store.id,name:'Região 1',vertices:data.polygon,fee:Number(data.polygon_fee||0)}]:[];
+    const normalized=stored.map((item,i)=>({
+     id:String(item.id||'regiao-'+i),name:String(item.name||'Região '+(i+1)),
+     vertices:Array.isArray(item.vertices)?item.vertices:[],
+     fee:Number(item.fee||0)
+    }));
+    setMode(isPolygon?'polygon':'circle');
     setRadius(data?.max_radius_km||5);
     setRates(Array.isArray(data?.distance_fees)&&data.distance_fees.length===10
-      ?data.distance_fees.map(Number):Array(10).fill(0));
-    setPolygon(Array.isArray(data?.polygon)?data.polygon:[]);
-    setPolygonFee(Number(data?.polygon_fee||0));
+     ?data.distance_fees.map(Number):Array(10).fill(0));
+    setRegions(normalized);
+    setActiveRegionId(normalized[0]?.id||null);
     setEnabled(Boolean(data?.enabled));
     setRevision(n=>n+1);
     setStatus('ready');
@@ -201,109 +216,207 @@ export function StoreDeliveryArea({client,store}){
   })();
   return()=>{live=false};
  },[client,store.id,reloadAreas]);
+
  useEffect(()=>{
   if(status!=='ready'||!container.current)return;
   let alive=true;
   mountDeliveryCoverageMap(container.current,{
-   center:origin,mode,radiusKm:radius,vertices:polygon,
-   onVerticesChange:next=>{if(alive){setPolygon(next);setNotice('');}}
+   center:origin,mode,radiusKm:radius,regions,activeRegionId,
+   onVerticesChange:(next,id)=>{if(alive){
+    setRegions(previous=>previous.map(region=>
+     region.id===id?{...region,vertices:next}:region));
+    setNotice('');
+   }},
+   onSelectRegion:id=>{if(alive)setActiveRegionId(id)}
   }).then(instance=>{
-    if(!alive){instance.remove();return;}
-    map.current=instance;
-    // A radio click may occur before the Leaflet bundle finishes loading.
-    const latest=liveMapOptions.current;
-    instance.setMode(latest.mode);
-    instance.setRadius(latest.radius);
-    instance.setVertices(latest.polygon);
-    instance.resize();
+   if(!alive){instance.remove();return;}
+   map.current=instance;
+   const latest=liveMapOptions.current;
+   instance.setMode(latest.mode);
+   instance.setRadius(latest.radius);
+   instance.setRegions(latest.regions,latest.activeRegionId);
+   instance.resize();
   }).catch(failure=>{if(alive)setError('Mapa indisponível: '+failure.message)});
   return()=>{alive=false;map.current?.remove();map.current=null};
  },[store.id,status,origin?.[0],origin?.[1],revision]);
  useEffect(()=>map.current?.setMode(mode),[mode]);
  useEffect(()=>map.current?.setRadius(radius),[radius]);
- function undoVertex(){setPolygon(previous=>{
-  const next=previous.slice(0,-1);map.current?.setVertices(next);return next;
- })}
- function clearVertices(){setPolygon([]);map.current?.setVertices([]);}
- function setFee(index,value){setRates(previous=>previous.map((v,i)=>i===index?value:v))}
+ useEffect(()=>map.current?.setRegions(regions,activeRegionId),[regions,activeRegionId]);
+
+ function updateRegion(id,patch){
+  setRegions(previous=>previous.map(region=>region.id===id?{...region,...patch}:region));
+  setNotice('');
+ }
+ function addRegion(){
+  if(regions.length>=MAX_DELIVERY_POLYGONS)return;
+  const id=crypto.randomUUID();
+  setRegions(previous=>[...previous,{
+   id,name:'Região '+(previous.length+1),vertices:[],fee:0
+  }]);
+  setActiveRegionId(id);
+  setNotice('');
+ }
+ function removeRegion(id){
+  const remaining=regions.filter(region=>region.id!==id);
+  setRegions(remaining);
+  if(activeRegionId===id)setActiveRegionId(remaining[0]?.id||null);
+  setNotice('');
+ }
+ function shiftRegion(id,direction){
+  const index=regions.findIndex(region=>region.id===id),nextIndex=index+direction;
+  if(index<0||nextIndex<0||nextIndex>=regions.length)return;
+  const reordered=[...regions];
+  [reordered[index],reordered[nextIndex]]=[reordered[nextIndex],reordered[index]];
+  setRegions(reordered);
+  setNotice('');
+ }
+ function undoVertex(){
+  if(!activeRegion?.vertices.length)return;
+  updateRegion(activeRegion.id,{vertices:activeRegion.vertices.slice(0,-1)});
+ }
+ function clearVertices(){
+  if(activeRegion)updateRegion(activeRegion.id,{vertices:[]});
+ }
+ function setFee(index,value){
+  setRates(previous=>previous.map((v,i)=>i===index?value:v));
+ }
  async function save(event){
   event.preventDefault();setBusy(true);setError('');setNotice('');
   try{
    if(!origin)throw Error('Marque primeiro a entrada da loja em Dados e identidade.');
    if(!address)throw Error('Cadastre o endereço completo da loja.');
-   if(mode==='polygon'&&polygon.length<3)
-    throw Error('Desenhe pelo menos três pontos para fechar o polígono.');
-   const fees=rates.map(Number),flat=Number(polygonFee);
-   if(fees.some(value=>!Number.isFinite(value)||value<0||value>999.99)||
-      !Number.isFinite(flat)||flat<0||flat>999.99)
-    throw Error('Confira os valores de entrega.');
-   const {data,error}=await client.rpc('pitacco_save_delivery_zone',{
-    p_store:store.id,p_mode:mode,p_radius:radius,p_distance:fees,
-    p_polygon:mode==='polygon'?polygon:[],p_polygon_fee:flat,
-   });
-   if(error)throw error;
-   if(!data?.saved||!data?.enabled)throw Error('A configuração não foi confirmada.');
+   let result;
+   if(mode==='polygon'){
+    if(!regions.length||regions.length>MAX_DELIVERY_POLYGONS)
+     throw Error('Cadastre de 1 a 12 regiões poligonais.');
+    for(const region of regions){
+     if(!region.name?.trim()||region.name.trim().length>60)
+      throw Error('Informe um nome de até 60 caracteres para cada região.');
+     if(!Array.isArray(region.vertices)||region.vertices.length<3||region.vertices.length>30)
+      throw Error('A região "'+region.name+'" precisa ter de 3 a 30 pontos no mapa.');
+     if(!Number.isFinite(Number(region.fee))||Number(region.fee)<0||Number(region.fee)>999.99)
+      throw Error('Confira o valor do frete da região "'+region.name+'".');
+    }
+    result=await client.rpc('pitacco_save_delivery_polygons',{
+     p_store:store.id,p_polygons:regions.map(region=>({
+      id:region.id,name:region.name.trim(),
+      vertices:region.vertices,fee:Number(region.fee)
+     }))
+    });
+   }else{
+    // Circle pricing stays unchanged, including individual per-km fees.
+    const fees=rates.map(Number);
+    if(fees.some(value=>!Number.isFinite(value)||value<0||value>999.99))
+     throw Error('Confira os valores de entrega por quilômetro.');
+    result=await client.rpc('pitacco_save_delivery_zone',{
+     p_store:store.id,p_mode:'circle',p_radius:radius,p_distance:fees,
+     p_polygon:[],p_polygon_fee:0
+    });
+   }
+   if(result.error)throw result.error;
+   if(!result.data?.saved||!result.data?.enabled)
+    throw Error('A configuração não foi confirmada.');
+   if(mode==='polygon'&&Array.isArray(result.data.polygons)){
+    setRegions(result.data.polygons);
+   }
    setEnabled(true);
-   setNotice('Área e valores de entrega salvos. O cardápio calculará o frete exclusivamente pelas regras desta tela.');
+   setNotice(mode==='polygon'
+    ?'Regiões poligonais salvas. O cardápio aplicará a taxa da primeira região que contiver o cliente.'
+    :'Taxas do círculo por quilômetro salvas para o cardápio digital.');
   }catch(failure){setError(failure.message||'Não foi possível salvar a área de entrega.');}
   finally{setBusy(false)}
  }
  return <section className="panel" aria-label="Área de entrega">
   <h3>Administrar Loja · Área de Entrega</h3>
-  <p>Defina no mapa exatamente onde sua loja entrega. O frete do cardápio usa somente os limites e preços escolhidos aqui.</p>
+  <p>Configure o círculo com taxas por km ou várias regiões poligonais com um preço por região. O cardápio utiliza somente o modo que você salvar.</p>
   <p><strong>Loja:</strong> {address||'Cadastre o endereço em Dados e identidade.'}</p>
-  {!origin&&<p role="status">Aguardando a localização da loja pelo endereço cadastrado. Você já pode escolher círculo ou polígono; será possível salvar assim que o marcador estiver localizado.</p>}
+  {!origin&&<p role="status">Aguardando a posição confirmada da loja. Você pode desenhar as regiões, mas só poderá ativar o frete quando confirmar o ponto de partida.</p>}
   {locationMessage&&<p role="status" className="storefront-delivery-note">{locationMessage}</p>}
   {locationState==='error'&&<button type="button" className="secondary" onClick={retryLocation}>Tentar localizar novamente</button>}
-  {status==='loading'&&<p role="status">Carregando área de entrega…</p>}
+  {status==='loading'&&<p role="status">Carregando áreas de entrega…</p>}
   {status==='error'&&<button type="button" onClick={()=>setReloadAreas(n=>n+1)}>Tentar novamente</button>}
   {status==='ready'&&<form onSubmit={save} className="delivery-zone-config">
    <fieldset disabled={busy}>
     <legend>Como delimitar a área de entrega?</legend>
     <div className="delivery-zone-mode">
      <label><input type="radio" name="delivery-zone-shape" checked={mode==='circle'}
-       onChange={()=>{setMode('circle');setNotice('')}}/> Círculo por km em linha reta</label>
+      onChange={()=>{setMode('circle');setNotice('')}}/> Círculo por km em linha reta</label>
      <label><input type="radio" name="delivery-zone-shape" checked={mode==='polygon'}
-       onChange={()=>{setMode('polygon');setNotice('')}}/> Polígono desenhado no mapa</label>
+      onChange={()=>{setMode('polygon');setNotice('')}}/> Polígonos por região</label>
     </div>
-    {mode==='circle'&&<label className="delivery-zone-range">
-      <span>Raio de atendimento: <strong>{radius} km</strong> em linha reta</span>
-      <input type="range" min="1" max="10" step="1" value={radius}
-       onChange={e=>setRadius(Number(e.target.value))}/>
-    </label>}
-    {mode==='polygon'&&<div className="delivery-zone-polygon-actions">
-      <p>Toque no mapa para ligar os pontos. Arraste um ponto para corrigir a divisa. Com três ou mais pontos, a região ficará preenchida.</p>
-      <div><button type="button" className="secondary" disabled={!polygon.length}
-       onClick={undoVertex}>Desfazer último ponto</button>
-       <button type="button" className="secondary" disabled={!polygon.length}
-       onClick={clearVertices}>Limpar desenho</button>
-       <span>{polygon.length} de 30 pontos</span></div>
-    </div>}
+    {mode==='circle'?<label className="delivery-zone-range">
+     <span>Raio de atendimento: <strong>{radius} km</strong> em linha reta</span>
+     <input type="range" min="1" max="10" step="1" value={radius}
+      onChange={e=>setRadius(Number(e.target.value))}/>
+    </label>:<>
+     <div className="delivery-region-heading">
+      <strong>Regiões de entrega ({regions.length} de {MAX_DELIVERY_POLYGONS})</strong>
+      <button type="button" className="secondary"
+       disabled={regions.length>=MAX_DELIVERY_POLYGONS||busy} onClick={addRegion}>+ Adicionar região</button>
+     </div>
+     <p>Selecione uma região para desenhar no mapa. Você pode criar pelo menos sete polígonos, renomear, ajustar e definir um frete diferente para cada um.</p>
+     <div className="delivery-region-list" role="list" aria-label="Regiões poligonais e suas prioridades">
+      {regions.map((region,index)=><div role="listitem" key={region.id}
+       className={'delivery-region-item'+(region.id===activeRegionId?' is-selected':'')}>
+       <button type="button" className="delivery-region-select"
+        onClick={()=>{setActiveRegionId(region.id);map.current?.focusRegion(region.id)}}>
+        <span className="delivery-region-dot" style={{backgroundColor:deliveryRegionColors[index%deliveryRegionColors.length]}}/>
+        <span><strong>{index+1}. {region.name||'Região sem nome'}</strong>
+         <small>{region.vertices.length} pontos · R$ {Number(region.fee||0).toFixed(2).replace('.',',')}</small>
+        </span>
+       </button>
+       <div className="delivery-region-item-actions">
+        <button type="button" title="Subir prioridade" aria-label={'Subir '+region.name}
+         disabled={index===0} onClick={()=>shiftRegion(region.id,-1)}>↑</button>
+        <button type="button" title="Descer prioridade" aria-label={'Descer '+region.name}
+         disabled={index===regions.length-1} onClick={()=>shiftRegion(region.id,1)}>↓</button>
+        <button type="button" title="Excluir região" aria-label={'Excluir '+region.name}
+         onClick={()=>removeRegion(region.id)}>×</button>
+       </div>
+      </div>)}
+     </div>
+     {activeRegion?<div className="delivery-region-editor">
+      <strong>Editar região selecionada</strong>
+      <div className="delivery-zone-rates">
+       <label>Nome da região
+        <input type="text" maxLength="60" required value={activeRegion.name}
+         onChange={e=>updateRegion(activeRegion.id,{name:e.target.value})}/></label>
+       <label>Valor do frete (R$)
+        <input type="number" inputMode="decimal" required min="0" max="999.99"
+         step="0.01" value={activeRegion.fee}
+         onChange={e=>updateRegion(activeRegion.id,{fee:e.target.value})}/></label>
+      </div>
+      <p>Toque no mapa para ligar os pontos desta região. Arraste os marcadores numerados para corrigir a divisa. As demais regiões continuam visíveis.</p>
+      <div className="delivery-zone-polygon-actions">
+       <div><button type="button" className="secondary" disabled={!polygon.length}
+         onClick={undoVertex}>Desfazer último ponto</button>
+        <button type="button" className="secondary" disabled={!polygon.length}
+         onClick={clearVertices}>Limpar desenho</button>
+        <span>{polygon.length} de 30 pontos nesta região</span>
+       </div>
+      </div>
+     </div>:<p>Adicione uma região para começar a desenhar.</p>}
+     <p className="storefront-delivery-note">Se duas regiões se sobrepuserem, o sistema usa a <strong>primeira região da lista</strong>. Use as setas para mudar a prioridade. Um ponto fora de todas as regiões não recebe entrega.</p>
+    </>}
    </fieldset>
    <div ref={container} className="storefront-map delivery-zone-map"
     aria-label="Mapa visual para delimitar onde a loja faz entregas"/>
    <small>Geocodificação quando habilitada: Powered by <a href="https://www.geoapify.com/" target="_blank" rel="noreferrer">Geoapify</a>.</small>
-   <fieldset disabled={busy||!origin}>
+   {mode==='circle'&&<fieldset disabled={busy||!origin}>
     <legend>Quanto cobrar de frete?</legend>
-    {mode==='circle'?<>
-     <p>Escolha o frete de cada faixa de distância em <strong>linha reta</strong> a partir do marcador da loja. Distâncias fora do círculo não serão atendidas.</p>
-     <div className="delivery-zone-rates">
-      {rates.slice(0,radius).map((fee,i)=><label key={i}>Até {i+1} km (R$)
-       <input type="number" inputMode="decimal" required min="0" max="999.99"
-        step="0.01" value={fee} onChange={e=>setFee(i,e.target.value)}/></label>)}
-     </div>
-    </>:<label>Taxa fixa para todo o polígono (R$)
+    <p>Escolha o frete de cada faixa em <strong>linha reta</strong> a partir da lojinha. Distâncias fora do círculo não serão atendidas.</p>
+    <div className="delivery-zone-rates">
+     {rates.slice(0,radius).map((fee,i)=><label key={i}>Até {i+1} km (R$)
       <input type="number" inputMode="decimal" required min="0" max="999.99"
-       step="0.01" value={polygonFee} onChange={e=>setPolygonFee(e.target.value)}/>
-      <small>Pedidos fora do polígono serão recusados. É necessário confirmar o ponto do cliente no mapa.</small>
-     </label>}
-   </fieldset>
-   <p className="storefront-delivery-note">O mapa e o cálculo do frete usam o mesmo limite. Frete grátis pode ser configurado como R$ 0,00. Distância por ruas não é a mesma coisa que distância em linha reta.</p>
-   {enabled&&<p role="status">Regras de entrega ativas para o cardápio. Se alterar os limites ou preços, salve novamente.</p>}
+       step="0.01" value={fee} onChange={e=>setFee(i,e.target.value)}/></label>)}
+    </div>
+   </fieldset>}
+   <p className="storefront-delivery-note">O mesmo limite desenhado no mapa define onde o cardápio permite entregas. Frete grátis pode ser configurado como R$ 0,00.</p>
+   {enabled&&<p role="status">Regras de entrega ativas. Se alterar o modo, os limites ou os preços, salve novamente.</p>}
    {error&&<p role="alert">{error}</p>}
    {notice&&<p role="status">{notice}</p>}
    <button type="submit" disabled={busy||!origin||status!=='ready'}>
-    {busy?'Salvando…':'Salvar e ativar área de entrega'}
+    {busy?'Salvando…':mode==='polygon'?'Salvar e ativar regiões poligonais':'Salvar e ativar círculo de entrega'}
    </button>
   </form>}
  </section>;
