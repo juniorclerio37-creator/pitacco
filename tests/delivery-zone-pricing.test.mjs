@@ -40,7 +40,8 @@ test('fees are configured exclusively inside delivery area, not Payment or onboa
  assert.match(settings,/pitacco_save_delivery_zone/);
  assert.match(settings,/mode==='circle'/);
  assert.match(settings,/mode==='polygon'/);
- assert.match(settings,/Salvar e ativar área de entrega/);
+ assert.match(settings,/Salvar e ativar círculo de entrega/);
+ assert.match(settings,/Salvar e ativar regiões poligonais/);
  assert.match(setup,/p_delivery_fee:0/);
  assert.doesNotMatch(setup,/id="fee"/);
 });
@@ -54,7 +55,8 @@ test('merchant config shares pinned store origin and visual coverage with custom
  assert.match(settings,/onVerticesChange/);
  assert.match(map,/export async function mountDeliveryCoverageMap/);
  assert.match(map,/L\.circle\(point/);
- assert.match(map,/L\.polygon\(polygon/);
+ assert.match(map,/L\.polygon\(vertices/);
+ assert.match(map,/L\.polygon\(pts/);
  assert.match(map,/draggable:true/);
  assert.match(map,/export async function mountDeliveryMap/);
  assert.match(map,/mode==='polygon'/);
@@ -78,4 +80,54 @@ test('server calculates delivery fee using authorized shape and saves destinatio
  assert.match(publicMenu,/pitacco_delivery_quote_point/);
  assert.match(publicMenu,/pitacco\.checkout_delivery_point/);
  assert.match(publicMenu,/route_pricing/);
+});
+
+test('seven or more independent polygons can have different fees and consistent overlap priority',()=>{
+ const makeSquare=(lat,lng,size=.008)=>[
+  [lat,lng],[lat,lng+size],[lat+size,lng+size],[lat+size,lng]
+ ];
+ const zones=Array.from({length:7},(_,i)=>({
+  name:'Região '+(i+1),
+  vertices:makeSquare(-22.8+i*.002,-43.5+i*.002),
+  fee:4.5+i
+ }));
+ assert.equal(zones.length,7);
+ assert.ok(zones.every(z=>polygonValid(z.vertices)));
+ const overlapping=[-22.795,-43.494];
+ const chosen=zones.find(z=>withinPolygon(overlapping,z.vertices));
+ assert.equal(chosen.name,'Região 1','first matching region wins');
+ assert.equal(chosen.fee,4.5);
+ assert.equal(zones.find(z=>withinPolygon([-22.7,-43.3],z.vertices)),undefined);
+});
+
+test('server preserves circle-by-km while quoting up to twelve ordered polygons',()=>{
+ const edge=read('supabase/functions/delivery-quote/index.ts');
+ const migration=read('supabase/migrations/20261120233000_enable_up_to_twelve_delivery_polygons.sql');
+ const publicMap=read('supabase/migrations/20261120233500_public_map_multiple_regions.sql');
+ assert.match(edge,/mode==='circle'\|\|mode==='polygon'\|\|mode==='polygons'/);
+ assert.match(edge,/fee=Number\(rules\.distance_fees\?\.\[bracket-1\]\)/);
+ assert.match(edge,/if\(withinPolygon\(to,vertices\)\)\{matched=region;break;\}/);
+ assert.match(edge,/region_name:regionName/);
+ assert.match(migration,/jsonb_array_length\(p_polygons\) not between 1 and 12/);
+ assert.match(migration,/where coverage_type='polygon'/);
+ assert.match(migration,/jsonb_build_object\('id',gen_random_uuid\(\)::text/);
+ assert.match(migration,/public\.is_store_manager\(p_store\)/);
+ assert.match(publicMap,/'polygons',r\.polygons/);
+});
+
+test('merchant can add, rename, reorder and price regions independently',()=>{
+ const settings=read('revisions/0.12/web/StorefrontSettings.jsx');
+ const map=read('revisions/0.12/web/deliveryMap.mjs');
+ const checkout=read('marketing/cardapio.html');
+ assert.match(settings,/MAX_DELIVERY_POLYGONS=12/);
+ assert.match(settings,/pitacco_save_delivery_polygons/);
+ assert.match(settings,/Adicionar região/);
+ assert.match(settings,/Nome da região/);
+ assert.match(settings,/Valor do frete \(R\$\)/);
+ assert.match(settings,/shiftRegion\(region\.id,-1\)/);
+ assert.match(settings,/onVerticesChange:\(next,id\)/);
+ assert.match(map,/polygonRegions\.forEach/);
+ assert.match(map,/onSelectRegion\?\.\(region\.id\)/);
+ assert.match(map,/mode==='polygons'/);
+ assert.match(checkout,/polygons:Array\.isArray\(polygons\)\?polygons:\[\]/);
 });
