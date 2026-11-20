@@ -1,6 +1,7 @@
 import React, {useEffect,useRef,useState} from 'react';
 import {invoke} from './printBridge.mjs';
 import {mountDeliveryCoverageMap} from './deliveryMap.mjs';
+import {shopPoint,locateStoreByAddress} from './mapOrigin.mjs';
 import {storefrontLink} from './storefrontLink.mjs';
 
 const origin=import.meta.env.VITE_PITACCO_HOMOLOGACAO==='1'
@@ -115,9 +116,13 @@ export function StorefrontPayments({client,storeId,resource}){
 
 
 export function StoreDeliveryArea({client,store}){
- const origin=store?.latitude!=null&&store?.longitude!=null&&
-   Number.isFinite(Number(store.latitude))&&Number.isFinite(Number(store.longitude))
-  ?[Number(store.latitude),Number(store.longitude)]:null;
+ const [automaticPoint,setAutomaticPoint]=useState(null);
+ const [locationState,setLocationState]=useState('idle');
+ const [locationRetry,setLocationRetry]=useState(0);
+ const [locationMessage,setLocationMessage]=useState('');
+ const locationAttempts=useRef(null);
+ const savedPoint=shopPoint(store);
+ const origin=savedPoint||(automaticPoint?.storeId===store.id?automaticPoint.point:null);
  const address=[store.address,store.address_number,store.neighborhood,
    store.city,store.state,store.postal_code].filter(Boolean).join(', ');
  const [mode,setMode]=useState('circle');
@@ -132,6 +137,42 @@ export function StoreDeliveryArea({client,store}){
  const [revision,setRevision]=useState(0);
  const [reloadAreas,setReloadAreas]=useState(0);
  const container=useRef(null),map=useRef(null);
+ // Keep the latest selection while Leaflet loads asynchronously on mobile.
+ const liveMapOptions=useRef({mode,radius,polygon});
+ liveMapOptions.current={mode,radius,polygon};
+ // Opening Áreas de Entrega must resolve the merchant's SAVED street address.
+ // It must not require manually visiting another tab or filling coordinates.
+ useEffect(()=>{
+  if(savedPoint||!store?.id)return;
+  if(!store.address?.trim()||!store.city?.trim()||!store.state?.trim()){
+   setLocationMessage('Cadastre rua, cidade e estado em Dados e identidade.');
+   return;
+  }
+  const key=[store.id,store.address,store.address_number,store.neighborhood,
+   store.city,store.state,store.postal_code].map(x=>String(x||'').trim()).join('|');
+  if(locationAttempts.current===key)return;
+  locationAttempts.current=key;
+  let alive=true;
+  setLocationState('loading');
+  setLocationMessage('Localizando a loja automaticamente pelo endereço cadastrado…');
+  locateStoreByAddress(client,store.id).then(({point,approximate})=>{
+   if(!alive)return;
+   setAutomaticPoint({storeId:store.id,point});
+   setLocationState('ready');
+   setLocationMessage(approximate
+    ?'Área centralizada em uma posição estimada. Confira a entrada da loja em Dados e identidade.'
+    :'Loja localizada automaticamente pelo endereço cadastrado.');
+  }).catch(error=>{
+   if(!alive)return;
+   setLocationState('error');
+   setLocationMessage('Não conseguimos localizar a loja automaticamente: '+(error.message||String(error))+
+    '. O mapa continua disponível e você pode marcar a entrada em Dados e identidade.');
+  });
+  return()=>{alive=false;};
+ },[client,store?.id,store?.address,store?.address_number,store?.neighborhood,
+   store?.city,store?.state,store?.postal_code,savedPoint?.[0],savedPoint?.[1],locationRetry]);
+ function retryLocation(){locationAttempts.current=null;setLocationState('idle');setAutomaticPoint(null);
+  setLocationMessage('');setLocationRetry(n=>n+1);}
  useEffect(()=>{
   let live=true;
   setStatus('loading');setError('');
@@ -158,13 +199,21 @@ export function StoreDeliveryArea({client,store}){
   return()=>{live=false};
  },[client,store.id,reloadAreas]);
  useEffect(()=>{
-  if(!origin||status!=='ready'||!container.current)return;
+  if(status!=='ready'||!container.current)return;
   let alive=true;
   mountDeliveryCoverageMap(container.current,{
    center:origin,mode,radiusKm:radius,vertices:polygon,
    onVerticesChange:next=>{if(alive){setPolygon(next);setNotice('');}}
-  }).then(instance=>{if(alive)map.current=instance;else instance.remove()})
-    .catch(failure=>{if(alive)setError('Mapa indisponível: '+failure.message)});
+  }).then(instance=>{
+    if(!alive){instance.remove();return;}
+    map.current=instance;
+    // A radio click may occur before the Leaflet bundle finishes loading.
+    const latest=liveMapOptions.current;
+    instance.setMode(latest.mode);
+    instance.setRadius(latest.radius);
+    instance.setVertices(latest.polygon);
+    instance.resize();
+  }).catch(failure=>{if(alive)setError('Mapa indisponível: '+failure.message)});
   return()=>{alive=false;map.current?.remove();map.current=null};
  },[store.id,status,origin?.[0],origin?.[1],revision]);
  useEffect(()=>map.current?.setMode(mode),[mode]);
@@ -200,11 +249,13 @@ export function StoreDeliveryArea({client,store}){
   <h3>Administrar Loja · Área de Entrega</h3>
   <p>Defina no mapa exatamente onde sua loja entrega. O frete do cardápio usa somente os limites e preços escolhidos aqui.</p>
   <p><strong>Loja:</strong> {address||'Cadastre o endereço em Dados e identidade.'}</p>
-  {!origin&&<p role="alert">Antes de configurar a área, abra <strong>Dados e identidade</strong> e marque a entrada exata da loja no mapa.</p>}
+  {!origin&&<p role="status">Aguardando a localização da loja pelo endereço cadastrado. Você já pode escolher círculo ou polígono; será possível salvar assim que o marcador estiver localizado.</p>}
+  {locationMessage&&<p role="status" className="storefront-delivery-note">{locationMessage}</p>}
+  {locationState==='error'&&<button type="button" className="secondary" onClick={retryLocation}>Tentar localizar novamente</button>}
   {status==='loading'&&<p role="status">Carregando área de entrega…</p>}
   {status==='error'&&<button type="button" onClick={()=>setReloadAreas(n=>n+1)}>Tentar novamente</button>}
   {status==='ready'&&<form onSubmit={save} className="delivery-zone-config">
-   <fieldset disabled={busy||!origin}>
+   <fieldset disabled={busy}>
     <legend>Como delimitar a área de entrega?</legend>
     <div className="delivery-zone-mode">
      <label><input type="radio" name="delivery-zone-shape" checked={mode==='circle'}
@@ -226,8 +277,8 @@ export function StoreDeliveryArea({client,store}){
        <span>{polygon.length} de 30 pontos</span></div>
     </div>}
    </fieldset>
-   {origin&&<div ref={container} className="storefront-map delivery-zone-map"
-    aria-label="Mapa visual para delimitar onde a loja faz entregas"/>}
+   <div ref={container} className="storefront-map delivery-zone-map"
+    aria-label="Mapa visual para delimitar onde a loja faz entregas"/>
    <fieldset disabled={busy||!origin}>
     <legend>Quanto cobrar de frete?</legend>
     {mode==='circle'?<>

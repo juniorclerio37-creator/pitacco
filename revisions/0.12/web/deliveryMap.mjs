@@ -291,14 +291,18 @@ export async function mountCustomerTrackingMap(container) {
 export async function mountDeliveryCoverageMap(container,{center,mode='circle',radiusKm=5,vertices=[],onVerticesChange}={}){
  const L=await leaflet();
  if(!container.isConnected)throw Error('O mapa foi fechado.');
- const point=Array.isArray(center)?center:[-14.24,-51.93];
- const map=L.map(container,{scrollWheelZoom:false,zoomControl:true}).setView(point,14);
+ const hasOrigin=Array.isArray(center)&&center.length===2&&
+  center.every(x=>Number.isFinite(Number(x)));
+ const point=hasOrigin?center:[-14.24,-51.93];
+ const map=L.map(container,{scrollWheelZoom:false,zoomControl:true})
+  .setView(point,hasOrigin?14:4);
  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
   maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
  }).addTo(map);
  const shopIcon=L.divIcon({className:'pitacco-store-picker-pin',html:'<span aria-hidden="true">🏪</span>',
   iconSize:[46,46],iconAnchor:[23,23]});
- L.marker(point,{icon:shopIcon,interactive:true,title:'Sua loja — centro da área de entrega'})
+ if(hasOrigin)L.marker(point,{icon:shopIcon,interactive:true,
+  title:'Sua loja — centro da área de entrega'})
   .bindPopup('Sua loja: ponto de partida das entregas').addTo(map);
  const coverage=L.layerGroup().addTo(map);
  let selectedMode=mode,km=radiusKm,polygon=vertices.map(v=>[Number(v[0]),Number(v[1])]);
@@ -307,18 +311,26 @@ export async function mountDeliveryCoverageMap(container,{center,mode='circle',r
  function render(focus=false){
   coverage.clearLayers();
   if(selectedMode==='circle'){
-   const circle=L.circle(point,{radius:km*1000,color:'#ea580c',weight:3,opacity:.95,
-    fillColor:'#fb923c',fillOpacity:.12}).addTo(coverage);
-   if(focus)map.fitBounds(circle.getBounds(),{padding:[22,22],maxZoom:16});
+   // Never draw an apparently real store radius around the fallback world
+   // map center while the address is still being geocoded.
+   if(hasOrigin){
+    const circle=L.circle(point,{radius:km*1000,color:'#ea580c',weight:3,opacity:.95,
+     fillColor:'#fb923c',fillOpacity:.12}).addTo(coverage);
+    if(focus)map.fitBounds(circle.getBounds(),{padding:[22,22],maxZoom:16});
+   }
   }else{
    if(polygon.length>=3)L.polygon(polygon,{color:'#ea580c',weight:3,
     fillColor:'#fb923c',fillOpacity:.16}).addTo(coverage);
    else if(polygon.length>=2)L.polyline(polygon,{color:'#ea580c',weight:3}).addTo(coverage);
    polygon.forEach((vertex,index)=>{
-    L.circleMarker(vertex,{radius:9,weight:3,color:'#c2410c',fillColor:'#fff7ed',fillOpacity:1})
-     .addTo(coverage).bindTooltip('Ponto '+(index+1),{direction:'top'});
-    const handle=L.marker(vertex,{opacity:0,draggable:true,title:'Arraste o ponto '+(index+1)})
-     .addTo(coverage);
+    // Visible draggable handles work with touch as well as a mouse.
+    const handle=L.marker(vertex,{
+     icon:L.divIcon({className:'pitacco-polygon-handle',
+      html:'<span aria-hidden="true">'+(index+1)+'</span>',
+      iconSize:[30,30],iconAnchor:[15,15]}),
+     draggable:true,title:'Arraste o ponto '+(index+1)
+    }).addTo(coverage);
+    handle.bindTooltip('Arraste o ponto '+(index+1),{direction:'top'});
     handle.on('dragend',()=>{
      const p=handle.getLatLng();
      polygon[index]=[Number(p.lat.toFixed(6)),Number(p.lng.toFixed(6))];
