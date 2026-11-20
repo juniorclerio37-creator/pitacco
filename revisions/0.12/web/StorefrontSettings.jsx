@@ -122,7 +122,7 @@ export function StoreDeliveryArea({client,store}){
  const [locationMessage,setLocationMessage]=useState('');
  const locationAttempts=useRef(null);
  const savedPoint=shopPoint(store);
- const origin=savedPoint||automaticPoint;
+ const origin=savedPoint||(automaticPoint?.storeId===store.id?automaticPoint.point:null);
  const address=[store.address,store.address_number,store.neighborhood,
    store.city,store.state,store.postal_code].filter(Boolean).join(', ');
  const [mode,setMode]=useState('circle');
@@ -157,7 +157,7 @@ export function StoreDeliveryArea({client,store}){
   setLocationMessage('Localizando a loja automaticamente pelo endereço cadastrado…');
   locateStoreByAddress(client,store.id).then(({point,approximate})=>{
    if(!alive)return;
-   setAutomaticPoint(point);
+   setAutomaticPoint({storeId:store.id,point});
    setLocationState('ready');
    setLocationMessage(approximate
     ?'Área centralizada em uma posição estimada. Confira a entrada da loja em Dados e identidade.'
