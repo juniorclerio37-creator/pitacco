@@ -524,7 +524,7 @@ test("Pitacco courier GPS continues in Android background only under a visible l
  assert.match(page,/id="stopNativeGps"/);
  assert.match(page,/pitacco_courier_background_gps_start/);
  assert.match(page,/pitacco_courier_background_gps_revoke/);
- assert.match(page,/if\(!nextOnline\)\{await stopNativeGpsTracking\(\);stopGpsSharing\(\);\}/);
+ assert.match(page,/if\(!nextOnline\)\{stopGpsSharing\(\);await stopNativeGpsTracking\(\);\}/);
  assert.match(migration,/extensions\.gen_random_bytes\(32\)/);
  assert.match(migration,/extensions\.digest\(v_token,'sha256'\)/);
  assert.match(migration,/interval '12 hours'/);
@@ -608,5 +608,5 @@ test("offline transition revokes GPS safely and never invokes catch on a Postgre
  const stop=panel.slice(panel.indexOf('async function stopNativeGpsTracking(){'),panel.indexOf('function stopGpsSharing(){'));
  assert.match(stop,/try\{[\s\S]*?await sb\.rpc\("pitacco_courier_background_gps_revoke"\)/);
  assert.doesNotMatch(stop,/sb\.rpc\("pitacco_courier_background_gps_revoke"\)\.catch/);
- assert.match(panel,/if\(!nextOnline\)\{await stopNativeGpsTracking\(\);stopGpsSharing\(\);\}/);
+ assert.match(panel,/if\(!nextOnline\)\{stopGpsSharing\(\);await stopNativeGpsTracking\(\);\}/);
 });
