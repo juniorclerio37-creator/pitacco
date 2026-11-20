@@ -18,3 +18,27 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
   gap: .75rem;
 }
+
+/* Delimitação visual de entrega — mesma origem do mapa da loja. */
+.delivery-zone-config{display:grid;gap:14px}
+.delivery-zone-config fieldset{min-width:0;border:1px solid #eadacb;border-radius:13px;padding:14px}
+.delivery-zone-config legend{font-weight:800;color:inherit;padding:0 6px}
+.delivery-zone-mode{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px;margin:8px 0 12px}
+.delivery-zone-mode label{display:flex;align-items:center;gap:9px;min-height:48px;
+ border:1px solid #edd8c8;border-radius:12px;padding:12px;font-weight:750;cursor:pointer}
+.delivery-zone-mode label:has(input:checked){background:#fff4e9;border-color:#fb923c;color:#9a3412}
+.delivery-zone-mode input{accent-color:#ea580c}
+.delivery-zone-range{display:grid;gap:12px;font-size:.96rem}
+.delivery-zone-range input{width:100%;accent-color:#ea580c}
+.delivery-zone-map{height:min(54vh,490px);min-height:320px;border:1px solid #ead6c4;
+ border-radius:15px;overflow:hidden;background:#f5f2ec;margin:0}
+.delivery-zone-rates{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.delivery-zone-rates label{display:grid;gap:5px;font-weight:700}
+.delivery-zone-rates input{width:100%;min-height:43px;border-radius:8px}
+.delivery-zone-polygon-actions p{margin:6px 0 12px}
+.delivery-zone-polygon-actions>div{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.delivery-zone-polygon-actions button{min-height:43px}
+.storefront-delivery-note{background:#fff7ed;border:1px solid #fed7aa;padding:12px;
+ color:#8a4515;border-radius:11px;margin:8px 0;line-height:1.55}
+@media(max-width:620px){.delivery-zone-map{height:350px;min-height:280px}
+ .delivery-zone-mode{grid-template-columns:1fr}.delivery-zone-polygon-actions button{flex:1}}
