@@ -137,3 +137,46 @@ button{font-family:inherit}button:focus-visible,a:focus-visible{outline:3px soli
 .route-plan-all{display:flex;margin-top:11px;background:#e9f8ef;border-color:#bce4cb;color:#166b43;min-height:42px;text-align:center;justify-content:center}
 .card-ifood-copy{display:block;width:100%;margin-top:7px;min-height:39px;background:#f5f6fa;color:#53657b;border:1px solid #e0e5ee;border-radius:11px;font-size:12px}
 .history-cancelled-amount{color:#7f8998!important}
+
+
+/* Shared store / courier / destination map inside the existing Android WebView. */
+.courier-shared-map{margin:16px 0 22px;border-radius:19px;padding:14px;
+ border:1px solid #f0ddca;overflow:hidden;background:#fff}
+.courier-shared-map-header{display:flex;flex-wrap:wrap;align-items:center;
+ justify-content:space-between;gap:10px;margin-bottom:12px}
+.courier-shared-map-header h2{font-size:17px;line-height:1.25;font-weight:900;
+ letter-spacing:-.4px;margin:5px 0 0;color:#293547}
+.courier-shared-map-actions{display:flex;gap:6px;flex-wrap:wrap}
+.courier-shared-map-actions .btn{font-size:12px;padding:9px 11px;min-height:38px}
+.courier-shared-map-canvas{height:270px;min-height:220px;width:100%;
+ position:relative;z-index:0;overflow:hidden;border:1px solid #e8ebef;
+ border-radius:15px;background:#edf2f5}
+.courier-shared-map-status{font-size:12px;line-height:1.5;color:#556574;margin:10px 0 0}
+.courier-shared-map-legend{display:flex;gap:12px;flex-wrap:wrap;align-items:center;
+ margin-top:9px;font-size:11px;font-weight:750;color:#586677}
+.courier-map-mini-number{display:inline-grid;width:19px;height:19px;place-items:center;
+ border-radius:50%;background:#f97316;color:#fff;font-size:11px;margin-right:3px}
+.courier-map-shop-pin,.courier-map-moto,.courier-map-destination{
+ background:none;border:0;box-shadow:none}
+.courier-map-shop-pin svg{display:block;width:58px;height:68px;max-width:none}
+.courier-map-moto span{display:grid;place-items:center;width:44px;height:44px;
+ border:3px solid white;border-radius:50%;background:#2563eb;color:white;
+ box-shadow:0 2px 9px #1d4ed868;font-size:24px}
+.courier-map-destination .courier-map-number{display:grid;place-items:center;
+ width:36px;height:36px;border:3px solid white;border-radius:50% 50% 50% 4px;
+ transform:rotate(-45deg);background:#ea580c;color:white;
+ box-shadow:0 2px 8px #9a341258;font-size:12px;font-weight:950}
+.courier-map-destination .courier-map-number::first-letter{transform:none}
+.courier-map-popup-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.courier-map-popup-actions a,.courier-map-popup-actions button{font:inherit;
+ border:0;background:#fff0dd;color:#9a3412;font-weight:800;border-radius:7px;
+ padding:8px 10px;cursor:pointer;text-decoration:none}
+.courier-shared-map .leaflet-popup-content p{margin:6px 0 10px}
+.courier-shared-map .leaflet-container{font-family:inherit}
+@media(max-width:420px){
+ .courier-shared-map{padding:10px}
+ .courier-shared-map-header{gap:8px}
+ .courier-shared-map-actions{width:100%}
+ .courier-shared-map-actions .btn{flex:1}
+ .courier-shared-map-canvas{height:248px}
+}
