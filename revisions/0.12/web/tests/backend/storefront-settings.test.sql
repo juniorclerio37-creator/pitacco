@@ -50,22 +50,19 @@ declare
   req uuid := gen_random_uuid();
   result jsonb;
 begin
- assert public.get_public_menu('acaidolinho')->'store'->'delivery_area'->>'radius_m'='3000';
+ -- Legacy radius and payment fee are NOT available for new delivery orders.
+ -- A merchant must explicitly configure a visual area and freight quote.
+ assert coalesce((public.get_public_menu('acaidolinho')->'store'->>'delivery_enabled')::boolean,false)=false,
+  'Without a saved delivery zone, the public menu offers pickup only';
+ assert public.get_public_menu('acaidolinho')->'store'->'delivery_area' is null,
+  'Legacy radius is no longer the authoritative map';
  begin
   perform public.checkout_public_order('acaidolinho',req,'Cliente','21999999999','Rua Teste, 100',items,'delivery','dinheiro','');
-  raise exception 'Expected missing pin rejection';
+  raise exception 'Expected missing delivery zone rejection';
  exception when raise_exception then
-  if sqlerrm <> 'Marque o endereço de entrega no mapa' then raise; end if;
+  if sqlerrm <> 'A loja precisa configurar a área e as taxas de entrega' then raise; end if;
  end;
- begin
-  perform public.pitacco_checkout_geocoded_order('acaidolinho',req,'Cliente','21999999999','Rua Teste, 100',items,'delivery','dinheiro','',-22.8,-43.4);
-  raise exception 'Expected out of area rejection';
- exception when raise_exception then
-  if sqlerrm <> 'Este endereço está fora da área de entrega da loja' then raise; end if;
- end;
- result := public.pitacco_checkout_geocoded_order('acaidolinho',req,'Cliente','21999999999','Rua Teste, 100',items,'delivery','dinheiro','',-22.71,-43.4);
- assert (result->>'total')::numeric=30;
- assert result=public.pitacco_checkout_geocoded_order('acaidolinho',req,'Cliente','21999999999','Rua Teste, 100',items,'delivery','dinheiro','',-22.71,-43.4);
- assert (public.checkout_public_order('acaidolinho',gen_random_uuid(),'Cliente','21999999999','',items,'pickup','dinheiro','')->>'total')::numeric=25;
+ result:=public.checkout_public_order('acaidolinho',gen_random_uuid(),'Cliente','21999999999','',items,'pickup','dinheiro','');
+ assert (result->>'total')::numeric=25, 'Pickup never incurs delivery fee';
 end $$;
 rollback;
