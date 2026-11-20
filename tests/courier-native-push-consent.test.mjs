@@ -56,9 +56,9 @@ test('Android 11+ requests all-the-time permission separately with driver disclo
  assert.match(main,/background_request/);
  assert.match(main,/"granted"\.equals\(locationPermissionState\(\)\)/);
  assert.match(main,/A permissão é opcional e não ativa o plantão automaticamente/);
- assert.match(panel,/id="requestBackgroundGps" hidden/);
- assert.match(panel,/Permitir localização o tempo todo no Android/);
- assert.match(panel,/postMessage\("background_request"\)/);
+ assert.match(panel,/id="openAndroidPermissions"/);
+ assert.match(panel,/localização o tempo todo/);
+ assert.match(panel,/postMessage\("settings"\)/);
  assert.match(panel,/postMessage\("background_status"\)/);
 });
 test('Native GPS status relies on recent successful upload, not only service running',()=>{
@@ -70,7 +70,7 @@ test('Native GPS status relies on recent successful upload, not only service run
  assert.match(main,/CourierLocationService\.trackingState\(\)/);
  assert.match(panel,/Serviço Android ativo\. Aguardando confirmação/);
  assert.match(panel,/servidor não confirma localização recente/);
- assert.match(panel,/id="verifyGpsUpload" hidden/);
+ assert.doesNotMatch(panel,/id="verifyGpsUpload"/);
 });
 test('Location service stays user-stoppable and shift-scoped',()=>{
  assert.match(gpsService,/setOngoing\(true\)/);
@@ -78,7 +78,7 @@ test('Location service stays user-stoppable and shift-scoped',()=>{
  assert.match(gpsService,/private void submitPosition/);
  assert.match(panel,/pitacco_courier_background_gps_start/);
  assert.match(panel,/pitacco_courier_background_gps_revoke/);
- assert.match(panel,/if\(!nextOnline\)\{stopGpsSharing\(\);await stopNativeGpsTracking\(\)/);
+ assert.match(panel,/if\(!nextOnline\)\{\s*stopGpsSharing\(\);\s*await stopNativeGpsTracking\(\)/);
 });
 
 
@@ -98,7 +98,7 @@ test('physical activity permission remains opt-in and never controls whether GPS
  assert.match(service,/requestActivityTransitionUpdates\(/);
  assert.match(service,/removeActivityTransitionUpdates\(/);
  assert.match(receiver,/!CourierLocationService.isRunning\(\)/);
- assert.match(panel,/postMessage\("motion_permission_request"\)/);
+ assert.match(panel,/postMessage\("settings"\)/);
 });
 
 
@@ -118,7 +118,7 @@ test('offline cleanup handles a real PostgrestBuilder-like thenable without .cat
    }},
    console:{warn:msg=>messages.push(msg)}
   };
-  await runInNewContext('let nativeGpsRunning=true;\n'+code+'\nstopNativeGpsTracking()',context);
+  await runInNewContext('let nativeGpsRunning=true,gpsShiftEpoch=0,nativeGpsLastAttempt=10;\n'+code+'\nstopNativeGpsTracking()',context);
   assert.deepEqual(events,['stop','pitacco_courier_background_gps_revoke']);
   assert.equal(messages.length,networkError?1:0);
  }
@@ -131,4 +131,17 @@ test('all courier Supabase RPC fallbacks use real Promises, not .catch on builde
  assert.match(panel,/Promise\.resolve\(sb\.rpc\("pitacco_unregister_courier_push"\)\)\.catch/);
  assert.doesNotMatch(panel,/sb\.rpc\("pitacco_courier_push_readiness"\)\.catch/);
  assert.doesNotMatch(panel,/sb\.rpc\("pitacco_unregister_courier_push"\)\.catch/);
+});
+
+
+test('general permissions screen replaces separate GPS and activity controls',()=>{
+ assert.match(panel,/id="openAndroidPermissions"/);
+ assert.doesNotMatch(panel,/id="startNativeGps"/);
+ assert.doesNotMatch(panel,/id="stopNativeGps"/);
+ assert.doesNotMatch(panel,/id="requestBackgroundGps"/);
+ assert.doesNotMatch(panel,/id="requestMotionPermission"/);
+ assert.match(panel,/void reconcileShiftGps\(\)/);
+ assert.match(panel,/void reconcileShiftGps\(\{force:true\}\)/);
+ assert.match(panel,/if\(epoch!==gpsShiftEpoch\|\|!courier\?\.available\)return/);
+ assert.match(panel,/courierAdvancedDiagnostics/);
 });
