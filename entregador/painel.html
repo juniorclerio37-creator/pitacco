@@ -321,9 +321,17 @@ async function startNativeGpsTracking(){
 }
 async function stopNativeGpsTracking(){
  nativeGpsRunning=false;
- if(window.PitaccoGps?.postMessage)window.PitaccoGps.postMessage("stop");
- // Revoke the capability even if Android loses connectivity later.
- await sb.rpc("pitacco_courier_background_gps_revoke").catch(()=>{});
+ // The local foreground service must stop even when the network is offline.
+ try{window.PitaccoGps?.postMessage?.("stop");}catch{}
+ // RPC returns a PostgrestBuilder (PromiseLike, no .catch method).
+ // Ignore cleanup errors only here: the database already revokes the GPS
+ // capability in the same transaction that marks the courier offline.
+ try{
+  const {error}=await sb.rpc("pitacco_courier_background_gps_revoke");
+  if(error)console.warn("Pitacco: não foi possível confirmar a limpeza de GPS no servidor.");
+ }catch{
+  console.warn("Pitacco: revogação remota indisponível; GPS nativo encerrado.");
+ }
 }
 
 function stopGpsSharing(){
