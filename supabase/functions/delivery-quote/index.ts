@@ -147,7 +147,7 @@ Deno.serve(async request=>{
    });
    if(permissionError||allowed!==true)return problem(403,'Sem permissão para alterar a localização desta loja.',origin);
    const {data:store,error:storeError}=await db.from('stores')
-    .select('address,address_number,neighborhood,city,state,postal_code,latitude,longitude')
+    .select('address,address_number,neighborhood,city,state,postal_code,latitude,longitude,updated_at')
     .eq('id',storeId).single();
    if(storeError||!store?.address||!store.city||!store.state)
     return problem(422,'Cadastre rua, cidade e estado em Dados da loja.',origin);
@@ -196,10 +196,20 @@ Deno.serve(async request=>{
    }
    if(location.country!=='BR'||!finiteBrazil(location.lat,location.lng))
     return problem(422,'Endereço fora da região atendida.',origin);
-   const {error:updateError}=await db.from('stores').update({
+   // Geocoding can take several seconds. If the merchant edited their
+   // address while the provider was working, NEVER save the old address's
+   // coordinates onto the newly saved address (freight uses this origin).
+   let save=db.from('stores').update({
     latitude:Number(location.lat.toFixed(6)),longitude:Number(location.lng.toFixed(6))
-   }).eq('id',storeId);
+   }).eq('id',storeId).eq('address',store.address)
+    .eq('city',store.city).eq('state',store.state);
+   save=store.updated_at==null
+    ?save.is('updated_at',null)
+    :save.eq('updated_at',store.updated_at);
+   const {data:saved,error:updateError}=await save.select('id').maybeSingle();
    if(updateError)throw Error('Não foi possível registrar a localização da loja.');
+   if(!saved)return problem(409,
+    'O endereço da loja mudou durante a localização. Atualize os dados e o Pitacco localizará o novo endereço.',origin);
    return response(200,{latitude:location.lat,longitude:location.lng,
     approximate:Boolean(location.approximate),address},origin);
   }
