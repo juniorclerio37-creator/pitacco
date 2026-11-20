@@ -27,6 +27,7 @@ const pointFromStore=store=>{
 function StorePointPicker({client,store,manager,addressDirty,onSaved}){
  const initial=pointFromStore(store);
  const [point,setPoint]=useState(initial),[picked,setPicked]=useState(initial);
+ const [viewCenter,setViewCenter]=useState(null);
  const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');
  const mapEl=useRef(null),map=useRef(null);
  const savedAddress=Boolean(store?.address?.trim()&&store?.city?.trim()&&store?.state?.trim());
@@ -35,13 +36,36 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
   setPoint(p);setPicked(p);setMessage('');setError('');
  },[store?.id,store?.latitude,store?.longitude]);
  useEffect(()=>{
-  if(!point||!mapEl.current)return;
+  if(!mapEl.current)return;
   let alive=true;
-  mountStorePointPicker(mapEl.current,{center:point,onSelect:p=>{if(alive){setPicked(p);setMessage('');}}})
-   .then(instance=>{if(alive)map.current=instance;else instance.remove()})
-   .catch(err=>{if(alive)setError('O mapa não pôde ser aberto: '+err.message)});
+  mountStorePointPicker(mapEl.current,{
+   center:point,viewCenter,
+   onSelect:p=>{if(alive){setPicked(p);setMessage('');}}
+  }).then(instance=>{
+   if(alive){map.current=instance;if(!point&&viewCenter)instance.focus(viewCenter,14);}
+   else instance.remove();
+  }).catch(err=>{if(alive)setError('O mapa não pôde ser aberto: '+err.message)});
   return()=>{alive=false;map.current?.remove();map.current=null};
  },[store?.id,Boolean(point)]);
+ // Start near an authorized on-shift driver if address lookup is unavailable.
+ // Never save the driver's coordinates as the shop by default.
+ useEffect(()=>{
+  if(point||!manager||!store?.id)return;
+  let active=true;
+  client.rpc('pitacco_store_courier_positions',{p_store:store.id})
+   .then(({data,error})=>{
+    if(!active||error)return;
+    const p=(data||[]).find(row=>row.latitude!=null&&row.longitude!=null&&
+      Number.isFinite(Number(row.latitude))&&Number.isFinite(Number(row.longitude))&&
+      Date.now()-Date.parse(row.observed_at)<5*60_000);
+    if(p){
+     const location=[Number(p.latitude),Number(p.longitude)];
+     setViewCenter(location);
+     map.current?.focus(location,14);
+    }
+   }).catch(()=>{});
+  return()=>{active=false};
+ },[client,store?.id,Boolean(point),manager]);
  async function locate(){
   setBusy(true);setMessage('');setError('');
   try{
@@ -76,23 +100,23 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
   }catch(err){setError('Não foi possível salvar o ponto: '+(err.message||String(err)));}
   finally{setBusy(false)}
  }
- const changed=Boolean(point&&picked&&(Math.abs(point[0]-picked[0])>0.0000001||
+ const changed=Boolean(picked&&(!point||Math.abs(point[0]-picked[0])>0.0000001||
   Math.abs(point[1]-picked[1])>0.0000001));
  return <div className="store-point-editor">
   <div className="store-point-editor-title"><strong>Posição exata da loja no mapa</strong>
    <small>Confirme a entrada do estabelecimento para centralizar entregas e motoboys.</small></div>
   {addressDirty&&<p role="status" className="store-point-warning">Salve as alterações do endereço acima antes de ajustar o marcador.</p>}
-  {point&&<div ref={mapEl} className="store-point-map" aria-label="Mapa para marcar a entrada da loja"/>}
-  {!point&&<p className="store-point-warning">Localize sua loja pelo endereço. O mapa será exibido aqui para posicionar o marcador.</p>}
+  <div ref={mapEl} className="store-point-map" aria-label="Mapa para marcar a entrada da loja"/>
+  {!point&&<p className="store-point-warning">Localize pelo endereço ou navegue no mapa e toque na entrada da loja para posicionar o marcador.</p>}
   <div className="store-point-actions">
    <button type="button" className="secondary" disabled={!manager||busy||addressDirty||!savedAddress} onClick={locate}>
     {busy?'Localizando…':'Localizar pelo endereço'}
    </button>
-   {point&&<button type="button" disabled={!manager||busy||addressDirty||!changed} onClick={savePoint}>
+   {picked&&<button type="button" disabled={!manager||busy||addressDirty||!changed} onClick={savePoint}>
      Salvar ponto da loja
    </button>}
   </div>
-  {point&&<small>Toque no local correto ou arraste o símbolo da loja para a entrada do estabelecimento. Não é necessário digitar coordenadas.</small>}
+  <small>Toque no local correto ou arraste o símbolo da loja para a entrada do estabelecimento. Não é necessário digitar coordenadas.</small>
   {error&&<p role="alert" className="store-point-error">{error}</p>}
   {message&&<p role="status" className="store-point-success">{message}</p>}
  </div>;
