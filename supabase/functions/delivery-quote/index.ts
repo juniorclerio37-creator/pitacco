@@ -336,20 +336,41 @@ Deno.serve(async request=>{
   const from:Point=[Number(store.latitude),Number(store.longitude)];
   const mode=rules.coverage_type||'road';
   let to:Point,meters:number,fee:number;
-  if(mode==='circle'||mode==='polygon'){
-   // Customer confirms their drop-off on the same map the store configured.
-   // This pin (NOT just text address) is saved in the protected order quote.
+  let regionName:string|null=null;
+  if(mode==='circle'||mode==='polygon'||mode==='polygons'){
+   // Customer confirms drop-off coordinates on the same map the store
+   // configured. Never trust a typed address for polygon membership.
    const lat=body.latitude,lng=body.longitude;
    if(typeof lat!=='number'||typeof lng!=='number'||!finiteBrazil(lat,lng))
     return problem(422,'Marque e confirme o ponto exato da entrega no mapa.',origin);
    to=[lat,lng];
    meters=directDistance(from,to);
    if(mode==='circle'){
+    // Keep existing per-kilometre circle brackets completely unchanged.
     if(meters>rules.max_radius_km*1000)
      return problem(422,'Este endereço está fora do círculo de entregas da loja.',origin);
     const bracket=Math.max(1,Math.ceil(meters/1000));
     fee=Number(rules.distance_fees?.[bracket-1]);
+   }else if(mode==='polygons'){
+    const regions=rules.polygons;
+    if(!Array.isArray(regions)||regions.length<1||regions.length>12)
+     return problem(409,'Cadastre as regiões poligonais em Área de Entrega.',origin);
+    let matched:any=null;
+    // Ordered array is the explicit priority: first matching polygon wins.
+    // A client must never be charged multiple overlapping region fees.
+    for(const region of regions){
+     const vertices:Point[]=region.vertices;
+     if(!Array.isArray(vertices)||!polygonValid(vertices)||
+        vertices.some(p=>directDistance(from,p)>30000))
+      return problem(409,'Existe uma região poligonal inválida. Corrija em Área de Entrega.',origin);
+     if(withinPolygon(to,vertices)){matched=region;break;}
+    }
+    if(!matched)
+     return problem(422,'Este endereço está fora de todas as regiões de entrega da loja.',origin);
+    fee=Number(matched.fee);
+    regionName=String(matched.name||'Região');
    }else{
+    // Compatibility with single-polygon settings created before migration.
     const polygon:Point[]=rules.polygon;
     if(!Array.isArray(polygon)||!polygonValid(polygon)||
        polygon.some(p=>directDistance(from,p)>30000))
@@ -388,7 +409,7 @@ Deno.serve(async request=>{
   }).select('id').single();
   if(insertError)return problem(409,'Esta solicitação já possui cotação. Recomece o cálculo do frete.',origin);
   return response(200,{quote_id:quote.id,request_id:requestId,distance_m:meters,
-   distance_type:mode==='road'?'road':'straight',fee,expires_at:expiresAt},origin);
+   distance_type:mode==='road'?'road':'straight',fee,region_name:regionName,expires_at:expiresAt},origin);
  }catch(error){
   const message=error instanceof Error?error.message:'Falha ao calcular a entrega.';
   const status=message.includes('impreciso')||message.includes('localizado')?422:503;
