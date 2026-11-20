@@ -21,3 +21,18 @@
 .identity-save{border:1px solid #e7dacc;border-radius:15px;background:var(--panel,#fff);padding:16px;display:flex;gap:12px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
 .identity-save p{margin-right:auto}
 @media(max-width:600px){.identity-head,.identity-section{padding:16px}.identity-grid{grid-template-columns:1fr}.identity-wide{grid-column:auto}}
+
+/* Loja: simples marcador móvel, nenhum campo numérico de coordenadas. */
+.store-point-editor{display:grid;gap:12px;border-top:1px solid #eee3d9;padding-top:17px;min-width:0}
+.store-point-editor-title{display:grid;gap:3px}
+.store-point-editor-title strong{font-size:1rem}
+.store-point-editor-title small,.store-point-editor>small{font-size:.82rem;color:var(--muted,#75695f)}
+.store-point-map{height:360px;max-width:100%;border:1px solid #e3ded7;border-radius:15px;overflow:hidden;z-index:0;background:#f3f1eb}
+.pitacco-store-picker-pin{display:grid;place-items:center;width:46px;height:46px;border:3px solid #ea580c;border-radius:50%;background:#fff;font-size:24px;box-shadow:0 4px 10px #0002;cursor:grab}
+.pitacco-store-picker-pin:active{cursor:grabbing}
+.store-point-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.store-point-actions button{min-height:42px;border-radius:10px}
+.store-point-warning{margin:0;background:#fff8eb;border:1px solid #f4d8aa;padding:12px;border-radius:10px;color:#8a4b11}
+.store-point-error{color:#b91c1c;margin:0}
+.store-point-success{color:#15803d;margin:0}
+@media(max-width:600px){.store-point-map{height:290px}.store-point-actions button{flex:1;min-width:165px}}

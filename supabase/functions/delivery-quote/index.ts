@@ -55,30 +55,59 @@ Deno.serve(async request=>{
  const key=Deno.env.get('PITACCO_GOOGLE_MAPS_SERVER_KEY');
  const serviceKey=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
  const url=Deno.env.get('SUPABASE_URL');
- if(!key||!serviceKey||!url)return problem(503,'Cálculo de rotas ainda não homologado.',origin);
+ if(!serviceKey||!url)return problem(503,'Configuração do serviço indisponível.',origin);
  try{
   const body=await request.json();
   const db=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
-  if(body.action==='store-origin'){
-   const storeId=String(body.store_id||''),token=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
-   if(!uuid.test(storeId)||!token)return problem(401,'Faça login como gestor para validar o endereço.',origin);
+  if(body.action==='store-origin'||body.action==='store-point'){
+   const storeId=String(body.store_id||'');
+   const token=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
+   if(!uuid.test(storeId)||!token)return problem(401,'Entre como gestor para configurar a localização da loja.',origin);
    const {data:identity,error:authError}=await db.auth.getUser(token);
    if(authError||!identity.user)return problem(401,'Sessão inválida.',origin);
-   const {data:member,error:memberError}=await db.from('store_members').select('role')
-    .eq('user_id',identity.user.id).eq('store_id',storeId).in('role',['lojista','gestor']).maybeSingle();
-   if(memberError||!member)return problem(403,'Você não gerencia este estabelecimento.',origin);
-   const {data:store,error:storeError}=await db.from('stores').select('address,address_number,neighborhood,city,state,postal_code').eq('id',storeId).single();
-   if(storeError||!store?.address||!store.city||!store.state)return problem(422,'Cadastre rua, cidade e estado em Dados da loja.',origin);
-   const limiter=await db.rpc('pitacco_service_delivery_quote_limit',
-    {p_scope:'origin-hour-'+storeId,p_max:20,p_minutes:60});
+   // Same store permissions as the courier manager; includes the platform
+   // owner and the authenticated store manager, never a courier or customer.
+   const {data:allowed,error:permissionError}=await db.rpc('pitacco_can_manage_courier_store',{
+    p_actor:identity.user.id,p_store:storeId
+   });
+   if(permissionError||allowed!==true)return problem(403,'Sem permissão para alterar a localização desta loja.',origin);
+   const {data:store,error:storeError}=await db.from('stores')
+    .select('address,address_number,neighborhood,city,state,postal_code,latitude,longitude')
+    .eq('id',storeId).single();
+   if(storeError||!store?.address||!store.city||!store.state)
+    return problem(422,'Cadastre rua, cidade e estado em Dados da loja.',origin);
+   if(body.action==='store-point'){
+    // A deliberate drag/click on the map. No coordinates exposed in forms.
+    // Keep this modification within Brazil and within the current store.
+    const lat=body.latitude,lng=body.longitude;
+    if(typeof lat!=='number'||typeof lng!=='number'||!Number.isFinite(lat)||!Number.isFinite(lng)||
+       lat < -34 || lat > 6 || lng < -75 || lng > -32)
+     return problem(422,'Escolha a entrada da loja no mapa, dentro do Brasil.',origin);
+    const limiter=await db.rpc('pitacco_service_delivery_quote_limit',{
+     p_scope:'store-map-point-hour-'+storeId,p_max:30,p_minutes:60
+    });
+    if(limiter.error||!limiter.data)return problem(429,'Aguarde antes de salvar outro ponto da loja.',origin);
+    const {error:updateError}=await db.from('stores').update({
+     latitude:Number(lat.toFixed(6)),longitude:Number(lng.toFixed(6))
+    }).eq('id',storeId);
+    if(updateError)throw Error('Não foi possível salvar o ponto da loja.');
+    return response(200,{saved:true},origin);
+   }
+   if(!key)return problem(503,'A localização automática do endereço ainda não foi habilitada.',origin);
+   const limiter=await db.rpc('pitacco_service_delivery_quote_limit',{
+    p_scope:'origin-hour-'+storeId,p_max:20,p_minutes:60
+   });
    if(limiter.error||!limiter.data)return problem(429,'Validação indisponível ou limite de tentativas atingido.',origin);
    const address=[store.address,store.address_number,store.neighborhood,store.city,store.state,store.postal_code,'Brasil'].filter(Boolean).join(', ');
    const location=await geocode(address,key);
    if(location.country!=='BR')return problem(422,'Endereço fora do Brasil.',origin);
-   const {error:updateError}=await db.from('stores').update({latitude:location.lat,longitude:location.lng}).eq('id',storeId);
+   const {error:updateError}=await db.from('stores').update({
+    latitude:location.lat,longitude:location.lng
+   }).eq('id',storeId);
    if(updateError)throw Error('Não foi possível registrar a localização da loja.');
    return response(200,{latitude:location.lat,longitude:location.lng,address},origin);
   }
+  if(!key)return problem(503,'Cálculo de rotas ainda não homologado.',origin);
   const slug=String(body.slug||'').trim(),address=String(body.address||'').trim();
   const requestId=String(body.request_id||'');
   if(!slugPattern.test(slug)||address.length<12||address.length>500||!uuid.test(requestId))

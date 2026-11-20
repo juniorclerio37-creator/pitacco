@@ -56,6 +56,51 @@ export async function mountDeliveryMap(container, { center, radius, onSelect }) 
   };
 }
 
+
+/**
+ * Editable store pin in Dados da loja. All coordinates are internal:
+ * the merchant sees a draggable shop marker, never numeric coordinates.
+ */
+export async function mountStorePointPicker(container,{center,viewCenter,onSelect}){
+ const L=await leaflet();
+ if(!container.isConnected)throw Error('Mapa fechado.');
+ const map=L.map(container,{scrollWheelZoom:false}).setView(
+  center||viewCenter||[-14.24,-51.93],center?17:viewCenter?13:4);
+ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+ }).addTo(map);
+ const icon=L.divIcon({
+  className:'pitacco-store-picker-pin',
+  html:'<span aria-hidden="true">🏪</span>',iconSize:[46,46],iconAnchor:[23,23]
+ });
+ let marker;
+ const set=(point,notify=false)=>{
+  if(!Array.isArray(point)||point.length!==2)return;
+  const lat=Number(point[0]),lng=Number(point[1]);
+  if(!Number.isFinite(lat)||!Number.isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180)return;
+  const rounded=[Number(lat.toFixed(6)),Number(lng.toFixed(6))];
+  if(!marker){
+   marker=L.marker(rounded,{icon,draggable:true,title:'Arraste para marcar a entrada da loja'})
+    .bindPopup('Entrada da sua loja').addTo(map);
+   marker.on('dragend',()=>{
+    const next=marker.getLatLng();
+    set([next.lat,next.lng],true);
+   });
+  }else marker.setLatLng(rounded);
+  map.panTo(rounded);
+  if(notify)onSelect?.(rounded);
+ };
+ map.on('click',({latlng})=>set([latlng.lat,latlng.lng],true));
+ if(center)set(center,false);
+ map.invalidateSize();
+ return{
+  setPoint(point,focus=true){set(point,false);if(focus)map.setView(point,17)},
+  focus(point,zoom=14){if(Array.isArray(point)&&point.length===2)map.setView(point,zoom)},
+  resize(){map.invalidateSize()},
+  remove(){map.remove()}
+ };
+}
+
 export function currentLocation() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error('Este dispositivo não fornece localização.'));
@@ -79,7 +124,8 @@ export async function mountFleetMap(container) {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   }).addTo(map);
   const markers = L.layerGroup().addTo(map);
-  let fitted = false;
+  let fitted = false, fittedShop = false, lastOnlineIds = '';
+  let lastSelectedCourier = '';
   const valid = item => item && item.latitude != null && item.longitude != null &&
     Number.isFinite(Number(item.latitude)) && Number.isFinite(Number(item.longitude)) &&
     Number(item.latitude) >= -90 && Number(item.latitude) <= 90 &&
@@ -141,11 +187,30 @@ export async function mountFleetMap(container) {
         color: '#f97316', weight: 3, opacity: .7, dashArray: '7 9', interactive: false,
       }).addTo(markers);
     }
-    if (!fitted && bounds.length) {
+    // Initial view ALWAYS prioritizes the shop. If a shared courier comes
+    // online later, refit once to include the shop and all online riders.
+    // Ordinary 10-second GPS updates never pull the map away from the user.
+    const visibleOnline = couriers.filter(c => c.signal === 'online' && valid(c.position));
+    const onlineIds = visibleOnline.map(c => c.id).sort().join(',');
+    const storeIsReady = valid(store);
+    if (storeIsReady && (!fittedShop ||
+        (onlineIds !== lastOnlineIds && visibleOnline.length > 0))) {
+      fittedShop = true;
+      fitted = true;
+      const shopBounds = [point(store),...visibleOnline.map(c => point(c.position))];
+      if (shopBounds.length === 1) map.setView(shopBounds[0], 16);
+      else map.fitBounds(shopBounds, {padding:[40,40],maxZoom:16});
+    } else if (!fitted && bounds.length) {
       fitted = true;
       if (bounds.length === 1) map.setView(bounds[0], 15);
-      else map.fitBounds(bounds, {padding: [35, 35], maxZoom: 15});
+      else map.fitBounds(bounds, {padding:[35,35],maxZoom:15});
     }
+    if (selectedCourier && selectedCourier !== lastSelectedCourier) {
+      const selected = couriers.find(c=>c.id===selectedCourier&&valid(c.position));
+      if (selected) map.panTo(point(selected.position));
+    }
+    lastSelectedCourier = selectedCourier;
+    lastOnlineIds = onlineIds;
     map.invalidateSize();
   }
   return {

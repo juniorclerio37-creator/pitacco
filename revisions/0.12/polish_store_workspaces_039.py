@@ -60,9 +60,13 @@ p.write_text(s,encoding='utf-8')
 p=Path('web/StoreProfile.jsx')
 s=p.read_text(encoding='utf-8')
 needle="const {data,error}=await client.from('stores').update(row).eq('id',store.id).select('id').single();"
-assert s.count(needle)==1
-s=s.replace(needle,"const {error}=await client.rpc('pitacco_update_store_identity',{p_store_id:store.id,p_data:row});",1)
-needle="if(error)throw error;if(data.id!==store.id)throw Error('Loja incorreta.');"
-assert s.count(needle)==1
-s=s.replace(needle,"if(error)throw error;",1)
+if s.count(needle)==1:
+    s=s.replace(needle,"const {error}=await client.rpc('pitacco_update_store_identity',{p_store_id:store.id,p_data:row});",1)
+    old="if(error)throw error;if(data.id!==store.id)throw Error('Loja incorreta.');"
+    assert s.count(old)==1
+    s=s.replace(old,"if(error)throw error;",1)
+else:
+    # Later web revisions already use the scoped identity RPC. Preserve the
+    # address's interactive map marker instead of failing the restore pipeline.
+    assert "client.rpc('pitacco_update_store_identity'" in s
 p.write_text(s,encoding='utf-8')

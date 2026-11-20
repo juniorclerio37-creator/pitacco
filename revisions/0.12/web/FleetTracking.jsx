@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {Bike, MapPin, Navigation, RefreshCw, Route, Store, WifiOff} from 'lucide-react';
+import {Bike, MapPin, Navigation, Route, Store, WifiOff} from 'lucide-react';
 import {mountFleetMap} from './deliveryMap.mjs';
 import './fleet-tracking.css';
 
@@ -52,6 +52,9 @@ export default function FleetTracking({client, storeId, onBack}) {
   const [selectedRoute, setSelectedRoute] = useState('');
   const [selectedCourier, setSelectedCourier] = useState('');
   const [panel, setPanel] = useState('routes');
+  const [originStatus, setOriginStatus] = useState('idle');
+  const [originAttempt, setOriginAttempt] = useState(0);
+  const requestedOrigin = useRef(null);
   const mapContainer = useRef(null), mapInstance = useRef(null), snapshot = useRef(null);
 
   useEffect(() => {
@@ -61,8 +64,12 @@ export default function FleetTracking({client, storeId, onBack}) {
       running = true;
       try {
         const [storeResult, couriersResult, deliveriesResult] = await Promise.all([
-          client.from('stores').select('id,name,latitude,longitude').eq('id', storeId).single(),
-          client.from('couriers').select('id,name,active,available').eq('store_id', storeId).order('name'),
+          client.from('stores')
+            .select('id,name,latitude,longitude,address,address_number,neighborhood,city,state,postal_code')
+            .eq('id', storeId).single(),
+          // This RPC returns couriers assigned directly AND authorized shared
+          // couriers. Filtering couriers.store_id hid the test-store rider.
+          client.rpc('pitacco_store_couriers', {p_store: storeId}),
           client.from('deliveries')
             .select('id,order_id,store_id,courier_id,status,logistics_provider,latitude,longitude,batch_id,address,customer_name,created_at')
             .eq('store_id', storeId).order('created_at', {ascending: false}).limit(200),
@@ -70,11 +77,12 @@ export default function FleetTracking({client, storeId, onBack}) {
         const failure = storeResult.error || couriersResult.error || deliveriesResult.error;
         if (failure) throw failure;
         const couriers = couriersResult.data || [];
-        const ids = couriers.map(c => c.id);
-        const positionsResult = ids.length
-          ? await client.from('courier_positions')
-              .select('courier_id,latitude,longitude,observed_at,accuracy_m').in('courier_id', ids)
-          : {data: [], error: null};
+        // Separate GPS RPC is checked against the SAME selected store on the
+        // server. A shared courier can have a different primary store_id, and
+        // raw courier_positions RLS must not be broadened globally.
+        const positionsResult = await client.rpc('pitacco_store_courier_positions', {
+          p_store: storeId,
+        });
         if (positionsResult.error) throw positionsResult.error;
         if (alive) {
           setState({store: storeResult.data, couriers, deliveries: deliveriesResult.data || [], positions: positionsResult.data || []});
@@ -94,6 +102,40 @@ export default function FleetTracking({client, storeId, onBack}) {
     }, 10000);
     return () => {alive = false; window.clearInterval(timer);};
   }, [client, storeId]);
+
+  // Existing saved street address is translated to a map point server-side.
+  // The merchant never sees or types latitude and longitude.
+  const storeHasAddress = Boolean(state.store?.address?.trim() &&
+    state.store?.city?.trim() && state.store?.state?.trim());
+  useEffect(() => {
+    if (!state.store || state.store.id !== storeId) return;
+    if (validPoint(state.store)) {setOriginStatus('ready');return;}
+    if (!storeHasAddress) {setOriginStatus('missing-address');return;}
+    const key = storeId + ':' + originAttempt;
+    if (requestedOrigin.current === key) return;
+    requestedOrigin.current = key;
+    let alive = true;
+    setOriginStatus('loading');
+    (async () => {
+      try {
+        const {data, error} = await client.functions.invoke('delivery-quote', {
+          body: {action:'store-origin', store_id:storeId},
+        });
+        if (error) throw error;
+        if (!validPoint(data)) throw Error(data?.error || 'Endereço não localizado');
+        if (!alive) return;
+        setState(previous => previous.store?.id !== storeId ? previous : ({
+          ...previous, store: {...previous.store,
+            latitude:Number(data.latitude), longitude:Number(data.longitude)},
+        }));
+        setOriginStatus('ready');
+      } catch {
+        if (alive) setOriginStatus('error');
+      }
+    })();
+    return () => {alive=false;};
+  }, [client,storeId,state.store?.id,state.store?.latitude,state.store?.longitude,
+      state.store?.address,state.store?.city,state.store?.state,storeHasAddress,originAttempt]);
 
   const active = useMemo(() => activeOwnDeliveries(state.deliveries), [state.deliveries]);
   const positions = useMemo(() => new Map(state.positions.map(p => [p.courier_id, p])), [state.positions]);
@@ -141,8 +183,14 @@ export default function FleetTracking({client, storeId, onBack}) {
     <div className="fleet-grid">
       <div className="fleet-map-column">
         {hasPoints ? <div ref={mapContainer} className="fleet-map" aria-label="Mapa interativo de entregadores e entregas"/> :
-          <div className="fleet-map fleet-empty"><MapPin size={32}/><strong>Sem coordenadas para exibir</strong>
-            <p>Configure a localização da loja e habilite o GPS dos entregadores. Endereços sem coordenadas não são posicionados por aproximação.</p></div>}
+          <div className="fleet-map fleet-empty"><MapPin size={32}/>
+            <strong>{loading||originStatus==='loading'?'Localizando sua loja no mapa…':'Localização da loja indisponível'}</strong>
+            <p>{originStatus==='missing-address'
+              ? 'Cadastre o endereço da loja em Administrar Loja → Dados e identidade.'
+              : 'O Pitacco utiliza o endereço cadastrado para encontrar sua loja automaticamente. Confira os dados do endereço se necessário.'}</p>
+            {!loading&&originStatus==='error'&&<button type="button" className="secondary"
+              onClick={()=>{requestedOrigin.current=null;setOriginAttempt(n=>n+1);}}>Tentar localizar novamente</button>}
+          </div>}
         <div className="fleet-legend">
           <span><i className="fleet-dot" data-kind="store"/> Loja</span>
           <span><i className="fleet-dot" data-kind="online"/> GPS atualizado</span>

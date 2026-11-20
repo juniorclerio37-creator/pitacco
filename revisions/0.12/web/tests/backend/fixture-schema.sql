@@ -1,3 +1,16 @@
+-- The production stores table includes editable street-address and pin columns.
+-- CI's historical schema predates those fields; represent them before loading
+-- new migrations that invalidate the map point after an address edit.
+alter table public.stores
+ add column if not exists address text,
+ add column if not exists address_number text,
+ add column if not exists neighborhood text,
+ add column if not exists city text,
+ add column if not exists state text,
+ add column if not exists postal_code text,
+ add column if not exists latitude double precision,
+ add column if not exists longitude double precision;
+
 create table public.product_option_groups (
  id uuid primary key default gen_random_uuid(), store_id uuid not null, product_id uuid not null,
  name text not null, min_select integer not null, max_select integer not null, sort_order integer not null default 0
