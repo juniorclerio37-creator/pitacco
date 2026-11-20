@@ -8,7 +8,7 @@ export default function CourierFinance({client,storeId,view}){
   [busy,setBusy]=useState(false),[error,setError]=useState(''),[note,setNote]=useState('');
  const refresh=async()=>{
   const [a,b,c,d]=await Promise.all([
-   client.from('couriers').select('id,name').eq('store_id',storeId),
+   client.rpc('pitacco_store_couriers',{p_store:storeId}),
    client.from('deliveries').select('id,courier_id,status,courier_payment,updated_at')
     .eq('store_id',storeId).eq('status','entregue'),
    client.from('pitacco_courier_payouts')
