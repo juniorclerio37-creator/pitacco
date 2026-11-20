@@ -73,7 +73,7 @@ test('server calculates delivery fee using authorized shape and saves destinatio
  assert.doesNotMatch(menu,/Number\(menu\.store\.delivery_fee\)/);
  assert.match(base,/not found or not rules\.enabled then/);
  assert.doesNotMatch(base,/then return p_fallback/);
- assert.match(publicMenu,/destination_latitude,destination_longitude/);
+ assert.match(publicMenu,/pitacco_delivery_quote_point/);
  assert.match(publicMenu,/pitacco\.checkout_delivery_point/);
  assert.match(publicMenu,/route_pricing/);
 });
