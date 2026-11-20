@@ -147,13 +147,12 @@ test('general permissions screen replaces separate GPS and activity controls',()
 });
 
 
-test('returning from Android permission settings refreshes opted-in Firebase token',()=>{
+test('returning from Android settings refreshes opted-in Firebase token',()=>{
  const resume=main.slice(main.indexOf('@Override protected void onResume()'),main.indexOf('@Override protected void onNewIntent('));
- assert.match(resume,/postMessage\\?\\.\\('refresh'\\)/);
- assert.match(resume,/postMessage\\?\\.\\('status'\\)/);
- assert.match(resume,/postMessage\\?\\.\\('motion_permission_status'\\)/);
- // The native bridge never sends service-role credentials or device push
- // tokens to pages outside the authenticated courier origin.
- assert.match(main,/Collections\\.singleton\\("https:\\/\\/" \\+ HOST\\)/);
- assert.match(main,/if \\(!mainFrame \\|\\| !isHttps\\(origin\\)/);
+ assert.ok(resume.includes("window.PitaccoPush?.postMessage?.('refresh')"));
+ assert.ok(resume.includes("window.PitaccoPush?.postMessage?.('status')"));
+ assert.ok(resume.includes("window.PitaccoGps?.postMessage?.('motion_permission_status')"));
+ // Keep the notification bridge restricted to the authenticated origin.
+ assert.ok(main.includes('Collections.singleton("https://" + HOST)'));
+ assert.ok(main.includes('if (!mainFrame || !isHttps(origin)'));
 });
