@@ -135,17 +135,32 @@ export async function mountStorePointPicker(container,{center,viewCenter,onSelec
  };
 }
 
-export function currentLocation() {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) return reject(new Error('Este dispositivo não fornece localização.'));
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => resolve([Number(coords.latitude.toFixed(6)), Number(coords.longitude.toFixed(6))]),
-      () => reject(new Error('Não foi possível obter sua localização. Confira a permissão do dispositivo.')),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
-    );
+export function currentDeviceLocation() {
+  return new Promise((resolve,reject)=>{
+    // Browser Geolocation works on Android, iOS and desktops that expose
+    // OS-provided position; computers may return Wi-Fi/IP-level estimates.
+    if(typeof navigator==='undefined'||!navigator.geolocation)
+      return reject(new Error('Este dispositivo ou navegador não oferece localização.'));
+    navigator.geolocation.getCurrentPosition(({coords})=>{
+      const lat=Number(coords.latitude),lng=Number(coords.longitude);
+      const accuracy=Number(coords.accuracy);
+      if(!Number.isFinite(lat)||!Number.isFinite(lng)||
+         lat < -90||lat > 90||lng < -180||lng > 180)
+        return reject(new Error('O dispositivo retornou uma posição inválida.'));
+      resolve({point:[Number(lat.toFixed(6)),Number(lng.toFixed(6))],
+        accuracyMeters:Number.isFinite(accuracy)&&accuracy>0?Math.ceil(accuracy):null});
+    },error=>{
+      const detail=error?.code===1?'Permissão de localização negada no navegador ou sistema.'
+        :error?.code===2?'O sistema não conseguiu determinar a posição.'
+        :error?.code===3?'A localização demorou demais.'
+        :'Não foi possível obter a localização.';
+      reject(new Error(detail));
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
   });
 }
-
+export async function currentLocation(){
+  return (await currentDeviceLocation()).point;
+}
 
 // Map for the merchant's live fleet. Reuses the same pinned Leaflet dependency
 // and tile layer as the existing delivery-area map; does not alter dispatch logic.
