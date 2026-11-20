@@ -130,6 +130,7 @@ export function StoreDeliveryArea({client,store}){
  const [busy,setBusy]=useState(false);
  const [enabled,setEnabled]=useState(false);
  const [revision,setRevision]=useState(0);
+ const [reloadAreas,setReloadAreas]=useState(0);
  const container=useRef(null),map=useRef(null);
  useEffect(()=>{
   let live=true;
@@ -155,7 +156,7 @@ export function StoreDeliveryArea({client,store}){
    }
   })();
   return()=>{live=false};
- },[client,store.id]);
+ },[client,store.id,reloadAreas]);
  useEffect(()=>{
   if(!origin||status!=='ready'||!container.current)return;
   let alive=true;
@@ -201,7 +202,7 @@ export function StoreDeliveryArea({client,store}){
   <p><strong>Loja:</strong> {address||'Cadastre o endereço em Dados e identidade.'}</p>
   {!origin&&<p role="alert">Antes de configurar a área, abra <strong>Dados e identidade</strong> e marque a entrada exata da loja no mapa.</p>}
   {status==='loading'&&<p role="status">Carregando área de entrega…</p>}
-  {status==='error'&&<button type="button" onClick={()=>setRevision(n=>n+1)}>Tentar novamente</button>}
+  {status==='error'&&<button type="button" onClick={()=>setReloadAreas(n=>n+1)}>Tentar novamente</button>}
   {status==='ready'&&<form onSubmit={save} className="delivery-zone-config">
    <fieldset disabled={busy||!origin}>
     <legend>Como delimitar a área de entrega?</legend>
