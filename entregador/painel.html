@@ -158,20 +158,20 @@ a.btn{text-decoration:none}
   <p class="note-inline">Quando não houver coordenadas verificadas, o aplicativo abre o endereço informado pela loja.</p>
  </section>
  <section class="panel-white pref-panel">
-  <span class="eyebrow">LOCALIZAÇÃO PARA ENTREGAS</span>
-  <button type="button" class="settings-row" id="retryCourierGps"><span>Autorizar localização no Android / Atualizar GPS</span><span class="setting-arrow">◎</span></button>
-  <button type="button" class="btn secondary" id="openAndroidGpsSettings" hidden>Abrir permissões de localização no Android</button>
-  <p id="courierGpsStatus" role="status" aria-live="polite">Ative seu plantão para compartilhar sua posição com a loja.</p>
-  <button type="button" class="settings-row" id="requestBackgroundGps" hidden><span>Permitir localização o tempo todo no Android</span><span class="setting-arrow">›</span></button>
-  <p id="courierBackgroundGpsStatus" class="note-inline" role="status" aria-live="polite"></p>
-  <button type="button" class="settings-row" id="requestMotionPermission" hidden><span>Ativar atividade física (GPS inteligente)</span><span class="setting-arrow">›</span></button>
-  <p id="courierMotionPermissionStatus" class="note-inline" role="status" aria-live="polite"></p>
-  <p id="courierMotionState" class="note-inline" role="status" aria-live="polite"></p>
-  <button type="button" class="settings-row" id="verifyGpsUpload" hidden><span>Verificar envio real do GPS</span><span class="setting-arrow">↻</span></button>
-  <button type="button" class="settings-row" id="startNativeGps" hidden><span>Ativar GPS em segundo plano durante o plantão</span><span class="setting-arrow">▶</span></button>
-  <button type="button" class="settings-row" id="stopNativeGps" hidden><span>Parar GPS em segundo plano</span><span class="setting-arrow">■</span></button>
-  <p class="note-inline">O rastreamento contínuo funciona enquanto você estiver online e a notificação persistente “GPS ativo” estiver visível. Ao ficar offline ou sair da conta, o serviço é encerrado. O Android pode interromper o serviço por bateria, falta de GPS ou encerramento forçado.</p>
-  <span class="eyebrow">AJUDA E SINCRONIZAÇÃO</span>
+  <span class="eyebrow">PERMISSÕES E RASTREAMENTO</span>
+  <button type="button" class="settings-row" id="openAndroidPermissions"><span>Permissões do Android</span><span class="setting-arrow" aria-hidden="true">›</span></button>
+  <p class="note-inline">Em Permissões do aplicativo, autorize localização precisa e, se desejar, localização o tempo todo, atividade física e notificações. A autorização é feita pelo próprio Android.</p>
+  <div class="courier-gps-summary" role="status" aria-live="polite">
+   <strong id="courierGpsStatus">Ao ficar online, o GPS inicia automaticamente.</strong>
+   <p id="courierBackgroundGpsStatus" class="note-inline"></p>
+   <p id="courierMotionPermissionStatus" class="note-inline"></p>
+   <p id="courierMotionState" class="note-inline"></p>
+  </div>
+  <p class="note-inline">O Pitacco inicia o GPS automaticamente ao ficar online, continua durante o plantão com a notificação persistente do Android e encerra ao ficar offline ou sair da conta. Se o Android bloquear o acesso, o rastreio mostrará o problema aqui, sem pedir para ativar ou parar o serviço manualmente.</p>
+  <details class="courier-diagnostics" id="courierAdvancedDiagnostics">
+   <summary>Diagnósticos e som de alertas</summary>
+   <div class="courier-diagnostics-content">
+   <span class="eyebrow">AJUDA E SINCRONIZAÇÃO</span>
   <button type="button" class="settings-row" id="enableNativePush" hidden><span>Ativar avisos no Android</span><span class="setting-arrow">›</span></button>
   <p id="nativePushStatus" role="status" aria-live="polite"></p>
   <button type="button" class="settings-row" id="checkNativePush"><span>Verificar recebimento de novas entregas</span><span class="setting-arrow">↻</span></button>
@@ -183,6 +183,8 @@ a.btn{text-decoration:none}
   <p id="shiftSoundUnsupported" class="note-inline" role="status" hidden>O Modo Plantão precisa da versão Android atualizada. A versão instalada não reconhece o controle de ativação. Atualize o Pitacco Entregador para habilitar o sino e a voz em volume alto.</p>
   <button type="button" class="settings-row" id="testAssignmentSound"><span>Testar som de nova entrega</span><span class="setting-arrow">♪</span></button>
   <p id="assignmentSoundStatus" role="status" aria-live="polite"></p>
+   </div>
+  </details>
   <button type="button" class="settings-row" id="settingsRefresh"><span>Atualizar pedidos e ganhos</span><span class="setting-arrow">↻</span></button>
   <button type="button" class="settings-row" id="settingsLogout"><span>Sair da minha conta</span><span class="setting-arrow">→</span></button>
  </section>
