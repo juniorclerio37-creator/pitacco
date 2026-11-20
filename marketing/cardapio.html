@@ -214,7 +214,7 @@ body.store-closed .dock{display:none}
  <button id="locateDelivery" type="button" class="secondary">Usar minha localização</button>
  <div id="deliveryMap" aria-label="Mapa da área de entrega" hidden style="height:260px;margin:12px 0;z-index:0"></div>
  <p id="deliveryPointStatus" role="status"></p>
-</fieldset><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe rua, número, bairro e cidade para calcular o frete pelo trajeto.</p></div></div><label for="payment">Forma de pagamento</label><select id="payment" required></select><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea><p><button class="primary" id="send" type="submit">Confirmar pedido</button></p></form>
+</fieldset><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço, marque o destino no mapa e calcule o frete conforme a área da loja.</p></div></div><label for="payment">Forma de pagamento</label><select id="payment" required></select><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea><p><button class="primary" id="send" type="submit">Confirmar pedido</button></p></form>
   <div id="success" hidden></div>
  </div>
  <footer class="dialog-footer" id="cartFooter"><button id="continueCheckout" type="button" class="primary">Continuar para entrega e pagamento</button><button id="backToCart" type="button" class="secondary" hidden>Voltar à sacola</button></footer>
@@ -781,10 +781,9 @@ $('checkout').onsubmit=async event=>{
    p_notes:$('notes').value
   };
   if(routeMode)pendingRequest.p_quote=deliveryQuote.id;
-  if(needsPin){
-   pendingRequest.p_latitude=deliveryPoint[0];
-   pendingRequest.p_longitude=deliveryPoint[1];
-  }
+  // The quoted checkout recovers the customer's exact pin on the server
+  // from the quote. Do NOT send p_latitude/p_longitude: that RPC does not
+  // accept these arguments and could reject a valid delivery at checkout.
   if($('schedule').value)pendingRequest.p_scheduled_for=$('schedule').value;
  }
  submitting=true;
