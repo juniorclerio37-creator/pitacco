@@ -25,9 +25,9 @@ reset role;
 update public.pitacco_delivery_pricing set enabled=true
  where store_id='90000000-0000-0000-0000-000000000002';
 
-insert into public.pitacco_delivery_route_quotes(id,store_id,request_id,destination_address,distance_m,fee,pricing_updated_at,expires_at)
+insert into public.pitacco_delivery_route_quotes(id,store_id,request_id,destination_address,distance_m,fee,pricing_updated_at,expires_at,destination_latitude,destination_longitude)
 select '90000000-0000-0000-0000-000000000005',
- store_id,'90000000-0000-0000-0000-000000000004','Rua Teste 100',3200,7.50,updated_at,now()+interval '5 minutes'
+ store_id,'90000000-0000-0000-0000-000000000004','Rua Teste 100',3200,7.50,updated_at,now()+interval '5 minutes',-22.91,-43.46
 from public.pitacco_delivery_pricing where store_id='90000000-0000-0000-0000-000000000002';
 
 set local role anon;

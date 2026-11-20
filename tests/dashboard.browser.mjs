@@ -8,7 +8,7 @@ const adminPortal='https://admin.pitacco.com.br';
 const realApi='https://mdevzehqcpcgxspwbiyz.supabase.co';
 const keys=['alertas','estoque','cardapio','clientes','fideliza','financeiro','caixa','relatorios','motoboys','integracoes','agendamento'];
 const user = { id: '10000000-0000-0000-0000-000000000001', aud: 'authenticated', email: 'teste@example.invalid' };
-const store = { id: '20000000-0000-0000-0000-000000000001', name: 'Loja de Teste', plan: 'saas', address:'Rua Central',address_number:'100',neighborhood:'Centro',city:'Nova Iguacu',state:'RJ',postal_code:'26000-000' };
+const store = { id: '20000000-0000-0000-0000-000000000001', name: 'Loja de Teste', plan: 'saas', address:'Rua Central',address_number:'100',neighborhood:'Centro',city:'Nova Iguacu',state:'RJ',postal_code:'26000-000',latitude:-22.71,longitude:-43.4 };
 const readOnlyStore = { id: '20000000-0000-0000-0000-000000000002', name: 'Loja sem gestão', plan: 'saas' };
 const fixtureUsername = '00000000001';
 const adminToken = [ {alg:'HS256'}, {sub:user.id, exp:Math.floor(Date.now()/1000)+3600} ]
@@ -171,14 +171,15 @@ try {
       if(pathname==='/rest/v1/pitacco_delivery_pricing'){
         return route.fulfill({headers,json:[]});
       }
-      if(pathname==='/rest/v1/rpc/pitacco_save_delivery_pricing'){
+      if(pathname==='/rest/v1/rpc/pitacco_save_delivery_zone'){
         const input=route.request().postDataJSON();
         assert.equal(input.p_store,store.id);
+        assert.equal(input.p_mode,'circle');
         assert.equal(input.p_radius,4);
         assert.equal(input.p_distance[0],4.5);
-        assert.equal(input.p_neighborhoods[0].bairro,'Centro');
-        assert.equal(input.p_neighborhoods[0].taxa,7.5);
-        return route.fulfill({headers,json:{saved:true,enabled:false,requires_route_provider:true}});
+        assert.deepEqual(input.p_polygon,[]);
+        assert.equal(input.p_polygon_fee,0);
+        return route.fulfill({headers,json:{saved:true,enabled:true,mode:'circle'}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_support_list'){
         const input=route.request().postDataJSON();
@@ -698,13 +699,10 @@ try {
       assert.equal(await page.getByRole('region',{name:'Chamados de suporte'}).count(),0);
       assert.equal(await page.getByRole('heading',{name:'Localização de saída'}).count(),0);
       await page.getByRole('button',{name:'Área de entrega',exact:true}).click();
-      await page.getByLabel('Distância máxima').selectOption('4');
+      await page.getByRole('slider',{name:/Raio de atendimento/}).press('ArrowLeft');
       await page.getByLabel('Até 1 km (R$)').fill('4.50');
-      await page.getByRole('button',{name:'Adicionar bairro'}).click();
-      await page.getByLabel('Bairro',{exact:true}).fill('Centro');
-      await page.getByLabel('Taxa (R$)',{exact:true}).fill('7.50');
-      await page.getByRole('button',{name:'Salvar regras de entrega'}).click();
-      await page.getByText(/Configurações salvas como rascunho/).waitFor();
+      await page.getByRole('button',{name:'Salvar e ativar área de entrega'}).click();
+      await page.getByText(/Área e valores de entrega salvos/).waitFor();
       await page.getByRole('button',{name:'Pagamentos',exact:true}).click();
       await page.getByRole('checkbox',{name:'InfinitePay'}).check();
       await page.getByRole('button',{name:'Salvar preferências de integração'}).click();

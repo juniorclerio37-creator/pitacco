@@ -34,8 +34,9 @@ try {
       1440: { status: 'accepted', preparation_status: 'completed', fulfillment: 'pickup', label: 'Retirado' }
     }[width];
     const scheduled = width === 768 ? '2026-11-17T21:00:00Z' : null;
-    const area = scheduled?{latitude:-22.7,longitude:-43.4,radius_m:3000}:null;
-    if(area){await page.context().grantPermissions(['geolocation']);await page.context().setGeolocation({latitude:-22.71,longitude:-43.4});}
+    const area = {latitude:-22.7,longitude:-43.4,radius_m:3000,coverage_type:'circle',polygon:[]};
+    await page.context().grantPermissions(['geolocation']);
+    await page.context().setGeolocation({latitude:-22.71,longitude:-43.4});
     let polls=0;
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -58,11 +59,12 @@ try {
           contentType: 'text/javascript',
           headers: { 'access-control-allow-origin': '*' },
           body: `export function createClient(){
-            return { rpc: async (name, payload) => {
-              const response = await fetch('/fixture/' + name,{method:'POST',body:JSON.stringify(payload)});
-              const data = await response.json();
-              return { status:response.status, data:response.ok?data:null, error:response.ok?null:data };
-            } };
+            const invoke=async (name,payload)=>{
+              const response=await fetch('/fixture/' + name,{method:'POST',body:JSON.stringify(payload)});
+              const data=await response.json();
+              return {status:response.status,data:response.ok?data:null,error:response.ok?null:data};
+            };
+            return {rpc:invoke,functions:{invoke:async (name,options)=>invoke(name,options.body)}};
           }`
         });
       }
@@ -71,7 +73,10 @@ try {
       if (pathname.endsWith('/get_public_menu')) {
         assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
         return route.fulfill({ json: {
-          store: { name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true, delivery_fee: 5, delivery_area:area, payment_methods: ['pix_manual'], opening_hours:{open:true,reason:'open',next_open_at:null} },
+          store: { name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true,
+            delivery_fee: 0, route_pricing:{enabled:true,mode:'circle',max_radius_km:3},
+            delivery_area:area, payment_methods: ['pix_manual'],
+            opening_hours:{open:true,reason:'open',next_open_at:null} },
           products: [{ id: 'acai', name: 'Açaí', category: 'Açaís', price: 20, option_groups: [{
             id: 'adicionais', name: 'Adicionais', min: 1, max: 1,
             options: [{ id: 'morango', name: 'Morango', price: 2 }, { id: 'leite', name: 'Leite em pó', price: 3 }]
@@ -88,8 +93,17 @@ try {
         assert.equal(route.request().postDataJSON().p_fulfillment,'delivery');
         return route.fulfill({json:scheduled?[scheduled]:[]});
       }
-      if (pathname.endsWith('/checkout_public_order') || pathname.endsWith('/pitacco_checkout_geocoded_order')) {
-        assert.equal(pathname.endsWith('/pitacco_checkout_geocoded_order'),Boolean(area));
+      if (pathname.endsWith('/delivery-quote')) {
+        const payload=route.request().postDataJSON();
+        assert.equal(payload.slug,'loja-teste');
+        assert.equal(payload.address,'Rua Teste 123');
+        assert.deepEqual([payload.latitude,payload.longitude],[-22.71,-43.4]);
+        return route.fulfill({json:{quote_id:'30000000-0000-0000-0000-000000000011',
+          request_id:payload.request_id,fee:5,distance_m:1112,distance_type:'straight',
+          expires_at:new Date(Date.now()+5*60*1000).toISOString()}});
+      }
+      if (pathname.endsWith('/pitacco_checkout_quoted_delivery')) {
+        assert.equal(route.request().postDataJSON().p_quote,'30000000-0000-0000-0000-000000000011');
         requests.push(route.request().postDataJSON());
         if (requests.length === 1) {
           await responseGate;
@@ -148,7 +162,8 @@ try {
     assert.match(await product.getByRole('button',{name:/Salvar alterações/}).innerText(),/46,00/);
     await product.getByRole('button',{name:/Salvar alterações/}).click();
     await cart.getByText('Item atualizado na sacola.',{exact:true}).waitFor();
-    assert.match(await cart.locator('#total').innerText(),/74,00/);
+    assert.match(await cart.locator('#total').innerText(),/69,00/);
+    assert.match(await cart.locator('#total').innerText(),/calcule o frete/i);
     await firstLine.getByText(/Morango · Granola/).waitFor();
     await firstLine.getByRole('button',{name:'Editar complementos',exact:true}).click();
     await product.getByRole('checkbox',{name:/Granola/}).uncheck();
@@ -158,12 +173,11 @@ try {
     for (const [id, value] of [['customer', 'Cliente Teste'], ['phone', '21999999999'], ['address', 'Rua Teste 123']]) {
       await page.locator('#' + id).fill(value);
     }
-    if(area){
-      await page.getByRole('button', { name: 'Confirmar pedido' }).click();
-      await page.locator('#checkoutMessage').filter({hasText:/Marque a localização/}).waitFor();
-      await page.getByRole('button',{name:'Usar minha localização'}).click();
-      await page.getByText('Localização marcada.').waitFor();
-    }
+    await page.getByRole('button',{name:'Usar minha localização'}).click();
+    await page.getByText('Ponto marcado. Confira o endereço e calcule o frete.').waitFor();
+    await page.getByRole('button',{name:'Calcular taxa de entrega'}).click();
+    await page.getByText(/Linha reta: 1,1 km · Entrega: R\$.*5,00/).waitFor();
+    assert.match(await page.locator('#total').innerText(),/74,00/);
     if(scheduled)await page.getByLabel('Quando deseja receber?').selectOption(scheduled);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
     await page.getByRole('button', { name: 'Confirmar pedido' }).click();
@@ -177,7 +191,8 @@ try {
     assert.equal(requests.length, 2);
     assert.deepEqual(requests[0], requests[1]);
     assert.equal(requests[0].p_scheduled_for,scheduled||undefined);
-    if(area)assert.deepEqual([requests[0].p_latitude,requests[0].p_longitude],[-22.71,-43.4]);
+    assert.equal(requests[0].p_quote,'30000000-0000-0000-0000-000000000011');
+    assert.equal(Object.hasOwn(requests[0],'p_latitude'),false);
     assert.deepEqual(requests[0].p_items, [
       { product_id: 'acai', quantity: 2, options: ['morango','granola'] },
       { product_id: 'acai', quantity: 1, options: ['leite'] }
