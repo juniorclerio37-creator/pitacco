@@ -19,7 +19,7 @@ create table public.product_options (
  id uuid primary key default gen_random_uuid(), group_id uuid not null, store_id uuid not null,
  name text not null, additional_price numeric not null, available boolean not null default true, sort_order integer not null default 0
 );
-create table public.store_customer_branding (store_id uuid primary key, logo_url text, primary_color text);
+create table public.store_customer_branding (store_id uuid primary key, logo_url text, primary_color text, secondary_color text, banner_url text);
 create table public.pitacco_signup_trials (
  user_id uuid primary key, first_store_id uuid not null unique, started_at timestamptz not null default now(),
  ends_at timestamptz not null default (now()+interval '30 days')
