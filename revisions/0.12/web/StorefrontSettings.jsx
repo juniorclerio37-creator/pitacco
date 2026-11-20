@@ -122,7 +122,10 @@ export function StoreDeliveryArea({client,store}){
  const [locationMessage,setLocationMessage]=useState('');
  const locationAttempts=useRef(null);
  const savedPoint=shopPoint(store);
- const origin=savedPoint||(automaticPoint?.storeId===store.id?automaticPoint.point:null);
+ // Never use a geocoder's street-level suggestion as the freight origin.
+ // Exact geocoding is persisted by the server; unverified results only
+ // appear in Dados e identidade for manual confirmation.
+ const origin=savedPoint||(automaticPoint?.storeId===store.id&&!automaticPoint.approximate?automaticPoint.point:null);
  const address=[store.address,store.address_number,store.neighborhood,
    store.city,store.state,store.postal_code].filter(Boolean).join(', ');
  const [mode,setMode]=useState('circle');
@@ -157,10 +160,10 @@ export function StoreDeliveryArea({client,store}){
   setLocationMessage('Localizando a loja automaticamente pelo endereço cadastrado…');
   locateStoreByAddress(client,store.id).then(({point,approximate})=>{
    if(!alive)return;
-   setAutomaticPoint({storeId:store.id,point});
+   setAutomaticPoint({storeId:store.id,point,approximate});
    setLocationState('ready');
    setLocationMessage(approximate
-    ?'Área centralizada em uma posição estimada. Confira a entrada da loja em Dados e identidade.'
+    ?'Endereço encontrado apenas de forma aproximada. Confirme a entrada da loja em Dados e identidade antes de configurar o frete.'
     :'Loja localizada automaticamente pelo endereço cadastrado.');
   }).catch(error=>{
    if(!alive)return;
@@ -279,6 +282,7 @@ export function StoreDeliveryArea({client,store}){
    </fieldset>
    <div ref={container} className="storefront-map delivery-zone-map"
     aria-label="Mapa visual para delimitar onde a loja faz entregas"/>
+   <small>Geocodificação quando habilitada: Powered by <a href="https://www.geoapify.com/" target="_blank" rel="noreferrer">Geoapify</a>.</small>
    <fieldset disabled={busy||!origin}>
     <legend>Quanto cobrar de frete?</legend>
     {mode==='circle'?<>
