@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import {runInNewContext} from 'node:vm';
 
 const main = readFileSync(new URL('../entregador/android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java',import.meta.url),'utf8');
 const receiver = readFileSync(new URL('../entregador/android-app/app/src/main/java/br/com/pitacco/entregador/AssignmentMessagingService.java',import.meta.url),'utf8');
@@ -98,4 +99,27 @@ test('physical activity permission remains opt-in and never controls whether GPS
  assert.match(service,/removeActivityTransitionUpdates\(/);
  assert.match(receiver,/!CourierLocationService.isRunning\(\)/);
  assert.match(panel,/postMessage\("motion_permission_request"\)/);
+});
+
+
+test('offline cleanup handles a real PostgrestBuilder-like thenable without .catch()', async()=>{
+ const begin=panel.indexOf('async function stopNativeGpsTracking(){');
+ const end=panel.indexOf('\nfunction stopGpsSharing(){',begin);
+ assert.ok(begin>0&&end>begin);
+ const code=panel.slice(begin,end);
+ for(const networkError of [null,{message:'Sem rede'}]){
+  const events=[],messages=[];
+  const context={
+   window:{PitaccoGps:{postMessage:msg=>events.push(msg)}},
+   sb:{rpc:name=>{
+     events.push(name);
+     // Supabase PostgrestBuilder has a .then() method, but NO .catch().
+     return {then(resolve){resolve({data:null,error:networkError})}};
+   }},
+   console:{warn:msg=>messages.push(msg)}
+  };
+  await runInNewContext('let nativeGpsRunning=true;\n'+code+'\nstopNativeGpsTracking()',context);
+  assert.deepEqual(events,['stop','pitacco_courier_background_gps_revoke']);
+  assert.equal(messages.length,networkError?1:0);
+ }
 });
