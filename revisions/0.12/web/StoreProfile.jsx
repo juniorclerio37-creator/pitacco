@@ -1,5 +1,5 @@
 import React,{useEffect,useRef,useState} from 'react';
-import {mountStorePointPicker,currentLocation} from './deliveryMap.mjs';
+import {mountStorePointPicker,currentDeviceLocation} from './deliveryMap.mjs';
 import {locateStoreByAddress} from './mapOrigin.mjs';
 import {StoreReadiness} from './StoreReadiness.jsx';
 import './store-profile-modern.css';
@@ -29,6 +29,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
  const initial=pointFromStore(store);
  const [point,setPoint]=useState(initial),[picked,setPicked]=useState(initial);
  const [suggestedPoint,setSuggestedPoint]=useState(null);
+ const [needsDeviceAdjustment,setNeedsDeviceAdjustment]=useState(false);
  const [viewCenter,setViewCenter]=useState(null);
  const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');
  const [retryAttempt,setRetryAttempt]=useState(0);
@@ -41,7 +42,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
  const savedAddress=Boolean(store?.address?.trim()&&store?.city?.trim()&&store?.state?.trim());
  useEffect(()=>{
   const p=pointFromStore(store);
-  setPoint(p);setSuggestedPoint(null);
+  setPoint(p);setSuggestedPoint(null);setNeedsDeviceAdjustment(false);
   // A background lookup must not override an unsaved manual correction.
   if(selectionVersion.current===0)setPicked(p);
   setMessage('');setError('');
@@ -53,6 +54,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
   retryTimer.current=null;
   automaticLookup.current=null;
   selectionVersion.current=0;
+  setNeedsDeviceAdjustment(false);
   setRetryAttempt(0);
  },[addressSignature]);
  useEffect(()=>()=>{if(retryTimer.current)clearTimeout(retryTimer.current)},[]);
@@ -61,7 +63,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
   let alive=true;
   mountStorePointPicker(mapEl.current,{
    center:point||suggestedPoint,viewCenter,
-   onSelect:p=>{if(alive){selectionVersion.current++;setPicked(p);setMessage('');setError('');}}
+   onSelect:p=>{if(alive){selectionVersion.current++;setPicked(p);setNeedsDeviceAdjustment(false);setMessage('');setError('');}}
   }).then(instance=>{
    if(alive){map.current=instance;if(!point&&!suggestedPoint&&viewCenter)instance.focus(viewCenter,14);}
    else instance.remove();
@@ -146,14 +148,25 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
    if(!savedAddress)throw Error('Cadastre o endereço da loja antes de usar o GPS.');
    // The manager explicitly grants location permission in the browser.
    // GPS is a proposal, never an implicit update to the store database.
-   const p=await currentLocation();
+   const {point:p,accuracyMeters}=await currentDeviceLocation();
    selectionVersion.current++;
+   const lowPrecision=accuracyMeters==null||accuracyMeters>250;
+   setNeedsDeviceAdjustment(lowPrecision);
    setSuggestedPoint(p);setPicked(p);
-   map.current?.setPoint(p);map.current?.focus(p,17);
-   setMessage('Posição do celular encontrada. Se você está na entrada da loja, toque em "Salvar ponto da loja" para confirmar.');
+   map.current?.setPoint(p);
+   map.current?.focus(p,accuracyMeters!=null&&accuracyMeters<=100?17:accuracyMeters!=null&&accuracyMeters<=500?15:13);
+   if(lowPrecision){
+    setMessage('Localização aproximada deste dispositivo'+
+      (accuracyMeters!=null?' (margem informada de '+accuracyMeters+' m)':'')+
+      '. Confira no mapa e arraste a lojinha até a entrada real antes de salvar.');
+   }else{
+    setMessage('Localização do dispositivo encontrada'+
+      (accuracyMeters!=null?' (precisão estimada de '+accuracyMeters+' m)':'')+
+      '. Confirme o marcador na entrada da loja antes de salvar.');
+   }
   }catch(err){
    setError('Não foi possível obter o GPS: '+(err.message||String(err))+
-    ' Ative a localização do celular e permita o acesso no navegador.');
+    ' Habilite a localização no celular ou computador e permita o acesso no navegador.');
   }finally{setBusy(false)}
  }
  async function savePoint(){
@@ -161,12 +174,13 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
   try{
    if(addressDirty)throw Error('Salve primeiro o endereço atualizado da loja.');
    if(!picked||picked.some(x=>!Number.isFinite(x)))throw Error('Selecione o ponto da loja no mapa.');
+   if(needsDeviceAdjustment)throw Error('A localização fornecida pelo dispositivo é imprecisa. Arraste a lojinha até a entrada real e tente salvar novamente.');
    const {data,error}=await client.functions.invoke('delivery-quote',{
     body:{action:'store-point',store_id:store.id,latitude:picked[0],longitude:picked[1]}
    });
    if(error)throw error;
    if(!data?.saved)throw Error(data?.error||'A gravação do ponto não foi confirmada.');
-   setPoint([...picked]);setSuggestedPoint(null);
+   setPoint([...picked]);setSuggestedPoint(null);setNeedsDeviceAdjustment(false);
    setMessage('Ponto exato da loja salvo. O mapa da Roteirização utilizará este marcador.');
    onSaved?.();
   }catch(err){setError('Não foi possível salvar o ponto: '+(err.message||String(err)));}
@@ -184,9 +198,9 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
       'O Pitacco posiciona sua loja automaticamente pelo endereço salvo. Se a busca falhar, verifique o endereço ou ajuste o ponto no mapa.'}
    </p>}
   <div className="store-point-actions">
-   {!point&&<button type="button" className="secondary"
+   <button type="button" className="secondary"
     disabled={!manager||busy||addressDirty||!savedAddress}
-    onClick={locateByDevice}>Usar GPS do celular (na loja)</button>}
+    onClick={locateByDevice}>Usar localização do celular ou computador</button>
    {error&&<button type="button" className="secondary"
     disabled={!manager||busy||addressDirty||!savedAddress}
     onClick={()=>{if(retryTimer.current){clearTimeout(retryTimer.current);retryTimer.current=null}
@@ -197,7 +211,8 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
      Salvar ponto da loja
    </button>}
   </div>
-  <small>O ponto é preenchido automaticamente pelo endereço da loja. O toque e o arraste servem apenas para corrigir a posição, se necessário.</small>
+  <small>O endereço é pesquisado automaticamente. Se o resultado não for exato, use a localização do celular ou computador e confirme a entrada da loja no mapa. A localização do computador pode ser aproximada.</small>
+  <small>Geocodificação quando habilitada: Powered by <a href="https://www.geoapify.com/" target="_blank" rel="noreferrer">Geoapify</a>.</small>
   {error&&<p role="alert" className="store-point-error">{error}</p>}
   {message&&<p role="status" className="store-point-success">{message}</p>}
  </div>;
