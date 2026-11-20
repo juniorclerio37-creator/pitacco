@@ -6,6 +6,11 @@ insert into public.stores(id,name) values
  ('20000000-0000-0000-0000-000000000001','Açaí do Linho'),
  ('20000000-0000-0000-0000-000000000002','Açaí do Linho'),
  ('20000000-0000-0000-0000-000000000003','Termos');
+-- Setup the only source of the shop origin: its saved map marker.
+update public.stores set address='Rua da Loja',city='Nova Iguaçu',state='RJ'
+ where id='20000000-0000-0000-0000-000000000001';
+update public.stores set latitude=-22.7,longitude=-43.4
+ where id='20000000-0000-0000-0000-000000000001';
 insert into public.store_members values
  ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','gestor'),
  ('20000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','gestor'),
@@ -21,6 +26,10 @@ values ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-00000000
 set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
 select public.save_public_menu_settings('20000000-0000-0000-0000-000000000001','acaidolinho',true,true,true,5,array['dinheiro'],'');
+-- A real circle definition, configured in Área de Entrega, replaces the
+-- old delivery_fee=5 setting that still exists for schema compatibility.
+select public.pitacco_save_delivery_zone('20000000-0000-0000-0000-000000000001',
+ 'circle',3,'[5,5,5,0,0,0,0,0,0,0]'::jsonb,'[]'::jsonb,0);
 insert into public.pitacco_store_delivery_areas values ('20000000-0000-0000-0000-000000000001',-22.7,-43.4,3000,true);
 insert into public.pitacco_store_payment_providers values ('20000000-0000-0000-0000-000000000001','mercado_pago',true);
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
@@ -42,27 +51,48 @@ begin
   if sqlerrm <> 'Acesso exclusivo da administração do Pitacco' then raise; end if;
  end;
 end $$;
+-- A quote is generated server-side, only inside a configured area.
+insert into public.pitacco_delivery_route_quotes
+ (id,store_id,request_id,destination_address,distance_m,fee,
+  pricing_updated_at,expires_at,destination_latitude,destination_longitude)
+select '60000000-0000-0000-0000-000000000020',
+ store_id,'60000000-0000-0000-0000-000000000021','Rua Teste, 100',
+ 1100,5,updated_at,now()+interval '5 minutes',-22.71,-43.4
+from public.pitacco_delivery_pricing
+where store_id='20000000-0000-0000-0000-000000000001';
 set local role anon;
 select set_config('request.jwt.claim.sub','',true);
 do $$
 declare
-  items jsonb := '[{"product_id":"30000000-0000-0000-0000-000000000001","quantity":1}]';
-  req uuid := gen_random_uuid();
-  result jsonb;
+ items jsonb := '[{"product_id":"30000000-0000-0000-0000-000000000001","quantity":1}]';
+ req uuid := '60000000-0000-0000-0000-000000000021';
+ result jsonb;
 begin
- -- Legacy radius and payment fee are NOT available for new delivery orders.
- -- A merchant must explicitly configure a visual area and freight quote.
- assert coalesce((public.get_public_menu('acaidolinho')->'store'->>'delivery_enabled')::boolean,false)=false,
-  'Without a saved delivery zone, the public menu offers pickup only';
- assert public.get_public_menu('acaidolinho')->'store'->'delivery_area' is null,
-  'Legacy radius is no longer the authoritative map';
+ assert public.get_public_menu('acaidolinho')->'store'->'delivery_area'->>'radius_m'='3000';
+ assert public.get_public_menu('acaidolinho')->'store'->>'delivery_fee'='0';
  begin
-  perform public.checkout_public_order('acaidolinho',req,'Cliente','21999999999','Rua Teste, 100',items,'delivery','dinheiro','');
-  raise exception 'Expected missing delivery zone rejection';
+  perform public.checkout_public_order('acaidolinho',req,'Cliente','21999999999',
+   'Rua Teste, 100',items,'delivery','dinheiro','');
+  raise exception 'Expected missing quote rejection';
  exception when raise_exception then
-  if sqlerrm <> 'A loja precisa configurar a área e as taxas de entrega' then raise; end if;
+  if sqlerrm not like 'Calcule o frete%' then raise; end if;
  end;
- result:=public.checkout_public_order('acaidolinho',gen_random_uuid(),'Cliente','21999999999','',items,'pickup','dinheiro','');
- assert (result->>'total')::numeric=25, 'Pickup never incurs delivery fee';
+ -- A legacy client pin alone must never bypass the area pricing quote.
+ begin
+  perform public.pitacco_checkout_geocoded_order('acaidolinho',req,'Cliente','21999999999',
+   'Rua Teste, 100',items,'delivery','dinheiro','',-22.71,-43.4);
+  raise exception 'Expected legacy checkout rejection';
+ exception when raise_exception then
+  if sqlerrm not like 'Calcule o frete%' then raise; end if;
+ end;
+ result := public.pitacco_checkout_quoted_delivery('acaidolinho',req,'Cliente',
+  '21999999999','Rua Teste, 100',items,'delivery','dinheiro','',
+  '60000000-0000-0000-0000-000000000020');
+ assert (result->>'total')::numeric=30, 'Only area quote fee 5 is charged';
+ assert result=public.pitacco_checkout_quoted_delivery('acaidolinho',req,'Cliente',
+  '21999999999','Rua Teste, 100',items,'delivery','dinheiro','',
+  '60000000-0000-0000-0000-000000000020');
+ assert (public.checkout_public_order('acaidolinho',gen_random_uuid(),'Cliente',
+  '21999999999','',items,'pickup','dinheiro','')->>'total')::numeric=25;
 end $$;
 rollback;
