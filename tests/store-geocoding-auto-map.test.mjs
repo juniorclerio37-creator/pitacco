@@ -41,7 +41,7 @@ test('delivery area map always renders and polygon/circle inputs remain availabl
  const areas=read('revisions/0.12/web/StorefrontSettings.jsx');
  const map=read('revisions/0.12/web/deliveryMap.mjs');
  assert.match(areas,/locateStoreByAddress\(client,store.id\)/);
- assert.match(areas,/automaticPoint\?\.storeId===store.id\?automaticPoint.point:null/);
+ assert.match(areas,/automaticPoint\?\.storeId===store.id&&\!automaticPoint.approximate\?automaticPoint.point:null/);
  assert.match(areas,/fieldset disabled=\{busy\}/);
  assert.match(areas,/<div ref=\{container\} className="storefront-map delivery-zone-map"/);
  assert.doesNotMatch(areas,/\{origin&&<div ref=\{container\}/);
@@ -104,7 +104,31 @@ test('approximate map coordinates require merchant approval before use as freigh
  const profile=read('revisions/0.12/web/StoreProfile.jsx');
  assert.match(edge,/if\(location\.approximate\)\{/);
  assert.match(edge,/requires_confirmation:true/);
- assert.match(profile,/Usar GPS do celular \(na loja\)/);
+ assert.match(profile,/Usar localização do celular ou computador/);
  assert.match(profile,/setSuggestedPoint\(p\)/);
- assert.match(profile,/currentLocation\(\)/);
+ assert.match(profile,/currentDeviceLocation\(\)/);
+});
+
+test('Geoapify runs only with its server-side key and rejects unclear coordinates',()=>{
+ const edge=read('supabase/functions/delivery-quote/index.ts');
+ assert.match(edge,/Deno\.env\.get\('PITACCO_GEOAPIFY_API_KEY'\)/);
+ assert.match(edge,/api\.geoapify\.com\/v1\/geocode\/search/);
+ assert.match(edge,/if\(geoapifyKey\)\{/);
+ assert.match(edge,/sameRoad\(item.street,store.address\)/);
+ assert.match(edge,/samePostal\(item.postcode,store.postal_code\)/);
+ assert.match(edge,/\['building','amenity','house'\]\.includes\(type\)/);
+ assert.match(edge,/requires_confirmation:true,provider/);
+ assert.doesNotMatch(edge,/await geocode\(address,key\)/);
+});
+test('device location stays available on both phone and computer with accuracy validation',()=>{
+ const map=read('revisions/0.12/web/deliveryMap.mjs');
+ const profile=read('revisions/0.12/web/StoreProfile.jsx');
+ const areas=read('revisions/0.12/web/StorefrontSettings.jsx');
+ assert.match(map,/export function currentDeviceLocation\(\)/);
+ assert.match(map,/navigator\.geolocation\.getCurrentPosition/);
+ assert.match(map,/accuracyMeters/);
+ assert.match(profile,/Usar localização do celular ou computador/);
+ assert.match(profile,/if\(needsDeviceAdjustment\)throw Error/);
+ assert.match(profile,/setNeedsDeviceAdjustment\(false\)/);
+ assert.match(areas,/!automaticPoint\.approximate/);
 });
