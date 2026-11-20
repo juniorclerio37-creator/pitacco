@@ -30,6 +30,7 @@ on:
       - '.github/workflows/entregador-tests.yml'
   push:
     branches:
+      - main
       - feature/pitacco-entregador-android
       - feature/entregador-auth-operacional
     paths:
