@@ -385,7 +385,7 @@ export async function mountDeliveryCoverageMap(container,{
     let geometry;
     if(pts.length>=3)geometry=L.polygon(pts,{
      color,weight:active?4:2.5,
-     fillColor:color,fillOpacity:active?.22:.09,
+     fillColor:color,fillOpacity:active?0.22:0.09,
      interactive:!active
     }).addTo(coverage);
     else if(pts.length>=2)geometry=L.polyline(pts,{
