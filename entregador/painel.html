@@ -164,6 +164,9 @@ a.btn{text-decoration:none}
   <p id="courierGpsStatus" role="status" aria-live="polite">Ative seu plantão para compartilhar sua posição com a loja.</p>
   <button type="button" class="settings-row" id="requestBackgroundGps" hidden><span>Permitir localização o tempo todo no Android</span><span class="setting-arrow">›</span></button>
   <p id="courierBackgroundGpsStatus" class="note-inline" role="status" aria-live="polite"></p>
+  <button type="button" class="settings-row" id="requestMotionPermission" hidden><span>Ativar atividade física (GPS inteligente)</span><span class="setting-arrow">›</span></button>
+  <p id="courierMotionPermissionStatus" class="note-inline" role="status" aria-live="polite"></p>
+  <p id="courierMotionState" class="note-inline" role="status" aria-live="polite"></p>
   <button type="button" class="settings-row" id="verifyGpsUpload" hidden><span>Verificar envio real do GPS</span><span class="setting-arrow">↻</span></button>
   <button type="button" class="settings-row" id="startNativeGps" hidden><span>Ativar GPS em segundo plano durante o plantão</span><span class="setting-arrow">▶</span></button>
   <button type="button" class="settings-row" id="stopNativeGps" hidden><span>Parar GPS em segundo plano</span><span class="setting-arrow">■</span></button>
@@ -224,6 +227,25 @@ function showAndroidGpsSettings(show){
  if(button)button.hidden=!show;
 }
 function handleAndroidGpsReply(status){
+ if(status.startsWith("motion_permission:")){
+  const granted=status==="motion_permission:granted";
+  const prompt=$("requestMotionPermission");
+  prompt.hidden=granted;
+  $("courierMotionPermissionStatus").textContent=granted
+   ?"Atividade física autorizada. O GPS ajusta seus envios ao movimento somente durante o plantão."
+   :"Atividade física opcional. O GPS continuará funcionando mesmo sem esta autorização.";
+  if(granted)window.PitaccoGps?.postMessage?.("motion_status");
+  return;
+ }
+ if(status.startsWith("motion_state:")){
+  const state=status.slice("motion_state:".length);
+  const translation={still:"Parado",walking:"A pé",bicycle:"De bicicleta",
+   vehicle:"Em veículo",unknown:"Aguardando identificar movimento",
+   disabled:"Detecção de movimento indisponível",inactive:"Plantão encerrado"};
+  $("courierMotionState").textContent="Atividade detectada: "+(translation[state]||"Indisponível")+
+   ". O Pitacco não envia o tipo de atividade à loja.";
+  return;
+ }
  if(status.startsWith("background:")){
   const mode=status.slice("background:".length);
   const button=$("requestBackgroundGps"),indicator=$("courierBackgroundGpsStatus");
@@ -294,16 +316,22 @@ if(window.PitaccoGps){
  try{
   window.PitaccoGps.postMessage("tracking_status");
   window.PitaccoGps.postMessage("background_status");
+  window.PitaccoGps.postMessage("motion_permission_status");
+  window.PitaccoGps.postMessage("motion_status");
  }catch{}
  document.addEventListener("visibilitychange",()=>{
   if(!document.hidden){
    window.PitaccoGps?.postMessage?.("tracking_status");
    window.PitaccoGps?.postMessage?.("background_status");
+   window.PitaccoGps?.postMessage?.("motion_permission_status");
+   window.PitaccoGps?.postMessage?.("motion_status");
   }
  });
  window.addEventListener("focus",()=>{
   window.PitaccoGps?.postMessage?.("background_status");
   window.PitaccoGps?.postMessage?.("tracking_status");
+  window.PitaccoGps?.postMessage?.("motion_permission_status");
+  window.PitaccoGps?.postMessage?.("motion_status");
  });
 }
 async function startNativeGpsTracking(){
@@ -1304,7 +1332,17 @@ async function boot(){
    $("courierBackgroundGpsStatus").textContent="Verificando autorização para localização durante o plantão…";
    window.PitaccoGps.postMessage("background_request");
   });
-  $("verifyGpsUpload").addEventListener("click",()=>window.PitaccoGps?.postMessage?.("tracking_status"));
+  $("verifyGpsUpload").addEventListener("click",()=>{
+   window.PitaccoGps?.postMessage?.("tracking_status");
+   window.PitaccoGps?.postMessage?.("motion_status");
+  });
+  $("requestMotionPermission").addEventListener("click",()=>{
+   if(!window.PitaccoGps?.postMessage){
+    $("courierMotionPermissionStatus").textContent="Atualize o aplicativo para habilitar a detecção de movimento.";
+    return;
+   }
+   window.PitaccoGps.postMessage("motion_permission_request");
+  });
   $("stopNativeGps").addEventListener("click",()=>{
    void stopNativeGpsTracking();
    gpsStatus("Rastreamento contínuo interrompido. Use Ativar para voltar a compartilhar em segundo plano.");
