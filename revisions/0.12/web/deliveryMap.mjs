@@ -54,7 +54,7 @@ function leaflet() {
   return leafletPromise;
 }
 
-export async function mountDeliveryMap(container, { center, radius, onSelect, mode='circle', polygon=[] }) {
+export async function mountDeliveryMap(container, { center, radius, onSelect, mode='circle', polygon=[], polygons=[] }) {
   const L = await leaflet();
   if (!container.isConnected) return;
   const map = L.map(container, { scrollWheelZoom: false }).setView(center || [-14.24, -51.93], center ? 14 : 4);
@@ -68,7 +68,19 @@ export async function mountDeliveryMap(container, { center, radius, onSelect, mo
     shape?.remove();
     if (!point) return;
     // Show exactly the geographical boundary the merchant saved.
-    if (mode==='polygon' && Array.isArray(polygon) && polygon.length>=3) {
+    if (mode==='polygons') {
+      // Customer sees every active region, exactly as configured by merchant.
+      const palette=['#ea580c','#2563eb','#059669','#9333ea','#d97706',
+        '#db2777','#0e7490','#be123c','#64748b','#0d9488','#7c3aed','#ca8a04'];
+      shape=L.featureGroup().addTo(map);
+      for (const [index,region] of (Array.isArray(polygons)?polygons:[]).entries()) {
+        const vertices=region?.vertices;
+        if(!Array.isArray(vertices)||vertices.length<3)continue;
+        L.polygon(vertices,{...style,color:palette[index%palette.length],weight:3})
+          .bindTooltip(String(region.name||'Região '+(index+1))).addTo(shape);
+      }
+      if(!shape.getLayers().length){shape.remove();shape=null;}
+    }else if (mode==='polygon' && Array.isArray(polygon) && polygon.length>=3) {
       shape=L.polygon(polygon,{...style,color:'#ea580c',weight:3}).addTo(map);
     }else if(meters) {
       shape=L.circle(point,{...style,color:'#ea580c',weight:3,radius:meters}).addTo(map);
