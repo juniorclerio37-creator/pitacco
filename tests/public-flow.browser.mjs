@@ -177,7 +177,7 @@ try {
     await page.getByText('Ponto marcado. Confira o endereço e calcule o frete.').waitFor();
     await page.getByRole('button',{name:'Calcular taxa de entrega'}).click();
     await page.getByText(/Linha reta: 1,1 km · Entrega: R\$.*5,00/).waitFor();
-    assert.match(await cart.locator('#total').innerText(),/74,00/);
+    assert.match(await page.locator('#total').innerText(),/74,00/);
     if(scheduled)await page.getByLabel('Quando deseja receber?').selectOption(scheduled);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
     await page.getByRole('button', { name: 'Confirmar pedido' }).click();
