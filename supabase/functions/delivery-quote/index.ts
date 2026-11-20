@@ -49,7 +49,7 @@ async function approximateStoreAddress(store:any,db:any):Promise<Geo & {approxim
  endpoint.searchParams.set('addressdetails','1');
  endpoint.searchParams.set('limit','4');
  endpoint.searchParams.set('countrycodes','br');
- let first:any;
+ let first:any, providerUnavailable=false;
  try{
   const result=await fetch(endpoint,{
    headers:{
@@ -72,7 +72,7 @@ async function approximateStoreAddress(store:any,db:any):Promise<Geo & {approxim
      finiteBrazil(Number(item.lat),Number(item.lon))&&
      normalize(String(item.display_name||'')).includes(normalize(String(store.city||''))));
   }
- }catch(e){throw Error('Localização automática indisponível. Marque o ponto manualmente no mapa.');}
+ }catch{providerUnavailable=true;}
  if(!first){
   // BrasilAPI CEP v2 sometimes includes a geocoded postal centroid. Never
   // mislabel this as the exact storefront entrance.
@@ -93,7 +93,9 @@ async function approximateStoreAddress(store:any,db:any):Promise<Geo & {approxim
     }
    }catch{/* Manual pin remains available. */}
   }
-  throw Error('Não encontramos esse endereço automaticamente. Toque no mapa para marcar a loja.');
+  throw Error(providerUnavailable
+   ?'Provedor de localização indisponível. Marque a loja no mapa ou tente novamente mais tarde.'
+   :'Não encontramos esse endereço automaticamente. Toque no mapa para marcar a loja.');
  }
  return {lat:Number(first.lat),lng:Number(first.lon),country:'BR',
   city:store.city,neighborhood:store.neighborhood||'',approximate:true};
