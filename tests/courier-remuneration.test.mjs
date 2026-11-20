@@ -74,3 +74,46 @@ test('regra da loja de origem só vale na loja de testes com acesso explícito',
  assert.match(sql,/order by \(r\.store_id=new\.store_id\) desc limit 1/);
  assert.match(sql,/rules\.store_id=\(select c\.store_id from public\.couriers c/);
 });
+
+test('courier list includes explicitly shared test rider without transferring their home store',()=>{
+ const api=read('supabase/functions/pitacco-courier-access/index.ts');
+ const sql=read('supabase/migrations/20261121000000_fix_courier_visibility_and_pay_rules.sql');
+ const web=read('revisions/0.12/web/CourierAccessManager.jsx');
+ assert.match(api,/pitacco_service_store_couriers/);
+ assert.match(api,/shared:driver\.store_id!==storeId/);
+ assert.match(sql,/public\.pitacco_courier_test_access\(c\.id,p_store\)/);
+ assert.match(web,/Compartilhado com esta loja/);
+ assert.match(web,/!c\.shared&&/);
+ assert.match(web,/set-remuneration/);
+});
+
+test('invalid phone returns actionable validation and never leaves a stale half-created account',()=>{
+ const api=read('supabase/functions/pitacco-courier-access/index.ts');
+ const identity=read('supabase/functions/pitacco-courier-access/identity.mjs');
+ const manager=read('revisions/0.12/web/CourierAccessManager.jsx');
+ assert.match(api,/try \{phone=normalizeBrazilPhone\(body\.phone\);\}/);
+ assert.match(api,/catch \{return \[422/);
+ assert.match(api,/celular com DDD válido/);
+ assert.match(identity,/normalizeBrazilPhone/);
+ assert.match(manager,/const national=digits\.startsWith\('55'\)/);
+ assert.match(manager,/\^\[1-9\]\[0-9\]9\[0-9\]/);
+});
+
+test('merchant pages use authorized courier listing and protect per-store payout',()=>{
+ const paths=[
+  'revisions/0.12/web/CourierWorkspace.jsx',
+  'revisions/0.12/web/CourierRates.jsx',
+  'revisions/0.12/web/CourierFinance.jsx',
+  'revisions/0.12/web/LogisticsHub.jsx',
+  'revisions/0.12/web/DeliveryDialog.jsx',
+ ];
+ for(const path of paths){
+  const source=read(path);
+  assert.match(source,/pitacco_store_couriers/,path);
+  assert.doesNotMatch(source,/from\('couriers'\)\.select\([^\n]*\)\.eq\('store_id'/,path);
+ }
+ const migration=read('supabase/migrations/20261121000000_fix_courier_visibility_and_pay_rules.sql');
+ assert.match(migration,/pitacco_register_courier_payout/);
+ assert.match(migration,/x\.status='entregue'/);
+ assert.match(migration,/public\.pitacco_validate_courier_pay_rule/);
+});
