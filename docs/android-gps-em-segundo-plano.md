@@ -36,7 +36,7 @@ Esta melhoria está apenas na branch `feat/entregador-atividade-fisica-20261120`
 
 ### Atividade física opcional
 
-Em **Ajustes → Localização para entregas → Ativar atividade física (GPS inteligente)**, o app explica para o entregador que a permissão permite identificar localmente transições entre **parado, caminhada, bicicleta e em veículo**. No Android 10 ou superior é solicitada separadamente a permissão `ACTIVITY_RECOGNITION`. A recusa não impede login, recebimento de pedidos ou GPS tradicional.
+Na versão **2.0.13**, a tela **Ajustes → Permissões e rastreamento** possui **um único botão “Permissões do Android”**. Ele abre as configurações do aplicativo no sistema operacional, onde o entregador pode autorizar localização precisa, localização o tempo todo, atividade física e notificações. O app não solicita tudo de uma vez; as permissões continuam sendo controladas individualmente pelo Android. A atividade física permite identificar localmente transições entre **parado, caminhada, bicicleta e em veículo**. A recusa não impede login, recebimento de pedidos ou GPS tradicional.
 
 Durante um plantão ativo, o serviço Android registra a API **Google Activity Transition** via um `PendingIntent` explícito para `CourierMotionReceiver` (`exported=false`). As transições ficam somente no celular; não são enviadas ao Supabase nem ao cliente. Ao sair do plantão, a assinatura é removida e o estado local é limpo. Sem permissão ou Google Play Services funcional, a frequência original permanece.
 
@@ -51,3 +51,14 @@ Durante um plantão ativo, o serviço Android registra a API **Google Activity T
 A tela do entregador não deve chamar `.catch()` diretamente sobre o retorno `PostgrestBuilder` de `sb.rpc()`. Após a RPC `pitacco_driver_online(false)` funcionar, deve cancelar a observação de GPS no navegador imediatamente, enviar o comando de parada ao serviço Android, solicitar revogação segura via Supabase e atualizar a disponibilidade. A falha temporária de limpeza remota não deve travar a tela; a capacidade GPS também é revogada automaticamente pelo mecanismo do banco ao ficar offline.
 
 **Testes no celular antes de liberar**: online → off → online, com o app aberto, minimizado, Waze aberto e tela bloqueada; verificar ausência de coordenadas novas após ficar offline; verificar permissão recusada, movimento, parado prolongado, retomada do movimento e bateria. Solicitar ao usuário a foto do erro para reconciliar qualquer outro defeito visual ou de navegação.
+
+### GPS automático e interface simplificada
+
+- **Ficar online**: o Pitacco verifica a sessão e inicia automaticamente o serviço GPS nativo (com localização autorizada); não há botão separado de ativação.
+- **Já estava online ao abrir**: após carregar o cadastro e confirmar a sessão, o app retoma automaticamente o rastreamento, sem solicitar uma nova ação de plantão.
+- **Ficar offline**: após confirmar o estado no servidor, interrompe o GPS do navegador, para o serviço nativo e revoga a capacidade de rastreamento. Não há botão separado de parada na tela.
+- **Falha temporária de rede**: não criar capacidades duplicadas em atualizações sucessivas; controlar tentativas e impedir que uma resposta atrasada religue um plantão encerrado.
+- **Android sem serviço nativo**: preservar o caminho de geolocalização da versão web no navegador. As informações de GPS mostram se o serviço está aguardando, ativo ou desatualizado.
+- **Alertas e sons**: permanecem em uma seção expansível “Diagnósticos e som de alertas”, recolhida por padrão. Não remover suas funcionalidades.
+
+**Importante:** a versão 2.0.13 permanece em *pull request rascunho*, sem APK oficial e sem implantação na produção até nova aprovação. O Android pode restringir o serviço em segundo plano conforme as permissões e bateria; validar em aparelho real antes de anunciar rastreamento garantido.
