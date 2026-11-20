@@ -1,5 +1,5 @@
 // All delivery area decisions happen on this server, never in client-side JS.
-export const finiteBrazil=(lat:number,lng:number)=>Number.isFinite(lat)&&Number.isFinite(lng)
+export const finiteBrazil=(lat,lng)=>Number.isFinite(lat)&&Number.isFinite(lng)
  &&lat>=-34&&lat<=6&&lng>=-75&&lng<=-32;
 export const directDistance=(a,b)=>{
  const rad=Math.PI/180;
