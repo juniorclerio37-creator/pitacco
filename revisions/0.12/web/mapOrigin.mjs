@@ -20,6 +20,16 @@ export async function edgeErrorMessage(error,fallback='Não foi possível locali
   ? fallback : (error.message||fallback);
 }
 export async function locateStoreByAddress(client,storeId){
+ const pending=inflightOriginRequests.get(storeId);
+ if(pending)return pending;
+ const job=locateStoreOnce(client,storeId);
+ inflightOriginRequests.set(storeId,job);
+ try{return await job;}finally{if(inflightOriginRequests.get(storeId)===job)inflightOriginRequests.delete(storeId);}
+}
+// Two merchant tabs can request the same origin simultaneously; keep only
+// one in-flight query per store and always clear the cache after completion.
+const inflightOriginRequests=new Map();
+async function locateStoreOnce(client,storeId){
  const {data,error}=await client.functions.invoke('delivery-quote',{
   body:{action:'store-origin',store_id:storeId}
  });
@@ -31,6 +41,7 @@ export async function locateStoreByAddress(client,storeId){
   const status=Number(error.context?.status||0);
   failure.status=status;
   failure.retryable=!status||status===429||status>=500;
+  failure.retryAfterMs=status===429?8_000:75_000;
   throw failure;
  }
  const latitude=Number(data?.latitude),longitude=Number(data?.longitude);
