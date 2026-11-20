@@ -48,7 +48,9 @@ test('merchant config shares pinned store origin and visual coverage with custom
  const settings=read('revisions/0.12/web/StorefrontSettings.jsx');
  const map=read('revisions/0.12/web/deliveryMap.mjs');
  assert.match(settings,/mountDeliveryCoverageMap/);
- assert.match(settings,/longitude/);
+ assert.match(settings,/shopPoint\(store\)/);
+ assert.match(settings,/locateStoreByAddress\(client,store.id\)/);
+ assert.match(read('revisions/0.12/web/mapOrigin.mjs'),/longitude/);
  assert.match(settings,/onVerticesChange/);
  assert.match(map,/export async function mountDeliveryCoverageMap/);
  assert.match(map,/L\.circle\(point/);
