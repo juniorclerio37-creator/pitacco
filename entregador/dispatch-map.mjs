@@ -121,7 +121,12 @@ export async function mountCourierSharedMap(container,{onOpenOrder,onNavigate}={
    weight:1,fillColor:'#60a5fa',fillOpacity:.06,interactive:false}).addTo(gpsLayer);
   return true;
  }
- return {setData,setGps,fitAll,stats:()=>stats,
+ function clearGps(){
+  if(rider){gpsLayer.removeLayer(rider);rider=null;}
+  if(accuracyCircle){gpsLayer.removeLayer(accuracyCircle);accuracyCircle=null;}
+  gpsPoint=null;
+ }
+ return {setData,setGps,clearGps,fitAll,stats:()=>stats,
   focusGps(){if(!gpsPoint)return false;map.setView(gpsPoint,16);return true;},
   resize(){map.invalidateSize();},destroy(){map.remove()}};
 }
