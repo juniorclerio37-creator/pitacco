@@ -78,7 +78,7 @@ test('Location service stays user-stoppable and shift-scoped',()=>{
  assert.match(gpsService,/private void submitPosition/);
  assert.match(panel,/pitacco_courier_background_gps_start/);
  assert.match(panel,/pitacco_courier_background_gps_revoke/);
- assert.match(panel,/if\(!nextOnline\)\{\s*stopGpsSharing\(\);\s*await stopNativeGpsTracking\(\)/);
+ assert.match(panel,/else\{\s*stopGpsSharing\(\);\s*await stopNativeGpsTracking\(\)/);
 });
 
 
