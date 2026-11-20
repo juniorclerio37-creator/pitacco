@@ -49,3 +49,34 @@
  background:white;color:#9a3412;border-radius:50%;font-size:13px;
  font-weight:900;box-shadow:0 3px 9px #0003;cursor:grab;touch-action:none}
 .pitacco-polygon-handle:active{cursor:grabbing}
+
+
+/* Independent polygons. Keep the existing circle-by-km controls untouched. */
+.delivery-region-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.delivery-region-heading strong{font-size:1rem}
+.delivery-region-heading button{min-height:42px}
+.delivery-region-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:10px}
+.delivery-region-item{display:flex;align-items:center;justify-content:space-between;gap:7px;min-width:0;
+ border:1px solid #e1d5c8;border-radius:12px;background:var(--panel,#fff);padding:8px}
+.delivery-region-item.is-selected{border:2px solid #ea580c;background:#fff7ed;color:#713f12}
+.delivery-region-select{flex:1;min-width:0;display:flex;align-items:center;gap:9px;text-align:left;
+ border:0;background:transparent;color:inherit;cursor:pointer;padding:5px;font:inherit}
+.delivery-region-select>span:last-child{display:grid;gap:2px;min-width:0}
+.delivery-region-select strong{font-size:.9rem;overflow-wrap:anywhere}
+.delivery-region-select small{font-size:.75rem;opacity:.8}
+.delivery-region-dot{width:17px;height:17px;border:2px solid #fff;border-radius:50%;flex-shrink:0;
+ box-shadow:0 1px 4px #0004}
+.delivery-region-item-actions{display:flex;align-items:center;gap:3px;flex-shrink:0}
+.delivery-region-item-actions button{width:29px;height:34px;min-height:34px;padding:0;
+ border:1px solid #ead6c4;border-radius:7px;background:#fff;color:#7c2d12;
+ font-size:18px;cursor:pointer}
+.delivery-region-item-actions button:disabled{opacity:.35;cursor:not-allowed}
+.delivery-region-editor{display:grid;gap:12px;border:1px solid #f0c7a8;border-radius:12px;
+ background:#fff9f2;padding:14px;color:#653e26}
+.delivery-region-editor .delivery-zone-rates{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+.delivery-region-editor p{margin:0;line-height:1.45}
+@media(max-width:620px){
+ .delivery-region-heading button{width:100%}
+ .delivery-region-list{grid-template-columns:1fr}
+ .delivery-region-select{flex:1;min-height:50px}
+}
