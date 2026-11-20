@@ -304,7 +304,6 @@ export async function mountDeliveryCoverageMap(container,{center,mode='circle',r
   if(selectedMode==='circle'){
    const circle=L.circle(point,{radius:km*1000,color:'#ea580c',weight:3,opacity:.95,
     fillColor:'#fb923c',fillOpacity:.12}).addTo(coverage);
-   L.marker(circle.getBounds().getNorth(),{opacity:0,interactive:false}).addTo(coverage);
    if(focus)map.fitBounds(circle.getBounds(),{padding:[22,22],maxZoom:16});
   }else{
    if(polygon.length>=3)L.polygon(polygon,{color:'#ea580c',weight:3,
