@@ -69,7 +69,9 @@ async function myCourier(userId) {
 async function registerDriver(body, actor) {
   const {storeId, name} = body;
   const cleanedName = String(name ?? "").trim();
-  const phone = normalizeBrazilPhone(body.phone);
+  let phone;
+  try {phone=normalizeBrazilPhone(body.phone);}
+  catch {return [422,{error:"Informe um celular com DDD válido, no formato (21) 99999-9999. Confira os 11 dígitos."}];}
   // The older merchant page only sends name and phone until the new bundle
   // is published. Preserve registration with the agreed default.
   const remuneration=validRemuneration(body.remuneration ?? {mode:"customer_fee"});
@@ -85,7 +87,7 @@ async function registerDriver(body, actor) {
     user_metadata: {full_name: cleanedName},
     app_metadata: {pitacco_role: "courier"},
   });
-  if (authError || !created?.user) return [409, {error:"Não foi possível cadastrar o telefone. Verifique se já existe um cadastro."}];
+  if (authError || !created?.user) return [409, {error:"Não foi possível criar uma nova conta para este telefone. Se o motoboy já possui acesso, procure-o na lista e use a opção adequada, sem cadastrar uma conta duplicada."}];
   const userId = created.user.id;
   try {
     const {data: profile, error: profileError} = await admin.from("profiles")
@@ -152,15 +154,23 @@ async function reactivateDriver(body, actor) {
 async function listDrivers(body, actor) {
   const storeId = body.storeId;
   if (!await authorizeStore(actor,storeId)) return [403,{error:"Sem permissão para esta loja"}];
-  const {data,error}=await admin.from("couriers").select("id,name,phone,active,available")
-    .eq("store_id",storeId).order("name");
+  // Includes native store couriers (even inactive) and ONLY authorized
+  // shared test couriers. The SQL RPC verifies this JWT's actor/store scope.
+  const {data,error}=await admin.rpc("pitacco_service_store_couriers",{
+    p_actor:actor,p_store:storeId
+  });
   if (error) throw error;
   const {data:rules,error:rulesError}=await admin.from("pitacco_courier_pay_rules")
     .select("courier_id,mode,rate,daily_rate,km_rate,per_delivery_rate,include_customer_fee")
     .eq("store_id",storeId);
   if (rulesError)throw rulesError;
   const byCourier=new Map((rules??[]).map(rule=>[rule.courier_id,rule]));
-  return [200,{couriers:(data??[]).map(driver=>({...driver,remuneration:byCourier.get(driver.id)??null}))}];
+  return [200,{couriers:(data??[]).map(driver=>({
+    id:driver.id,name:driver.name,phone:driver.phone,
+    active:driver.active,available:driver.available,
+    shared:driver.store_id!==storeId,
+    remuneration:byCourier.get(driver.id)??null
+  }))}];
 }
 async function setDriverRemuneration(body,actor){
  const {storeId,courierId}=body;
@@ -169,9 +179,11 @@ async function setDriverRemuneration(body,actor){
  const remuneration=validRemuneration(body.remuneration);
  if(!remuneration)return [400,{error:"Informe um modelo e valores válidos de remuneração."}];
  if(!await authorizeStore(actor,storeId))return [403,{error:"Sem permissão para esta loja"}];
- const {data:courier,error:findError}=await admin.from("couriers")
-  .select("id").eq("id",courierId).eq("store_id",storeId).maybeSingle();
- if(findError||!courier)return [404,{error:"Entregador não encontrado nesta loja"}];
+ const {data:visible,error:findError}=await admin.rpc("pitacco_service_store_couriers",{
+  p_actor:actor,p_store:storeId
+ });
+ const courier=(visible??[]).find(driver=>driver.id===courierId);
+ if(findError||!courier)return [404,{error:"Entregador não encontrado ou não autorizado nesta loja"}];
  const {error}=await admin.from("pitacco_courier_pay_rules")
   .upsert({store_id:storeId,courier_id:courierId,...remuneration},
     {onConflict:"store_id,courier_id"});
