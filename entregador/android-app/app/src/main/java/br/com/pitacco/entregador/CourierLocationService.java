@@ -12,6 +12,12 @@ import android.content.pm.ServiceInfo;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.ActivityTransition;
+import com.google.android.gms.location.ActivityTransitionRequest;
+import com.google.android.gms.location.DetectedActivity;
+import java.util.ArrayList;
+import java.util.List;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.Looper;
@@ -43,14 +49,61 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class CourierLocationService extends Service implements LocationListener {
     static final String ACTION_START = "br.com.pitacco.entregador.location.START";
     static final String ACTION_STOP = "br.com.pitacco.entregador.location.STOP";
+    static final String ACTION_REFRESH_MOTION = "br.com.pitacco.entregador.location.MOTION_REFRESH";
     static final String CHANNEL = "pitacco_gps_shift_v1";
     static final String EXPECTED_BACKEND = "https://mdevzehqcpcgxspwbiyz.supabase.co";
     private static final int NOTIFICATION_ID = 20811;
     private static final long INTERVAL_MS = 12_000L;
+    // Keep a recent courier position even when motion detection says STILL.
+    // Never infer arrival/completion from activity recognition.
+    private static final long STILL_INTERVAL_MS = 45_000L;
+    private static final long STILL_HYSTERESIS_MS = 60_000L;
+    private static final long MOTION_FRESH_MS = 10 * 60_000L;
+    private static final int MOTION_REQUEST_ID = 20812;
+    private static volatile String motionType = "unknown";
+    private static volatile int motionActivity = -1;
+    private static volatile long motionChangedAtMs = 0L;
+    private static volatile boolean motionRegistered = false;
     private static final long ORDER_WATCH_MS = 8_000L;
     private static volatile boolean running = false;
 
     static boolean isRunning() { return running; }
+
+    /** Motion metadata stays only on the phone and is cleared after the shift. */
+    static String motionStatus() {
+        if (!running) return "inactive";
+        if (!motionRegistered) return "disabled";
+        if (motionChangedAtMs == 0 ||
+                SystemClock.elapsedRealtime() - motionChangedAtMs > MOTION_FRESH_MS) return "unknown";
+        return motionType;
+    }
+
+    static void onMotionTransition(int activity, int transition, long eventElapsedNanos) {
+        if (!running || !motionRegistered) return;
+        long now = SystemClock.elapsedRealtime();
+        long eventMs = eventElapsedNanos / 1_000_000L;
+        if (eventMs <= 0 || eventMs > now + 30_000L || now - eventMs > 120_000L) return;
+        if (transition == ActivityTransition.ACTIVITY_TRANSITION_EXIT) {
+            if (activity == motionActivity) {
+                motionType = "unknown";
+                motionActivity = -1;
+                motionChangedAtMs = now; // resume normal-frequency GPS immediately
+            }
+            return;
+        }
+        if (transition != ActivityTransition.ACTIVITY_TRANSITION_ENTER) return;
+        final String next;
+        if (activity == DetectedActivity.STILL) next = "still";
+        else if (activity == DetectedActivity.IN_VEHICLE) next = "vehicle";
+        else if (activity == DetectedActivity.ON_BICYCLE) next = "bicycle";
+        else if (activity == DetectedActivity.ON_FOOT ||
+                activity == DetectedActivity.WALKING ||
+                activity == DetectedActivity.RUNNING) next = "walking";
+        else return;
+        motionType = next;
+        motionActivity = activity;
+        motionChangedAtMs = now;
+    }
     private static volatile long startedElapsedMs = 0;
     private static volatile long lastConfirmedUploadElapsedMs = 0;
 
@@ -64,7 +117,70 @@ public final class CourierLocationService extends Service implements LocationLis
         return "stale";
     }
 
+    private PendingIntent motionPendingIntent;
     private LocationManager locations;
+
+    private boolean motionPermissionGranted() {
+        return Build.VERSION.SDK_INT < 29 ||
+            checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void enableMotionRecognition() {
+        if (!running || !motionPermissionGranted() || motionRegistered) return;
+        try {
+            Intent callback = new Intent(this, CourierMotionReceiver.class);
+            // Google Play services fills the transition result; the PendingIntent
+            // must be mutable, but points to an explicit, non-exported receiver.
+            motionPendingIntent = PendingIntent.getBroadcast(this, MOTION_REQUEST_ID, callback,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
+            List<ActivityTransition> transitions = new ArrayList<>();
+            int[] activities = new int[] {DetectedActivity.STILL, DetectedActivity.WALKING,
+                DetectedActivity.RUNNING, DetectedActivity.ON_FOOT,
+                DetectedActivity.ON_BICYCLE, DetectedActivity.IN_VEHICLE};
+            for (int activity : activities) {
+                transitions.add(new ActivityTransition.Builder().setActivityType(activity)
+                    .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER).build());
+                transitions.add(new ActivityTransition.Builder().setActivityType(activity)
+                    .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT).build());
+            }
+            ActivityRecognition.getClient(this).requestActivityTransitionUpdates(
+                new ActivityTransitionRequest(transitions), motionPendingIntent)
+                .addOnSuccessListener(ignored -> { if (running) motionRegistered = true; })
+                .addOnFailureListener(error -> {
+                    motionRegistered = false; motionType = "unknown"; motionChangedAtMs = 0L;
+                });
+        } catch (RuntimeException | LinkageError ignored) {
+            motionRegistered = false;
+            // Without Play services or this optional permission, regular GPS
+            // continues at its original 12-second cadence.
+        }
+    }
+
+    private void disableMotionRecognition() {
+        motionRegistered = false;
+        motionType = "unknown";
+        motionActivity = -1;
+        motionChangedAtMs = 0L;
+        if (motionPendingIntent == null) return;
+        PendingIntent current = motionPendingIntent;
+        motionPendingIntent = null;
+        try {
+            ActivityRecognition.getClient(this).removeActivityTransitionUpdates(current)
+                .addOnCompleteListener(ignored -> current.cancel());
+        } catch (RuntimeException | LinkageError ignored) {
+            current.cancel();
+        }
+    }
+
+    private static long reportIntervalMs(Location fix) {
+        if (!"still".equals(motionStatus())) return INTERVAL_MS;
+        // The transition filter can occasionally call a moving rider STILL
+        // (e.g. traffic signals). Hysteresis plus speed prevents GPS gaps.
+        if (SystemClock.elapsedRealtime() - motionChangedAtMs < STILL_HYSTERESIS_MS ||
+                (fix.hasSpeed() && fix.getSpeed() > 1.5f)) return INTERVAL_MS;
+        return STILL_INTERVAL_MS;
+    }
     private final ExecutorService network = Executors.newSingleThreadExecutor();
     private final AtomicBoolean sending = new AtomicBoolean(false);
     private final AtomicBoolean checkingOrders = new AtomicBoolean(false);
@@ -94,6 +210,11 @@ public final class CourierLocationService extends Service implements LocationLis
     @Override public IBinder onBind(Intent intent) { return null; }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null && ACTION_REFRESH_MOTION.equals(intent.getAction())) {
+            if (running) enableMotionRecognition();
+            else stopSelf();
+            return START_NOT_STICKY;
+        }
         if (intent == null || ACTION_STOP.equals(intent.getAction())) {
             stopSelf();
             return START_NOT_STICKY;
@@ -138,8 +259,14 @@ public final class CourierLocationService extends Service implements LocationLis
             }
             if (!listening) throw new IllegalStateException("Location provider disabled");
             lastConfirmedUploadElapsedMs = 0;
+            lastSubmittedMs = 0;
+            motionRegistered = false;
+            motionType = "unknown";
+            motionActivity = -1;
+            motionChangedAtMs = 0;
             startedElapsedMs = SystemClock.elapsedRealtime();
             running = true;
+            enableMotionRecognition();
             watchHandler.removeCallbacks(orderWatch);
             watchHandler.post(orderWatch);
             return START_NOT_STICKY;
@@ -190,7 +317,8 @@ public final class CourierLocationService extends Service implements LocationLis
                 SystemClock.elapsedRealtimeNanos() - fix.getElapsedRealtimeNanos() >
                         30_000_000_000L) return;
         long now = SystemClock.elapsedRealtime();
-        if (now - lastSubmittedMs < INTERVAL_MS || !sending.compareAndSet(false, true)) return;
+        if (now - lastSubmittedMs < reportIntervalMs(fix) ||
+                !sending.compareAndSet(false, true)) return;
         lastSubmittedMs = now;
         final double lat = fix.getLatitude(), lng = fix.getLongitude(), accuracy = fix.getAccuracy();
         try {
@@ -298,6 +426,7 @@ public final class CourierLocationService extends Service implements LocationLis
 
     @Override public void onDestroy() {
         running = false;
+        disableMotionRecognition();
         startedElapsedMs = 0;
         lastConfirmedUploadElapsedMs = 0;
         watchHandler.removeCallbacks(orderWatch);

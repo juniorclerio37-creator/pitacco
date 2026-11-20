@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import {runInNewContext} from 'node:vm';
 
 const main = readFileSync(new URL('../entregador/android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java',import.meta.url),'utf8');
 const receiver = readFileSync(new URL('../entregador/android-app/app/src/main/java/br/com/pitacco/entregador/AssignmentMessagingService.java',import.meta.url),'utf8');
@@ -42,8 +43,8 @@ test('Pitacco Android declares separate opt-in background GPS and preserves one 
  assert.match(manifest,/android:foregroundServiceType="location"/);
  assert.match(manifest,/android:stopWithTask="false"/);
  assert.match(gradle,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(gradle,/versionCode 32/);
- assert.match(gradle,/versionName '2\.0\.12'/);
+ assert.match(gradle,/versionCode 33/);
+ assert.match(gradle,/versionName '2\.0\.13'/);
 });
 test('Android 11+ requests all-the-time permission separately with driver disclosure',()=>{
  assert.match(main,/private void showBackgroundLocationDisclosure\(JavaScriptReplyProxy reply\)/);
@@ -55,9 +56,9 @@ test('Android 11+ requests all-the-time permission separately with driver disclo
  assert.match(main,/background_request/);
  assert.match(main,/"granted"\.equals\(locationPermissionState\(\)\)/);
  assert.match(main,/A permissão é opcional e não ativa o plantão automaticamente/);
- assert.match(panel,/id="requestBackgroundGps" hidden/);
- assert.match(panel,/Permitir localização o tempo todo no Android/);
- assert.match(panel,/postMessage\("background_request"\)/);
+ assert.match(panel,/id="openAndroidPermissions"/);
+ assert.match(panel,/localização o tempo todo/);
+ assert.match(panel,/postMessage\("settings"\)/);
  assert.match(panel,/postMessage\("background_status"\)/);
 });
 test('Native GPS status relies on recent successful upload, not only service running',()=>{
@@ -69,7 +70,7 @@ test('Native GPS status relies on recent successful upload, not only service run
  assert.match(main,/CourierLocationService\.trackingState\(\)/);
  assert.match(panel,/Serviço Android ativo\. Aguardando confirmação/);
  assert.match(panel,/servidor não confirma localização recente/);
- assert.match(panel,/id="verifyGpsUpload" hidden/);
+ assert.doesNotMatch(panel,/id="verifyGpsUpload"/);
 });
 test('Location service stays user-stoppable and shift-scoped',()=>{
  assert.match(gpsService,/setOngoing\(true\)/);
@@ -77,5 +78,81 @@ test('Location service stays user-stoppable and shift-scoped',()=>{
  assert.match(gpsService,/private void submitPosition/);
  assert.match(panel,/pitacco_courier_background_gps_start/);
  assert.match(panel,/pitacco_courier_background_gps_revoke/);
- assert.match(panel,/if\(!nextOnline\)\{await stopNativeGpsTracking\(\)/);
+ assert.match(panel,/else\{\s*stopGpsSharing\(\);\s*await stopNativeGpsTracking\(\)/);
+});
+
+
+test('physical activity permission remains opt-in and never controls whether GPS may run',()=>{
+ const manifest=readFileSync(new URL('../entregador/android-app/app/src/main/AndroidManifest.xml',import.meta.url),'utf8');
+ const service=readFileSync(new URL('../entregador/android-app/app/src/main/java/br/com/pitacco/entregador/CourierLocationService.java',import.meta.url),'utf8');
+ const receiver=readFileSync(new URL('../entregador/android-app/app/src/main/java/br/com/pitacco/entregador/CourierMotionReceiver.java',import.meta.url),'utf8');
+ assert.match(manifest,/android.permission.ACTIVITY_RECOGNITION/);
+ assert.match(manifest,/CourierMotionReceiver" android:exported="false"/);
+ assert.match(main,/motion_permission_request/);
+ assert.match(main,/ACTIVITY_PERMISSION = 98/);
+ assert.match(main,/showMotionPermissionDisclosure\(JavaScriptReplyProxy reply\)/);
+ assert.match(main,/O tipo de movimento não é enviado à loja nem ao cliente/);
+ assert.match(service,/!motionPermissionGranted\(\)/);
+ assert.match(service,/return INTERVAL_MS/);
+ assert.match(service,/STILL_INTERVAL_MS = 45_000L/);
+ assert.match(service,/requestActivityTransitionUpdates\(/);
+ assert.match(service,/removeActivityTransitionUpdates\(/);
+ assert.match(receiver,/!CourierLocationService.isRunning\(\)/);
+ assert.match(panel,/postMessage\("settings"\)/);
+});
+
+
+test('offline cleanup handles a real PostgrestBuilder-like thenable without .catch()', async()=>{
+ const begin=panel.indexOf('async function stopNativeGpsTracking(){');
+ const end=panel.indexOf('\nfunction stopGpsSharing(){',begin);
+ assert.ok(begin>0&&end>begin);
+ const code=panel.slice(begin,end);
+ for(const networkError of [null,{message:'Sem rede'}]){
+  const events=[],messages=[];
+  const context={
+   window:{PitaccoGps:{postMessage:msg=>events.push(msg)}},
+   sb:{rpc:name=>{
+     events.push(name);
+     // Supabase PostgrestBuilder has a .then() method, but NO .catch().
+     return {then(resolve){resolve({data:null,error:networkError})}};
+   }},
+   console:{warn:msg=>messages.push(msg)}
+  };
+  await runInNewContext('let nativeGpsRunning=true,gpsShiftEpoch=0,nativeGpsLastAttempt=10;\n'+code+'\nstopNativeGpsTracking()',context);
+  assert.deepEqual(events,['stop','pitacco_courier_background_gps_revoke']);
+  assert.equal(messages.length,networkError?1:0);
+ }
+});
+
+
+test('all courier Supabase RPC fallbacks use real Promises, not .catch on builders',()=>{
+ assert.match(panel,/Promise\.resolve\(sb\.rpc\("pitacco_courier_push_readiness"\)\)\.catch/);
+ assert.match(panel,/Promise\.resolve\(sb\.rpc\(nativeProtocol\?/);
+ assert.match(panel,/Promise\.resolve\(sb\.rpc\("pitacco_unregister_courier_push"\)\)\.catch/);
+ assert.doesNotMatch(panel,/sb\.rpc\("pitacco_courier_push_readiness"\)\.catch/);
+ assert.doesNotMatch(panel,/sb\.rpc\("pitacco_unregister_courier_push"\)\.catch/);
+});
+
+
+test('general permissions screen replaces separate GPS and activity controls',()=>{
+ assert.match(panel,/id="openAndroidPermissions"/);
+ assert.doesNotMatch(panel,/id="startNativeGps"/);
+ assert.doesNotMatch(panel,/id="stopNativeGps"/);
+ assert.doesNotMatch(panel,/id="requestBackgroundGps"/);
+ assert.doesNotMatch(panel,/id="requestMotionPermission"/);
+ assert.match(panel,/void reconcileShiftGps\(\)/);
+ assert.match(panel,/void reconcileShiftGps\(\{force:true\}\)/);
+ assert.match(panel,/if\(epoch!==gpsShiftEpoch\|\|!courier\?\.available\)return/);
+ assert.match(panel,/courierAdvancedDiagnostics/);
+});
+
+
+test('returning from Android settings refreshes opted-in Firebase token',()=>{
+ const resume=main.slice(main.indexOf('@Override protected void onResume()'),main.indexOf('@Override protected void onNewIntent('));
+ assert.ok(resume.includes("window.PitaccoPush?.postMessage?.('refresh')"));
+ assert.ok(resume.includes("window.PitaccoPush?.postMessage?.('status')"));
+ assert.ok(resume.includes("window.PitaccoGps?.postMessage?.('motion_permission_status')"));
+ // Keep the notification bridge restricted to the authenticated origin.
+ assert.ok(main.includes('Collections.singleton("https://" + HOST)'));
+ assert.ok(main.includes('if (!mainFrame || !isHttps(origin)'));
 });

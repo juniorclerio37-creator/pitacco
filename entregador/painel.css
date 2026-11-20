@@ -137,3 +137,17 @@ button{font-family:inherit}button:focus-visible,a:focus-visible{outline:3px soli
 .route-plan-all{display:flex;margin-top:11px;background:#e9f8ef;border-color:#bce4cb;color:#166b43;min-height:42px;text-align:center;justify-content:center}
 .card-ifood-copy{display:block;width:100%;margin-top:7px;min-height:39px;background:#f5f6fa;color:#53657b;border:1px solid #e0e5ee;border-radius:11px;font-size:12px}
 .history-cancelled-amount{color:#7f8998!important}
+
+/* Permissões simples: um único acesso ao Android e GPS automático. */
+.courier-gps-summary{margin:13px 0 12px;padding:14px 15px;border:1px solid #f1dac5;background:#fff8f1;border-radius:14px}
+.courier-gps-summary strong{display:block;font-size:14px;line-height:1.55;color:#8d4815;overflow-wrap:anywhere}
+.courier-gps-summary p{margin:7px 0 0;line-height:1.5}
+.courier-gps-summary p:empty{display:none}
+#openAndroidPermissions{font-weight:850;color:#a84b13}
+.courier-diagnostics{margin:15px 0;border:1px solid #e7eaf0;border-radius:13px;background:#fafbfc;overflow:hidden}
+.courier-diagnostics summary{cursor:pointer;list-style:none;padding:13px 15px;min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;font-weight:800;color:#607084}
+.courier-diagnostics summary::after{content:"⌄";font-size:20px;line-height:1;color:#e46d17}
+.courier-diagnostics[open] summary::after{transform:rotate(180deg)}
+.courier-diagnostics summary::-webkit-details-marker{display:none}
+.courier-diagnostics summary:focus-visible{outline:3px solid #fb923c;outline-offset:-3px}
+.courier-diagnostics-content{padding:7px 13px 12px;border-top:1px solid #e7eaf0}

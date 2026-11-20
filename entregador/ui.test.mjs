@@ -117,8 +117,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.ok(page.includes('nativeNotificationSettings'));
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 32'));
- assert.ok(build.includes("versionName '2.0.12'"));
+ assert.ok(build.includes('versionCode 33'));
+ assert.ok(build.includes("versionName '2.0.13'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -459,15 +459,15 @@ test("Android GPS authorization remains part of the original courier app upgrade
  const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
  const screen=read("painel.html");
  assert.match(app,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(app,/versionCode 32/);
- assert.match(app,/versionName '2\.0\.12'/);
+ assert.match(app,/versionCode 33/);
+ assert.match(app,/versionName '2\.0\.13'/);
  assert.match(activity,/registerGpsBridge\(\)/);
  assert.match(activity,/WebViewCompat\.addWebMessageListener\(web, "PitaccoGps"/);
  assert.match(activity,/requestPermissions\(new String\[\]\{/);
  assert.match(activity,/ACTION_APPLICATION_DETAILS_SETTINGS/);
- assert.match(screen,/Autorizar localização no Android/);
- assert.match(screen,/window\.PitaccoGps\.postMessage\("request"\)|bridge\.postMessage\("request"\)/);
- assert.match(screen,/openAndroidGpsSettings/);
+ assert.match(screen,/id="openAndroidPermissions"/);
+ assert.match(screen,/postMessage\("settings"\)/);
+ assert.doesNotMatch(screen,/id="retryCourierGps"/);
 });
 
 test("Android 2.0.9 upgrade prompts for GPS and keeps notification registration opt-in",()=>{
@@ -477,8 +477,8 @@ test("Android 2.0.9 upgrade prompts for GPS and keeps notification registration 
  const workflow=read("../.github/workflows/courier-apk.yml");
  const panel=read("painel.html");
  assert.match(build,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(build,/versionCode 32/);
- assert.match(build,/versionName '2\.0\.12'/);
+ assert.match(build,/versionCode 33/);
+ assert.match(build,/versionName '2\.0\.13'/);
  for(const name of ["ACCESS_FINE_LOCATION","ACCESS_COARSE_LOCATION","POST_NOTIFICATIONS"])
   assert.ok(manifest.includes("android.permission."+name));
  assert.match(main,/GPS_SETUP_DONE = "gps_permission_explained_209"/);
@@ -508,7 +508,8 @@ test("Pitacco courier GPS continues in Android background only under a visible l
  assert.match(manifest,/ACCESS_BACKGROUND_LOCATION/);
  assert.match(activity,/showBackgroundLocationDisclosure/);
  assert.match(activity,/backgroundPermissionState/);
- assert.match(page,/id="requestBackgroundGps"/);
+ assert.match(page,/id="openAndroidPermissions"/);
+ assert.doesNotMatch(page,/id="requestBackgroundGps"/);
  assert.match(service,/FOREGROUND_SERVICE_TYPE_LOCATION/);
  assert.match(service,/startForeground\(NOTIFICATION_ID/);
  assert.match(service,/LocationManager\.GPS_PROVIDER/);
@@ -520,11 +521,13 @@ test("Pitacco courier GPS continues in Android background only under a visible l
  assert.doesNotMatch(service,/service.role|SUPABASE_SERVICE_ROLE_KEY|refresh_token|accessToken/i);
  assert.match(activity,/startForegroundService\(tracking\)/);
  assert.match(activity,/if \("tracking_status"\.equals\(action\)\)/);
- assert.match(page,/id="startNativeGps"/);
- assert.match(page,/id="stopNativeGps"/);
+ assert.doesNotMatch(page,/id="startNativeGps"/);
+ assert.doesNotMatch(page,/id="stopNativeGps"/);
+ assert.match(page,/async function reconcileShiftGps/);
+ assert.match(page,/void reconcileShiftGps\(\)/);
  assert.match(page,/pitacco_courier_background_gps_start/);
  assert.match(page,/pitacco_courier_background_gps_revoke/);
- assert.match(page,/if\(!nextOnline\)\{await stopNativeGpsTracking\(\);stopGpsSharing\(\);\}/);
+ assert.match(page,/else\{\s*stopGpsSharing\(\);\s*await stopNativeGpsTracking\(\);/);
  assert.match(migration,/extensions\.gen_random_bytes\(32\)/);
  assert.match(migration,/extensions\.digest\(v_token,'sha256'\)/);
  assert.match(migration,/interval '12 hours'/);
@@ -570,4 +573,71 @@ test("Firebase courier device automatically retries session-scoped enrollment an
  const logout=panel.slice(panel.indexOf('async function logout(){'));
  assert.match(logout,/window\.clearTimeout\(nativePushRetryTimer\)/);
  assert.match(logout,/pitacco_unregister_courier_push/);
+});
+
+
+test("optional movement permission is wired from native consent to GPS adaptive reporting",()=>{
+ const manifest=read("android-app/app/src/main/AndroidManifest.xml");
+ const gradle=read("android-app/app/build.gradle");
+ const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
+ const service=read("android-app/app/src/main/java/br/com/pitacco/entregador/CourierLocationService.java");
+ const receiver=read("android-app/app/src/main/java/br/com/pitacco/entregador/CourierMotionReceiver.java");
+ const panel=read("painel.html");
+ assert.match(manifest,/android.permission.ACTIVITY_RECOGNITION/);
+ assert.match(manifest,/CourierMotionReceiver" android:exported="false"/);
+ assert.match(gradle,/play-services-location:21\.4\.0/);
+ assert.match(activity,/showMotionPermissionDisclosure/);
+ assert.match(activity,/ACTIVITY_PERMISSION = 98/);
+ assert.match(activity,/motion_permission_request/);
+ assert.match(activity,/motionPermissionState/);
+ assert.match(activity,/ACCESS_BACKGROUND_LOCATION/);
+ assert.match(service,/requestActivityTransitionUpdates/);
+ assert.match(service,/removeActivityTransitionUpdates/);
+ assert.match(service,/reportIntervalMs\(fix\)/);
+ assert.match(service,/STILL_INTERVAL_MS = 45_000L/);
+ assert.match(service,/MOTION_FRESH_MS/);
+ assert.match(service,/if \(!running \|\| !motionRegistered\) return/);
+ assert.match(service,/lastConfirmedUploadElapsedMs/);
+ assert.match(service,/disableMotionRecognition\(\)/);
+ assert.match(receiver,/ActivityTransitionResult.extractResult/);
+ assert.match(receiver,/CourierLocationService.isRunning\(\)/);
+ assert.match(panel,/id="openAndroidPermissions"/);
+ assert.doesNotMatch(panel,/id="requestMotionPermission"/);
+ assert.match(panel,/id="courierMotionState"/);
+ assert.match(panel,/postMessage\("settings"\)/);
+ assert.match(panel,/postMessage\("motion_permission_status"\)/);
+ assert.match(panel,/postMessage\("motion_permission_status"\)/);
+});
+test("offline transition revokes GPS safely and never invokes catch on a PostgrestBuilder",()=>{
+ const panel=read("painel.html");
+ const stop=panel.slice(panel.indexOf('async function stopNativeGpsTracking(){'),panel.indexOf('function stopGpsSharing(){'));
+ assert.match(stop,/try\{[\s\S]*?await sb\.rpc\("pitacco_courier_background_gps_revoke"\)/);
+ assert.doesNotMatch(stop,/sb\.rpc\("pitacco_courier_background_gps_revoke"\)\.catch/);
+ assert.match(panel,/else\{\s*stopGpsSharing\(\);\s*await stopNativeGpsTracking\(\);/);
+});
+
+
+test("one Android permissions entry and GPS automatically follows availability",()=>{
+ const panel=read("painel.html");
+ assert.match(panel,/id="openAndroidPermissions"/);
+ for(const obsolete of ["retryCourierGps","openAndroidGpsSettings","requestBackgroundGps",
+                         "requestMotionPermission","verifyGpsUpload","startNativeGps","stopNativeGps"]){
+  assert.doesNotMatch(panel,new RegExp('id="'+obsolete+'"'));
+ }
+ assert.match(panel,/courierAdvancedDiagnostics/);
+ assert.match(panel,/function reconcileShiftGps\(/);
+ assert.match(panel,/void reconcileShiftGps\(\)/);
+ assert.match(panel,/if\(nativeGpsRunning\|\|nativeGpsStartTask\)return/);
+ assert.match(panel,/if\(epoch!==gpsShiftEpoch\|\|!courier\?\.available\)return/);
+ assert.match(panel,/navigator\.onLine===false/);
+ assert.match(panel,/AUTO_GPS_RETRY_MS=45000/);
+ assert.match(panel,/await sb\.rpc\("pitacco_driver_online",\{p_online:nextOnline\}\)/);
+ assert.match(panel,/if\(nextOnline\)\{\s*nativeGpsLastAttempt=0;\s*void reconcileShiftGps\(\{force:true\}\)/);
+ assert.match(panel,/else\{\s*stopGpsSharing\(\);\s*await stopNativeGpsTracking\(\)/);
+ assert.match(panel,/if\(window\.PitaccoGps\?\.postMessage\)\{stopGpsSharing\(\);return;\}/);
+ assert.match(panel,/onclick|addEventListener\("click"/);
+ const main=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
+ assert.match(main,/refreshMotionRecognition\(\);\s*if \(web != null\)/);
+ assert.match(main,/postMessage\?\.\('tracking_status'\)/);
+ assert.match(main,/postMessage\?\.\('motion_permission_status'\)/);
 });

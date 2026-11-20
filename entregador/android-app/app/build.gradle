@@ -9,6 +9,7 @@ if (file('google-services.json').exists()) {
 dependencies {
     implementation 'androidx.webkit:webkit:1.12.1'
     implementation 'com.google.firebase:firebase-messaging:24.1.2'
+    implementation 'com.google.android.gms:play-services-location:21.4.0'
 }
 
 android {
@@ -18,8 +19,8 @@ android {
         applicationId 'br.com.pitacco.entregador'
         minSdk 26
         targetSdk 35
-        versionCode 32
-        versionName '2.0.12'
+        versionCode 33
+        versionName '2.0.13'
         manifestPlaceholders = [pitaccoAppLabel: 'Pitacco Entregador']
     }
     buildTypes {

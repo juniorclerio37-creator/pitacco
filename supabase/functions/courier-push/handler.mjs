@@ -73,8 +73,16 @@ export function createCourierPush({url,serviceKey,cronSecret,verifyCron,account,
    return Response.json({error:'FCM ainda não configurado'},{status:503});
   }
   try{
-   // Obtain OAuth before claiming; a missing credential does not consume deliveries.
+   // A server-to-server preflight checks that the Firebase service account
+   // can obtain a Google OAuth token, WITHOUT claiming any courier delivery or
+   // requiring a registered device. The same Vault/cron bearer is mandatory.
+   // Never return access tokens, private keys, project IDs or device tokens.
+   const mode=(await req.clone().json().catch(()=>({})))?.action;
    const token=await googleToken();
+   if(mode==='preflight'){
+    return Response.json({ready:true,oauth:'authorized',dispatched:false});
+   }
+   // Obtain OAuth before claiming; a missing credential does not consume deliveries.
    const jobs=await rpc('pitacco_claim_courier_push');
    async function deliver(event){
     // A missing/invalid capability must not downgrade old APKs into a data-only
