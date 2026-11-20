@@ -35,6 +35,8 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
  const retryTimer=useRef(null),selectionVersion=useRef(0);
  const addressSignature=[store?.id,store?.address,store?.address_number,store?.neighborhood,
    store?.city,store?.state,store?.postal_code].map(x=>String(x||'').trim()).join('|');
+ const currentAddressRef=useRef(addressSignature);
+ currentAddressRef.current=addressSignature;
  const savedAddress=Boolean(store?.address?.trim()&&store?.city?.trim()&&store?.state?.trim());
  useEffect(()=>{
   const p=pointFromStore(store);
@@ -93,7 +95,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
    if(!savedAddress)throw Error('Cadastre rua, cidade e estado antes de localizar a loja.');
    const {point:p,approximate}=await locateStoreByAddress(client,store.id);
    // Ignore slow responses for a store/address no longer shown.
-   if(requestedAddress!==addressSignature)return;
+   if(requestedAddress!==currentAddressRef.current)return;
    setPoint(p);
    if(selectionVersion.current===pickedBefore){
     setPicked(p);map.current?.setPoint(p);
