@@ -1,5 +1,6 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {mountStorePointPicker} from './deliveryMap.mjs';
+import {locateStoreByAddress} from './mapOrigin.mjs';
 import {StoreReadiness} from './StoreReadiness.jsx';
 import './store-profile-modern.css';
 const keys=[['name','Nome da loja'],['description','Descrição'],['phone','Telefone'],['address','Rua / avenida'],['address_number','Número'],['neighborhood','Bairro'],['city','Cidade'],['state','Estado'],['postal_code','CEP']];
@@ -29,7 +30,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
  const [point,setPoint]=useState(initial),[picked,setPicked]=useState(initial);
  const [viewCenter,setViewCenter]=useState(null);
  const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');
- const mapEl=useRef(null),map=useRef(null);
+ const mapEl=useRef(null),map=useRef(null),automaticLookup=useRef(null);
  const savedAddress=Boolean(store?.address?.trim()&&store?.city?.trim()&&store?.state?.trim());
  useEffect(()=>{
   const p=pointFromStore(store);
@@ -66,24 +67,33 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
    }).catch(()=>{});
   return()=>{active=false};
  },[client,store?.id,Boolean(point),manager]);
- async function locate(){
+ async function locate({automatic=false}={}){
   setBusy(true);setMessage('');setError('');
   try{
    if(addressDirty)throw Error('Salve primeiro o endereço atualizado da loja.');
    if(!savedAddress)throw Error('Cadastre rua, cidade e estado antes de localizar a loja.');
-   const {data,error}=await client.functions.invoke('delivery-quote',{
-    body:{action:'store-origin',store_id:store.id}
-   });
-   if(error)throw error;
-   if(!data||!Number.isFinite(Number(data.latitude))||!Number.isFinite(Number(data.longitude)))
-    throw Error(data?.error||'Endereço não localizado.');
-   const p=[Number(data.latitude),Number(data.longitude)];
+   const {point:p,approximate}=await locateStoreByAddress(client,store.id);
    setPoint(p);setPicked(p);map.current?.setPoint(p);
-   setMessage('Endereço localizado. Arraste o marcador até a entrada exata da loja e salve.');
+   setMessage(approximate
+    ?'Encontramos uma posição aproximada pelo endereço. Arraste o símbolo até a entrada exata e confirme.'
+    :'Localização da loja encontrada. Você pode ajustar o marcador até a entrada exata.');
    onSaved?.();
-  }catch(err){setError('Não foi possível localizar a loja: '+(err.message||String(err)));}
-  finally{setBusy(false)}
+  }catch(err){
+   setError((automatic?'Localização automática: ':'Não foi possível localizar a loja: ')+
+    (err.message||String(err))+'. Você também pode tocar diretamente no mapa.');
+  }finally{setBusy(false)}
  }
+ // No manual "Localizar" click is needed: use the address saved for this store.
+ // The ref prevents duplicate calls on React renders and map updates.
+ useEffect(()=>{
+  if(point||!manager||!savedAddress||addressDirty||!store?.id)return;
+  const key=[store.id,store.address,store.address_number,store.neighborhood,
+    store.city,store.state,store.postal_code].map(x=>String(x||'').trim()).join('|');
+  if(automaticLookup.current===key)return;
+  automaticLookup.current=key;
+  void locate({automatic:true});
+ },[store?.id,store?.address,store?.address_number,store?.neighborhood,
+    store?.city,store?.state,store?.postal_code,point,manager,savedAddress,addressDirty]);
  async function savePoint(){
   setBusy(true);setMessage('');setError('');
   try{
@@ -107,9 +117,9 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
    <small>Confirme a entrada do estabelecimento para centralizar entregas e motoboys.</small></div>
   {addressDirty&&<p role="status" className="store-point-warning">Salve as alterações do endereço acima antes de ajustar o marcador.</p>}
   <div ref={mapEl} className="store-point-map" aria-label="Mapa para marcar a entrada da loja"/>
-  {!point&&<p className="store-point-warning">Localize pelo endereço ou navegue no mapa e toque na entrada da loja para posicionar o marcador.</p>}
+  {!point&&<p className="store-point-warning">O Pitacco busca o endereço cadastrado automaticamente. Se necessário, toque no mapa para ajustar o ponto da loja.</p>}
   <div className="store-point-actions">
-   <button type="button" className="secondary" disabled={!manager||busy||addressDirty||!savedAddress} onClick={locate}>
+   <button type="button" className="secondary" disabled={!manager||busy||addressDirty||!savedAddress} onClick={()=>locate()}>
     {busy?'Localizando…':'Localizar pelo endereço'}
    </button>
    {picked&&<button type="button" disabled={!manager||busy||addressDirty||!changed} onClick={savePoint}>
