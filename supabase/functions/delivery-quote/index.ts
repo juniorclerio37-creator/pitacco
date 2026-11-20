@@ -11,7 +11,8 @@ const response=(status:number,payload:unknown,origin:string)=>new Response(JSON.
 });
 const problem=(status:number,message:string,origin:string)=>response(status,{error:message},origin);
 
-type Geo={lat:number;lng:number;country:string;city:string;neighborhood:string};
+type Geo={lat:number;lng:number;country:string;city:string;neighborhood:string;
+ street?:string;houseNumber?:string;postalCode?:string};
 async function geocode(address:string,key:string):Promise<Geo>{
  const url=new URL('https://maps.googleapis.com/maps/api/geocode/json');
  url.searchParams.set('address',address);url.searchParams.set('region','br');url.searchParams.set('key',key);
@@ -27,7 +28,8 @@ async function geocode(address:string,key:string):Promise<Geo>{
  const country=components.find((x:any)=>x.types.includes('country'))?.short_name||'';
  const neighborhood=component('sublocality_level_1')||component('neighborhood')||component('sublocality');
  const city=component('administrative_area_level_2')||component('locality');
- return {lat:first.geometry.location.lat,lng:first.geometry.location.lng,country,city,neighborhood};
+ return {lat:first.geometry.location.lat,lng:first.geometry.location.lng,country,city,neighborhood,
+ street:component('route'),houseNumber:component('street_number'),postalCode:component('postal_code')};
 }
 /**
  * Limited one-off OSM fallback for the shop ADDRESS, not a general purpose
@@ -36,70 +38,74 @@ async function geocode(address:string,key:string):Promise<Geo>{
  * identify the app, and cache the answer in stores.latitude/longitude.
  * A larger installation must configure a dedicated geocoding provider.
  */
+// Keep only results verified against the actual street AND city and either
+// neighborhood or postal code. Never replace the real shop with a city center.
+const sameRoad=(a:unknown,b:unknown)=>{
+ const clean=(v:unknown)=>normalize(String(v||'')).replace(/^(rua|r\\.?|avenida|av\\.?|travessa|tv\\.?)\\s+/,'')
+  .replace(/[^a-z0-9 ]+/g,' ').replace(/\\s+/g,' ').trim();
+ return !!clean(a)&&clean(a)===clean(b);
+};
+const samePostal=(a:unknown,b:unknown)=>{
+ const digits=(v:unknown)=>String(v||'').replace(/\\D/g,'');
+ return digits(a).length===8 && digits(a)===digits(b);
+};
+function originMatchesGoogle(g:Geo,store:any):boolean{
+ // Google gives rooftop/interpolated results; demand the requested road/number,
+ // municipality and (if supplied) postal code. Otherwise try strict OSM.
+ if(g.country!=='BR'||!finiteBrazil(g.lat,g.lng)||!sameRoad(g.street,store.address)
+  ||normalize(g.city)!==normalize(store.city)
+  ||String(g.houseNumber||'').trim()!==String(store.address_number||'').trim())return false;
+ if(g.postalCode&&store.postal_code&&!samePostal(g.postalCode,store.postal_code))return false;
+ return true;
+}
 async function approximateStoreAddress(store:any,db:any):Promise<Geo & {approximate:boolean}>{
  const cap=await db.rpc('pitacco_service_delivery_quote_limit',{
   p_scope:'pitacco-osm-geocode-global-minute',p_max:1,p_minutes:1
  });
  if(cap.error)throw Error('A verificação do serviço de localização está temporariamente indisponível.');
  if(cap.data!==true)throw Error('Serviço de localização ocupado. Tente novamente em um minuto.');
+ // A broad search of the city must never be used as the shop location.
  const query=[store.address,store.neighborhood,store.city,store.state,'Brasil']
   .filter(Boolean).map((value:string)=>String(value).trim()).join(', ');
  const endpoint=new URL('https://nominatim.openstreetmap.org/search');
  endpoint.searchParams.set('q',query);
  endpoint.searchParams.set('format','jsonv2');
  endpoint.searchParams.set('addressdetails','1');
- endpoint.searchParams.set('limit','4');
+ endpoint.searchParams.set('limit','8');
  endpoint.searchParams.set('countrycodes','br');
- let first:any, providerUnavailable=false;
+ let items:any[];
  try{
   const result=await fetch(endpoint,{
-   headers:{
-    'User-Agent':'Pitacco-delivery/1.0 (https://pitacco.com.br)',
-    'Referer':'https://pitacco.com.br/'
-   },
+   headers:{'User-Agent':'Pitacco-delivery/1.0 (https://pitacco.com.br)',
+    'Referer':'https://pitacco.com.br/'},
    signal:AbortSignal.timeout(9000)
   });
-  if(!result.ok)throw Error('Geocodificação temporariamente indisponível.');
-  const items=await result.json();
-  if(Array.isArray(items)){
-   const street=(value:any)=>normalize(String(value||'')).replace(/^(rua|r |avenida|av )\s+/,'');
-   first=items.find((item:any)=>item.address?.country_code==='br'&&
-     finiteBrazil(Number(item.lat),Number(item.lon))&&
-     street(item.address.road||item.address.pedestrian||item.address.residential)
-       ===street(store.address));
-   // A rough but region-valid OSM suggestion is also acceptable; the merchant
-   // must visually confirm or drag the pin to the actual shop entrance.
-   if(!first)first=items.find((item:any)=>item.address?.country_code==='br'&&
-     finiteBrazil(Number(item.lat),Number(item.lon))&&
-     normalize(String(item.display_name||'')).includes(normalize(String(store.city||''))));
-  }
- }catch{providerUnavailable=true;}
- if(!first){
-  // BrasilAPI CEP v2 sometimes includes a geocoded postal centroid. Never
-  // mislabel this as the exact storefront entrance.
-  const cep=String(store.postal_code||'').replace(/\D/g,'');
-  if(cep.length===8){
-   try{
-    const resp=await fetch('https://brasilapi.com.br/api/cep/v2/'+cep,{
-     headers:{'User-Agent':'Pitacco-delivery/1.0 (https://pitacco.com.br)'},
-     signal:AbortSignal.timeout(6500)
-    });
-    if(resp.ok){
-     const data=await resp.json();
-     const lat=Number(data?.location?.coordinates?.latitude),lng=Number(data?.location?.coordinates?.longitude);
-     if(data?.city&&normalize(data.city)===normalize(store.city)&&
-       data?.state&&Number.isFinite(lat)&&Number.isFinite(lng)&&finiteBrazil(lat,lng)){
-      return {lat,lng,country:'BR',city:store.city,neighborhood:store.neighborhood||'',approximate:true};
-     }
-    }
-   }catch{/* Manual pin remains available. */}
-  }
-  throw Error(providerUnavailable
-   ?'Provedor de localização indisponível. Marque a loja no mapa ou tente novamente mais tarde.'
-   :'Não encontramos esse endereço automaticamente. Toque no mapa para marcar a loja.');
- }
- return {lat:Number(first.lat),lng:Number(first.lon),country:'BR',
-  city:store.city,neighborhood:store.neighborhood||'',approximate:true};
+  if(!result.ok)throw Error('Serviço de geocodificação não respondeu.');
+  const data=await result.json();
+  if(!Array.isArray(data))throw Error('Resposta inválida de geocodificação.');
+  items=data;
+ }catch{throw Error('Provedor de localização indisponível. Tente novamente mais tarde.');}
+ const first=items.find((item:any)=>{
+  const a=item.address||{};
+  if(a.country_code!=='br'||!finiteBrazil(Number(item.lat),Number(item.lon)))return false;
+  const road=a.road||a.pedestrian||a.residential||a.living_street||a.footway;
+  if(!sameRoad(road,store.address))return false;
+  const cities=[a.city,a.town,a.municipality,a.county,a.village].filter(Boolean);
+  if(!cities.some((city:any)=>normalize(String(city))===normalize(store.city)))return false;
+  const expectedZip=String(store.postal_code||'').replace(/\\D/g,'');
+  if(a.postcode&&expectedZip.length===8&&!samePostal(a.postcode,expectedZip))return false;
+  if(a.house_number&&store.address_number&&
+   String(a.house_number).trim()!==String(store.address_number).trim())return false;
+  const districts=[a.suburb,a.city_district,a.neighbourhood,a.quarter,a.district,
+   a.borough,a.hamlet,a.residential].filter(Boolean);
+  const sameDistrict=!!store.neighborhood&&districts.some((v:any)=>
+   normalize(String(v))===normalize(String(store.neighborhood)));
+  const sameZip=expectedZip.length===8&&samePostal(a.postcode,expectedZip);
+  return sameDistrict||sameZip;
+ });
+ if(!first)throw Error('Endereço não localizado com segurança. Não foi possível confirmar rua, bairro e cidade. Ajuste o ponto manualmente ou configure um provedor de localização preciso.');
+ return {lat:Number(first.lat),lng:Number(first.lon),country:'BR',city:store.city,
+  neighborhood:store.neighborhood||'',approximate:!Boolean(first.address?.house_number)};
 }
 
 async function roadDistance(origin:Geo,destination:Geo,key:string):Promise<number>{
@@ -183,8 +189,11 @@ Deno.serve(async request=>{
    let location:Geo & {approximate?:boolean};
    try{
     if(key){
-     try{location={...(await geocode(address,key)),approximate:false};}
-     catch{location=await approximateStoreAddress(store,db);}
+     try{
+      const exact=await geocode(address,key);
+      if(!originMatchesGoogle(exact,store))throw Error('Google retornou outro endereço.');
+      location={...exact,approximate:false};
+     }catch{location=await approximateStoreAddress(store,db);}
     }else location=await approximateStoreAddress(store,db);
    }catch(failure){
     const detail=failure instanceof Error?failure.message:'Falha ao localizar o endereço.';
