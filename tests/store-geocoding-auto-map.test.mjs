@@ -92,3 +92,19 @@ test('deduplicates concurrent merchant origin requests',async()=>{
  await locateStoreByAddress(client,'same-store');
  assert.equal(requests,2);
 });
+
+test('street and postal code patterns are real regex tokens, not literal backslashes',()=>{
+ const edge=read('supabase/functions/delivery-quote/index.ts');
+ assert.ok(edge.includes(String.raw`/^(rua|r\.?|avenida|av\.?|travessa|tv\.?)\s+/`));
+ assert.ok(edge.includes(String.raw`replace(/\D/g,'')`));
+ assert.ok(!edge.includes(String.raw`replace(/\\D/g,'')`));
+});
+test('approximate map coordinates require merchant approval before use as freight origin',()=>{
+ const edge=read('supabase/functions/delivery-quote/index.ts');
+ const profile=read('revisions/0.12/web/StoreProfile.jsx');
+ assert.match(edge,/if\(location\.approximate\)\{/);
+ assert.match(edge,/requires_confirmation:true/);
+ assert.match(profile,/Usar GPS do celular \(na loja\)/);
+ assert.match(profile,/setSuggestedPoint\(p\)/);
+ assert.match(profile,/currentLocation\(\)/);
+});
