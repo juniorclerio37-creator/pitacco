@@ -22,7 +22,7 @@ function leaflet() {
   return leafletPromise;
 }
 
-export async function mountDeliveryMap(container, { center, radius, onSelect }) {
+export async function mountDeliveryMap(container, { center, radius, onSelect, mode='circle', polygon=[] }) {
   const L = await leaflet();
   if (!container.isConnected) return;
   const map = L.map(container, { scrollWheelZoom: false }).setView(center || [-14.24, -51.93], center ? 14 : 4);
@@ -31,12 +31,17 @@ export async function mountDeliveryMap(container, { center, radius, onSelect }) 
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   }).addTo(map);
   const style = { color: '#c2410c', fillOpacity: 0.14, interactive: false };
-  let circle, marker;
+  let shape, marker;
   function setArea(point, meters, focus = false) {
-    circle?.remove();
-    if (!point || !meters) return;
-    circle = L.circle(point, { ...style, radius: meters }).addTo(map);
-    if (focus) map.fitBounds(circle.getBounds(), { padding: [18, 18], maxZoom: 16 });
+    shape?.remove();
+    if (!point) return;
+    // Show exactly the geographical boundary the merchant saved.
+    if (mode==='polygon' && Array.isArray(polygon) && polygon.length>=3) {
+      shape=L.polygon(polygon,{...style,color:'#ea580c',weight:3}).addTo(map);
+    }else if(meters) {
+      shape=L.circle(point,{...style,color:'#ea580c',weight:3,radius:meters}).addTo(map);
+    }
+    if (focus && shape) map.fitBounds(shape.getBounds(), {padding:[18,18],maxZoom:16});
   }
   function setPoint(point) {
     marker?.remove();
