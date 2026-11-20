@@ -117,8 +117,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.ok(page.includes('nativeNotificationSettings'));
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 32'));
- assert.ok(build.includes("versionName '2.0.12'"));
+ assert.ok(build.includes('versionCode 33'));
+ assert.ok(build.includes("versionName '2.0.13'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -459,8 +459,8 @@ test("Android GPS authorization remains part of the original courier app upgrade
  const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
  const screen=read("painel.html");
  assert.match(app,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(app,/versionCode 32/);
- assert.match(app,/versionName '2\.0\.12'/);
+ assert.match(app,/versionCode 33/);
+ assert.match(app,/versionName '2\.0\.13'/);
  assert.match(activity,/registerGpsBridge\(\)/);
  assert.match(activity,/WebViewCompat\.addWebMessageListener\(web, "PitaccoGps"/);
  assert.match(activity,/requestPermissions\(new String\[\]\{/);
@@ -477,8 +477,8 @@ test("Android 2.0.9 upgrade prompts for GPS and keeps notification registration 
  const workflow=read("../.github/workflows/courier-apk.yml");
  const panel=read("painel.html");
  assert.match(build,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(build,/versionCode 32/);
- assert.match(build,/versionName '2\.0\.12'/);
+ assert.match(build,/versionCode 33/);
+ assert.match(build,/versionName '2\.0\.13'/);
  for(const name of ["ACCESS_FINE_LOCATION","ACCESS_COARSE_LOCATION","POST_NOTIFICATIONS"])
   assert.ok(manifest.includes("android.permission."+name));
  assert.match(main,/GPS_SETUP_DONE = "gps_permission_explained_209"/);
@@ -570,4 +570,43 @@ test("Firebase courier device automatically retries session-scoped enrollment an
  const logout=panel.slice(panel.indexOf('async function logout(){'));
  assert.match(logout,/window\.clearTimeout\(nativePushRetryTimer\)/);
  assert.match(logout,/pitacco_unregister_courier_push/);
+});
+
+
+test("optional movement permission is wired from native consent to GPS adaptive reporting",()=>{
+ const manifest=read("android-app/app/src/main/AndroidManifest.xml");
+ const gradle=read("android-app/app/build.gradle");
+ const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
+ const service=read("android-app/app/src/main/java/br/com/pitacco/entregador/CourierLocationService.java");
+ const receiver=read("android-app/app/src/main/java/br/com/pitacco/entregador/CourierMotionReceiver.java");
+ const panel=read("painel.html");
+ assert.match(manifest,/android.permission.ACTIVITY_RECOGNITION/);
+ assert.match(manifest,/CourierMotionReceiver" android:exported="false"/);
+ assert.match(gradle,/play-services-location:21\.4\.0/);
+ assert.match(activity,/showMotionPermissionDisclosure/);
+ assert.match(activity,/ACTIVITY_PERMISSION = 98/);
+ assert.match(activity,/motion_permission_request/);
+ assert.match(activity,/motionPermissionState/);
+ assert.match(activity,/ACCESS_BACKGROUND_LOCATION/);
+ assert.match(service,/requestActivityTransitionUpdates/);
+ assert.match(service,/removeActivityTransitionUpdates/);
+ assert.match(service,/reportIntervalMs\(fix\)/);
+ assert.match(service,/STILL_INTERVAL_MS = 45_000L/);
+ assert.match(service,/MOTION_FRESH_MS/);
+ assert.match(service,/if \(!running \|\| !motionRegistered\) return/);
+ assert.match(service,/lastConfirmedUploadElapsedMs/);
+ assert.match(service,/disableMotionRecognition\(\)/);
+ assert.match(receiver,/ActivityTransitionResult.extractResult/);
+ assert.match(receiver,/CourierLocationService.isRunning\(\)/);
+ assert.match(panel,/id="requestMotionPermission" hidden/);
+ assert.match(panel,/id="courierMotionState"/);
+ assert.match(panel,/postMessage\("motion_permission_request"\)/);
+ assert.match(panel,/postMessage\("motion_permission_status"\)/);
+});
+test("offline transition revokes GPS safely and never invokes catch on a PostgrestBuilder",()=>{
+ const panel=read("painel.html");
+ const stop=panel.slice(panel.indexOf('async function stopNativeGpsTracking(){'),panel.indexOf('function stopGpsSharing(){'));
+ assert.match(stop,/try\{[\s\S]*?await sb\.rpc\("pitacco_courier_background_gps_revoke"\)/);
+ assert.doesNotMatch(stop,/sb\.rpc\("pitacco_courier_background_gps_revoke"\)\.catch/);
+ assert.match(panel,/if\(!nextOnline\)\{await stopNativeGpsTracking\(\);stopGpsSharing\(\);\}/);
 });
