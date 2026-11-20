@@ -8,7 +8,7 @@ export default function CourierRates({client,storeId}){
  const [message,setMessage]=useState(''),[busy,setBusy]=useState(false);
  const load=async()=>{
   const [a,b]=await Promise.all([
-   client.from('couriers').select('id,name').eq('store_id',storeId),
+   client.rpc('pitacco_store_couriers',{p_store:storeId}),
    client.from('pitacco_courier_pay_rules').select('*').eq('store_id',storeId)
   ]);
   if(a.error)throw a.error;if(b.error)throw b.error;
