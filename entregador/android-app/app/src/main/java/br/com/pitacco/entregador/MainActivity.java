@@ -45,6 +45,7 @@ public class MainActivity extends Activity {
     private static final int PUSH_PERMISSION = 94;
     private static final int FIRST_OPEN_NOTIFICATION_PERMISSION = 95;
     private static final int LOCATION_PERMISSION = 96;
+    private static final int BACKGROUND_LOCATION_PERMISSION = 97;
     private static final String INITIAL_SETUP_PREFS = "pitacco_delivery_initial_setup";
     private static final String INITIAL_SETUP_DONE = "completed_v1";
     private static final String GPS_SETUP_DONE = "gps_permission_explained_209";
@@ -52,6 +53,7 @@ public class MainActivity extends Activity {
     private GeolocationPermissions.Callback pendingLocationCallback;
     private String pendingLocationOrigin;
     private JavaScriptReplyProxy pendingGpsReply;
+    private JavaScriptReplyProxy pendingBackgroundGpsReply;
     private WebView web;
     private LinearLayout offline;
 
@@ -217,7 +219,7 @@ public class MainActivity extends Activity {
         if (prefs.getBoolean(GPS_SETUP_DONE, false)) return;
         new AlertDialog.Builder(this)
                 .setTitle("Autorizar localização do Pitacco?")
-                .setMessage("O Pitacco precisa da localização precisa para a loja atribuir entregas, calcular distâncias e acompanhar o trajeto durante o plantão. O GPS é compartilhado somente quando você estiver online no aplicativo. Nesta versão, o GPS pode parar quando o aplicativo estiver em segundo plano.")
+                .setMessage("O Pitacco precisa da localização precisa para atribuir entregas e acompanhar o trajeto durante o plantão. Quando o rastreamento contínuo estiver ativo, o GPS poderá continuar com o aplicativo minimizado e a tela apagada. O envio é encerrado ao ficar offline.")
                 .setPositiveButton("Permitir localização", (dialog, which) -> {
                     prefs.edit().putBoolean(GPS_SETUP_DONE, true).apply();
                     requestPermissions(new String[]{
@@ -243,8 +245,11 @@ public class MainActivity extends Activity {
                     if ("status".equals(action)) {
                         reply.postMessage(locationPermissionState());
                     } else if ("tracking_status".equals(action)) {
-                        reply.postMessage(CourierLocationService.isRunning() ?
-                                "tracking:on" : "tracking:off");
+                        reply.postMessage("tracking:" + CourierLocationService.trackingState());
+                    } else if ("background_status".equals(action)) {
+                        reply.postMessage(backgroundPermissionState());
+                    } else if ("background_request".equals(action)) {
+                        showBackgroundLocationDisclosure(reply);
                     } else if ("stop".equals(action)) {
                         stopService(new Intent(this, CourierLocationService.class));
                         reply.postMessage("tracking:off");
@@ -306,6 +311,56 @@ public class MainActivity extends Activity {
                         openExternal(intent);
                     }
                 });
+    }
+
+    /**
+     * Android 11+ deliberately requires the courier to choose "Permitir o tempo
+     * todo" in system Settings AFTER granting foreground precise location.
+     * This permission is optional and never enables a shift by itself.
+     */
+    private String backgroundPermissionState() {
+        if (Build.VERSION.SDK_INT < 29) return "background:granted";
+        if (checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) return "background:granted";
+        return "background:denied";
+    }
+
+    private void showBackgroundLocationDisclosure(JavaScriptReplyProxy reply) {
+        if (!"granted".equals(locationPermissionState())) {
+            reply.postMessage("background:foreground_required");
+            return;
+        }
+        if ("background:granted".equals(backgroundPermissionState())) {
+            reply.postMessage("background:granted");
+            return;
+        }
+        new AlertDialog.Builder(this)
+            .setTitle("Localização durante o plantão")
+            .setMessage("O Pitacco Entregador compartilha sua localização precisa com a loja " +
+                "quando você está online, mesmo com o aplicativo minimizado ou a tela apagada. " +
+                "O cliente acompanha apenas uma posição aproximada da própria entrega após a coleta. " +
+                "Ao ficar offline, sair da conta ou tocar em Parar rastreamento, o envio é interrompido. " +
+                "Para autorizar, escolha Localização > Permitir o tempo todo nas configurações do Android. " +
+                "A permissão é opcional e não ativa o plantão automaticamente.")
+            .setPositiveButton(Build.VERSION.SDK_INT >= 30
+                ? "Abrir configurações" : "Autorizar agora", (dialog, which) -> {
+                if (Build.VERSION.SDK_INT >= 30) {
+                    Intent settings = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:" + getPackageName()));
+                    openExternal(settings);
+                    reply.postMessage("background:settings");
+                } else if (Build.VERSION.SDK_INT == 29) {
+                    pendingBackgroundGpsReply = reply;
+                    requestPermissions(new String[]{
+                            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                    }, BACKGROUND_LOCATION_PERMISSION);
+                } else {
+                    reply.postMessage("background:granted");
+                }
+            })
+            .setNegativeButton("Mais tarde", (dialog, which) ->
+                    reply.postMessage("background:denied"))
+            .show();
     }
 
     private String locationPermissionState() {
@@ -459,6 +514,13 @@ public class MainActivity extends Activity {
             }
             return;
         }
+        if (requestCode == BACKGROUND_LOCATION_PERMISSION) {
+            if (pendingBackgroundGpsReply != null) {
+                pendingBackgroundGpsReply.postMessage(backgroundPermissionState());
+                pendingBackgroundGpsReply = null;
+            }
+            return;
+        }
         if (requestCode == FIRST_OPEN_NOTIFICATION_PERMISSION) {
             finishFirstOpenNotifications();
             return;
@@ -505,6 +567,14 @@ public class MainActivity extends Activity {
     }
 
     /** Recheck orders when the driver taps a native delivery notification. */
+    @Override protected void onResume() {
+        super.onResume();
+        if (web != null) {
+            web.evaluateJavascript(
+                "window.PitaccoGps?.postMessage?.('background_status')", null);
+        }
+    }
+
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
