@@ -30,18 +30,35 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
  const [point,setPoint]=useState(initial),[picked,setPicked]=useState(initial);
  const [viewCenter,setViewCenter]=useState(null);
  const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');
+ const [retryAttempt,setRetryAttempt]=useState(0);
  const mapEl=useRef(null),map=useRef(null),automaticLookup=useRef(null);
+ const retryTimer=useRef(null),selectionVersion=useRef(0);
+ const addressSignature=[store?.id,store?.address,store?.address_number,store?.neighborhood,
+   store?.city,store?.state,store?.postal_code].map(x=>String(x||'').trim()).join('|');
  const savedAddress=Boolean(store?.address?.trim()&&store?.city?.trim()&&store?.state?.trim());
  useEffect(()=>{
   const p=pointFromStore(store);
-  setPoint(p);setPicked(p);setMessage('');setError('');
+  setPoint(p);
+  // A background lookup must not override an unsaved manual correction.
+  if(selectionVersion.current===0)setPicked(p);
+  setMessage('');setError('');
  },[store?.id,store?.latitude,store?.longitude]);
+ useEffect(()=>{
+  // A new address begins a new automatic attempt; any previous retry belongs
+  // to the old address and must not move the marker to an outdated location.
+  if(retryTimer.current)clearTimeout(retryTimer.current);
+  retryTimer.current=null;
+  automaticLookup.current=null;
+  selectionVersion.current=0;
+  setRetryAttempt(0);
+ },[addressSignature]);
+ useEffect(()=>()=>{if(retryTimer.current)clearTimeout(retryTimer.current)},[]);
  useEffect(()=>{
   if(!mapEl.current)return;
   let alive=true;
   mountStorePointPicker(mapEl.current,{
    center:point,viewCenter,
-   onSelect:p=>{if(alive){setPicked(p);setMessage('');}}
+   onSelect:p=>{if(alive){selectionVersion.current++;setPicked(p);setMessage('');setError('');}}
   }).then(instance=>{
    if(alive){map.current=instance;if(!point&&viewCenter)instance.focus(viewCenter,14);}
    else instance.remove();
@@ -68,32 +85,49 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
   return()=>{active=false};
  },[client,store?.id,Boolean(point),manager]);
  async function locate({automatic=false}={}){
+  const requestedAddress=addressSignature;
+  const pickedBefore=selectionVersion.current;
   setBusy(true);setMessage('');setError('');
   try{
    if(addressDirty)throw Error('Salve primeiro o endereço atualizado da loja.');
    if(!savedAddress)throw Error('Cadastre rua, cidade e estado antes de localizar a loja.');
    const {point:p,approximate}=await locateStoreByAddress(client,store.id);
-   setPoint(p);setPicked(p);map.current?.setPoint(p);
+   // Ignore slow responses for a store/address no longer shown.
+   if(requestedAddress!==addressSignature)return;
+   setPoint(p);
+   if(selectionVersion.current===pickedBefore){
+    setPicked(p);map.current?.setPoint(p);
+   }
    setMessage(approximate
-    ?'Encontramos uma posição aproximada pelo endereço. Arraste o símbolo até a entrada exata e confirme.'
-    :'Localização da loja encontrada. Você pode ajustar o marcador até a entrada exata.');
+    ?'Localização aproximada marcada automaticamente pelo endereço. Confira a entrada no mapa e ajuste somente se necessário.'
+    :'A loja foi localizada automaticamente pelo endereço cadastrado.');
    onSaved?.();
   }catch(err){
-   setError((automatic?'Localização automática: ':'Não foi possível localizar a loja: ')+
-    (err.message||String(err))+'. Você também pode tocar diretamente no mapa.');
+   const detail=err.message||String(err);
+   const retry=automatic&&err.retryable===true&&retryAttempt<1;
+   setError(retry
+    ?'Não foi possível localizar o endereço agora. O Pitacco tentará novamente automaticamente.'
+    :'Não conseguimos localizar sua loja com segurança: '+detail+
+      ' Confira rua, número, cidade e CEP. Se necessário, ajuste o marcador no mapa.');
+   if(retry&&!retryTimer.current){
+    // A single delayed retry respects the public geocoding fallback and
+    // avoids repeatedly querying the service on every React re-render.
+    retryTimer.current=setTimeout(()=>{
+     retryTimer.current=null;
+     setRetryAttempt(n=>n+1);
+    },75_000);
+   }
   }finally{setBusy(false)}
  }
- // No manual "Localizar" click is needed: use the address saved for this store.
- // The ref prevents duplicate calls on React renders and map updates.
+ // Map origin is computed as soon as a complete address is loaded or saved.
+ // Merchants do not need to click a location button.
  useEffect(()=>{
   if(point||!manager||!savedAddress||addressDirty||!store?.id)return;
-  const key=[store.id,store.address,store.address_number,store.neighborhood,
-    store.city,store.state,store.postal_code].map(x=>String(x||'').trim()).join('|');
+  const key=addressSignature+'|'+retryAttempt;
   if(automaticLookup.current===key)return;
   automaticLookup.current=key;
   void locate({automatic:true});
- },[store?.id,store?.address,store?.address_number,store?.neighborhood,
-    store?.city,store?.state,store?.postal_code,point,manager,savedAddress,addressDirty]);
+ },[store?.id,addressSignature,point,manager,savedAddress,addressDirty,retryAttempt]);
  async function savePoint(){
   setBusy(true);setMessage('');setError('');
   try{
@@ -117,16 +151,22 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
    <small>Confirme a entrada do estabelecimento para centralizar entregas e motoboys.</small></div>
   {addressDirty&&<p role="status" className="store-point-warning">Salve as alterações do endereço acima antes de ajustar o marcador.</p>}
   <div ref={mapEl} className="store-point-map" aria-label="Mapa para marcar a entrada da loja"/>
-  {!point&&<p className="store-point-warning">O Pitacco busca o endereço cadastrado automaticamente. Se necessário, toque no mapa para ajustar o ponto da loja.</p>}
+  {!point&&<p className="store-point-warning">
+    {busy?'Localizando a loja automaticamente pelo endereço cadastrado…':
+      'O Pitacco posiciona sua loja automaticamente pelo endereço salvo. Se a busca falhar, verifique o endereço ou ajuste o ponto no mapa.'}
+   </p>}
   <div className="store-point-actions">
-   <button type="button" className="secondary" disabled={!manager||busy||addressDirty||!savedAddress} onClick={()=>locate()}>
-    {busy?'Localizando…':'Localizar pelo endereço'}
-   </button>
+   {error&&<button type="button" className="secondary"
+    disabled={!manager||busy||addressDirty||!savedAddress}
+    onClick={()=>{if(retryTimer.current){clearTimeout(retryTimer.current);retryTimer.current=null}
+     automaticLookup.current=null;void locate();}}>
+    Tentar localizar novamente
+   </button>}
    {picked&&<button type="button" disabled={!manager||busy||addressDirty||!changed} onClick={savePoint}>
      Salvar ponto da loja
    </button>}
   </div>
-  <small>Toque no local correto ou arraste o símbolo da loja para a entrada do estabelecimento. Não é necessário digitar coordenadas.</small>
+  <small>O ponto é preenchido automaticamente pelo endereço da loja. O toque e o arraste servem apenas para corrigir a posição, se necessário.</small>
   {error&&<p role="alert" className="store-point-error">{error}</p>}
   {message&&<p role="status" className="store-point-success">{message}</p>}
  </div>;
