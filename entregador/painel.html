@@ -1139,6 +1139,11 @@ async function refreshSnapshot(){
   mapLastGps=gpsResult.data;
   sharedCourierMap?.setGps(mapLastGps);
  }
+ // Do not keep showing the rider at an outdated position.
+ if(mapLastGps&&!freshGps(mapLastGps)){
+  mapLastGps=null;
+  sharedCourierMap?.clearGps();
+ }
  mountCourierMapIfNeeded();
  renderRouteSuggestions(current);
  const target=$("cards");target.replaceChildren();
