@@ -61,10 +61,11 @@ export async function mountDeliveryMap(container, { center, radius, onSelect }) 
  * Editable store pin in Dados da loja. All coordinates are internal:
  * the merchant sees a draggable shop marker, never numeric coordinates.
  */
-export async function mountStorePointPicker(container,{center,onSelect}){
+export async function mountStorePointPicker(container,{center,viewCenter,onSelect}){
  const L=await leaflet();
  if(!container.isConnected)throw Error('Mapa fechado.');
- const map=L.map(container,{scrollWheelZoom:false}).setView(center||[-14.24,-51.93],center?17:4);
+ const map=L.map(container,{scrollWheelZoom:false}).setView(
+  center||viewCenter||[-14.24,-51.93],center?17:viewCenter?13:4);
  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
   maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
  }).addTo(map);
@@ -94,6 +95,7 @@ export async function mountStorePointPicker(container,{center,onSelect}){
  map.invalidateSize();
  return{
   setPoint(point,focus=true){set(point,false);if(focus)map.setView(point,17)},
+  focus(point,zoom=14){if(Array.isArray(point)&&point.length===2)map.setView(point,zoom)},
   resize(){map.invalidateSize()},
   remove(){map.remove()}
  };
