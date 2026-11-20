@@ -1,3 +1,35 @@
+
+// Illustrated storefront marker shared by the shop picker, delivery coverage
+// and fleet map. The bottom of the pin is the actual latitude/longitude.
+export function illustratedShopIcon(L) {
+  const html = `<svg xmlns="http://www.w3.org/2000/svg" width="58" height="68"
+    viewBox="0 0 58 68" aria-hidden="true" focusable="false">
+    <defs><filter id="pitacco-shop-shadow" x="-30%" y="-25%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity=".23"/>
+    </filter></defs>
+    <path filter="url(#pitacco-shop-shadow)"
+      d="M29 2C14.5 2 3 13.4 3 28c0 18.5 20.3 30.8 26 38
+      5.7-7.2 26-19.5 26-38C55 13.4 43.5 2 29 2Z"
+      fill="#ea580c" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>
+    <circle cx="29" cy="27.5" r="21.5" fill="#fff7ed"/>
+    <rect x="15" y="25" width="28" height="18" rx="2" fill="#fff" stroke="#9a3412" stroke-width="1.5"/>
+    <rect x="16" y="23" width="26" height="4" rx="1" fill="#fed7aa"/>
+    <path d="M15 23.2h28l-3.6-8.8H18.6L15 23.2Z" fill="#fb923c" stroke="#c2410c" stroke-width="1.2"/>
+    <path d="M18.6 14.4h4.1L21.8 23H15l3.6-8.6ZM27.1 14.4h4l1.1 8.6h-6l.9-8.6ZM35.3 14.4h4.1L43 23h-6.8l-.9-8.6Z" fill="#fff"/>
+    <path d="M15 23c0 3.3 4.7 3.3 4.7 0s4.7 3.3 4.7 0 4.7 3.3 4.7 0 4.7 3.3 4.7 0 4.7 3.3 4.7 0 4.5 3.3 4.5 0"
+      fill="none" stroke="#c2410c" stroke-width="1.2" stroke-linecap="round"/>
+    <rect x="19.2" y="30" width="8" height="7.5" rx="1" fill="#bae6fd" stroke="#0e7490" stroke-width="1.1"/>
+    <path d="M23.2 30v7.5" stroke="#0e7490" stroke-width=".8"/>
+    <rect x="31.2" y="29.5" width="8" height="13.5" rx="1" fill="#fed7aa" stroke="#9a3412" stroke-width="1.2"/>
+    <circle cx="37" cy="36.5" r="1" fill="#c2410c"/>
+    <rect x="13" y="42" width="32" height="2" rx="1" fill="#9a3412"/>
+  </svg>`;
+  return L.divIcon({
+    className:'pitacco-illustrated-shop-pin',
+    html, iconSize:[58,68], iconAnchor:[29,65], popupAnchor:[0,-58],
+  });
+}
+
 let leafletPromise;
 function leaflet() {
   if (!leafletPromise) {
@@ -74,10 +106,7 @@ export async function mountStorePointPicker(container,{center,viewCenter,onSelec
  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
   maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
  }).addTo(map);
- const icon=L.divIcon({
-  className:'pitacco-store-picker-pin',
-  html:'<span aria-hidden="true">🏪</span>',iconSize:[46,46],iconAnchor:[23,23]
- });
+ const icon=illustratedShopIcon(L);
  let marker;
  const set=(point,notify=false)=>{
   if(!Array.isArray(point)||point.length!==2)return;
@@ -146,7 +175,8 @@ export async function mountFleetMap(container) {
     return node;
   }
   function icon(kind, active) {
-    const html = kind === 'store' ? '<span>🏪</span>' : '<span>🛵</span>';
+    if(kind==='store')return illustratedShopIcon(L);
+    const html = '<span>🛵</span>';
     return L.divIcon({
       html,
       className: 'fleet-map-pin fleet-map-pin-' + kind + (active ? ' fleet-map-pin-active' : ''),
@@ -299,8 +329,7 @@ export async function mountDeliveryCoverageMap(container,{center,mode='circle',r
  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
   maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
  }).addTo(map);
- const shopIcon=L.divIcon({className:'pitacco-store-picker-pin',html:'<span aria-hidden="true">🏪</span>',
-  iconSize:[46,46],iconAnchor:[23,23]});
+ const shopIcon=illustratedShopIcon(L);
  if(hasOrigin)L.marker(point,{icon:shopIcon,interactive:true,
   title:'Sua loja — centro da área de entrega'})
   .bindPopup('Sua loja: ponto de partida das entregas').addTo(map);
