@@ -51,6 +51,8 @@ begin
   if sqlerrm <> 'Acesso exclusivo da administração do Pitacco' then raise; end if;
  end;
 end $$;
+-- The Edge Function uses service_role; authenticated merchant cannot insert quotes.
+reset role;
 -- A quote is generated server-side, only inside a configured area.
 insert into public.pitacco_delivery_route_quotes
  (id,store_id,request_id,destination_address,distance_m,fee,
