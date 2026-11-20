@@ -28,3 +28,26 @@ Não use credenciais de sessão de outros usuários nem divulgue posições prec
 ## Distribuição
 
 O workflow `.github/workflows/courier-apk.yml` valida que a permissão `ACCESS_BACKGROUND_LOCATION` consta no APK **assinado**, com package `br.com.pitacco.entregador`, versão 2.0.12 e certificado oficial já configurado. O APK `-TESTE-PARALELO` usa um ID e uma assinatura distintos, apenas para homologação isolada.
+
+
+## Homologação da próxima versão 2.0.13 (NÃO PUBLICADA)
+
+Esta melhoria está apenas na branch `feat/entregador-atividade-fisica-20261120` e num pull request **rascunho**. Não fazer merge, release nem distribuição até a revisão da próxima foto do usuário.
+
+### Atividade física opcional
+
+Em **Ajustes → Localização para entregas → Ativar atividade física (GPS inteligente)**, o app explica para o entregador que a permissão permite identificar localmente transições entre **parado, caminhada, bicicleta e em veículo**. No Android 10 ou superior é solicitada separadamente a permissão `ACTIVITY_RECOGNITION`. A recusa não impede login, recebimento de pedidos ou GPS tradicional.
+
+Durante um plantão ativo, o serviço Android registra a API **Google Activity Transition** via um `PendingIntent` explícito para `CourierMotionReceiver` (`exported=false`). As transições ficam somente no celular; não são enviadas ao Supabase nem ao cliente. Ao sair do plantão, a assinatura é removida e o estado local é limpo. Sem permissão ou Google Play Services funcional, a frequência original permanece.
+
+- Movimento identificado (ou desconhecido): intervalo mínimo de envio GPS **12 segundos**.
+- **Parado por pelo menos 60 segundos**: mínimo de **45 segundos** entre envios, preservando localização recente no mapa.
+- GPS indicando velocidade acima de 1,5 m/s: priorizar 12 segundos mesmo se o classificador indicar parado.
+- Os estados são auxiliares e **não confirmam chegada, coleta ou entrega**.
+- Essa primeira otimização reduz transmissões de rede e processamento; não desliga o receptor GPS, porque o funcionamento do rastreio em segundo plano é prioritário. O ganho real de bateria deve ser medido no aparelho.
+
+### Regressão do botão Ficar offline
+
+A tela do entregador não deve chamar `.catch()` diretamente sobre o retorno `PostgrestBuilder` de `sb.rpc()`. Após a RPC `pitacco_driver_online(false)` funcionar, deve cancelar a observação de GPS no navegador imediatamente, enviar o comando de parada ao serviço Android, solicitar revogação segura via Supabase e atualizar a disponibilidade. A falha temporária de limpeza remota não deve travar a tela; a capacidade GPS também é revogada automaticamente pelo mecanismo do banco ao ficar offline.
+
+**Testes no celular antes de liberar**: online → off → online, com o app aberto, minimizado, Waze aberto e tela bloqueada; verificar ausência de coordenadas novas após ficar offline; verificar permissão recusada, movimento, parado prolongado, retomada do movimento e bateria. Solicitar ao usuário a foto do erro para reconciliar qualquer outro defeito visual ou de navegação.
