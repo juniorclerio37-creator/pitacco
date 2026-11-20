@@ -46,6 +46,7 @@ public class MainActivity extends Activity {
     private static final int FIRST_OPEN_NOTIFICATION_PERMISSION = 95;
     private static final int LOCATION_PERMISSION = 96;
     private static final int BACKGROUND_LOCATION_PERMISSION = 97;
+    private static final int ACTIVITY_PERMISSION = 98;
     private static final String INITIAL_SETUP_PREFS = "pitacco_delivery_initial_setup";
     private static final String INITIAL_SETUP_DONE = "completed_v1";
     private static final String GPS_SETUP_DONE = "gps_permission_explained_209";
@@ -54,6 +55,7 @@ public class MainActivity extends Activity {
     private String pendingLocationOrigin;
     private JavaScriptReplyProxy pendingGpsReply;
     private JavaScriptReplyProxy pendingBackgroundGpsReply;
+    private JavaScriptReplyProxy pendingMotionReply;
     private WebView web;
     private LinearLayout offline;
 
@@ -246,6 +248,12 @@ public class MainActivity extends Activity {
                         reply.postMessage(locationPermissionState());
                     } else if ("tracking_status".equals(action)) {
                         reply.postMessage("tracking:" + CourierLocationService.trackingState());
+                    } else if ("motion_permission_status".equals(action)) {
+                        reply.postMessage(motionPermissionState());
+                    } else if ("motion_status".equals(action)) {
+                        reply.postMessage("motion_state:" + CourierLocationService.motionStatus());
+                    } else if ("motion_permission_request".equals(action)) {
+                        showMotionPermissionDisclosure(reply);
                     } else if ("background_status".equals(action)) {
                         reply.postMessage(backgroundPermissionState());
                     } else if ("background_request".equals(action)) {
@@ -318,6 +326,54 @@ public class MainActivity extends Activity {
      * todo" in system Settings AFTER granting foreground precise location.
      * This permission is optional and never enables a shift by itself.
      */
+    private String motionPermissionState() {
+        return Build.VERSION.SDK_INT < 29 ||
+            checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)
+                == PackageManager.PERMISSION_GRANTED
+            ? "motion_permission:granted" : "motion_permission:denied";
+    }
+
+    /** Optional physical-activity consent is independent of GPS permission. */
+    private void showMotionPermissionDisclosure(JavaScriptReplyProxy reply) {
+        if ("motion_permission:granted".equals(motionPermissionState())) {
+            reply.postMessage("motion_permission:granted");
+            refreshMotionRecognition();
+            return;
+        }
+        if (pendingMotionReply != null) {
+            reply.postMessage("motion_permission:pending");
+            return;
+        }
+        new AlertDialog.Builder(this)
+            .setTitle("Atividade física durante as entregas")
+            .setMessage("Com sua autorização, o Pitacco identifica no aparelho se você " +
+                "está parado, caminhando, pedalando ou em veículo. Durante o plantão, " +
+                "essas mudanças permitem reduzir envios de localização após um período " +
+                "parado e retomar a frequência normal em movimento. " +
+                "O tipo de movimento não é enviado à loja nem ao cliente, " +
+                "e o GPS continua funcionando se você recusar. " +
+                "A detecção termina quando o plantão é encerrado.")
+            .setPositiveButton("Autorizar atividade física", (dialog, which) -> {
+                pendingMotionReply = reply;
+                requestPermissions(new String[]{
+                    Manifest.permission.ACTIVITY_RECOGNITION
+                }, ACTIVITY_PERMISSION);
+            })
+            .setNegativeButton("Agora não", (dialog, which) ->
+                reply.postMessage("motion_permission:denied"))
+            .show();
+    }
+
+    private void refreshMotionRecognition() {
+        if (!CourierLocationService.isRunning()) return;
+        Intent update = new Intent(this, CourierLocationService.class)
+            .setAction(CourierLocationService.ACTION_REFRESH_MOTION);
+        try { startService(update); }
+        catch (RuntimeException ignored) {
+            // Motion is optional: no interruption to the existing GPS shift.
+        }
+    }
+
     private String backgroundPermissionState() {
         if (Build.VERSION.SDK_INT < 29) return "background:granted";
         if (checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
@@ -514,6 +570,15 @@ public class MainActivity extends Activity {
             }
             return;
         }
+        if (requestCode == ACTIVITY_PERMISSION) {
+            String status = motionPermissionState();
+            if (pendingMotionReply != null) {
+                pendingMotionReply.postMessage(status);
+                pendingMotionReply = null;
+            }
+            if ("motion_permission:granted".equals(status)) refreshMotionRecognition();
+            return;
+        }
         if (requestCode == BACKGROUND_LOCATION_PERMISSION) {
             if (pendingBackgroundGpsReply != null) {
                 pendingBackgroundGpsReply.postMessage(backgroundPermissionState());
@@ -571,7 +636,9 @@ public class MainActivity extends Activity {
         super.onResume();
         if (web != null) {
             web.evaluateJavascript(
-                "window.PitaccoGps?.postMessage?.('background_status')", null);
+                "window.PitaccoGps?.postMessage?.('background_status');" +
+                "window.PitaccoGps?.postMessage?.('motion_permission_status');" +
+                "window.PitaccoGps?.postMessage?.('motion_status')", null);
         }
     }
 
