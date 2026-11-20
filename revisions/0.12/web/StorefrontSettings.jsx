@@ -137,6 +137,9 @@ export function StoreDeliveryArea({client,store}){
  const [revision,setRevision]=useState(0);
  const [reloadAreas,setReloadAreas]=useState(0);
  const container=useRef(null),map=useRef(null);
+ // Keep the latest selection while Leaflet loads asynchronously on mobile.
+ const liveMapOptions=useRef({mode,radius,polygon});
+ liveMapOptions.current={mode,radius,polygon};
  // Opening Áreas de Entrega must resolve the merchant's SAVED street address.
  // It must not require manually visiting another tab or filling coordinates.
  useEffect(()=>{
@@ -201,8 +204,16 @@ export function StoreDeliveryArea({client,store}){
   mountDeliveryCoverageMap(container.current,{
    center:origin,mode,radiusKm:radius,vertices:polygon,
    onVerticesChange:next=>{if(alive){setPolygon(next);setNotice('');}}
-  }).then(instance=>{if(alive)map.current=instance;else instance.remove()})
-    .catch(failure=>{if(alive)setError('Mapa indisponível: '+failure.message)});
+  }).then(instance=>{
+    if(!alive){instance.remove();return;}
+    map.current=instance;
+    // A radio click may occur before the Leaflet bundle finishes loading.
+    const latest=liveMapOptions.current;
+    instance.setMode(latest.mode);
+    instance.setRadius(latest.radius);
+    instance.setVertices(latest.polygon);
+    instance.resize();
+  }).catch(failure=>{if(alive)setError('Mapa indisponível: '+failure.message)});
   return()=>{alive=false;map.current?.remove();map.current=null};
  },[store.id,status,origin?.[0],origin?.[1],revision]);
  useEffect(()=>map.current?.setMode(mode),[mode]);
