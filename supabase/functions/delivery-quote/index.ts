@@ -40,7 +40,8 @@ async function approximateStoreAddress(store:any,db:any):Promise<Geo & {approxim
  const cap=await db.rpc('pitacco_service_delivery_quote_limit',{
   p_scope:'pitacco-osm-geocode-global-minute',p_max:1,p_minutes:1
  });
- if(cap.error||cap.data!==true)throw Error('Serviço de localização ocupado. Tente novamente em um minuto.');
+ if(cap.error)throw Error('A verificação do serviço de localização está temporariamente indisponível.');
+ if(cap.data!==true)throw Error('Serviço de localização ocupado. Tente novamente em um minuto.');
  const query=[store.address,store.neighborhood,store.city,store.state,'Brasil']
   .filter(Boolean).map((value:string)=>String(value).trim()).join(', ');
  const endpoint=new URL('https://nominatim.openstreetmap.org/search');
@@ -146,7 +147,7 @@ Deno.serve(async request=>{
    });
    if(permissionError||allowed!==true)return problem(403,'Sem permissão para alterar a localização desta loja.',origin);
    const {data:store,error:storeError}=await db.from('stores')
-    .select('address,address_number,neighborhood,city,state,postal_code,latitude,longitude')
+    .select('address,address_number,neighborhood,city,state,postal_code,latitude,longitude,updated_at')
     .eq('id',storeId).single();
    if(storeError||!store?.address||!store.city||!store.state)
     return problem(422,'Cadastre rua, cidade e estado em Dados da loja.',origin);
@@ -175,20 +176,40 @@ Deno.serve(async request=>{
    const limiter=await db.rpc('pitacco_service_delivery_quote_limit',{
     p_scope:'origin-hour-'+storeId,p_max:10,p_minutes:60
    });
-   if(limiter.error||!limiter.data)return problem(429,'Aguarde antes de localizar sua loja novamente.',origin);
+   if(limiter.error)return problem(503,'A busca automática do endereço está temporariamente indisponível.',origin);
+   if(!limiter.data)return problem(429,'Aguarde antes de localizar sua loja novamente.',origin);
    const address=[store.address,store.address_number,store.neighborhood,store.city,
      store.state,store.postal_code,'Brasil'].filter(Boolean).join(', ');
    let location:Geo & {approximate?:boolean};
-   if(key){
-    try{location={...(await geocode(address,key)),approximate:false};}
-    catch{location=await approximateStoreAddress(store,db);}
-   }else location=await approximateStoreAddress(store,db);
+   try{
+    if(key){
+     try{location={...(await geocode(address,key)),approximate:false};}
+     catch{location=await approximateStoreAddress(store,db);}
+    }else location=await approximateStoreAddress(store,db);
+   }catch(failure){
+    const detail=failure instanceof Error?failure.message:'Falha ao localizar o endereço.';
+    if(detail.includes('ocupado')||detail.includes('Aguarde'))
+     return problem(429,'A localização automática está ocupada. O Pitacco fará outra tentativa.',origin);
+    if(detail.includes('Não encontramos')||detail.includes('Endereço não localizado'))
+     return problem(422,'Não encontramos um ponto confiável para este endereço. Confira rua, número, bairro e CEP.',origin);
+    return problem(503,'O provedor de localização não respondeu. O Pitacco tentará novamente automaticamente.',origin);
+   }
    if(location.country!=='BR'||!finiteBrazil(location.lat,location.lng))
     return problem(422,'Endereço fora da região atendida.',origin);
-   const {error:updateError}=await db.from('stores').update({
+   // Geocoding can take several seconds. If the merchant edited their
+   // address while the provider was working, NEVER save the old address's
+   // coordinates onto the newly saved address (freight uses this origin).
+   let save=db.from('stores').update({
     latitude:Number(location.lat.toFixed(6)),longitude:Number(location.lng.toFixed(6))
-   }).eq('id',storeId);
+   }).eq('id',storeId).eq('address',store.address)
+    .eq('city',store.city).eq('state',store.state);
+   save=store.updated_at==null
+    ?save.is('updated_at',null)
+    :save.eq('updated_at',store.updated_at);
+   const {data:saved,error:updateError}=await save.select('id').maybeSingle();
    if(updateError)throw Error('Não foi possível registrar a localização da loja.');
+   if(!saved)return problem(409,
+    'O endereço da loja mudou durante a localização. Atualize os dados e o Pitacco localizará o novo endereço.',origin);
    return response(200,{latitude:location.lat,longitude:location.lng,
     approximate:Boolean(location.approximate),address},origin);
   }
