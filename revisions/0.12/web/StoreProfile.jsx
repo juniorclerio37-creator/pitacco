@@ -1,5 +1,5 @@
 import React,{useEffect,useRef,useState} from 'react';
-import {mountStorePointPicker} from './deliveryMap.mjs';
+import {mountStorePointPicker,currentLocation} from './deliveryMap.mjs';
 import {locateStoreByAddress} from './mapOrigin.mjs';
 import {StoreReadiness} from './StoreReadiness.jsx';
 import './store-profile-modern.css';
@@ -28,6 +28,7 @@ const pointFromStore=store=>{
 function StorePointPicker({client,store,manager,addressDirty,onSaved}){
  const initial=pointFromStore(store);
  const [point,setPoint]=useState(initial),[picked,setPicked]=useState(initial);
+ const [suggestedPoint,setSuggestedPoint]=useState(null);
  const [viewCenter,setViewCenter]=useState(null);
  const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');
  const [retryAttempt,setRetryAttempt]=useState(0);
@@ -40,7 +41,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
  const savedAddress=Boolean(store?.address?.trim()&&store?.city?.trim()&&store?.state?.trim());
  useEffect(()=>{
   const p=pointFromStore(store);
-  setPoint(p);
+  setPoint(p);setSuggestedPoint(null);
   // A background lookup must not override an unsaved manual correction.
   if(selectionVersion.current===0)setPicked(p);
   setMessage('');setError('');
@@ -59,14 +60,14 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
   if(!mapEl.current)return;
   let alive=true;
   mountStorePointPicker(mapEl.current,{
-   center:point,viewCenter,
+   center:point||suggestedPoint,viewCenter,
    onSelect:p=>{if(alive){selectionVersion.current++;setPicked(p);setMessage('');setError('');}}
   }).then(instance=>{
-   if(alive){map.current=instance;if(!point&&viewCenter)instance.focus(viewCenter,14);}
+   if(alive){map.current=instance;if(!point&&!suggestedPoint&&viewCenter)instance.focus(viewCenter,14);}
    else instance.remove();
   }).catch(err=>{if(alive)setError('O mapa não pôde ser aberto: '+err.message)});
   return()=>{alive=false;map.current?.remove();map.current=null};
- },[store?.id,Boolean(point),Boolean(viewCenter)]);
+ },[store?.id,Boolean(point),Boolean(suggestedPoint),Boolean(viewCenter)]);
  // Start near an authorized on-shift driver if address lookup is unavailable.
  // Never save the driver's coordinates as the shop by default.
  useEffect(()=>{
@@ -96,14 +97,22 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
    const {point:p,approximate}=await locateStoreByAddress(client,store.id);
    // Ignore slow responses for a store/address no longer shown.
    if(requestedAddress!==currentAddressRef.current)return;
-   setPoint(p);
-   if(selectionVersion.current===pickedBefore){
-    setPicked(p);map.current?.setPoint(p);
+   if(approximate){
+    // Provider located a street, not the exact doorway. Never imply that
+    // this preview is saved or ready for freight calculations.
+    setSuggestedPoint(p);
+    if(selectionVersion.current===pickedBefore){
+     setPicked(p);map.current?.setPoint(p);
+    }
+    setMessage('O mapa encontrou apenas uma posição estimada. Confira a entrada da loja e clique em "Salvar ponto da loja" para confirmar.');
+   }else{
+    setPoint(p);setSuggestedPoint(null);
+    if(selectionVersion.current===pickedBefore){
+     setPicked(p);map.current?.setPoint(p);
+    }
+    setMessage('A loja foi localizada automaticamente pelo endereço cadastrado.');
+    onSaved?.();
    }
-   setMessage(approximate
-    ?'Localização aproximada marcada automaticamente pelo endereço. Confira a entrada no mapa e ajuste somente se necessário.'
-    :'A loja foi localizada automaticamente pelo endereço cadastrado.');
-   onSaved?.();
   }catch(err){
    const detail=err.message||String(err);
    const retry=automatic&&err.retryable===true&&retryAttempt<1;
@@ -130,6 +139,23 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
   automaticLookup.current=key;
   void locate({automatic:true});
  },[store?.id,addressSignature,point,manager,savedAddress,addressDirty,retryAttempt]);
+ async function locateByDevice(){
+  setBusy(true);setMessage('');setError('');
+  try{
+   if(addressDirty)throw Error('Salve primeiro o endereço atualizado da loja.');
+   if(!savedAddress)throw Error('Cadastre o endereço da loja antes de usar o GPS.');
+   // The manager explicitly grants location permission in the browser.
+   // GPS is a proposal, never an implicit update to the store database.
+   const p=await currentLocation();
+   selectionVersion.current++;
+   setSuggestedPoint(p);setPicked(p);
+   map.current?.setPoint(p);map.current?.focus(p,17);
+   setMessage('Posição do celular encontrada. Se você está na entrada da loja, toque em "Salvar ponto da loja" para confirmar.');
+  }catch(err){
+   setError('Não foi possível obter o GPS: '+(err.message||String(err))+
+    ' Ative a localização do celular e permita o acesso no navegador.');
+  }finally{setBusy(false)}
+ }
  async function savePoint(){
   setBusy(true);setMessage('');setError('');
   try{
@@ -140,7 +166,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
    });
    if(error)throw error;
    if(!data?.saved)throw Error(data?.error||'A gravação do ponto não foi confirmada.');
-   setPoint([...picked]);
+   setPoint([...picked]);setSuggestedPoint(null);
    setMessage('Ponto exato da loja salvo. O mapa da Roteirização utilizará este marcador.');
    onSaved?.();
   }catch(err){setError('Não foi possível salvar o ponto: '+(err.message||String(err)));}
@@ -158,6 +184,9 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
       'O Pitacco posiciona sua loja automaticamente pelo endereço salvo. Se a busca falhar, verifique o endereço ou ajuste o ponto no mapa.'}
    </p>}
   <div className="store-point-actions">
+   {!point&&<button type="button" className="secondary"
+    disabled={!manager||busy||addressDirty||!savedAddress}
+    onClick={locateByDevice}>Usar GPS do celular (na loja)</button>}
    {error&&<button type="button" className="secondary"
     disabled={!manager||busy||addressDirty||!savedAddress}
     onClick={()=>{if(retryTimer.current){clearTimeout(retryTimer.current);retryTimer.current=null}
