@@ -633,7 +633,7 @@ test("one Android permissions entry and GPS automatically follows availability",
  assert.match(panel,/AUTO_GPS_RETRY_MS=45000/);
  assert.match(panel,/await sb\.rpc\("pitacco_driver_online",\{p_online:nextOnline\}\)/);
  assert.match(panel,/if\(nextOnline\)\{\s*nativeGpsLastAttempt=0;\s*void reconcileShiftGps\(\{force:true\}\)/);
- assert.match(panel,/if\(!nextOnline\)\{\s*stopGpsSharing\(\);\s*await stopNativeGpsTracking\(\)/);
+ assert.match(panel,/else\{\s*stopGpsSharing\(\);\s*await stopNativeGpsTracking\(\)/);
  assert.match(panel,/if\(window\.PitaccoGps\?\.postMessage\)\{stopGpsSharing\(\);return;\}/);
  assert.match(panel,/onclick|addEventListener\("click"/);
  const main=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
