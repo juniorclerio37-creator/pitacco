@@ -29,7 +29,7 @@ test('store address form provides a draggable shop pin without coordinate fields
  const map=read('revisions/0.12/web/deliveryMap.mjs');
  const css=read('revisions/0.12/web/store-profile-modern.css');
  assert.match(form,/<StorePointPicker client=\{client\}/);
- assert.match(form,/localiza a loja automaticamente pelo endereço cadastrado/);
+ assert.match(form,/A loja foi localizada automaticamente pelo endereço cadastrado/);
  assert.match(form,/void locate\(\{automatic:true\}\)/);
  assert.match(form,/Tentar localizar novamente/);
  assert.doesNotMatch(form,/Localizar pelo endereço/);
