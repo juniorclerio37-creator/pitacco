@@ -81,3 +81,30 @@ test('the Vault cron authorization migration never publishes the secret to clien
  assert.match(edge,/pitacco_verify_courier_push_cron/);
  assert.doesNotMatch(edge,/console\.(log|warn|error)\(.*token/);
 });
+
+
+test('Firebase OAuth preflight is bearer-protected and never claims or sends assignments',async()=>{
+ const keyPair=await crypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5',modulusLength:2048,
+  publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['sign','verify']);
+ const pemBuffer=Buffer.from(await crypto.subtle.exportKey('pkcs8',keyPair.privateKey));
+ const private_key='-----BEGIN PRIVATE KEY-----\\n'+pemBuffer.toString('base64').match(/.{1,64}/g).join('\\n')+'\\n-----END PRIVATE KEY-----\\n';
+ const calls=[];
+ const sender=createCourierPush({
+  url:'https://fixture.example',serviceKey:'server-fixture',
+  verifyCron:async s=>s==='valid-vault-token',
+  account:{client_email:'test@example.invalid',project_id:'pitacco-test',private_key},
+  fetcher:async url=>{
+   calls.push(String(url));
+   if(String(url).includes('oauth2.googleapis.com'))return Response.json({access_token:'fixture-short-lived-oauth',expires_in:3600});
+   throw Error('Preflight must not claim or send any real assignment');
+  }
+ });
+ const request=token=>new Request('https://fixture.example',{method:'POST',
+  headers:{authorization:'Bearer '+token,'content-type':'application/json'},
+  body:JSON.stringify({action:'preflight'})});
+ assert.equal((await sender(request('wrong-token'))).status,401);
+ const result=await sender(request('valid-vault-token'));
+ assert.equal(result.status,200);
+ assert.deepEqual(await result.json(),{ready:true,oauth:'authorized',dispatched:false});
+ assert.deepEqual(calls,['https://oauth2.googleapis.com/token']);
+});
