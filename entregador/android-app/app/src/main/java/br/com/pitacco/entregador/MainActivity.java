@@ -634,8 +634,13 @@ public class MainActivity extends Activity {
     /** Recheck orders when the driver taps a native delivery notification. */
     @Override protected void onResume() {
         super.onResume();
+        // Returning from Android's general permission screen may have granted
+        // activity recognition. Resume its on-shift transitions automatically.
+        refreshMotionRecognition();
         if (web != null) {
             web.evaluateJavascript(
+                "window.PitaccoGps?.postMessage?.('status');" +
+                "window.PitaccoGps?.postMessage?.('tracking_status');" +
                 "window.PitaccoGps?.postMessage?.('background_status');" +
                 "window.PitaccoGps?.postMessage?.('motion_permission_status');" +
                 "window.PitaccoGps?.postMessage?.('motion_status')", null);
