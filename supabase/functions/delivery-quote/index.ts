@@ -58,6 +58,57 @@ function originMatchesGoogle(g:Geo,store:any):boolean{
  if(g.postalCode&&store.postal_code&&!samePostal(g.postalCode,store.postal_code))return false;
  return true;
 }
+/**
+ * Geoapify offers non-Google geocoding results that can be shown on the
+ * existing OpenStreetMap/Leaflet map. Never expose the API key to browsers.
+ * Presence of a street/city alone is a preview, not a verified storefront.
+ */
+async function geoapifyStoreAddress(store:any,key:string):Promise<(Geo & {approximate:boolean})|null>{
+ const address=new URL('https://api.geoapify.com/v1/geocode/search');
+ address.searchParams.set('street',String(store.address).trim());
+ if(store.address_number)address.searchParams.set('housenumber',String(store.address_number).trim());
+ if(store.postal_code)address.searchParams.set('postcode',String(store.postal_code).replace(/\D/g,''));
+ address.searchParams.set('city',String(store.city).trim());
+ address.searchParams.set('state',String(store.state).trim());
+ address.searchParams.set('country','Brazil');
+ address.searchParams.set('filter','countrycode:br');
+ address.searchParams.set('format','json');
+ address.searchParams.set('limit','5');
+ address.searchParams.set('apiKey',key);
+ const res=await fetch(address,{signal:AbortSignal.timeout(8500)});
+ if(!res.ok)throw Error('Geoapify indisponível (HTTP '+res.status+').');
+ const payload=await res.json();
+ const matches=Array.isArray(payload.results)?payload.results:[];
+ const normalizedCity=normalize(String(store.city||''));
+ const expectedDistrict=normalize(String(store.neighborhood||''));
+ const normalizedNumber=String(store.address_number||'').trim();
+ for(const item of matches){
+  if(String(item.country_code||'').toLowerCase()!=='br')continue;
+  if(!finiteBrazil(Number(item.lat),Number(item.lon)))continue;
+  if(!sameRoad(item.street,store.address))continue;
+  if(item.postcode&&store.postal_code&&!samePostal(item.postcode,store.postal_code))continue;
+  const cities=[item.city,item.municipality,item.county].filter(Boolean);
+  if(!cities.some((v:any)=>normalize(String(v))===normalizedCity))continue;
+  const districts=[item.suburb,item.district,item.neighbourhood,item.city_district].filter(Boolean);
+  const hasDistrict=Boolean(expectedDistrict)&&districts.some((v:any)=>normalize(String(v))===expectedDistrict);
+  const hasPostcode=Boolean(item.postcode)&&samePostal(item.postcode,store.postal_code);
+  if(!hasDistrict&&!hasPostcode)continue;
+  const incomingNumber=String(item.housenumber||'').trim();
+  if(incomingNumber&&incomingNumber!==normalizedNumber)continue;
+  const confidence=Number(item.rank?.confidence);
+  if(Number.isFinite(confidence)&&confidence<0.70)continue;
+  const type=String(item.result_type||'').toLowerCase();
+  const precise=incomingNumber!==''&&incomingNumber===normalizedNumber
+   &&['building','amenity','house'].includes(type)
+   &&Number.isFinite(confidence)&&confidence>=0.85;
+  return {lat:Number(item.lat),lng:Number(item.lon),country:'BR',
+   city:String(item.city||store.city),neighborhood:String(item.suburb||store.neighborhood||''),
+   street:String(item.street),houseNumber:incomingNumber,
+   postalCode:String(item.postcode||''),approximate:!precise};
+ }
+ return null;
+}
+
 async function approximateStoreAddress(store:any,db:any):Promise<Geo & {approximate:boolean}>{
  // Overall throttle protects the free provider against sustained requests.
  const cap=await db.rpc('pitacco_service_delivery_quote_limit',{
@@ -154,6 +205,7 @@ Deno.serve(async request=>{
  if(request.method!=='POST')return problem(405,'Método não permitido.',origin);
  if(!allowedOrigins.has(origin))return problem(403,'Origem não autorizada.',origin);
  const key=Deno.env.get('PITACCO_GOOGLE_MAPS_SERVER_KEY');
+ const geoapifyKey=Deno.env.get('PITACCO_GEOAPIFY_API_KEY');
  const serviceKey=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
  const url=Deno.env.get('SUPABASE_URL');
  if(!serviceKey||!url)return problem(503,'Configuração do serviço indisponível.',origin);
@@ -206,15 +258,18 @@ Deno.serve(async request=>{
    if(!limiter.data)return problem(429,'Aguarde antes de localizar sua loja novamente.',origin);
    const address=[store.address,store.address_number,store.neighborhood,store.city,
      store.state,store.postal_code,'Brasil'].filter(Boolean).join(', ');
-   let location:Geo & {approximate?:boolean};
+   let location:(Geo & {approximate?:boolean})|null=null;
+   let provider='openstreetmap';
    try{
-    if(key){
+    // Google's geocoding results cannot be displayed over non-Google maps.
+    // Prefer the OSM-compatible, configured Geoapify provider if available.
+    if(geoapifyKey){
      try{
-      const exact=await geocode(address,key);
-      if(!originMatchesGoogle(exact,store))throw Error('Google retornou outro endereço.');
-      location={...exact,approximate:false};
-     }catch{location=await approximateStoreAddress(store,db);}
-    }else location=await approximateStoreAddress(store,db);
+      location=await geoapifyStoreAddress(store,geoapifyKey);
+      if(location)provider='geoapify';
+     }catch{/* Fall back to the strict OSM request, not city centroids. */}
+    }
+    if(!location)location=await approximateStoreAddress(store,db);
    }catch(failure){
     const detail=failure instanceof Error?failure.message:'Falha ao localizar o endereço.';
     if(detail.includes('ocupado')||detail.includes('Aguarde'))
@@ -229,7 +284,7 @@ Deno.serve(async request=>{
    // Street-level guesses are preview-only until the merchant confirms.
    if(location.approximate){
     return response(200,{latitude:location.lat,longitude:location.lng,
-     approximate:true,saved:false,requires_confirmation:true},origin);
+     approximate:true,saved:false,requires_confirmation:true,provider},origin);
    }
    // Geocoding can take several seconds. If the merchant edited their
    // address while the provider was working, NEVER save the old address's
@@ -246,7 +301,7 @@ Deno.serve(async request=>{
    if(!saved)return problem(409,
     'O endereço da loja mudou durante a localização. Atualize os dados e o Pitacco localizará o novo endereço.',origin);
    return response(200,{latitude:location.lat,longitude:location.lng,
-    approximate:Boolean(location.approximate),address},origin);
+    approximate:Boolean(location.approximate),address,provider},origin);
   }
   const slug=String(body.slug||'').trim(),address=String(body.address||'').trim();
   const requestId=String(body.request_id||'');
