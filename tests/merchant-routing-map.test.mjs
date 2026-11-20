@@ -32,6 +32,9 @@ test('store address form provides a draggable shop pin without coordinate fields
  assert.match(form,/Localizar pelo endereço/);
  assert.match(form,/Salvar ponto da loja/);
  assert.match(form,/action:'store-point'/);
+ assert.match(form,/Promise.resolve\(client.rpc\('pitacco_store_courier_positions'/);
+ assert.match(form,/setViewCenter/);
+ assert.match(form,/\{picked&&<button type="button"/);
  assert.match(form,/action:'store-origin'/);
  assert.match(form,/rpc\('pitacco_update_store_identity'/);
  assert.match(form,/addressDirty/);
