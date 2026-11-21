@@ -42,8 +42,8 @@ test('Pitacco Android declares separate opt-in background GPS and preserves one 
  assert.match(manifest,/android:foregroundServiceType="location"/);
  assert.match(manifest,/android:stopWithTask="false"/);
  assert.match(gradle,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(gradle,/versionCode 32/);
- assert.match(gradle,/versionName '2\.0\.12'/);
+ assert.match(gradle,/versionCode 33/);
+ assert.match(gradle,/versionName '2\.0\.13'/);
 });
 test('Android 11+ requests all-the-time permission separately with driver disclosure',()=>{
  assert.match(main,/private void showBackgroundLocationDisclosure\(JavaScriptReplyProxy reply\)/);
@@ -103,4 +103,31 @@ test('Firebase OAuth preflight never claims or consumes queued orders',()=>{
  assert.match(script,/!account\?\.private_key/);
  assert.match(script,/return Response\.json\(\{ready:true,phase:'firebase_oauth',dispatched:false\}/);
  assert.match(script,/status:503/);
+});
+
+test('Physical Activity is an opt-in Android runtime permission and never a GPS prerequisite',()=>{
+ const permission='android.permission.ACTIVITY_RECOGNITION';
+ assert.ok(manifest.includes(permission));
+ assert.match(main,/ACTIVITY_RECOGNITION_PERMISSION = 98/);
+ assert.match(main,/Build\.VERSION\.SDK_INT < 29/);
+ assert.match(main,/private void requestPhysicalActivityPermission\(JavaScriptReplyProxy reply\)/);
+ assert.match(main,/Manifest\.permission\.ACTIVITY_RECOGNITION/);
+ assert.match(main,/activity_status/);
+ assert.match(main,/activity_request/);
+ assert.match(main,/activity:granted/);
+ assert.match(main,/activity:declined/);
+ assert.match(panel,/id="requestPhysicalActivity"/);
+ assert.match(panel,/id="courierPhysicalActivityStatus"/);
+ assert.match(panel,/postMessage\("activity_request"\)/);
+ assert.match(panel,/window\.PitaccoGps\.postMessage\("activity_status"\)/);
+ assert.doesNotMatch(gpsService,/ACTIVITY_RECOGNITION/,'GPS must never depend on this optional permission');
+});
+test('Native GPS diagnostics separate Android OS, WebView site and server-reported position',()=>{
+ assert.match(main,/\"site_status\"\.equals\(action\)/);
+ assert.match(main,/\"site_reset\"\.equals\(action\)/);
+ assert.match(main,/callback\.invoke\(origin, true, true\)/);
+ assert.match(panel,/function renderGpsPermissionDiagnostic/);
+ assert.match(panel,/browserGpsDenied/);
+ assert.match(panel,/async function verifyGpsUploadOnServer/);
+ assert.match(panel,/select\("observed_at,accuracy_m"\)/);
 });
