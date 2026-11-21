@@ -58,3 +58,35 @@ test('authorized storefront origins never expose other shops',()=>{
  assert.match(sql,/pitacco_courier_session_ready\(\)/);
  assert.match(sql,/revoke all on function public\.pitacco_driver_route_origins/);
 });
+
+test('the rider has one orange illustrated motorcycle in courier, merchant and customer map',()=>{
+ const merchant=read('revisions/0.12/web/deliveryMap.mjs');
+ const courier=read('entregador/dispatch-map.mjs');
+ const courierStyles=read('entregador/painel.css');
+ const fleetStyles=read('revisions/0.12/web/fleet-tracking.css');
+ const customer=read('marketing/acompanhar.html');
+ const svg=merchant.match(/export const PITACCO_COURIER_SVG = \`([\s\S]*?)\`;/);
+ assert.ok(svg,'illustrated courier artwork exists');
+ assert.match(svg[1],/width="72" height="82"/);
+ assert.match(svg[1],/fill="#ea580c"/);
+ assert.match(svg[1],/fill="#29364a"/);
+ assert.ok(courier.includes(JSON.stringify(svg[1])),'mobile and merchant SVG artwork must match exactly');
+ assert.match(courier,/html:PITACCO_COURIER_SVG/);
+ assert.match(merchant,/return illustratedCourierIcon\(L,\{stale:kind==='stale',selected:active\}\)/);
+ assert.match(merchant,/illustratedCourierIcon\(L,\{customer:true\}\)/);
+ assert.match(merchant,/iconAnchor:\[36,78\]/);
+ assert.match(courier,/iconAnchor:\[36,78\]/);
+ assert.match(fleetStyles,/\.pitacco-courier-moto-stale svg/);
+ assert.match(courierStyles,/\.courier-map-moto svg/);
+ assert.match(customer,/\.pitacco-courier-moto-pin svg/);
+ assert.doesNotMatch(courier,/html:'<span aria-hidden="true">🛵<\/span>'/);
+});
+test('public rider map remains scoped to own order tracking and rounds coordinates',()=>{
+ const publicPage=read('marketing/acompanhar.html');
+ const sharedMap=read('revisions/0.12/web/deliveryMap.mjs');
+ assert.match(publicPage,/pitacco_track_public_order/);
+ assert.match(publicPage,/if\(data\.tracking_token\)/);
+ assert.match(sharedMap,/export async function mountCustomerTrackingMap/);
+ assert.match(sharedMap,/Use ONLY the coordinates from pitacco_track_public_order/);
+ assert.doesNotMatch(publicPage,/from\('courier_positions'\)/);
+});
