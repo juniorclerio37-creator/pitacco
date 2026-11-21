@@ -182,6 +182,13 @@ a.btn{text-decoration:none}
   <p id="courierBackgroundGpsStatus" class="note-inline" role="status" aria-live="polite"></p>
   <button type="button" class="settings-row" id="verifyGpsUpload" hidden><span>Verificar envio real do GPS</span><span class="setting-arrow">↻</span></button>
   <p id="courierGpsServerStatus" class="note-inline" role="status" aria-live="polite"></p>
+  <button type="button" class="settings-row" id="requestPhysicalActivity">
+    <span>Autorizar Atividade física (opcional)</span><span class="setting-arrow">◎</span>
+  </button>
+  <p id="courierPhysicalActivityStatus" class="note-inline" role="status" aria-live="polite">
+    Consultando permissão de Atividade física do Android…
+  </p>
+  <p class="note-inline">A permissão Atividade física é independente do GPS: não concede localização, não inicia o rastreamento e pode ser revogada nos ajustes do Android.</p>
   <button type="button" class="settings-row" id="startNativeGps" hidden><span>Ativar GPS em segundo plano durante o plantão</span><span class="setting-arrow">▶</span></button>
   <button type="button" class="settings-row" id="stopNativeGps" hidden><span>Parar GPS em segundo plano</span><span class="setting-arrow">■</span></button>
   <p class="note-inline">O rastreamento contínuo funciona enquanto você estiver online e a notificação persistente “GPS ativo” estiver visível. Ao ficar offline ou sair da conta, o serviço é encerrado. O Android pode interromper o serviço por bateria, falta de GPS ou encerramento forçado.</p>
@@ -261,6 +268,20 @@ function showAndroidGpsSettings(show){
  if(button)button.hidden=!show;
 }
 function handleAndroidGpsReply(status){
+ if(status.startsWith("activity:")){
+  const result=status.slice("activity:".length);
+  const output=$("courierPhysicalActivityStatus");
+  if(output){
+   if(result==="granted")output.textContent="Atividade física permitida pelo Android. O GPS permanece independente.";
+   else if(result==="unavailable")output.textContent="Esta versão do Android não exige essa autorização específica.";
+   else if(result==="declined")output.textContent="Autorização opcional não solicitada. O aplicativo continua funcionando normalmente.";
+   else if(result==="request_running")output.textContent="Aguardando a escolha no Android…";
+   else if(result==="settings")output.textContent="Para permitir Atividade física, abra Permissões → Atividade física nas configurações do Android.";
+   else if(result==="denied")output.textContent="Atividade física ainda não autorizada. Toque em Autorizar para solicitar.";
+   else output.textContent="Estado da permissão indisponível.";
+  }
+  return;
+ }
  if(status.startsWith("site:")){
   nativeSitePermission=status.slice(5);
   renderGpsPermissionDiagnostic();
@@ -344,6 +365,7 @@ if(window.PitaccoGps){
  window.PitaccoGps.onmessage=event=>handleAndroidGpsReply(String(event?.data||"denied"));
  try{
   window.PitaccoGps.postMessage("status");
+  window.PitaccoGps.postMessage("activity_status");
   window.PitaccoGps.postMessage("site_status");
   window.PitaccoGps.postMessage("tracking_status");
   window.PitaccoGps.postMessage("background_status");
@@ -351,6 +373,7 @@ if(window.PitaccoGps){
  document.addEventListener("visibilitychange",()=>{
   if(!document.hidden){
    window.PitaccoGps?.postMessage?.("status");
+   window.PitaccoGps?.postMessage?.("activity_status");
    window.PitaccoGps?.postMessage?.("site_status");
    window.PitaccoGps?.postMessage?.("tracking_status");
    window.PitaccoGps?.postMessage?.("background_status");
@@ -358,6 +381,7 @@ if(window.PitaccoGps){
  });
  window.addEventListener("focus",()=>{
   window.PitaccoGps?.postMessage?.("status");
+  window.PitaccoGps?.postMessage?.("activity_status");
   window.PitaccoGps?.postMessage?.("site_status");
   window.PitaccoGps?.postMessage?.("background_status");
   window.PitaccoGps?.postMessage?.("tracking_status");
@@ -1455,6 +1479,16 @@ async function boot(){
   loadNavPreferences();
   initializeNativePush();
   $("startNativeGps").addEventListener("click",()=>startNativeGpsTracking().catch(()=>gpsStatus("Não foi possível iniciar o GPS.")));
+  $("requestPhysicalActivity").addEventListener("click",()=>{
+   const bridge=window.PitaccoGps;
+   if(!bridge?.postMessage){
+    $("courierPhysicalActivityStatus").textContent="Atividade física é configurada nas permissões do aplicativo Android instalado.";
+    return;
+   }
+   $("courierPhysicalActivityStatus").textContent="Solicitando autorização de Atividade física ao Android…";
+   try{bridge.postMessage("activity_request");}
+   catch{$("courierPhysicalActivityStatus").textContent="Não foi possível abrir a permissão. Atualize o aplicativo Android.";}
+  });
   $("requestBackgroundGps").addEventListener("click",()=>{
    if(!window.PitaccoGps?.postMessage)return;
    $("courierBackgroundGpsStatus").textContent="Verificando autorização para localização durante o plantão…";
