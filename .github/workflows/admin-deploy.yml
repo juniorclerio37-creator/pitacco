@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'revisions/0.12/web/AdminApp.jsx'
+      - 'revisions/0.12/web/OwnerCourierCampaigns.jsx'
+      - 'revisions/0.12/web/owner-courier-campaigns.css'
       - 'revisions/0.12/web/OwnerIncidentNotifier.jsx'
       - 'revisions/0.12/web/owner-incident-notifier.css'
       - 'revisions/0.12/web/IncidentCenter.jsx'
@@ -63,6 +65,7 @@ jobs:
           grep -Rql 'pitacco_owner_diagnostic_snapshot' web/dist-admin/assets
           grep -Rql 'pitacco_owner_repair_decide' web/dist-admin/assets
           grep -Rql 'pitacco_owner_recovery_preflight' web/dist-admin/assets
+          grep -Rql 'pitacco_admin_send_courier_campaign' web/dist-admin/assets
       - name: Publicar no Worker existente
         shell: bash
         env:
