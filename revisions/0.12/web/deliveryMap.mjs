@@ -30,6 +30,50 @@ export function illustratedShopIcon(L) {
   });
 }
 
+
+/** One illustrated rider marker for the courier, shop fleet and public
+ * order tracking maps. The pin tip is anchored to the reported coordinates.
+ * The customer map still receives only rounded, delivery-scoped points. */
+export const PITACCO_COURIER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="72" height="82"
+ viewBox="0 0 72 82" aria-hidden="true" focusable="false">
+ <path d="M36 2C18 2 3 16 3 34c0 21 23 35 33 44 10-9 33-23 33-44C69 16 54 2 36 2Z"
+  fill="#ea580c" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>
+ <circle cx="36" cy="34" r="27.5" fill="#fff7ed"/>
+ <ellipse cx="36" cy="55.5" rx="26" ry="2" fill="#fed7aa"/>
+ <circle cx="21" cy="48" r="8.1" fill="#29364a" stroke="#fff" stroke-width="1.5"/>
+ <circle cx="21" cy="48" r="3.5" fill="#cbd5e1"/>
+ <circle cx="52" cy="48" r="8.1" fill="#29364a" stroke="#fff" stroke-width="1.5"/>
+ <circle cx="52" cy="48" r="3.5" fill="#cbd5e1"/>
+ <rect x="11.5" y="27" width="14.5" height="14.5" rx="3"
+  fill="#fb923c" stroke="#9a3412" stroke-width="1.7"/>
+ <path d="M15 30.5h7.5M18.7 28.5v10" stroke="#fff7ed"
+  stroke-width="1.5" stroke-linecap="round"/>
+ <path d="M20.5 46h30c1.5 0 2.5-1.2 2.5-2.4v-2.5h-9l-6-7-13 1.5-5 8.4Z"
+  fill="#f97316" stroke="#9a3412" stroke-width="1.6" stroke-linejoin="round"/>
+ <path d="M26 37l8.8-1.4 6 7.2H24.5Z" fill="#fdba74"/>
+ <path d="M47 42l4.5-14.5h4.3M51.5 29h7" fill="none"
+  stroke="#334155" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>
+ <path d="M28.5 30.5c1.5-5.1 5-8 9.4-8 4.1 0 7.3 3 8.5 7.8l-4 7.4-7-2.1-6.1 6.4"
+  fill="#ea580c" stroke="#29364a" stroke-width="1.8" stroke-linejoin="round"/>
+ <path d="M41 30.8l6.4 1.2 5.2-2.8" fill="none" stroke="#29364a"
+  stroke-width="3.2" stroke-linecap="round"/>
+ <path d="M30.5 40h-6.3" stroke="#334155" stroke-width="3" stroke-linecap="round"/>
+ <circle cx="38" cy="18.3" r="7.1" fill="#29364a" stroke="#fff" stroke-width="1.6"/>
+ <path d="M33.5 18.2q4.2-3 10.8 1l-.7 3.2-9.9-.4Z"
+  fill="#bae6fd" stroke="#0e7490" stroke-width="1"/>
+ <path d="M24.5 45h28" stroke="#fff7ed" stroke-width="1.3" stroke-linecap="round"/>
+ <path d="M19 58h34" stroke="#fed7aa" stroke-width="1" stroke-linecap="round"/>
+</svg>`;
+export function illustratedCourierIcon(L,{stale=false,selected=false,customer=false}={}){
+ return L.divIcon({
+  className:'pitacco-courier-moto-pin'+(stale?' pitacco-courier-moto-stale':'')+
+   (selected?' pitacco-courier-moto-selected':'')+
+   (customer?' pitacco-courier-moto-customer':''),
+  html:PITACCO_COURIER_SVG,
+  iconSize:[72,82],iconAnchor:[36,78],popupAnchor:[0,-65]
+ });
+}
+
 let leafletPromise;
 function leaflet() {
   if (!leafletPromise) {
@@ -203,12 +247,7 @@ export async function mountFleetMap(container) {
   }
   function icon(kind, active) {
     if(kind==='store')return illustratedShopIcon(L);
-    const html = '<span>🛵</span>';
-    return L.divIcon({
-      html,
-      className: 'fleet-map-pin fleet-map-pin-' + kind + (active ? ' fleet-map-pin-active' : ''),
-      iconSize: [38, 38], iconAnchor: [19, 19],
-    });
+    return illustratedCourierIcon(L,{stale:kind==='stale',selected:active});
   }
   function update({store, couriers = [], deliveries = [], selectedRoute = '', selectedCourier = ''} = {}) {
     markers.clearLayers();
@@ -298,12 +337,7 @@ export async function mountCustomerTrackingMap(container) {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   }).addTo(map);
-  const markerIcon = L.divIcon({
-    className: 'pitacco-customer-courier-pin',
-    html: '<span aria-hidden="true">🛵</span>',
-    iconSize: [42, 42],
-    iconAnchor: [21, 21],
-  });
+  const markerIcon = illustratedCourierIcon(L,{customer:true});
   let marker = null, uncertainty = null, firstPoint = true;
   const validPoint = p => p && p.latitude != null && p.longitude != null &&
     Number.isFinite(Number(p.latitude)) && Number.isFinite(Number(p.longitude)) &&
