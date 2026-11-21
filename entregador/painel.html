@@ -195,6 +195,7 @@ a.btn{text-decoration:none}
   <p id="shiftSoundUnsupported" class="note-inline" role="status" hidden>O Modo Plantão precisa da versão Android atualizada. A versão instalada não reconhece o controle de ativação. Atualize o Pitacco Entregador para habilitar o sino e a voz em volume alto.</p>
   <button type="button" class="settings-row" id="testAssignmentSound"><span>Testar som de nova entrega</span><span class="setting-arrow">♪</span></button>
   <p id="assignmentSoundStatus" role="status" aria-live="polite"></p>
+  <p class="note-inline">O botão acima testa o sino e a voz <strong>neste aparelho</strong>, mas não testa uma mensagem Firebase enviada com o aplicativo fechado. Para validar segundo plano, registre o aparelho e faça uma atribuição real com a tela bloqueada.</p>
   <button type="button" class="settings-row" id="settingsRefresh"><span>Atualizar pedidos e ganhos</span><span class="setting-arrow">↻</span></button>
   <button type="button" class="settings-row" id="settingsLogout"><span>Sair da minha conta</span><span class="setting-arrow">→</span></button>
  </section>
@@ -1199,19 +1200,26 @@ async function checkNativePushStatus(){
   return;
  }
  if(!data.device_registered){
-  showPushBanner(window.PitaccoPush?.postMessage?
-   "Este celular ainda não recebe avisos com o aplicativo fechado. Toque em Ativar avisos.":
-   "A versão instalada não registra notificações. Atualize o Pitacco Entregador.",
-   !!window.PitaccoPush?.postMessage);
-  view.textContent=window.PitaccoPush?.postMessage
-   ?"Este celular ainda não está registrado. Toque em Ativar avisos no Android."
-   :"Nenhum aparelho registrado nesta sessão. Use o Pitacco Entregador para Android.";
+  const phoneAvailable=!!window.PitaccoPush?.postMessage;
+  showPushBanner(phoneAvailable
+   ?"Este aparelho ainda não está registrado para receber entregas com a tela bloqueada. Toque em Ativar avisos."
+   :"O navegador não oferece o receptor nativo. Use o aplicativo oficial Pitacco Entregador.",phoneAvailable);
+  view.textContent=phoneAvailable
+   ?"Registro do aparelho pendente. Autorize as notificações no Android e toque em Ativar avisos."
+   :"Nenhum aparelho Android registrado nesta sessão.";
+  if(!data.server_enabled)view.textContent+=" O servidor também aguarda configuração do Firebase.";
  }else if(!data.server_enabled){
-  showPushBanner("Celular registrado, mas o servidor de notificações do Pitacco ainda está desativado.",false);
-  view.textContent="Celular registrado. O servidor de notificações ainda aguarda ativação.";
+  showPushBanner("Aparelho registrado, mas o servidor Firebase do Pitacco ainda não está habilitado.",false);
+  view.textContent="Aparelho cadastrado. A configuração de envio do Firebase ainda está pendente no servidor.";
+ }else if(!data.cron_credential_present){
+  showPushBanner("Servidor de notificações sem autorização do agendamento. Contate o suporte Pitacco.",false);
+  view.textContent="Aparelho cadastrado, mas a credencial do agendamento está ausente no servidor.";
+ }else if(data.dispatch_scheduled!==true){
+  showPushBanner("Aparelho cadastrado, mas o agendamento de envios está desligado.",false);
+  view.textContent="Aparelho cadastrado. A equipe Pitacco precisa habilitar o agendamento do envio.";
  }else{
   showPushBanner("",false);
-  view.textContent="Celular registrado e envio habilitado. Faça uma atribuição de teste com o aplicativo em segundo plano.";
+  view.textContent="Aparelho registrado e agendamento ativo. Faça uma atribuição real de teste com a tela bloqueada para verificar o recebimento.";
  }
 }
 function initializeNativePush(){
