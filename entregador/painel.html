@@ -90,6 +90,11 @@ a.btn{text-decoration:none}
     <span id="pushBannerText" style="flex:1;min-width:210px;font-size:13px">Verificando alertas de novas entregas...</span>
     <button id="pushBannerEnable" type="button" class="btn primary" hidden>Ativar avisos</button>
   </div>
+  <section class="courier-push-check panel-white" aria-label="Diagnóstico de notificações">
+    <header><strong>Notificações em segundo plano</strong><button id="pushQuickCheck" type="button" class="btn secondary">Verificar agora</button></header>
+    <p id="pushQuickStatus" role="status" aria-live="polite" data-state="checking">Conferindo o Firebase e o cadastro do aparelho…</p>
+    <small>Cadastro automático após login. Este botão não cria pedidos nem dispara som.</small>
+  </section>
   <div class="summary">
     <div class="stat"><span class="stat-icon orange">↗</span><strong id="active">—</strong><span>Entregas em andamento</span></div>
     <div class="stat"><span class="stat-icon green">✓</span><strong id="done">—</strong><span>Concluídas hoje</span></div>
@@ -1291,6 +1296,50 @@ let pushCheckRequestId=0;
 let nativePushRetryTimer=null;
 let nativePushRetryAttempts=0;
 let nativePushRegistrationInFlight=false;
+let pushQuickTimeout=null;
+function showPushQuick(text,state="checking"){
+ const output=$("pushQuickStatus");
+ if(output){output.textContent=String(text);output.dataset.state=state;}
+}
+function syncPushQuick(){
+ const check=String($("nativePushReadiness")?.textContent||"");
+ const android=String($("nativePushStatus")?.textContent||"");
+ if(/Aparelho registrado e agendamento ativo/i.test(check)){
+  window.clearTimeout(pushQuickTimeout);
+  showPushQuick("Celular registrado no Firebase e envio ativo. Pronto para testar com a tela bloqueada.","success");
+ }else if(/não foi possível registrar|não conseguiu obter|não autorizad|Firebase não configurado/i.test(android)){
+  showPushQuick(android,"error");
+ }else if(/não foi possível|erro|não autorizad|sem Firebase/i.test(check)){
+  showPushQuick(check,"error");
+ }else if(check.trim())showPushQuick(check,"warning");
+}
+function requestPushQuickCheck(){
+ showPushQuick("Consultando a permissão do Android e o token Firebase…","checking");
+ const bridge=window.PitaccoPush;
+ if(!bridge?.postMessage){
+  showPushQuick("Receptor Android não detectado. Use o aplicativo Pitacco Entregador instalado, não o navegador.","error");
+  void checkNativePushStatus();return;
+ }
+ try{
+  bridge.postMessage("status");
+  bridge.postMessage("enable");
+  void checkNativePushStatus();
+  window.clearTimeout(pushQuickTimeout);
+  pushQuickTimeout=window.setTimeout(()=>{
+   if(!nativePushRegistered)showPushQuick(
+    "O aparelho ainda não concluiu o cadastro Firebase. Confira a permissão de notificações e a conexão.","warning");
+  },14000);
+ }catch{
+  showPushQuick("Falha na comunicação com o Android. Reabra o Pitacco Entregador.","error");
+ }
+}
+function observePushQuick(){
+ for(const id of ["nativePushStatus","nativePushReadiness"]){
+  const node=$(id);
+  if(node)new MutationObserver(syncPushQuick).observe(node,{childList:true,characterData:true,subtree:true});
+ }
+ syncPushQuick();
+}
 function showPushBanner(text, enable){
  const banner=$("pushBanner"),label=$("pushBannerText"),button=$("pushBannerEnable");
  if(!banner||!label||!button)return;
@@ -1485,7 +1534,9 @@ function initializeNativePush(){
     const {error}=await sb.rpc(rpcName,{p_token:token}).catch(()=>({error:true}));
     nativePushRegistered=!error;
     if(error){
-     status.textContent="Não foi possível registrar este aparelho. Nova tentativa automática após reconexão.";
+     const code=String(error?.code||"").slice(0,40);
+     status.textContent="Não foi possível registrar este aparelho"+
+      (code?" ("+code+")":"")+". Nova tentativa automática após reconexão.";
      // The Firebase token may arrive before the web-auth session settles.
      // Retry only in the authenticated visible panel; never after logout.
      if(nativePushRetryAttempts<5){
@@ -1510,9 +1561,10 @@ function initializeNativePush(){
     ++pushCheckRequestId;
     $("nativePushReadiness").textContent="Este APK de teste não tem Firebase configurado. O registro de notificações reais não é possível nesta versão.";
    }
-   status.textContent=value==="permission"?"Permita as notificações do Pitacco nos ajustes do Android."
-    :value==="unavailable"?"Esta versão TESTE não possui Firebase para receber entregas em segundo plano. Você ainda pode testar o som local após autorizar notificações."
-    :"Não foi possível ativar os avisos. Tente novamente.";
+   status.textContent=value==="permission"?"O Android não autorizou as notificações do Pitacco. Confira as permissões do aplicativo."
+    :value==="unavailable"?"Firebase não configurado neste APK. Confira se instalou a versão oficial, não o aplicativo TESTE."
+    :value==="failed"?"O Android não conseguiu gerar o token Firebase. Verifique conexão e Google Play Services."
+    :"Não foi possível concluir o cadastro automático. Confira a conexão e as notificações do Android.";
   }
  };
  // boot() verified the authenticated courier before this function runs.
@@ -1579,7 +1631,9 @@ async function boot(){
     switchView("config");
    }
   });
-  $("checkNativePush").addEventListener("click",checkNativePushStatus);
+  $("checkNativePush").addEventListener("click",requestPushQuickCheck);
+  $("pushQuickCheck").addEventListener("click",requestPushQuickCheck);
+  observePushQuick();
   // Network diagnostics must never delay the dispatch / delivery screen.
   void checkNativePushStatus();
   switchView(location.hash.slice(1));
