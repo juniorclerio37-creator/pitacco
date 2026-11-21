@@ -117,8 +117,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.ok(page.includes('nativeNotificationSettings'));
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 32'));
- assert.ok(build.includes("versionName '2.0.12'"));
+ assert.ok(build.includes('versionCode 34'));
+ assert.ok(build.includes("versionName '2.0.14'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -227,7 +227,7 @@ test("delivery Shift Sound is opt-in, restores prior alarm volume, and reserves 
  assert.ok(page.includes('if(value.startsWith("shift_test:"))'));
  assert.ok(activity.includes('"shift_enable".equals(action)'));
  assert.ok(activity.includes('ShiftSoundPlayer.setEnabled(this, true)'));
- assert.ok(activity.includes('token_native:'));
+ assert.ok(activity.includes('token_admin:'));
  assert.ok(player.includes('getBoolean(KEY_ENABLED, false)'));
  assert.ok(player.includes('AudioManager.STREAM_ALARM'));
  assert.ok(player.includes('setStreamVolume(AudioManager.STREAM_ALARM, raised, 0)'));
@@ -432,7 +432,7 @@ test("courier GPS requires location consent and server-authenticated reporting",
  assert.match(manifest,/android.permission.ACCESS_COARSE_LOCATION/);
  assert.match(activity,/onGeolocationPermissionsShowPrompt/);
  assert.match(activity,/LOCATION_PERMISSION/);
- assert.match(activity,/\("https:\/\/" \+ HOST\)\.equalsIgnoreCase\(origin\)/);
+ assert.match(activity,/HOST\.equalsIgnoreCase\(requestedOrigin\.getHost\(\)\)/);
  assert.match(page,/navigator\.geolocation\.watchPosition/);
  assert.match(page,/pitacco_courier_report_position/);
  assert.match(page,/syncGpsSharing\(\)/);
@@ -459,8 +459,8 @@ test("Android GPS authorization remains part of the original courier app upgrade
  const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
  const screen=read("painel.html");
  assert.match(app,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(app,/versionCode 32/);
- assert.match(app,/versionName '2\.0\.12'/);
+ assert.match(app,/versionCode 34/);
+ assert.match(app,/versionName '2\.0\.14'/);
  assert.match(activity,/registerGpsBridge\(\)/);
  assert.match(activity,/WebViewCompat\.addWebMessageListener\(web, "PitaccoGps"/);
  assert.match(activity,/requestPermissions\(new String\[\]\{/);
@@ -470,15 +470,15 @@ test("Android GPS authorization remains part of the original courier app upgrade
  assert.match(screen,/openAndroidGpsSettings/);
 });
 
-test("Android 2.0.9 upgrade prompts for GPS and keeps notification registration opt-in",()=>{
+test("Android update preserves GPS permission prompts and registers push after login",()=>{
  const main=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
  const manifest=read("android-app/app/src/main/AndroidManifest.xml");
  const build=read("android-app/app/build.gradle");
  const workflow=read("../.github/workflows/courier-apk.yml");
  const panel=read("painel.html");
  assert.match(build,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(build,/versionCode 32/);
- assert.match(build,/versionName '2\.0\.12'/);
+ assert.match(build,/versionCode 34/);
+ assert.match(build,/versionName '2\.0\.14'/);
  for(const name of ["ACCESS_FINE_LOCATION","ACCESS_COARSE_LOCATION","POST_NOTIFICATIONS"])
   assert.ok(manifest.includes("android.permission."+name));
  assert.match(main,/GPS_SETUP_DONE = "gps_permission_explained_209"/);
