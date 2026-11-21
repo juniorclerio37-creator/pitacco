@@ -22,6 +22,8 @@ import com.google.firebase.messaging.RemoteMessage;
 public final class AssignmentMessagingService extends FirebaseMessagingService {
     public static final String CHANNEL_ID = "pitacco_new_assignment_loud_v2";
     public static final String SHIFT_CHANNEL_ID = "pitacco_new_assignment_shift_v1";
+    public static final String ADMIN_CHANNEL_ID = "pitacco_admin_messages_silent_v1";
+    private static final String ADMIN_TYPE = "admin_message";
     private static final String TYPE = "new_assignment";
     private static final HashMap<String,Long> recentlyNotified = new HashMap<>();
     private static synchronized boolean firstAlertForEvent(String id) {
@@ -68,6 +70,18 @@ public final class AssignmentMessagingService extends FirebaseMessagingService {
             shift.enableVibration(true);
             shift.setVibrationPattern(new long[]{0, 420, 150, 420, 150, 600});
             manager.createNotificationChannel(shift);
+        }
+        // Do not reuse the loud order channel. Owner communications must
+        // never play the courier bell, voice recording or shift sound.
+        if (manager.getNotificationChannel(ADMIN_CHANNEL_ID) == null) {
+            NotificationChannel silent = new NotificationChannel(
+                    ADMIN_CHANNEL_ID,"Comunicados do Pitacco",
+                    NotificationManager.IMPORTANCE_LOW);
+            silent.setDescription("Campanhas, incentivos e comunicados do Super Admin. Sem som.");
+            silent.setSound(null,null);
+            silent.enableVibration(false);
+            silent.setShowBadge(true);
+            manager.createNotificationChannel(silent);
         }
     }
 
@@ -123,16 +137,63 @@ public final class AssignmentMessagingService extends FirebaseMessagingService {
         return true;
     }
 
+    /** Completely separate, silent admin message: no bell, voice, or
+     * ShiftSoundPlayer call. Only deliverable with OS notification permission. */
+    public static boolean showAdminMessage(Context context,String id,
+                                           String title,String body) {
+        if (Build.VERSION.SDK_INT >= 33 &&
+                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) return false;
+        NotificationManager manager=context.getSystemService(NotificationManager.class);
+        if(manager==null || !manager.areNotificationsEnabled())return false;
+        ensureChannel(context);
+        NotificationChannel channel=manager.getNotificationChannel(ADMIN_CHANNEL_ID);
+        if(channel==null || channel.getImportance()==NotificationManager.IMPORTANCE_NONE)
+            return false;
+        if(!firstAlertForEvent(id))return true;
+        Intent open=new Intent(context,MainActivity.class);
+        open.putExtra("pitacco_admin_message",true);
+        open.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent click=PendingIntent.getActivity(context,id.hashCode(),open,
+            PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
+        String safeTitle=title==null?"Comunicado":title.trim();
+        String safeBody=body==null?"":body.trim();
+        if(safeTitle.isEmpty())safeTitle="Comunicado";
+        if(safeTitle.length()>80)safeTitle=safeTitle.substring(0,80);
+        if(safeBody.length()>400)safeBody=safeBody.substring(0,400);
+        Notification notice=new Notification.Builder(context,ADMIN_CHANNEL_ID)
+          .setSmallIcon(R.drawable.ic_pitacco)
+          .setContentTitle("Pitacco • "+safeTitle)
+          .setContentText(safeBody)
+          .setStyle(new Notification.BigTextStyle().bigText(safeBody))
+          .setCategory(Notification.CATEGORY_MESSAGE)
+          .setVisibility(Notification.VISIBILITY_PRIVATE)
+          .setAutoCancel(true)
+          .setContentIntent(click)
+          .setDefaults(0)
+          .setSound(null)
+          .build();
+        manager.notify(id.hashCode(),notice);
+        return true;
+    }
+
     @Override public void onMessageReceived(RemoteMessage message) {
         // Opt-out and logout must prevent audible/native delivery alerts, even
         // when an old token remains registered while the device is offline.
         // The production app sends data-only FCM events to this native handler.
         if (!MainActivity.isPushOptedIn(this)) return;
-        if (!TYPE.equals(message.getData().get("kind"))) return;
-        String eventId = message.getData().get("event_id");
-        if (eventId == null || !eventId.matches(UUID_PATTERN)) return;
-        // Only the short, non-sensitive payload is displayed. The order detail
-        // remains behind authenticated login when the driver opens the app.
-        showAssignment(this, eventId);
+        String kind=message.getData().get("kind");
+        String eventId=message.getData().get("event_id");
+        if(eventId==null||!eventId.matches(UUID_PATTERN))return;
+        if(ADMIN_TYPE.equals(kind)){
+            // Admin text lives in a silent notification channel, never on
+            // the delivery alert path. No customer or order data included.
+            showAdminMessage(this,eventId,
+                message.getData().get("title"),message.getData().get("body"));
+            return;
+        }
+        if (!TYPE.equals(kind))return;
+        // Only active order events may use the recorded bell and courier voice.
+        showAssignment(this,eventId);
     }
 }
