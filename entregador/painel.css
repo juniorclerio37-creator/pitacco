@@ -193,3 +193,14 @@ button{font-family:inherit}button:focus-visible,a:focus-visible{outline:3px soli
 .courier-admin-inbox-item small{font-size:.75rem;color:#64748b}
 .courier-admin-inbox-item p{white-space:pre-wrap;overflow-wrap:anywhere;
  font-size:.89rem;line-height:1.5;margin:3px 0}
+
+/* In-place Firebase diagnostics visible on the Orders home screen. */
+.courier-push-check{margin:10px 0 15px;padding:14px 16px;border-color:#f0d3b5}
+.courier-push-check header{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.courier-push-check header strong{font-size:14px;color:#283849}
+.courier-push-check button{min-height:36px;padding:8px 12px;font-size:12px}
+#pushQuickStatus{font-size:13px;line-height:1.5;margin:10px 0 7px;color:#67582d}
+#pushQuickStatus[data-state=success]{color:#126c48;font-weight:700}
+#pushQuickStatus[data-state=error]{color:#b42318;font-weight:700}
+#pushQuickStatus[data-state=warning]{color:#a95f15}
+.courier-push-check small{display:block;color:#718096;font-size:11px;line-height:1.5}
