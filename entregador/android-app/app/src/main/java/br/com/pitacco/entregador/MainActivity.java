@@ -271,6 +271,8 @@ public class MainActivity extends Activity {
                         }
                     } else if ("tracking_status".equals(action)) {
                         reply.postMessage("tracking:" + CourierLocationService.trackingState());
+                    } else if ("motion_status".equals(action)) {
+                        reply.postMessage("motion:" + CourierLocationService.motionState());
                     } else if ("background_status".equals(action)) {
                         reply.postMessage(backgroundPermissionState());
                     } else if ("activity_status".equals(action)) {
