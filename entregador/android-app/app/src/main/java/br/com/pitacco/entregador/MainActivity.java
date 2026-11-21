@@ -148,7 +148,11 @@ public class MainActivity extends Activity {
         ShiftSoundPlayer.recover(this);
         preparePush();
         registerGpsBridge();
-        if (state == null || web.restoreState(state) == null) web.loadUrl(HOME);
+        if (state == null || web.restoreState(state) == null) {
+            Intent launch=getIntent();
+            boolean admin=launch!=null && launch.getBooleanExtra("pitacco_admin_message",false);
+            web.loadUrl(admin?HOME+"#config":HOME);
+        }
         if (state == null) showFirstOpenSetup();
     }
 
@@ -562,7 +566,7 @@ public class MainActivity extends Activity {
             if (!result.isSuccessful() || result.getResult() == null) reply.postMessage("failed");
             // Native courier Android 2.0 supports data-only FCM with explicit
             // notification and audible alarm. Old APKs still send "token:".
-            else reply.postMessage("token_native:" + result.getResult());
+            else reply.postMessage("token_admin:" + result.getResult());
         });
     }
 
@@ -676,6 +680,12 @@ public class MainActivity extends Activity {
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        if (web != null && intent != null &&
+                intent.getBooleanExtra("pitacco_admin_message",false)) {
+            web.evaluateJavascript("window.location.hash='config';"+
+                "document.getElementById('adminInboxRefresh')?.click();",null);
+            intent.removeExtra("pitacco_admin_message");
+        }
         if (web != null && intent != null &&
                 intent.getBooleanExtra("pitacco_assignment_alert", false)) {
             web.evaluateJavascript(
