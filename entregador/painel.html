@@ -1469,15 +1469,18 @@ function initializeNativePush(){
     :"Notificações não autorizadas. Toque em Ativar avisos no Android.";
    return;
   }
-  if(value.startsWith("token:")||value.startsWith("token_native:")){
+  if(value.startsWith("token:")||value.startsWith("token_native:")||
+     value.startsWith("token_admin:")){
    window.clearTimeout(nativeEnableTimeout);
    if(nativePushRegistrationInFlight)return;
    nativePushRegistrationInFlight=true;
    try{
-    const nativeProtocol=value.startsWith("token_native:");
-    const token=value.slice(nativeProtocol?13:6);
-    const {error}=await sb.rpc(nativeProtocol?"pitacco_register_courier_push_native":"pitacco_register_courier_push",
-      {p_token:token}).catch(()=>({error:true}));
+    const adminProtocol=value.startsWith("token_admin:");
+    const nativeProtocol=value.startsWith("token_native:")||adminProtocol;
+    const token=value.slice(adminProtocol?12:nativeProtocol?13:6);
+    const rpcName=adminProtocol?"pitacco_register_courier_push_native_admin":
+     nativeProtocol?"pitacco_register_courier_push_native":"pitacco_register_courier_push";
+    const {error}=await sb.rpc(rpcName,{p_token:token}).catch(()=>({error:true}));
     nativePushRegistered=!error;
     if(error){
      status.textContent="Não foi possível registrar este aparelho. Nova tentativa automática após reconexão.";
