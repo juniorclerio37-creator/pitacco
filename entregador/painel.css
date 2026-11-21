@@ -180,3 +180,16 @@ button{font-family:inherit}button:focus-visible,a:focus-visible{outline:3px soli
  .courier-shared-map-actions .btn{flex:1}
  .courier-shared-map-canvas{height:248px}
 }
+
+/* Silent platform-owner notices, separate from loud delivery notifications. */
+.courier-admin-inbox{margin:14px 0;padding:14px;border:1px solid #e8eaf0;
+ border-radius:14px;background:#f8fafc}
+.courier-admin-inbox header{display:flex;flex-wrap:wrap;justify-content:space-between;
+ align-items:center;gap:10px}
+.courier-admin-inbox header button{min-height:32px;padding:5px 10px}
+.courier-admin-inbox-item{background:#fff;border:1px solid #e5e7eb;
+ border-radius:11px;padding:12px;margin:9px 0;display:grid;gap:5px}
+.courier-admin-inbox-item strong{color:#273345;font-size:.92rem}
+.courier-admin-inbox-item small{font-size:.75rem;color:#64748b}
+.courier-admin-inbox-item p{white-space:pre-wrap;overflow-wrap:anywhere;
+ font-size:.89rem;line-height:1.5;margin:3px 0}
