@@ -42,8 +42,12 @@ jobs:
               echo "O Admin em produção não será substituído até que a publicação seja autorizada."
             } >> "$GITHUB_STEP_SUMMARY"
             echo "::warning::Cloudflare Admin ainda não autorizado no GitHub Actions."
+          elif [[ ! "$PITACCO_ADMIN_CLOUDFLARE_ACCOUNT_ID" =~ ^[a-fA-F0-9]{32}$ ]]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::O Account ID do Pitacco Admin deve ter 32 caracteres hexadecimais."
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Publicação autorizada: token e Account ID configurados." >> "$GITHUB_STEP_SUMMARY"
           fi
   publish:
     name: Construir e publicar admin.pitacco.com.br
