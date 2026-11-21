@@ -17,6 +17,7 @@ import OwnerFinance from './OwnerFinance.jsx';
 import OwnerPlans from './OwnerPlans.jsx';
 import OwnerOperations from './OwnerOperations.jsx';
 import OwnerAppReleases from './OwnerAppReleases.jsx';
+import OwnerCourierCampaigns from './OwnerCourierCampaigns.jsx';
 import SupportCenter from './SupportCenter.jsx';
 import IncidentCenter from './IncidentCenter.jsx';
 import PitaccoIntelligence from './PitaccoIntelligence.jsx';
@@ -33,7 +34,7 @@ const client=(preview||location.hostname===adminHost)&&config.url&&config.key?cr
 const storefrontOrigin=preview?(import.meta.env.VITE_PITACCO_HOMOLOG_SITE_ORIGIN||''):'https://pitacco.com.br';
 const groups=[
  ['Visão geral',[['Painel geral',LayoutDashboard]]],
- ['Operação',[['Estabelecimentos',Store],['Pedidos',ShoppingBag],['Entregadores',Bike]]],
+ ['Operação',[['Estabelecimentos',Store],['Pedidos',ShoppingBag],['Entregadores',Bike],['Comunicados aos entregadores',Bike]]],
  ['Gestão comercial',[['Assinaturas',CreditCard],['Plano Pitacco',Package],['Financeiro do Pitacco',CreditCard]]],
  ['Administração',[['Módulos do lojista',Package],['Homologação',ClipboardCheck]]],
  ['Sistema',[['Auditoria',ListChecks],['Central de Diagnósticos',Activity],['Pitacco Intelligence',ClipboardCheck],['Suporte e incidentes',ClipboardCheck],['Central de Aplicativos',Settings]]]
@@ -167,6 +168,7 @@ function AdminApp(){
    {error&&<p role="alert">{error}</p>}
    {page==='Painel geral'&&<OwnerDashboard client={client} onStore={openStore}/>}
    {operations[page]&&<OwnerOperations key={page} client={client} stores={stores} kind={operations[page]}/>}
+   {page==='Comunicados aos entregadores'&&<OwnerCourierCampaigns client={client} stores={stores}/>}
    {page==='Financeiro do Pitacco'&&<OwnerFinance client={client} stores={stores}/>}
    {page==='Plano Pitacco'&&<OwnerPlans client={client} stores={stores}/>}
    {page==='Assinaturas'&&<OwnerSubscriptions client={client}/>}
