@@ -49,6 +49,15 @@ public final class CourierLocationService extends Service implements LocationLis
     private static volatile String physicalActivityState = "unknown";
     private static volatile int physicalActivityConfidence = 0;
     private static volatile long physicalActivityUpdatedAt = 0L;
+    private static volatile String lastCombinedMotion = "unknown";
+    private static volatile long lastCombinedMotionAt = 0L;
+
+    static String motionState() {
+        if (!running || lastCombinedMotionAt<=0 ||
+            SystemClock.elapsedRealtime()-lastCombinedMotionAt>90_000L)
+            return "unknown";
+        return lastCombinedMotion;
+    }
     static final String CHANNEL = "pitacco_gps_shift_v1";
     static final String EXPECTED_BACKEND = "https://mdevzehqcpcgxspwbiyz.supabase.co";
     private static final int NOTIFICATION_ID = 20811;
@@ -274,6 +283,8 @@ public final class CourierLocationService extends Service implements LocationLis
         lastSubmittedMs = now;
         final double lat = fix.getLatitude(), lng = fix.getLongitude(), accuracy = fix.getAccuracy();
         final Motion motion=classifyMotion(fix);
+        lastCombinedMotion=motion.state;
+        lastCombinedMotionAt=SystemClock.elapsedRealtime();
         try {
             network.execute(() -> {
                 try { submitPosition(lat,lng,accuracy,motion); }
@@ -394,6 +405,8 @@ public final class CourierLocationService extends Service implements LocationLis
         running = false;
         startedElapsedMs = 0;
         lastConfirmedUploadElapsedMs = 0;
+        lastCombinedMotion = "unknown";
+        lastCombinedMotionAt = 0L;
         watchHandler.removeCallbacks(orderWatch);
         stopMotionRecognition();
         if (locations != null) {
