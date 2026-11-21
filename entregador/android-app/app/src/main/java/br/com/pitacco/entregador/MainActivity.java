@@ -105,7 +105,13 @@ public class MainActivity extends Activity {
             @Override public void onGeolocationPermissionsShowPrompt(
                     String origin, GeolocationPermissions.Callback callback) {
                 // Only the authenticated courier website can ask for GPS.
-                if (!("https://" + HOST).equalsIgnoreCase(origin)) {
+                // Some WebViews report a canonical origin with a default
+                // port; validate its host and HTTPS instead of raw equality.
+                Uri requestedOrigin;
+                try { requestedOrigin = Uri.parse(origin); }
+                catch (Exception error) { callback.invoke(origin, false, false); return; }
+                if (!isHttps(requestedOrigin) ||
+                        !HOST.equalsIgnoreCase(requestedOrigin.getHost())) {
                     callback.invoke(origin, false, false);
                     return;
                 }
@@ -113,7 +119,9 @@ public class MainActivity extends Activity {
                         == PackageManager.PERMISSION_GRANTED ||
                     checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
                         == PackageManager.PERMISSION_GRANTED) {
-                    callback.invoke(origin, true, false);
+                    // Persist ONLY the already OS-authorized first-party
+                    // courier origin so WebView does not keep asking.
+                    callback.invoke(origin, true, true);
                     return;
                 }
                 pendingLocationOrigin = origin;
@@ -244,6 +252,21 @@ public class MainActivity extends Activity {
                     String action = message.getData();
                     if ("status".equals(action)) {
                         reply.postMessage(locationPermissionState());
+                    } else if ("site_status".equals(action)) {
+                        GeolocationPermissions.getInstance().getAllowed(
+                                "https://" + HOST,
+                                allowed -> reply.postMessage(Boolean.TRUE.equals(allowed)
+                                        ? "site:granted" : "site:not_granted"));
+                    } else if ("site_reset".equals(action)) {
+                        // User explicitly tapped 'Atualizar GPS'. Never change
+                        // Android permissions. Clear ONLY an old WebView
+                        // permission decision for our authenticated origin.
+                        if ("denied".equals(locationPermissionState())) {
+                            reply.postMessage("site:android_denied");
+                        } else {
+                            GeolocationPermissions.getInstance().clear("https://" + HOST);
+                            reply.postMessage("site:reset");
+                        }
                     } else if ("tracking_status".equals(action)) {
                         reply.postMessage("tracking:" + CourierLocationService.trackingState());
                     } else if ("background_status".equals(action)) {
@@ -571,7 +594,10 @@ public class MainActivity extends Activity {
         super.onResume();
         if (web != null) {
             web.evaluateJavascript(
-                "window.PitaccoGps?.postMessage?.('background_status')", null);
+                "window.PitaccoGps?.postMessage?.('status');" +
+                "window.PitaccoGps?.postMessage?.('site_status');" +
+                "window.PitaccoGps?.postMessage?.('background_status');" +
+                "window.PitaccoGps?.postMessage?.('tracking_status')", null);
         }
     }
 
