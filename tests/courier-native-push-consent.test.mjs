@@ -17,7 +17,7 @@ test('background FCM receiver enforces consent BEFORE showing an assignment',()=
  const handler=receiver.slice(receiver.indexOf('@Override public void onMessageReceived(RemoteMessage'));
  assert.match(handler,/if \(!MainActivity\.isPushOptedIn\(this\)\) return;/);
  assert.ok(handler.indexOf('isPushOptedIn(this)')<handler.indexOf('showAssignment(this, eventId)'));
- assert.match(handler,/if \(eventId == null \|\| !eventId\.matches\(UUID_PATTERN\)\) return;/);
+ assert.match(handler,/if\(eventId==null\|\|!eventId\.matches\(UUID_PATTERN\)\)return;/);
 });
 test('logout revokes server registration and disables native opt-in',()=>{
  const logout=panel.slice(panel.indexOf('async function logout(){'));
@@ -42,8 +42,8 @@ test('Pitacco Android declares separate opt-in background GPS and preserves one 
  assert.match(manifest,/android:foregroundServiceType="location"/);
  assert.match(manifest,/android:stopWithTask="false"/);
  assert.match(gradle,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(gradle,/versionCode 33/);
- assert.match(gradle,/versionName '2\.0\.13'/);
+ assert.match(gradle,/versionCode 34/);
+ assert.match(gradle,/versionName '2\.0\.14'/);
 });
 test('Android 11+ requests all-the-time permission separately with driver disclosure',()=>{
  assert.match(main,/private void showBackgroundLocationDisclosure\(JavaScriptReplyProxy reply\)/);
