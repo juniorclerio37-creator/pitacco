@@ -69,18 +69,22 @@ export function createCourierPush({url,serviceKey,cronSecret,verifyCron,account,
    try{authorized=await verifyCron(candidate)===true;}catch{authorized=false;}
   }
   if(!authorized)return new Response(null,{status:401});
+  // The preflight is restricted by the same cron/Vault bearer as dispatch.
+  // It never claims orders and never returns credential or device contents.
+  const mode=(await req.clone().json().catch(()=>({})))?.action;
   if(!url||!serviceKey||!account?.private_key||!account?.client_email||!/^[-a-z0-9]+$/.test(account?.project_id||'')){
+   if(mode==='preflight')return Response.json(
+    {ready:false,phase:'firebase_credentials',dispatched:false},
+    {status:503,headers:{'cache-control':'no-store'}});
    return Response.json({error:'FCM ainda não configurado'},{status:503});
   }
   try{
-   // A server-to-server preflight checks that the Firebase service account
-   // can obtain a Google OAuth token, WITHOUT claiming any courier delivery or
-   // requiring a registered device. The same Vault/cron bearer is mandatory.
-   // Never return access tokens, private keys, project IDs or device tokens.
-   const mode=(await req.clone().json().catch(()=>({})))?.action;
+   // Obtain OAuth before claiming; missing or invalid credentials must
+   // NEVER consume any pending courier delivery notification.
    const token=await googleToken();
    if(mode==='preflight'){
-    return Response.json({ready:true,oauth:'authorized',dispatched:false});
+    return Response.json({ready:true,phase:'firebase_oauth',dispatched:false},
+     {headers:{'cache-control':'no-store'}});
    }
    // Obtain OAuth before claiming; a missing credential does not consume deliveries.
    const jobs=await rpc('pitacco_claim_courier_push');
@@ -99,6 +103,11 @@ export function createCourierPush({url,serviceKey,cronSecret,verifyCron,account,
    }
    const results=await Promise.allSettled(jobs.map(deliver));
    return Response.json({processed:results.length,sent:results.filter(row=>row.status==='fulfilled'&&row.value==='sent').length});
-  }catch{return Response.json({error:'Não foi possível despachar notificações'},{status:502});}
+  }catch{
+   if(mode==='preflight')return Response.json(
+    {ready:false,phase:'firebase_oauth',dispatched:false},
+    {status:503,headers:{'cache-control':'no-store'}});
+   return Response.json({error:'Não foi possível despachar notificações'},{status:502});
+  }
  };
 }
