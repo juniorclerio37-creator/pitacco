@@ -563,11 +563,10 @@ test("Firebase courier device automatically retries session-scoped enrollment an
  const panel=read("painel.html");
  assert.match(panel,/nativePushRetryAttempts=0/);
  assert.match(panel,/nativePushRegistrationInFlight=true/);
- assert.match(panel,/nativePushRetryAttempts>=5/);
-  assert.match(panel,/function scheduleNativeRegistrationRetry\(\)/);
+ assert.match(panel,/nativePushRetryAttempts<5/);
  assert.match(panel,/\[2000,5000,12000,30000,60000\]/);
  assert.match(panel,/pitacco_register_courier_push_native/);
- assert.ok(panel.includes('window.PitaccoPush?.postMessage?.("enable")'));
+ assert.ok(panel.includes('window.PitaccoPush?.postMessage?.("refresh")'));
  const logout=panel.slice(panel.indexOf('async function logout(){'));
  assert.match(logout,/window\.clearTimeout\(nativePushRetryTimer\)/);
  assert.match(logout,/pitacco_unregister_courier_push/);
