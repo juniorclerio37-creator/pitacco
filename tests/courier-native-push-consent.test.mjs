@@ -120,7 +120,13 @@ test('Physical Activity is an opt-in Android runtime permission and never a GPS 
  assert.match(panel,/id="courierPhysicalActivityStatus"/);
  assert.match(panel,/postMessage\("activity_request"\)/);
  assert.match(panel,/window\.PitaccoGps\.postMessage\("activity_status"\)/);
- assert.doesNotMatch(gpsService,/ACTIVITY_RECOGNITION/,'GPS must never depend on this optional permission');
+ assert.match(gpsService,/requestActivityUpdates/);
+ assert.match(gpsService,/MOTION_MAX_AGE_MS/);
+ assert.match(gpsService,/physicalActivityConfidence/);
+ assert.match(gpsService,/classifyMotion/);
+ assert.match(gpsService,/gps_update_motion/);
+ assert.match(gpsService,/gps_update",basic/);
+ assert.match(readFileSync(new URL('../entregador/android-app/app/src/main/java/br/com/pitacco/entregador/CourierMotionReceiver.java',import.meta.url),'utf8'),/ActivityRecognitionResult/);
 });
 test('Native GPS diagnostics separate Android OS, WebView site and server-reported position',()=>{
  assert.match(main,/\"site_status\"\.equals\(action\)/);
@@ -130,4 +136,22 @@ test('Native GPS diagnostics separate Android OS, WebView site and server-report
  assert.match(panel,/browserGpsDenied/);
  assert.match(panel,/async function verifyGpsUploadOnServer/);
  assert.match(panel,/select\("observed_at,accuracy_m"\)/);
+});
+
+test('motion classification is optional, shift-scoped and never treats stopped as offline',()=>{
+ const main=readFileSync(new URL('../entregador/android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java',import.meta.url),'utf8');
+ const manifest=readFileSync(new URL('../entregador/android-app/app/src/main/AndroidManifest.xml',import.meta.url),'utf8');
+ const fleet=readFileSync(new URL('../revisions/0.12/web/FleetTracking.jsx',import.meta.url),'utf8');
+ const sql=readFileSync(new URL('../supabase/migrations/20261121013000_courier_motion_telemetry.sql',import.meta.url),'utf8');
+ assert.match(manifest,/CourierMotionReceiver/);
+ assert.match(manifest,/android:exported="false"/);
+ assert.match(main,/ACTION_REFRESH_MOTION/);
+ assert.match(main,/\"motion_status\"/);
+ assert.match(panel,/id="courierMotionStatus"/);
+ assert.match(panel,/postMessage\("motion_status"\)/);
+ assert.match(fleet,/rpc\('pitacco_store_courier_motion'/);
+ assert.match(fleet,/motionResult\.error\?\[\]/);
+ assert.match(sql,/pitacco_courier_background_gps_update_motion/);
+ assert.match(sql,/public\.pitacco_courier_background_gps_update\(/);
+ assert.match(sql,/pitacco_can_manage_courier_store/);
 });
