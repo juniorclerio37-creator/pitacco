@@ -1296,6 +1296,25 @@ let pushCheckRequestId=0;
 let nativePushRetryTimer=null;
 let nativePushRetryAttempts=0;
 let nativePushRegistrationInFlight=false;
+let nativeReplySeen=false, nativePushFailure="", lastDiag="";
+function pushDiag(stage,code=""){
+ // Only fixed stages and short error codes. Never log/store FCM tokens.
+ const clean=/^[a-zA-Z0-9_-]{1,24}$/.test(String(code))?String(code):"";
+ const key=stage+":"+clean;if(lastDiag===key)return;lastDiag=key;
+ void sb.rpc("pitacco_courier_push_diagnostic",{p_stage:stage,p_code:clean}).catch(()=>{});
+}
+function scheduleNativeRegistrationRetry(){
+ if(nativePushRetryAttempts>=5)return;
+ const delay=[2000,5000,12000,30000,60000][nativePushRetryAttempts++];
+ window.clearTimeout(nativePushRetryTimer);
+ nativePushRetryTimer=window.setTimeout(()=>{
+  if(!document.hidden&&navigator.onLine!==false&&
+      !["permission","unavailable"].includes(nativePushFailure)){
+   pushDiag("network_retry");
+   window.PitaccoPush?.postMessage?.("enable");
+  }
+ },delay);
+}
 let pushQuickTimeout=null;
 function showPushQuick(text,state="checking"){
  const output=$("pushQuickStatus");
@@ -1305,13 +1324,16 @@ function syncPushQuick(){
  const check=String($("nativePushReadiness")?.textContent||"");
  const android=String($("nativePushStatus")?.textContent||"");
  if(/Aparelho registrado e agendamento ativo/i.test(check)){
+  pushDiag("ready");
+  nativePushRegistered=true;
   window.clearTimeout(pushQuickTimeout);
   showPushQuick("Celular registrado no Firebase e envio ativo. Pronto para testar com a tela bloqueada.","success");
  }else if(/não foi possível registrar|não conseguiu obter|não autorizad|Firebase não configurado/i.test(android)){
   showPushQuick(android,"error");
  }else if(/não foi possível|erro|não autorizad|sem Firebase/i.test(check)){
-  showPushQuick(check,"error");
- }else if(check.trim())showPushQuick(check,"warning");
+  pushDiag("readiness_error");
+  if(!nativePushFailure)showPushQuick(check,"error");
+ }else if(check.trim()&&!nativePushFailure)showPushQuick(check,"warning");
 }
 function requestPushQuickCheck(){
  showPushQuick("Consultando a permissão do Android e o token Firebase…","checking");
@@ -1322,12 +1344,18 @@ function requestPushQuickCheck(){
  }
  try{
   bridge.postMessage("status");
+  pushDiag("request_token");
   bridge.postMessage("enable");
   void checkNativePushStatus();
   window.clearTimeout(pushQuickTimeout);
   pushQuickTimeout=window.setTimeout(()=>{
-   if(!nativePushRegistered)showPushQuick(
-    "O aparelho ainda não concluiu o cadastro Firebase. Confira a permissão de notificações e a conexão.","warning");
+   if(nativePushRegistered)return;
+   pushDiag("timeout",nativeReplySeen?"no_token":"no_reply");
+   if(nativePushFailure)return;
+   showPushQuick(nativeReplySeen?
+    "O Android respondeu, mas ainda não concluiu o cadastro Firebase. Nova tentativa automática será feita.":
+    "O aplicativo Android não respondeu ao pedido de token. Confira a versão instalada.",
+    "warning");
   },14000);
  }catch{
   showPushQuick("Falha na comunicação com o Android. Reabra o Pitacco Entregador.","error");
@@ -1436,7 +1464,12 @@ async function loadAdminInbox(){
 
 function initializeNativePush(){
  const native=window.PitaccoPush;
- if(!native?.postMessage)return;
+ if(!native?.postMessage){
+  pushDiag("bridge_absent");
+  showPushQuick("O receptor Android não foi detectado. Use o aplicativo oficial.","error");
+  return;
+ }
+ pushDiag("bridge_ready");
  const button=$("enableNativePush"),status=$("nativePushStatus");
  const settings=$("nativeNotificationSettings");
  // No Pitacco-specific activation step. OS permission is still respected.
@@ -1475,6 +1508,7 @@ function initializeNativePush(){
  });
  native.onmessage=async event=>{
   const value=String(event.data||"");
+  if(!nativeReplySeen){nativeReplySeen=true;pushDiag("native_message");}
   if(value.startsWith("shift_sound:")){
    window.clearTimeout(shiftProbe);
    $("shiftSoundUnsupported").hidden=true;
@@ -1514,6 +1548,15 @@ function initializeNativePush(){
   }
   if(value.startsWith("notification_status:")){
    const state=value.slice("notification_status:".length);
+   if(state==="permission"){
+    nativePushFailure="permission";pushDiag("permission_blocked");
+    showPushQuick("O Android bloqueou as notificações do Pitacco.","error");
+   }else if(state==="channel_disabled"){
+    nativePushFailure="channel_disabled";pushDiag("channel_blocked");
+    showPushQuick("O canal de novos pedidos está desativado no Android.","error");
+   }else if(state==="ready"&&!nativePushRegistered){
+    showPushQuick("Permissão do Android concedida. Solicitando token Firebase…","checking");
+   }
    status.textContent=state==="ready"?"Notificações do Android autorizadas. Faça o teste de som."
     :state==="channel_silent"?"Canal de notificações sem som. Toque em Configurar volume e notificações do Android."
     :state==="channel_disabled"?"Canal de novas entregas desativado. Abra as configurações do Android."
@@ -1522,6 +1565,9 @@ function initializeNativePush(){
   }
   if(value.startsWith("token:")||value.startsWith("token_native:")||
      value.startsWith("token_admin:")){
+   nativePushFailure="";
+   pushDiag("token_received");
+   showPushQuick("Token Firebase obtido; vinculando o aparelho à conta no Supabase…","checking");
    window.clearTimeout(nativeEnableTimeout);
    if(nativePushRegistrationInFlight)return;
    nativePushRegistrationInFlight=true;
@@ -1531,23 +1577,19 @@ function initializeNativePush(){
     const token=value.slice(adminProtocol?12:nativeProtocol?13:6);
     const rpcName=adminProtocol?"pitacco_register_courier_push_native_admin":
      nativeProtocol?"pitacco_register_courier_push_native":"pitacco_register_courier_push";
-    const {error}=await sb.rpc(rpcName,{p_token:token}).catch(()=>({error:true}));
+    const {error}=await sb.rpc(rpcName,{p_token:token}).catch(cause=>({error:cause}));
     nativePushRegistered=!error;
     if(error){
-     const code=String(error?.code||"").slice(0,40);
-     status.textContent="Não foi possível registrar este aparelho"+
-      (code?" ("+code+")":"")+". Nova tentativa automática após reconexão.";
-     // The Firebase token may arrive before the web-auth session settles.
-     // Retry only in the authenticated visible panel; never after logout.
-     if(nativePushRetryAttempts<5){
-      const delay=[2000,5000,12000,30000,60000][nativePushRetryAttempts++];
-      window.clearTimeout(nativePushRetryTimer);
-      nativePushRetryTimer=window.setTimeout(()=>{
-       if(!document.hidden&&navigator.onLine!==false)
-        window.PitaccoPush?.postMessage?.("refresh");
-      },delay);
-     }
+     const code=String(error?.code||"NETWORK").slice(0,24);
+     nativePushFailure="register_error";
+     pushDiag("register_error",code);
+     status.textContent="Falha no cadastro do aparelho no Supabase (código "+code+"). O Pitacco tentará novamente.";
+     showPushQuick(status.textContent,"error");
+     scheduleNativeRegistrationRetry();
     }else{
+     nativePushFailure="";
+     pushDiag("register_ok");
+     showPushQuick("Token cadastrado. Confirmando ativação no Supabase…","checking");
      nativePushRetryAttempts=0;
      window.clearTimeout(nativePushRetryTimer);
      status.textContent="Aparelho registrado para receber avisos em segundo plano.";
@@ -1557,6 +1599,8 @@ function initializeNativePush(){
   }else{
    window.clearTimeout(nativeEnableTimeout);
    if(value==="unavailable"){
+    nativePushFailure="unavailable";
+    pushDiag("firebase_unavailable");
     nativeFirebaseUnavailable=true;
     ++pushCheckRequestId;
     $("nativePushReadiness").textContent="Este APK de teste não tem Firebase configurado. O registro de notificações reais não é possível nesta versão.";
@@ -1565,15 +1609,30 @@ function initializeNativePush(){
     :value==="unavailable"?"Firebase não configurado neste APK. Confira se instalou a versão oficial, não o aplicativo TESTE."
     :value==="failed"?"O Android não conseguiu gerar o token Firebase. Verifique conexão e Google Play Services."
     :"Não foi possível concluir o cadastro automático. Confira a conexão e as notificações do Android.";
+   if(value==="permission"){nativePushFailure="permission";pushDiag("permission_blocked");}
+   if(value==="failed"){nativePushFailure="failed";pushDiag("firebase_failed");scheduleNativeRegistrationRetry();}
+   showPushQuick(status.textContent,"error");
   }
  };
  // boot() verified the authenticated courier before this function runs.
  // Register FCM automatically; do not try to bypass OS permission.
  status.textContent="Registrando avisos automaticamente após o login…";
+ pushDiag("request_token");
  native.postMessage("enable");
  native.postMessage("status");
  document.addEventListener("visibilitychange",()=>{
-  if(!document.hidden){native.postMessage("refresh");native.postMessage("status");}
+  if(!document.hidden){
+   if(!nativePushRegistered&&!["permission","unavailable"].includes(nativePushFailure)){
+    pushDiag("request_token");native.postMessage("enable");
+   }else native.postMessage("refresh");
+   native.postMessage("status");
+  }
+ });
+ window.addEventListener("online",()=>{
+  if(!document.hidden&&!nativePushRegistered&&
+   !["permission","unavailable"].includes(nativePushFailure)){
+   pushDiag("network_retry");native.postMessage("enable");
+  }
  });
 }
 async function boot(){
@@ -1592,6 +1651,7 @@ async function boot(){
   }
   storeName=status?.courier?.storeName||"Minha loja";
   loadNavPreferences();
+  pushDiag("boot");
   initializeNativePush();
   $("adminInboxRefresh").addEventListener("click",loadAdminInbox);
   void loadAdminInbox();
