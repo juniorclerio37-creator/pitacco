@@ -194,10 +194,17 @@ a.btn{text-decoration:none}
   <button type="button" class="settings-row" id="stopNativeGps" hidden><span>Parar GPS em segundo plano</span><span class="setting-arrow">■</span></button>
   <p class="note-inline">O rastreamento contínuo funciona enquanto você estiver online e a notificação persistente “GPS ativo” estiver visível. Ao ficar offline ou sair da conta, o serviço é encerrado. O Android pode interromper o serviço por bateria, falta de GPS ou encerramento forçado.</p>
   <span class="eyebrow">AJUDA E SINCRONIZAÇÃO</span>
-  <button type="button" class="settings-row" id="enableNativePush" hidden><span>Ativar avisos no Android</span><span class="setting-arrow">›</span></button>
+  <button type="button" class="settings-row" id="enableNativePush" hidden><span>Revalidar registro de notificações</span><span class="setting-arrow">↻</span></button>
   <p id="nativePushStatus" role="status" aria-live="polite"></p>
   <button type="button" class="settings-row" id="checkNativePush"><span>Verificar recebimento de novas entregas</span><span class="setting-arrow">↻</span></button>
-  <p id="nativePushReadiness" role="status" aria-live="polite">Verificação do aparelho disponível após o login.</p>
+  <p id="nativePushReadiness" role="status" aria-live="polite">Verificação automática do aparelho após o login.</p>
+  <section class="courier-admin-inbox" aria-label="Comunicados do Pitacco">
+   <header><strong>Comunicados e incentivos do Pitacco</strong>
+    <button type="button" class="secondary" id="adminInboxRefresh">Atualizar</button>
+   </header>
+   <p class="note-inline">Avisos enviados pelo Super Admin aparecem aqui e na notificação silenciosa do Android. O sino e a voz são exclusivos de novas entregas.</p>
+   <div id="courierAdminInbox" role="status" aria-live="polite">Carregando comunicados…</div>
+  </section>
   <button type="button" class="settings-row" id="nativeNotificationSettings" hidden><span>Configurar volume e notificações do Android</span><span class="setting-arrow">›</span></button>
   <p class="note-inline">Para novas entregas em segundo plano, permita as notificações e mantenha o aparelho conectado. Sem o Modo Plantão, o Android pode silenciar o aviso se o volume estiver no mínimo. O Não Perturbe e as restrições de bateria também podem impedir ou atrasar alertas.</p>
   <button type="button" class="settings-row" id="shiftSoundToggle" aria-pressed="false" hidden><span id="shiftSoundLabel">Modo Plantão — desativado</span><span class="setting-arrow" id="shiftSoundState">ATIVAR</span></button>
@@ -1323,10 +1330,10 @@ async function checkNativePushStatus(){
  if(!data.device_registered){
   const phoneAvailable=!!window.PitaccoPush?.postMessage;
   showPushBanner(phoneAvailable
-   ?"Este aparelho ainda não está registrado para receber entregas com a tela bloqueada. Toque em Ativar avisos."
-   :"O navegador não oferece o receptor nativo. Use o aplicativo oficial Pitacco Entregador.",phoneAvailable);
+   ?"Registro automático de notificações pendente. Se o Android tiver negado a permissão, abra as configurações de notificações."
+   :"O navegador não oferece o receptor nativo. Use o aplicativo oficial Pitacco Entregador.",false);
   view.textContent=phoneAvailable
-   ?"Registro do aparelho pendente. Autorize as notificações no Android e toque em Ativar avisos."
+   ?"O Pitacco registra automaticamente este aparelho após o login. Confira a permissão nas configurações do Android."
    :"Nenhum aparelho Android registrado nesta sessão.";
   if(!data.server_enabled)view.textContent+=" O servidor também aguarda configuração do Firebase.";
  }else if(!data.server_enabled){
@@ -1343,12 +1350,46 @@ async function checkNativePushStatus(){
   view.textContent="Aparelho registrado e agendamento ativo. Faça uma atribuição real de teste com a tela bloqueada para verificar o recebimento.";
  }
 }
+async function loadAdminInbox(){
+ const target=$("courierAdminInbox");
+ if(!target)return;
+ target.replaceChildren();
+ const label=document.createElement("p");
+ label.textContent="Carregando mensagens do Super Admin…";
+ target.append(label);
+ try{
+  const {data,error}=await sb.rpc("pitacco_courier_admin_inbox");
+  if(error)throw error;
+  target.replaceChildren();
+  if(!data?.length){
+   const empty=document.createElement("p");
+   empty.textContent="Nenhum comunicado recebido até agora.";
+   target.append(empty);return;
+  }
+  for(const item of data){
+   const article=document.createElement("article");
+   article.className="courier-admin-inbox-item";
+   const h=document.createElement("strong");h.textContent=item.title||"Comunicado do Pitacco";
+   const date=document.createElement("small");
+   date.textContent=new Date(item.created_at).toLocaleString("pt-BR");
+   const p=document.createElement("p");p.textContent=item.body||"";
+   article.append(h,date,p);target.append(article);
+  }
+ }catch(error){
+  target.replaceChildren();
+  const p=document.createElement("p");
+  p.textContent="Não foi possível carregar os comunicados. Toque em Atualizar.";
+  target.append(p);
+ }
+}
+
 function initializeNativePush(){
  const native=window.PitaccoPush;
  if(!native?.postMessage)return;
  const button=$("enableNativePush"),status=$("nativePushStatus");
  const settings=$("nativeNotificationSettings");
- button.hidden=false;
+ // No Pitacco-specific activation step. OS permission is still respected.
+ button.hidden=true;
  settings.hidden=false;
  settings.addEventListener("click",()=>native.postMessage("settings"));
  const shiftToggle=$("shiftSoundToggle"),shiftDescription=$("shiftSoundDescription");
@@ -1469,7 +1510,10 @@ function initializeNativePush(){
     :"Não foi possível ativar os avisos. Tente novamente.";
   }
  };
- native.postMessage("refresh");
+ // boot() verified the authenticated courier before this function runs.
+ // Register FCM automatically; do not try to bypass OS permission.
+ status.textContent="Registrando avisos automaticamente após o login…";
+ native.postMessage("enable");
  native.postMessage("status");
  document.addEventListener("visibilitychange",()=>{
   if(!document.hidden){native.postMessage("refresh");native.postMessage("status");}
@@ -1492,6 +1536,8 @@ async function boot(){
   storeName=status?.courier?.storeName||"Minha loja";
   loadNavPreferences();
   initializeNativePush();
+  $("adminInboxRefresh").addEventListener("click",loadAdminInbox);
+  void loadAdminInbox();
   $("startNativeGps").addEventListener("click",()=>startNativeGpsTracking().catch(()=>gpsStatus("Não foi possível iniciar o GPS.")));
   $("requestPhysicalActivity").addEventListener("click",()=>{
    const bridge=window.PitaccoGps;
