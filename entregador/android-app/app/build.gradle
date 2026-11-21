@@ -9,6 +9,7 @@ if (file('google-services.json').exists()) {
 dependencies {
     implementation 'androidx.webkit:webkit:1.12.1'
     implementation 'com.google.firebase:firebase-messaging:24.1.2'
+    implementation 'com.google.android.gms:play-services-location:21.4.0'
 }
 
 android {
