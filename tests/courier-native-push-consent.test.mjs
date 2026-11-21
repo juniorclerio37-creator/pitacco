@@ -101,6 +101,6 @@ test('Firebase OAuth preflight never claims or consumes queued orders',()=>{
  assert.ok(claim>start,'FCM OAuth preflight must return before claiming orders');
  assert.match(script,/const token=await googleToken\(\)/);
  assert.match(script,/!account\?\.private_key/);
- assert.match(script,/return Response\.json\(\{ready:true,oauth:'authorized',dispatched:false\}\)/);
+ assert.match(script,/return Response\.json\(\{ready:true,phase:'firebase_oauth',dispatched:false\}/);
  assert.match(script,/status:503/);
 });
