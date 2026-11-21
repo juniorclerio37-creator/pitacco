@@ -46,6 +46,7 @@ public class MainActivity extends Activity {
     private static final int FIRST_OPEN_NOTIFICATION_PERMISSION = 95;
     private static final int LOCATION_PERMISSION = 96;
     private static final int BACKGROUND_LOCATION_PERMISSION = 97;
+    private static final int ACTIVITY_RECOGNITION_PERMISSION = 98;
     private static final String INITIAL_SETUP_PREFS = "pitacco_delivery_initial_setup";
     private static final String INITIAL_SETUP_DONE = "completed_v1";
     private static final String GPS_SETUP_DONE = "gps_permission_explained_209";
@@ -54,6 +55,7 @@ public class MainActivity extends Activity {
     private String pendingLocationOrigin;
     private JavaScriptReplyProxy pendingGpsReply;
     private JavaScriptReplyProxy pendingBackgroundGpsReply;
+    private JavaScriptReplyProxy pendingPhysicalActivityReply;
     private WebView web;
     private LinearLayout offline;
 
@@ -271,6 +273,15 @@ public class MainActivity extends Activity {
                         reply.postMessage("tracking:" + CourierLocationService.trackingState());
                     } else if ("background_status".equals(action)) {
                         reply.postMessage(backgroundPermissionState());
+                    } else if ("activity_status".equals(action)) {
+                        reply.postMessage("activity:" + activityPermissionState());
+                    } else if ("activity_request".equals(action)) {
+                        requestPhysicalActivityPermission(reply);
+                    } else if ("activity_settings".equals(action)) {
+                        Intent settings = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:" + getPackageName()));
+                        openExternal(settings);
+                        reply.postMessage("activity:settings");
                     } else if ("background_request".equals(action)) {
                         showBackgroundLocationDisclosure(reply);
                     } else if ("stop".equals(action)) {
@@ -384,6 +395,44 @@ public class MainActivity extends Activity {
             .setNegativeButton("Mais tarde", (dialog, which) ->
                     reply.postMessage("background:denied"))
             .show();
+    }
+
+    /**
+     * Physical Activity / ACTIVITY_RECOGNITION is opt-in, introduced as a
+     * runtime permission on Android 10. It does not provide GPS coordinates
+     * and is never a prerequisite for background location or new orders.
+     */
+    private String activityPermissionState() {
+        if (Build.VERSION.SDK_INT < 29) return "unavailable";
+        return checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)
+                == PackageManager.PERMISSION_GRANTED ? "granted" : "denied";
+    }
+
+    private void requestPhysicalActivityPermission(JavaScriptReplyProxy reply) {
+        if (Build.VERSION.SDK_INT < 29) {
+            reply.postMessage("activity:unavailable");
+            return;
+        }
+        if ("granted".equals(activityPermissionState())) {
+            reply.postMessage("activity:granted");
+            return;
+        }
+        if (pendingPhysicalActivityReply != null) {
+            reply.postMessage("activity:request_running");
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Permitir Atividade física?")
+                .setMessage("A permissão é opcional e permite ao Android oferecer dados de movimento. Ela não substitui o GPS e não ativa o rastreamento nem coleta dados de atividade por conta própria. Você pode revogá-la nos ajustes do sistema.")
+                .setPositiveButton("Solicitar permissão", (dialog, which) -> {
+                    pendingPhysicalActivityReply = reply;
+                    requestPermissions(
+                            new String[]{Manifest.permission.ACTIVITY_RECOGNITION},
+                            ACTIVITY_RECOGNITION_PERMISSION);
+                })
+                .setNegativeButton("Agora não", (dialog, which) ->
+                        reply.postMessage("activity:declined"))
+                .show();
     }
 
     private String locationPermissionState() {
@@ -544,6 +593,19 @@ public class MainActivity extends Activity {
             }
             return;
         }
+        if (requestCode == ACTIVITY_RECOGNITION_PERMISSION) {
+            JavaScriptReplyProxy activityReply = pendingPhysicalActivityReply;
+            pendingPhysicalActivityReply = null;
+            if (activityReply != null) {
+                String state = activityPermissionState();
+                if ("denied".equals(state) &&
+                        !shouldShowRequestPermissionRationale(
+                                Manifest.permission.ACTIVITY_RECOGNITION)) {
+                    activityReply.postMessage("activity:settings");
+                } else activityReply.postMessage("activity:" + state);
+            }
+            return;
+        }
         if (requestCode == FIRST_OPEN_NOTIFICATION_PERMISSION) {
             finishFirstOpenNotifications();
             return;
@@ -595,6 +657,7 @@ public class MainActivity extends Activity {
         if (web != null) {
             web.evaluateJavascript(
                 "window.PitaccoGps?.postMessage?.('status');" +
+                "window.PitaccoGps?.postMessage?.('activity_status');" +
                 "window.PitaccoGps?.postMessage?.('site_status');" +
                 "window.PitaccoGps?.postMessage?.('background_status');" +
                 "window.PitaccoGps?.postMessage?.('tracking_status')", null);
