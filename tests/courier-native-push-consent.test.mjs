@@ -79,3 +79,28 @@ test('Location service stays user-stoppable and shift-scoped',()=>{
  assert.match(panel,/pitacco_courier_background_gps_revoke/);
  assert.match(panel,/if\(!nextOnline\)\{await stopNativeGpsTracking\(\)/);
 });
+
+test('courier push readiness reports scheduler and Vault presence without exposing secrets',()=>{
+ const sql=readFileSync(new URL('../supabase/migrations/20261121004500_courier_push_readiness_scheduler.sql',import.meta.url),'utf8');
+ assert.match(sql,/pitacco_courier_session_ready\(\)/);
+ assert.match(sql,/dispatch_scheduled/);
+ assert.match(sql,/cron_credential_present/);
+ assert.match(sql,/device_registered/);
+ assert.match(sql,/server_enabled/);
+ assert.match(sql,/grant execute on function public\.pitacco_courier_push_readiness/);
+ assert.doesNotMatch(sql,/decrypted_secret/);
+ assert.match(panel,/data\.dispatch_scheduled!==true/);
+ assert.match(panel,/data\.cron_credential_present/);
+ assert.match(panel,/não testa uma mensagem Firebase/);
+});
+test('Firebase OAuth preflight never claims or consumes queued orders',()=>{
+ const script=sender;
+ const start=script.indexOf("if(mode==='preflight')");
+ const claim=script.indexOf("pitacco_claim_courier_push");
+ assert.ok(start>=0);
+ assert.ok(claim>start,'FCM OAuth preflight must return before claiming orders');
+ assert.match(script,/const token=await googleToken\(\)/);
+ assert.match(script,/!account\?\.private_key/);
+ assert.match(script,/return Response\.json\(\{ready:true,oauth:'authorized',dispatched:false\}\)/);
+ assert.match(script,/status:503/);
+});
