@@ -1475,8 +1475,11 @@ $("retryCourierGps").addEventListener("click",()=>{
  const bridge=window.PitaccoGps;
  if(bridge?.postMessage){
   gpsStatus("Verificando a permissão nativa do Android…");
-  try{bridge.postMessage("status");}
-  catch{gpsStatus("Falha ao consultar a permissão nativa. Reabra o aplicativo Android.")}
+  try{
+   bridge.postMessage(nativeGpsPermission==="denied"?"request":"status");
+   if(nativeGpsPermission==="granted"&&courier?.available)
+    bridge.postMessage("tracking_status");
+  }catch{gpsStatus("Falha ao consultar a permissão nativa. Reabra o aplicativo Android.")}
  }else if(navigator.geolocation){
   navigator.geolocation.getCurrentPosition(()=>{stopGpsSharing();syncGpsSharing();},
    error=>gpsStatus(error.code===1?"Permissão de localização recusada. Autorize o navegador ou o aplicativo.":"Verifique a localização e a conexão do aparelho."),
