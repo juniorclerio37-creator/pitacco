@@ -85,7 +85,7 @@ test('public rider map remains scoped to own order tracking and rounds coordinat
  const publicPage=read('marketing/acompanhar.html');
  const sharedMap=read('revisions/0.12/web/deliveryMap.mjs');
  assert.match(publicPage,/pitacco_track_public_order/);
- assert.match(publicPage,/if\(data\.tracking_token\)/);
+ assert.match(publicPage,/new URLSearchParams\(location\.search\)\.get\('token'\)/);
  assert.match(sharedMap,/export async function mountCustomerTrackingMap/);
  assert.match(sharedMap,/Use ONLY the coordinates from pitacco_track_public_order/);
  assert.doesNotMatch(publicPage,/from\('courier_positions'\)/);
