@@ -453,7 +453,7 @@ async function stopNativeGpsTracking(){
  nativeGpsRunning=false;
  if(window.PitaccoGps?.postMessage)window.PitaccoGps.postMessage("stop");
  // Revoke the capability even if Android loses connectivity later.
- await sb.rpc("pitacco_courier_background_gps_revoke").catch(()=>{});
+ await Promise.resolve(sb.rpc("pitacco_courier_background_gps_revoke")).catch(()=>{});
 }
 
 function stopGpsSharing(){
@@ -1301,7 +1301,7 @@ function pushDiag(stage,code=""){
  // Only fixed stages and short error codes. Never log/store FCM tokens.
  const clean=/^[a-zA-Z0-9_-]{1,24}$/.test(String(code))?String(code):"";
  const key=stage+":"+clean;if(lastDiag===key)return;lastDiag=key;
- void sb.rpc("pitacco_courier_push_diagnostic",{p_stage:stage,p_code:clean}).catch(()=>{});
+ void Promise.resolve(sb.rpc("pitacco_courier_push_diagnostic",{p_stage:stage,p_code:clean})).catch(()=>{});
 }
 function scheduleNativeRegistrationRetry(){
  if(nativePushRetryAttempts>=5)return;
@@ -1388,7 +1388,7 @@ async function checkNativePushStatus(){
  // A timed-out RPC may eventually settle, but its late response is ignored.
  let timer;
  const response=await Promise.race([
-  sb.rpc("pitacco_courier_push_readiness").catch(()=>({error:true})),
+  Promise.resolve(sb.rpc("pitacco_courier_push_readiness")).catch(()=>({error:true})),
   new Promise(resolve=>{timer=window.setTimeout(()=>resolve({error:{message:"timeout"}}),7000);})
  ]);
  window.clearTimeout(timer);
@@ -1577,7 +1577,7 @@ function initializeNativePush(){
     const token=value.slice(adminProtocol?12:nativeProtocol?13:6);
     const rpcName=adminProtocol?"pitacco_register_courier_push_native_admin":
      nativeProtocol?"pitacco_register_courier_push_native":"pitacco_register_courier_push";
-    const {error}=await sb.rpc(rpcName,{p_token:token}).catch(cause=>({error:cause}));
+    const {error}=await Promise.resolve(sb.rpc(rpcName,{p_token:token})).catch(cause=>({error:cause}));
     nativePushRegistered=!error;
     if(error){
      const code=String(error?.code||"NETWORK").slice(0,24);
@@ -1833,7 +1833,7 @@ async function logout(){
  stopGpsSharing();
  orderDetails.close();
  if(window.PitaccoPush?.postMessage){
-  await sb.rpc("pitacco_unregister_courier_push").catch(()=>{});
+  await Promise.resolve(sb.rpc("pitacco_unregister_courier_push")).catch(()=>{});
   nativePushRegistered=false;
   window.PitaccoPush.postMessage("disable");
  }
