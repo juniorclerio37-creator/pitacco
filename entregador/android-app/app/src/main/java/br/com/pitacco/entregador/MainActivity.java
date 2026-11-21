@@ -596,8 +596,15 @@ public class MainActivity extends Activity {
         if (requestCode == ACTIVITY_RECOGNITION_PERMISSION) {
             JavaScriptReplyProxy activityReply = pendingPhysicalActivityReply;
             pendingPhysicalActivityReply = null;
+            String state = activityPermissionState();
+            if ("granted".equals(state) && CourierLocationService.isRunning()) {
+                // Register optional sensors immediately without restarting the
+                // shift, revoking its token or affecting GPS service uptime.
+                Intent refresh = new Intent(this, CourierLocationService.class);
+                refresh.setAction(CourierLocationService.ACTION_REFRESH_MOTION);
+                startService(refresh);
+            }
             if (activityReply != null) {
-                String state = activityPermissionState();
                 if ("denied".equals(state) &&
                         !shouldShowRequestPermissionRationale(
                                 Manifest.permission.ACTIVITY_RECOGNITION)) {
