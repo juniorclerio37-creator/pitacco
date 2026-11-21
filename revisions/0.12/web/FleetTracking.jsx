@@ -45,7 +45,7 @@ function groupRoutes(deliveries) {
 }
 
 export default function FleetTracking({client, storeId, onBack}) {
-  const [state, setState] = useState({store: null, couriers: [], deliveries: [], positions: []});
+  const [state, setState] = useState({store: null, couriers: [], deliveries: [], positions: [], motion: []});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [updatedAt, setUpdatedAt] = useState(null);
@@ -80,12 +80,16 @@ export default function FleetTracking({client, storeId, onBack}) {
         // Separate GPS RPC is checked against the SAME selected store on the
         // server. A shared courier can have a different primary store_id, and
         // raw courier_positions RLS must not be broadened globally.
-        const positionsResult = await client.rpc('pitacco_store_courier_positions', {
-          p_store: storeId,
-        });
+        const [positionsResult,motionResult] = await Promise.all([
+          client.rpc('pitacco_store_courier_positions',{p_store:storeId}),
+          client.rpc('pitacco_store_courier_motion',{p_store:storeId}),
+        ]);
         if (positionsResult.error) throw positionsResult.error;
+        // Motion is advisory. A sensor or permission issue must never hide the
+        // actual courier GPS or break dispatch for the merchant.
         if (alive) {
-          setState({store: storeResult.data, couriers, deliveries: deliveriesResult.data || [], positions: positionsResult.data || []});
+          setState({store: storeResult.data, couriers, deliveries: deliveriesResult.data || [],
+            positions: positionsResult.data || [],motion: motionResult.error?[]:(motionResult.data||[])});
           setUpdatedAt(new Date());
           setError('');
         }
@@ -139,14 +143,19 @@ export default function FleetTracking({client, storeId, onBack}) {
 
   const active = useMemo(() => activeOwnDeliveries(state.deliveries), [state.deliveries]);
   const positions = useMemo(() => new Map(state.positions.map(p => [p.courier_id, p])), [state.positions]);
+  const motions = useMemo(() => new Map((state.motion||[]).map(m => [m.courier_id,m])), [state.motion]);
   const routes = useMemo(() => groupRoutes(active), [active]);
   const couriers = useMemo(() => state.couriers.map(c => {
     const position = positions.get(c.id);
     const signal = gpsStatus(c, position);
     const jobs = active.filter(d => d.courier_id === c.id);
     const phase = jobs.some(d => d.status === 'retirada') ? 'Em entrega' : jobs.length ? 'Em coleta' : 'Disponível';
-    return {...c, position, signal, phase, jobCount: jobs.length};
-  }), [state.couriers, positions, active]);
+    const motion=motions.get(c.id);
+    const freshMotion=signal==='online'&&motion?.motion_observed_at&&
+      Date.now()-Date.parse(motion.motion_observed_at)<120000;
+    const moving=freshMotion?(motion.motion_state||'unknown'):'unknown';
+    return {...c, position, signal, phase, motion:moving, jobCount: jobs.length};
+  }), [state.couriers, positions, motions, active]);
   const hasPoints = validPoint(state.store) || active.some(validPoint) || couriers.some(c => validPoint(c.position));
   const visibleRoutes = selectedRoute ? routes.filter(r => r.id === selectedRoute) : routes;
   snapshot.current = {store: state.store, couriers, deliveries: active, selectedRoute, selectedCourier};
@@ -208,7 +217,7 @@ export default function FleetTracking({client, storeId, onBack}) {
         {panel === 'couriers' ? <div className="fleet-list">
           {couriers.map(c => <button key={c.id} type="button" className={'fleet-list-row' + (selectedCourier === c.id ? ' selected' : '')}
             onClick={() => {setSelectedCourier(selectedCourier === c.id ? '' : c.id); setSelectedRoute('');}}>
-            <span><strong>{c.name}</strong><small>{c.jobCount ? c.phase + ' · ' + c.jobCount + ' pedido(s)' : c.phase}</small></span>
+            <span><strong>{c.name}</strong><small>{c.jobCount ? c.phase + ' · ' + c.jobCount + ' pedido(s)' : c.phase}{c.signal==='online'&&c.motion!=='unknown' ? ' · '+(c.motion==='moving'?'Em movimento':'Parado') : ''}</small></span>
             <span className={'fleet-signal ' + c.signal}>{c.signal === 'online' ? 'GPS ativo' : c.signal === 'offline' ? 'Offline' : 'Sem sinal'}<small>{ago(c.position?.observed_at)}</small></span>
           </button>)}
           {!couriers.length && <p>Nenhum entregador cadastrado nesta loja.</p>}
