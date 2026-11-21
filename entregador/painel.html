@@ -453,7 +453,7 @@ async function stopNativeGpsTracking(){
  nativeGpsRunning=false;
  if(window.PitaccoGps?.postMessage)window.PitaccoGps.postMessage("stop");
  // Revoke the capability even if Android loses connectivity later.
- await sb.rpc("pitacco_courier_background_gps_revoke").catch(()=>{});
+ await Promise.resolve(sb.rpc("pitacco_courier_background_gps_revoke")).catch(()=>{});
 }
 
 function stopGpsSharing(){
@@ -1360,7 +1360,7 @@ async function checkNativePushStatus(){
  // A timed-out RPC may eventually settle, but its late response is ignored.
  let timer;
  const response=await Promise.race([
-  sb.rpc("pitacco_courier_push_readiness").catch(()=>({error:true})),
+  Promise.resolve(sb.rpc("pitacco_courier_push_readiness")).catch(error=>({data:null,error})),
   new Promise(resolve=>{timer=window.setTimeout(()=>resolve({error:{message:"timeout"}}),7000);})
  ]);
  window.clearTimeout(timer);
@@ -1531,7 +1531,8 @@ function initializeNativePush(){
     const token=value.slice(adminProtocol?12:nativeProtocol?13:6);
     const rpcName=adminProtocol?"pitacco_register_courier_push_native_admin":
      nativeProtocol?"pitacco_register_courier_push_native":"pitacco_register_courier_push";
-    const {error}=await sb.rpc(rpcName,{p_token:token}).catch(()=>({error:true}));
+    const {error}=await Promise.resolve(sb.rpc(rpcName,{p_token:token}))
+     .catch(error=>({data:null,error}));
     nativePushRegistered=!error;
     if(error){
      const code=String(error?.code||"").slice(0,40);
@@ -1592,7 +1593,9 @@ async function boot(){
   }
   storeName=status?.courier?.storeName||"Minha loja";
   loadNavPreferences();
-  initializeNativePush();
+  // Native Firebase must never block orders, maps or courier state on failure.
+  try {initializeNativePush();}
+  catch {showPushQuick("Falha no módulo de notificações. Pedidos e mapa permanecem disponíveis.","error");}
   $("adminInboxRefresh").addEventListener("click",loadAdminInbox);
   void loadAdminInbox();
   $("startNativeGps").addEventListener("click",()=>startNativeGpsTracking().catch(()=>gpsStatus("Não foi possível iniciar o GPS.")));
@@ -1773,7 +1776,7 @@ async function logout(){
  stopGpsSharing();
  orderDetails.close();
  if(window.PitaccoPush?.postMessage){
-  await sb.rpc("pitacco_unregister_courier_push").catch(()=>{});
+  await Promise.resolve(sb.rpc("pitacco_unregister_courier_push")).catch(()=>{});
   nativePushRegistered=false;
   window.PitaccoPush.postMessage("disable");
  }
