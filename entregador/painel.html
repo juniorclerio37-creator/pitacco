@@ -569,7 +569,9 @@ async function enableAssignmentSound(){
  try{assignmentAudio??=new Audio();await assignmentAudio.resume();}catch{}
 }
 function announceAssignments(deliveries,courier){
- const current=new Set(deliveries.filter(order=>order.status==="atribuida"&&order.courier_id===courier.id).map(order=>order.id));
+ const current=new Set(deliveries.filter(order=>
+  order.status==="atribuida"&&order.courier_id===courier.id&&
+  order.store_id===courier.store_id).map(order=>order.id));
  const fresh=courier.available&&assignmentBaseline?.courier===courier.id
    &&[...current].some(id=>!assignmentBaseline.ids.has(id));
  assignmentBaseline={courier:courier.id,ids:current};
