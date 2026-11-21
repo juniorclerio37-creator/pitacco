@@ -492,7 +492,7 @@ test("Android update preserves GPS permission prompts and registers push after l
  assert.match(panel,/showPushBanner\(/);
  assert.match(panel,/pitacco_courier_push_readiness/);
  assert.match(panel,/native\.postMessage\("enable"\)/);
- assert.match(panel,/o servidor de notificações do Pitacco ainda está desativado/);
+ assert.match(panel,/O Pitacco registra automaticamente este aparelho após o login/);
 });
 
 test("Pitacco courier GPS continues in Android background only under a visible location foreground service",()=>{
