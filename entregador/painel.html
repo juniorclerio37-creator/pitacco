@@ -182,6 +182,7 @@ a.btn{text-decoration:none}
   <p id="courierBackgroundGpsStatus" class="note-inline" role="status" aria-live="polite"></p>
   <button type="button" class="settings-row" id="verifyGpsUpload" hidden><span>Verificar envio real do GPS</span><span class="setting-arrow">↻</span></button>
   <p id="courierGpsServerStatus" class="note-inline" role="status" aria-live="polite"></p>
+  <p id="courierMotionStatus" class="note-inline" role="status" aria-live="polite">Movimento: ainda não identificado. A atividade física é opcional e ajuda a complementar o GPS.</p>
   <button type="button" class="settings-row" id="requestPhysicalActivity">
     <span>Autorizar Atividade física (opcional)</span><span class="setting-arrow">◎</span>
   </button>
@@ -268,6 +269,16 @@ function showAndroidGpsSettings(show){
  if(button)button.hidden=!show;
 }
 function handleAndroidGpsReply(status){
+ if(status.startsWith("motion:")){
+  const movement=status.slice(7);
+  const node=$("courierMotionStatus");
+  if(node)node.textContent=movement==="moving"
+   ?"Movimento: deslocamento detectado (estimativa dos sensores e GPS)."
+   :movement==="stopped"
+    ?"Movimento: parado no momento (estimativa; você continua online)."
+    :"Movimento: informação insuficiente ou sem GPS recente.";
+  return;
+ }
  if(status.startsWith("activity:")){
   const result=status.slice("activity:".length);
   const output=$("courierPhysicalActivityStatus");
@@ -366,6 +377,7 @@ if(window.PitaccoGps){
  try{
   window.PitaccoGps.postMessage("status");
   window.PitaccoGps.postMessage("activity_status");
+  window.PitaccoGps.postMessage("motion_status");
   window.PitaccoGps.postMessage("site_status");
   window.PitaccoGps.postMessage("tracking_status");
   window.PitaccoGps.postMessage("background_status");
@@ -374,6 +386,7 @@ if(window.PitaccoGps){
   if(!document.hidden){
    window.PitaccoGps?.postMessage?.("status");
    window.PitaccoGps?.postMessage?.("activity_status");
+   window.PitaccoGps?.postMessage?.("motion_status");
    window.PitaccoGps?.postMessage?.("site_status");
    window.PitaccoGps?.postMessage?.("tracking_status");
    window.PitaccoGps?.postMessage?.("background_status");
@@ -382,6 +395,7 @@ if(window.PitaccoGps){
  window.addEventListener("focus",()=>{
   window.PitaccoGps?.postMessage?.("status");
   window.PitaccoGps?.postMessage?.("activity_status");
+  window.PitaccoGps?.postMessage?.("motion_status");
   window.PitaccoGps?.postMessage?.("site_status");
   window.PitaccoGps?.postMessage?.("background_status");
   window.PitaccoGps?.postMessage?.("tracking_status");
@@ -1497,6 +1511,7 @@ async function boot(){
   $("verifyGpsUpload").addEventListener("click",()=>{
   window.PitaccoGps?.postMessage?.("status");
   window.PitaccoGps?.postMessage?.("tracking_status");
+  window.PitaccoGps?.postMessage?.("motion_status");
   void verifyGpsUploadOnServer();
 });
   $("stopNativeGps").addEventListener("click",()=>{
@@ -1519,6 +1534,8 @@ async function boot(){
   switchView(location.hash.slice(1));
   await refresh();
   setInterval(()=>{if(!document.hidden&&!busy)refresh().catch(e=>message(String(e.message)))},15000);
+  setInterval(()=>{if(!document.hidden&&courier?.available)
+   window.PitaccoGps?.postMessage?.("motion_status")},15000);
   document.addEventListener("visibilitychange",()=>{
    if(!document.hidden&&!busy)refresh().catch(e=>message(String(e.message)));
   });
