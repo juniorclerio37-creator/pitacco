@@ -559,6 +559,42 @@ test("courier receives native shift alerts with webview background even when Fir
  assert.doesNotMatch(migration,/customer_name|customer_phone|delivery_address/);
 });
 
+test("Firebase registration and readiness accept Supabase RPC thenables without .catch",async()=>{
+ const panel=read("painel.html");
+ // Supabase PostgrestBuilder is awaitable but not necessarily Promise.catch.
+ assert.match(panel,/Promise\.resolve\(sb\.rpc\(rpcName,\{p_token:token\}\)\)/);
+ assert.match(panel,/Promise\.resolve\(sb\.rpc\("pitacco_courier_push_readiness"\)\)/);
+ assert.doesNotMatch(panel,/await sb\.rpc\(rpcName,\{p_token:token\}\)\.catch/);
+ assert.match(panel,/try \{initializeNativePush\(\);\}/);
+
+ const start=panel.indexOf("async function checkNativePushStatus(){");
+ const end=panel.indexOf("async function loadAdminInbox(){",start);
+ assert.ok(start>=0&&end>start,"Readiness diagnostics must exist");
+ const snippet=panel.slice(start,end);
+ const view={textContent:""};
+ const $=id=>id==="nativePushReadiness"?view:{textContent:""};
+ const seen=[];
+ const createCheck=(rpc)=>new Function("$","sb","window",
+   "showPushBanner","nativeFirebaseUnavailable","pushCheckRequestId",
+   snippet+";return checkNativePushStatus;")(
+   $,{rpc},{setTimeout,clearTimeout,PitaccoPush:{postMessage(){}}},
+   (message)=>seen.push(message),false,0);
+ const success={data:{device_registered:true,server_enabled:true,
+   cron_credential_present:true,dispatch_scheduled:true},error:null};
+ const thenable={
+  then(onFulfilled,onRejected){return Promise.resolve(success).then(onFulfilled,onRejected);}
+ };
+ assert.equal(thenable.catch,undefined);
+ await createCheck(()=>thenable)();
+ assert.match(view.textContent,/Aparelho registrado e agendamento ativo/);
+ assert.equal(seen.at(-1),"");
+ const rejected={
+  then(onFulfilled,onRejected){return Promise.reject(new Error("offline")).then(onFulfilled,onRejected);}
+ };
+ await createCheck(()=>rejected)();
+ assert.match(view.textContent,/Não foi possível conferir o registro/);
+});
+
 test("Firebase courier device automatically retries session-scoped enrollment and stops after logout",()=>{
  const panel=read("painel.html");
  assert.match(panel,/nativePushRetryAttempts=0/);
