@@ -177,9 +177,11 @@ a.btn{text-decoration:none}
   <button type="button" class="settings-row" id="retryCourierGps"><span>Autorizar localização no Android / Atualizar GPS</span><span class="setting-arrow">◎</span></button>
   <button type="button" class="btn secondary" id="openAndroidGpsSettings" hidden>Abrir permissões de localização no Android</button>
   <p id="courierGpsStatus" role="status" aria-live="polite">Ative seu plantão para compartilhar sua posição com a loja.</p>
+  <p id="courierGpsPermissionDiagnostic" class="note-inline" role="status">Consultando permissões do Android e do navegador interno…</p>
   <button type="button" class="settings-row" id="requestBackgroundGps" hidden><span>Permitir localização o tempo todo no Android</span><span class="setting-arrow">›</span></button>
   <p id="courierBackgroundGpsStatus" class="note-inline" role="status" aria-live="polite"></p>
   <button type="button" class="settings-row" id="verifyGpsUpload" hidden><span>Verificar envio real do GPS</span><span class="setting-arrow">↻</span></button>
+  <p id="courierGpsServerStatus" class="note-inline" role="status" aria-live="polite"></p>
   <button type="button" class="settings-row" id="startNativeGps" hidden><span>Ativar GPS em segundo plano durante o plantão</span><span class="setting-arrow">▶</span></button>
   <button type="button" class="settings-row" id="stopNativeGps" hidden><span>Parar GPS em segundo plano</span><span class="setting-arrow">■</span></button>
   <p class="note-inline">O rastreamento contínuo funciona enquanto você estiver online e a notificação persistente “GPS ativo” estiver visível. Ao ficar offline ou sair da conta, o serviço é encerrado. O Android pode interromper o serviço por bateria, falta de GPS ou encerramento forçado.</p>
@@ -233,7 +235,23 @@ let courier=null, busy=false,routeOrigins=new Map(),lastCompletedBatchStops=new 
 let sharedCourierMap=null,mapLoadPromise=null,mapLastAttempt=0,mapLastGps=null;
 let gpsWatchId=null, gpsCourierId=null, gpsLastAttemptAt=0, gpsInFlight=false;
 let nativeGpsSupported=false, nativeGpsRunning=false, nativeGpsPermission='unknown';
-let browserGpsDenied=false;
+let browserGpsDenied=false,nativeSitePermission='unknown';
+function renderGpsPermissionDiagnostic(){
+ const node=$("courierGpsPermissionDiagnostic");
+ if(!node)return;
+ if(!window.PitaccoGps?.postMessage){
+  node.textContent="Modo navegador: é necessária a permissão de localização deste site.";
+  return;
+ }
+ const android=nativeGpsPermission==="granted"?"localização precisa autorizada"
+  :nativeGpsPermission==="approximate"?"apenas localização aproximada"
+  :nativeGpsPermission==="denied"?"localização não autorizada":"verificando";
+ const site=nativeSitePermission==="granted"?"autorização confirmada"
+  :nativeSitePermission==="not_granted"?"não autorizada"
+  :nativeSitePermission==="reset"?"autorização anterior redefinida":"não verificado";
+ node.textContent="Android: "+android+" · Navegador interno: "+site+
+   (browserGpsDenied?" · O navegador recusou o GPS; a permissão do Android é independente.":"")+".";
+}
 function gpsStatus(text){
  const output=$("courierGpsStatus");
  if(output)output.textContent=text;
@@ -243,6 +261,11 @@ function showAndroidGpsSettings(show){
  if(button)button.hidden=!show;
 }
 function handleAndroidGpsReply(status){
+ if(status.startsWith("site:")){
+  nativeSitePermission=status.slice(5);
+  renderGpsPermissionDiagnostic();
+  return;
+ }
  if(status.startsWith("background:")){
   const mode=status.slice("background:".length);
   const button=$("requestBackgroundGps"),indicator=$("courierBackgroundGpsStatus");
@@ -296,6 +319,8 @@ function handleAndroidGpsReply(status){
  if(["granted","approximate","denied","settings"].includes(status)){
   nativeGpsSupported=true;
   nativeGpsPermission=status==="settings"?"denied":status;
+  renderGpsPermissionDiagnostic();
+  if(status==="granted")try{window.PitaccoGps?.postMessage?.("site_status");}catch{}
  }
  if(status==="granted"){
   browserGpsDenied=false;
@@ -319,21 +344,47 @@ if(window.PitaccoGps){
  window.PitaccoGps.onmessage=event=>handleAndroidGpsReply(String(event?.data||"denied"));
  try{
   window.PitaccoGps.postMessage("status");
+  window.PitaccoGps.postMessage("site_status");
   window.PitaccoGps.postMessage("tracking_status");
   window.PitaccoGps.postMessage("background_status");
  }catch{}
  document.addEventListener("visibilitychange",()=>{
   if(!document.hidden){
    window.PitaccoGps?.postMessage?.("status");
+   window.PitaccoGps?.postMessage?.("site_status");
    window.PitaccoGps?.postMessage?.("tracking_status");
    window.PitaccoGps?.postMessage?.("background_status");
   }
  });
  window.addEventListener("focus",()=>{
   window.PitaccoGps?.postMessage?.("status");
+  window.PitaccoGps?.postMessage?.("site_status");
   window.PitaccoGps?.postMessage?.("background_status");
   window.PitaccoGps?.postMessage?.("tracking_status");
  });
+}
+async function verifyGpsUploadOnServer(){
+ const node=$("courierGpsServerStatus");
+ if(!node||!courier?.id)return;
+ node.textContent="Consultando o último GPS confirmado pelo servidor…";
+ try{
+  const {data,error}=await sb.from("courier_positions")
+   .select("observed_at,accuracy_m")
+   .eq("courier_id",courier.id).maybeSingle();
+  if(error)throw error;
+  if(!data?.observed_at){
+   node.textContent="Nenhum GPS confirmado pelo servidor para este motoboy.";return;
+  }
+  const age=Date.now()-Date.parse(data.observed_at);
+  if(!Number.isFinite(age)||age<0){node.textContent="Data de GPS inválida.";return;}
+  const interval=age<120000?Math.floor(age/1000)+" segundos":Math.floor(age/60000)+" minutos";
+  const accuracy=Number(data.accuracy_m);
+  node.textContent=(age<=90000?"GPS confirmado pelo servidor há ":"GPS desatualizado: último envio há ")+
+   interval+(Number.isFinite(accuracy)?" · precisão "+Math.round(accuracy)+" m":"")+".";
+ }catch(error){
+  node.textContent="Erro ao verificar GPS no servidor: "+
+   String(error?.message||"tente novamente").slice(0,120);
+ }
 }
 async function startNativeGpsTracking(){
  if(!courier?.available){gpsStatus("Fique online antes de ativar o rastreamento contínuo.");return}
@@ -425,6 +476,7 @@ function syncGpsSharing(){
   }finally{gpsInFlight=false;}
  },error=>{
   browserGpsDenied=error.code===1;
+  renderGpsPermissionDiagnostic();
   const description=error.code===1
    ?"O site/navegador não recebeu autorização para acessar o GPS. Isso não significa que o Android tenha negado a permissão; use a verificação do aplicativo nativo."
    :error.code===2?"A localização do navegador está indisponível. Verifique o GPS do aparelho."
@@ -1411,6 +1463,7 @@ async function boot(){
   $("verifyGpsUpload").addEventListener("click",()=>{
   window.PitaccoGps?.postMessage?.("status");
   window.PitaccoGps?.postMessage?.("tracking_status");
+  void verifyGpsUploadOnServer();
 });
   $("stopNativeGps").addEventListener("click",()=>{
    void stopNativeGpsTracking();
@@ -1476,9 +1529,14 @@ $("retryCourierGps").addEventListener("click",()=>{
  if(bridge?.postMessage){
   gpsStatus("Verificando a permissão nativa do Android…");
   try{
-   bridge.postMessage(nativeGpsPermission==="denied"?"request":"status");
-   if(nativeGpsPermission==="granted"&&courier?.available)
-    bridge.postMessage("tracking_status");
+   if(nativeGpsPermission==="denied")bridge.postMessage("request");
+   else{
+    if(nativeGpsPermission==="granted")bridge.postMessage("site_reset");
+    bridge.postMessage("status");
+    bridge.postMessage("site_status");
+    if(nativeGpsPermission==="granted"&&courier?.available)
+     bridge.postMessage("tracking_status");
+   }
   }catch{gpsStatus("Falha ao consultar a permissão nativa. Reabra o aplicativo Android.")}
  }else if(navigator.geolocation){
   navigator.geolocation.getCurrentPosition(()=>{stopGpsSharing();syncGpsSharing();},
