@@ -263,7 +263,10 @@ export async function mountFleetMap(container) {
       const focused = courier.id === selectedCourier;
       const marker = L.marker(coords, {icon: icon(fresh ? 'online' : 'stale', focused)})
         .bindPopup(popup(courier.name || 'Motoboy',
-          (fresh ? 'GPS atualizado' : 'Última localização (sem sinal atual)') + ' · ' + (courier.phase || ''))).addTo(markers);
+          (fresh ? 'GPS atualizado' : 'Última localização (sem sinal atual)') + ' · ' +
+          (courier.phase || '') +
+          (fresh&&courier.motion==='moving'?' · Movimento detectado':
+           fresh&&courier.motion==='stopped'?' · Parado (estimado)':''))).addTo(markers);
       if (focused) marker.openPopup();
       bounds.push(coords);
       if (fresh && Number(courier.position.accuracy_m) > 0 && Number(courier.position.accuracy_m) < 500) {
