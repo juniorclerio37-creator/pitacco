@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import com.google.android.gms.location.ActivityRecognition;
 
 /**
  * Native on-shift location tracking, started ONLY by the foreground activity.
@@ -43,6 +44,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class CourierLocationService extends Service implements LocationListener {
     static final String ACTION_START = "br.com.pitacco.entregador.location.START";
     static final String ACTION_STOP = "br.com.pitacco.entregador.location.STOP";
+    static final String ACTION_REFRESH_MOTION = "br.com.pitacco.entregador.location.REFRESH_MOTION";
+    private static final long MOTION_MAX_AGE_MS = 90_000L;
+    private static volatile String physicalActivityState = "unknown";
+    private static volatile int physicalActivityConfidence = 0;
+    private static volatile long physicalActivityUpdatedAt = 0L;
     static final String CHANNEL = "pitacco_gps_shift_v1";
     static final String EXPECTED_BACKEND = "https://mdevzehqcpcgxspwbiyz.supabase.co";
     private static final int NOTIFICATION_ID = 20811;
@@ -62,6 +68,75 @@ public final class CourierLocationService extends Service implements LocationLis
                 now - lastConfirmedUploadElapsedMs <= 90_000L) return "on";
         if (now - startedElapsedMs < 45_000L) return "waiting";
         return "stale";
+    }
+
+    static void recordPhysicalActivity(String state,int confidence) {
+        if (!running || (!"moving".equals(state) && !"stopped".equals(state)) ||
+            confidence < 65 || confidence > 100) return;
+        physicalActivityState=state;
+        physicalActivityConfidence=confidence;
+        physicalActivityUpdatedAt=SystemClock.elapsedRealtime();
+    }
+
+    private PendingIntent motionPendingIntent;
+    private boolean motionRequested=false;
+
+    private void startMotionRecognition() {
+        if (!running || (Build.VERSION.SDK_INT >= 29 &&
+                checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)
+                    != PackageManager.PERMISSION_GRANTED) || motionRequested) return;
+        try {
+            Intent callback = new Intent(this,CourierMotionReceiver.class)
+                .setAction(CourierMotionReceiver.ACTION_UPDATE);
+            int flags=PendingIntent.FLAG_UPDATE_CURRENT |
+                (Build.VERSION.SDK_INT >= 31?PendingIntent.FLAG_MUTABLE:0);
+            motionPendingIntent=PendingIntent.getBroadcast(this,241,callback,flags);
+            ActivityRecognition.getClient(this)
+                .requestActivityUpdates(15_000L,motionPendingIntent)
+                .addOnSuccessListener(ignored -> motionRequested=true)
+                .addOnFailureListener(error -> motionRequested=false);
+        } catch (RuntimeException ignored) {
+            // Optional Google Play services. GPS remains functional.
+            motionRequested=false;
+        }
+    }
+
+    private void stopMotionRecognition() {
+        if (motionPendingIntent != null) {
+            try { ActivityRecognition.getClient(this)
+                .removeActivityUpdates(motionPendingIntent); }
+            catch (RuntimeException ignored) {}
+            motionPendingIntent=null;
+        }
+        motionRequested=false;
+        physicalActivityState="unknown";
+        physicalActivityConfidence=0;
+        physicalActivityUpdatedAt=0L;
+    }
+
+    private static final class Motion {
+        final String state;
+        final int confidence;
+        final double speed;
+        Motion(String state,int confidence,double speed) {
+            this.state=state;this.confidence=confidence;this.speed=speed;
+        }
+    }
+
+    // GPS speed and low-power Android activity sensing are independent signals.
+    // Movement is an estimate; a stationary bike at a light is NOT offline.
+    private Motion classifyMotion(Location fix) {
+        double speed=fix.hasSpeed()?Math.max(0,fix.getSpeed()):Double.NaN;
+        boolean reliable=fix.hasSpeed()&&fix.hasSpeedAccuracy()
+             &&fix.getSpeedAccuracyMetersPerSecond()<=1.8f
+             &&fix.getAccuracy()<=65f;
+        if(reliable&&speed>=2.8)return new Motion("moving",90,speed);
+        if(reliable&&speed<=0.6&&fix.getAccuracy()<=30f)
+            return new Motion("stopped",85,speed);
+        if(SystemClock.elapsedRealtime()-physicalActivityUpdatedAt<=MOTION_MAX_AGE_MS
+            &&physicalActivityUpdatedAt>0 && physicalActivityConfidence>=65)
+            return new Motion(physicalActivityState,physicalActivityConfidence,speed);
+        return new Motion("unknown",0,speed);
     }
 
     private LocationManager locations;
@@ -96,6 +171,10 @@ public final class CourierLocationService extends Service implements LocationLis
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null || ACTION_STOP.equals(intent.getAction())) {
             stopSelf();
+            return START_NOT_STICKY;
+        }
+        if (ACTION_REFRESH_MOTION.equals(intent.getAction())) {
+            if (running) startMotionRecognition();
             return START_NOT_STICKY;
         }
         if (!ACTION_START.equals(intent.getAction()) ||
@@ -140,6 +219,7 @@ public final class CourierLocationService extends Service implements LocationLis
             lastConfirmedUploadElapsedMs = 0;
             startedElapsedMs = SystemClock.elapsedRealtime();
             running = true;
+            startMotionRecognition();
             watchHandler.removeCallbacks(orderWatch);
             watchHandler.post(orderWatch);
             return START_NOT_STICKY;
@@ -193,9 +273,10 @@ public final class CourierLocationService extends Service implements LocationLis
         if (now - lastSubmittedMs < INTERVAL_MS || !sending.compareAndSet(false, true)) return;
         lastSubmittedMs = now;
         final double lat = fix.getLatitude(), lng = fix.getLongitude(), accuracy = fix.getAccuracy();
+        final Motion motion=classifyMotion(fix);
         try {
             network.execute(() -> {
-                try { submitPosition(lat, lng, accuracy); }
+                try { submitPosition(lat,lng,accuracy,motion); }
                 finally { sending.set(false); }
             });
         } catch (java.util.concurrent.RejectedExecutionException ignored) {
@@ -203,12 +284,25 @@ public final class CourierLocationService extends Service implements LocationLis
         }
     }
 
-    private void submitPosition(double lat, double lng, double accuracy) {
+    private void submitPosition(double lat,double lng,double accuracy,Motion motion) {
         try {
             JSONObject body = new JSONObject()
-                    .put("p_token", gpsToken)
-                    .put("p_lat", lat).put("p_lng", lng).put("p_accuracy_m", accuracy);
-            ApiResponse result = request("/rest/v1/rpc/pitacco_courier_background_gps_update", body);
+                .put("p_token",gpsToken)
+                .put("p_lat",lat).put("p_lng",lng).put("p_accuracy_m",accuracy)
+                .put("p_motion_state",motion.state)
+                .put("p_motion_confidence",motion.confidence)
+                .put("p_speed_mps",Double.isFinite(motion.speed)
+                     ?motion.speed:JSONObject.NULL);
+            ApiResponse result=request(
+                "/rest/v1/rpc/pitacco_courier_background_gps_update_motion",body);
+            if(result.status==404){
+                // Compatibility if the new optional motion RPC is unavailable:
+                // keep sending authenticated GPS via the original endpoint.
+                JSONObject basic=new JSONObject().put("p_token",gpsToken)
+                    .put("p_lat",lat).put("p_lng",lng)
+                    .put("p_accuracy_m",accuracy);
+                result=request("/rest/v1/rpc/pitacco_courier_background_gps_update",basic);
+            }
             if (result.status >= 200 && result.status < 300) {
                 lastConfirmedUploadElapsedMs = SystemClock.elapsedRealtime();
             }
@@ -301,6 +395,7 @@ public final class CourierLocationService extends Service implements LocationLis
         startedElapsedMs = 0;
         lastConfirmedUploadElapsedMs = 0;
         watchHandler.removeCallbacks(orderWatch);
+        stopMotionRecognition();
         if (locations != null) {
             try { locations.removeUpdates(this); } catch (SecurityException ignored) {}
         }
