@@ -26,7 +26,7 @@ begin
   p_motion_state not in ('unknown','moving','stopped') or
   p_motion_confidence is null or p_motion_confidence not between 0 and 100 or
   (p_speed_mps is not null and
-   (p_speed_mps<0 or p_speed_mps>80 or not isfinite(p_speed_mps))) then
+   (not (p_speed_mps between 0 and 80))) then
   raise exception 'Estado de movimento inválido' using errcode='22023';
  end if;
  -- Reuse the established authenticated 256-bit shift token, session,
