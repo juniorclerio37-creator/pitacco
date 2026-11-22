@@ -160,7 +160,7 @@ button{font-family:inherit}button:focus-visible,a:focus-visible{outline:3px soli
  background:none;border:0;box-shadow:none}
 .courier-map-shop-pin svg{display:block;width:58px;height:68px;max-width:none}
 .courier-map-moto{overflow:visible!important}
-.courier-map-moto svg{display:block;width:72px;height:82px;max-width:none;
+.courier-map-moto svg{display:block;width:72px;height:70px;max-width:none;
  filter:drop-shadow(0 3px 4px #33415552)}
 .courier-map-destination .courier-map-number{display:grid;place-items:center;
  width:36px;height:36px;border:3px solid white;border-radius:50% 50% 50% 4px;
