@@ -32,37 +32,29 @@ export function illustratedShopIcon(L) {
 
 
 /** One illustrated rider marker for the courier, shop fleet and public
- * order tracking maps. The pin tip is anchored to the reported coordinates.
+ * order tracking maps. The floating motorcycle's wheel base is anchored to the GPS coordinates.
  * The customer map still receives only rounded, delivery-scoped points. */
-export const PITACCO_COURIER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="72" height="82"
- viewBox="0 0 72 82" aria-hidden="true" focusable="false">
- <path d="M36 2C18 2 3 16 3 34c0 21 23 35 33 44 10-9 33-23 33-44C69 16 54 2 36 2Z"
-  fill="#ea580c" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>
- <circle cx="36" cy="34" r="27.5" fill="#fff7ed"/>
- <ellipse cx="36" cy="55.5" rx="26" ry="2" fill="#fed7aa"/>
- <circle cx="21" cy="48" r="8.1" fill="#29364a" stroke="#fff" stroke-width="1.5"/>
- <circle cx="21" cy="48" r="3.5" fill="#cbd5e1"/>
- <circle cx="52" cy="48" r="8.1" fill="#29364a" stroke="#fff" stroke-width="1.5"/>
- <circle cx="52" cy="48" r="3.5" fill="#cbd5e1"/>
- <rect x="11.5" y="27" width="14.5" height="14.5" rx="3"
-  fill="#fb923c" stroke="#9a3412" stroke-width="1.7"/>
- <path d="M15 30.5h7.5M18.7 28.5v10" stroke="#fff7ed"
-  stroke-width="1.5" stroke-linecap="round"/>
- <path d="M20.5 46h30c1.5 0 2.5-1.2 2.5-2.4v-2.5h-9l-6-7-13 1.5-5 8.4Z"
-  fill="#f97316" stroke="#9a3412" stroke-width="1.6" stroke-linejoin="round"/>
- <path d="M26 37l8.8-1.4 6 7.2H24.5Z" fill="#fdba74"/>
- <path d="M47 42l4.5-14.5h4.3M51.5 29h7" fill="none"
-  stroke="#334155" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>
- <path d="M28.5 30.5c1.5-5.1 5-8 9.4-8 4.1 0 7.3 3 8.5 7.8l-4 7.4-7-2.1-6.1 6.4"
-  fill="#ea580c" stroke="#29364a" stroke-width="1.8" stroke-linejoin="round"/>
- <path d="M41 30.8l6.4 1.2 5.2-2.8" fill="none" stroke="#29364a"
-  stroke-width="3.2" stroke-linecap="round"/>
- <path d="M30.5 40h-6.3" stroke="#334155" stroke-width="3" stroke-linecap="round"/>
- <circle cx="38" cy="18.3" r="7.1" fill="#29364a" stroke="#fff" stroke-width="1.6"/>
- <path d="M33.5 18.2q4.2-3 10.8 1l-.7 3.2-9.9-.4Z"
-  fill="#bae6fd" stroke="#0e7490" stroke-width="1"/>
- <path d="M24.5 45h28" stroke="#fff7ed" stroke-width="1.3" stroke-linecap="round"/>
- <path d="M19 58h34" stroke="#fed7aa" stroke-width="1" stroke-linecap="round"/>
+export const PITACCO_COURIER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="72" height="70"
+ viewBox="0 0 72 70" aria-hidden="true" focusable="false">
+ <ellipse cx="36" cy="64" rx="27" ry="3.5" fill="#0f172a" opacity=".16"/>
+ <circle cx="20" cy="52" r="9" fill="#263347" stroke="#fff" stroke-width="1.8"/>
+ <circle cx="20" cy="52" r="4" fill="#cbd5e1" stroke="#64748b" stroke-width="1"/>
+ <circle cx="53" cy="52" r="9" fill="#263347" stroke="#fff" stroke-width="1.8"/>
+ <circle cx="53" cy="52" r="4" fill="#cbd5e1" stroke="#64748b" stroke-width="1"/>
+ <rect x="9" y="29" width="16" height="16" rx="3" fill="#fb923c" stroke="#9a3412" stroke-width="1.8"/>
+ <path d="M13 33h8M17 31v11" stroke="#fff7ed" stroke-width="1.5" stroke-linecap="round"/>
+ <path d="M19 47h31c2 0 4-1.6 4-3.7V42h-9l-6-8-15 2-5 11Z"
+  fill="#f97316" stroke="#9a3412" stroke-width="1.8" stroke-linejoin="round"/>
+ <path d="M26 38l9-1.4 6.2 7.5H23.8Z" fill="#fdba74"/>
+ <path d="M49 43l5-15h4M52 29h7" fill="none" stroke="#334155"
+  stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+ <path d="M28.5 32c1.2-5.5 4.6-8.4 9.2-8.4 4.2 0 7.4 3.2 8.5 8.4l-4.2 7.3-7-2-6.4 6.4"
+  fill="#ea580c" stroke="#29364a" stroke-width="2" stroke-linejoin="round"/>
+ <path d="M41 32l6.5 1.5 5.3-3.5" fill="none" stroke="#29364a"
+  stroke-width="3.1" stroke-linecap="round"/>
+ <circle cx="37.5" cy="18.3" r="7.6" fill="#29364a" stroke="#fff" stroke-width="1.6"/>
+ <path d="M32 18q5.4-3.5 11.7 1.1l-.8 3.2-9.9-.5Z" fill="#bae6fd" stroke="#0e7490" stroke-width="1"/>
+ <path d="M21 47h32" stroke="#fff7ed" stroke-width="1.4" stroke-linecap="round"/>
 </svg>`;
 export function illustratedCourierIcon(L,{stale=false,selected=false,customer=false}={}){
  return L.divIcon({
@@ -70,7 +62,7 @@ export function illustratedCourierIcon(L,{stale=false,selected=false,customer=fa
    (selected?' pitacco-courier-moto-selected':'')+
    (customer?' pitacco-courier-moto-customer':''),
   html:PITACCO_COURIER_SVG,
-  iconSize:[72,82],iconAnchor:[36,78],popupAnchor:[0,-65]
+  iconSize:[72,70],iconAnchor:[36,61],popupAnchor:[0,-52]
  });
 }
 
