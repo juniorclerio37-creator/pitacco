@@ -18,6 +18,7 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
  const [reload,setReload]=useState(0),[requestKey,setRequestKey]=useState(null);
  const customers=overview?.customers||[],charges=overview?.charges||[],payments=overview?.payments||[];
  const customer=customers.find(x=>x.id===selected)||null;
+ useEffect(()=>setIssuedCode(''),[storeId]);
  const customerCharges=charges.filter(x=>x.customer_id===selected);
  const reserved=customerCharges.filter(x=>x.state==='reserved').reduce((a,x)=>a+Number(x.amount)-Number(x.paid),0);
  const due=customerCharges.filter(x=>x.state==='open').reduce((a,x)=>a+Number(x.amount)-Number(x.paid),0);
@@ -35,7 +36,7 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
   return sum+item.quantity*(Number(p?.price||0)+item.options.reduce((a,id)=>a+Number(options.find(x=>x.id===id)?.additional_price||0),0));
  },0),[cart,products,options]);
  useEffect(()=>{
-  let live=true;setLoading(true);setError('');setIssuedCode('');
+  let live=true;setLoading(true);setError('');
   const get=async()=>{
    try{
     const [wallet,productsResult,groupResult,optionResult]=await Promise.all([
