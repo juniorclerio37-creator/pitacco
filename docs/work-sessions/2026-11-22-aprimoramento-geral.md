@@ -88,5 +88,9 @@ Nenhum pedido real foi criado para teste; não houve cobrança, exclusão de dad
 - Build React/Vite aprovado. Aviso de bundle acima de 500 kB, sem erro de compilação.
 - Nenhum navegador do usuário foi aberto. Os testes Chromium são executados pelo pipeline de homologação existente, com dados de teste.
 - CI do commit financeiro confirmou PostgreSQL 17 e teste concorrente de alocação. A evidência de publicação e o estado final dos workflows devem ser conferidos nos links do GitHub, sem confundir build com instalação física.
+- Validação completa do commit dos cupons: https://github.com/juniorclerio37-creator/pitacco/actions/runs/45067142401 — sucesso, incluindo PostgreSQL 17, concorrência e testes Chromium.
+- Publicação mais recente do site: https://github.com/juniorclerio37-creator/pitacco/actions/runs/45067142355 — sucesso.
+- Compilação Windows do commit financeiro: https://github.com/juniorclerio37-creator/pitacco/actions/runs/45066948532 — sucesso; isso não comprova instalação, impressão física ou áudio.
+- Uma sincronização opcional do estado local do Git foi bloqueada pela revisão automática por risco de perda de trabalho não commitado. Não foi repetida; a comparação posterior em modo de leitura confirmou igualdade dos arquivos modificados com `origin/main`.
 
 Não encerrar a missão inteira com este relatório: os bloqueios e lacunas acima permanecem registrados para continuidade sem refazer a investigação.
