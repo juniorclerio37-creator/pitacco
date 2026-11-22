@@ -25,7 +25,8 @@ test("courier card only advances by user action and verified code",()=>{
  const html=page();
  assert.doesNotMatch(html,/courierProgress\(d\)/);
  assert.match(html,/courierActionStage\(d\)/);
- assert.match(html,/createAction\("Coletar pedido"/);
+ assert.match(html,/createAction\("Coletar"/);
+ assert.match(html,/collectButton\.setAttribute\("aria-label","Coletar pedido"\)/);
  assert.match(html,/createAction\("Sair para entrega"/);
  assert.match(html,/closeToCustomer\?"Confirmar chegada":"Cheguei na entrega"/);
  assert.match(html,/createAction\("Finalizar entrega"/);
