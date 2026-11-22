@@ -271,12 +271,12 @@ test("cartão mostra Ir ao lado do endereço e PIN após Cheguei sem abrir detal
  assert.match(page,/element\("a","card-route-link","Ir"\)/);
  assert.match(page,/data-route-delivery/);
  assert.doesNotMatch(page,/createAction\("Abrir rota"/);
- assert.match(page,/Você chegou ao destino/);
+ assert.match(page,/Confirmar entrega/);
   assert.match(page,/courierActionStage\(d\)/);
   assert.doesNotMatch(page,/courierProgress\(d\)/);
   assert.match(page,/createAction\("Coletar pedido"/);
   assert.match(page,/createAction\("Finalizar entrega"/);
- assert.match(page,/Peça o código de confirmação ao cliente/);
+ assert.match(page,/Digite o código informado pelo cliente para finalizar/);
  assert.match(page,/element\("a","btn secondary card-ifood-confirm","Abrir confirmação no iFood"\)/);
  assert.match(page,/https:\/\/confirmacao-entrega-propria\.ifood\.com\.br\//);
  assert.match(android,/confirmacao-entrega-propria\.ifood\.com\.br/);
