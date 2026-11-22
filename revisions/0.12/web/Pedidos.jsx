@@ -1,7 +1,8 @@
 import React,{useEffect,useMemo,useState} from 'react';
-import {Bike, CheckCircle2, ChefHat, Clock3, CreditCard, Printer, ShoppingBag, TrendingUp, UserRound} from 'lucide-react';
+import {Bike, CheckCircle2, ChefHat, Clock3, Printer, ShoppingBag, TrendingUp} from 'lucide-react';
 import './pedidos.css';
 import FleetTracking from './FleetTracking.jsx';
+import OrderDetails from './OrderDetails.jsx';
 import {deliveryLabel,sourceLabel} from './DeliveryDialog.jsx';
 import {receiptItems} from './receiptItems.mjs';
 import {orderAddress,publicOrderNumber,validLocalizer} from './orderDisplay.mjs';
@@ -60,15 +61,16 @@ function DeliveryBadge({order,delivery}){
  const {type,label}=deliveryType(order,delivery);
  return <span className="pedidos-delivery-badge" data-delivery={type}>{type==='pickup'?<ShoppingBag size={15} aria-hidden="true"/>:<Bike size={15} aria-hidden="true"/>}{label}</span>;
 }
-export default function Pedidos({client,storeId,orders=[],deliveries=[],badges=[],stage,onAccept,onAcceptIfood,onGetIfoodReasons,onRejectIfood,onDecision,onReady,onPickup,onConclude,onDetail,onAssign,onReprint,busy=false,merchantLayout=false,popupLayout=false,manualPrint=false,acceptMode='manual',dispatchMode='manual'}){
+export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers=[],badges=[],stage,onAccept,onAcceptIfood,onGetIfoodReasons,onRejectIfood,onDecision,onReady,onPickup,onConclude,onDetail,onAssign,onReprint,busy=false,actionError,merchantLayout=false,popupLayout=false,manualPrint=false,acceptMode='manual',dispatchMode='manual'}){
  const [filter,setFilter]=useState('all'),[search,setSearch]=useState(''),[selected,setSelected]=useState(null),[decision,setDecision]=useState(null);
  const [layout,setLayout]=useState('columns');
  const badgeByOrder=useMemo(()=>new Map(badges.map(b=>[b.order_id,b])),[badges]);
  const number=o=>publicOrderNumber(o,badgeByOrder.get(o?.id));
  const counts=useMemo(()=>Object.fromEntries(stages.map(([id])=>[id,orders.filter(o=>stage(o)===id).length])),[orders,stage]);
  const filtered=useMemo(()=>orders.filter(o=>(filter==='all'?!terminal.has(stage(o)):stage(o)===filter)&&(!search||[number(o),o.receipt?.customer,o.receipt?.phone,...receiptItems(o.receipt).map(i=>i.name)].join(' ').toLowerCase().includes(search.toLowerCase()))),[orders,filter,search,stage]);
- const current=filtered.find(o=>o.id===selected)||(popupLayout?null:filtered[0]);
- useEffect(()=>{if(!popupLayout||!selected)return;const dismiss=event=>{if(event.key==='Escape'){event.preventDefault();setSelected(null);setDecision(null)}};window.addEventListener('keydown',dismiss);return()=>window.removeEventListener('keydown',dismiss)},[popupLayout,selected]);
+ const current=orders.find(o=>o.id===selected);
+ const closeDetails=()=>{setSelected(null);setDecision(null)};
+ useEffect(()=>{closeDetails()},[storeId]);
  const deliveriesByOrder=useMemo(()=>new Map(deliveries.map(delivery=>[delivery.order_id,delivery])),[deliveries]);
  const currentDelivery=deliveriesByOrder.get(current?.id);
  const currentLocalizer=validLocalizer(badgeByOrder.get(current?.id));
@@ -90,7 +92,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],badges=[
     {...previous,error:error.message||'Não foi possível consultar motivos no iFood.',loading:false}:previous);
   }
  }
- const decisionApplies=canDecide&&decision?.id===current.id;
+ const decisionApplies=canDecide&&decision?.id===current.id&&decision.status!=='ifood';
  const total=orders.filter(o=>!['cancelled','rejected'].includes(stage(o))).reduce((sum,o)=>sum+Number(o.gross||0),0); 
  // Agrupamento visual por etapa; a classificação continua sendo calculada a
  // partir dos estados confirmados do pedido e da coleta, não por drag-and-drop.
@@ -128,7 +130,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],badges=[
    const address=orderAddress(delivery?.address)||orderAddress(o.receipt?.address||o.receipt?.delivery_address);
    return <article key={o.id} aria-label={'Card do pedido '+number(o)} data-source={o.source}
     className={'pedidos-card order-card '+(current?.id===o.id?'selected':'')}>
-    <button type="button" className="pedidos-card-select" aria-pressed={current?.id===o.id} onClick={()=>setSelected(o.id)}>
+    <button type="button" className="pedidos-card-select" aria-haspopup="dialog" aria-expanded={current?.id===o.id} onClick={()=>setSelected(o.id)}>
      <span className="pedidos-card-row"><b className="pedidos-origin"><PlatformIcon source={o.source}/><span>{source}</span></b><span className="store-stage" data-stage={stage(o)}>{stages.find(([id])=>id===stage(o))?.[1]||'Em andamento'}</span></span>
      <span className="pedidos-card-row"><b className="pedidos-number"><ShoppingBag size={17} aria-hidden="true"/> #{number(o)}</b>
       <small>{o.scheduled_for?'Agendado '+scheduledTime.format(new Date(o.scheduled_for)):o.created_at?new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</small></span>
@@ -175,36 +177,43 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],badges=[
     </div>}
    </article>;
   })}</section>)}</div>
-  {popupLayout&&current&&<div className="pedidos-modal-backdrop" aria-hidden="true" onClick={()=>{setSelected(null);setDecision(null)}}/>}
-  {current?<article className={"pedidos-detail"+(popupLayout?" pedidos-detail-modal":"")} role={popupLayout?"dialog":undefined} aria-modal={popupLayout?"true":undefined} aria-label={popupLayout?"Detalhes do pedido "+number(current):undefined}><div className="pedidos-detail-heading"><h3><ShoppingBag size={23} aria-hidden="true"/> Pedido #{number(current)}</h3>{popupLayout&&<button className="secondary pedidos-modal-close" type="button" onClick={()=>{setSelected(null);setDecision(null)}}>Fechar ✕</button>}<span className="store-stage" data-stage={stage(current)}>{stages.find(([id])=>id===stage(current))?.[1]||'Em andamento'}</span></div>{currentLocalizer&&<div className="pedidos-localizer pedidos-localizer-detail"><strong>LOCALIZADOR DE LIGAÇÃO</strong><b>{currentLocalizer}</b></div>}<div className="pedidos-detail-pair"><section><h4><UserRound size={17} aria-hidden="true"/> Cliente</h4><strong>{current.receipt?.customer||'Não informado'}</strong><p>{current.receipt?.phone||''}</p><p>{orderAddress(currentDelivery?.address)||orderAddress(current.receipt?.address||current.receipt?.delivery_address)}</p></section><section><h4><CreditCard size={17} aria-hidden="true"/> Pagamento</h4><p>{current.receipt?.payment||'Não informado'}</p><DeliveryBadge order={current} delivery={currentDelivery}/></section></div><section className="pedidos-items"><h4><ShoppingBag size={17} aria-hidden="true"/> Itens do pedido</h4>{receiptItems(current.receipt).map((item,i)=><div key={i}><span>{item.quantity||1} × {item.name}<small>{Array.isArray(item.modifiers)?readableModifiers(item.modifiers):''}</small></span><span>{item.total!=null?brl(item.total):''}</span></div>)}{current.receipt?.subtotal!=null&&<div><span>Subtotal</span><strong>{brl(current.receipt.subtotal)}</strong></div>}
-  {current.receipt?.delivery_fee!=null&&<div><span>Taxa de entrega</span><strong>{brl(current.receipt.delivery_fee)}</strong></div>}
-  <footer><b>Total</b><strong>{brl(current.gross)}</strong></footer></section><div className="pedidos-actions">
-<button onClick={()=>onDetail(current)}>Entrega e entregador</button>
-{current.status==='accepted'&&<button disabled={busy} onClick={()=>onReprint(current.id)}>🖨️ {manualPrint?'Imprimir no navegador':'Reimprimir'}</button>}
+  </div>
+  {current&&<OrderDetails key={current.id} order={current} delivery={currentDelivery} number={number(current)}
+   stage={stage(current)} stageLabel={stages.find(([id])=>id===stage(current))?.[1]||'Em andamento'}
+   platform={<PlatformIcon source={current.source}/>} origin={sourceLabel(current.source)||current.channel||'Loja'}
+   localizer={currentLocalizer} items={receiptItems(current.receipt)} modifiers={readableModifiers}
+   deliveryBadge={<DeliveryBadge order={current} delivery={currentDelivery}/>}
+   courierName={couriers.find(courier=>courier.id===currentDelivery?.courier_id)?.name}
+   onClose={closeDetails} actionError={actionError}
+   decisionOpen={decision?.id===current.id} actions={<>
+{(currentDelivery||current.receipt?.logistics!=='retirada')&&<button className="secondary" onClick={()=>onDetail(current)}>Entrega e entregador</button>}
+{current.status==='accepted'&&<button className="secondary" disabled={busy} onClick={()=>onReprint(current.id)}>🖨️ {manualPrint?'Imprimir no navegador':'Reimprimir'}</button>}
 {stage(current)==='preparing'&&current.status==='accepted'&&<button className="primary" disabled={busy} onClick={()=>onReady(current.id)}>{popupLayout?'Marcar pronto':'Marcar pedido pronto'}</button>}
 {stage(current)==='ready'&&current.source==='proprio'&&current.receipt?.logistics==='retirada'&&<button className="primary" disabled={busy||!onPickup} onClick={()=>onPickup?.(current.id)}>Confirmar retirada</button>}
 {stage(current)==='ready'&&canDispatch(current,currentDelivery,dispatchMode)&&<button className="primary" disabled={busy} onClick={()=>onAssign(current)}>{popupLayout?'Despachar':'Selecionar entregador'}</button>}
-{stage(current)==='ready'&&currentDelivery?.courier_id&&<span role="status">Entregador atribuído · aguardando saída</span>}
-{stage(current)==='ready'&&currentDelivery?.logistics_provider==='marketplace'&&<span role="status">Aguardando retirada pelo parceiro</span>}
 {stage(current)==='delivery'&&current.source==='proprio'&&<button className="primary" disabled={busy||!onConclude} onClick={()=>onConclude?.(current.id)}>Concluir entrega</button>}
-{stage(current)==='delivery'&&<span role="status">A conclusão exige chegada e comprovação registradas pelo entregador; pedidos de marketplaces aguardam a confirmação oficial.</span>}
-{canAssign(current,currentDelivery)&&isAutomaticDispatch(dispatchMode)&&<span role="status">Atribuição automática ativa · você pode selecionar manualmente</span>}
 {canDecide&&<>
- {stage(current)==='scheduled'
-  ? <p>Aceite liberado às {scheduledTime.format(new Date(current.scheduled_release_at))}.</p>
-  : <button className="primary" disabled={busy} onClick={()=>onAccept(current.id)}>Aceitar e iniciar preparo</button>}
- <button type="button" disabled={busy} onClick={()=>setDecision({id:current.id,status:'rejected',reason:''})}>Recusar pedido</button>
- <button type="button" disabled={busy} onClick={()=>setDecision({id:current.id,status:'cancelled',reason:''})}>Cancelar pedido</button>
- </>}</div>{waitingIfood&&<div role="status">
- {ifoodCancelPending?<p>Cancelamento solicitado ao iFood. Aguardando o evento oficial CANCELLED.</p>:
+ {stage(current)!=='scheduled'&&<button className="primary" disabled={busy} onClick={()=>onAccept(current.id)}>Aceitar e iniciar preparo</button>}
+ <button type="button" className="secondary" disabled={busy} onClick={()=>setDecision({id:current.id,status:'rejected',reason:''})}>Recusar pedido</button>
+ <button type="button" className="secondary" disabled={busy} onClick={()=>setDecision({id:current.id,status:'cancelled',reason:''})}>Cancelar pedido</button>
+ </>}{waitingIfood&&!ifoodRequestPending&&!ifoodCancelPending&&acceptMode!=='automatic'&&<>
+ { !ifoodExpired&&<button className="primary" disabled={busy||!onAcceptIfood} onClick={()=>onAcceptIfood?.(current.id)}>Aceitar pedido no iFood</button>}
+ <button type="button" className="secondary" disabled={busy||!onRejectIfood||!onGetIfoodReasons} onClick={()=>void openIfoodReject(current)}>Recusar pedido no iFood</button>
+ </>}
+  </>}>
+{stage(current)==='ready'&&currentDelivery?.courier_id&&<p role="status" className="order-detail-note">Entregador atribuído · aguardando saída</p>}
+{stage(current)==='ready'&&currentDelivery?.logistics_provider==='marketplace'&&<p role="status" className="order-detail-note">Aguardando retirada pelo parceiro</p>}
+{stage(current)==='delivery'&&<p role="status" className="order-detail-note">A conclusão exige chegada e comprovação registradas pelo entregador; pedidos de marketplaces aguardam a confirmação oficial.</p>}
+{canAssign(current,currentDelivery)&&isAutomaticDispatch(dispatchMode)&&<p role="status" className="order-detail-note">Atribuição automática ativa · você pode selecionar manualmente</p>}
+{canDecide&&stage(current)==='scheduled'&&<p className="order-detail-note">Aceite liberado às {scheduledTime.format(new Date(current.scheduled_release_at))}.</p>}
+{waitingIfood&&<div role="status" className="order-detail-meta">
+ {ifoodCancelPending?<p>Cancelamento solicitado ao iFood. Aguardando confirmação oficial.</p>:
  ifoodRequestPending?<p>Aguardando confirmação oficial do iFood. Não aceite novamente.</p>:
- acceptMode==='automatic'?<p>Aceite automático ativo. Botões visíveis para consulta; o iFood é confirmado pelo servidor.</p>:
- ifoodExpired?<p>Prazo de aceite do iFood encerrado. Se ainda estiver disponível, utilize Recusar pedido e aguarde a resposta oficial.</p>:
- <><button className="primary" disabled={busy||acceptMode==='automatic'||!onAcceptIfood} onClick={()=>onAcceptIfood?.(current.id)}>Aceitar pedido no iFood</button>
- {current.receipt?.ifood_manual_accept==='failed'&&<p>O envio anterior falhou. É possível tentar novamente enquanto estiver no prazo.</p>}</>}
- {!ifoodRequestPending&&!ifoodCancelPending&&<button type="button" className="secondary" disabled={busy||acceptMode==='automatic'||!onRejectIfood||!onGetIfoodReasons} onClick={()=>void openIfoodReject(current)}>Recusar pedido no iFood</button>}
+ acceptMode==='automatic'?<p>Aceite automático ativo. Aguardando o iFood.</p>:
+ ifoodExpired?<p>Prazo de aceite do iFood encerrado.</p>:null}
+ {current.receipt?.ifood_manual_accept==='failed'&&<p>O envio anterior falhou. Tente novamente se o prazo ainda estiver aberto.</p>}
  {current.receipt?.ifood_manual_cancel==='failed'&&<p>O iFood não confirmou o cancelamento anterior. Consulte o motivo e tente novamente se permitido.</p>}
- </div>}{decision?.id===current.id&&decision.status==='ifood'&&<form onSubmit={async e=>{
+</div>}{decision?.id===current.id&&decision.status==='ifood'&&<form className="order-detail-decision" tabIndex={-1} onSubmit={async e=>{
  e.preventDefault();if(!decision.reason)return;
  const completed=await onRejectIfood(current.id,decision.reason);if(completed)setDecision(null);
  }}>
@@ -220,7 +229,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],badges=[
  </label>}
  <button className="primary" disabled={busy||decision.loading||!decision.reason||Boolean(decision.error)}>Confirmar recusa no iFood</button>
  <button type="button" className="secondary" disabled={busy} onClick={()=>setDecision(null)}>Voltar</button>
- </form>}{decisionApplies&&<form onSubmit={async event=>{
+ </form>}{decisionApplies&&<form className="order-detail-decision" tabIndex={-1} onSubmit={async event=>{
  event.preventDefault();
  await onDecision(current.id,decision.status,decision.reason);
  }}>
@@ -229,6 +238,8 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],badges=[
  </label>
  <button disabled={busy||decision.reason.trim().length<3}>{decision.status==='rejected'?'Confirmar recusa':'Confirmar cancelamento'}</button>
  <button type="button" disabled={busy} className="secondary" onClick={()=>setDecision(null)}>Voltar</button>
- </form>}</article>:!popupLayout?<div className="pedidos-detail">Selecione um pedido para ver os detalhes.</div>:null}</div><small>*Total de pedidos carregados, não necessariamente faturamento do dia.</small>
+ </form>}
+  </OrderDetails>}
+  <small>*Total de pedidos carregados, não necessariamente faturamento do dia.</small>
  </div>
 }

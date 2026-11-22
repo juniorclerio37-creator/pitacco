@@ -113,3 +113,88 @@
 .pitacco-pedidos[data-layout="routes"]>.pedidos-tabs,
 .pitacco-pedidos[data-layout="routes"]>.pedidos-split,
 .pitacco-pedidos[data-layout="routes"]>small{display:none}
+
+/* Details use a top-layer dialog, leaving the full board available for cards. */
+.pitacco-pedidos:not(.windows-cards-only) .pedidos-split {display:block}
+.pitacco-pedidos:not(.windows-cards-only) .pedidos-list {
+ display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,255px),1fr));
+ align-items:start;gap:10px;max-height:none;overflow:visible;
+}
+.pitacco-pedidos .pedidos-order-dialog {
+ position:fixed;inset:0;margin:auto;transform:none;padding:0;border:1px solid var(--store-border,#e1e6ed);
+ width:min(720px,calc(100% - 40px));max-width:none;max-height:none;overflow:hidden;
+ border-radius:20px;background:var(--store-surface,#fff);color:var(--store-ink,#182136);
+ box-shadow:0 24px 80px #141b3940;
+}
+.pedidos-order-dialog::backdrop {background:#12172c99}
+.order-detail-surface {
+ max-height:min(760px,calc(100dvh - 44px));display:grid;grid-template-rows:auto minmax(0,1fr) auto;
+}
+.order-detail-header,.order-detail-footer {
+ display:flex;align-items:center;gap:12px;padding:14px 20px;
+ background:var(--store-surface,#fff);
+}
+.order-detail-header {border-bottom:1px solid var(--store-border,#e1e6ed)}
+.order-detail-heading {display:flex;align-items:center;gap:10px;min-width:0;margin-right:auto}
+.order-detail-heading>.pedidos-platform-icon {width:38px;height:38px;border-radius:11px;font-size:.9rem}
+.order-detail-origin,.order-detail-heading time,.order-detail-meta,.order-detail-label {
+ color:var(--store-muted,#535f74);font-size:.8rem;line-height:1.4;
+}
+.order-detail-heading h3 {margin:1px 0;font-size:1.15rem;line-height:1.2;overflow-wrap:anywhere}
+.order-detail-heading time {display:flex;align-items:center;gap:4px}
+.order-detail-header .store-stage {text-align:center;flex:none}
+.pedidos-order-dialog .pedidos-modal-close {
+ display:grid;place-items:center;width:40px;min-width:40px;height:40px;padding:0;border-radius:11px;
+}
+.order-detail-body {
+ display:grid;align-content:start;gap:12px;min-height:0;overflow:auto;overscroll-behavior:contain;
+ padding:16px 20px;background:var(--store-quiet,#f5f7fa);overflow-wrap:anywhere;
+}
+.order-detail-body :is(h4,p,ul,dl,dd) {margin:0}
+.order-detail-customer,.order-detail-section,.order-detail-decision {
+ padding:13px 14px;border:1px solid var(--store-border,#e1e6ed);border-radius:12px;background:var(--store-surface,#fff);
+}
+.order-detail-customer,.order-detail-address,.order-detail-fulfillment {
+ display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;
+}
+.order-detail-customer strong {font-size:1.05rem}
+.order-detail-section h4 {display:flex;align-items:center;gap:7px;font-size:.92rem;margin-bottom:8px}
+.order-detail-section h4 svg {color:var(--store-accent,#ba4322);flex:none}
+.order-detail-link {
+ display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:8px;
+ border:1px solid var(--store-border,#e1e6ed);color:var(--store-ink,#182136);font-size:.8rem;font-weight:700;
+ text-decoration:none;
+}
+.order-detail-link:hover {background:var(--store-quiet,#f5f7fa)}
+.order-detail-items {padding:0;list-style:none}
+.order-detail-items li {
+ display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;gap:9px;padding:8px 0;
+}
+.order-detail-items li+li {border-top:1px solid var(--store-border,#e1e6ed)}
+.order-detail-quantity {padding:3px 5px;border-radius:6px;background:var(--store-quiet,#f5f7fa);font-size:.75rem;font-weight:750}
+.order-detail-items li p {font-size:.8rem;margin-top:3px;color:var(--store-muted,#535f74)}
+.order-detail-body .order-detail-note {font-size:.8rem;padding:6px 9px;border-radius:7px;background:var(--store-quiet,#f5f7fa)}
+.order-detail-fulfillment {font-size:.84rem}
+.order-detail-finance dl>div {display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:.85rem}
+.order-detail-finance dd {font-weight:700;white-space:nowrap}
+.order-detail-finance dl>.order-detail-total {border-top:1px solid var(--store-border,#e1e6ed);font-size:1.05rem;font-weight:800;margin-top:4px}
+.order-detail-finance dl>.order-detail-collect {background:#fff0db;color:#733700;padding:8px 10px;border-radius:8px;font-weight:800}
+.order-detail-decision {display:flex;flex-wrap:wrap;align-items:end;gap:8px}
+.order-detail-decision :is(h4,p,label) {flex-basis:100%}
+.order-detail-decision :is(input,select) {width:100%;margin-top:4px}
+.order-detail-footer {border-top:1px solid var(--store-border,#e1e6ed);justify-content:flex-end;flex-wrap:wrap;gap:7px}
+.order-detail-footer button {min-height:40px;padding:7px 12px;font-size:.82rem}
+.order-detail-footer .primary {order:1}
+.order-detail-footer [role="alert"] {flex-basis:100%;margin:0;color:var(--store-ink,#182136)}
+@media(max-width:640px) {
+ .pitacco-pedidos .pedidos-order-dialog {inset:auto 0 0;margin:0;width:100%;border-radius:17px 17px 0 0;border-bottom:0}
+ .order-detail-surface {max-height:94dvh}
+ .order-detail-header,.order-detail-body {padding:12px}
+ .order-detail-header {gap:7px}
+ .order-detail-heading {gap:7px}
+ .order-detail-heading>.pedidos-platform-icon {width:29px;height:29px}
+ .order-detail-heading h3 {font-size:1rem}
+ .order-detail-footer {padding:9px 12px max(12px,env(safe-area-inset-bottom))}
+ .order-detail-footer button {flex:1 1 130px}
+ .order-detail-footer .primary {order:-1;flex-basis:100%}
+}

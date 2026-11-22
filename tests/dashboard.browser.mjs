@@ -25,7 +25,9 @@ try {
     const flowOrder={id:'30000000-0000-0000-0000-000000000050',store_id:store.id,source:'proprio',
       status:'pending',gross:28,created_at:new Date().toISOString(),
       receipt:{display_number:'D-FLUXO',customer:'Cliente do fluxo',logistics:'loja',
-        address:{street:'Rua do Teste',number:'50'},items:[{name:'Açaí do fluxo',quantity:1}]}};
+        phone:'(21) 99999-0000',payment:'dinheiro',amount_to_collect:28,change_for:50,
+        address:{street:'Rua do Teste',number:'50'},items:[{name:'Açaí do fluxo',quantity:1,total:28,
+          modifiers:[{name:'Banana',quantity:1}],notes:'Sem calda'}]}};
     const flowDelivery={id:'40000000-0000-0000-0000-000000000050',order_id:flowOrder.id,store_id:store.id,
       logistics_provider:'loja',status:'pendente',courier_id:null};
     const flowCourier={id:'50000000-0000-0000-0000-000000000050',name:'Motoboy de teste',fleet_type:'propria',available:true};
@@ -652,14 +654,37 @@ try {
         .locator('.connection-bar').filter({hasText:'Conectado · sincronização ativa'}).waitFor();
     }else{
       await page.getByRole('button', { name:'Agendados (1)', exact:true }).click();
-      await page.locator('.pedidos-card').getByText('Cliente agendado').waitFor();
-      await page.getByText(/Aceite liberado às/).waitFor();
-      assert.equal(await page.getByRole('button',{name:'Aceitar e iniciar preparo',exact:true}).count(),0);
+      const scheduledCard=page.getByRole('article',{name:'Card do pedido D-181',exact:true});
+      await scheduledCard.locator('.pedidos-card-select').click();
+      const scheduledDetails=page.getByRole('dialog',{name:'Pedido #D-181'});
+      await scheduledDetails.getByText(/Aceite liberado às/).waitFor();
+      assert.equal(await scheduledDetails.getByRole('button',{name:'Aceitar e iniciar preparo',exact:true}).count(),0);
+      await scheduledDetails.getByRole('button',{name:'Fechar detalhes do pedido'}).click();
     }
     await page.getByRole('button', { name:'Em análise (1)', exact:true }).click();
-    await page.getByRole('button', { name:'Recusar pedido', exact:true }).click();
-    await page.getByLabel('Motivo da recusa').fill('Item indisponível');
-    await page.getByRole('button', { name:'Confirmar recusa', exact:true }).click();
+    const pendingCard=page.getByRole('article',{name:'Card do pedido D-180',exact:true});
+    await pendingCard.locator('.pedidos-card-select').click();
+    const pendingDetails=page.getByRole('dialog',{name:'Pedido #D-180'});
+    const bounds=await pendingDetails.evaluate(dialog=>{
+      const rect=dialog.getBoundingClientRect();
+      const footer=dialog.querySelector('footer').getBoundingClientRect();
+      const body=dialog.querySelector('.order-detail-body');
+      return {inside:rect.top>=0&&rect.bottom<=innerHeight&&rect.left>=0&&rect.right<=innerWidth,
+        bottom:Math.abs(rect.bottom-innerHeight)<2,centered:Math.abs((rect.left+rect.right)/2-innerWidth/2)<2,
+        scroll:getComputedStyle(body).overflowY,footer:footer.top>=0&&footer.bottom<=innerHeight};
+    });
+    assert.ok(bounds.inside&&bounds.footer&&bounds.centered);
+    assert.equal(bounds.scroll,'auto');
+    assert.equal(bounds.bottom,width<=640);
+    await page.keyboard.press('Escape');
+    await pendingDetails.waitFor({state:'hidden'});
+    assert.equal(await pendingCard.locator('.pedidos-card-select').evaluate(button=>button===document.activeElement),true);
+    await pendingCard.locator('.pedidos-card-select').click();
+    await pendingDetails.getByRole('button', { name:'Recusar pedido', exact:true }).click();
+    await pendingDetails.getByLabel('Motivo da recusa').fill('Item indisponível');
+    await pendingDetails.getByRole('button', { name:'Confirmar recusa', exact:true }).click();
+    await pendingDetails.getByText('Recusados',{exact:true}).waitFor();
+    await pendingDetails.getByRole('button',{name:'Fechar detalhes do pedido'}).click();
     await page.getByRole('button', { name:'Recusados (1)', exact:true }).click();
     await page.locator('.pedidos-card').getByText('Cliente do pedido').waitFor();
     if(width===1440){
@@ -673,6 +698,16 @@ try {
       await expectStage('Em análise');
       await card.getByRole('img',{name:'Plataforma Loja'}).waitFor();
       await card.getByText('1 × Açaí do fluxo',{exact:true}).waitFor();
+      await card.locator('.pedidos-card-select').click();
+      const details=page.getByRole('dialog',{name:'Pedido #D-FLUXO'});
+      await details.getByText('Cliente do fluxo',{exact:true}).waitFor();
+      assert.equal(await details.getByRole('link',{name:'(21) 99999-0000'}).getAttribute('href'),'tel:21999990000');
+      assert.equal(new URL(await details.getByRole('link',{name:'Abrir rota'}).getAttribute('href')).searchParams.get('destination'),'Rua do Teste, 50');
+      await details.getByText(/Complementos:.*Banana/).waitFor();
+      await details.getByText(/Obs\.: Sem calda/).waitFor();
+      await details.getByText('Cobrar na entrega',{exact:true}).waitFor();
+      await details.getByText('Troco',{exact:true}).waitFor();
+      await details.getByRole('button',{name:'Fechar detalhes do pedido'}).click();
       await card.getByRole('button',{name:'Aceitar',exact:true}).click();
       await expectStage('Em preparo');
       await card.getByRole('button',{name:'Marcar pedido pronto',exact:true}).click();
@@ -699,8 +734,8 @@ try {
     if(width===768){
       appointment.scheduled_release_at=new Date(Date.now()-1_000).toISOString();
       await page.getByRole('button',{name:'Em análise (1)',exact:true}).click();
-      await page.locator('.pedidos-card').getByText('Cliente agendado').waitFor();
-      await page.getByRole('button',{name:'Aceitar e iniciar preparo',exact:true}).waitFor();
+      const releasedCard=page.getByRole('article',{name:'Card do pedido D-181',exact:true});
+      await releasedCard.getByRole('button',{name:'Aceitar',exact:true}).waitFor();
     }
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
     await navigation.getByRole('button', { name:'Relatórios', exact:true }).click();

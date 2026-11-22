@@ -28,9 +28,10 @@ new=old+"""
      {iFoodProviderClosed(o)&&<span role="status">iFood encerrou o pedido. {delivery?.status==='entregue'?'Entrega registrada no Pitacco.':'A entrega local ainda não tem confirmação de conclusão. Não despache novamente.'}</span>}"""
 assert s.count(old)==1,'Missing iFood status badges'
 s=s.replace(old,new)
-old='<section className="pedidos-items">'
-new="""{iFoodProviderClosed(current)&&<p role="status">Status do iFood: {current.receipt?.ifood_status==='CONCLUDED'?'Concluído pela plataforma':'Cancelado'}. {currentDelivery?.status==='entregue'?'Entrega finalizada no Pitacco.':'Não confundir com confirmação do código no Pitacco.'}</p>}<section className="pedidos-items">"""
-assert s.count(old)==1,'Missing detail section'
+old="{stage(current)==='ready'&&currentDelivery?.courier_id&&<p"
+new="""{iFoodProviderClosed(current)&&<p role="status" className="order-detail-note">Status do iFood: {current.receipt?.ifood_status==='CONCLUDED'?'Concluído pela plataforma':'Cancelado'}. {currentDelivery?.status==='entregue'?'Entrega finalizada no Pitacco.':'A confirmação do código no Pitacco é separada.'}</p>}
+"""+old
+assert s.count(old)==1,'Missing details status'
 s=s.replace(old,new)
 p.write_text(s,encoding='utf-8')
 

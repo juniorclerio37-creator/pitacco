@@ -153,8 +153,10 @@ test('same installed Windows app keeps order cards and guarded conclusion next t
  const css=readFileSync(new URL('../pedidos.css',import.meta.url),'utf8');
  const mount=readFileSync(new URL('../../revisions/0.12/mount_orders_045.py',import.meta.url),'utf8');
  assert.match(mount,/popupLayout=\{desktop\}/);
- assert.match(orders,/pedidos-detail-modal/);
- assert.match(orders,/pedidos-modal-close/);
+ const details=readFileSync(new URL('../OrderDetails.jsx',import.meta.url),'utf8');
+ assert.match(orders,/<OrderDetails /);
+ assert.match(details,/pedidos-detail-modal/);
+ assert.match(details,/pedidos-modal-close/);
  assert.match(orders,/Marcar pronto/);
  assert.match(orders,/Despachar/);
  assert.match(orders,/pedidos-complete-button/);
