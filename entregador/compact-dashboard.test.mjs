@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {deliveryBucket,paymentChipInfo,safeFinishedToday} from "./compact-dashboard.mjs";
+import {deliveryBucket,paymentChipInfo,safeFinishedToday,isNotificationDiagnostic} from "./compact-dashboard.mjs";
 
 test("courier dashboard tabs reflect actual assigned delivery stages",()=>{
  const d={source:"proprio",logistics_provider:"loja"};
@@ -50,4 +50,31 @@ test("approved white dashboard retains actual earnings and courier RPC actions",
  assert.match(page,/data-order-bucket="concluidas"/);
  assert.match(css,/\.courier-dashboard-balances/);
  assert.match(css,/\.compact-delivery-layout/);
+});
+
+test("synthetic notification delivery is never a real order or a code-confirmation task",()=>{
+ const synthetic={
+  id:"e430bd54-f71d-4b06-9407-d1b8f4db8f9a",
+  source:"proprio",order_id:null,status:"retirada",
+  customer_name:"TESTE INTERNO PITACCO — NÃO É CLIENTE",
+  address:"SEM DESTINO — TESTE DE NOTIFICAÇÃO. NÃO REALIZAR ENTREGA",
+  notes:"PITACCO_FCM_DIAG_20261121_1551"
+ };
+ assert.equal(isNotificationDiagnostic(synthetic),true);
+ for(const other of [
+  {...synthetic,order_id:"real-order-id"},
+  {...synthetic,notes:"Pedido de cliente"},
+  {...synthetic,address:"Rua do Cliente, 42"},
+  {...synthetic,customer_name:"Cliente real"},
+  {...synthetic,source:"ifood"},
+  {...synthetic,notes:"PITACCO_FCM_DIAG_20261121_1551_EXTRA"}
+ ])assert.equal(isNotificationDiagnostic(other),false,"Real deliveries must never be hidden");
+ const page=readFileSync(new URL("./painel.html",import.meta.url),"utf8");
+ assert.match(page,/list\.filter\(d=>!\["entregue","cancelada"\]\.includes\(d\.status\)&&!isNotificationDiagnostic\(d\)\)/);
+ assert.match(page,/if\(isNotificationDiagnostic\(d\)\)/);
+ assert.match(page,/Este registro é apenas um teste interno de notificação/);
+ assert.match(page,/Este pedido não possui código de entrega gerado/);
+ assert.match(page,/pitacco_driver_own_code_lengths/);
+ assert.match(page,/pitacco_driver_verify_own_code/);
+ assert.match(page,/ifoodDriverAction\(d.id,"verify",digits\)/);
 });
