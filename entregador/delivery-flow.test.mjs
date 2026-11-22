@@ -27,7 +27,7 @@ test("courier card only advances by user action and verified code",()=>{
  assert.match(html,/courierActionStage\(d\)/);
  assert.match(html,/createAction\("Coletar pedido"/);
  assert.match(html,/createAction\("Sair para entrega"/);
- assert.match(html,/createAction\("Cheguei na entrega"/);
+ assert.match(html,/closeToCustomer\?"Confirmar chegada":"Cheguei na entrega"/);
  assert.match(html,/createAction\("Finalizar entrega"/);
  assert.match(html,/pitacco_driver_collect/);
  assert.match(html,/pitacco_driver_depart/);
