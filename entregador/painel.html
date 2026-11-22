@@ -1210,105 +1210,17 @@ function card(d){
  if(stage==="arrive"||stage==="code"){
   if(stage==="arrive"){
    const closeToCustomer=nearbyArrival?.deliveryId===d.id;
-   if(closeToCustomer)stageExtras.append(element("p","arrival-nearby",
-     "📍 Localização do cliente identificada (aprox. "+nearbyArrival.distanceMeters+" m). Confirme sua chegada."));
-   actions.append(createAction(closeToCustomer?"Confirmar chegada":"Cheguei na entrega","primary",()=>markArrival(d)));
-   stageExtras.append(element("p","note-inline","Chegar não é o mesmo que entregar. O código só pode ser validado após registrar a chegada."));
+   if(closeToCustomer)stageExtras.append(element("p","compact-arrival-notice",
+    "⌖ Você está próximo ao cliente ("+nearbyArrival.distanceMeters+" m)."));
+   actions.append(createAction(closeToCustomer?"Confirmar chegada":"Cheguei na entrega",
+     "primary",()=>requestArrivalConfirmation(d)));
   }else{
-   const arrivalTime=new Date(d.arrived_at).toLocaleTimeString("pt-BR",{
-    timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit"
-   });
-   stageExtras.append(element("p","arrival-record","✓ Chegada registrada às "+arrivalTime));
-   const synced=d.source==="ifood"&&(d.arrival_provider_state==="submitted"||d.arrival_provider_state==="confirmed");
-   const statusText=d.source==="ifood"?
-    (synced?"Chegada enviada ao iFood.":"Aviso ao iFood ainda pendente ou indisponível."):
-    (d.source==="99food"?"Aviso à 99Food ainda não homologado.":
-     d.source==="keeta"?"Aviso à Keeta ainda não homologado.":"Peça o código de seis dígitos ao cliente.");
-   stageExtras.append(element("p","arrival-provider",statusText));
-   if(d.source==="ifood"&&!synced){
-    const arrivalTools=element("details","courier-secondary-tools");
-    arrivalTools.append(element("summary","","Problemas ao avisar o iFood?"));
-    arrivalTools.append(createAction("Tentar avisar iFood","secondary",async()=>{
-     if(busy)return;busy=true;
-     try{const result=await ifoodDriverAction(d.id,"arrival");
-       message(result.provider_state==="submitted"?"Chegada enviada ao iFood; aguardando confirmação.":"Aviso iFood pendente.");
-       await refresh();
-     }catch(error){message(String(error.message))}finally{busy=false}
-    }));
-    stageExtras.append(arrivalTools);
-   }
-   if(payment.state==="collect"){
-    stageExtras.append(courierCollectStep(payment,()=>confirmCourierCollection(d)));
-   }else if(d.source==="proprio"||d.source==="ifood"){
-    const verify=element("section","card-verify-block");
-    verify.append(element("strong","card-verify-title","Confirmar entrega"));
-    verify.append(element("p","card-verify-help","Digite o código informado pelo cliente para finalizar."));
-    const form=element("form","verify-form"),code=element("input","verify-input");
-    form.noValidate=true;
-    code.type="text";code.inputMode="numeric";code.autocomplete="one-time-code";
-    code.maxLength=d.source==="proprio"?6:8;
-    code.pattern=d.source==="proprio"?"[0-9]{6}":"[0-9]{4,8}";
-    code.placeholder=d.source==="proprio"?"Código Pitacco (6 dígitos)":"Código do cliente (iFood)";
-    const draft=codeDrafts.get(d.id)||{value:"",error:""};
-    code.value=draft.value;
-    code.setAttribute("aria-label","Código de entrega fornecido pelo cliente");
-    const fields=element("div","verify-fields");
-    const feedback=element("p","verify-error",draft.error);
-    feedback.id="verify-error-"+d.id;
-    feedback.setAttribute("role","status");
-    feedback.setAttribute("aria-live","polite");
-    feedback.hidden=!draft.error;
-    code.setAttribute("aria-describedby",feedback.id);
-    code.setAttribute("aria-invalid",String(!!draft.error));
-    fields.append(code,feedback);
-    code.addEventListener("input",()=>{
-     codeDrafts.set(d.id,{value:code.value,error:""});
-     feedback.textContent="";feedback.hidden=true;
-     code.setAttribute("aria-invalid","false");
-    });
-    const submit=createAction("Finalizar entrega","primary",null);submit.type="submit";
-    submit.setAttribute("aria-label","Validar código e finalizar entrega");
-    if(d.source==="ifood"&&!synced){
-     verify.append(element("p","card-verify-pending",
-      "A chegada foi registrada no Pitacco. Você pode tentar validar o código pelo iFood, mesmo se o aviso de chegada ainda estiver pendente."));
-    }
-    form.addEventListener("submit",event=>{event.preventDefault();verifyCode(d,code.value)});
-    form.append(fields,submit);verify.append(form);
-    if(d.source==="ifood"){
-     verify.append(element("p","card-ifood-fallback","Não conseguiu confirmar pelo código?"));
-     const officialUrl="https://confirmacao-entrega-propria.ifood.com.br/";
-     const external=element("a","btn secondary card-ifood-confirm","Abrir confirmação no iFood");
-     external.href=officialUrl;
-     // WebView: navegar na janela principal abre o navegador Android.
-     // Navegador comum: abrir em outra aba, sem perder o Pitacco.
-     external.target=window.PitaccoPush?.postMessage?"_self":"_blank";
-     external.rel="noopener noreferrer";
-     external.setAttribute("aria-label","Abrir confirmação oficial do iFood no navegador");
-     external.addEventListener("click",event=>{
-      if(!window.PitaccoPush?.postMessage)return;
-      event.preventDefault();
-      window.location.assign(officialUrl);
-     });
-     verify.append(external);
-     const copy=createAction("Copiar link para o navegador","ghost card-ifood-copy",async()=>{
-      try{
-       await navigator.clipboard.writeText(officialUrl);
-       message("Link oficial do iFood copiado. Abra o navegador e cole o endereço.");
-      }catch{
-       window.prompt("Copie o endereço e abra no navegador:",officialUrl);
-      }
-     });
-     verify.append(copy);
-     verify.append(element("p","card-verify-help",
-      "Se a página não abrir no aparelho, copie o link e cole no Chrome. Use o localizador da comanda do iFood e o código do cliente, não o localizador de ligação."));
-     verify.append(element("p","card-verify-help",
-      "O Pitacco retira o pedido automaticamente após receber a confirmação oficial do iFood. Não é necessário atualizar manualmente."));
-    }
-    stageExtras.append(verify);
-   }
-   if(d.source==="99food"||d.source==="keeta"){
-    stageExtras.append(element("p","warn","A validação do código da plataforma ainda depende de homologação. Não finalize manualmente. A coleta e a chegada permanecem registradas no Pitacco."));
-   }
+   const when=new Date(d.arrived_at);
+   if(Number.isFinite(when.getTime()))stageExtras.append(element("span","compact-arrival-tag",
+     "✓ Chegada registrada às "+when.toLocaleTimeString("pt-BR",{
+      timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit"})));
+   // O PIN não aparece no card: só é solicitado ao tocar em Concluir.
+   actions.append(createAction("Concluir","primary compact-finish",()=>openDeliveryFinish(d)));
   }
  }
  if(actions.children.length)actionSlot.append(actions);
