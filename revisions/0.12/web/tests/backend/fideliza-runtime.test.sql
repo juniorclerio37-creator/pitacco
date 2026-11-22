@@ -85,6 +85,8 @@ begin
 
  insert into public.loyalty_coupons(store_id,code,title,kind,discount_type,discount_value,target_customer_id,max_uses,per_customer_limit)
  values(s,'PESSOAL20','Campanha pessoal','campaign','percent',20,c,1,1);
+ assert jsonb_array_length(public.pitacco_loyalty_wallet('loyalty-test',k)->'offers')=1,'Oferta pessoal aparece só na carteira correta';
+ assert jsonb_array_length(public.pitacco_loyalty_wallet('loyalty-test',kb)->'offers')=0;
  begin
   perform pg_temp.loyalty_buy(kb,'','PESSOAL20');raise exception 'Outro cliente não pode usar cupom pessoal';
  exception when raise_exception then if sqlerrm<>'Cupom exclusivo para outro cliente' then raise;end if;end;

@@ -50,7 +50,7 @@ begin
  end if;
  rules:=l.rules;
  eligible:=greatest(0,round((o.gross-coalesce((o.receipt->>'delivery_fee')::numeric,0))*100))::integer;
- if eligible>=coalesce((rules->>'minimum_order_cents')::integer,0) then
+ if eligible>0 and eligible>=coalesce((rules->>'minimum_order_cents')::integer,0) then
   if (rules->>'points_enabled')::boolean then
    v_points:=floor(eligible::numeric/100*(rules->>'points_per_real')::numeric)::integer;
    perform pitacco_private.loyalty_entry(l.store_id,l.customer_id,oid,'points',v_points,'earn','loyalty:earn:points:'||oid::text);

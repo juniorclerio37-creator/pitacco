@@ -157,16 +157,26 @@ end $$;
 
 create function public.pitacco_loyalty_wallet(p_slug text,p_key text) returns jsonb
 language plpgsql stable security definer set search_path='' as $$
-declare s uuid;c uuid;result jsonb;
+declare s uuid;c uuid;result jsonb;rules jsonb;
 begin
  select store_id into s from public.public_menu_settings where slug=p_slug and enabled;
  c:=pitacco_private.loyalty_customer(s,p_key);
  if c is null or not pitacco_private.loyalty_available(s) then return jsonb_build_object('error','Chave pessoal inválida para esta loja');end if;
+ rules:=pitacco_private.loyalty_rules(s);
  select jsonb_build_object('customer_id',lc.id,'name',lc.name,'phone',lc.phone,'referral_code',lc.referral_code,
   'points',greatest(0,pitacco_private.loyalty_balance(s,c,'points')),
   'orders',greatest(0,pitacco_private.loyalty_balance(s,c,'orders')),
   'cashback_cents',greatest(0,pitacco_private.loyalty_balance(s,c,'cashback')),
-  'rules',pitacco_private.loyalty_rules(s),
+  'rules',rules,
+  'offers',coalesce((select jsonb_agg(jsonb_build_object('id',cp.id,'title',cp.title,'code',cp.code,
+   'discount_type',cp.discount_type,'discount_value',cp.discount_value,'minimum_order_cents',cp.minimum_order_cents,
+   'expires_at',cp.expires_at,'personal',true)) from public.loyalty_coupons cp
+   where cp.store_id=s and cp.target_customer_id=c and cp.kind in ('coupon','campaign') and cp.active
+    and ((cp.kind='coupon' and (rules->>'coupons_enabled')::boolean) or (cp.kind='campaign' and (rules->>'campaigns_enabled')::boolean))
+    and (cp.starts_at is null or cp.starts_at<=now()) and (cp.expires_at is null or cp.expires_at>now())
+    and (cp.max_uses is null or cp.uses<cp.max_uses)
+    and (cp.per_customer_limit is null or (select count(*) from public.loyalty_coupon_redemptions r
+      where r.coupon_id=cp.id and r.store_id=s and r.customer_id=c and r.state<>'cancelled')<cp.per_customer_limit)),'[]'::jsonb),
   'history',coalesce((select jsonb_agg(to_jsonb(h)) from (select asset,points_delta,event_type,created_at
    from public.loyalty_ledger where store_id=s and customer_key=c::text order by created_at desc,id desc limit 30) h),'[]'::jsonb))
  into result from pitacco_private.loyalty_customers lc where id=c;

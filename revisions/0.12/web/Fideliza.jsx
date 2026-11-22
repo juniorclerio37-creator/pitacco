@@ -103,12 +103,12 @@ export default function Fideliza({client,storeId,manager}){
    <form className="panel" key={editing?.id||section} onSubmit={saveCoupon}><h3>{editing?'Editar oferta':section==='Campanhas'?'Criar campanha':'Criar cupom'}</h3>
     <label className="field">Nome da oferta<input name="title" maxLength={120} required={section==='Campanhas'} defaultValue={editing?.title||''}/></label>
     <label className="field">Código<input name="code" maxLength={32} required disabled={!!editing} defaultValue={editing?.code||''} placeholder="VOLTE10"/></label>
-    <label className="field">Tipo<select name="discount_type" defaultValue={editing?.discount_type||'percent'}><option value="percent">Porcentagem (%)</option><option value="fixed">Valor fixo (R$)</option></select></label>
+    <label className="field">Tipo<select aria-label="Tipo do desconto" name="discount_type" defaultValue={editing?.discount_type||'percent'}><option value="percent">Porcentagem (%)</option><option value="fixed">Valor fixo (R$)</option></select></label>
     <label className="field">Desconto<input name="discount_value" type="number" step="0.01" min="0.01" required defaultValue={editing?.discount_value||''}/></label>
     <label className="field">Pedido mínimo em produtos (R$)<input name="minimum_order" type="number" step="0.01" min="0" defaultValue={(editing?.minimum_order_cents||0)/100}/></label>
     <label className="field">Limite total de utilizações<input name="max_uses" type="number" min="1" defaultValue={editing?.max_uses||''}/></label>
     <label className="field">Limite por cliente (exige acesso à carteira)<input name="per_customer_limit" type="number" min="1" max="10000" defaultValue={editing?.per_customer_limit||''}/></label>
-    <label className="field">Cliente exclusivo<select name="target_customer_id" defaultValue={editing?.target_customer_id||''}><option value="">Todos os clientes</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name} · {c.phone}</option>)}</select></label>
+    <label className="field">Cliente exclusivo<select aria-label="Cliente exclusivo" name="target_customer_id" defaultValue={editing?.target_customer_id||''}><option value="">Todos os clientes</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name} · {c.phone}</option>)}</select></label>
     <label className="field">Início (Brasília)<input name="starts_at" type="date" defaultValue={dateValue(editing?.starts_at)}/></label>
     <label className="field">Fim (Brasília)<input name="expires_at" type="date" defaultValue={dateValue(editing?.expires_at)}/></label>
     <p className="hint">Campanhas vigentes aparecem no cardápio com código, desconto e condições. Um pedido usa um cupom ou um resgate; não há acúmulo de descontos.</p>

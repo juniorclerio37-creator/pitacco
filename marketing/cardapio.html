@@ -183,7 +183,7 @@ body.store-closed .dock{display:none}
 #fiadoStatus{font-size:.87rem;line-height:1.4;min-height:1.2em;margin:3px 0;color:#8e431c}
 #fiadoStatus[data-valid=true]{color:#176c3d;font-weight:750}
 
-#loyaltyBox{overflow-wrap:anywhere}#loyaltyBox input,#loyaltyBox select{max-width:100%;box-sizing:border-box}#loyaltyBox button{margin:5px 5px 5px 0}.loyalty-offer{padding:12px;border:1px solid #e8d6c9;border-radius:12px;margin:8px 0}#loyaltyBalance{font-weight:800}#loyaltyStatus{color:#9a3412}
+#checkout.loyalty-only>:not(#loyaltyBox){display:none!important}#loyaltyBox{overflow-wrap:anywhere}#loyaltyBox input,#loyaltyBox select{max-width:100%;box-sizing:border-box}#loyaltyBox button{margin:5px 5px 5px 0}.loyalty-offer{padding:12px;border:1px solid #e8d6c9;border-radius:12px;margin:8px 0}#loyaltyBalance{font-weight:800}#loyaltyStatus{color:#9a3412}
 </style></head><body>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
@@ -797,9 +797,9 @@ function renderLoyalty(){
  if(rules.referrals_enabled)terms.push('Indique e ganhe '+money(rules.referral_reward_cents/100)+'; o novo participante ganha '+money(rules.referral_welcome_cents/100)+' após a primeira compra paga e entregue');
  $('loyaltyTerms').textContent=(terms.join(' · ')||'Cupons e ofertas desta loja')+'. Acúmulo sobre produtos após descontos, sem frete. Mínimo para acumular: '+money(rules.minimum_order_cents/100)+'. Um desconto por pedido. Cancelamentos revertem benefícios.';
  const offers=$('loyaltyCampaigns');offers.replaceChildren();
- for(const campaign of loyaltyProgram?.campaigns||[]){
+ for(const campaign of [...(loyaltyProgram?.campaigns||[]),...(loyaltyWallet?.offers||[])]){
   const row=el('div',undefined,'loyalty-offer');
-  row.append(el('strong',campaign.title||campaign.code),el('p',(campaign.discount_type==='percent'?campaign.discount_value+'%':money(campaign.discount_value))+' de desconto · Produtos a partir de '+money(campaign.minimum_order_cents/100)+(campaign.expires_at?' · Até '+new Date(campaign.expires_at).toLocaleDateString('pt-BR'):'')));
+  row.append(el('strong',(campaign.personal?'Exclusivo para você · ':'')+(campaign.title||campaign.code)),el('p',(campaign.discount_type==='percent'?campaign.discount_value+'%':money(campaign.discount_value))+' de desconto · Produtos a partir de '+money(campaign.minimum_order_cents/100)+(campaign.expires_at?' · Até '+new Date(campaign.expires_at).toLocaleDateString('pt-BR'):'')));
   const use=button('Usar '+campaign.code,'secondary');use.onclick=()=>{$('loyaltyReward').value='';$('loyaltyCoupon').disabled=false;$('loyaltyCoupon').value=campaign.code;invalidateLoyalty();loyaltyNotice('Toque em Aplicar benefício para conferir o desconto.');};
   row.append(use);offers.append(row);
  }
@@ -821,7 +821,7 @@ async function loadLoyalty(){
  }catch{ $('loyaltyOpen').hidden=false;$('loyaltyBox').hidden=false;loyaltyNotice('Não foi possível carregar o Fideliza+. Tente novamente. Seu pedido comum continua disponível.'); }
 }
 async function refreshLoyaltyWallet(){
- if(!loyaltyKey||submitting||pendingRequest||loyaltyBusy||document.hidden||!$('cartDialog').open)return;
+ if(!loyaltyKey||submitting||(pendingRequest&&!completed)||loyaltyBusy||document.hidden||!$('cartDialog').open)return;
  const key=loyaltyKey;
  try{
   const {data,error}=await client.rpc('pitacco_loyalty_wallet',{p_slug:slug,p_key:key});
@@ -835,7 +835,12 @@ async function refreshLoyaltyWallet(){
 }
 setInterval(()=>{void refreshLoyaltyWallet()},20000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshLoyaltyWallet()});
-$('loyaltyOpen').onclick=()=>{$('cartDialog').showModal();cartStep(true);$('loyaltyBox').scrollIntoView({block:'start'});void refreshLoyaltyWallet();};
+$('loyaltyOpen').onclick=()=>{
+ $('cartDialog').showModal();
+ if(completed){$('checkout').hidden=false;$('checkout').classList.add('loyalty-only');$('cartTitle').textContent='Meu Fideliza+';}
+ else cartStep(true);
+ $('loyaltyBox').scrollIntoView({block:'start'});void refreshLoyaltyWallet();
+};
 $('loyaltyJoin').onclick=async()=>{
  if(loyaltyBusy||pendingRequest)return;loyaltyBusy=true;$('loyaltyJoin').disabled=true;loyaltyNotice('Criando sua carteira…');
  try{
@@ -849,7 +854,7 @@ $('loyaltyLogin').onclick=async()=>{
  try{await enterLoyalty($('loyaltyKey').value.trim().toLowerCase());loyaltyNotice('Carteira conectada. Use o mesmo telefone no pedido.');}catch(error){loyaltyNotice(error.message);}finally{loyaltyBusy=false;$('loyaltyLogin').disabled=false;}
 };
 $('loyaltyLogout').onclick=()=>{
- if(pendingRequest)return;loyaltyKey='';loyaltyWallet=null;$('loyaltyKey').value='';$('loyaltyReward').value='';
+ if(pendingRequest)return;loyaltyKey='';loyaltyWallet=null;$('loyaltyKey').value='';$('loyaltyKey').type='password';$('loyaltyReward').value='';$('loyaltyCoupon').value='';$('loyaltyBalance').textContent='';$('loyaltyHistory').replaceChildren();$('loyaltyShare').value='';
  try{localStorage.removeItem(loyaltyStorage)}catch{}invalidateLoyalty();renderLoyalty();loyaltyNotice('Acesso removido deste aparelho.');
 };
 $('loyaltyShowKey').onclick=()=>{$('loyaltyKey').type=$('loyaltyKey').type==='password'?'text':'password';};
@@ -937,6 +942,7 @@ function lockCheckout(locked){
 
 $('checkout').onsubmit=async event=>{
  event.preventDefault();
+ if(completed)return;
  if(submitting||!cart.length)return;
  if(!pendingRequest){
   try{

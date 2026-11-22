@@ -57,6 +57,9 @@ try{
   await page.locator('#send').click();await page.getByRole('button',{name:'Tentar novamente',exact:true}).waitFor();
   assert.equal(await page.locator('#loyaltyBox').evaluate(e=>e.inert),true);
   await page.locator('#send').click();await page.getByRole('heading',{name:'Pedido recebido!',exact:true}).waitFor();
+  await page.locator('#closeCart').click();await page.getByRole('button',{name:'Meu Fideliza+',exact:true}).click();
+  assert.equal(await page.locator('#send').isVisible(),false,'wallet remains accessible after ordering without reopening checkout');
+  assert.equal(await page.locator('#loyaltyBalance').isVisible(),true);
   assert.equal(sent.length,2);assert.deepEqual(errors,[]);
   console.log('PASS Fideliza customer wallet, campaign/reward, cart invalidation and retry',width);
   await page.close();
