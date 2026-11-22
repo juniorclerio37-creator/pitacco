@@ -27,6 +27,8 @@ insert into public.product_options(id,store_id,group_id,name,additional_price) v
  '40000000-0000-0000-0000-000000000091','Nutella',3.50);
 set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000091',true);
+-- IDs explícitos só para a massa sintética; gestores reais usam IDs geradas pelo banco.
+reset role;
 insert into public.pitacco_ingredients(id,store_id,name,unit,minimum) values
  ('60000000-0000-0000-0000-000000000091','20000000-0000-0000-0000-000000000091','Polpa de açaí','g',100),
  ('60000000-0000-0000-0000-000000000092','20000000-0000-0000-0000-000000000091','Nutella','g',50),
@@ -45,6 +47,7 @@ insert into public.pitacco_option_recipe_lines(store_id,option_id,ingredient_id,
 insert into public.pitacco_ingredients(id,store_id,name,unit,minimum)
 values('60000000-0000-0000-0000-000000000094',
        '20000000-0000-0000-0000-000000000092','Insumo outra loja','g',0);
+set local role authenticated;
 do $test$
 begin
  begin
