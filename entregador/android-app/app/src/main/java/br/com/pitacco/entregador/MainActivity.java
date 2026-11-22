@@ -42,20 +42,15 @@ public class MainActivity extends Activity {
     private static final String HOST = "entregador.pitacco.com.br";
     private static final String HOME = "https://" + HOST + "/";
 
-    private static final int PUSH_PERMISSION = 94;
     private static final int FIRST_OPEN_NOTIFICATION_PERMISSION = 95;
     private static final int LOCATION_PERMISSION = 96;
     private static final int BACKGROUND_LOCATION_PERMISSION = 97;
     private static final int ACTIVITY_RECOGNITION_PERMISSION = 98;
+    private static final int BACKGROUND_LOCATION_SETTINGS = 99;
     private static final String INITIAL_SETUP_PREFS = "pitacco_delivery_initial_setup";
-    private static final String INITIAL_SETUP_DONE = "completed_v1";
-    private static final String GPS_SETUP_DONE = "gps_permission_explained_209";
-    private JavaScriptReplyProxy pendingPermission;
-    private GeolocationPermissions.Callback pendingLocationCallback;
-    private String pendingLocationOrigin;
-    private JavaScriptReplyProxy pendingGpsReply;
-    private JavaScriptReplyProxy pendingBackgroundGpsReply;
-    private JavaScriptReplyProxy pendingPhysicalActivityReply;
+    private static final String SETUP_STEP = "permission_setup_v2_step";
+    private static final int SETUP_DONE = 5;
+    private boolean waitingForSystem;
     private WebView web;
     private LinearLayout offline;
 
@@ -126,11 +121,8 @@ public class MainActivity extends Activity {
                     callback.invoke(origin, true, true);
                     return;
                 }
-                pendingLocationOrigin = origin;
-                pendingLocationCallback = callback;
-                requestPermissions(new String[]{
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION);
+                // Android permissions are changed during initial setup or in system settings.
+                callback.invoke(origin, false, false);
             }
         });
         web.setWebViewClient(new WebViewClient() {
@@ -153,97 +145,92 @@ public class MainActivity extends Activity {
             boolean admin=launch!=null && launch.getBooleanExtra("pitacco_admin_message",false);
             web.loadUrl(admin?HOME+"#config":HOME);
         }
-        if (state == null) showFirstOpenSetup();
+        waitingForSystem = state != null && state.getBoolean("permission_setup_waiting");
+        if (!waitingForSystem) showFirstOpenSetup();
     }
 
-    /**
-     * Android grants INTERNET and MODIFY_AUDIO_SETTINGS at install time.
-     * Notification permission is requested for push. Location is requested
-     * after the courier explicitly accepts the Android permission dialog.
-     * Location reporting remains restricted to an active shift in the web app.
-     * Background GPS requires a separate foreground service and is NOT claimed.
-     */
+    private SharedPreferences setupPreferences() {
+        return getSharedPreferences(INITIAL_SETUP_PREFS, MODE_PRIVATE);
+    }
+
     private void showFirstOpenSetup() {
-        SharedPreferences prefs = getSharedPreferences(INITIAL_SETUP_PREFS, MODE_PRIVATE);
-        if (prefs.getBoolean(INITIAL_SETUP_DONE, false)) {
-            showGpsPermissionSetup();
+        SharedPreferences prefs = setupPreferences();
+        int step = prefs.getInt(SETUP_STEP, -1);
+        if (step >= SETUP_DONE) return;
+        if (step >= 0) {
+            continuePermissionSetup(step);
+            return;
+        }
+        boolean alreadyConfigured = prefs.getBoolean("completed_v1", false)
+                && !"permission".equals(AssignmentMessagingService.notificationStatus(this))
+                && "granted".equals(locationPermissionState())
+                && "background:granted".equals(backgroundPermissionState())
+                && !"denied".equals(activityPermissionState());
+        if (alreadyConfigured) {
+            continuePermissionSetup(SETUP_DONE);
             return;
         }
         new AlertDialog.Builder(this)
-                .setTitle("Configurar alertas do Pitacco")
-                .setMessage("Para avisar quando chegar uma nova entrega, o Pitacco precisa de permissão para mostrar notificações. Em seguida você pode ativar o Modo Plantão: sino e voz em volume alto, com tentativa de restaurar o volume original após o alerta. O Android pode restringir o som no modo Não Perturbe.")
+                .setTitle("Permissões do Pitacco Entregador")
+                .setMessage("O Android vai pedir notificações, localização precisa e acesso em segundo plano para avisos e GPS durante o plantão. A atividade física é opcional e ajuda a identificar movimento. Você pode mudar sua escolha nas configurações do celular. O GPS só é enviado durante um plantão online.")
+                .setPositiveButton("Continuar", (dialog, which) -> continuePermissionSetup(0))
+                .setNegativeButton("Agora não", (dialog, which) -> continuePermissionSetup(SETUP_DONE))
                 .setCancelable(false)
-                .setPositiveButton("Configurar agora", (dialog, which) -> {
-                    prefs.edit().putBoolean(INITIAL_SETUP_DONE, true).apply();
-                    requestFirstOpenNotifications();
-                })
-                .setNegativeButton("Agora não", (dialog, which) -> {
-                    prefs.edit().putBoolean(INITIAL_SETUP_DONE, true).apply();
-                    showGpsPermissionSetup();
-                })
                 .show();
     }
 
-    private void requestFirstOpenNotifications() {
-        if (Build.VERSION.SDK_INT >= 33 &&
-                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
-                        PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                    FIRST_OPEN_NOTIFICATION_PERMISSION);
-        } else {
-            finishFirstOpenNotifications();
+    private void continuePermissionSetup(int step) {
+        setupPreferences().edit().putInt(SETUP_STEP, step).apply();
+        switch (step) {
+            case 0:
+                if (Build.VERSION.SDK_INT >= 33 &&
+                        checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    requestSetupPermissions(FIRST_OPEN_NOTIFICATION_PERMISSION, Manifest.permission.POST_NOTIFICATIONS);
+                } else continuePermissionSetup(1);
+                break;
+            case 1:
+                if (!"granted".equals(locationPermissionState())) {
+                    requestSetupPermissions(LOCATION_PERMISSION, Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION);
+                } else continuePermissionSetup(2);
+                break;
+            case 2:
+                if (Build.VERSION.SDK_INT >= 29 && "granted".equals(locationPermissionState())
+                        && !"background:granted".equals(backgroundPermissionState())) {
+                    showBackgroundLocationDisclosure();
+                } else continuePermissionSetup(3);
+                break;
+            case 3:
+                if (Build.VERSION.SDK_INT >= 29 && "denied".equals(activityPermissionState())) {
+                    requestSetupPermissions(ACTIVITY_RECOGNITION_PERMISSION, Manifest.permission.ACTIVITY_RECOGNITION);
+                } else continuePermissionSetup(4);
+                break;
+            case 4:
+                if (setupPreferences().getBoolean("completed_v1", false)
+                        || "permission".equals(AssignmentMessagingService.notificationStatus(this))) {
+                    continuePermissionSetup(SETUP_DONE);
+                } else {
+                    new AlertDialog.Builder(this)
+                            .setTitle("Som forte durante o plantão")
+                            .setMessage("Opcional: o Pitacco pode elevar temporariamente o volume de alarme para tocar o sino e a voz e depois restaurar o volume anterior. As permissões e os canais de notificações ficam nas configurações do Android.")
+                            .setPositiveButton("Ativar som forte", (dialog, which) -> {
+                                ShiftSoundPlayer.setEnabled(this, true);
+                                continuePermissionSetup(SETUP_DONE);
+                            })
+                            .setNegativeButton("Manter padrão", (dialog, which) -> continuePermissionSetup(SETUP_DONE))
+                            .setCancelable(false)
+                            .show();
+                }
+                break;
+            default:
+                if (web != null) web.evaluateJavascript(
+                        "window.dispatchEvent(new Event('pitacco-permissions-ready'))", null);
         }
     }
 
-    private void finishFirstOpenNotifications() {
-        boolean granted = Build.VERSION.SDK_INT < 33 ||
-                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-                        PackageManager.PERMISSION_GRANTED;
-        NotificationManager manager = getSystemService(NotificationManager.class);
-        if (granted && manager != null && manager.areNotificationsEnabled()) {
-            // The courier has explicitly opted in on the initial setup.
-            // Registration still happens only after authenticated web login.
-            getPreferences(MODE_PRIVATE).edit().putBoolean("push_enabled", true).apply();
-            if (!FirebaseApp.getApps(this).isEmpty())
-                FirebaseMessaging.getInstance().setAutoInitEnabled(true);
-        } else {
-            Toast.makeText(this, "Ative as notificações nos Ajustes para receber entregas.",
-                    Toast.LENGTH_LONG).show();
-        }
-        new AlertDialog.Builder(this)
-                .setTitle("Ativar Modo Plantão?")
-                .setMessage("Quando receber uma entrega, o Pitacco tentará aumentar temporariamente o volume de alarme para tocar o sino e a voz, depois restaurará o valor anterior. O recurso é opcional, não altera o Não Perturbe e pode ser bloqueado pelo Android. Você pode desligá-lo nos Ajustes.")
-                .setPositiveButton("Ativar som forte", (dialog, which) -> {
-                    ShiftSoundPlayer.setEnabled(this, true);
-                    Toast.makeText(this, "Modo Plantão ativado.", Toast.LENGTH_SHORT).show();
-                    showGpsPermissionSetup();
-                })
-                .setNegativeButton("Manter desligado", (dialog, which) -> showGpsPermissionSetup())
-                .show();
-    }
-
-    /**
-     * Version 2.0.9 adds an explicit, one-time GPS prompt to upgrades as well
-     * as fresh installations. The user controls the Android permission and the
-     * courier must still go online before coordinates are sent to Pitacco.
-     */
-    private void showGpsPermissionSetup() {
-        if (!"denied".equals(locationPermissionState())) return;
-        SharedPreferences prefs = getSharedPreferences(INITIAL_SETUP_PREFS, MODE_PRIVATE);
-        if (prefs.getBoolean(GPS_SETUP_DONE, false)) return;
-        new AlertDialog.Builder(this)
-                .setTitle("Autorizar localização do Pitacco?")
-                .setMessage("O Pitacco precisa da localização precisa para atribuir entregas e acompanhar o trajeto durante o plantão. Quando o rastreamento contínuo estiver ativo, o GPS poderá continuar com o aplicativo minimizado e a tela apagada. O envio é encerrado ao ficar offline.")
-                .setPositiveButton("Permitir localização", (dialog, which) -> {
-                    prefs.edit().putBoolean(GPS_SETUP_DONE, true).apply();
-                    requestPermissions(new String[]{
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION);
-                })
-                .setNegativeButton("Mais tarde", (dialog, which) -> {
-                    prefs.edit().putBoolean(GPS_SETUP_DONE, true).apply();
-                })
-                .show();
+    private void requestSetupPermissions(int requestCode, String... permissions) {
+        waitingForSystem = true;
+        requestPermissions(permissions, requestCode);
     }
 
     // Runtime GPS authorization is independent of the online shift state.
@@ -281,15 +268,6 @@ public class MainActivity extends Activity {
                         reply.postMessage(backgroundPermissionState());
                     } else if ("activity_status".equals(action)) {
                         reply.postMessage("activity:" + activityPermissionState());
-                    } else if ("activity_request".equals(action)) {
-                        requestPhysicalActivityPermission(reply);
-                    } else if ("activity_settings".equals(action)) {
-                        Intent settings = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                Uri.parse("package:" + getPackageName()));
-                        openExternal(settings);
-                        reply.postMessage("activity:settings");
-                    } else if ("background_request".equals(action)) {
-                        showBackgroundLocationDisclosure(reply);
                     } else if ("stop".equals(action)) {
                         stopService(new Intent(this, CourierLocationService.class));
                         reply.postMessage("tracking:off");
@@ -322,29 +300,6 @@ public class MainActivity extends Activity {
                         } catch (Exception e) {
                             reply.postMessage("tracking:error");
                         }
-                    } else if ("request".equals(action)) {
-                        String state = locationPermissionState();
-                        if (!"denied".equals(state)) {
-                            reply.postMessage(state);
-                            return;
-                        }
-                        if (pendingGpsReply != null) {
-                            reply.postMessage("request_running");
-                            return;
-                        }
-                        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-                        boolean asked = prefs.getBoolean("gps_permission_requested", false);
-                        if (asked &&
-                                !shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) &&
-                                !shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                            reply.postMessage("settings");
-                            return;
-                        }
-                        pendingGpsReply = reply;
-                        prefs.edit().putBoolean("gps_permission_requested", true).apply();
-                        requestPermissions(new String[]{
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION);
                     } else if ("settings".equals(action)) {
                         Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                                 Uri.parse("package:" + getPackageName()));
@@ -365,80 +320,36 @@ public class MainActivity extends Activity {
         return "background:denied";
     }
 
-    private void showBackgroundLocationDisclosure(JavaScriptReplyProxy reply) {
-        if (!"granted".equals(locationPermissionState())) {
-            reply.postMessage("background:foreground_required");
-            return;
-        }
-        if ("background:granted".equals(backgroundPermissionState())) {
-            reply.postMessage("background:granted");
-            return;
-        }
+    private void showBackgroundLocationDisclosure() {
         new AlertDialog.Builder(this)
-            .setTitle("Localização durante o plantão")
-            .setMessage("O Pitacco Entregador compartilha sua localização precisa com a loja " +
-                "quando você está online, mesmo com o aplicativo minimizado ou a tela apagada. " +
-                "O cliente acompanha apenas uma posição aproximada da própria entrega após a coleta. " +
-                "Ao ficar offline, sair da conta ou tocar em Parar rastreamento, o envio é interrompido. " +
-                "Para autorizar, escolha Localização > Permitir o tempo todo nas configurações do Android. " +
-                "A permissão é opcional e não ativa o plantão automaticamente.")
-            .setPositiveButton(Build.VERSION.SDK_INT >= 30
-                ? "Abrir configurações" : "Autorizar agora", (dialog, which) -> {
-                if (Build.VERSION.SDK_INT >= 30) {
-                    Intent settings = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                            Uri.parse("package:" + getPackageName()));
-                    openExternal(settings);
-                    reply.postMessage("background:settings");
-                } else if (Build.VERSION.SDK_INT == 29) {
-                    pendingBackgroundGpsReply = reply;
-                    requestPermissions(new String[]{
-                            Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                    }, BACKGROUND_LOCATION_PERMISSION);
-                } else {
-                    reply.postMessage("background:granted");
-                }
-            })
-            .setNegativeButton("Mais tarde", (dialog, which) ->
-                    reply.postMessage("background:denied"))
-            .show();
+                .setTitle("Localização durante o plantão")
+                .setMessage("Para manter o GPS durante seu plantão, mesmo com a tela apagada, escolha Permissões → Localização → Permitir o tempo todo. Essa autorização não ativa o plantão. Ao ficar offline ou sair da conta, o envio é interrompido.")
+                .setPositiveButton(Build.VERSION.SDK_INT >= 30 ? "Abrir configurações" : "Solicitar permissão",
+                        (dialog, which) -> {
+                            if (Build.VERSION.SDK_INT >= 30) {
+                                Intent settings = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                        Uri.parse("package:" + getPackageName()));
+                                try {
+                                    waitingForSystem = true;
+                                    startActivityForResult(settings, BACKGROUND_LOCATION_SETTINGS);
+                                } catch (android.content.ActivityNotFoundException error) {
+                                    waitingForSystem = false;
+                                    continuePermissionSetup(3);
+                                }
+                            } else {
+                                requestSetupPermissions(BACKGROUND_LOCATION_PERMISSION,
+                                        Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+                            }
+                        })
+                .setNegativeButton("Agora não", (dialog, which) -> continuePermissionSetup(3))
+                .setCancelable(false)
+                .show();
     }
 
-    /**
-     * Physical Activity / ACTIVITY_RECOGNITION is opt-in, introduced as a
-     * runtime permission on Android 10. It does not provide GPS coordinates
-     * and is never a prerequisite for background location or new orders.
-     */
     private String activityPermissionState() {
         if (Build.VERSION.SDK_INT < 29) return "unavailable";
         return checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)
                 == PackageManager.PERMISSION_GRANTED ? "granted" : "denied";
-    }
-
-    private void requestPhysicalActivityPermission(JavaScriptReplyProxy reply) {
-        if (Build.VERSION.SDK_INT < 29) {
-            reply.postMessage("activity:unavailable");
-            return;
-        }
-        if ("granted".equals(activityPermissionState())) {
-            reply.postMessage("activity:granted");
-            return;
-        }
-        if (pendingPhysicalActivityReply != null) {
-            reply.postMessage("activity:request_running");
-            return;
-        }
-        new AlertDialog.Builder(this)
-                .setTitle("Permitir Atividade física?")
-                .setMessage("A permissão é opcional e permite ao Android oferecer dados de movimento. Ela não substitui o GPS e não ativa o rastreamento nem coleta dados de atividade por conta própria. Você pode revogá-la nos ajustes do sistema.")
-                .setPositiveButton("Solicitar permissão", (dialog, which) -> {
-                    pendingPhysicalActivityReply = reply;
-                    requestPermissions(
-                            new String[]{Manifest.permission.ACTIVITY_RECOGNITION},
-                            ACTIVITY_RECOGNITION_PERMISSION);
-                })
-                .setNegativeButton("Agora não", (dialog, which) ->
-                        reply.postMessage("activity:declined"))
-                .show();
     }
 
     private String locationPermissionState() {
@@ -475,16 +386,6 @@ public class MainActivity extends Activity {
                                 AssignmentMessagingService.notificationStatus(this));
                         reply.postMessage(ShiftSoundPlayer.isEnabled(this)
                                 ? "shift_sound:on" : "shift_sound:off");
-                    }
-                    else if ("shift_enable".equals(action)) {
-                        // This action is only sent after an explicit confirmation
-                        // in the authenticated courier's Settings screen.
-                        ShiftSoundPlayer.setEnabled(this, true);
-                        reply.postMessage("shift_sound:on");
-                    }
-                    else if ("shift_disable".equals(action)) {
-                        ShiftSoundPlayer.setEnabled(this, false);
-                        reply.postMessage("shift_sound:off");
                     }
                     else if ("shift_status".equals(action)) {
                         reply.postMessage(ShiftSoundPlayer.isEnabled(this)
@@ -534,17 +435,11 @@ public class MainActivity extends Activity {
     }
 
     private void enablePush(JavaScriptReplyProxy reply) {
-        // Notification permission is independent of Firebase. The parallel QA
-        // app intentionally has no FCM registration, but must still request
-        // POST_NOTIFICATIONS to test its native chime on Android 13+.
-        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            pendingPermission = reply;
-            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, PUSH_PERMISSION);
-        } else if (!getSystemService(NotificationManager.class).areNotificationsEnabled()) {
+        if ("permission".equals(AssignmentMessagingService.notificationStatus(this))) {
             reply.postMessage("permission");
-        } else {
-            finishPushEnable(reply);
+            return;
         }
+        finishPushEnable(reply);
     }
 
     private void finishPushEnable(JavaScriptReplyProxy reply) {
@@ -572,62 +467,19 @@ public class MainActivity extends Activity {
 
     @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
         super.onRequestPermissionsResult(requestCode, permissions, results);
-        if (requestCode == LOCATION_PERMISSION) {
-            String state = locationPermissionState();
-            GeolocationPermissions.Callback callback = pendingLocationCallback;
-            String origin = pendingLocationOrigin;
-            pendingLocationCallback = null;
-            pendingLocationOrigin = null;
-            if (callback != null) {
-                callback.invoke(origin, "granted".equals(state) || "approximate".equals(state), false);
-            }
-            JavaScriptReplyProxy gpsReply = pendingGpsReply;
-            pendingGpsReply = null;
-            if (gpsReply != null) {
-                if ("denied".equals(state) &&
-                        !shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) &&
-                        !shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                    gpsReply.postMessage("settings");
-                } else gpsReply.postMessage(state);
-            }
-            return;
+        waitingForSystem = false;
+        if (requestCode == FIRST_OPEN_NOTIFICATION_PERMISSION) continuePermissionSetup(1);
+        else if (requestCode == LOCATION_PERMISSION) continuePermissionSetup(2);
+        else if (requestCode == BACKGROUND_LOCATION_PERMISSION) continuePermissionSetup(3);
+        else if (requestCode == ACTIVITY_RECOGNITION_PERMISSION) continuePermissionSetup(4);
+    }
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == BACKGROUND_LOCATION_SETTINGS) {
+            waitingForSystem = false;
+            continuePermissionSetup(3);
         }
-        if (requestCode == BACKGROUND_LOCATION_PERMISSION) {
-            if (pendingBackgroundGpsReply != null) {
-                pendingBackgroundGpsReply.postMessage(backgroundPermissionState());
-                pendingBackgroundGpsReply = null;
-            }
-            return;
-        }
-        if (requestCode == ACTIVITY_RECOGNITION_PERMISSION) {
-            JavaScriptReplyProxy activityReply = pendingPhysicalActivityReply;
-            pendingPhysicalActivityReply = null;
-            String state = activityPermissionState();
-            if ("granted".equals(state) && CourierLocationService.isRunning()) {
-                // Register optional sensors immediately without restarting the
-                // shift, revoking its token or affecting GPS service uptime.
-                Intent refresh = new Intent(this, CourierLocationService.class);
-                refresh.setAction(CourierLocationService.ACTION_REFRESH_MOTION);
-                startService(refresh);
-            }
-            if (activityReply != null) {
-                if ("denied".equals(state) &&
-                        !shouldShowRequestPermissionRationale(
-                                Manifest.permission.ACTIVITY_RECOGNITION)) {
-                    activityReply.postMessage("activity:settings");
-                } else activityReply.postMessage("activity:" + state);
-            }
-            return;
-        }
-        if (requestCode == FIRST_OPEN_NOTIFICATION_PERMISSION) {
-            finishFirstOpenNotifications();
-            return;
-        }
-        if (requestCode != PUSH_PERMISSION || pendingPermission == null) return;
-        JavaScriptReplyProxy reply = pendingPermission;
-        pendingPermission = null;
-        if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) finishPushEnable(reply);
-        else reply.postMessage("permission");
     }
 
     private boolean handleLink(Uri uri) {
@@ -667,6 +519,11 @@ public class MainActivity extends Activity {
     /** Recheck orders when the driver taps a native delivery notification. */
     @Override protected void onResume() {
         super.onResume();
+        if (CourierLocationService.isRunning() && "granted".equals(activityPermissionState())) {
+            Intent refreshMotion = new Intent(this, CourierLocationService.class)
+                    .setAction(CourierLocationService.ACTION_REFRESH_MOTION);
+            startService(refreshMotion);
+        }
         if (web != null) {
             web.evaluateJavascript(
                 "window.PitaccoGps?.postMessage?.('status');" +
@@ -696,6 +553,7 @@ public class MainActivity extends Activity {
     }
 
     @Override protected void onSaveInstanceState(Bundle state) {
+        state.putBoolean("permission_setup_waiting", waitingForSystem);
         web.saveState(state);
         super.onSaveInstanceState(state);
     }

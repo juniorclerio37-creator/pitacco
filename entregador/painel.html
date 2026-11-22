@@ -88,7 +88,6 @@ a.btn{text-decoration:none}
   <div id="pushBanner" class="panel-white" role="status" aria-live="polite" hidden
     style="padding:13px 16px;margin:12px 0;border:1px solid #f0c48e;border-radius:14px;background:#fff9f2;display:none;flex-wrap:wrap;align-items:center;gap:10px">
     <span id="pushBannerText" style="flex:1;min-width:210px;font-size:13px">Verificando alertas de novas entregas...</span>
-    <button id="pushBannerEnable" type="button" class="btn primary" hidden>Ativar avisos</button>
   </div>
   <section class="courier-push-check panel-white" aria-label="Diagnóstico de notificações">
     <header><strong>Notificações em segundo plano</strong><button id="pushQuickCheck" type="button" class="btn secondary">Verificar agora</button></header>
@@ -179,27 +178,13 @@ a.btn{text-decoration:none}
  </section>
  <section class="panel-white pref-panel">
   <span class="eyebrow">LOCALIZAÇÃO PARA ENTREGAS</span>
-  <button type="button" class="settings-row" id="retryCourierGps"><span>Autorizar localização no Android / Atualizar GPS</span><span class="setting-arrow">◎</span></button>
-  <button type="button" class="btn secondary" id="openAndroidGpsSettings" hidden>Abrir permissões de localização no Android</button>
   <p id="courierGpsStatus" role="status" aria-live="polite">Ative seu plantão para compartilhar sua posição com a loja.</p>
   <p id="courierGpsPermissionDiagnostic" class="note-inline" role="status">Consultando permissões do Android e do navegador interno…</p>
-  <button type="button" class="settings-row" id="requestBackgroundGps" hidden><span>Permitir localização o tempo todo no Android</span><span class="setting-arrow">›</span></button>
-  <p id="courierBackgroundGpsStatus" class="note-inline" role="status" aria-live="polite"></p>
   <button type="button" class="settings-row" id="verifyGpsUpload" hidden><span>Verificar envio real do GPS</span><span class="setting-arrow">↻</span></button>
   <p id="courierGpsServerStatus" class="note-inline" role="status" aria-live="polite"></p>
   <p id="courierMotionStatus" class="note-inline" role="status" aria-live="polite">Movimento: ainda não identificado. A atividade física é opcional e ajuda a complementar o GPS.</p>
-  <button type="button" class="settings-row" id="requestPhysicalActivity">
-    <span>Autorizar Atividade física (opcional)</span><span class="setting-arrow">◎</span>
-  </button>
-  <p id="courierPhysicalActivityStatus" class="note-inline" role="status" aria-live="polite">
-    Consultando permissão de Atividade física do Android…
-  </p>
-  <p class="note-inline">A permissão Atividade física é independente do GPS: não concede localização, não inicia o rastreamento e pode ser revogada nos ajustes do Android.</p>
-  <button type="button" class="settings-row" id="startNativeGps" hidden><span>Ativar GPS em segundo plano durante o plantão</span><span class="setting-arrow">▶</span></button>
-  <button type="button" class="settings-row" id="stopNativeGps" hidden><span>Parar GPS em segundo plano</span><span class="setting-arrow">■</span></button>
   <p class="note-inline">O rastreamento contínuo funciona enquanto você estiver online e a notificação persistente “GPS ativo” estiver visível. Ao ficar offline ou sair da conta, o serviço é encerrado. O Android pode interromper o serviço por bateria, falta de GPS ou encerramento forçado.</p>
   <span class="eyebrow">AJUDA E SINCRONIZAÇÃO</span>
-  <button type="button" class="settings-row" id="enableNativePush" hidden><span>Revalidar registro de notificações</span><span class="setting-arrow">↻</span></button>
   <p id="nativePushStatus" role="status" aria-live="polite"></p>
   <button type="button" class="settings-row" id="checkNativePush"><span>Verificar recebimento de novas entregas</span><span class="setting-arrow">↻</span></button>
   <p id="nativePushReadiness" role="status" aria-live="polite">Verificação automática do aparelho após o login.</p>
@@ -210,11 +195,7 @@ a.btn{text-decoration:none}
    <p class="note-inline">Avisos enviados pelo Super Admin aparecem aqui e na notificação silenciosa do Android. O sino e a voz são exclusivos de novas entregas.</p>
    <div id="courierAdminInbox" role="status" aria-live="polite">Carregando comunicados…</div>
   </section>
-  <button type="button" class="settings-row" id="nativeNotificationSettings" hidden><span>Configurar volume e notificações do Android</span><span class="setting-arrow">›</span></button>
-  <p class="note-inline">Para novas entregas em segundo plano, permita as notificações e mantenha o aparelho conectado. Sem o Modo Plantão, o Android pode silenciar o aviso se o volume estiver no mínimo. O Não Perturbe e as restrições de bateria também podem impedir ou atrasar alertas.</p>
-  <button type="button" class="settings-row" id="shiftSoundToggle" aria-pressed="false" hidden><span id="shiftSoundLabel">Modo Plantão — desativado</span><span class="setting-arrow" id="shiftSoundState">ATIVAR</span></button>
-  <p id="shiftSoundDescription" class="note-inline" hidden>Toque em ATIVAR para autorizar sino e voz com aumento temporário do volume de alarme. O Pitacco tenta restaurar o volume original após o alerta, sem alterar o Não Perturbe.</p>
-  <p id="shiftSoundUnsupported" class="note-inline" role="status" hidden>O Modo Plantão precisa da versão Android atualizada. A versão instalada não reconhece o controle de ativação. Atualize o Pitacco Entregador para habilitar o sino e a voz em volume alto.</p>
+  <p class="note-inline">Para alterar permissões ou o som das notificações, use as configurações do Android.</p>
   <button type="button" class="settings-row" id="testAssignmentSound"><span>Testar som de nova entrega</span><span class="setting-arrow">♪</span></button>
   <p id="assignmentSoundStatus" role="status" aria-live="polite"></p>
   <p class="note-inline">O botão acima testa o sino e a voz <strong>neste aparelho</strong>, mas não testa uma mensagem Firebase enviada com o aplicativo fechado. Para validar segundo plano, registre o aparelho e faça uma atribuição real com a tela bloqueada.</p>
@@ -254,8 +235,8 @@ const orderDetails=createOrderDetailsController({supabase:sb,routeFor:delivery=>
 let courier=null, busy=false,routeOrigins=new Map(),lastCompletedBatchStops=new Map();
 let sharedCourierMap=null,mapLoadPromise=null,mapLastAttempt=0,mapLastGps=null;
 let gpsWatchId=null, gpsCourierId=null, gpsLastAttemptAt=0, gpsInFlight=false;
-let nativeGpsSupported=false, nativeGpsRunning=false, nativeGpsPermission='unknown';
-let gpsStartRequested=false,gpsStartTask=null,gpsStartGeneration=0;
+let nativeGpsRunning=false, nativeGpsPermission='unknown';
+let gpsStartRequested=false,gpsStartTask=null,gpsStartGeneration=0,gpsAutoChecked=false;
 let browserGpsDenied=false,nativeSitePermission='unknown';
 function renderGpsPermissionDiagnostic(){
  const node=$("courierGpsPermissionDiagnostic");
@@ -277,10 +258,6 @@ function gpsStatus(text){
  const output=$("courierGpsStatus");
  if(output)output.textContent=text;
 }
-function showAndroidGpsSettings(show){
- const button=$("openAndroidGpsSettings");
- if(button)button.hidden=!show;
-}
 function handleAndroidGpsReply(status){
  if(status.startsWith("motion:")){
   const movement=status.slice(7);
@@ -292,47 +269,15 @@ function handleAndroidGpsReply(status){
     :"Movimento: informação insuficiente ou sem GPS recente.";
   return;
  }
- if(status.startsWith("activity:")){
-  const result=status.slice("activity:".length);
-  const output=$("courierPhysicalActivityStatus");
-  if(output){
-   if(result==="granted")output.textContent="Atividade física permitida pelo Android. O GPS permanece independente.";
-   else if(result==="unavailable")output.textContent="Esta versão do Android não exige essa autorização específica.";
-   else if(result==="declined")output.textContent="Autorização opcional não solicitada. O aplicativo continua funcionando normalmente.";
-   else if(result==="request_running")output.textContent="Aguardando a escolha no Android…";
-   else if(result==="settings")output.textContent="Para permitir Atividade física, abra Permissões → Atividade física nas configurações do Android.";
-   else if(result==="denied")output.textContent="Atividade física ainda não autorizada. Toque em Autorizar para solicitar.";
-   else output.textContent="Estado da permissão indisponível.";
-  }
-  return;
- }
  if(status.startsWith("site:")){
   nativeSitePermission=status.slice(5);
   renderGpsPermissionDiagnostic();
   return;
  }
- if(status.startsWith("background:")){
-  const mode=status.slice("background:".length);
-  const button=$("requestBackgroundGps"),indicator=$("courierBackgroundGpsStatus");
-  button.hidden=mode==="granted";
-  if(mode==="granted"){
-   indicator.textContent="Permissão de localização o tempo todo autorizada. O GPS só é enviado durante seu plantão.";
-  }else if(mode==="settings"){
-   indicator.textContent="Nas configurações do Pitacco Entregador, abra Permissões → Localização → Permitir o tempo todo. Depois retorne ao aplicativo.";
-  }else if(mode==="foreground_required"){
-   indicator.textContent="Primeiro autorize a localização precisa no Android; depois permita o rastreamento em segundo plano.";
-  }else{
-   indicator.textContent="Para manter o rastreio mesmo com o app minimizado, toque em Permitir localização o tempo todo. O acesso é opcional e só será usado durante o plantão.";
-  }
-  return;
- }
  if(status.startsWith("tracking:")){
-  nativeGpsSupported=true;
   const state=status.slice("tracking:".length);
   nativeGpsRunning=["on","starting","waiting","stale"].includes(state);
   $("verifyGpsUpload").hidden=false;
-  $("startNativeGps").hidden=false;
-  $("stopNativeGps").hidden=!nativeGpsRunning;
   if(state==="on"){
    stopGpsSharing();
    gpsStatus("GPS nativo ativo: o Android está enviando sua posição durante o plantão.");
@@ -348,28 +293,27 @@ function handleAndroidGpsReply(status){
    window.setTimeout(()=>window.PitaccoGps?.postMessage?.("tracking_status"),1200);
   }else if(state==="permission"){
    gpsStatus("Ative a localização precisa para iniciar GPS em segundo plano.");
-   showAndroidGpsSettings(true);
+
   }else if(state==="invalid_session"){
    gpsStatus("Sessão inválida para GPS. Entre novamente no Pitacco Entregador.");
   }else if(state==="error"){
    gpsStatus("Não foi possível iniciar o serviço de GPS do Android. Reabra o aplicativo e tente novamente.");
   }else if(state==="off"){
    gpsStatus(courier?.available?
-     "O Android permite localizar esta moto, mas o rastreamento do plantão está parado. Toque em Ativar GPS em segundo plano para iniciar.":
+     "GPS do plantão parado. Se necessário, fique offline e volte a ficar online para retomar.":
      "GPS do plantão parado. Fique online para iniciar o rastreamento.");
   }
   return;
  }
  if(status==="request_running")return;
  if(["granted","approximate","denied","settings"].includes(status)){
-  nativeGpsSupported=true;
   nativeGpsPermission=status==="settings"?"denied":status;
   renderGpsPermissionDiagnostic();
   if(status==="granted")try{window.PitaccoGps?.postMessage?.("site_status");}catch{}
  }
  if(status==="granted"){
   browserGpsDenied=false;
-  showAndroidGpsSettings(false);
+
   if(nativeGpsRunning)return;
   if(gpsStartRequested&&courier?.available){
    void startNativeGpsTracking();
@@ -377,15 +321,15 @@ function handleAndroidGpsReply(status){
   }
   stopGpsSharing();
   gpsStatus(courier?.available
-   ?"Permissão de localização precisa confirmada pelo Android. Toque em Ativar GPS em segundo plano durante o plantão para enviar sua localização."
-   :"Android autorizou a localização precisa. Fique online e inicie o rastreamento para compartilhar o GPS.");
+   ?"Localização precisa autorizada pelo Android para o plantão."
+   :"Localização precisa autorizada. Fique online para compartilhar o GPS.");
  }else if(status==="approximate"){
   stopGpsSharing();
-  showAndroidGpsSettings(true);
+
   gpsStatus("O Android permite apenas localização aproximada. Abra as permissões e habilite Localização precisa para enviar o GPS da entrega.");
  }else if(status==="settings"||status==="denied"){
   stopGpsSharing();
-  showAndroidGpsSettings(true);
+
   gpsStatus("O Android informa que a permissão de localização não foi concedida a este aplicativo. Confira as permissões e retorne ao Pitacco.");
  }
 }
@@ -393,28 +337,22 @@ if(window.PitaccoGps){
  window.PitaccoGps.onmessage=event=>handleAndroidGpsReply(String(event?.data||"denied"));
  try{
   window.PitaccoGps.postMessage("status");
-  window.PitaccoGps.postMessage("activity_status");
   window.PitaccoGps.postMessage("motion_status");
   window.PitaccoGps.postMessage("site_status");
   window.PitaccoGps.postMessage("tracking_status");
-  window.PitaccoGps.postMessage("background_status");
  }catch{}
  document.addEventListener("visibilitychange",()=>{
   if(!document.hidden){
    window.PitaccoGps?.postMessage?.("status");
-   window.PitaccoGps?.postMessage?.("activity_status");
    window.PitaccoGps?.postMessage?.("motion_status");
    window.PitaccoGps?.postMessage?.("site_status");
    window.PitaccoGps?.postMessage?.("tracking_status");
-   window.PitaccoGps?.postMessage?.("background_status");
   }
  });
  window.addEventListener("focus",()=>{
   window.PitaccoGps?.postMessage?.("status");
-  window.PitaccoGps?.postMessage?.("activity_status");
   window.PitaccoGps?.postMessage?.("motion_status");
   window.PitaccoGps?.postMessage?.("site_status");
-  window.PitaccoGps?.postMessage?.("background_status");
   window.PitaccoGps?.postMessage?.("tracking_status");
  });
 }
@@ -451,7 +389,7 @@ function startNativeGpsTracking(){
  if(document.hidden||navigator.onLine===false)return;
  if(nativeGpsPermission!=="granted"){
   gpsStatus("Autorize a localização precisa do Android para iniciar o GPS do plantão.");
-  showAndroidGpsSettings(nativeGpsPermission!=="unknown");
+
   if(nativeGpsPermission==="unknown")bridge.postMessage("status");
   return;
  }
@@ -511,9 +449,8 @@ function syncGpsSharing(){
    gpsStatus("Verificando permissão nativa do Android…");
    try{window.PitaccoGps.postMessage("status");}catch{}
   }else if(nativeGpsPermission==="granted"){
-   gpsStatus("GPS autorizado pelo Android. Para enviar a posição durante o plantão, toque em Ativar GPS em segundo plano.");
-   $("startNativeGps").hidden=false;
-  }else if(nativeGpsPermission==="approximate"){
+   gpsStatus("Localização precisa autorizada. O GPS acompanha seu plantão online.");
+   }else if(nativeGpsPermission==="approximate"){
    gpsStatus("Android autorizou apenas localização aproximada. Ative a precisão nas configurações.");
   }else{
    gpsStatus("Permissão de localização não autorizada pelo Android. Abra as configurações do aplicativo.");
@@ -595,8 +532,7 @@ let earnPeriod="hoje", earnRequest=0, lastEarningsReport=null;
 let storeName="Minha loja", navProvider="google", navMode="address", assignedDeliveries=[];
 let permittedStores=new Map();
 let assignmentAudio, assignmentBaseline, nativePushRegistered=false;
-let nativeTestPending=false, nativeTestTimeout=0, nativeEnableTimeout=0;
-let shiftSoundEnabled=false,shiftSoundAvailable=false;
+let nativeTestPending=false, nativeTestTimeout=0;
 function playWebSoundWhenNativeFails(reason){
  const sounded=playAssignmentSound();
  $("assignmentSoundStatus").textContent=sounded
@@ -1281,6 +1217,10 @@ async function refreshSnapshot(){
  $("availableHelp").textContent=courier.available?"Você pode receber pedidos da loja.":"Ative sua disponibilidade para receber pedidos.";
  $("online").textContent=courier.available?"Ficar offline":"Ficar online";
  $("online").disabled=navigator.onLine===false;
+ if(!gpsAutoChecked&&window.PitaccoGps?.postMessage){
+  gpsAutoChecked=true;
+  if(courier.available&&!nativeGpsRunning)void startNativeGpsTracking();
+ }
  syncGpsSharing();
  // A única exceção autorizada usa o mesmo courier_id, sem criar outro cadastro.
  // RLS protege a seleção e as operações, inclusive a loja de testes.
@@ -1375,19 +1315,18 @@ function observePushQuick(){
  }
  syncPushQuick();
 }
-function showPushBanner(text, enable){
- const banner=$("pushBanner"),label=$("pushBannerText"),button=$("pushBannerEnable");
- if(!banner||!label||!button)return;
+function showPushBanner(text){
+ const banner=$("pushBanner"),label=$("pushBannerText");
+ if(!banner||!label)return;
  banner.hidden=!text;banner.style.display=text?"flex":"none";
  label.textContent=text||"";
- button.hidden=!enable;
 }
 async function checkNativePushStatus(){
  const view=$("nativePushReadiness");
  const requestId=++pushCheckRequestId;
  if(nativeFirebaseUnavailable){
   view.textContent="Este APK de teste não tem Firebase configurado. O registro de notificações reais não é possível nesta versão.";
-  showPushBanner("Sem Firebase neste APK: instale a versão oficial do Pitacco Entregador.",false);
+  showPushBanner("Sem Firebase neste APK: instale a versão oficial do Pitacco Entregador.");
   return;
  }
  view.textContent="Verificando registro de notificações…";
@@ -1402,12 +1341,12 @@ async function checkNativePushStatus(){
  if(requestId!==pushCheckRequestId)return;
  if(nativeFirebaseUnavailable){
   view.textContent="Este APK de teste não tem Firebase configurado. O registro de notificações reais não é possível nesta versão.";
-  showPushBanner("Sem Firebase neste APK: instale a versão oficial do Pitacco Entregador.",false);
+  showPushBanner("Sem Firebase neste APK: instale a versão oficial do Pitacco Entregador.");
   return;
  }
  const {data,error}=response;
  if(error||!data){
-  showPushBanner("Não foi possível verificar as notificações. Confira sua conexão.",false);
+  showPushBanner("Não foi possível verificar as notificações. Confira sua conexão.");
   view.textContent=error?.message==="timeout"
    ?"Não foi possível consultar o servidor em 7 segundos. Verifique sua conexão e toque em Verificar novamente."
    :"Não foi possível conferir o registro. Toque em Verificar novamente.";
@@ -1417,22 +1356,22 @@ async function checkNativePushStatus(){
   const phoneAvailable=!!window.PitaccoPush?.postMessage;
   showPushBanner(phoneAvailable
    ?"Registro automático de notificações pendente. Se o Android tiver negado a permissão, abra as configurações de notificações."
-   :"O navegador não oferece o receptor nativo. Use o aplicativo oficial Pitacco Entregador.",false);
+   :"O navegador não oferece o receptor nativo. Use o aplicativo oficial Pitacco Entregador.");
   view.textContent=phoneAvailable
    ?"O Pitacco registra automaticamente este aparelho após o login. Confira a permissão nas configurações do Android."
    :"Nenhum aparelho Android registrado nesta sessão.";
   if(!data.server_enabled)view.textContent+=" O servidor também aguarda configuração do Firebase.";
  }else if(!data.server_enabled){
-  showPushBanner("Aparelho registrado, mas o servidor Firebase do Pitacco ainda não está habilitado.",false);
+  showPushBanner("Aparelho registrado, mas o servidor Firebase do Pitacco ainda não está habilitado.");
   view.textContent="Aparelho cadastrado. A configuração de envio do Firebase ainda está pendente no servidor.";
  }else if(!data.cron_credential_present){
-  showPushBanner("Servidor de notificações sem autorização do agendamento. Contate o suporte Pitacco.",false);
+  showPushBanner("Servidor de notificações sem autorização do agendamento. Contate o suporte Pitacco.");
   view.textContent="Aparelho cadastrado, mas a credencial do agendamento está ausente no servidor.";
  }else if(data.dispatch_scheduled!==true){
-  showPushBanner("Aparelho cadastrado, mas o agendamento de envios está desligado.",false);
+  showPushBanner("Aparelho cadastrado, mas o agendamento de envios está desligado.");
   view.textContent="Aparelho cadastrado. A equipe Pitacco precisa habilitar o agendamento do envio.";
  }else{
-  showPushBanner("",false);
+  showPushBanner("");
   view.textContent="Aparelho registrado e agendamento ativo. Faça uma atribuição real de teste com a tela bloqueada para verificar o recebimento.";
  }
 }
@@ -1472,55 +1411,15 @@ async function loadAdminInbox(){
 function initializeNativePush(){
  const native=window.PitaccoPush;
  if(!native?.postMessage)return;
- const button=$("enableNativePush"),status=$("nativePushStatus");
- const settings=$("nativeNotificationSettings");
- // No Pitacco-specific activation step. OS permission is still respected.
- button.hidden=true;
- settings.hidden=false;
- settings.addEventListener("click",()=>native.postMessage("settings"));
- const shiftToggle=$("shiftSoundToggle"),shiftDescription=$("shiftSoundDescription");
- // Older APKs have a PitaccoPush bridge, but not the shift_status command.
- // Do not display a fake "DESLIGADO" control that cannot activate anything.
- const shiftProbe=window.setTimeout(()=>{
-  if(!shiftSoundAvailable)$("shiftSoundUnsupported").hidden=false;
- },2500);
- // Keep this control hidden in older APKs that do not support it.
- shiftToggle.addEventListener("click",()=>{
-  if(!shiftSoundAvailable){
-   $("assignmentSoundStatus").textContent="O Modo Plantão exige uma nova versão Android. Não é possível ativá-lo somente pela interface web.";
-   return;
-  }
-  if(shiftSoundEnabled){native.postMessage("shift_disable");return;}
-  const confirmed=window.confirm("Ativar Modo Plantão? Para cada nova entrega, o Pitacco tentará elevar temporariamente o volume de alarme e restaurá-lo após o toque. O Android pode bloquear o som no modo Não Perturbe. Você pode desligar a qualquer momento.");
-  if(confirmed)native.postMessage("shift_enable");
- });
- native.postMessage("shift_status");
- button.addEventListener("click",()=>{
-  status.textContent="Verificando avisos do Android…";
-  window.clearTimeout(nativeEnableTimeout);
-  nativeEnableTimeout=window.setTimeout(()=>{
-   if(status.textContent==="Verificando avisos do Android…")
-    status.textContent="Sem resposta do Android. Esta versão instalada pode ser antiga e não reconhecer o comando. Verifique as permissões de notificação.";
-  },9000);
-  try{native.postMessage("enable");}
-  catch{
-   window.clearTimeout(nativeEnableTimeout);
-   status.textContent="Falha ao comunicar com o Android. Reabra o aplicativo e tente novamente.";
-  }
- });
+ const status=$("nativePushStatus");
+ let registerFromStatus=false;
+ const requestRegistration=()=>{
+  registerFromStatus=true;
+  native.postMessage("status");
+ };
  native.onmessage=async event=>{
   const value=String(event.data||"");
-  if(value.startsWith("shift_sound:")){
-   window.clearTimeout(shiftProbe);
-   $("shiftSoundUnsupported").hidden=true;
-   shiftToggle.hidden=false;shiftDescription.hidden=false;
-   shiftSoundAvailable=true;
-   shiftSoundEnabled=value==="shift_sound:on";
-   $("shiftSoundLabel").textContent=shiftSoundEnabled?"Modo Plantão — ativado":"Modo Plantão — desativado";
-   $("shiftSoundState").textContent=shiftSoundEnabled?"DESATIVAR":"ATIVAR";
-   $("shiftSoundToggle").setAttribute("aria-pressed",String(shiftSoundEnabled));
-   return;
-  }
+  if(value.startsWith("shift_sound:"))return;
   if(value.startsWith("shift_test:")){
    nativeTestPending=false;
    window.clearTimeout(nativeTestTimeout);
@@ -1549,15 +1448,18 @@ function initializeNativePush(){
   }
   if(value.startsWith("notification_status:")){
    const state=value.slice("notification_status:".length);
+   if(registerFromStatus){
+    registerFromStatus=false;
+    if(state!=="permission")native.postMessage("enable");
+   }
    status.textContent=state==="ready"?"Notificações do Android autorizadas. Faça o teste de som."
-    :state==="channel_silent"?"Canal de notificações sem som. Toque em Configurar volume e notificações do Android."
+    :state==="channel_silent"?"Canal de notificações sem som. Confira as configurações do Android."
     :state==="channel_disabled"?"Canal de novas entregas desativado. Abra as configurações do Android."
-    :"Notificações não autorizadas. Toque em Ativar avisos no Android.";
+    :"Notificações não autorizadas. Confira as configurações do Android.";
    return;
   }
   if(value.startsWith("token:")||value.startsWith("token_native:")||
      value.startsWith("token_admin:")){
-   window.clearTimeout(nativeEnableTimeout);
    if(nativePushRegistrationInFlight)return;
    nativePushRegistrationInFlight=true;
    try{
@@ -1591,7 +1493,6 @@ function initializeNativePush(){
     await checkNativePushStatus();
    }finally{nativePushRegistrationInFlight=false}
   }else{
-   window.clearTimeout(nativeEnableTimeout);
    if(value==="unavailable"){
     nativeFirebaseUnavailable=true;
     ++pushCheckRequestId;
@@ -1606,10 +1507,10 @@ function initializeNativePush(){
  // boot() verified the authenticated courier before this function runs.
  // Register FCM automatically; do not try to bypass OS permission.
  status.textContent="Registrando avisos automaticamente após o login…";
- native.postMessage("enable");
- native.postMessage("status");
+ requestRegistration();
+ window.addEventListener("pitacco-permissions-ready",requestRegistration);
  document.addEventListener("visibilitychange",()=>{
-  if(!document.hidden){native.postMessage("refresh");native.postMessage("status");}
+  if(!document.hidden)requestRegistration();
  });
 }
 async function boot(){
@@ -1633,42 +1534,12 @@ async function boot(){
   catch {showPushQuick("Falha no módulo de notificações. Pedidos e mapa permanecem disponíveis.","error");}
   $("adminInboxRefresh").addEventListener("click",loadAdminInbox);
   void loadAdminInbox();
-  $("startNativeGps").addEventListener("click",()=>startNativeGpsTracking());
-  $("requestPhysicalActivity").addEventListener("click",()=>{
-   const bridge=window.PitaccoGps;
-   if(!bridge?.postMessage){
-    $("courierPhysicalActivityStatus").textContent="Atividade física é configurada nas permissões do aplicativo Android instalado.";
-    return;
-   }
-   $("courierPhysicalActivityStatus").textContent="Solicitando autorização de Atividade física ao Android…";
-   try{bridge.postMessage("activity_request");}
-   catch{$("courierPhysicalActivityStatus").textContent="Não foi possível abrir a permissão. Atualize o aplicativo Android.";}
-  });
-  $("requestBackgroundGps").addEventListener("click",()=>{
-   if(!window.PitaccoGps?.postMessage)return;
-   $("courierBackgroundGpsStatus").textContent="Verificando autorização para localização durante o plantão…";
-   window.PitaccoGps.postMessage("background_request");
-  });
   $("verifyGpsUpload").addEventListener("click",()=>{
   window.PitaccoGps?.postMessage?.("status");
   window.PitaccoGps?.postMessage?.("tracking_status");
   window.PitaccoGps?.postMessage?.("motion_status");
   void verifyGpsUploadOnServer();
 });
-  $("stopNativeGps").addEventListener("click",()=>{
-   void stopNativeGpsTracking();
-   gpsStatus("Rastreamento contínuo interrompido. Use Ativar para voltar a compartilhar em segundo plano.");
-  });
-  $("pushBannerEnable").addEventListener("click",()=>{
-   const native=window.PitaccoPush;
-   if(native?.postMessage){
-    $("nativePushStatus").textContent="Solicitando registro do celular...";
-    native.postMessage("enable");
-   }else{
-    $("nativePushStatus").textContent="Atualize o Pitacco Entregador para registrar o aparelho.";
-    switchView("config");
-   }
-  });
   $("checkNativePush").addEventListener("click",requestPushQuickCheck);
   $("pushQuickCheck").addEventListener("click",requestPushQuickCheck);
   observePushQuick();
@@ -1713,34 +1584,10 @@ $("courierMapGps").addEventListener("click",()=>{
  },error=>{
   $('courierMapStatus').textContent=error.code===1
    ?(window.PitaccoGps?.postMessage
-     ?'O navegador interno não conseguiu acessar o GPS. Use Minha posição após ativar o serviço GPS nativo do plantão.'
+     ?'O navegador interno não conseguiu acessar o GPS. Confira a permissão em Configurações do Android → Apps → Pitacco Entregador.'
      :'Autorize a localização para este site no navegador.')
    :'Não foi possível obter a localização. Ative o GPS e tente novamente.';
  },{enableHighAccuracy:true,maximumAge:0,timeout:15000});
-});
-$("retryCourierGps").addEventListener("click",()=>{
- const bridge=window.PitaccoGps;
- if(bridge?.postMessage){
-  gpsStatus("Verificando a permissão nativa do Android…");
-  try{
-   if(nativeGpsPermission==="denied")bridge.postMessage("request");
-   else{
-    if(nativeGpsPermission==="granted")bridge.postMessage("site_reset");
-    bridge.postMessage("status");
-    bridge.postMessage("site_status");
-    if(nativeGpsPermission==="granted"&&courier?.available)
-     bridge.postMessage("tracking_status");
-   }
-  }catch{gpsStatus("Falha ao consultar a permissão nativa. Reabra o aplicativo Android.")}
- }else if(navigator.geolocation){
-  navigator.geolocation.getCurrentPosition(()=>{stopGpsSharing();syncGpsSharing();},
-   error=>gpsStatus(error.code===1?"Permissão de localização recusada. Autorize o navegador ou o aplicativo.":"Verifique a localização e a conexão do aparelho."),
-   {enableHighAccuracy:true,maximumAge:0,timeout:15000});
- }else gpsStatus("Geolocalização indisponível neste dispositivo.");
-});
-$("openAndroidGpsSettings").addEventListener("click",()=>{
- if(window.PitaccoGps?.postMessage)window.PitaccoGps.postMessage("settings");
- else gpsStatus("Abra as permissões do aplicativo nas configurações do Android.");
 });
 $("online").addEventListener("click",async()=>{
  if(!courier||busy)return;busy=true;$("online").disabled=true;

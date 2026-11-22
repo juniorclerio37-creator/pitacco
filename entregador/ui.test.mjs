@@ -116,10 +116,10 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(java.includes('PendingIntent.FLAG_IMMUTABLE'));
  assert.ok(activity.includes('FirebaseMessaging.getInstance().setAutoInitEnabled(true)'));
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
- assert.ok(page.includes('nativeNotificationSettings'));
+ assert.doesNotMatch(page,/id="nativeNotificationSettings"/);
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 34'));
- assert.ok(build.includes("versionName '2.0.14'"));
+ assert.ok(build.includes('versionCode 35'));
+ assert.ok(build.includes("versionName '2.0.15'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -152,7 +152,6 @@ test("installed Android app with outdated native bridge falls back to audible we
  assert.match(page,/if\(value==="tested"\)/);
  assert.match(page,/nativeTestPending=false/);
  assert.match(page,/O Android não respondeu ao teste nativo/);
- assert.match(page,/Sem resposta do Android/);
  assert.match(page,/Avisos em segundo plano exigem Firebase ativo/);
 });
 
@@ -204,7 +203,8 @@ test("parallel Android test asks notification permission even without Firebase",
  const start=activity.indexOf("private void enablePush(JavaScriptReplyProxy reply)");
  const end=activity.indexOf("private void finishPushEnable(", start);
  const enable=activity.slice(start,end);
- assert.ok(enable.includes("requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}"));
+ assert.match(activity,/requestSetupPermissions\(FIRST_OPEN_NOTIFICATION_PERMISSION, Manifest\.permission\.POST_NOTIFICATIONS\)/);
+ assert.doesNotMatch(enable,/requestPermissions/);
  assert.ok(!enable.includes("FirebaseApp.getApps(this).isEmpty()"));
  const finish=activity.slice(end,activity.indexOf("private void sendToken(",end));
  assert.ok(finish.includes("if (FirebaseApp.getApps(this).isEmpty())"));
@@ -221,12 +221,9 @@ test("delivery Shift Sound is opt-in, restores prior alarm volume, and reserves 
  const service=read("android-app/app/src/main/java/br/com/pitacco/entregador/AssignmentMessagingService.java");
  const manifest=read("android-app/app/src/main/AndroidManifest.xml");
  const generator=read("android-app/generate-alert.py");
- assert.ok(page.includes('id="shiftSoundToggle"'));
- assert.ok(page.includes('window.confirm("Ativar Modo Plantão?'));
- assert.ok(page.includes('native.postMessage("shift_enable")'));
- assert.ok(page.includes('native.postMessage("shift_disable")'));
+ assert.doesNotMatch(page,/id="shiftSoundToggle"|postMessage\("shift_(?:enable|disable)"\)/);
  assert.ok(page.includes('if(value.startsWith("shift_test:"))'));
- assert.ok(activity.includes('"shift_enable".equals(action)'));
+ assert.doesNotMatch(activity,/"shift_(?:enable|disable)"\.equals\(action\)/);
  assert.ok(activity.includes('ShiftSoundPlayer.setEnabled(this, true)'));
  assert.ok(activity.includes('token_admin:'));
  assert.ok(player.includes('getBoolean(KEY_ENABLED, false)'));
@@ -258,16 +255,11 @@ test("first opening asks for notification permission and offers explicit shift s
  const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
  const page=read("painel.html");
  const css=read("painel.css");
- assert.match(activity,/if \(state == null\) showFirstOpenSetup\(\)/);
+ assert.match(activity,/if \(!waitingForSystem\) showFirstOpenSetup\(\)/);
  assert.match(activity,/FIRST_OPEN_NOTIFICATION_PERMISSION/);
- assert.match(activity,/requestFirstOpenNotifications\(\)/);
- assert.match(activity,/requestPermissions\(new String\[\]\{Manifest\.permission\.POST_NOTIFICATIONS\}/);
- assert.match(activity,/finishFirstOpenNotifications\(\)/);
  assert.match(activity,/setPositiveButton\("Ativar som forte"/);
  assert.match(activity,/ShiftSoundPlayer\.setEnabled\(this, true\)/);
- assert.match(page,/id="shiftSoundState">ATIVAR<\/span>/);
- assert.match(page,/id="shiftSoundUnsupported"/);
- assert.match(page,/window\.clearTimeout\(shiftProbe\)/);
+ assert.doesNotMatch(page,/id="shiftSoundState"|id="shiftSoundUnsupported"/);
  assert.match(css,/\.settings-row\[hidden\]\{display:none!important\}/);
 });
 
@@ -460,15 +452,13 @@ test("Android GPS authorization remains part of the original courier app upgrade
  const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
  const screen=read("painel.html");
  assert.match(app,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(app,/versionCode 34/);
- assert.match(app,/versionName '2\.0\.14'/);
+ assert.match(app,/versionCode 35/);
+ assert.match(app,/versionName '2\.0\.15'/);
  assert.match(activity,/registerGpsBridge\(\)/);
  assert.match(activity,/WebViewCompat\.addWebMessageListener\(web, "PitaccoGps"/);
- assert.match(activity,/requestPermissions\(new String\[\]\{/);
+ assert.match(activity,/requestPermissions\(permissions, requestCode\)/);
  assert.match(activity,/ACTION_APPLICATION_DETAILS_SETTINGS/);
- assert.match(screen,/Autorizar localização no Android/);
- assert.match(screen,/window\.PitaccoGps\.postMessage\("request"\)|bridge\.postMessage\("request"\)/);
- assert.match(screen,/openAndroidGpsSettings/);
+ assert.doesNotMatch(screen,/id="retryCourierGps"|id="openAndroidGpsSettings"/);
 });
 
 test("Android update preserves GPS permission prompts and registers push after login",()=>{
@@ -478,18 +468,18 @@ test("Android update preserves GPS permission prompts and registers push after l
  const workflow=read("../.github/workflows/courier-apk.yml");
  const panel=read("painel.html");
  assert.match(build,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(build,/versionCode 34/);
- assert.match(build,/versionName '2\.0\.14'/);
+ assert.match(build,/versionCode 35/);
+ assert.match(build,/versionName '2\.0\.15'/);
  for(const name of ["ACCESS_FINE_LOCATION","ACCESS_COARSE_LOCATION","POST_NOTIFICATIONS"])
   assert.ok(manifest.includes("android.permission."+name));
- assert.match(main,/GPS_SETUP_DONE = "gps_permission_explained_209"/);
- assert.match(main,/private void showGpsPermissionSetup\(\)/);
- assert.match(main,/\.setPositiveButton\("Permitir localização"/);
- assert.match(main,/requestPermissions\(new String\[\]\{[\s\S]*?Manifest\.permission\.ACCESS_FINE_LOCATION/);
- assert.match(main,/if \(prefs\.getBoolean\(INITIAL_SETUP_DONE, false\)\) \{\s*showGpsPermissionSetup\(\)/);
+ assert.match(main,/permission_setup_v2_step/);
+ assert.match(main,/requestSetupPermissions\(LOCATION_PERMISSION, Manifest\.permission\.ACCESS_FINE_LOCATION/);
+ assert.match(main,/LOCATION_PERMISSION\) continuePermissionSetup\(2\)/);
+ assert.match(main,/BACKGROUND_LOCATION_PERMISSION\) continuePermissionSetup\(3\)/);
+ assert.match(main,/ACTIVITY_RECOGNITION_PERMISSION\) continuePermissionSetup\(4\)/);
  assert.match(workflow,/Conferir permissões e identidade do APK oficial/);
  assert.match(workflow,/dump permissions/);
- assert.match(panel,/id="pushBannerEnable"/);
+ assert.doesNotMatch(panel,/id="pushBannerEnable"/);
  assert.match(panel,/showPushBanner\(/);
  assert.match(panel,/pitacco_courier_push_readiness/);
  assert.match(panel,/native\.postMessage\("enable"\)/);
@@ -509,7 +499,7 @@ test("Pitacco courier GPS continues in Android background only under a visible l
  assert.match(manifest,/ACCESS_BACKGROUND_LOCATION/);
  assert.match(activity,/showBackgroundLocationDisclosure/);
  assert.match(activity,/backgroundPermissionState/);
- assert.match(page,/id="requestBackgroundGps"/);
+ assert.doesNotMatch(page,/id="requestBackgroundGps"/);
  assert.match(service,/FOREGROUND_SERVICE_TYPE_LOCATION/);
  assert.match(service,/startForeground\(NOTIFICATION_ID/);
  assert.match(service,/LocationManager\.GPS_PROVIDER/);
@@ -521,8 +511,8 @@ test("Pitacco courier GPS continues in Android background only under a visible l
  assert.doesNotMatch(service,/service.role|SUPABASE_SERVICE_ROLE_KEY|refresh_token|accessToken/i);
  assert.match(activity,/startForegroundService\(tracking\)/);
  assert.match(activity,/if \("tracking_status"\.equals\(action\)\)/);
- assert.match(page,/id="startNativeGps"/);
- assert.match(page,/id="stopNativeGps"/);
+ assert.doesNotMatch(page,/id="startNativeGps"/);
+ assert.doesNotMatch(page,/id="stopNativeGps"/);
  assert.match(page,/pitacco_courier_background_gps_start/);
  assert.match(page,/pitacco_courier_background_gps_revoke/);
  assert.match(page,/if\(!nextOnline\)\{await stopNativeGpsTracking\(\);stopGpsSharing\(\);\}/);
