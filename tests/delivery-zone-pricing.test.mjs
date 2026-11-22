@@ -110,7 +110,7 @@ test('server preserves circle-by-km while quoting up to twelve ordered polygons'
  assert.match(edge,/region_name:regionName/);
  assert.match(migration,/jsonb_array_length\(p_polygons\) not between 1 and 12/);
  assert.match(migration,/where coverage_type='polygon'/);
- assert.match(migration,/jsonb_build_object\('id',gen_random_uuid\(\)::text/);
+ assert.match(migration,/jsonb_build_object\(\s*'id',\s*gen_random_uuid\(\)::text/s);
  assert.match(migration,/public\.is_store_manager\(p_store\)/);
  assert.match(publicMap,/'polygons',r\.polygons/);
 });
