@@ -29,7 +29,7 @@ revoke all on function pitacco_private.loyalty_normal_phone(text) from public,an
 -- PRIMEIRA COMPRA, no mesmo commit de checkout, nunca em mera consulta.
 -- A função interna será criada com variável explícita para evitar ambiguidades.
 create or replace function pitacco_private.loyalty_customer_for_order(
- s uuid, customer_name text, raw_phone text, referral_code text default ''
+ s uuid, customer_name text, raw_phone text, p_referral_code text default ''
 ) returns uuid language plpgsql security definer set search_path='' as $$
 declare c uuid;referrer uuid;v_phone text:=pitacco_private.loyalty_normal_phone(raw_phone);
 begin
@@ -39,11 +39,11 @@ begin
  if c is not null then return c;end if;
  if length(trim(coalesce(customer_name,''))) not between 2 and 120 then
   raise exception 'Informe o nome do cliente';end if;
- if coalesce(trim(referral_code),'')<>'' then
+ if coalesce(trim(p_referral_code),'')<>'' then
   if not (pitacco_private.loyalty_rules(s)->>'referrals_enabled')::boolean then
    raise exception 'Indicações não estão ativas nesta loja';end if;
-  select id into referrer from pitacco_private.loyalty_customers
-   where store_id=s and referral_code=upper(trim(referral_code))
+  select lc.id into referrer from pitacco_private.loyalty_customers lc
+   where lc.store_id=s and lc.referral_code=upper(trim(p_referral_code))
      and phone<>v_phone and active;
   if referrer is null then raise exception 'Indicação inválida para esta loja';end if;
  end if;
