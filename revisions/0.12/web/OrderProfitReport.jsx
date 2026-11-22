@@ -4,7 +4,7 @@ const dateFormat = new Intl.DateTimeFormat('sv-SE', {timeZone:'America/Sao_Paulo
 const dayFormat = new Intl.DateTimeFormat('pt-BR', {timeZone:'America/Sao_Paulo',dateStyle:'short'});
 const money = new Intl.NumberFormat('pt-BR', {style:'currency',currency:'BRL'});
 const fields = [
-  ['goods_cost','Custo dos produtos'],
+  ['goods_cost','Custo dos produtos (substituição manual, opcional)'],
   ['processing_fees','Taxa de pagamento adicional'],
   ['delivery_cost','Custo de entrega adicional'],
   ['other_cost','Outros custos diretos'],
@@ -42,10 +42,26 @@ export default function OrderProfitReport({client, storeId}) {
     }
   }
 
+  async function openCostEditor(row) {
+    setBusy(true);setError('');setNotice('');
+    try{
+      const {data,error}=await client.rpc('pitacco_order_cost_breakdown',{
+        p_store:storeId,p_order:row.order_id
+      });
+      if(error)throw error;
+      setDraft({...row,material:data});
+    }catch(failure){
+      setError(failure.message||'Não foi possível consultar o detalhamento do custo.');
+    }finally{setBusy(false);}
+  }
+
   async function save(event) {
     event.preventDefault();
     setBusy(true);setError('');setNotice('');
     const values = Object.fromEntries(new FormData(event.currentTarget));
+    // Vazio: nenhum custo manual. O relatório usará o custo automático
+    // apenas quando a ficha estiver completa. Nunca gravar custo presumido.
+    values.goods_cost=values.goods_cost===''?null:values.goods_cost;
     try {
       const {error} = await client.from('pitacco_order_costs').upsert({
         order_id:draft.order_id,store_id:storeId,...values
@@ -63,7 +79,7 @@ export default function OrderProfitReport({client, storeId}) {
 
   return <section className="panel" aria-label="Resultado por pedido" aria-busy={busy}>
     <h3>Resultado por pedido</h3>
-    <p>O resultado desconta da venda registrada as taxas do pedido e os custos diretos cadastrados. Registre em custos adicionais somente valores que ainda não estejam nas taxas do pedido.</p>
+    <p>O resultado desconta da venda registrada as taxas do pedido e os custos diretos cadastrados. O custo dos ingredientes e complementos pode ser calculado a partir das fichas técnicas e dos preços cadastrados <strong>no momento do aceite</strong>. Se faltar algum preço, a estimativa não será considerada custo completo. As demais despesas devem ser informadas; não presumimos que sejam zero.</p>
     <form onSubmit={event=>{event.preventDefault();void goTo({start,end},0);}}>
       <label>Data inicial <input type="date" required value={start} max={end} onChange={event=>setStart(event.target.value)}/></label>
       <label>Data final <input type="date" required value={end} min={start} onChange={event=>setEnd(event.target.value)}/></label>
@@ -73,9 +89,40 @@ export default function OrderProfitReport({client, storeId}) {
     {notice&&<p role="status">{notice}</p>}
     {draft&&<form key={draft.order_id} aria-label="Custos do pedido" onSubmit={save}>
       <h4>Custos do pedido {draft.reference}</h4>
-      <p>Preencha com zero quando um tipo de custo não se aplicar. O desconto é informativo, pois o valor da venda pode já incluí-lo.</p>
+      <p>Preencha com zero apenas quando souber que determinado custo não se aplica. O desconto é informativo, pois o valor da venda pode já incluí-lo. Não duplique taxas já descontadas do pedido.</p>
+      {draft.material&&<section aria-label="Detalhamento dos ingredientes">
+        <p><strong>Origem do custo dos produtos:</strong> {draft.material.status==='manual'
+          ?'Valor manual cadastrado pelo lojista.'
+          :draft.material.status==='automatic'
+            ?'Calculado automaticamente com os preços vigentes ao aceitar o pedido.'
+            :'Pendente de preços ou fichas técnicas.'}</p>
+        {draft.material.automatic_goods_cost!=null&&<p>
+          Custo automático: <strong>{money.format(draft.material.automatic_goods_cost)}</strong>.
+          Você pode substituir este valor informando o custo manual, ou manter o campo vazio para usar o automático.
+        </p>}
+        {draft.material.status==='pending'&&<p role="status">
+          Custo conhecido até agora: {money.format(draft.material.known_partial_cost||0)}.
+          Fichas de produtos pendentes: {draft.material.missing_product_recipes||0};
+          fichas de complementos pendentes: {draft.material.missing_option_recipes||0};
+          insumos sem preço: {draft.material.missing_ingredient_prices||0}.
+          O custo parcial não é considerado lucro final.
+        </p>}
+        {Array.isArray(draft.material.ingredients)&&draft.material.ingredients.length>0&&
+          <details><summary>Ver insumos consumidos e seus preços na data do pedido</summary>
+            <ul>{draft.material.ingredients.map((line,index)=><li key={index}>
+              {line.name}: {line.quantity} {line.unit} × {line.unit_cost===null?'preço pendente':('R$ '+Number(line.unit_cost).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:6}))}
+              {' = '}{line.line_cost===null?'pendente':money.format(line.line_cost)}
+            </li>)}</ul>
+          </details>}
+      </section>}
       {fields.map(([key,label])=><label key={key}>{label}
-        <input name={key} type="number" min="0" max="999999.99" step="0.01" required defaultValue={draft[key]??(key==='merchant_discount'?0:'')}/>
+        <input name={key} type="number" min="0" max="999999.99" step="0.01"
+          required={key!=='goods_cost'}
+          placeholder={key==='goods_cost'&&draft.material?.automatic_goods_cost!=null
+            ?'Automático: '+money.format(draft.material.automatic_goods_cost):undefined}
+          defaultValue={key==='goods_cost'
+            ?(draft.material?.manual_goods_cost??'')
+            :(draft[key]??(key==='merchant_discount'?0:''))}/>
       </label>)}
       <button disabled={busy}>Salvar custos</button>
       <button disabled={busy} type="button" className="secondary" onClick={()=>setDraft(null)}>Cancelar</button>
@@ -90,7 +137,7 @@ export default function OrderProfitReport({client, storeId}) {
             <td>{row.direct_cost===null?'Sem cadastro':money.format(row.direct_cost)}</td>
             <td>{row.result===null?'Aguardando custos':money.format(row.result)}</td>
             <td><button type="button" className="secondary" disabled={busy}
-              aria-label={'Editar custos do pedido '+row.reference} onClick={()=>{setDraft(row);setNotice('');setError('');}}>Editar custos</button></td>
+              aria-label={'Editar custos do pedido '+row.reference} onClick={()=>void openCostEditor(row)}>Editar custos</button></td>
           </tr>)}</tbody>
         </table>
       </div>
