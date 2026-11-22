@@ -31,14 +31,15 @@ test('merchant cards and kitchen board use the same authorized badge RPC',()=>{
  assert.doesNotMatch(ops,/o\.id\.slice\(0,8\)/);
  assert.doesNotMatch(orders,/o\.id\.slice\(0,8\)/);
 });
-test('driver cards show only public order number and locator, never UUID prefix',()=>{
+test('compact driver cards show public order number; private contact localizer stays in details',()=>{
  const html=read('entregador/painel.html');
  const detail=read('entregador/order-details.mjs');
  const sql=read('docs/sql/order-detail-public-number.sql');
  assert.match(html,/sb\.rpc\("pitacco_driver_card_badges"\)/);
  assert.match(html,/orderCardBadges\.get\(d\.id\)/);
  assert.match(html,/badge\?\.public_number\|\|"Aguardando número"/);
- assert.match(html,/LOCALIZADOR DE LIGAÇÃO/);
+ assert.match(detail,/LOCALIZADOR DO CONTATO/);
+ assert.match(html,/orderDetails\.open\(d\)/);
  assert.doesNotMatch(html,/String\(d\.order_id\|\|d\.id\)\.slice\(0,8\)/);
  assert.match(detail,/data\.display_number\|\|'Aguardando número'/);
  assert.match(sql,/pitacco_order_public_label/);
