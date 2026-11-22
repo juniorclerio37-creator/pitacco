@@ -856,7 +856,10 @@ async function collectCourierOrder(d){
     notice+=" Atenção: envio ao iFood não confirmado: "+String(err?.message||err);
    }
   }
-  await refresh(true);message(notice);
+  try{await refresh(true)}catch(err){notice+=" Atualize a lista para ver o novo status da coleta.";}
+  message(notice);
+  // Se o servidor confirmou a coleta, uma falha no refresh não pode fazer o
+  // pop-up pedir um segundo registro nem desfazer a etapa no lojista.
   return true;
  }catch(err){message(String(err?.message||"Não foi possível confirmar a coleta"));return false}
  finally{busy=false}
