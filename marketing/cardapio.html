@@ -874,7 +874,12 @@ $('checkout').onsubmit=async event=>{
    if(status>=400&&status<500&&status!==408)pendingRequest=null;
    throw error;
   }
-  if(data?.error)throw Error(String(data.error));
+  if(data?.error){
+   // Autorização negada antes da criação não pode deixar o carrinho bloqueado.
+   // Permite corrigir credencial, voltar para Pix ou escolher outro pagamento.
+   pendingRequest=null;
+   throw Error(String(data.error));
+  }
   if(!data?.order_id)throw Error('O servidor não retornou a confirmação do pedido.');
   completed=true;submitting=false;
   $('checkout').hidden=true;$('cartReview').hidden=true;$('cartFooter').hidden=true;
