@@ -35,7 +35,8 @@ export default function OrderDetails({order,delivery,number,stage,stageLabel,pla
  const method=text(receipt.payment_method)||text(receipt.payment)||text(receipt.payment?.method)||text(receipt.payment_type);
  const timing=[receipt.payment_timing,receipt.payment_when,receipt.payment_location,receipt.payment_channel].map(text).join(' ');
  const state=text(receipt.payment_status||receipt.payment?.status).toLowerCase();
- const paid=receipt.payment_confirmed===true||receipt.paid===true||receipt.is_paid===true||
+ const courierReceived=receipt.courier_collection?.received===true;
+ const paid=courierReceived||receipt.payment_confirmed===true||receipt.paid===true||receipt.is_paid===true||
   ['paid','approved','captured','confirmed','settled'].includes(state);
  const pickup=(delivery?.logistics_provider??receipt.logistics)==='retirada';
  const collect=receipt.payment_on_delivery!==false&&receipt.collect_on_delivery!==false&&
@@ -98,6 +99,7 @@ export default function OrderDetails({order,delivery,number,stage,stageLabel,pla
     <section className="order-detail-section order-detail-finance" aria-label="Resumo financeiro">
      <h4><CreditCard size={17} aria-hidden="true"/> Resumo financeiro</h4>
      {method&&<p className="order-detail-meta">{paymentNames[method.toLowerCase()]||method.replace(/_/g,' ')}{paid?' · Pago':''}</p>}
+      {courierReceived&&<p className="order-detail-meta">✓ Recebido pelo entregador na entrega — confirmação registrada no Pitacco</p>}
      {!method&&paid&&<p className="order-detail-meta">Pago</p>}
      <dl>
       {receipt.subtotal!=null&&<div><dt>Subtotal</dt><dd>{money(receipt.subtotal)}</dd></div>}
