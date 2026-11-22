@@ -152,7 +152,7 @@ test("installed Android app with outdated native bridge falls back to audible we
  assert.match(page,/if\(value==="tested"\)/);
  assert.match(page,/nativeTestPending=false/);
  assert.match(page,/O Android não respondeu ao teste nativo/);
- assert.match(page,/Avisos em segundo plano exigem Firebase ativo/);
+ assert.doesNotMatch(page,/Avisos em segundo plano exigem Firebase ativo/);
 });
 
 test("courier continues to show opened deliveries offline without unsafe queued completion",()=>{
