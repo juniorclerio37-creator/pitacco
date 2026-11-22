@@ -116,6 +116,14 @@ jobs:
           node tests/public-flow.browser.mjs
           node tests/fideliza.browser.mjs
           node tests/dashboard.browser.mjs
+      - name: Guardar telas do Fideliza+
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fideliza-visual
+          path: artifacts/fideliza-*.png
+          if-no-files-found: ignore
+
       - name: Validar rotas e Service Worker
         run: |
           test -s web/dist/index.html

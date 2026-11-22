@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
+import {readFile,mkdir} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {build} from '../web/node_modules/esbuild/lib/main.js';
 import {chromium} from '../web/node_modules/playwright/index.mjs';
@@ -65,36 +65,62 @@ try{
   await page.close();
  }
  // Exercise the actual merchant component with deterministic API fixtures.
- const bundled=await build({stdin:{contents:`import React from 'react';import{createRoot}from'react-dom/client';import Fideliza from '../revisions/0.12/web/Fideliza.jsx';createRoot(document.getElementById('root')).render(<Fideliza client={window.fixtureClient} storeId="store" manager={true}/>);`,resolveDir:fileURLToPath(new URL('../web/',import.meta.url)),loader:'jsx'},nodePaths:[fileURLToPath(new URL('../web/node_modules/',import.meta.url))],bundle:true,write:false,format:'iife'});
+ const bundled=await build({stdin:{contents:`import React from 'react';import{createRoot}from'react-dom/client';import Fideliza from '../revisions/0.12/web/Fideliza.jsx';createRoot(document.getElementById('root')).render(<Fideliza client={window.fixtureClient} storeId="store" manager={true}/>);`,resolveDir:fileURLToPath(new URL('../web/',import.meta.url)),loader:'jsx'},nodePaths:[fileURLToPath(new URL('../web/node_modules/',import.meta.url))],bundle:true,write:false,outfile:'merchant.js',format:'iife'});
  for(const width of [375,1440]){
   const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.stack||e.message));
   await page.addInitScript(()=>{
    window.fixtureProgram=null;window.fixtureCoupons=[];
    window.fixtureClient={rpc:async(name,p)=>({data:name==='pitacco_loyalty_customers'?[{id:'customer',name:'Cliente',phone:'21999990001',points:120,orders:3,cashback_cents:500}]:'b'.repeat(64),error:null}),from(table){
-    let mode='select',data,filters={};const q={select(){return q},eq(k,v){filters[k]=v;return q},neq(){return q},order(){return q},maybeSingle(){return Promise.resolve({data:window.fixtureProgram,error:null})},upsert(d){mode='save';data=d;return q},insert(d){mode='insert';data=d;return q},update(d){mode='update';data=d;return q},delete(){mode='delete';return q},then(resolve,reject){
+    let mode='select',data,filters={};const q={select(){return q},eq(k,v){filters[k]=v;return q},neq(){return q},order(){return q},maybeSingle(){return Promise.resolve({data:table==='public_menu_settings'?{slug:'loja-teste',enabled:true}:window.fixtureProgram,error:null})},upsert(d){mode='save';data=d;return q},insert(d){mode='insert';data=d;return q},update(d){mode='update';data=d;return q},delete(){mode='delete';return q},then(resolve,reject){
      if(mode==='save')window.fixtureProgram=data;
      if(mode==='insert')window.fixtureCoupons.push({...data,id:'coupon-'+window.fixtureCoupons.length,uses:0,active:true});
      if(mode==='update')window.fixtureCoupons=window.fixtureCoupons.map(x=>x.id===filters.id?{...x,...data}:x);
-     return Promise.resolve({data:table==='loyalty_coupons'?window.fixtureCoupons:window.fixtureProgram,count:0,error:null}).then(resolve,reject);
+     return Promise.resolve({data:table==='loyalty_coupons'?window.fixtureCoupons:window.fixtureProgram,count:table==='loyalty_coupon_redemptions'?7:0,error:null}).then(resolve,reject);
     }};return q;}};
   });
-  await page.route('**/*',route=>route.request().url().endsWith('/merchant.js')?route.fulfill({contentType:'text/javascript',body:bundled.outputFiles[0].text}):route.fulfill({contentType:'text/html',body:'<div id="root"></div><script src="/merchant.js"></script>'}));
+  await page.route('**/*',route=>{
+   const path=new URL(route.request().url()).pathname;
+   if(path==='/merchant.js')return route.fulfill({contentType:'text/javascript',body:bundled.outputFiles.find(x=>x.path.endsWith('.js')).text});
+   if(path==='/merchant.css')return route.fulfill({contentType:'text/css',body:bundled.outputFiles.find(x=>x.path.endsWith('.css')).text});
+   return route.fulfill({contentType:'text/html',body:'<meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0;background:#f7f8fa}#root{max-width:1140px;margin:auto;padding:24px 20px}</style><link rel="stylesheet" href="/merchant.css"><div id="root"></div><script src="/merchant.js"></script>'});
+  });
   await page.goto(origin+'/merchant');
-  await page.getByRole('tab',{name:'Clientes e pontos',exact:true}).click();await page.getByLabel('Ativar pontos',{exact:true}).check();await page.getByLabel('Ativar recompensa por quantidade de pedidos',{exact:true}).check();
+  const configure=name=>page.getByRole('article',{name,exact:true}).getByRole('button',{name:'Configurar',exact:true}).click();
+  await page.getByRole('button',{name:'Ver clientes',exact:true}).waitFor();
+  await page.waitForFunction(()=>!document.querySelector('[aria-label="Fideliza+"]').getAttribute('aria-busy')||document.querySelector('[aria-label="Fideliza+"]').getAttribute('aria-busy')==='false');
+  assert.equal(await page.locator('.fl-benefit').count(),6);
+  assert.match(await page.locator('.fl-metrics').innerText(),/Clientes participantes\s+1/);
+  assert.match(await page.locator('.fl-metrics').innerText(),/Benefícios utilizados\s+7/);
+  assert.match(await page.locator('.fl-metrics').innerText(),/R\$\s*5,00/);
+  assert.equal(await page.getByRole('link',{name:'Ver no cardápio',exact:true}).getAttribute('href'),'https://pitacco.com.br/loja-teste');
+  await mkdir('artifacts',{recursive:true});
+  await page.screenshot({path:`artifacts/fideliza-overview-${width}.png`,fullPage:true});
+  await page.getByLabel('Filtrar benefícios').selectOption('Inativos');assert.equal(await page.locator('.fl-benefit').count(),4);
+  await page.getByLabel('Filtrar benefícios').selectOption('Todos');
+  await configure('Pontos e recompensas');
+  await page.getByLabel('Ativar pontos',{exact:true}).check();
+  page.once('dialog',dialog=>dialog.accept());await page.getByRole('button',{name:'Fechar configuração',exact:true}).click();
+  assert.equal(await page.getByRole('switch',{name:'Ativar Pontos e recompensas',exact:true}).getAttribute('aria-checked'),'false');
+  await configure('Pontos e recompensas');await page.screenshot({path:`artifacts/fideliza-drawer-${width}.png`,fullPage:true});await page.getByLabel('Ativar pontos',{exact:true}).check();await page.getByLabel('Ativar recompensa por quantidade de pedidos',{exact:true}).check();
   await page.getByRole('button',{name:'Salvar regras de pontos',exact:true}).click();
   await page.waitForFunction(()=>window.fixtureProgram?.points_enabled===true&&window.fixtureProgram.orders_enabled===true);
-  await page.getByRole('tab',{name:'Cashback',exact:true}).click();await page.getByLabel('Ativar cashback',{exact:true}).check();
+  await configure('Cashback');await page.getByLabel('Ativar cashback',{exact:true}).check();
   await page.getByLabel('Percentual sobre produtos pagos, após descontos (%)',{exact:true}).fill('5');await page.getByRole('button',{name:'Salvar cashback',exact:true}).click();
   await page.waitForFunction(()=>window.fixtureProgram?.cashback_percent===5);
-  await page.getByRole('tab',{name:'Indique e ganhe',exact:true}).click();await page.getByLabel('Ativar indicações',{exact:true}).check();
-  await page.getByLabel('Crédito para quem indica (centavos)',{exact:true}).fill('300');await page.getByRole('button',{name:'Salvar indicações',exact:true}).click();
-  await page.waitForFunction(()=>window.fixtureProgram?.referrals_enabled===true);
-  await page.getByRole('tab',{name:'Campanhas',exact:true}).click();await page.getByLabel('Ativar campanhas no cardápio',{exact:true}).check();await page.getByRole('button',{name:'Salvar ativação',exact:true}).click();
+  await configure('Indique e ganhe');await page.getByLabel('Ativar indicações',{exact:true}).check();
+  await page.getByLabel('Crédito para quem indica (R$)',{exact:true}).fill('3');await page.getByRole('button',{name:'Salvar indicações',exact:true}).click();
+  await page.waitForFunction(()=>window.fixtureProgram?.referrals_enabled===true&&window.fixtureProgram.referral_reward_cents===300);
+  await configure('Campanhas');await page.getByLabel('Ativar campanhas no cardápio',{exact:true}).check();await page.getByRole('button',{name:'Salvar ativação',exact:true}).click();
   await page.getByLabel('Nome da oferta',{exact:true}).fill('Semana de ofertas');await page.getByLabel('Código',{exact:true}).fill('SEMANA5');await page.getByLabel('Desconto',{exact:true}).fill('5');
   await page.getByRole('button',{name:'Cadastrar oferta',exact:true}).click();await page.waitForFunction(()=>window.fixtureCoupons.some(x=>x.kind==='campaign'&&x.code==='SEMANA5'));
-  await page.getByRole('tab',{name:'Cupons',exact:true}).click();await page.getByLabel('Código',{exact:true}).fill('PESSOAL10');await page.getByLabel('Desconto',{exact:true}).fill('10');
+  await page.getByRole('button',{name:'Fechar configuração',exact:true}).click();
+  await configure('Cupons');await page.getByLabel('Código',{exact:true}).fill('PESSOAL10');await page.getByLabel('Desconto',{exact:true}).fill('10');
   await page.getByLabel('Cliente exclusivo',{exact:true}).selectOption('customer');await page.getByLabel('Limite por cliente (exige acesso à carteira)',{exact:true}).fill('1');
   await page.getByRole('button',{name:'Cadastrar oferta',exact:true}).click();await page.waitForFunction(()=>window.fixtureCoupons.some(x=>x.code==='PESSOAL10'&&x.target_customer_id==='customer'&&x.per_customer_limit===1));
+  await page.getByRole('button',{name:'Fechar configuração',exact:true}).click();
+  await page.getByRole('button',{name:'Ver clientes',exact:true}).click();await page.getByLabel('Buscar cliente',{exact:true}).fill('inexistente');assert.equal(await page.getByRole('button',{name:'Recuperar acesso',exact:true}).count(),0);
+  await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog').count(),0);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'no horizontal overflow');
   assert.deepEqual(errors,[]);console.log('PASS Fideliza merchant configuration for all modalities',width);await page.close();
  }
 }finally{await browser.close()}
