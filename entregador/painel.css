@@ -480,3 +480,233 @@ button{font-family:inherit}button:focus-visible,a:focus-visible{outline:3px soli
  @keyframes pickupReminderRise {from {opacity:.7;transform:translateY(9px) scale(.985)}
    to {opacity:1;transform:translateY(0) scale(1)}}
 }
+
+
+/* Painel claro aprovado — resumo financeiro real e cartões de entrega compactos. */
+.dashboard-legacy-fields{display:none!important}
+.bar{background:#fff!important}
+.header-right{gap:7px!important}
+.header-online.status-banner{
+ display:flex;align-items:center;justify-content:center;gap:8px;
+ margin:0!important;padding:5px 11px!important;border:1px solid #dce6e0!important;
+ border-radius:999px!important;background:#f6fcf9!important;
+ box-shadow:none!important;min-height:39px;flex:0 0 auto
+}
+.header-online .status-dot{width:10px;height:10px;box-shadow:none}
+.header-online .btn{
+ background:transparent!important;color:#1d3141!important;border:0!important;box-shadow:none!important;
+ padding:3px 0!important;min-height:28px!important;font-size:12px!important;line-height:1.2!important;
+ font-weight:900!important;cursor:pointer
+}
+.header-online:has(.status-dot:not(.online)){background:#f7f8fa!important;border-color:#e2e6eb!important}
+.header-online .btn:disabled{opacity:.65!important}
+#viewPedidos{min-width:0}
+.courier-dashboard-balances{
+ display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.8fr) minmax(0,1.05fr);
+ align-items:stretch;
+ gap:0;margin:2px 0 16px;
+ background:linear-gradient(105deg,#fffdfa,#fff6ef);
+ border:1px solid #ffcfab;border-radius:18px;
+ box-shadow:0 4px 14px #f3751610;
+ overflow:hidden
+}
+.balance-stat{
+ display:flex;align-items:center;justify-content:center;text-align:left;gap:9px;
+ min-width:0;padding:14px 10px;background:transparent;border:0;position:relative;
+ color:#1d2939;font-family:inherit
+}
+.balance-stat+.balance-stat::before{
+ content:"";position:absolute;left:0;top:22%;height:56%;width:1px;background:#eccdb8
+}
+.balance-stat--today{cursor:pointer}
+.balance-stat--today:focus-visible{outline:3px solid #fc9240;outline-offset:-4px}
+.balance-stat-icon{display:grid;place-items:center;flex:0 0 auto;font-size:25px;font-weight:900;color:#f57916;line-height:1}
+.balance-stat-icon--bike{font-size:24px}
+.balance-stat-copy{display:flex;flex-direction:column;min-width:0;gap:4px}
+.balance-stat-copy small{font-size:11px;line-height:1.12;color:#4d5b69;font-weight:680}
+.balance-stat-copy strong{
+ font-size:clamp(17px,2.85vw,25px);line-height:1.15;font-weight:950;
+ font-variant-numeric:tabular-nums;letter-spacing:-.5px;color:#111e32;white-space:nowrap
+}
+.delivery-bucket-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:0 0 10px}
+.delivery-bucket-btn{
+ display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;min-height:58px;
+ border:1px solid #e2e8ef;border-radius:16px;padding:10px 8px;
+ background:linear-gradient(#fff,#fafbff);box-shadow:0 3px 8px #22365009;
+ color:#4a556b;font-family:inherit;font-size:12px;font-weight:900;line-height:1.25;text-align:center;cursor:pointer
+}
+.delivery-bucket-btn .bucket-icon{font-size:20px;line-height:1;font-weight:900}
+.delivery-bucket-btn b{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:950}
+.delivery-bucket-btn[aria-pressed=true]{
+ background:linear-gradient(145deg,#ff8c19,#f46406);
+ color:white;border-color:#e97309;box-shadow:0 4px 12px #f8792424
+}
+.delivery-bucket-btn:focus-visible{outline:3px solid #ffac6c;outline-offset:2px}
+.delivery-bucket-summary{
+ display:flex;justify-content:space-between;align-items:center;gap:10px;
+ margin:12px 0 9px;padding:0 1px
+}
+.delivery-bucket-summary strong{font-size:14px;color:#273246;font-weight:950}
+.delivery-bucket-summary .auto-pill{white-space:nowrap;font-size:9px;padding:6px 8px}
+.courier-order-list{display:flex!important;flex-direction:column;gap:9px!important}
+.courier-order-list .bucket-empty{
+ border:1px dashed #e1e6ee;background:#fff;border-radius:16px;padding:35px 13px;text-align:center;
+ color:#758194;font-size:13px;line-height:1.6
+}
+
+/* Reorganiza sem destruir os controles de cada fase ou os dados de pagamento. */
+.card-modern.compact-delivery-card{
+ display:block;background:#fff!important;padding:12px 13px!important;border-radius:17px!important;
+ border:1px solid #e1e7f0!important;box-shadow:0 5px 14px #26364d0c!important;position:relative;overflow:hidden
+}
+.compact-delivery-card::before{
+ content:"";position:absolute;left:0;right:auto;top:0;bottom:0;
+ width:4px;height:100%;background:linear-gradient(#ff9a45,#f56c15)
+}
+.compact-delivery-card[data-origin=ifood]::before{background:linear-gradient(#fa4c68,#ed1740)}
+.compact-delivery-card[data-origin="99food"]::before{background:linear-gradient(#ffdc43,#f7af0d)}
+.compact-delivery-layout{
+ display:grid;grid-template-columns:minmax(0,1fr) minmax(112px,.56fr) minmax(104px,.45fr);
+ align-items:center;gap:10px;min-width:0
+}
+.compact-card-main{display:grid;gap:7px;min-width:0}
+.compact-card-open{
+ display:flex!important;gap:10px;align-items:center!important;min-width:0!important;
+ border:0!important;background:transparent!important;width:100%;
+ text-align:left!important;padding:0!important;margin:0!important
+}
+.compact-source-badge{
+ display:flex;align-items:center;justify-content:center;flex:0 0 48px;width:48px;height:48px;
+ padding:3px;border-radius:12px;background:linear-gradient(145deg,#ff9c34,#f56d0a);
+ color:white;text-align:center;font-size:11px;font-weight:950;letter-spacing:-.4px
+}
+.compact-source-badge[data-source="99food"]{background:linear-gradient(145deg,#ffdc3f,#ffc107);color:#111827;font-size:23px;letter-spacing:-1px}
+.compact-source-badge[data-source=ifood]{background:linear-gradient(145deg,#fb304c,#dc0727);font-size:12px}
+.compact-source-badge[data-source=keeta]{background:linear-gradient(145deg,#ffd64a,#ffae00);color:#303030}
+.compact-card-identity{min-width:0;display:flex;flex-direction:column;gap:3px}
+.compact-card-topline{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;line-height:1.2}
+.compact-order-number{font-size:17px;font-weight:950;letter-spacing:-.4px;color:#17253b}
+.compact-order-time{font-size:10px;font-weight:750;color:#8590a0;font-variant-numeric:tabular-nums}
+.compact-customer{display:block;max-width:100%;font-weight:800;font-size:12px;color:#273444;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.compact-store,.compact-note-flag{font-size:9px;color:#8591a0;line-height:1.2}
+.compact-address-row.card-address-row{
+ margin:0!important;padding:0!important;min-width:0;display:flex!important;align-items:center;gap:6px;
+ border:0!important
+}
+.compact-address-row .compact-address-pin{color:#ef771c;font-size:19px;line-height:1;flex:0 0 auto}
+.compact-address-row .address{
+ color:#596779;font-size:11px!important;min-width:0;flex:1;line-height:1.32!important;
+ overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere
+}
+.compact-address-row .card-route-link{
+ padding:5px 8px!important;min-height:30px!important;border-radius:9px!important;
+ font-size:11px!important;white-space:nowrap!important;background:#eff6ff!important;color:#175eab!important
+}
+.compact-card-payment{min-width:0}
+.compact-payment-chip{
+ display:flex;align-items:flex-start;gap:8px;padding:10px 9px;min-width:0;
+ border-radius:13px;border:1px solid #e3e7eb;background:#f8fafd
+}
+.compact-payment-paid{background:#eaf8ee;border-color:#c8e9d0;color:#196842}
+.compact-payment-collect{background:#fff6e6;border-color:#f5deb2;color:#92510d}
+.compact-payment-unknown{background:#fff4ef;border-color:#f4d2c8;color:#994729}
+.compact-payment-icon{flex:0 0 18px;font-size:17px;font-weight:950;line-height:1.2}
+.compact-payment-copy{display:flex;flex-direction:column;min-width:0;gap:3px}
+.compact-payment-copy strong{font-size:11px;line-height:1.2;font-weight:900;overflow-wrap:anywhere}
+.compact-payment-copy small{font-size:10px;line-height:1.3;color:#657386;overflow-wrap:anywhere}
+.compact-payment-collect .compact-payment-copy small{color:#a35f1b}
+.compact-payment-total{font-size:13px;line-height:1.25;font-variant-numeric:tabular-nums;color:#1c2c3f;font-weight:950;white-space:nowrap}
+.compact-card-action{min-width:0}
+.compact-card-action .actions{margin:0!important;display:flex!important}
+.compact-card-action .btn{
+ min-width:0;width:100%;min-height:45px!important;padding:10px 7px!important;
+ line-height:1.2!important;border-radius:12px!important;font-size:11px!important;
+ font-weight:900!important;white-space:normal!important;
+ box-shadow:0 3px 0 #dc650db0
+}
+.compact-card-action .btn.primary{background:linear-gradient(150deg,#ff8a19,#f5650b)!important;color:#fff!important}
+.compact-stage-extras{margin:11px 0 0;border-top:1px solid #edf0f5;padding-top:10px}
+.compact-stage-extras:empty{display:none}
+.compact-stage-extras .note-inline{margin-top:6px}
+.compact-stage-extras .arrival-record{margin:4px 0;padding:8px 9px;font-size:11px}
+.compact-stage-extras .card-verify-block{margin-top:8px;padding:11px}
+.compact-stage-extras .card-verify-title{font-size:13px}
+.compact-stage-extras .card-verify-help{font-size:11px}
+.compact-stage-extras .courier-collect-step{margin-top:8px}
+.compact-stage-extras .courier-secondary-tools{margin-top:3px}
+.compact-finished-card{
+ display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:10px;
+ border-radius:15px;border:1px solid #d6eade;background:#fff;
+ padding:13px 14px;box-shadow:0 4px 14px #26364d09
+}
+.finished-icon{background:#e3f7e9;color:#179756;border-radius:11px;width:36px;height:36px;
+ display:grid;place-items:center;font-size:21px;font-weight:950}
+.finished-copy{min-width:0;display:flex;flex-direction:column;gap:4px}
+.finished-copy strong{font-size:14px;font-weight:950;color:#26374a}
+.finished-copy small{font-size:11px;color:#758396;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.finished-income{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.finished-income span{font-size:10px;color:#779585}
+.finished-income strong{font-size:14px;color:#167a4b;white-space:nowrap;font-weight:900}
+.dashboard-hint{margin-top:10px!important;font-size:10px!important}
+@media(max-width:680px){
+ .courier-dashboard-balances{margin-top:0;margin-bottom:13px}
+ .balance-stat{padding:13px 7px;gap:6px}
+ .balance-stat-icon{font-size:18px}.balance-stat-icon--bike{font-size:18px}
+ .balance-stat-copy small{font-size:10px}
+ .balance-stat-copy strong{font-size:clamp(14px,3.6vw,19px)}
+ .delivery-bucket-btn{padding:9px 5px;min-height:60px;font-size:11px;gap:5px}
+ .delivery-bucket-btn .bucket-icon{font-size:17px}
+ .compact-delivery-layout{grid-template-columns:minmax(0,1.05fr) minmax(110px,.75fr);
+   grid-template-areas:"main payment" "main action";gap:5px 9px}
+ .compact-card-main{grid-area:main;align-self:center}
+ .compact-card-payment{grid-area:payment}
+ .compact-card-action{grid-area:action}
+ .compact-card-action .btn{min-height:39px!important}
+ .compact-source-badge{width:42px;height:42px;flex-basis:42px;border-radius:10px}
+ .compact-order-number{font-size:16px}
+ .compact-customer{font-size:12px}
+ .compact-payment-chip{padding:8px 7px;gap:6px}
+ .compact-payment-copy strong{font-size:10px}
+ .compact-payment-copy small{font-size:9px}
+ .compact-payment-total{font-size:12px}
+}
+@media(max-width:430px){
+ .store-pill{display:none!important}
+ .barinner{padding:8px 11px;gap:6px}
+ .header-online.status-banner{padding:4px 9px!important;min-height:36px}
+ .header-online .btn{font-size:11px!important}
+ .app-shell{padding-top:11px}
+ .courier-dashboard-balances{border-radius:15px}
+ .balance-stat{flex-direction:column;gap:4px;padding:10px 5px;text-align:center;justify-content:center}
+ .balance-stat-icon{font-size:16px}
+ .balance-stat-copy small{font-size:9px}
+ .balance-stat-copy strong{font-size:clamp(13px,3.8vw,18px)}
+ .delivery-bucket-nav{gap:4px}
+ .delivery-bucket-btn{flex-direction:column;gap:4px;min-height:62px;border-radius:13px;font-size:10px;padding:8px 4px}
+ .delivery-bucket-btn .bucket-icon{font-size:16px}
+ .delivery-bucket-summary{margin:9px 0 6px}
+ .delivery-bucket-summary strong{font-size:12px}
+ .delivery-bucket-summary .auto-pill{font-size:8px}
+ .card-modern.compact-delivery-card{padding:10px 11px!important}
+ .compact-delivery-layout{gap:5px 8px;grid-template-columns:minmax(0,1fr) minmax(107px,.71fr)}
+ .compact-card-open{gap:7px}
+ .compact-source-badge{width:39px;height:39px;flex-basis:39px;font-size:10px}
+ .compact-order-number{font-size:15px}
+ .compact-order-time{font-size:9px}
+ .compact-customer{font-size:11px}
+ .compact-address-row .address{font-size:10px!important}
+ .compact-payment-copy strong{font-size:10px}
+ .compact-payment-chip{padding:7px}
+ .compact-payment-icon{font-size:14px;flex-basis:14px}
+ .compact-card-action .btn{font-size:11px!important;min-height:36px!important}
+}
+@media(max-width:335px){
+ .app-logo{width:32px;height:32px}
+ .app-brand strong{font-size:19px}
+ .header-online .btn{font-size:10px!important}
+ .compact-delivery-layout{grid-template-columns:minmax(0,1fr) minmax(96px,.63fr)}
+ .compact-source-badge{width:33px;height:35px;flex-basis:33px;font-size:9px}
+ .compact-customer{font-size:10px}
+ .compact-order-number{font-size:14px}
+}
