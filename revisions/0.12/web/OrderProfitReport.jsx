@@ -4,7 +4,7 @@ const dateFormat = new Intl.DateTimeFormat('sv-SE', {timeZone:'America/Sao_Paulo
 const dayFormat = new Intl.DateTimeFormat('pt-BR', {timeZone:'America/Sao_Paulo',dateStyle:'short'});
 const money = new Intl.NumberFormat('pt-BR', {style:'currency',currency:'BRL'});
 const fields = [
-  ['goods_cost','Custo dos produtos (substituição manual, opcional)'],
+  ['goods_cost','Custo dos produtos'],
   ['processing_fees','Taxa de pagamento adicional'],
   ['delivery_cost','Custo de entrega adicional'],
   ['other_cost','Outros custos diretos'],
