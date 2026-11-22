@@ -57,6 +57,6 @@
 
 /* Unified illustrated courier marker across rider, merchant and customer. */
 .pitacco-courier-moto-pin{background:transparent!important;border:0!important;box-shadow:none!important;overflow:visible!important}
-.pitacco-courier-moto-pin svg{display:block;width:72px;height:82px;max-width:none;filter:drop-shadow(0 3px 4px #33415552)}
+.pitacco-courier-moto-pin svg{display:block;width:72px;height:70px;max-width:none;filter:drop-shadow(0 3px 4px #33415552)}
 .pitacco-courier-moto-stale svg{opacity:.68;filter:grayscale(.85) drop-shadow(0 2px 3px #33415535)}
 .pitacco-courier-moto-selected svg{filter:drop-shadow(0 0 4px #fb923c) drop-shadow(0 3px 3px #33415540)}

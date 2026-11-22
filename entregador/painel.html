@@ -228,6 +228,7 @@ import {createOrderDetailsController} from "./order-details.mjs";
 import {buildNavigationUrl,buildBatchNavigationUrl} from "./navigation.mjs";
 import {suggestedBatchRoutes} from "./route-sequence.mjs";
 import {mountCourierSharedMap,freshGps} from "./dispatch-map.mjs";
+import {courierActionStage,courierProgress} from "./delivery-flow.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
@@ -1020,9 +1021,21 @@ function card(d){
  }
  box.append(addressRow);
  box.append(element("div","pay","Cobrança: a confirmar com a loja. Não presuma pagamento aprovado."));
+ // O fluxo acompanha todo pedido. A ação disponível acompanha o estado validado no servidor.
+ const stage=courierActionStage(d);
+ const progress=element("div","card-delivery-steps");
+ progress.setAttribute("role","list");
+ progress.setAttribute("aria-label","Etapas da entrega");
+ for(const step of courierProgress(d)){
+  const pill=element("span","card-delivery-step"+(step.done?" is-done":"")+(step.active?" is-active":""),step.label);
+  pill.setAttribute("role","listitem");
+  if(step.active&&!step.done)pill.setAttribute("aria-current","step");
+  progress.append(pill);
+ }
+ box.append(progress);
  const actions=element("div","actions");
- const collecting=d.status==="atribuida"||(d.status==="aceita"&&!d.collected_at);
- if(collecting)actions.append(createAction("Efetuei a coleta","primary",()=>collectCourierOrder(d)));
+ const collecting=stage==="collect";
+ if(collecting)actions.append(createAction("Coletar pedido","primary",()=>collectCourierOrder(d)));
  if(d.status==="aceita"&&d.collected_at&&d.source==="ifood"&&d.logistics_provider==="loja"){
   actions.append(createAction("Sincronizar despacho com iFood","secondary",async()=>{
    if(busy)return;busy=true;message("");
@@ -1035,8 +1048,10 @@ function card(d){
    finally{busy=false}
   }));
  }
- if(d.status==="aceita"&&d.collected_at&&d.batch_id)
+ if(stage==="depart"&&d.batch_id)
   actions.append(createAction("Sair para entrega","primary",()=>rpc("pitacco_driver_depart",{p_batch:d.batch_id})));
+ if(stage==="depart"&&!d.batch_id)
+  box.append(element("p","warn","Este pedido está sem rota vinculada. Solicite à loja que revise a atribuição."));
  if(d.status==="retirada"){
   if(!d.arrived_at){
    actions.append(createAction("Cheguei na entrega","primary",()=>markArrival(d)));
@@ -1088,7 +1103,8 @@ function card(d){
      feedback.textContent="";feedback.hidden=true;
      code.setAttribute("aria-invalid","false");
     });
-    const submit=createAction("Confirmar entrega","primary",null);submit.type="submit";
+    const submit=createAction("Finalizar entrega","primary",null);submit.type="submit";
+    submit.setAttribute("aria-label","Validar código e finalizar entrega");
     if(d.source==="ifood"&&!synced){
      verify.append(element("p","card-verify-pending",
       "A chegada foi registrada no Pitacco. Você pode tentar validar o código pelo iFood, mesmo se o aviso de chegada ainda estiver pendente."));
@@ -1128,7 +1144,7 @@ function card(d){
     box.append(verify);
    }
    if(d.source==="99food"||d.source==="keeta"){
-    box.append(element("p","warn","A validação do código da plataforma ainda depende de homologação. Não finalize manualmente."));
+    box.append(element("p","warn","A validação do código da plataforma ainda depende de homologação. Não finalize manualmente. A coleta e a chegada permanecem registradas no Pitacco."));
    }
   }
  }

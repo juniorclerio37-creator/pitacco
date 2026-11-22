@@ -272,6 +272,10 @@ test("cartão mostra Ir ao lado do endereço e PIN após Cheguei sem abrir detal
  assert.match(page,/data-route-delivery/);
  assert.doesNotMatch(page,/createAction\("Abrir rota"/);
  assert.match(page,/Você chegou ao destino/);
+  assert.match(page,/courierActionStage\(d\)/);
+  assert.match(page,/courierProgress\(d\)/);
+  assert.match(page,/createAction\("Coletar pedido"/);
+  assert.match(page,/createAction\("Finalizar entrega"/);
  assert.match(page,/Peça o código de confirmação ao cliente/);
  assert.match(page,/element\("a","btn secondary card-ifood-confirm","Abrir confirmação no iFood"\)/);
  assert.match(page,/https:\/\/confirmacao-entrega-propria\.ifood\.com\.br\//);

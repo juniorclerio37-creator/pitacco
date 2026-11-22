@@ -131,7 +131,7 @@ test('partner-delivery or unscoped courier is rejected before any iFood dispatch
 
 test('only local pickup button invokes provider dispatch on merchant iFood deliveries',()=>{
  const page=readFileSync(new URL('../entregador/painel.html',import.meta.url),'utf8');
- assert.match(page,/Efetuei a coleta/);
+ assert.match(page,/Coletar pedido/);
  assert.match(page,/sb\.rpc\("pitacco_driver_collect"/);
  assert.match(page,/if\(d\.source==="ifood"&&d\.logistics_provider==="loja"\)/);
  assert.match(page,/ifoodDriverAction\(d\.id,"dispatch"\)/);
