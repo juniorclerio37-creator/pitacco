@@ -539,7 +539,7 @@ let nativeTestPending=false, nativeTestTimeout=0;
 function playWebSoundWhenNativeFails(reason){
  const sounded=playAssignmentSound();
  $("assignmentSoundStatus").textContent=sounded
-  ?reason+" O teste de sino pela tela foi iniciado; confirme se você o ouviu. Avisos em segundo plano exigem Firebase ativo."
+  ?reason+" O teste de sino pela tela foi iniciado; confirme se você o ouviu."
   :reason+" O som da tela também não pôde tocar. Confira o volume de mídia.";
 }
 async function enableAssignmentSound(){
