@@ -15,7 +15,9 @@ insert into public.public_menu_settings(store_id,slug,enabled,delivery_enabled,p
 insert into public.products(id,store_id,name,price,cost,menu_active)
  values ('30000000-0000-0000-0000-000000000081','20000000-0000-0000-0000-000000000081','Produto teste fiado',20,5,true);
 
-set local role authenticated;
+-- Os asserts conferem tabelas internas como papel de teste privilegiado; as RPCs
+-- verificam o gestor por auth.uid, e as permissões do papel authenticated são
+-- checadas explicitamente com has_table_privilege/has_function_privilege.
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000081',true);
 do $test$
 declare
