@@ -275,6 +275,7 @@ import {paymentSummaryPanel,courierCollectStep} from "./payment-ui.mjs";
 import {deliveryBucket,compactPaymentChip,safeFinishedToday,isNotificationDiagnostic} from "./compact-dashboard.mjs";
 import {pickupReminderType,showPickupReminder} from "./pickup-reminder.mjs";
 import {showArrivalConfirmation,showDeliveryFinish} from "./delivery-confirmation.mjs";
+import {isMerchantIfoodDelivery,ifoodDispatchTargets,ifoodDispatchOutcome} from "./ifood-departure.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
@@ -883,30 +884,80 @@ async function requestCourierPickup(d){
 async function collectCourierOrder(d){
  if(busy)return false;busy=true;message("");
  try{
-  // The local pickup is always saved first; network issues must never erase
-  // the courier's physical collection. Only merchant-owned iFood deliveries
-  // are dispatched to the provider. Partner-driver orders belong to iFood.
+  // Coleta é SOMENTE registro Pitacco. O iFood não recebe DISPATCHED aqui:
+  // esse evento exige que o motoboy toque em "Sair para entrega".
   const {error}=await sb.rpc("pitacco_driver_collect",{p_delivery:d.id});
   if(error)throw Error(error.message||"Não foi possível confirmar a coleta");
   let notice="Coleta registrada no Pitacco. Confirme a saída da rota quando todos os pedidos estiverem coletados.";
-  if(d.source==="ifood"&&d.logistics_provider==="loja"){
+  if(isMerchantIfoodDelivery(d))
+   notice="Coleta registrada no Pitacco. O iFood será avisado quando você tocar em Sair para entrega.";
+  try{await refresh(true);}catch{notice+=" Atualize a lista para conferir a coleta.";}
+  message(notice);
+  return true;
+ }catch(error){message(String(error?.message||"Não foi possível confirmar a coleta"));return false}
+ finally{busy=false}
+}
+async function sendIfoodDispatch(d){
+ if(!isMerchantIfoodDelivery(d))throw Error("Despacho externo disponível somente em entregas próprias do iFood.");
+ // A RPC autorizada no servidor também exige status='retirada'.
+ return ifoodDriverAction(d.id,"dispatch");
+}
+async function sendIfoodArrival(d){
+ // Com rede instável, a entrega local já pode ter avançado antes da plataforma.
+ // O dispatch é idempotente no servidor e não duplica o evento.
+ const sync=await sendIfoodDispatch(d);
+ if(!["submitted","confirmed"].includes(sync?.provider_state))
+  throw Error("Despacho iFood ainda não confirmado. Confira a plataforma e tente sincronizar novamente.");
+ return ifoodDriverAction(d.id,"arrival");
+}
+async function departCourierRoute(d){
+ if(busy)return false;busy=true;message("");
+ try{
+  const args=d.batch_id?{p_batch:d.batch_id}:{p_delivery:d.id};
+  const name=d.batch_id?"pitacco_driver_depart":"pitacco_driver_depart_single";
+  const {error}=await sb.rpc(name,args);
+  if(error)throw Error(error.message||"A saída da loja não foi registrada");
+  // O status de saída é salvo PRIMEIRO para todas as entregas agrupadas.
+  // Só depois enviamos cada despacho de entrega própria ao iFood.
+  const targets=ifoodDispatchTargets(assignedDeliveries,d);
+  let confirmed=0,submitted=0,pending=0;
+  const problems=[];
+  for(const stop of targets){
    try{
-    const result=await ifoodDriverAction(d.id,"dispatch");
-    notice=result.provider_state==="submitted"
-     ?"Coleta confirmada e despacho enviado ao iFood. Aguardando evento DISPATCHED."
-     :result.provider_state==="confirmed"
-      ?"O iFood já confirmou o despacho deste pedido."
-      :"Coleta confirmada. Despacho ao iFood ainda pendente de confirmação.";
+    const response=await sendIfoodDispatch(stop);
+    const outcome=ifoodDispatchOutcome(response);
+    if(outcome==="confirmed")confirmed++;
+    else if(outcome==="submitted")submitted++;
+    else pending++;
    }catch(err){
-    notice+=" Atenção: envio ao iFood não confirmado: "+String(err?.message||err);
+    problems.push(String(err?.message||"Falha na sincronização iFood"));
    }
   }
-  try{await refresh(true)}catch(err){notice+=" Atualize a lista para ver o novo status da coleta.";}
+  let notice="Saída para entrega registrada no Pitacco.";
+  if(targets.length){
+   const sent=confirmed+submitted;
+   notice+=sent?" Despacho iFood enviado/confirmado em "+sent+" pedido(s).":"";
+   if(submitted)notice+=" Aguarde a confirmação DISPATCHED do iFood.";
+   if(pending||problems.length)
+    notice+=" Atenção: "+(pending+problems.length)+" despacho(s) iFood pendente(s). Use Sincronizar despacho no pedido.";
+   if(problems.some(x=>/incerta|uncertain/i.test(x)))
+    notice+=" Há despacho de situação incerta: confira diretamente no iFood antes de tentar novamente.";
+  }
+  try{await refresh(true);}catch{notice+=" Atualize a lista quando houver conexão.";}
   message(notice);
-  // Se o servidor confirmou a coleta, uma falha no refresh não pode fazer o
-  // pop-up pedir um segundo registro nem desfazer a etapa no lojista.
   return true;
- }catch(err){message(String(err?.message||"Não foi possível confirmar a coleta"));return false}
+ }catch(err){message(String(err?.message||"Não foi possível registrar a saída da loja"));return false}
+ finally{busy=false}
+}
+async function retryIfoodDispatch(d){
+ if(busy)return;busy=true;message("");
+ try{
+  const result=await sendIfoodDispatch(d);
+  const state=ifoodDispatchOutcome(result);
+  message(state==="confirmed"?"Despacho confirmado pelo iFood.":
+   state==="submitted"?"Despacho enviado ao iFood; aguardando o evento DISPATCHED.":
+   "Despacho ainda pendente no iFood. Confira a situação antes de tentar novamente.");
+ }catch(err){message("Não foi possível sincronizar o despacho iFood: "+String(err?.message||err))}
  finally{busy=false}
 }
 async function markArrival(d){
@@ -919,7 +970,7 @@ async function markArrival(d){
   let info="Chegada registrada no Pitacco. O pedido ainda não foi concluído.";
   if(d.source==="ifood"){
    try{
-    const result=await ifoodDriverAction(d.id,"arrival");
+    const result=await sendIfoodArrival(d);
     if(result.provider_state==="submitted")info="Chegada registrada e aviso enviado ao iFood.";
    }catch(error){info+=" Aviso iFood ainda não confirmado: "+String(error.message);}
   }else if(d.source==="99food")info+=" Aviso à 99Food ainda não homologado.";
@@ -1046,7 +1097,7 @@ async function openDeliveryFinish(d){
   onConfirmPayment:()=>confirmCourierCollection(d),
   onVerifyCode:digits=>verifyCode(d,digits),
   onProviderRetry:d.source==="ifood"?async()=>{
-   const result=await ifoodDriverAction(d.id,"arrival");
+   const result=await sendIfoodArrival(d);
    if(result.provider_state!=="submitted"&&result.provider_state!=="confirmed")
     throw Error("Aviso de chegada ainda pendente.");
    try{await refresh(true);}catch{}
@@ -1215,25 +1266,14 @@ function card(d){
   collectButton.setAttribute("aria-label","Coletar pedido");
   actions.append(collectButton);
  }
- if(stage==="depart"&&d.source==="ifood"&&d.logistics_provider==="loja"){
+ if((stage==="arrive"||stage==="code")&&isMerchantIfoodDelivery(d)){
   const syncTools=element("details","courier-secondary-tools");
   syncTools.append(element("summary","","Problemas ao sincronizar com iFood?"));
-  syncTools.append(createAction("Sincronizar despacho com iFood","secondary",async()=>{
-   if(busy)return;busy=true;message("");
-   try{
-    const result=await ifoodDriverAction(d.id,"dispatch");
-    message(result.provider_state==="submitted"?"Despacho enviado ao iFood; aguardando DISPATCHED.":
-      result.provider_state==="confirmed"?"O iFood já confirmou o despacho.":
-      "Despacho iFood aguardando confirmação.");
-   }catch(err){message(String(err?.message||"Não foi possível sincronizar o despacho"))}
-   finally{busy=false}
-  }));
+  syncTools.append(createAction("Sincronizar despacho com iFood","secondary",()=>retryIfoodDispatch(d)));
   stageExtras.append(syncTools);
  }
  if(stage==="depart")
-  actions.append(createAction("Sair para entrega","primary",()=>d.batch_id
-    ?rpc("pitacco_driver_depart",{p_batch:d.batch_id})
-    :rpc("pitacco_driver_depart_single",{p_delivery:d.id})));
+  actions.append(createAction("Sair para entrega","primary",()=>departCourierRoute(d)));
  if(stage==="arrive"||stage==="code"){
   if(stage==="arrive"){
    const closeToCustomer=nearbyArrival?.deliveryId===d.id;
