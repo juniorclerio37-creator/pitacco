@@ -57,7 +57,7 @@ create or replace function pitacco_private.fiado_on_order_create()
 returns trigger language plpgsql security definer set search_path='' as $$
 declare cid uuid; account public.pitacco_fiado_customers%rowtype;
 begin
- if new.source<>'proprio' or new.receipt->>'payment'<>'fiado' then return new;end if;
+ if new.source<>'proprio' or new.receipt->>'payment' is distinct from 'fiado' then return new;end if;
  cid:=nullif(current_setting('pitacco.fiado_customer',true),'')::uuid;
  if cid is null then raise exception 'Fiado não autorizado para este pedido' using errcode='42501';end if;
  select * into account from public.pitacco_fiado_customers where id=cid and store_id=new.store_id for update;
@@ -87,7 +87,7 @@ create or replace function pitacco_private.fiado_order_record()
 returns trigger language plpgsql security definer set search_path='' as $$
 declare account public.pitacco_fiado_customers%rowtype;
 begin
- if new.source<>'proprio' or new.receipt->>'payment'<>'fiado' then return new;end if;
+ if new.source<>'proprio' or new.receipt->>'payment' is distinct from 'fiado' then return new;end if;
  select * into account from public.pitacco_fiado_customers
   where id=(new.receipt->>'fiado_customer_id')::uuid and store_id=new.store_id;
  if not found then raise exception 'Conta do fiado não encontrada';end if;
@@ -109,7 +109,7 @@ create or replace function pitacco_private.fiado_guard_order_update()
 returns trigger language plpgsql security definer set search_path='' as $$
 declare charge public.pitacco_fiado_charges%rowtype;
 begin
- if old.source<>'proprio' or old.receipt->>'payment'<>'fiado' then
+ if old.source<>'proprio' or old.receipt->>'payment' is distinct from 'fiado' then
   if new.receipt->>'payment'='fiado' then
    raise exception 'Fiado deve ser cadastrado no checkout autorizado' using errcode='42501';
   end if;
@@ -134,7 +134,7 @@ create or replace function pitacco_private.fiado_after_order_change()
 returns trigger language plpgsql security definer set search_path='' as $$
 declare charge public.pitacco_fiado_charges%rowtype;
 begin
- if new.source<>'proprio' or new.receipt->>'payment'<>'fiado' then return new;end if;
+ if new.source<>'proprio' or new.receipt->>'payment' is distinct from 'fiado' then return new;end if;
  if new.status in ('cancelled','rejected') and old.status is distinct from new.status then
   select * into charge from public.pitacco_fiado_charges where order_id=new.id for update;
   if found and charge.state not in ('cancelled','settled') then
