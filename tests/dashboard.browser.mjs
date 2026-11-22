@@ -497,6 +497,15 @@ try {
           {metric:'recebimentos', channel:null, entries:1, amount:22}
         ]});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_order_cost_breakdown'){
+        const input=route.request().postDataJSON();
+        assert.deepEqual(input,{p_store:store.id,p_order:costOrder.order_id});
+        return route.fulfill({headers,json:{
+          status:'pending',manual_goods_cost:null,automatic_goods_cost:null,
+          known_partial_cost:0,missing_product_recipes:0,
+          missing_option_recipes:0,missing_ingredient_prices:0,ingredients:[]
+        }});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_order_profit_report'){
         const input=route.request().postDataJSON();
         assert.equal(input.p_store,store.id);
