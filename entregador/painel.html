@@ -578,6 +578,7 @@ let lastHistoryRequest=0;
 
 let earnPeriod="hoje", earnRequest=0, lastEarningsReport=null;
 let storeName="Minha loja", navProvider="google", navMode="address", assignedDeliveries=[];
+let orderBucket="coleta", finishedToday=[], historyReady=false;
 let permittedStores=new Map();
 let assignmentAudio, assignmentBaseline, nativePushRegistered=false;
 let nativeTestPending=false, nativeTestTimeout=0;
@@ -729,7 +730,11 @@ function renderEarnings(report){
  const from=report.period_start?shortDate(report.period_start):"";
  const to=report.period_end?shortDate(report.period_end):"";
  $("earnRange").textContent=from&&to?(from===to?from:from+" – "+to):"Entregas concluídas";
+ $("homeTodayBalance").textContent=brl.format(numValue(report.today.amount));
+ $("homeTodayCount").textContent=String(Number(report.today.count??0));
+ $("homeMonthBalance").textContent=brl.format(numValue(report.month.amount));
  $("miniToday").textContent=brl.format(numValue(report.today.amount));
+ renderOrderBucketCounts();
  $("miniTodayCount").textContent=countLabel(Number(report.today.count??0));
  $("done").textContent=String(Number(report.today.count??0));
  renderDailyBreakdown(report);
@@ -987,6 +992,10 @@ async function loadSafeHistory(){
   if(key!==lastHistoryRequest)return;
   if(error||!Array.isArray(data))throw Error("Histórico indisponível");
   target.replaceChildren();
+  historyReady=true;
+  finishedToday=data.filter(item=>safeFinishedToday(item,dateKey(new Date())));
+  renderOrderBucketCounts();
+  if(orderBucket==="concluidas")renderOrderBucket();
   if(!data.length){target.append(element("div","earn-empty","Nenhuma entrega concluída."));return;}
   for(const x of data){
    const line=element("div","earn-history-item"),label=element("div");
@@ -1003,7 +1012,11 @@ async function loadSafeHistory(){
    line.append(label,value);target.append(line);
   }
  }catch{
-  if(key===lastHistoryRequest)target.replaceChildren(element("div","earn-empty","Histórico protegido indisponível."));
+  if(key===lastHistoryRequest){
+   historyReady=false;
+   target.replaceChildren(element("div","earn-empty","Histórico protegido indisponível."));
+   if(orderBucket==="concluidas")renderOrderBucket();
+  }
  }
 }
 
@@ -1252,6 +1265,70 @@ function card(d){
  return box;
 }
 
+
+function renderOrderBucketCounts(){
+ const pending=assignedDeliveries.filter(d=>deliveryBucket(d)==="coleta").length;
+ const progress=assignedDeliveries.filter(d=>deliveryBucket(d)==="andamento").length;
+ const complete=lastEarningsReport?Number(lastEarningsReport.today?.count||0):finishedToday.length;
+ $("bucketCollectCount").textContent=String(pending);
+ $("bucketProgressCount").textContent=String(progress);
+ $("bucketCompletedCount").textContent=String(complete);
+ for(const button of document.querySelectorAll("[data-order-bucket]"))
+  button.setAttribute("aria-pressed",String(button.dataset.orderBucket===orderBucket));
+ $("bucketTitle").textContent={
+   coleta:"Aguardando coleta",andamento:"Entregas em andamento",concluidas:"Entregas concluídas"
+ }[orderBucket]||"Pedidos";
+}
+function renderFinishedCompact(x){
+ const item=element("article","compact-finished-card");
+ const source=element("span","finished-icon","✓");
+ const summary=element("div","finished-copy");
+ summary.append(element("strong","",String(x.number||"Número indisponível")==="Número indisponível"
+  ?"Pedido concluído":"Pedido #"+String(x.number).slice(0,28)));
+ // A função de histórico retorna identificação e endereço resumidos, nunca os dados brutos.
+ summary.append(element("small","",String(x.initial||"C.")+" • "+String(x.address_hint||"Endereço resumido")));
+ const clock=x.finished_at||x.completed_at;
+ if(clock){
+  const day=new Date(clock);
+  if(Number.isFinite(day.getTime()))summary.append(element("small","",
+   "Concluída às "+day.toLocaleTimeString("pt-BR",{timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit"})));
+ }
+ const amount=element("div","finished-income");
+ amount.append(element("span","","Ganho"),element("strong","",brl.format(numValue(x.amount))));
+ item.append(source,summary,amount);
+ return item;
+}
+function renderOrderBucket(){
+ renderOrderBucketCounts();
+ const target=$("cards");target.replaceChildren();
+ if(orderBucket==="concluidas"){
+  if(!historyReady){
+   target.append(element("div","bucket-empty","Carregando histórico protegido das entregas concluídas..."));
+   return;
+  }
+  if(!finishedToday.length){
+   target.append(element("div","bucket-empty","Nenhuma entrega concluída hoje."));
+   return;
+  }
+  for(const result of finishedToday)target.append(renderFinishedCompact(result));
+  return;
+ }
+ const selected=assignedDeliveries.filter(d=>deliveryBucket(d)===orderBucket);
+ if(!selected.length){
+  target.append(element("div","bucket-empty",orderBucket==="coleta"
+   ?"Nenhum pedido aguardando coleta.":"Nenhuma entrega em andamento."));
+  return;
+ }
+ for(const delivery of selected.slice(0,50))target.append(card(delivery));
+}
+document.querySelectorAll("[data-order-bucket]").forEach(button=>button.addEventListener("click",()=>{
+ const next=button.dataset.orderBucket;
+ if(!["coleta","andamento","concluidas"].includes(next))return;
+ orderBucket=next;
+ renderOrderBucket();
+}));
+$("homeBalanceLink").addEventListener("click",()=>switchView("ganhos"));
+
 function courierMapStatus(){
  if(!sharedCourierMap)return;
  const summary=sharedCourierMap.setData({
@@ -1333,7 +1410,8 @@ async function refreshSnapshot(){
  $("availability").textContent=courier.available?"Você está online":"Você está offline";
  $("onlineDot").classList.toggle("online",!!courier.available);
  $("availableHelp").textContent=courier.available?"Você pode receber pedidos da loja.":"Ative sua disponibilidade para receber pedidos.";
- $("online").textContent=courier.available?"Ficar offline":"Ficar online";
+ $("online").textContent=courier.available?"Online":"Offline";
+ $("online").setAttribute("aria-label",courier.available?"Ficar offline":"Ficar online");
  $("online").disabled=navigator.onLine===false;
  if(!gpsAutoChecked&&window.PitaccoGps?.postMessage){
   gpsAutoChecked=true;
@@ -1378,13 +1456,7 @@ async function refreshSnapshot(){
  nearbyArrival=arrivalProximity(current,mapLastGps,arrivalSignals);
  if(!document.querySelector(".app-view[data-view=rotas]")?.hidden)mountCourierMapIfNeeded();
  renderRouteSuggestions(current);
- const target=$("cards");target.replaceChildren();
- if(!current.length){
-  const empty=element("div","empty");
-  empty.append(element("div","empty-icon","✓"),element("h3","","Tudo entregue!"),
-    element("p","","Novos pedidos aparecerão aqui automaticamente assim que a loja atribuir."));
-  target.append(empty);
- }else for(const d of current.slice(0,50))target.append(card(d));
+ renderOrderBucket();
  await Promise.all([loadEarnings(),loadSafeHistory()]);
 }
 let nativeFirebaseUnavailable=false;
