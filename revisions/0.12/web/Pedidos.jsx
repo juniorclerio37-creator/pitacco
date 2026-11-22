@@ -51,6 +51,7 @@ function PlatformIcon({source}){
 function cardPayment(order){
  const receipt=order?.receipt||{},status=String(receipt.payment_status||'').toLowerCase();
  const method=String(receipt.payment_method||receipt.payment||'');
+ if(receipt.payment==='fiado')return {state:'fiado',label:'Fiado · a receber'};
  if(receipt.payment_confirmed===true||receipt.paid===true||['paid','approved','captured','settled'].includes(status))
   return {state:'paid',label:'Pago'};
  if(receipt.payment_on_delivery===true||receipt.collect_on_delivery===true||/dinheiro|cash|na entrega/i.test(method))
