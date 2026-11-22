@@ -32,6 +32,7 @@ begin
     or coalesce(r->>'collect_on_delivery','false')='true'
     or timing ~ '(entrega|delivery|on.arrival|na_entrega|offline)'
     or m ~ '(^|[^a-z])(dinheiro|cash|cod|na entrega)([^a-z]|$)'
+    or m in ('cartao_entrega','cartao_na_entrega','card_on_delivery')
  );
  if coalesce(r->>'payment_on_delivery','')='false' and coalesce(r->>'collect_on_delivery','')='false'
    then collect:=false;
@@ -46,6 +47,7 @@ begin
   'state',case when already or providerpaid then 'paid'
     when collect and amount>0 then 'collect' else 'unknown' end,
   'method',case
+    when m in ('cartao_entrega','cartao_na_entrega','card_on_delivery') then 'Cartão na entrega'
     when m in ('dinheiro','cash','cod') then 'Dinheiro'
     when m in ('pix','pix_manual') then 'Pix'
     when m in ('cartao','card') then 'Cartão'
