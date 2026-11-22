@@ -205,14 +205,13 @@ button{font-family:inherit}button:focus-visible,a:focus-visible{outline:3px soli
 #pushQuickStatus[data-state=warning]{color:#a95f15}
 .courier-push-check small{display:block;color:#718096;font-size:11px;line-height:1.5}
 
-/* Sequência operacional uniforme em todos os cartões atribuídos. */
-.card-delivery-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:13px 0 10px}
-.card-delivery-step{display:flex;align-items:center;justify-content:center;text-align:center;min-width:0;
- padding:7px 3px;border:1px solid #e2e8f0;border-radius:9px;background:#f6f8fb;color:#64748b;
- font-size:10px;font-weight:800;line-height:1.2}
-.card-delivery-step.is-done{background:#e9f8ef;border-color:#b8e5c9;color:#176d42}
-.card-delivery-step.is-active:not(.is-done){background:#fff2e5;border-color:#ffb876;color:#9a4209}
-@media(max-width:350px){.card-delivery-steps{gap:3px}.card-delivery-step{font-size:9px;padding:7px 1px}}
+/* O cartão mostra só a próxima ação. O GPS apenas sugere a chegada. */
+.arrival-nearby{border:1px solid #a7dec2;background:#eaf8f0;color:#17643f;
+ padding:12px 13px;border-radius:12px;font-size:12px;font-weight:750;line-height:1.45;margin:12px 0}
+.courier-secondary-tools{margin:12px 0 0;border-top:1px solid #e7ecf2;padding:10px 0 0}
+.courier-secondary-tools summary{color:#6a798b;cursor:pointer;font-size:12px;font-weight:700}
+.courier-secondary-tools .btn{margin-top:10px}
+#viewRotas .courier-shared-map{margin-top:0}
 
 /* Diagnósticos de suporte: elementos permanecem acessíveis ao código nativo,
    mas nunca são apresentados nem acionáveis na interface do entregador. */
