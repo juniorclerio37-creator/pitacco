@@ -10,7 +10,10 @@ insert into public.store_members(store_id,user_id,role) values
  ('20000000-0000-0000-0000-000000000091','10000000-0000-0000-0000-000000000091','gestor'),
  ('20000000-0000-0000-0000-000000000092','10000000-0000-0000-0000-000000000092','gestor');
 insert into public.public_menu_settings(store_id,slug,enabled,delivery_enabled,pickup_enabled,delivery_fee,payment_methods,pix_instructions)
- values ('20000000-0000-0000-0000-000000000091','estoque-complementos-teste',true,true,true,0,array['pix_manual'],'');
+ values ('20000000-0000-0000-0000-000000000091','estoque-complementos-teste',true,true,true,0,array['pix_manual'],'')
+ on conflict(store_id) do update set slug=excluded.slug,enabled=excluded.enabled,
+ delivery_enabled=excluded.delivery_enabled,pickup_enabled=excluded.pickup_enabled,
+ delivery_fee=excluded.delivery_fee,payment_methods=excluded.payment_methods,pix_instructions=excluded.pix_instructions;
 insert into public.products(id,store_id,name,price,cost,menu_active) values
  ('30000000-0000-0000-0000-000000000091','20000000-0000-0000-0000-000000000091','Açaí teste',20,0,true),
  ('30000000-0000-0000-0000-000000000092','20000000-0000-0000-0000-000000000092','Produto de outra loja',20,0,true);
