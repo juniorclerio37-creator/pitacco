@@ -91,6 +91,9 @@ test('wrong provider code or invalid code never signals delivered',async()=>{
  assert.equal(rejected.status,409);
  assert.equal((await rejected.json()).provider_state,'invalid_code');
  assert.equal((await call('verify','four')).status,400);
+ assert.equal((await call('verify','123')).status,400);
+ assert.equal((await call('verify','12345')).status,400);
+ assert.equal((await call('verify','12345678')).status,400);
  assert.equal(calls.some(x=>x.path.endsWith('/pitacco_ifood_driver_result')),false);
 });
 test('preflight is limited to courier origin, without auth bypass',async()=>{
