@@ -29,10 +29,8 @@ begin
   update public.pitacco_fiado_customers
    set credential_bad_attempts=0,credential_locked_until=null where id=account.id;
  end if;
- if account.credit_limit<=0 or account.used>=account.credit_limit then return null;end if;
- if account.block_overdue and exists(
-  select 1 from public.pitacco_fiado_charges c where c.customer_id=account.id
-    and c.state='open' and c.paid<c.amount and c.due_at<now()) then return null;end if;
+ -- Não bloquear a autenticação de uma retransmissão idempotente de pedido já
+ -- criado. O checkout aplica limite e vencimento dentro do trigger transacional.
  return account.id;
 end $$;
 revoke all on function pitacco_private.fiado_customer_access(uuid,text,text) from public,anon,authenticated;
@@ -46,6 +44,12 @@ begin
  cid:=pitacco_private.fiado_customer_access(sid,p_phone,p_code);
  if cid is null then return jsonb_build_object('eligible',false);end if;
  select * into account from public.pitacco_fiado_customers where id=cid;
+ if account.credit_limit<=account.used or
+    (account.block_overdue and exists(
+      select 1 from public.pitacco_fiado_charges c
+       where c.store_id=sid and c.customer_id=cid and c.state='open'
+         and c.amount>c.paid and c.due_at<now()))
+ then return jsonb_build_object('eligible',false);end if;
  return jsonb_build_object('eligible',true,'available',greatest(0,account.credit_limit-account.used),
   'due_days',account.due_days,'approval_mode',account.approval_mode);
 end $$;
