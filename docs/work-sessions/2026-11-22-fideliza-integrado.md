@@ -13,7 +13,7 @@ Não houve alteração de planos, comissões, taxas dos marketplaces, saldos his
 
 ## Atualização do aplicativo existente
 
-O projeto Windows foi avançado para **0.12.14**, preservando identificador, configuração e dados, para que o atualizador detecte a mudança. No registro deste relatório, o workflow principal `45072151761` estava gerando o instalador NSIS; distribuição do instalador e instalação física ainda não foram confirmadas. O painel web e o cardápio já estão publicados. Não foi criado outro aplicativo.
+O projeto Windows foi avançado para **0.12.14**, preservando identificador, configuração e dados, para que o atualizador detecte a mudança. O workflow principal `45072151761` concluiu build, testes, verificação do instalador e publicação com sucesso. A release oficial `pitacco-windows-da51612ad063` aponta para o mesmo commit da implantação; o manifesto `latest.json` confirma versão **0.12.14** e plataforma Windows. A instalação física no computador de uma loja não foi realizada nesta sessão. O painel web, o cardápio e o instalador estão publicados. Não foi criado outro aplicativo.
 
 ## Evidências
 
