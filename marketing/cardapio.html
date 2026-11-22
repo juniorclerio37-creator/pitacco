@@ -789,7 +789,7 @@ async function loadSchedule(){
 }
 
 function lockCheckout(locked){
- for(const id of ['products','cart','customer','phone','address','deliveryPoint','fulfillment','payment','notes','schedule'])$(id).inert=locked;
+ for(const id of ['products','cart','customer','phone','address','deliveryPoint','fulfillment','payment','notes','schedule','fiadoCode','fiadoCheck','fiadoToggle'])$(id).inert=locked;
  $('backToCart').disabled=locked;
 }
 
@@ -807,6 +807,10 @@ $('checkout').onsubmit=async event=>{
    return;
   }
   const phoneDigits=$('phone').value.replace(/\D/g,'');
+  if(payment==='fiado'&&(phoneDigits!==fiadoCheckedPhone||!/^[0-9]{10}$/.test($('fiadoCode').value.trim()))){
+   msg('Verifique sua autorização do fiado antes de confirmar o pedido.');
+   return;
+  }
   if(phoneDigits.length<10||phoneDigits.length>11){
    msg('Informe um telefone válido com DDD (10 ou 11 dígitos).');
    $('phone').focus();
@@ -843,6 +847,7 @@ $('checkout').onsubmit=async event=>{
    p_payment:payment,
    p_notes:$('notes').value
   };
+  if(payment==='fiado')pendingRequest.p_code=$('fiadoCode').value.trim();
   if(routeMode)pendingRequest.p_quote=deliveryQuote.id;
   // The quoted checkout recovers the customer's exact pin on the server
   // from the quote. Do NOT send p_latitude/p_longitude: that RPC does not
@@ -856,15 +861,20 @@ $('checkout').onsubmit=async event=>{
  $('send').textContent='Enviando…';
  $('checkout').setAttribute('aria-busy','true');
  try{
-  const endpoint=Object.hasOwn(pendingRequest,'p_quote')?'pitacco_checkout_quoted_delivery'
+  const endpoint=pendingRequest.p_payment==='fiado'?'pitacco_checkout_fiado'
+   :Object.hasOwn(pendingRequest,'p_quote')?'pitacco_checkout_quoted_delivery'
    :Object.hasOwn(pendingRequest,'p_latitude')?'pitacco_checkout_geocoded_order'
    :pendingRequest.p_scheduled_for?'pitacco_checkout_scheduled_order':'checkout_public_order';
-  const response=await client.rpc(endpoint,pendingRequest);
+  const payload=pendingRequest.p_payment==='fiado'
+    ?Object.fromEntries(Object.entries(pendingRequest).filter(([key])=>key!=='p_payment'))
+    :pendingRequest;
+  const response=await client.rpc(endpoint,payload);
   const {data,error,status}=response;
   if(error){
    if(status>=400&&status<500&&status!==408)pendingRequest=null;
    throw error;
   }
+  if(data?.error)throw Error(String(data.error));
   if(!data?.order_id)throw Error('O servidor não retornou a confirmação do pedido.');
   completed=true;submitting=false;
   $('checkout').hidden=true;$('cartReview').hidden=true;$('cartFooter').hidden=true;
@@ -874,7 +884,9 @@ $('checkout').onsubmit=async event=>{
    el('h2','Pedido recebido!'),
    el('p','Número do pedido: '+data.order_id),
    el('p','Total confirmado: '+money(data.total)),
-   el('p',data.payment_status==='paid_manual'?'Pagamento registrado.':'Pagamento pendente de confirmação.')
+   el('p',pendingRequest.p_payment==='fiado'
+     ?'Compra registrada na caderneta da loja. O pagamento será feito depois, conforme o prazo combinado.'
+     :data.payment_status==='paid_manual'?'Pagamento registrado.':'Pagamento pendente de confirmação.')
   );
   if(pendingRequest.p_scheduled_for)$('success').append(el('p','Agendado para '+scheduleFormat.format(new Date(pendingRequest.p_scheduled_for))+'.'));
   if(data.payment_instructions)$('success').append(el('p','Instruções de pagamento: '+data.payment_instructions));
