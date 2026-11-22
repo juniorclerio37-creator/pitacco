@@ -24,3 +24,24 @@ export function ifoodDispatchOutcome(value){
  if(state==="submitted")return "submitted";
  return "pending";
 }
+
+/**
+ * Persist departure before contacting iFood. If local departure fails no event
+ * is emitted. Each provider failure is reported without rolling back an actual
+ * departure or advancing the order to delivered.
+ */
+export async function recordDepartureAndDispatch({depart,dispatch,deliveries,selected}){
+ await depart();
+ const targets=ifoodDispatchTargets(deliveries,selected);
+ let confirmed=0,submitted=0,pending=0;
+ const problems=[];
+ for(const stop of targets){
+  try{
+   const outcome=ifoodDispatchOutcome(await dispatch(stop));
+   if(outcome==="confirmed")confirmed++;
+   else if(outcome==="submitted")submitted++;
+   else pending++;
+  }catch(err){problems.push(String(err?.message||"Falha na sincronização iFood"));}
+ }
+ return {targets,confirmed,submitted,pending,problems};
+}
