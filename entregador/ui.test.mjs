@@ -274,7 +274,8 @@ test("cartão mostra Ir ao lado do endereço e PIN após Cheguei sem abrir detal
  assert.match(page,/Confirmar entrega/);
   assert.match(page,/courierActionStage\(d\)/);
   assert.doesNotMatch(page,/courierProgress\(d\)/);
-  assert.match(page,/createAction\("Coletar pedido"/);
+  assert.match(page,/createAction\("Coletar"/);
+  assert.match(page,/collectButton\.setAttribute\("aria-label","Coletar pedido"\)/);
   assert.match(page,/createAction\("Finalizar entrega"/);
  assert.match(page,/Digite o código informado pelo cliente para finalizar/);
  assert.match(page,/element\("a","btn secondary card-ifood-confirm","Abrir confirmação no iFood"\)/);
