@@ -664,4 +664,5 @@ test("GPS, Firebase e painéis técnicos não aparecem para o entregador",()=>{
  assert.match(page,/pitacco_register_courier_push_native/);
  assert.match(page,/pitacco_courier_background_gps_start/);
  assert.doesNotMatch(page,/O botão acima testa o sino e a voz[\s\S]*?mensagem Firebase enviada/);
+ assert.doesNotMatch(page,/Avisos em segundo plano exigem Firebase ativo/);
 });
