@@ -239,6 +239,7 @@ import {mountCourierSharedMap,freshGps} from "./dispatch-map.mjs";
 import {courierActionStage} from "./delivery-flow.mjs";
 import {arrivalProximity} from "./arrival-proximity.mjs";
 import {paymentSummaryPanel,courierCollectStep} from "./payment-ui.mjs";
+import {pickupReminderType,showPickupReminder} from "./pickup-reminder.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
@@ -820,8 +821,22 @@ async function ifoodDriverAction(delivery,action,code){
  }
  return out;
 }
+async function requestCourierPickup(d){
+ if(busy)return false;
+ // Consultar pagamento apenas se os dados ainda não estiverem disponíveis.
+ // O lembrete jamais modifica o pagamento: a coleta oficial ocorre após confirmar.
+ let payment=paymentOf(d);
+ if(payment.state==="unknown"){
+  const {data}=await sb.rpc("pitacco_driver_payment_cards");
+  const current=Array.isArray(data)?data.find(x=>x.delivery_id===d.id):null;
+  if(current?.payment){payment=current.payment;paymentCards.set(d.id,payment);}
+ }
+ if(pickupReminderType(payment))
+  return showPickupReminder(payment,()=>collectCourierOrder(d));
+ return collectCourierOrder(d);
+}
 async function collectCourierOrder(d){
- if(busy)return;busy=true;message("");
+ if(busy)return false;busy=true;message("");
  try{
   // The local pickup is always saved first; network issues must never erase
   // the courier's physical collection. Only merchant-owned iFood deliveries
@@ -841,8 +856,12 @@ async function collectCourierOrder(d){
     notice+=" Atenção: envio ao iFood não confirmado: "+String(err?.message||err);
    }
   }
-  await refresh(true);message(notice);
- }catch(err){message(String(err?.message||"Não foi possível confirmar a coleta"))}
+  try{await refresh(true)}catch(err){notice+=" Atualize a lista para ver o novo status da coleta.";}
+  message(notice);
+  // Se o servidor confirmou a coleta, uma falha no refresh não pode fazer o
+  // pop-up pedir um segundo registro nem desfazer a etapa no lojista.
+  return true;
+ }catch(err){message(String(err?.message||"Não foi possível confirmar a coleta"));return false}
  finally{busy=false}
 }
 async function markArrival(d){
@@ -1059,7 +1078,7 @@ function card(d){
  const stage=courierActionStage(d);
  const actions=element("div","actions");
  const collecting=stage==="collect";
- if(collecting)actions.append(createAction("Coletar pedido","primary",()=>collectCourierOrder(d)));
+ if(collecting)actions.append(createAction("Coletar pedido","primary",()=>requestCourierPickup(d)));
  if(stage==="depart"&&d.source==="ifood"&&d.logistics_provider==="loja"){
   const syncTools=element("details","courier-secondary-tools");
   syncTools.append(element("summary","","Problemas ao sincronizar com iFood?"));
