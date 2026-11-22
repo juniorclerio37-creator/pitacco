@@ -275,7 +275,7 @@ import {paymentSummaryPanel,courierCollectStep} from "./payment-ui.mjs";
 import {deliveryBucket,compactPaymentChip,safeFinishedToday,isNotificationDiagnostic} from "./compact-dashboard.mjs";
 import {pickupReminderType,showPickupReminder} from "./pickup-reminder.mjs";
 import {showArrivalConfirmation,showDeliveryFinish} from "./delivery-confirmation.mjs";
-import {isMerchantIfoodDelivery,ifoodDispatchTargets,ifoodDispatchOutcome} from "./ifood-departure.mjs";
+import {isMerchantIfoodDelivery,ifoodDispatchOutcome,recordDepartureAndDispatch} from "./ifood-departure.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
@@ -915,24 +915,14 @@ async function departCourierRoute(d){
  try{
   const args=d.batch_id?{p_batch:d.batch_id}:{p_delivery:d.id};
   const name=d.batch_id?"pitacco_driver_depart":"pitacco_driver_depart_single";
-  const {error}=await sb.rpc(name,args);
-  if(error)throw Error(error.message||"A saída da loja não foi registrada");
-  // O status de saída é salvo PRIMEIRO para todas as entregas agrupadas.
-  // Só depois enviamos cada despacho de entrega própria ao iFood.
-  const targets=ifoodDispatchTargets(assignedDeliveries,d);
-  let confirmed=0,submitted=0,pending=0;
-  const problems=[];
-  for(const stop of targets){
-   try{
-    const response=await sendIfoodDispatch(stop);
-    const outcome=ifoodDispatchOutcome(response);
-    if(outcome==="confirmed")confirmed++;
-    else if(outcome==="submitted")submitted++;
-    else pending++;
-   }catch(err){
-    problems.push(String(err?.message||"Falha na sincronização iFood"));
-   }
-  }
+  const {targets,confirmed,submitted,pending,problems}=await recordDepartureAndDispatch({
+   selected:d,deliveries:assignedDeliveries,
+   depart:async()=>{
+    const {error}=await sb.rpc(name,args);
+    if(error)throw Error(error.message||"A saída da loja não foi registrada");
+   },
+   dispatch:stop=>sendIfoodDispatch(stop)
+  });
   let notice="Saída para entrega registrada no Pitacco.";
   if(targets.length){
    const sent=confirmed+submitted;
