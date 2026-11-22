@@ -105,7 +105,7 @@ function buildItems(details) {
   }
   return block;
 }
-function buildDetails(details, delivery, routeFor) {
+function buildDetails(details, delivery, routeFor, paymentInfo) {
   const root = document.createDocumentFragment();
   const status = node('div','order-source-row');
   status.append(node('span','order-source-tag',String(details.source ?? delivery.source ?? 'Próprio').toUpperCase()),
@@ -135,13 +135,19 @@ function buildDetails(details, delivery, routeFor) {
     const total = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(details.total));
     payment.append(line('Valor informado do pedido', total));
   }
-  if (details.payment_method) payment.append(line('Forma informada', String(details.payment_method).slice(0, 100)));
-  payment.append(node('p','order-detail-muted',
-    'O valor do pedido não é o ganho do motoboy. Antes de cobrar qualquer quantia, confirme com a loja se o pedido está pago ou é para receber na entrega.'));
+  const p=paymentInfo||{state:'unknown',method:details.payment_method||'Não informada'};
+  payment.append(line('Forma de pagamento',String(p.method||details.payment_method||'Não informada').slice(0,100)));
+  payment.append(line('Situação',p.state==='paid'
+    ?(p.received_by_courier?'Recebido pelo entregador':'Pago')
+    :p.state==='collect'?'Cobrar na entrega':'Sem confirmação disponível'));
+  if(p.state==='collect'&&p.amount!=null){
+    payment.append(line('Cobrar do cliente',new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(p.amount))));
+    if(p.change_for!=null)payment.append(line('Troco para',new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(p.change_for))));
+  }
   root.append(payment);
   return root;
 }
-export function createOrderDetailsController({supabase,routeFor}) {
+export function createOrderDetailsController({supabase,routeFor,paymentFor}) {
   const overlay = document.getElementById('orderDetailOverlay');
   const title = document.getElementById('orderDetailTitle');
   const content = document.getElementById('orderDetailContent');
@@ -184,7 +190,7 @@ export function createOrderDetailsController({supabase,routeFor}) {
       if(ticket!==request)return;
       if(error || !data || data.delivery_id!==delivery.id)throw Error('Não foi possível carregar este pedido');
       title.textContent='Pedido • '+String(data.display_number||'Aguardando número').slice(0,40);
-      content.replaceChildren(buildDetails(data,delivery,routeFor));
+      content.replaceChildren(buildDetails(data,delivery,routeFor,paymentFor?.(delivery)));
     }catch(err){
       if(ticket!==request)return;
       content.replaceChildren(node('p','order-detail-error',

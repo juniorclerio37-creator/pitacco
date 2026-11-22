@@ -12,7 +12,7 @@ test('tapping a card requests detailed data for the assigned delivery only',()=>
  assert.match(html,/orderDetails\.open\(d\)/);
  assert.match(module,/supabase\.rpc\('pitacco_driver_order_detail',\{p_delivery:delivery\.id\}\)/);
  assert.match(module,/data\.delivery_id!==delivery\.id/);
- assert.match(module,/content\.replaceChildren\(buildDetails\(data,delivery,routeFor\)\)/);
+ assert.match(module,/content\.replaceChildren\(buildDetails\(data,delivery,routeFor,paymentFor\?\.\(delivery\)\)\)/);
  assert.doesNotMatch(module,/\.innerHTML\s*=/);
 });
 test('contact action is chosen by real phone versus intermediary 0800 and localizer',()=>{
