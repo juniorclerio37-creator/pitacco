@@ -32,5 +32,6 @@ test("não registra coleta antes do consentimento no modal; mantém RPC do lojis
  assert.match(html,/collectCourierOrder\(d\)/);
  assert.match(html,/pitacco_driver_collect/);
  assert.match(html,/ifoodDriverAction\(d\.id,"dispatch"\)/);
- assert.match(html,/if\(collecting\)actions\.append\(createAction\("Coletar pedido","primary",\(\)=>requestCourierPickup\(d\)\)\)/);
+ assert.match(html,/const collectButton=createAction\("Coletar","primary",\(\)=>requestCourierPickup\(d\)\)/);
+ assert.match(html,/collectButton\.setAttribute\("aria-label","Coletar pedido"\)/);
 });

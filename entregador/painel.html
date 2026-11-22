@@ -72,7 +72,11 @@ a.btn{text-decoration:none}
 <header class="bar">
   <div class="barinner">
     <div class="app-brand"><div class="app-logo" aria-hidden="true"><img src="./logo-entregador.svg" width="44" height="44" alt=""></div><div><strong>Pitacco</strong><small>ENTREGADOR</small></div></div>
-    <div class="header-right"><span class="store-pill" id="storeChip" title="Loja ativa">Minha loja</span><button class="header-refresh" id="refresh" type="button" aria-label="Atualizar informações" title="Atualizar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-5L4 8m0-4v4h4M4 13a8 8 0 0 0 14 5l2-2m0 4v-4h-4"/></svg></button></div>
+    <div class="header-right">
+      <span class="store-pill" id="storeChip" title="Loja ativa">Minha loja</span>
+      <div class="status-banner header-online"><span class="status-dot" id="onlineDot"></span><button class="btn primary" id="online" type="button" disabled aria-label="Alterar disponibilidade do entregador">Carregando...</button></div>
+      <button class="header-refresh" id="refresh" type="button" aria-label="Atualizar informações" title="Atualizar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-5L4 8m0-4v4h4M4 13a8 8 0 0 0 14 5l2-2m0 4v-4h-4"/></svg></button>
+    </div>
   </div>
 </header>
 <div id="connectionBanner" role="status" aria-live="polite" hidden>
@@ -80,11 +84,26 @@ a.btn{text-decoration:none}
 </div>
 <main class="app-shell">
 <section class="app-view" data-view="pedidos" id="viewPedidos">
-  <div class="order-header">
-    <div><span class="eyebrow">SUA OPERAÇÃO</span><h1 id="greeting">Minhas entregas</h1><p class="sub">Pedidos enviados diretamente pela loja.</p></div>
-    <button type="button" class="today-mini" id="miniEarnings" aria-label="Abrir ganhos de hoje"><small>GANHOS DE HOJE</small><b id="miniToday">R$ 0,00</b><span id="miniTodayCount">0 entregas</span></button>
+  <div class="dashboard-legacy-fields" aria-hidden="true">
+    <span id="greeting">Minhas entregas</span>
+    <button type="button" id="miniEarnings" tabindex="-1"><b id="miniToday">R$ 0,00</b><span id="miniTodayCount">0 entregas</span></button>
+    <span id="availability">Carregando disponibilidade...</span>
+    <span id="availableHelp">Sua loja organiza as entregas para você.</span>
   </div>
-  <div class="status-banner"><div class="status-copy"><span class="status-dot" id="onlineDot"></span><div><b id="availability">Carregando disponibilidade...</b><span id="availableHelp">Sua loja organiza as entregas para você.</span></div></div><button class="btn primary" id="online" type="button" disabled>Carregando...</button></div>
+  <section class="courier-dashboard-balances" aria-label="Resumo financeiro e entregas de hoje">
+    <button class="balance-stat balance-stat--today" id="homeBalanceLink" type="button" aria-label="Abrir ganhos e saldo de hoje">
+      <span class="balance-stat-icon" aria-hidden="true">▣</span>
+      <span class="balance-stat-copy"><small>Saldo do dia</small><strong id="homeTodayBalance">R$ 0,00</strong></span>
+    </button>
+    <div class="balance-stat">
+      <span class="balance-stat-icon balance-stat-icon--bike" aria-hidden="true">🛵</span>
+      <span class="balance-stat-copy"><small>Entregas hoje</small><strong id="homeTodayCount">0</strong></span>
+    </div>
+    <div class="balance-stat">
+      <span class="balance-stat-icon" aria-hidden="true">▤</span>
+      <span class="balance-stat-copy"><small>Ganhos no mês</small><strong id="homeMonthBalance">R$ 0,00</strong></span>
+    </div>
+  </section>
   <div id="pushBanner" class="panel-white courier-tech-internal" aria-hidden="true" inert role="status" aria-live="polite" hidden
     style="padding:13px 16px;margin:12px 0;border:1px solid #f0c48e;border-radius:14px;background:#fff9f2;display:none;flex-wrap:wrap;align-items:center;gap:10px">
     <span id="pushBannerText" style="flex:1;min-width:210px;font-size:13px">Verificando alertas de novas entregas...</span>
@@ -94,16 +113,30 @@ a.btn{text-decoration:none}
     <p id="pushQuickStatus" role="status" aria-live="polite" data-state="checking">Conferindo o Firebase e o cadastro do aparelho…</p>
     <small>Cadastro automático após login. Este botão não cria pedidos nem dispara som.</small>
   </section>
-  <div class="summary">
-    <div class="stat"><span class="stat-icon orange">↗</span><strong id="active">—</strong><span>Entregas em andamento</span></div>
-    <div class="stat"><span class="stat-icon green">✓</span><strong id="done">—</strong><span>Concluídas hoje</span></div>
+  <div class="dashboard-legacy-fields" aria-hidden="true">
+    <strong id="active">—</strong><strong id="done">—</strong>
   </div>
-
+  <nav class="delivery-bucket-nav" role="group" aria-label="Filtrar pedidos por etapa">
+    <button type="button" data-order-bucket="coleta" class="delivery-bucket-btn" aria-pressed="true">
+      <span class="bucket-icon" aria-hidden="true">🛵</span>
+      <span>Aguardando coleta <b id="bucketCollectCount">0</b></span>
+    </button>
+    <button type="button" data-order-bucket="andamento" class="delivery-bucket-btn" aria-pressed="false">
+      <span class="bucket-icon" aria-hidden="true">◷</span>
+      <span>Entregas em andamento <b id="bucketProgressCount">0</b></span>
+    </button>
+    <button type="button" data-order-bucket="concluidas" class="delivery-bucket-btn" aria-pressed="false">
+      <span class="bucket-icon" aria-hidden="true">✓</span>
+      <span>Entregas concluídas <b id="bucketCompletedCount">0</b></span>
+    </button>
+  </nav>
   <p id="notice" role="alert" aria-live="polite"></p>
-  <h2 class="section-title">Seus pedidos <span class="auto-pill">Atualiza automaticamente</span></h2>
-
-  <section id="cards" class="grid" aria-label="Pedidos atribuídos"><div class="empty">Carregando entregas...</div></section>
-  <p class="note-inline">Pedidos são atribuídos pela loja, sem necessidade de aceitar. Registre a chegada ao cliente antes de validar o código da entrega. Integração 99Food em homologação.</p>
+  <div class="delivery-bucket-summary" aria-live="polite">
+    <strong id="bucketTitle">Aguardando coleta</strong>
+    <span class="auto-pill">Atualiza automaticamente</span>
+  </div>
+  <section id="cards" class="grid courier-order-list" aria-label="Pedidos atribuídos"><div class="empty">Carregando entregas...</div></section>
+  <p class="note-inline dashboard-hint">Os pedidos são atribuídos pela loja e atualizados automaticamente. Conclusões exigem confirmação oficial do código.</p>
 </section>
 <section class="app-view" data-view="rotas" id="viewRotas" hidden>
   <div class="page-title"><span class="eyebrow">SUAS ENTREGAS</span><h1>Rotas</h1><p>Acompanhe sua moto, a loja e os destinos atribuídos.</p></div>
@@ -239,6 +272,7 @@ import {mountCourierSharedMap,freshGps} from "./dispatch-map.mjs";
 import {courierActionStage} from "./delivery-flow.mjs";
 import {arrivalProximity} from "./arrival-proximity.mjs";
 import {paymentSummaryPanel,courierCollectStep} from "./payment-ui.mjs";
+import {deliveryBucket,compactPaymentChip,safeFinishedToday} from "./compact-dashboard.mjs";
 import {pickupReminderType,showPickupReminder} from "./pickup-reminder.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
@@ -544,6 +578,7 @@ let lastHistoryRequest=0;
 
 let earnPeriod="hoje", earnRequest=0, lastEarningsReport=null;
 let storeName="Minha loja", navProvider="google", navMode="address", assignedDeliveries=[];
+let orderBucket="coleta", finishedToday=[], historyReady=false;
 let permittedStores=new Map();
 let assignmentAudio, assignmentBaseline, nativePushRegistered=false;
 let nativeTestPending=false, nativeTestTimeout=0;
@@ -695,7 +730,11 @@ function renderEarnings(report){
  const from=report.period_start?shortDate(report.period_start):"";
  const to=report.period_end?shortDate(report.period_end):"";
  $("earnRange").textContent=from&&to?(from===to?from:from+" – "+to):"Entregas concluídas";
+ $("homeTodayBalance").textContent=brl.format(numValue(report.today.amount));
+ $("homeTodayCount").textContent=String(Number(report.today.count??0));
+ $("homeMonthBalance").textContent=brl.format(numValue(report.month.amount));
  $("miniToday").textContent=brl.format(numValue(report.today.amount));
+ renderOrderBucketCounts();
  $("miniTodayCount").textContent=countLabel(Number(report.today.count??0));
  $("done").textContent=String(Number(report.today.count??0));
  renderDailyBreakdown(report);
@@ -953,6 +992,10 @@ async function loadSafeHistory(){
   if(key!==lastHistoryRequest)return;
   if(error||!Array.isArray(data))throw Error("Histórico indisponível");
   target.replaceChildren();
+  historyReady=true;
+  finishedToday=data.filter(item=>safeFinishedToday(item,dateKey(new Date())));
+  renderOrderBucketCounts();
+  if(orderBucket==="concluidas")renderOrderBucket();
   if(!data.length){target.append(element("div","earn-empty","Nenhuma entrega concluída."));return;}
   for(const x of data){
    const line=element("div","earn-history-item"),label=element("div");
@@ -969,7 +1012,11 @@ async function loadSafeHistory(){
    line.append(label,value);target.append(line);
   }
  }catch{
-  if(key===lastHistoryRequest)target.replaceChildren(element("div","earn-empty","Histórico protegido indisponível."));
+  if(key===lastHistoryRequest){
+   historyReady=false;
+   target.replaceChildren(element("div","earn-empty","Histórico protegido indisponível."));
+   if(orderBucket==="concluidas")renderOrderBucket();
+  }
  }
 }
 
@@ -1036,32 +1083,40 @@ function renderRouteSuggestions(deliveries){
  }
 }
 function card(d){
- const box=element("article","card card-modern");
+ const box=element("article","card card-modern compact-delivery-card");
  box.setAttribute("data-origin",d.source||"proprio");
  box.setAttribute("data-delivery-id",d.id);
- const opener=element("button","card-open");
+ const compact=element("div","compact-delivery-layout");
+ const details=element("div","compact-card-main");
+ const actionSlot=element("div","compact-card-action");
+ const stageExtras=element("div","compact-stage-extras");
+ const badge=orderCardBadges.get(d.id);
+ const number=String(badge?.public_number||"Aguardando número");
+ const opener=element("button","card-open compact-card-open");
  opener.type="button";
  opener.setAttribute("aria-label","Ver detalhes do pedido de "+(d.customer_name||"cliente"));
  opener.addEventListener("click",()=>orderDetails.open(d));
- const head=element("div","cardhead");
- const badge=orderCardBadges.get(d.id);
- const number=String(badge?.public_number||"Aguardando número");
- head.append(element("span","order",number==="Aguardando número"?"Número pendente":"Pedido #"+number));
- head.append(element("span","tag",statuses[d.status]||d.status||"Em andamento"));
- opener.append(head);
- const sourceLabels={proprio:"PITACCO",ifood:"iFood","99food":"99Food",keeta:"Keeta"};
- opener.append(element("span","card-platform",sourceLabels[d.source]||"Pedido da loja"));
- const originName=d.store_name||"Loja de origem";
- opener.append(element("span","card-store-label","LOJA • "+originName));
- const intro=element("div","card-customer-row");intro.append(element("div","customer",d.customer_name||"Cliente"));
- opener.append(intro);
-
- if(badge?.localizer)opener.append(element("span","card-localizer",
-   "LOCALIZADOR DE LIGAÇÃO • "+String(badge.localizer).replace(/\D/g,"").slice(0,16)));
- if(d.notes)opener.append(element("p","notes",d.notes));
- opener.append(element("span","card-detail-hint","Ver itens e contato  ↗"));
- box.append(opener);
- const addressRow=element("div","card-address-row");
+ const sourceLabels={proprio:"Loja",ifood:"iFood","99food":"99",keeta:"Keeta"};
+ const source=element("span","compact-source-badge",sourceLabels[d.source]||"Loja");
+ source.setAttribute("data-source",d.source||"proprio");
+ source.setAttribute("aria-label","Origem: "+(d.source==="99food"?"99Food":sourceLabels[d.source]||"Loja"));
+ const identity=element("span","compact-card-identity");
+ const top=element("span","compact-card-topline");
+ const num=element("strong","compact-order-number",number==="Aguardando número"?"Número pendente":"#"+number);
+ top.append(num);
+ if(d.created_at){
+  const when=new Date(d.created_at);
+  if(Number.isFinite(when.getTime()))top.append(element("small","compact-order-time",
+   when.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",timeZone:"America/Sao_Paulo"})));
+ }
+ identity.append(top);
+ identity.append(element("span","compact-customer",d.customer_name||"Cliente"));
+ if(permittedStores.size>1)identity.append(element("small","compact-store","LOJA • "+(d.store_name||"Loja de origem")));
+ if(d.notes)identity.append(element("small","compact-note-flag","• Observações no detalhe"));
+ opener.append(source,identity);
+ details.append(opener);
+ const addressRow=element("div","card-address-row compact-address-row");
+ addressRow.append(element("span","compact-address-pin","⌖"));
  addressRow.append(element("p","address",d.address||"Endereço não informado"));
  const routeUrl=buildNavigationUrl(d,navProvider,navMode);
  if(routeUrl){
@@ -1071,14 +1126,20 @@ function card(d){
   route.setAttribute("data-route-delivery",d.id);
   addressRow.append(route);
  }
- box.append(addressRow);
+ details.append(addressRow);
  const payment=paymentOf(d);
- box.append(paymentSummaryPanel(payment));
+ const paymentSlot=element("div","compact-card-payment");
+ paymentSlot.append(compactPaymentChip(payment));
+ compact.append(details,paymentSlot,actionSlot);
  // O cartão exibe somente a ação que corresponde à etapa atual.
  const stage=courierActionStage(d);
  const actions=element("div","actions");
  const collecting=stage==="collect";
- if(collecting)actions.append(createAction("Coletar pedido","primary",()=>requestCourierPickup(d)));
+ if(collecting){
+  const collectButton=createAction("Coletar","primary",()=>requestCourierPickup(d));
+  collectButton.setAttribute("aria-label","Coletar pedido");
+  actions.append(collectButton);
+ }
  if(stage==="depart"&&d.source==="ifood"&&d.logistics_provider==="loja"){
   const syncTools=element("details","courier-secondary-tools");
   syncTools.append(element("summary","","Problemas ao sincronizar com iFood?"));
@@ -1092,7 +1153,7 @@ function card(d){
    }catch(err){message(String(err?.message||"Não foi possível sincronizar o despacho"))}
    finally{busy=false}
   }));
-  box.append(syncTools);
+  stageExtras.append(syncTools);
  }
  if(stage==="depart")
   actions.append(createAction("Sair para entrega","primary",()=>d.batch_id
@@ -1101,21 +1162,21 @@ function card(d){
  if(stage==="arrive"||stage==="code"){
   if(stage==="arrive"){
    const closeToCustomer=nearbyArrival?.deliveryId===d.id;
-   if(closeToCustomer)box.append(element("p","arrival-nearby",
+   if(closeToCustomer)stageExtras.append(element("p","arrival-nearby",
      "📍 Localização do cliente identificada (aprox. "+nearbyArrival.distanceMeters+" m). Confirme sua chegada."));
    actions.append(createAction(closeToCustomer?"Confirmar chegada":"Cheguei na entrega","primary",()=>markArrival(d)));
-   box.append(element("p","note-inline","Chegar não é o mesmo que entregar. O código só pode ser validado após registrar a chegada."));
+   stageExtras.append(element("p","note-inline","Chegar não é o mesmo que entregar. O código só pode ser validado após registrar a chegada."));
   }else{
    const arrivalTime=new Date(d.arrived_at).toLocaleTimeString("pt-BR",{
     timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit"
    });
-   box.append(element("p","arrival-record","✓ Chegada registrada às "+arrivalTime));
+   stageExtras.append(element("p","arrival-record","✓ Chegada registrada às "+arrivalTime));
    const synced=d.source==="ifood"&&(d.arrival_provider_state==="submitted"||d.arrival_provider_state==="confirmed");
    const statusText=d.source==="ifood"?
     (synced?"Chegada enviada ao iFood.":"Aviso ao iFood ainda pendente ou indisponível."):
     (d.source==="99food"?"Aviso à 99Food ainda não homologado.":
      d.source==="keeta"?"Aviso à Keeta ainda não homologado.":"Peça o código de seis dígitos ao cliente.");
-   box.append(element("p","arrival-provider",statusText));
+   stageExtras.append(element("p","arrival-provider",statusText));
    if(d.source==="ifood"&&!synced){
     const arrivalTools=element("details","courier-secondary-tools");
     arrivalTools.append(element("summary","","Problemas ao avisar o iFood?"));
@@ -1126,10 +1187,10 @@ function card(d){
        await refresh();
      }catch(error){message(String(error.message))}finally{busy=false}
     }));
-    box.append(arrivalTools);
+    stageExtras.append(arrivalTools);
    }
    if(payment.state==="collect"){
-    box.append(courierCollectStep(payment,()=>confirmCourierCollection(d)));
+    stageExtras.append(courierCollectStep(payment,()=>confirmCourierCollection(d)));
    }else if(d.source==="proprio"||d.source==="ifood"){
     const verify=element("section","card-verify-block");
     verify.append(element("strong","card-verify-title","Confirmar entrega"));
@@ -1195,16 +1256,82 @@ function card(d){
      verify.append(element("p","card-verify-help",
       "O Pitacco retira o pedido automaticamente após receber a confirmação oficial do iFood. Não é necessário atualizar manualmente."));
     }
-    box.append(verify);
+    stageExtras.append(verify);
    }
    if(d.source==="99food"||d.source==="keeta"){
-    box.append(element("p","warn","A validação do código da plataforma ainda depende de homologação. Não finalize manualmente. A coleta e a chegada permanecem registradas no Pitacco."));
+    stageExtras.append(element("p","warn","A validação do código da plataforma ainda depende de homologação. Não finalize manualmente. A coleta e a chegada permanecem registradas no Pitacco."));
    }
   }
  }
- if(actions.children.length)box.append(actions);
+ if(actions.children.length)actionSlot.append(actions);
+ box.append(compact);
+ if(stageExtras.children.length)box.append(stageExtras);
  return box;
 }
+
+
+function renderOrderBucketCounts(){
+ const pending=assignedDeliveries.filter(d=>deliveryBucket(d)==="coleta").length;
+ const progress=assignedDeliveries.filter(d=>deliveryBucket(d)==="andamento").length;
+ const complete=lastEarningsReport?Number(lastEarningsReport.today?.count||0):finishedToday.length;
+ $("bucketCollectCount").textContent=String(pending);
+ $("bucketProgressCount").textContent=String(progress);
+ $("bucketCompletedCount").textContent=String(complete);
+ for(const button of document.querySelectorAll("[data-order-bucket]"))
+  button.setAttribute("aria-pressed",String(button.dataset.orderBucket===orderBucket));
+ $("bucketTitle").textContent={
+   coleta:"Aguardando coleta",andamento:"Entregas em andamento",concluidas:"Entregas concluídas"
+ }[orderBucket]||"Pedidos";
+}
+function renderFinishedCompact(x){
+ const item=element("article","compact-finished-card");
+ const source=element("span","finished-icon","✓");
+ const summary=element("div","finished-copy");
+ summary.append(element("strong","",String(x.number||"Número indisponível")==="Número indisponível"
+  ?"Pedido concluído":"Pedido #"+String(x.number).slice(0,28)));
+ // A função de histórico retorna identificação e endereço resumidos, nunca os dados brutos.
+ summary.append(element("small","",String(x.initial||"C.")+" • "+String(x.address_hint||"Endereço resumido")));
+ const clock=x.finished_at||x.completed_at;
+ if(clock){
+  const day=new Date(clock);
+  if(Number.isFinite(day.getTime()))summary.append(element("small","",
+   "Concluída às "+day.toLocaleTimeString("pt-BR",{timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit"})));
+ }
+ const amount=element("div","finished-income");
+ amount.append(element("span","","Ganho"),element("strong","",brl.format(numValue(x.amount))));
+ item.append(source,summary,amount);
+ return item;
+}
+function renderOrderBucket(){
+ renderOrderBucketCounts();
+ const target=$("cards");target.replaceChildren();
+ if(orderBucket==="concluidas"){
+  if(!historyReady){
+   target.append(element("div","bucket-empty","Carregando histórico protegido das entregas concluídas..."));
+   return;
+  }
+  if(!finishedToday.length){
+   target.append(element("div","bucket-empty","Nenhuma entrega concluída hoje."));
+   return;
+  }
+  for(const result of finishedToday)target.append(renderFinishedCompact(result));
+  return;
+ }
+ const selected=assignedDeliveries.filter(d=>deliveryBucket(d)===orderBucket);
+ if(!selected.length){
+  target.append(element("div","bucket-empty",orderBucket==="coleta"
+   ?"Nenhum pedido aguardando coleta.":"Nenhuma entrega em andamento."));
+  return;
+ }
+ for(const delivery of selected.slice(0,50))target.append(card(delivery));
+}
+document.querySelectorAll("[data-order-bucket]").forEach(button=>button.addEventListener("click",()=>{
+ const next=button.dataset.orderBucket;
+ if(!["coleta","andamento","concluidas"].includes(next))return;
+ orderBucket=next;
+ renderOrderBucket();
+}));
+$("homeBalanceLink").addEventListener("click",()=>switchView("ganhos"));
 
 function courierMapStatus(){
  if(!sharedCourierMap)return;
@@ -1287,7 +1414,8 @@ async function refreshSnapshot(){
  $("availability").textContent=courier.available?"Você está online":"Você está offline";
  $("onlineDot").classList.toggle("online",!!courier.available);
  $("availableHelp").textContent=courier.available?"Você pode receber pedidos da loja.":"Ative sua disponibilidade para receber pedidos.";
- $("online").textContent=courier.available?"Ficar offline":"Ficar online";
+ $("online").textContent=courier.available?"Online":"Offline";
+ $("online").setAttribute("aria-label",courier.available?"Ficar offline":"Ficar online");
  $("online").disabled=navigator.onLine===false;
  if(!gpsAutoChecked&&window.PitaccoGps?.postMessage){
   gpsAutoChecked=true;
@@ -1332,13 +1460,7 @@ async function refreshSnapshot(){
  nearbyArrival=arrivalProximity(current,mapLastGps,arrivalSignals);
  if(!document.querySelector(".app-view[data-view=rotas]")?.hidden)mountCourierMapIfNeeded();
  renderRouteSuggestions(current);
- const target=$("cards");target.replaceChildren();
- if(!current.length){
-  const empty=element("div","empty");
-  empty.append(element("div","empty-icon","✓"),element("h3","","Tudo entregue!"),
-    element("p","","Novos pedidos aparecerão aqui automaticamente assim que a loja atribuir."));
-  target.append(empty);
- }else for(const d of current.slice(0,50))target.append(card(d));
+ renderOrderBucket();
  await Promise.all([loadEarnings(),loadSafeHistory()]);
 }
 let nativeFirebaseUnavailable=false;
