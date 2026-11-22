@@ -190,7 +190,7 @@ declare
  already_qty integer:=0;
  v_known numeric(18,2):=0;
  v_missing integer:=0;
- r record;
+ v_recipe record;
  v_original numeric;
  v_already_restored numeric;
 begin
@@ -239,7 +239,7 @@ begin
  end if;
  -- Impede restaurar mais do que foi originalmente debitado, inclusive
  -- quando bebidas diferentes compartilham o MESMO insumo.
- for r in
+ for v_recipe in
    select ingredient_id,quantity_per_unit from public.pitacco_cancel_beverage_recipe
    where order_id=p_order and store_id=p_store and product_id=p_product
    order by ingredient_id
@@ -247,15 +247,15 @@ begin
    select coalesce(-sum(quantity),0) into v_original
    from public.pitacco_stock_movements
    where order_id=p_order and store_id=p_store
-     and ingredient_id=r.ingredient_id and quantity<0;
+     and ingredient_id=v_recipe.ingredient_id and quantity<0;
    select coalesce(sum(ret.returned_quantity*recipe.quantity_per_unit),0)
     into v_already_restored
    from public.pitacco_cancel_beverage_returns ret
    join public.pitacco_cancel_beverage_recipe recipe
      on recipe.order_id=ret.order_id and recipe.store_id=ret.store_id
-      and recipe.product_id=ret.product_id and recipe.ingredient_id=r.ingredient_id
+      and recipe.product_id=ret.product_id and recipe.ingredient_id=v_recipe.ingredient_id
    where ret.order_id=p_order and ret.store_id=p_store;
-   if v_original<=0 or v_already_restored+r.quantity_per_unit*p_quantity>v_original then
+   if v_original<=0 or v_already_restored+v_recipe.quantity_per_unit*p_quantity>v_original then
      raise exception 'Devolução maior que o consumo original'
       using errcode='22023';
    end if;
