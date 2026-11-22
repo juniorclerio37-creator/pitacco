@@ -1,49 +1,58 @@
 import React,{useCallback,useEffect,useRef,useState} from 'react';
+import {Users,Gift,Ticket,Megaphone,RefreshCw,UserPlus,Coins,ArrowRight,ExternalLink,ShieldCheck,Smartphone,X,Search} from 'lucide-react';
+import './fideliza.css';
 const money=cents=>(Number(cents||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const defaults={points_enabled:false,points_per_real:1,min_points_to_redeem:100,points_reward_cents:1000,orders_enabled:false,orders_required:10,orders_reward_cents:1000,coupons_enabled:true,campaigns_enabled:false,cashback_enabled:false,cashback_percent:0,cashback_max_redeem_percent:50,referrals_enabled:false,referral_reward_cents:0,referral_welcome_cents:0,minimum_order_cents:0};
-const tabs=['Visão geral','Clientes e pontos','Cupons','Campanhas','Cashback','Indique e ganhe'];
-const sections=[['points_enabled','Pontos'],['orders_enabled','Recompensa por pedidos'],['coupons_enabled','Cupons'],['campaigns_enabled','Campanhas'],['cashback_enabled','Cashback'],['referrals_enabled','Indicações']];
+
 const dateValue=value=>value?new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo'}).format(new Date(value)):'';
 export default function Fideliza({client,storeId,manager}){
  const [section,setSection]=useState('Visão geral'),[program,setProgram]=useState(defaults),[coupons,setCoupons]=useState([]),[customers,setCustomers]=useState([]);
  const [ready,setReady]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[editing,setEditing]=useState(null),[recovered,setRecovered]=useState(null);
- const version=useRef(0);
+ const version=useRef(0),dialogRef=useRef(null),openerRef=useRef(null);
+ const [savedProgram,setSavedProgram]=useState(defaults),[filter,setFilter]=useState('Todos'),[customerQuery,setCustomerQuery]=useState(''),[menuLink,setMenuLink]=useState(''),[used,setUsed]=useState(null),[statsError,setStatsError]=useState(''),[offerDirty,setOfferDirty]=useState(false);
  const refresh=useCallback(async()=>{
   if(!storeId||!manager)return;
   const request=++version.current;setLoading(true);setError('');
   try{
-   const [p,c,people]=await Promise.all([
+   const [p,c,people,menu,redemptions]=await Promise.all([
     client.from('loyalty_programs').select('*').eq('store_id',storeId).maybeSingle(),
     client.from('loyalty_coupons').select('*').eq('store_id',storeId).neq('kind','reward').order('created_at',{ascending:false}),
-    client.rpc('pitacco_loyalty_customers',{p_store:storeId})]);
+    client.rpc('pitacco_loyalty_customers',{p_store:storeId}),
+    client.from('public_menu_settings').select('slug,enabled').eq('store_id',storeId).maybeSingle(),
+    client.from('loyalty_coupon_redemptions').select('id',{count:'exact',head:true}).eq('store_id',storeId).eq('state','completed')]);
    if(p.error)throw p.error;if(c.error)throw c.error;if(people.error)throw people.error;
    if(request!==version.current)return;
-   setReady(true);setProgram({...defaults,...p.data});setCoupons(c.data||[]);setCustomers(people.data||[]);
+   setReady(true);setProgram({...defaults,...p.data});setSavedProgram({...defaults,...p.data});
+   setMenuLink(!menu.error&&menu.data?.enabled&&/^[a-z0-9][a-z0-9-]{2,59}$/.test(menu.data.slug)?'https://pitacco.com.br/'+menu.data.slug:'');
+   setUsed(redemptions.error?null:redemptions.count);setStatsError(redemptions.error?'Não foi possível atualizar os benefícios utilizados.':'');setCoupons(c.data||[]);setCustomers(people.data||[]);
   }catch(e){if(request===version.current)setError(e.message||String(e))}finally{if(request===version.current)setLoading(false)}
  },[client,storeId,manager]);
- useEffect(()=>{setReady(false);setProgram(defaults);setMessage('');setEditing(null);setRecovered(null);setCoupons([]);setCustomers([]);void refresh();return()=>{version.current++}},[refresh]);
+ useEffect(()=>{setSection('Visão geral');setMenuLink('');setUsed(null);setReady(false);setProgram(defaults);setMessage('');setEditing(null);setRecovered(null);setCoupons([]);setCustomers([]);void refresh();return()=>{version.current++}},[refresh]);
  useEffect(()=>{
   if(!storeId||!manager)return;let active=true;
   const timer=setInterval(async()=>{
    if(document.hidden)return;
-   try{const {data,error}=await client.rpc('pitacco_loyalty_customers',{p_store:storeId});
-    if(active&&!error)setCustomers(data||[]);
+   try{const [{data,error},counts]=await Promise.all([client.rpc('pitacco_loyalty_customers',{p_store:storeId}),client.from('loyalty_coupon_redemptions').select('id',{count:'exact',head:true}).eq('store_id',storeId).eq('state','completed')]);
+    if(active&&!error)setCustomers(data||[]);if(active&&!counts.error)setUsed(counts.count);
    }catch{}
   },30000);
   return()=>{active=false;clearInterval(timer)};
  },[client,storeId,manager]);
  const update=(key,value)=>setProgram(old=>({...old,[key]:value}));
- async function saveProgram(e){
-  e.preventDefault();if(loading)return;setLoading(true);setError('');setMessage('');
+ async function persistProgram(values,close=false){
+  if(loading||!ready)return false;setLoading(true);setError('');setMessage('');
   try{
    const data={store_id:storeId,updated_at:new Date().toISOString()};
-   for(const key of Object.keys(defaults))data[key]=typeof defaults[key]==='boolean'?!!program[key]:Number(program[key]);
+   for(const key of Object.keys(defaults))data[key]=typeof defaults[key]==='boolean'?!!values[key]:Number(values[key]);
    if(data.cashback_enabled&&data.cashback_percent<=0)throw Error('Informe o percentual de cashback antes de ativar.');
-   if(data.referrals_enabled&&data.referral_reward_cents+data.referral_welcome_cents<=0)throw Error('Configure o crédito da indicação antes de ativar.');
+   if(data.referrals_enabled&&data.referral_reward_cents+data.referral_welcome_cents<=0)throw Error('Configure os créditos da indicação antes de ativar.');
    const {error}=await client.from('loyalty_programs').upsert(data,{onConflict:'store_id'});if(error)throw error;
-   setMessage('Regras salvas e disponíveis no cardápio. Novos pedidos usarão estas regras.');
-  }catch(e){setError(e.message||String(e))}finally{setLoading(false)}
+   setProgram({...defaults,...data});setSavedProgram({...defaults,...data});
+   setMessage('Regras salvas. Os benefícios já estão disponíveis conforme a ativação da loja.');
+   if(close)closeDrawer(true,data);return true;
+  }catch(e){setError(e.message||String(e));return false}finally{setLoading(false)}
  }
+ function saveProgram(e){e.preventDefault();void persistProgram(program,!['Cupons','Campanhas'].includes(section));}
  async function saveCoupon(e){
   e.preventDefault();if(loading)return;const form=e.currentTarget,f=new FormData(form);setLoading(true);setError('');setMessage('');
   try{
@@ -58,7 +67,7 @@ export default function Fideliza({client,storeId,manager}){
    if(row.starts_at&&row.expires_at&&row.expires_at<=row.starts_at)throw Error('O fim deve ser posterior ao início.');
    const result=editing?await client.from('loyalty_coupons').update(row).eq('id',editing.id).eq('store_id',storeId):await client.from('loyalty_coupons').insert({...row,code});
    if(result.error)throw result.error;
-   form.reset();setEditing(null);setMessage('Oferta salva. Quando a modalidade estiver ativa, poderá ser usada no cardápio.');await refresh();
+   form.reset();setOfferDirty(false);setEditing(null);setMessage('Oferta salva. Quando a modalidade estiver ativa, poderá ser usada no cardápio.');await refresh();
   }catch(e){setError(e.message||String(e))}finally{setLoading(false)}
  }
  async function toggleCoupon(c){
@@ -80,27 +89,85 @@ export default function Fideliza({client,storeId,manager}){
   setLoading(true);setError('');setRecovered(null);
   try{const {data,error}=await client.rpc('pitacco_loyalty_reset_key',{p_store:storeId,p_customer:c.id});if(error)throw error;setRecovered({name:c.name,key:data})}catch(e){setError(e.message||String(e))}finally{setLoading(false)}
  }
- const toggle=(key,label)=><label className="toggle"><input type="checkbox" checked={!!program[key]} onChange={e=>update(key,e.target.checked)}/>{label}</label>;
- const number=(key,label,min,max,step=1)=><label className="field">{label}<input type="number" min={min} max={max} step={step} required value={program[key]} onChange={e=>update(key,e.target.value)}/></label>;
+ function openDrawer(name,opener,draft=savedProgram){
+  openerRef.current=opener;setProgram({...defaults,...draft});setEditing(null);setRecovered(null);setOfferDirty(false);setError('');setMessage('');setSection(name);
+ }
+ function closeDrawer(force=false,values=savedProgram){
+  if(loading&&!force)return;
+  const changed=Object.keys(defaults).some(key=>String(program[key])!==String(savedProgram[key]));
+  if(!force&&(changed||offerDirty)&&!window.confirm('Descartar as alterações que ainda não foram salvas?'))return;
+  setProgram({...defaults,...values});setSection('Visão geral');setEditing(null);setRecovered(null);setOfferDirty(false);
+ }
+ useEffect(()=>{
+  const dialog=dialogRef.current;if(!dialog)return;
+  if(section!=='Visão geral'&&!dialog.open)dialog.showModal();
+  if(section==='Visão geral'&&dialog.open){dialog.close();if(openerRef.current?.isConnected)openerRef.current.focus();}
+ },[section]);
+ async function toggleCard(card,opener){
+  if(loading||!ready)return;
+  const next={...savedProgram};
+  if(card.id==='points'){const enabled=savedProgram.points_enabled||savedProgram.orders_enabled;next.points_enabled=!enabled;if(enabled)next.orders_enabled=false;}
+  else next[card.key]=!savedProgram[card.key];
+  if((card.id==='cashback'&&next.cashback_enabled&&Number(next.cashback_percent)<=0)||
+    (card.id==='referral'&&next.referrals_enabled&&Number(next.referral_reward_cents)+Number(next.referral_welcome_cents)<=0)){
+   openDrawer(card.section,opener,next);return;
+  }
+  await persistProgram(next);
+ }
+ const toggle=(key,label)=><label className="fl-setting-toggle"><span>{label}</span><input type="checkbox" checked={!!program[key]} onChange={e=>update(key,e.target.checked)}/></label>;
+ const number=(key,label,min,max,step=1)=>{
+  const currency=key.endsWith('_cents');
+  return <label className="field">{label}<input type="number" min={currency?min/100:min} max={currency?max/100:max} step={currency ? 0.01 : step} required
+   value={program[key]===''?'':currency?Number(program[key])/100:program[key]}
+   onChange={e=>update(key,e.target.value===''?'':currency?Math.round(Number(e.target.value)*100):e.target.value)}/></label>;
+ };
  const sectionKind=section==='Campanhas'?'campaign':'coupon';
+ const availableOffers=kind=>coupons.filter(c=>c.kind===kind&&c.active&&(!c.starts_at||Date.parse(c.starts_at)<=Date.now())&&(!c.expires_at||Date.parse(c.expires_at)>Date.now())&&(!c.max_uses||c.uses<c.max_uses)).length;
+ const cards=[
+  {id:'points',title:'Pontos e recompensas',section:'Clientes e pontos',icon:Gift,color:'amber',description:'Recompense cada compra do cliente.',extra:'Pontos ou quantidade de pedidos',active:!!(savedProgram.points_enabled||savedProgram.orders_enabled),summary:savedProgram.points_enabled?`${savedProgram.points_per_real} ponto(s) por R$ 1 • ${savedProgram.min_points_to_redeem} pontos = ${money(savedProgram.points_reward_cents)}`:savedProgram.orders_enabled?`${savedProgram.orders_required} pedidos = ${money(savedProgram.orders_reward_cents)}`:'Defina pontos ou recompensa por pedidos'},
+  {id:'coupons',key:'coupons_enabled',title:'Cupons',section:'Cupons',icon:Ticket,color:'green',description:'Crie ofertas para todos ou clientes específicos.',active:!!savedProgram.coupons_enabled,summary:`${availableOffers('coupon')} cupom(ns) disponível(is)`},
+  {id:'campaigns',key:'campaigns_enabled',title:'Campanhas',section:'Campanhas',icon:Megaphone,color:'gray',description:'Divulgue ofertas com início e fim definidos.',active:!!savedProgram.campaigns_enabled,summary:savedProgram.campaigns_enabled&&availableOffers('campaign')?`${availableOffers('campaign')} campanha(s) ativa(s)`:'Nenhuma campanha ativa'},
+  {id:'cashback',key:'cashback_enabled',title:'Cashback',section:'Cashback',icon:RefreshCw,color:'green',description:'Devolva parte da compra em créditos.',active:!!savedProgram.cashback_enabled,summary:savedProgram.cashback_enabled?`${savedProgram.cashback_percent}% de volta • uso de até ${savedProgram.cashback_max_redeem_percent}% do pedido`:'Defina o percentual e o limite de uso'},
+  {id:'referral',key:'referrals_enabled',title:'Indique e ganhe',section:'Indique e ganhe',icon:UserPlus,color:'purple',description:'Incentive clientes a trazer novos participantes.',active:!!savedProgram.referrals_enabled,summary:savedProgram.referrals_enabled?`${money(savedProgram.referral_reward_cents)} para quem indica • ${money(savedProgram.referral_welcome_cents)} para o novo cliente`:'Defina os créditos para cada participante'},
+  {id:'customers',title:'Clientes e carteiras',section:'Clientes e carteiras',icon:Users,color:'blue',description:'Acompanhe saldos e histórico de benefícios.',management:true,summary:'Consulte pontos, pedidos e créditos.'}
+ ];
+ const drawerTitle=section==='Clientes e pontos'?'Pontos e recompensas':section;
+ const shownCustomers=customers.filter(c=>(c.name+' '+c.phone).toLocaleLowerCase('pt-BR').includes(customerQuery.toLocaleLowerCase('pt-BR')));
+ const creditTotal=customers.reduce((sum,c)=>sum+Math.max(0,Number(c.cashback_cents)||0),0);
+ const publicLink=(label,primary=false)=>menuLink?<a className={primary?'fl-button fl-button--primary':'fl-button'} href={menuLink} target="_blank" rel="noopener noreferrer">{!primary&&<ExternalLink size={17}/>} {label}</a>:<button className={primary?'fl-button fl-button--primary':'fl-button'} disabled title="Ative o cardápio digital da loja para visualizar.">{label}</button>;
  if(!manager)return <section className="panel"><h2>Fideliza+</h2><p>Somente gestores podem administrar os benefícios da loja.</p></section>;
  return <section aria-label="Fideliza+" className="loyalty-page" aria-busy={loading}>
-  <header><h2>Fideliza+</h2><p>Escolha as modalidades da sua loja. O cliente consulta e resgata os benefícios diretamente no cardápio.</p></header>
-  <div className="quick-actions" role="tablist" aria-label="Seções do Fideliza+">{tabs.map(t=><button type="button" key={t} role="tab" aria-selected={section===t} className={section===t?'':'secondary'} onClick={()=>{setSection(t);setEditing(null);setRecovered(null)}}>{t}</button>)}</div>
-  {error&&<p role="alert" className="notice error">{error}</p>}{message&&<p role="status" className="notice">{message}</p>}
-  <p className="hint">Créditos são liberados após entrega e pagamento confirmados, sobre os produtos após descontos, sem frete. Cancelamentos revertem os lançamentos. Resgates são descontos, não saque em dinheiro. A loja preserva o controle de quais modalidades ativar.</p>
-  {section==='Visão geral'&&<form className="panel" onSubmit={saveProgram}><h3>Modalidades da loja</h3>{sections.map(([key,label])=><React.Fragment key={key}>{toggle(key,label)}</React.Fragment>)}
-   {number('minimum_order_cents','Valor mínimo dos produtos para acumular (centavos)',0,1000000)}<p className="hint">Configure os valores de cashback e indicações nas respectivas abas antes de ativá-los. As regras valem para pedidos novos.</p><button disabled={loading||!ready}>Salvar modalidades</button></form>}
+  <div className="fl-heading"><div><div className="fl-breadcrumb">Relacionamento <span>/</span> <strong>Fideliza+</strong></div><h2>Transforme compras em novas visitas</h2><p>Escolha os benefícios que combinam com a sua loja.</p></div>{publicLink('Ver no cardápio')}</div>
+  <div className="fl-metrics" aria-label="Resumo do Fideliza+">
+   {[{label:'Clientes participantes',value:ready?customers.length:'—',icon:Users},{label:'Benefícios utilizados',value:used??'—',icon:Gift},{label:'Créditos disponíveis',value:ready?money(creditTotal):'—',icon:Coins}].map(metric=><article className="fl-metric" key={metric.label}><span className="fl-metric-icon"><metric.icon size={27}/></span><div><span>{metric.label}</span><strong>{metric.value}</strong></div></article>)}
+  </div>
+  {statsError&&<p className="fl-inline-notice" role="status">{statsError}<button type="button" onClick={()=>void refresh()} disabled={loading}>Atualizar</button></p>}
+  {section==='Visão geral'&&error&&<p role="alert" className="fl-feedback fl-feedback--error">{error}</p>}{section==='Visão geral'&&message&&<p role="status" className="fl-feedback">{message}</p>}
+  <div className="fl-section-heading"><h3>Benefícios da sua loja</h3><select aria-label="Filtrar benefícios" value={filter} onChange={e=>setFilter(e.target.value)}><option>Todos</option><option>Ativos</option><option>Inativos</option></select></div>
+  <div className="fl-benefits">
+   {cards.filter(card=>filter==='Todos'||!card.management&&(filter==='Ativos'?card.active:!card.active)).map(card=><article className={'fl-benefit fl-benefit--'+card.color} key={card.id} aria-label={card.title}>
+    <div className="fl-card-main"><span className="fl-card-icon"><card.icon size={29}/></span><div className="fl-card-copy"><span className={'fl-badge '+(card.management?'fl-badge--management':card.active?'fl-badge--active':'fl-badge--inactive')}>{card.management?'Gestão':card.active?'Ativo':'Inativo'}</span><h4>{card.title}</h4><p>{card.description}</p>{card.extra&&<small>{card.extra}</small>}</div>
+     {!card.management&&<button type="button" className="fl-switch" role="switch" aria-label={'Ativar '+card.title} aria-checked={card.active} disabled={loading||!ready} onClick={event=>void toggleCard(card,event.currentTarget)}><span/></button>}
+    </div><div className="fl-card-rule"><card.icon size={18}/><span>{card.summary}</span></div>
+    <button type="button" className="fl-configure" disabled={loading||!ready} onClick={event=>openDrawer(card.section,event.currentTarget)}>{card.management?'Ver clientes':'Configurar'}<ArrowRight size={18}/></button>
+   </article>)}
+  </div>
+  <div className="fl-bottom"><div className="fl-trust"><ShieldCheck size={32}/><div><strong>Benefícios liberados após pagamento e entrega confirmados.</strong><p>Cada loja escolhe suas regras. Cancelamentos revertem os lançamentos.</p></div></div><div className="fl-preview"><span className="fl-preview-icon"><Smartphone size={29}/></span><div><strong>No cardápio do cliente</strong><p>Seus benefícios aparecem em Meu Fideliza+.</p></div>{publicLink('Pré-visualizar',true)}</div></div>
+  <dialog ref={dialogRef} className="fl-dialog" aria-labelledby="fl-drawer-title" onCancel={event=>{event.preventDefault();closeDrawer()}} onClick={event=>{if(event.target===dialogRef.current)closeDrawer()}}>
+   <div className="fl-drawer-inner"><header className="fl-drawer-heading"><div><span>Fideliza+ / Configuração</span><h2 id="fl-drawer-title">{drawerTitle}</h2><p>Defina os benefícios que seus clientes verão no cardápio.</p></div><button type="button" className="fl-close" aria-label="Fechar configuração" disabled={loading} onClick={()=>closeDrawer()}><X size={23}/></button></header>
+    <div className="fl-drawer-content">{error&&<p role="alert" className="fl-feedback fl-feedback--error">{error}</p>}{message&&<p role="status" className="fl-feedback">{message}</p>}
   {section==='Clientes e pontos'&&<><form className="panel" onSubmit={saveProgram}><h3>Pontos e recompensa por pedidos</h3>
    {toggle('points_enabled','Ativar pontos')}{number('points_per_real','Pontos por R$ 1 em produtos',0,1000,.01)}
-   {number('min_points_to_redeem','Pontos necessários para um resgate',1,10000000)}{number('points_reward_cents','Desconto do resgate (centavos)',1,1000000)}
-   {toggle('orders_enabled','Ativar recompensa por quantidade de pedidos')}{number('orders_required','Pedidos para um resgate',1,1000)}{number('orders_reward_cents','Desconto da recompensa por pedidos (centavos)',1,1000000)}
+   {number('min_points_to_redeem','Pontos necessários para um resgate',1,10000000)}{number('points_reward_cents','Desconto do resgate (R$)',1,1000000)}
+   {toggle('orders_enabled','Ativar recompensa por quantidade de pedidos')}{number('orders_required','Pedidos para um resgate',1,1000)}{number('orders_reward_cents','Desconto da recompensa por pedidos (R$)',1,1000000)}
+   {number('minimum_order_cents','Compra mínima para acumular (R$)',0,1000000)}
    <p className="hint">Um pedido pago e entregue acumula uma participação. O resgate desconta a quantidade configurada; o saldo restante é preservado.</p><button disabled={loading||!ready}>Salvar regras de pontos</button></form>
-   <div className="panel"><h3>Clientes e carteiras</h3>{!customers.length&&<p>Os clientes aparecerão após aderirem ao Fideliza+ pelo cardápio.</p>}{customers.map(c=><div className="line" key={c.id}><b>{c.name}</b><span>{c.phone} · {c.points} pontos · {c.orders} pedidos · Créditos {money(c.cashback_cents)}</span><button className="secondary" disabled={loading||!ready} onClick={()=>resetKey(c)}>Recuperar acesso</button></div>)}
+   </>}
+  {section==='Clientes e carteiras'&&<><label className="fl-customer-search"><Search size={18}/><input aria-label="Buscar cliente" placeholder="Buscar por nome ou telefone" value={customerQuery} onChange={e=>setCustomerQuery(e.target.value)}/></label><div className="panel"><h3>Clientes e carteiras</h3>{!customers.length&&<p>Os clientes aparecerão após aderirem ao Fideliza+ pelo cardápio.</p>}{shownCustomers.map(c=><div className="line" key={c.id}><b>{c.name}</b><span>{c.phone} · {c.points} pontos · {c.orders} pedidos · Créditos {money(c.cashback_cents)}</span><button className="secondary" disabled={loading||!ready} onClick={()=>resetKey(c)}>Recuperar acesso</button></div>)}
    {recovered&&<div role="status"><p>Nova chave de {recovered.name}. Entregue somente ao cliente após conferir a identidade.</p><input aria-label="Nova chave pessoal" readOnly value={recovered.key} onFocus={e=>e.target.select()}/><button type="button" onClick={()=>setRecovered(null)}>Ocultar chave</button></div>}</div></>}
   {['Cupons','Campanhas'].includes(section)&&<>
    <form className="panel" onSubmit={saveProgram}>{toggle(section==='Campanhas'?'campaigns_enabled':'coupons_enabled','Ativar '+section.toLowerCase()+' no cardápio')}<button disabled={loading||!ready}>Salvar ativação</button></form>
-   <form className="panel" key={editing?.id||section} onSubmit={saveCoupon}><h3>{editing?'Editar oferta':section==='Campanhas'?'Criar campanha':'Criar cupom'}</h3>
+   <form className="panel" key={editing?.id||section} onChangeCapture={()=>setOfferDirty(true)} onSubmit={saveCoupon}><h3>{editing?'Editar oferta':section==='Campanhas'?'Criar campanha':'Criar cupom'}</h3>
     <label className="field">Nome da oferta<input name="title" maxLength={120} required={section==='Campanhas'} defaultValue={editing?.title||''}/></label>
     <label className="field">Código<input name="code" maxLength={32} required disabled={!!editing} defaultValue={editing?.code||''} placeholder="VOLTE10"/></label>
     <label className="field">Tipo<select aria-label="Tipo do desconto" name="discount_type" defaultValue={editing?.discount_type||'percent'}><option value="percent">Porcentagem (%)</option><option value="fixed">Valor fixo (R$)</option></select></label>
@@ -114,13 +181,16 @@ export default function Fideliza({client,storeId,manager}){
     <p className="hint">Campanhas vigentes aparecem no cardápio com código, desconto e condições. Um pedido usa um cupom ou um resgate; não há acúmulo de descontos.</p>
     <button disabled={loading||!ready}>{editing?'Salvar alterações':'Cadastrar oferta'}</button>{editing&&<button type="button" className="secondary" onClick={()=>setEditing(null)}>Cancelar edição</button>}
    </form>
-   <div className="panel"><h3>Ofertas cadastradas</h3>{coupons.filter(c=>c.kind===sectionKind).map(c=><div className="line" key={c.id}><b>{c.title||c.code} · {c.code}</b><span>{c.discount_type==='percent'?c.discount_value+'%':money(c.discount_value*100)} · {c.uses} uso(s){c.max_uses?'/'+c.max_uses:''}{c.active?' · Ativa':' · Desativada'}</span><button className="secondary" disabled={loading||!ready} onClick={()=>setEditing(c)}>Editar</button><button className="secondary" disabled={loading||!ready} onClick={()=>toggleCoupon(c)}>{c.active?'Desativar':'Ativar'}</button><button className="secondary" disabled={loading||Number(c.uses)>0} onClick={()=>deleteCoupon(c)}>Excluir</button></div>)}{!coupons.some(c=>c.kind===sectionKind)&&<p>Nenhuma oferta cadastrada nesta modalidade.</p>}</div>
+   <div className="panel"><h3>Ofertas cadastradas</h3>{coupons.filter(c=>c.kind===sectionKind).map(c=><div className="line" key={c.id}><b>{c.title||c.code} · {c.code}</b><span>{c.discount_type==='percent'?c.discount_value+'%':money(c.discount_value*100)} · {c.uses} uso(s){c.max_uses?'/'+c.max_uses:''}{c.active?' · Ativa':' · Desativada'}</span><button className="secondary" disabled={loading||!ready} onClick={()=>{setEditing(c);setOfferDirty(false)}}>Editar</button><button className="secondary" disabled={loading||!ready} onClick={()=>toggleCoupon(c)}>{c.active?'Desativar':'Ativar'}</button><button className="secondary" disabled={loading||Number(c.uses)>0} onClick={()=>deleteCoupon(c)}>Excluir</button></div>)}{!coupons.some(c=>c.kind===sectionKind)&&<p>Nenhuma oferta cadastrada nesta modalidade.</p>}</div>
   </>}
   {section==='Cashback'&&<form className="panel" onSubmit={saveProgram}><h3>Cashback em compras</h3>{toggle('cashback_enabled','Ativar cashback')}
    {number('cashback_percent','Percentual sobre produtos pagos, após descontos (%)',0,50,.01)}{number('cashback_max_redeem_percent','Percentual máximo dos produtos que os créditos podem pagar (%)',1,100,.01)}
    <p>Exemplo: R$ 100 em produtos com 5% de cashback geram R$ 5 após pagamento e entrega. Créditos ficam na carteira desta loja e podem ser usados em outra compra.</p><button disabled={loading||!ready}>Salvar cashback</button></form>}
   {section==='Indique e ganhe'&&<form className="panel" onSubmit={saveProgram}><h3>Indique e ganhe</h3>{toggle('referrals_enabled','Ativar indicações')}
-   {number('referral_reward_cents','Crédito para quem indica (centavos)',0,100000)}{number('referral_welcome_cents','Crédito para o novo cliente (centavos)',0,100000)}
+   {number('referral_reward_cents','Crédito para quem indica (R$)',0,100000)}{number('referral_welcome_cents','Crédito para o novo cliente (R$)',0,100000)}
    <p>O cliente compartilha seu código pessoal. A indicação deve ser informada no cadastro de um novo participante. Os créditos são liberados uma vez, na primeira compra paga e entregue que alcançar o mínimo da loja. Autoindicação pelo mesmo telefone é recusada.</p><button disabled={loading||!ready}>Salvar indicações</button></form>}
+
+    </div><footer className="fl-drawer-footer"><ShieldCheck size={16}/><span>Suas regras e históricos são preservados.</span><button type="button" className="fl-button" disabled={loading} onClick={()=>closeDrawer()}>Voltar à visão geral</button></footer></div>
+  </dialog>
  </section>;
 }
