@@ -275,7 +275,7 @@ import {paymentSummaryPanel,courierCollectStep} from "./payment-ui.mjs";
 import {deliveryBucket,compactPaymentChip,safeFinishedToday,isNotificationDiagnostic} from "./compact-dashboard.mjs";
 import {pickupReminderType,showPickupReminder} from "./pickup-reminder.mjs";
 import {showArrivalConfirmation,showDeliveryFinish} from "./delivery-confirmation.mjs";
-import {isMerchantIfoodDelivery,ifoodDispatchOutcome,recordDepartureAndDispatch} from "./ifood-departure.mjs";
+import {isMerchantIfoodDelivery,ifoodDispatchOutcome,recordDepartureAndDispatch,dispatchBeforeArrival} from "./ifood-departure.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
@@ -905,10 +905,10 @@ async function sendIfoodDispatch(d){
 async function sendIfoodArrival(d){
  // Com rede instável, a entrega local já pode ter avançado antes da plataforma.
  // O dispatch é idempotente no servidor e não duplica o evento.
- const sync=await sendIfoodDispatch(d);
- if(!["submitted","confirmed"].includes(sync?.provider_state))
-  throw Error("Despacho iFood ainda não confirmado. Confira a plataforma e tente sincronizar novamente.");
- return ifoodDriverAction(d.id,"arrival");
+ return dispatchBeforeArrival({
+  dispatch:()=>sendIfoodDispatch(d),
+  arrival:()=>ifoodDriverAction(d.id,"arrival")
+ });
 }
 async function departCourierRoute(d){
  if(busy)return false;busy=true;message("");

@@ -2,12 +2,32 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {isMerchantIfoodDelivery,ifoodDispatchTargets,ifoodDispatchOutcome,
- recordDepartureAndDispatch} from "./ifood-departure.mjs";
+ recordDepartureAndDispatch,dispatchBeforeArrival} from "./ifood-departure.mjs";
 
 const own=(id,batch="batch",extra={})=>({
  id,batch_id:batch,courier_id:"courier",store_id:"store",
  source:"ifood",logistics_provider:"loja",status:"aceita",
  collected_at:"2026-11-22T17:00:00-03:00",...extra
+});
+test("chegada externa aguarda DISPATCHED oficial, inclusive após solicitação aceita",async()=>{
+ for(const state of ["submitted","pending","uncertain",undefined]){
+  let arrivals=0;
+  await assert.rejects(dispatchBeforeArrival({
+   dispatch:async()=>({provider_state:state}),arrival:async()=>{arrivals++;}
+  }),/Aguardando a confirmação DISPATCHED/);
+  assert.equal(arrivals,0);
+ }
+ const events=[];
+ const result=await dispatchBeforeArrival({
+  dispatch:async()=>{events.push("confirmed");return {provider_state:"confirmed"};},
+  arrival:async()=>{events.push("arrival");return {registered:true};}
+ });
+ assert.deepEqual(events,["confirmed","arrival"]);
+ assert.deepEqual(result,{registered:true});
+ await assert.rejects(dispatchBeforeArrival({
+  dispatch:async()=>{throw Error("Sem conexão");},
+  arrival:async()=>assert.fail("Não enviar chegada após falha de despacho")
+ }),/Sem conexão/);
 });
 test("coleta local não despacha ao iFood; saída está no botão próprio",()=>{
  const page=readFileSync(new URL("./painel.html",import.meta.url),"utf8");

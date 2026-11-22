@@ -67,6 +67,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Validar pedidos, integrações e aplicativo do entregador
+        run: node --test tests/*.test.mjs entregador/*.test.mjs
       - name: Construir o painel real e o cardápio no bundle existente
         run: |
           bash scripts/build-cloudflare.sh
@@ -82,6 +84,11 @@ jobs:
             echo "Bundle dos lojistas contém funcionalidades exclusivas do Super Admin." >&2
             exit 1
           fi
+      - name: Validar painel e banco isolado antes de publicar
+        run: |
+          npm test --prefix web
+          npm ci --prefix web/tests/backend
+          npm test --prefix web/tests/backend
       - name: Publicar somente o Worker existente e seus arquivos
         shell: bash
         env:

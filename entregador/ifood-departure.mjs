@@ -25,6 +25,15 @@ export function ifoodDispatchOutcome(value){
  return "pending";
 }
 
+// A solicitação HTTP aceita ainda não comprova o evento DISPATCHED.
+// A chegada local permanece registrada mesmo quando a sincronização precisa esperar.
+export async function dispatchBeforeArrival({dispatch,arrival}){
+ const result=await dispatch();
+ if(ifoodDispatchOutcome(result)!=="confirmed")
+  throw Error("Aguardando a confirmação DISPATCHED do iFood. A chegada permanece registrada no Pitacco; tente sincronizar novamente após a confirmação.");
+ return arrival();
+}
+
 /**
  * Persist departure before contacting iFood. If local departure fails no event
  * is emitted. Each provider failure is reported without rolling back an actual
