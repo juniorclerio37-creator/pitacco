@@ -112,7 +112,7 @@ test('a 200 response without valid:true never completes delivery',async()=>{
  assert.equal(calls.some(x=>x.path.endsWith('/pitacco_ifood_driver_result')),false);
 });
 
-test('merchant courier collection calls /dispatch with deliveredBy MERCHANT after scoped claim',async()=>{
+test('merchant courier departure calls /dispatch with deliveredBy MERCHANT after scoped claim',async()=>{
  const {calls,call}=createHarness();
  const response=await call('dispatch');
  assert.equal(response.status,202);
@@ -132,16 +132,17 @@ test('partner-delivery or unscoped courier is rejected before any iFood dispatch
  assert.equal(calls.some(x=>x.path.endsWith('/dispatch')),false);
 });
 
-test('only local pickup button invokes provider dispatch on merchant iFood deliveries',()=>{
+test('coleta não envia DISPATCHED; sair para entrega dispara o envio próprio',()=>{
  const page=readFileSync(new URL('../entregador/painel.html',import.meta.url),'utf8');
- assert.match(page,/createAction\("Coletar"/);
- assert.match(page,/requestCourierPickup\(d\)/);
- assert.match(page,/sb\.rpc\("pitacco_driver_collect"/);
- assert.match(page,/if\(d\.source==="ifood"&&d\.logistics_provider==="loja"\)/);
- assert.match(page,/ifoodDriverAction\(d\.id,"dispatch"\)/);
- assert.match(page,/Sair para entrega/);
+ const collect=page.slice(page.indexOf('async function collectCourierOrder(d){'),
+  page.indexOf('async function sendIfoodDispatch(d){'));
+ assert.match(collect,/sb\.rpc\("pitacco_driver_collect"/);
+ assert.doesNotMatch(collect,/ifoodDriverAction\(d\.id,"dispatch"\)/);
+ assert.match(page,/createAction\("Sair para entrega","primary",\(\)=>departCourierRoute\(d\)\)/);
+ assert.match(page,/sendIfoodDispatch\(stop\)/);
+ assert.match(page,/recordDepartureAndDispatch\(/);
+ assert.match(page,/Sincronizar despacho com iFood/);
 });
-
 
 test('provider conflicts and access errors never claim an incorrect code',async()=>{
  for(const [upstream,http] of [[401,503],[403,503],[404,409],[409,409],[412,409],[422,409],[429,503],[500,503]]){
