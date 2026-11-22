@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { runInNewContext } from "node:vm";
 
 function read(relative) {
   return readFileSync(fileURLToPath(new URL(relative, import.meta.url)), "utf8");
@@ -606,4 +607,47 @@ test("Firebase courier device automatically retries session-scoped enrollment an
  const logout=panel.slice(panel.indexOf('async function logout(){'));
  assert.match(logout,/window\.clearTimeout\(nativePushRetryTimer\)/);
  assert.match(logout,/pitacco_unregister_courier_push/);
+});
+
+
+test("native shift waits for precise GPS authorization and stops without a late native start",async()=>{
+ const page=read("./painel.html");
+ const begin=page.indexOf("function startNativeGpsTracking()");
+ const end=page.indexOf("function stopGpsSharing()",begin);
+ const methods=page.slice(begin,end);
+ const messages=[],requests=[];
+ let release;
+ const api=runInNewContext(methods+`
+  ({startNativeGpsTracking,stopNativeGpsTracking,
+    grant(){nativeGpsPermission="granted"},
+    requested(){return gpsStartRequested}})`,{
+  courier:{id:"courier",available:true},window:{PitaccoGps:{postMessage:value=>messages.push(value)}},
+  document:{hidden:false},navigator:{onLine:true},nativeGpsPermission:"denied",nativeGpsRunning:false,
+  gpsStartRequested:false,gpsStartTask:null,gpsStartGeneration:0,
+  gpsStatus(){},showAndroidGpsSettings(){},SUPABASE_URL:"https://demo.invalid",
+  SUPABASE_PUBLISHABLE_KEY:"test",
+  sb:{rpc(name){
+   requests.push(name);
+   if(name.endsWith("_start"))return new Promise(resolve=>{release=()=>resolve({data:"a".repeat(64)});});
+   return Promise.resolve({});
+  }}
+ });
+ await api.startNativeGpsTracking();
+ assert.equal(api.requested(),true);
+ assert.deepEqual(requests,[]);
+ api.grant();
+ const started=api.startNativeGpsTracking();
+ assert.equal(api.startNativeGpsTracking(),started);
+ release();
+ await started;
+ assert.equal(messages.filter(msg=>msg.startsWith("start:")).length,1);
+
+ messages.length=0;
+ const pending=api.startNativeGpsTracking();
+ const stopped=api.stopNativeGpsTracking();
+ release();
+ await Promise.all([stopped,pending]);
+ assert.deepEqual(messages,["stop"]);
+ assert.equal(requests.at(-1),"pitacco_courier_background_gps_revoke");
+ assert.equal(api.requested(),false);
 });
