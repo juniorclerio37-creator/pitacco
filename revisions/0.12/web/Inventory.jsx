@@ -2,11 +2,13 @@ import React, {useEffect, useRef, useState} from 'react';
 
 const formatQuantity = new Intl.NumberFormat('pt-BR', {maximumFractionDigits: 3}).format;
 const formatDate = new Intl.DateTimeFormat('pt-BR', {dateStyle: 'short', timeStyle: 'short'}).format;
+const costNumber = new Intl.NumberFormat('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:6});
 
 export default function Inventory({client, storeId, manager, products}) {
   const [ingredients, setIngredients] = useState([]);
   const [recipes, setRecipes] = useState([]);
   const [optionRecipes, setOptionRecipes] = useState([]);
+  const [unitCosts, setUnitCosts] = useState([]);
   const [optionGroups, setOptionGroups] = useState([]);
   const [catalogOptions, setCatalogOptions] = useState([]);
   const [movements, setMovements] = useState([]);
@@ -14,6 +16,7 @@ export default function Inventory({client, storeId, manager, products}) {
   const [productId, setProductId] = useState('');
   const [optionId, setOptionId] = useState('');
   const [editing, setEditing] = useState(null);
+  const [costEditing, setCostEditing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -32,7 +35,10 @@ export default function Inventory({client, storeId, manager, products}) {
         client.from('pitacco_stock_movements').select('*').eq('store_id',storeId).order('created_at',{ascending:false}).limit(50),
         client.from('pitacco_option_recipe_lines').select('*').eq('store_id',storeId),
         client.from('product_option_groups').select('id,product_id,name,sort_order').eq('store_id',storeId).order('sort_order'),
-        client.from('product_options').select('id,group_id,name,available,sort_order').eq('store_id',storeId).order('sort_order')
+        client.from('product_options').select('id,group_id,name,available,sort_order').eq('store_id',storeId).order('sort_order'),
+        manager
+          ?client.from('pitacco_ingredient_unit_costs').select('ingredient_id,cost_per_unit').eq('store_id',storeId)
+          :Promise.resolve({data:[],error:null})
       ]);
       if (requestVersion.current !== version) return;
       const error = results.find(result=>result.error)?.error;
@@ -43,6 +49,7 @@ export default function Inventory({client, storeId, manager, products}) {
       setOptionRecipes(results[3].data||[]);
       setOptionGroups(results[4].data||[]);
       setCatalogOptions(results[5].data||[]);
+      setUnitCosts(results[6].data||[]);
       setFailure('');
     } catch (error) {
       if (requestVersion.current === version) setFailure(error.message || 'Não foi possível carregar o estoque.');
@@ -120,6 +127,21 @@ export default function Inventory({client, storeId, manager, products}) {
     save(operation,'Ficha técnica do complemento atualizada.',()=>form.reset());
   }
 
+  function saveUnitCost(event) {
+    event.preventDefault();
+    if(!manager||!costEditing)return;
+    const form=event.currentTarget;
+    const cost=Number(new FormData(form).get('unit_cost'));
+    if(!Number.isFinite(cost)||cost<0||cost>100000){
+      setFailure('O preço por unidade deve ser um número válido.');
+      return;
+    }
+    save(client.from('pitacco_ingredient_unit_costs').upsert({
+      store_id:storeId,ingredient_id:costEditing.id,cost_per_unit:cost
+    },{onConflict:'store_id,ingredient_id'}),'Custo unitário salvo para os próximos pedidos.',
+      ()=>setCostEditing(null));
+  }
+
   function saveMovement(event) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -137,6 +159,7 @@ export default function Inventory({client, storeId, manager, products}) {
   }
 
   const ingredientById = new Map(ingredients.map(item=>[item.id,item]));
+  const unitCostById = new Map(unitCosts.map(item=>[item.ingredient_id,Number(item.cost_per_unit)]));
   const stockOptions = ingredients.map(item=><option key={item.id} value={item.id}>{item.name} ({item.unit})</option>);
   const shortages = ingredients.filter(item=>Number(item.balance)<=Number(item.minimum));
   const visibleRecipe = recipes.filter(row=>row.product_id===productId);
@@ -154,6 +177,7 @@ export default function Inventory({client, storeId, manager, products}) {
     {failure&&<p role="alert">{failure} <button type="button" className="secondary" onClick={reload} disabled={busy||loading}>Atualizar dados</button></p>}
     {view==='Insumos'&&<>
       <h3>Saldos e estoque mínimo</h3>
+      {manager&&<p>Cadastre o custo de compra por <strong>g, ml ou unidade</strong> em cada insumo para calcular o custo dos pedidos futuros. Embalagens também podem ser cadastradas como insumo na unidade <strong>un</strong>. Custos não informados não serão presumidos.</p>}
       {!loading&&shortages.length>0&&<p role="status">{shortages.length} {shortages.length===1?'insumo no saldo mínimo ou abaixo':'insumos no saldo mínimo ou abaixo'}.</p>}
       {manager&&<form key={editing?.id||'new'} onSubmit={saveIngredient}>
         <label>Nome <input name="name" required maxLength={120} defaultValue={editing?.name}/></label>
@@ -166,8 +190,27 @@ export default function Inventory({client, storeId, manager, products}) {
       <ul>{ingredients.map(item=><li key={item.id}>
         <strong>{item.name}</strong> · {formatQuantity(item.balance)} {item.unit} · mínimo {formatQuantity(item.minimum)} {item.unit}
         {Number(item.balance)<=Number(item.minimum)&&<strong> · Estoque baixo</strong>}
-        {manager&&<button type="button" className="secondary" disabled={busy} onClick={()=>setEditing(item)} aria-label={'Editar '+item.name}>Editar</button>}
+        {manager&&<>
+          <span> · {unitCostById.has(item.id)
+            ?'Custo: R$ '+costNumber.format(unitCostById.get(item.id))+'/'+item.unit
+            :'Custo não cadastrado'}</span>
+          <button type="button" className="secondary" disabled={busy} onClick={()=>setCostEditing(item)}
+            aria-label={'Editar custo de '+item.name}>Custo por {item.unit}</button>
+          <button type="button" className="secondary" disabled={busy} onClick={()=>setEditing(item)}
+            aria-label={'Editar '+item.name}>Editar</button>
+        </>}
       </li>)}</ul>
+      {manager&&costEditing&&<form key={costEditing.id} onSubmit={saveUnitCost}
+        aria-label={'Custo unitário de '+costEditing.name}>
+        <h4>Preço de compra — {costEditing.name}</h4>
+        <p>Informe o preço de <strong>1 {costEditing.unit}</strong> em reais. Exemplo: um pote de 350 g por R$ 14,00 equivale a R$ 0,04/g. O novo preço não altera pedidos já aceitos.</p>
+        <label>R$ por {costEditing.unit}
+          <input name="unit_cost" type="number" min="0" max="100000" step="0.000001"
+            required defaultValue={unitCostById.get(costEditing.id)??''} />
+        </label>
+        <button disabled={busy||loading}>Salvar custo para próximos pedidos</button>
+        <button type="button" className="secondary" disabled={busy} onClick={()=>setCostEditing(null)}>Cancelar</button>
+      </form>}
     </>}
     {view==='Fichas técnicas'&&<>
       <h3>Ingredientes por unidade vendida</h3>
