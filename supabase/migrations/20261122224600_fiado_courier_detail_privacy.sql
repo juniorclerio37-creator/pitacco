@@ -1,4 +1,9 @@
--- Sanitização da RPC dos detalhes, não apenas no componente visual.
+-- Produção possui dados de contato do entregador; fixtures antigas de PostgreSQL
+-- não possuem essa tabela. Não recriar suas tabelas nem quebrar migrations alheias.
+do $pitacco_privacy$
+begin
+ if to_regclass('public.pitacco_delivery_customer_contacts') is not null then
+  execute $definition$
 CREATE OR REPLACE FUNCTION public.pitacco_driver_order_detail(p_delivery uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -173,3 +178,6 @@ begin
     )
   );
 end $function$;
+$definition$;
+ end if;
+end $pitacco_privacy$;
