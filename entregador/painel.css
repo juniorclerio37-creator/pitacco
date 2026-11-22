@@ -213,3 +213,7 @@ button{font-family:inherit}button:focus-visible,a:focus-visible{outline:3px soli
 .card-delivery-step.is-done{background:#e9f8ef;border-color:#b8e5c9;color:#176d42}
 .card-delivery-step.is-active:not(.is-done){background:#fff2e5;border-color:#ffb876;color:#9a4209}
 @media(max-width:350px){.card-delivery-steps{gap:3px}.card-delivery-step{font-size:9px;padding:7px 1px}}
+
+/* Diagnósticos de suporte: elementos permanecem acessíveis ao código nativo,
+   mas nunca são apresentados nem acionáveis na interface do entregador. */
+.courier-tech-internal,.courier-tech-internal[hidden],#pushBanner.courier-tech-internal{display:none!important}

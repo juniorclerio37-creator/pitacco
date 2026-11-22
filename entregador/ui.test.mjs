@@ -152,7 +152,7 @@ test("installed Android app with outdated native bridge falls back to audible we
  assert.match(page,/if\(value==="tested"\)/);
  assert.match(page,/nativeTestPending=false/);
  assert.match(page,/O Android não respondeu ao teste nativo/);
- assert.match(page,/Avisos em segundo plano exigem Firebase ativo/);
+ assert.doesNotMatch(page,/Avisos em segundo plano exigem Firebase ativo/);
 });
 
 test("courier continues to show opened deliveries offline without unsafe queued completion",()=>{
@@ -644,4 +644,25 @@ test("native shift waits for precise GPS authorization and stops without a late 
  assert.deepEqual(messages,["stop"]);
  assert.equal(requests.at(-1),"pitacco_courier_background_gps_revoke");
  assert.equal(api.requested(),false);
+});
+
+test("GPS, Firebase e painéis técnicos não aparecem para o entregador",()=>{
+ const page=read("painel.html");
+ const css=read("painel.css");
+ assert.match(page, /id="pushBanner" class="panel-white courier-tech-internal" aria-hidden="true" inert/);
+ assert.match(page, /class="courier-push-check panel-white courier-tech-internal"[^>]*aria-hidden="true" inert hidden/);
+ assert.match(page, /class="panel-white pref-panel courier-tech-internal" aria-hidden="true" inert hidden>[\s\S]*?LOCALIZAÇÃO PARA ENTREGAS/);
+ assert.match(css, /#pushBanner\.courier-tech-internal\{display:none!important\}/);
+ const technical=page.slice(page.indexOf('LOCALIZAÇÃO PARA ENTREGAS'),page.indexOf('id="courierAdminInbox"'));
+ assert.match(technical,/Verificar envio real do GPS/);
+ assert.match(technical,/Verificar recebimento de novas entregas/);
+ assert.match(technical,/Comunicados e incentivos do Pitacco/);
+ assert.match(page,/id="settingsLogout"/);
+ assert.match(page,/id="testAssignmentSound"/);
+ assert.match(page,/id="pushQuickCheck"/);
+ assert.match(page,/initializeNativePush\(\)/);
+ assert.match(page,/pitacco_register_courier_push_native/);
+ assert.match(page,/pitacco_courier_background_gps_start/);
+ assert.doesNotMatch(page,/O botão acima testa o sino e a voz[\s\S]*?mensagem Firebase enviada/);
+ assert.doesNotMatch(page,/Avisos em segundo plano exigem Firebase ativo/);
 });
