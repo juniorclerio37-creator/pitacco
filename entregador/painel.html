@@ -85,11 +85,11 @@ a.btn{text-decoration:none}
     <button type="button" class="today-mini" id="miniEarnings" aria-label="Abrir ganhos de hoje"><small>GANHOS DE HOJE</small><b id="miniToday">R$ 0,00</b><span id="miniTodayCount">0 entregas</span></button>
   </div>
   <div class="status-banner"><div class="status-copy"><span class="status-dot" id="onlineDot"></span><div><b id="availability">Carregando disponibilidade...</b><span id="availableHelp">Sua loja organiza as entregas para você.</span></div></div><button class="btn primary" id="online" type="button" disabled>Carregando...</button></div>
-  <div id="pushBanner" class="panel-white" role="status" aria-live="polite" hidden
+  <div id="pushBanner" class="panel-white courier-tech-internal" aria-hidden="true" inert role="status" aria-live="polite" hidden
     style="padding:13px 16px;margin:12px 0;border:1px solid #f0c48e;border-radius:14px;background:#fff9f2;display:none;flex-wrap:wrap;align-items:center;gap:10px">
     <span id="pushBannerText" style="flex:1;min-width:210px;font-size:13px">Verificando alertas de novas entregas...</span>
   </div>
-  <section class="courier-push-check panel-white" aria-label="Diagnóstico de notificações">
+  <section class="courier-push-check panel-white courier-tech-internal" aria-label="Diagnóstico de notificações" aria-hidden="true" inert hidden>
     <header><strong>Notificações em segundo plano</strong><button id="pushQuickCheck" type="button" class="btn secondary">Verificar agora</button></header>
     <p id="pushQuickStatus" role="status" aria-live="polite" data-state="checking">Conferindo o Firebase e o cadastro do aparelho…</p>
     <small>Cadastro automático após login. Este botão não cria pedidos nem dispara som.</small>
@@ -176,7 +176,7 @@ a.btn{text-decoration:none}
   </div>
   <p class="note-inline">Quando não houver coordenadas verificadas, o aplicativo abre o endereço informado pela loja.</p>
  </section>
- <section class="panel-white pref-panel">
+ <section class="panel-white pref-panel courier-tech-internal" aria-hidden="true" inert hidden>
   <span class="eyebrow">LOCALIZAÇÃO PARA ENTREGAS</span>
   <p id="courierGpsStatus" role="status" aria-live="polite">Ative seu plantão para compartilhar sua posição com a loja.</p>
   <p id="courierGpsPermissionDiagnostic" class="note-inline" role="status">Consultando permissões do Android e do navegador interno…</p>
@@ -195,10 +195,12 @@ a.btn{text-decoration:none}
    <p class="note-inline">Avisos enviados pelo Super Admin aparecem aqui e na notificação silenciosa do Android. O sino e a voz são exclusivos de novas entregas.</p>
    <div id="courierAdminInbox" role="status" aria-live="polite">Carregando comunicados…</div>
   </section>
-  <p class="note-inline">Para alterar permissões ou o som das notificações, use as configurações do Android.</p>
+ </section>
+ <section class="panel-white pref-panel">
+  <p class="note-inline">O som e as permissões do aparelho são gerenciados nas configurações do Android.</p>
   <button type="button" class="settings-row" id="testAssignmentSound"><span>Testar som de nova entrega</span><span class="setting-arrow">♪</span></button>
   <p id="assignmentSoundStatus" role="status" aria-live="polite"></p>
-  <p class="note-inline">O botão acima testa o sino e a voz <strong>neste aparelho</strong>, mas não testa uma mensagem Firebase enviada com o aplicativo fechado. Para validar segundo plano, registre o aparelho e faça uma atribuição real com a tela bloqueada.</p>
+  <p class="note-inline">Reproduz o alerta de nova entrega neste aparelho.</p>
   <button type="button" class="settings-row" id="settingsRefresh"><span>Atualizar pedidos e ganhos</span><span class="setting-arrow">↻</span></button>
   <button type="button" class="settings-row" id="settingsLogout"><span>Sair da minha conta</span><span class="setting-arrow">→</span></button>
  </section>
