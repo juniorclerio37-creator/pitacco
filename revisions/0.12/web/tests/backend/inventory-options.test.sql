@@ -39,15 +39,18 @@ insert into public.pitacco_recipe_lines(store_id,product_id,ingredient_id,quanti
 insert into public.pitacco_option_recipe_lines(store_id,option_id,ingredient_id,quantity) values
  ('20000000-0000-0000-0000-000000000091','50000000-0000-0000-0000-000000000091','60000000-0000-0000-0000-000000000091',50),
  ('20000000-0000-0000-0000-000000000091','50000000-0000-0000-0000-000000000091','60000000-0000-0000-0000-000000000092',30);
+insert into public.pitacco_ingredients(id,store_id,name,unit,minimum)
+values('60000000-0000-0000-0000-000000000094',
+       '20000000-0000-0000-0000-000000000092','Insumo outra loja','g',0);
 do $test$
 begin
  begin
   insert into public.pitacco_option_recipe_lines(store_id,option_id,ingredient_id,quantity)
   values('20000000-0000-0000-0000-000000000091',
    '50000000-0000-0000-0000-000000000091',
-   '60000000-0000-0000-0000-000000000092',1);
+   '60000000-0000-0000-0000-000000000094',1);
   raise exception 'Não deveria permitir insumo de outra loja';
- exception when unique_violation then null;
+ exception when foreign_key_violation then null;
  end;
 end $test$;
 set local role anon;
