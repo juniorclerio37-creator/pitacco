@@ -24,7 +24,7 @@ test("store owner can set 4 to 8 digits for future own deliveries, default remai
  assert.match(merchant,/DeliveryCodeSettings client=\{client\} storeId=\{storeId\}/);
 });
 test("no PIN leaks to courier; original PIN length remains valid on existing orders",()=>{
- assert.match(sql,/from public\.pitacco_own_delivery_codes pin/);
+ assert.match(sql,/join public\.pitacco_own_delivery_codes pin/);
  assert.match(sql,/'digits',pg_catalog\.length\(pin.code\)/);
  assert.doesNotMatch(sql,/'code',pin\.code/);
  assert.match(sql,/pg_catalog\.length\(p_code\)<>pg_catalog\.length\(code_row\.code\)/);
