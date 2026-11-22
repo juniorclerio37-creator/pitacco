@@ -8,7 +8,10 @@ insert into public.stores(id,name) values
 insert into public.store_members(store_id,user_id,role) values
  ('20000000-0000-0000-0000-000000000081','10000000-0000-0000-0000-000000000081','gestor');
 insert into public.public_menu_settings(store_id,slug,enabled,delivery_enabled,pickup_enabled,delivery_fee,payment_methods)
- values ('20000000-0000-0000-0000-000000000081','fiado-fixture',true,true,true,0,array['dinheiro']);
+ values ('20000000-0000-0000-0000-000000000081','fiado-fixture',true,true,true,0,array['dinheiro'])
+ on conflict(store_id) do update set slug=excluded.slug,enabled=excluded.enabled,
+  delivery_enabled=excluded.delivery_enabled,pickup_enabled=excluded.pickup_enabled,
+  delivery_fee=excluded.delivery_fee,payment_methods=excluded.payment_methods;
 insert into public.products(id,store_id,name,price,cost,menu_active)
  values ('30000000-0000-0000-0000-000000000081','20000000-0000-0000-0000-000000000081','Produto teste fiado',20,5,true);
 
