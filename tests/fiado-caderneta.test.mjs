@@ -44,7 +44,7 @@ test("public checkout never accepts fiado from telephone alone and uses original
  assert.match(checkout,/p_payment<>'fiado'/);
  assert.match(shop,/pitacco_fiado_public_eligibility/);
  assert.match(shop,/pitacco_checkout_fiado/);
- assert.match(shop,/pendingRequest\.p_code=\$('fiadoCode'\)\.value\.trim\(\)/);
+ assert.ok(shop.includes("pendingRequest.p_code=$('fiadoCode').value.trim()"));
  assert.match(shop,/fiadoCheckedPhone/);
  assert.match(shop,/Não foi possível/); // Other normal error handler preserved
 });
