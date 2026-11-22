@@ -1070,32 +1070,40 @@ function renderRouteSuggestions(deliveries){
  }
 }
 function card(d){
- const box=element("article","card card-modern");
+ const box=element("article","card card-modern compact-delivery-card");
  box.setAttribute("data-origin",d.source||"proprio");
  box.setAttribute("data-delivery-id",d.id);
- const opener=element("button","card-open");
+ const compact=element("div","compact-delivery-layout");
+ const details=element("div","compact-card-main");
+ const actionSlot=element("div","compact-card-action");
+ const stageExtras=element("div","compact-stage-extras");
+ const badge=orderCardBadges.get(d.id);
+ const number=String(badge?.public_number||"Aguardando número");
+ const opener=element("button","card-open compact-card-open");
  opener.type="button";
  opener.setAttribute("aria-label","Ver detalhes do pedido de "+(d.customer_name||"cliente"));
  opener.addEventListener("click",()=>orderDetails.open(d));
- const head=element("div","cardhead");
- const badge=orderCardBadges.get(d.id);
- const number=String(badge?.public_number||"Aguardando número");
- head.append(element("span","order",number==="Aguardando número"?"Número pendente":"Pedido #"+number));
- head.append(element("span","tag",statuses[d.status]||d.status||"Em andamento"));
- opener.append(head);
- const sourceLabels={proprio:"PITACCO",ifood:"iFood","99food":"99Food",keeta:"Keeta"};
- opener.append(element("span","card-platform",sourceLabels[d.source]||"Pedido da loja"));
- const originName=d.store_name||"Loja de origem";
- opener.append(element("span","card-store-label","LOJA • "+originName));
- const intro=element("div","card-customer-row");intro.append(element("div","customer",d.customer_name||"Cliente"));
- opener.append(intro);
-
- if(badge?.localizer)opener.append(element("span","card-localizer",
-   "LOCALIZADOR DE LIGAÇÃO • "+String(badge.localizer).replace(/\D/g,"").slice(0,16)));
- if(d.notes)opener.append(element("p","notes",d.notes));
- opener.append(element("span","card-detail-hint","Ver itens e contato  ↗"));
- box.append(opener);
- const addressRow=element("div","card-address-row");
+ const sourceLabels={proprio:"Loja",ifood:"iFood","99food":"99",keeta:"Keeta"};
+ const source=element("span","compact-source-badge",sourceLabels[d.source]||"Loja");
+ source.setAttribute("data-source",d.source||"proprio");
+ source.setAttribute("aria-label","Origem: "+(d.source==="99food"?"99Food":sourceLabels[d.source]||"Loja"));
+ const identity=element("span","compact-card-identity");
+ const top=element("span","compact-card-topline");
+ const num=element("strong","compact-order-number",number==="Aguardando número"?"Número pendente":"#"+number);
+ top.append(num);
+ if(d.created_at){
+  const when=new Date(d.created_at);
+  if(Number.isFinite(when.getTime()))top.append(element("small","compact-order-time",
+   when.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",timeZone:"America/Sao_Paulo"})));
+ }
+ identity.append(top);
+ identity.append(element("span","compact-customer",d.customer_name||"Cliente"));
+ if(permittedStores.size>1)identity.append(element("small","compact-store",d.store_name||"Loja de origem"));
+ if(d.notes)identity.append(element("small","compact-note-flag","• Observações no detalhe"));
+ opener.append(source,identity);
+ details.append(opener);
+ const addressRow=element("div","card-address-row compact-address-row");
+ addressRow.append(element("span","compact-address-pin","⌖"));
  addressRow.append(element("p","address",d.address||"Endereço não informado"));
  const routeUrl=buildNavigationUrl(d,navProvider,navMode);
  if(routeUrl){
@@ -1105,14 +1113,16 @@ function card(d){
   route.setAttribute("data-route-delivery",d.id);
   addressRow.append(route);
  }
- box.append(addressRow);
+ details.append(addressRow);
  const payment=paymentOf(d);
- box.append(paymentSummaryPanel(payment));
+ const paymentSlot=element("div","compact-card-payment");
+ paymentSlot.append(compactPaymentChip(payment));
+ compact.append(details,paymentSlot,actionSlot);
  // O cartão exibe somente a ação que corresponde à etapa atual.
  const stage=courierActionStage(d);
  const actions=element("div","actions");
  const collecting=stage==="collect";
- if(collecting)actions.append(createAction("Coletar pedido","primary",()=>requestCourierPickup(d)));
+ if(collecting)actions.append(createAction("Coletar","primary",()=>requestCourierPickup(d)));
  if(stage==="depart"&&d.source==="ifood"&&d.logistics_provider==="loja"){
   const syncTools=element("details","courier-secondary-tools");
   syncTools.append(element("summary","","Problemas ao sincronizar com iFood?"));
@@ -1126,7 +1136,7 @@ function card(d){
    }catch(err){message(String(err?.message||"Não foi possível sincronizar o despacho"))}
    finally{busy=false}
   }));
-  box.append(syncTools);
+  stageExtras.append(syncTools);
  }
  if(stage==="depart")
   actions.append(createAction("Sair para entrega","primary",()=>d.batch_id
@@ -1135,21 +1145,21 @@ function card(d){
  if(stage==="arrive"||stage==="code"){
   if(stage==="arrive"){
    const closeToCustomer=nearbyArrival?.deliveryId===d.id;
-   if(closeToCustomer)box.append(element("p","arrival-nearby",
+   if(closeToCustomer)stageExtras.append(element("p","arrival-nearby",
      "📍 Localização do cliente identificada (aprox. "+nearbyArrival.distanceMeters+" m). Confirme sua chegada."));
    actions.append(createAction(closeToCustomer?"Confirmar chegada":"Cheguei na entrega","primary",()=>markArrival(d)));
-   box.append(element("p","note-inline","Chegar não é o mesmo que entregar. O código só pode ser validado após registrar a chegada."));
+   stageExtras.append(element("p","note-inline","Chegar não é o mesmo que entregar. O código só pode ser validado após registrar a chegada."));
   }else{
    const arrivalTime=new Date(d.arrived_at).toLocaleTimeString("pt-BR",{
     timeZone:"America/Sao_Paulo",hour:"2-digit",minute:"2-digit"
    });
-   box.append(element("p","arrival-record","✓ Chegada registrada às "+arrivalTime));
+   stageExtras.append(element("p","arrival-record","✓ Chegada registrada às "+arrivalTime));
    const synced=d.source==="ifood"&&(d.arrival_provider_state==="submitted"||d.arrival_provider_state==="confirmed");
    const statusText=d.source==="ifood"?
     (synced?"Chegada enviada ao iFood.":"Aviso ao iFood ainda pendente ou indisponível."):
     (d.source==="99food"?"Aviso à 99Food ainda não homologado.":
      d.source==="keeta"?"Aviso à Keeta ainda não homologado.":"Peça o código de seis dígitos ao cliente.");
-   box.append(element("p","arrival-provider",statusText));
+   stageExtras.append(element("p","arrival-provider",statusText));
    if(d.source==="ifood"&&!synced){
     const arrivalTools=element("details","courier-secondary-tools");
     arrivalTools.append(element("summary","","Problemas ao avisar o iFood?"));
@@ -1160,10 +1170,10 @@ function card(d){
        await refresh();
      }catch(error){message(String(error.message))}finally{busy=false}
     }));
-    box.append(arrivalTools);
+    stageExtras.append(arrivalTools);
    }
    if(payment.state==="collect"){
-    box.append(courierCollectStep(payment,()=>confirmCourierCollection(d)));
+    stageExtras.append(courierCollectStep(payment,()=>confirmCourierCollection(d)));
    }else if(d.source==="proprio"||d.source==="ifood"){
     const verify=element("section","card-verify-block");
     verify.append(element("strong","card-verify-title","Confirmar entrega"));
@@ -1229,14 +1239,16 @@ function card(d){
      verify.append(element("p","card-verify-help",
       "O Pitacco retira o pedido automaticamente após receber a confirmação oficial do iFood. Não é necessário atualizar manualmente."));
     }
-    box.append(verify);
+    stageExtras.append(verify);
    }
    if(d.source==="99food"||d.source==="keeta"){
-    box.append(element("p","warn","A validação do código da plataforma ainda depende de homologação. Não finalize manualmente. A coleta e a chegada permanecem registradas no Pitacco."));
+    stageExtras.append(element("p","warn","A validação do código da plataforma ainda depende de homologação. Não finalize manualmente. A coleta e a chegada permanecem registradas no Pitacco."));
    }
   }
  }
- if(actions.children.length)box.append(actions);
+ if(actions.children.length)actionSlot.append(actions);
+ box.append(compact);
+ if(stageExtras.children.length)box.append(stageExtras);
  return box;
 }
 
