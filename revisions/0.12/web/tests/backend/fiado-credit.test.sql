@@ -17,10 +17,10 @@ select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000081'
 do $test$
 declare
  store uuid:='20000000-0000-0000-0000-000000000081';
- c uuid; secret text; order_id uuid; second_order uuid;
+ c uuid; secret text; v_order_id uuid; second_order uuid;
  request uuid:='60000000-0000-0000-0000-000000000081';
  payload jsonb:='[{"product_id":"30000000-0000-0000-0000-000000000081","quantity":1,"options":[]}]'::jsonb;
- created jsonb; replay jsonb; paid jsonb; payment_request uuid:='70000000-0000-0000-0000-000000000081';
+ created jsonb; replay jsonb; payment_result jsonb; payment_request uuid:='70000000-0000-0000-0000-000000000081';
 begin
  assert not has_function_privilege('anon','public.pitacco_fiado_overview(uuid)','execute');
  assert not has_function_privilege('anon','public.pitacco_fiado_rotate_code(uuid,uuid)','execute');
@@ -34,10 +34,10 @@ begin
  assert (public.pitacco_fiado_public_eligibility('fiado-fixture','21988887777',secret)->>'eligible')::boolean;
  created:=public.pitacco_checkout_fiado('fiado-fixture',request,'Cliente Fiado','21988887777','',
     payload,'pickup','',secret);
- order_id:=(created->>'order_id')::uuid;
- assert order_id is not null;
+ v_order_id:=(created->>'order_id')::uuid;
+ assert v_order_id is not null;
  assert (select used=20 from public.pitacco_fiado_customers where id=c), 'Crédito reservado na criação';
- assert (select state='reserved' from public.pitacco_fiado_charges where order_id=order_id);
+ assert (select state='reserved' from public.pitacco_fiado_charges where order_id=v_order_id);
  -- Reenviar mesma requisição quando saldo disponível é menor que o pedido não duplica dívida.
  replay:=public.pitacco_checkout_fiado('fiado-fixture',request,'Cliente Fiado','21988887777','',
     payload,'pickup','',secret);
@@ -52,17 +52,17 @@ begin
   if sqlerrm <> 'Limite do fiado insuficiente para este pedido' then raise;end if;
  end;
  -- Retirada entregue pelo funcionário converte a reserva em conta a receber.
- update public.orders set status='accepted',preparation_status='completed' where id=order_id;
- assert (select state='open' from public.pitacco_fiado_charges where order_id=order_id);
- paid:=public.pitacco_fiado_receive(store,c,8,'pix',payment_request,'Pagamento parcial');
- assert (paid->>'remaining')::numeric=12;
- assert (select paid=8 from public.pitacco_fiado_charges where order_id=order_id);
- paid:=public.pitacco_fiado_receive(store,c,8,'pix',payment_request,'Pagamento parcial');
- assert (paid->>'duplicate')::boolean, 'Retentativa jamais debita em duplicidade';
+ update public.orders set status='accepted',preparation_status='completed' where id=v_order_id;
+ assert (select state='open' from public.pitacco_fiado_charges where order_id=v_order_id);
+ payment_result:=public.pitacco_fiado_receive(store,c,8,'pix',payment_request,'Pagamento parcial');
+ assert (payment_result->>'remaining')::numeric=12;
+ assert (select paid=8 from public.pitacco_fiado_charges where order_id=v_order_id);
+ payment_result:=public.pitacco_fiado_receive(store,c,8,'pix',payment_request,'Pagamento parcial');
+ assert (payment_result->>'duplicate')::boolean, 'Retentativa jamais debita em duplicidade';
  assert (select used=12 from public.pitacco_fiado_customers where id=c);
- paid:=public.pitacco_fiado_receive(store,c,12,'dinheiro',gen_random_uuid(),'Quitação');
- assert (paid->>'remaining')::numeric=0;
- assert (select state='settled' from public.pitacco_fiado_charges where order_id=order_id);
+ payment_result:=public.pitacco_fiado_receive(store,c,12,'dinheiro',gen_random_uuid(),'Quitação');
+ assert (payment_result->>'remaining')::numeric=0;
+ assert (select state='settled' from public.pitacco_fiado_charges where order_id=v_order_id);
  assert (select used=0 from public.pitacco_fiado_customers where id=c);
  -- Um novo pedido cancelado precisa devolver o limite reservado.
  created:=public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
