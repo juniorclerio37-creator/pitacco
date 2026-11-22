@@ -73,7 +73,7 @@ test("COD requires verified server receipt before revealing PIN, then server cod
  assert.equal(payments,1);
  assert.match(textOf(dlg),/Confirmar entrega/);
  const input=find(dlg,".verify-input");
- assert.ok(input,"PIN appears after a verified receipt");
+ assert.ok(input,"PIN appears after a verified receipt; modal="+textOf(dlg));
  input.value="123456";await input.emit("input");
  const form=find(dlg,".delivery-sheet-code-form");
  await form.emit("submit");
