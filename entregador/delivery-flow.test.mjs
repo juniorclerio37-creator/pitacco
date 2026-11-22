@@ -23,11 +23,11 @@ test("progress never marks unverified delivery as completed",()=>{
 });
 test("courier card only advances by user action and verified code",()=>{
  const html=page();
- assert.match(html,/courierProgress\(d\)/);
+ assert.doesNotMatch(html,/courierProgress\(d\)/);
  assert.match(html,/courierActionStage\(d\)/);
  assert.match(html,/createAction\("Coletar pedido"/);
  assert.match(html,/createAction\("Sair para entrega"/);
- assert.match(html,/createAction\("Cheguei na entrega"/);
+ assert.match(html,/closeToCustomer\?"Confirmar chegada":"Cheguei na entrega"/);
  assert.match(html,/createAction\("Finalizar entrega"/);
  assert.match(html,/pitacco_driver_collect/);
  assert.match(html,/pitacco_driver_depart/);
@@ -35,4 +35,21 @@ test("courier card only advances by user action and verified code",()=>{
  assert.match(html,/pitacco_driver_verify_own_code/);
  assert.match(html,/ifoodDriverAction\(d.id,"verify",digits\)/);
  assert.match(html,/validação oficial desta plataforma ainda depende de homologação/);
+});
+
+test("single order departs by authorized standalone RPC; batches use existing RPC",()=>{
+ const html=page();
+ assert.match(html,/pitacco_driver_depart_single/);
+ assert.match(html,/pitacco_driver_depart/);
+ assert.match(html,/d\.batch_id/);
+ assert.doesNotMatch(html,/sem rota vinculada/);
+ assert.match(html,/arrivalProximity\(current,mapLastGps,arrivalSignals\)/);
+ assert.doesNotMatch(html,/card-delivery-steps/);
+ const sql=readFileSync(new URL("../supabase/migrations/20261122143000_pitacco_driver_depart_single.sql",import.meta.url),"utf8");
+ assert.match(sql,/public\.pitacco_courier_session_ready\(\)/);
+ assert.match(sql,/d\.collected_at is null/);
+ assert.match(sql,/d\.batch_id is not null/);
+ assert.match(sql,/d\.status='retirada'/);
+ assert.match(sql,/c\.user_id=\(select auth\.uid\(\)\)/);
+ assert.match(sql,/revoke all on function public\.pitacco_driver_depart_single\(uuid\) from public,anon/);
 });

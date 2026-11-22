@@ -98,6 +98,15 @@ a.btn{text-decoration:none}
     <div class="stat"><span class="stat-icon orange">↗</span><strong id="active">—</strong><span>Entregas em andamento</span></div>
     <div class="stat"><span class="stat-icon green">✓</span><strong id="done">—</strong><span>Concluídas hoje</span></div>
   </div>
+
+  <p id="notice" role="alert" aria-live="polite"></p>
+  <h2 class="section-title">Seus pedidos <span class="auto-pill">Atualiza automaticamente</span></h2>
+
+  <section id="cards" class="grid" aria-label="Pedidos atribuídos"><div class="empty">Carregando entregas...</div></section>
+  <p class="note-inline">Pedidos são atribuídos pela loja, sem necessidade de aceitar. Registre a chegada ao cliente antes de validar o código da entrega. Integração 99Food em homologação.</p>
+</section>
+<section class="app-view" data-view="rotas" id="viewRotas" hidden>
+  <div class="page-title"><span class="eyebrow">SUAS ENTREGAS</span><h1>Rotas</h1><p>Acompanhe sua moto, a loja e os destinos atribuídos.</p></div>
   <section class="courier-shared-map panel-white" aria-label="Mapa compartilhado das entregas">
     <header class="courier-shared-map-header">
       <div><span class="eyebrow">MAPA DAS ENTREGAS</span><h2>Loja, sua moto e destinos</h2></div>
@@ -113,13 +122,9 @@ a.btn{text-decoration:none}
       <span>🏪 Loja</span><span>🛵 Seu GPS</span><span><b class="courier-map-mini-number">1</b> Entrega</span>
     </div>
   </section>
-  <p id="notice" role="alert" aria-live="polite"></p>
-  <h2 class="section-title">Seus pedidos <span class="auto-pill">Atualiza automaticamente</span></h2>
   <section id="routeSuggestions" class="route-suggestions" aria-label="Sequência de entregas agrupadas" hidden></section>
-  <section id="cards" class="grid" aria-label="Pedidos atribuídos"><div class="empty">Carregando entregas...</div></section>
-  <p class="note-inline">Pedidos são atribuídos pela loja, sem necessidade de aceitar. Registre a chegada ao cliente antes de validar o código da entrega. Integração 99Food em homologação.</p>
+  <p class="note-inline">Entregas sem coordenadas confirmadas podem ser abertas pelo botão Ir no cartão do pedido.</p>
 </section>
-
 <section class="app-view" data-view="ganhos" id="viewGanhos" hidden>
   <div class="page-title"><span class="eyebrow">FINANCEIRO DO ENTREGADOR</span><h1>Meus ganhos</h1><p>Veja quanto você gerou em entregas concluídas.</p></div>
   <section class="earnings" aria-label="Meus ganhos" id="earnings">
@@ -218,6 +223,7 @@ a.btn{text-decoration:none}
 </div>
 <nav class="bottom-nav" aria-label="Navegação principal">
   <button type="button" data-tab="pedidos" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Pedidos</span></button>
+  <button type="button" data-tab="rotas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="6" cy="17" r="2"/><circle cx="18" cy="7" r="2"/><path d="M8 17h5c6 0 1-10 3-10M4 10l4-4 4 4"/></svg><span>Rotas</span></button>
   <button type="button" data-tab="ganhos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 2v20m5-15c-1-2-3-3-5-3-3 0-5 2-5 4s2 3 5 4 5 2 5 4-2 4-5 4c-2 0-5-1-6-3"/></svg><span>Ganhos</span></button>
   <button type="button" data-tab="perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-5 3-8 8-8s8 3 8 8"/></svg><span>Perfil</span></button>
   <button type="button" data-tab="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm0-13 2 2 3-1 1 3 3 2-1 3 1 3-3 2-1 3-3-1-2 2-2-2-3 1-1-3-3-2 1-3-1-3 3-2 1-3 3 1Z"/></svg><span>Ajustes</span></button>
@@ -230,13 +236,16 @@ import {createOrderDetailsController} from "./order-details.mjs";
 import {buildNavigationUrl,buildBatchNavigationUrl} from "./navigation.mjs";
 import {suggestedBatchRoutes} from "./route-sequence.mjs";
 import {mountCourierSharedMap,freshGps} from "./dispatch-map.mjs";
-import {courierActionStage,courierProgress} from "./delivery-flow.mjs";
+import {courierActionStage} from "./delivery-flow.mjs";
+import {arrivalProximity} from "./arrival-proximity.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
 const orderDetails=createOrderDetailsController({supabase:sb,routeFor:delivery=>buildNavigationUrl(delivery,navProvider,navMode)});
 let courier=null, busy=false,routeOrigins=new Map(),lastCompletedBatchStops=new Map();
 let sharedCourierMap=null,mapLoadPromise=null,mapLastAttempt=0,mapLastGps=null;
+const arrivalSignals=new Map();
+let nearbyArrival=null;
 let gpsWatchId=null, gpsCourierId=null, gpsLastAttemptAt=0, gpsInFlight=false;
 let nativeGpsRunning=false, nativeGpsPermission='unknown';
 let gpsStartRequested=false,gpsStartTask=null,gpsStartGeneration=0,gpsAutoChecked=false;
@@ -591,7 +600,7 @@ function playAssignmentSound(){
 document.addEventListener("pointerdown",enableAssignmentSound,{once:true});
 document.addEventListener("keydown",enableAssignmentSound,{once:true});
 
-const validViews=["pedidos","ganhos","perfil","config"];
+const validViews=["pedidos","rotas","ganhos","perfil","config"];
 function switchView(view){
  const next=validViews.includes(view)?view:"pedidos";
  for(const section of document.querySelectorAll(".app-view"))section.hidden=section.dataset.view!==next;
@@ -599,7 +608,10 @@ function switchView(view){
   if(btn.dataset.tab===next)btn.setAttribute("aria-current","page");else btn.removeAttribute("aria-current");
  }
  if(location.hash!=="#"+next)history.replaceState(null,"","#"+next);
- if(next==="pedidos"&&sharedCourierMap)requestAnimationFrame(()=>sharedCourierMap.resize());
+ if(next==="rotas"){
+  if(sharedCourierMap)requestAnimationFrame(()=>{sharedCourierMap.resize();sharedCourierMap.fitAll();});
+  else mountCourierMapIfNeeded();
+ }
  window.scrollTo({top:0,behavior:"instant"});
 }
 
@@ -1023,23 +1035,15 @@ function card(d){
  }
  box.append(addressRow);
  box.append(element("div","pay","Cobrança: a confirmar com a loja. Não presuma pagamento aprovado."));
- // O fluxo acompanha todo pedido. A ação disponível acompanha o estado validado no servidor.
+ // O cartão exibe somente a ação que corresponde à etapa atual.
  const stage=courierActionStage(d);
- const progress=element("div","card-delivery-steps");
- progress.setAttribute("role","list");
- progress.setAttribute("aria-label","Etapas da entrega");
- for(const step of courierProgress(d)){
-  const pill=element("span","card-delivery-step"+(step.done?" is-done":"")+(step.active?" is-active":""),step.label);
-  pill.setAttribute("role","listitem");
-  if(step.active&&!step.done)pill.setAttribute("aria-current","step");
-  progress.append(pill);
- }
- box.append(progress);
  const actions=element("div","actions");
  const collecting=stage==="collect";
  if(collecting)actions.append(createAction("Coletar pedido","primary",()=>collectCourierOrder(d)));
- if(d.status==="aceita"&&d.collected_at&&d.source==="ifood"&&d.logistics_provider==="loja"){
-  actions.append(createAction("Sincronizar despacho com iFood","secondary",async()=>{
+ if(stage==="depart"&&d.source==="ifood"&&d.logistics_provider==="loja"){
+  const syncTools=element("details","courier-secondary-tools");
+  syncTools.append(element("summary","","Problemas ao sincronizar com iFood?"));
+  syncTools.append(createAction("Sincronizar despacho com iFood","secondary",async()=>{
    if(busy)return;busy=true;message("");
    try{
     const result=await ifoodDriverAction(d.id,"dispatch");
@@ -1049,14 +1053,18 @@ function card(d){
    }catch(err){message(String(err?.message||"Não foi possível sincronizar o despacho"))}
    finally{busy=false}
   }));
+  box.append(syncTools);
  }
- if(stage==="depart"&&d.batch_id)
-  actions.append(createAction("Sair para entrega","primary",()=>rpc("pitacco_driver_depart",{p_batch:d.batch_id})));
- if(stage==="depart"&&!d.batch_id)
-  box.append(element("p","warn","Este pedido está sem rota vinculada. Solicite à loja que revise a atribuição."));
- if(d.status==="retirada"){
-  if(!d.arrived_at){
-   actions.append(createAction("Cheguei na entrega","primary",()=>markArrival(d)));
+ if(stage==="depart")
+  actions.append(createAction("Sair para entrega","primary",()=>d.batch_id
+    ?rpc("pitacco_driver_depart",{p_batch:d.batch_id})
+    :rpc("pitacco_driver_depart_single",{p_delivery:d.id})));
+ if(stage==="arrive"||stage==="code"){
+  if(stage==="arrive"){
+   const closeToCustomer=nearbyArrival?.deliveryId===d.id;
+   if(closeToCustomer)box.append(element("p","arrival-nearby",
+     "📍 Localização do cliente identificada (aprox. "+nearbyArrival.distanceMeters+" m). Confirme sua chegada."));
+   actions.append(createAction(closeToCustomer?"Confirmar chegada":"Cheguei na entrega","primary",()=>markArrival(d)));
    box.append(element("p","note-inline","Chegar não é o mesmo que entregar. O código só pode ser validado após registrar a chegada."));
   }else{
    const arrivalTime=new Date(d.arrived_at).toLocaleTimeString("pt-BR",{
@@ -1070,13 +1078,16 @@ function card(d){
      d.source==="keeta"?"Aviso à Keeta ainda não homologado.":"Peça o código de seis dígitos ao cliente.");
    box.append(element("p","arrival-provider",statusText));
    if(d.source==="ifood"&&!synced){
-    actions.append(createAction("Tentar avisar iFood","secondary",async()=>{
+    const arrivalTools=element("details","courier-secondary-tools");
+    arrivalTools.append(element("summary","","Problemas ao avisar o iFood?"));
+    arrivalTools.append(createAction("Tentar avisar iFood","secondary",async()=>{
      if(busy)return;busy=true;
      try{const result=await ifoodDriverAction(d.id,"arrival");
        message(result.provider_state==="submitted"?"Chegada enviada ao iFood; aguardando confirmação.":"Aviso iFood pendente.");
        await refresh();
      }catch(error){message(String(error.message))}finally{busy=false}
     }));
+    box.append(arrivalTools);
    }
    if(d.source==="proprio"||d.source==="ifood"){
     const verify=element("section","card-verify-block");
@@ -1175,8 +1186,9 @@ function courierMapStatus(){
 function mountCourierMapIfNeeded(){
  if(sharedCourierMap){courierMapStatus();return;}
  if(mapLoadPromise||Date.now()-mapLastAttempt<60000)return;
- mapLastAttempt=Date.now();
  const holder=$('courierMap');
+ if(!holder||holder.closest(".app-view")?.hidden)return;
+ mapLastAttempt=Date.now();
  mapLoadPromise=mountCourierSharedMap(holder,{
   onOpenOrder:delivery=>orderDetails.open(delivery),
   onNavigate:delivery=>buildNavigationUrl(delivery,navProvider,navMode)
@@ -1273,7 +1285,8 @@ async function refreshSnapshot(){
   mapLastGps=null;
   sharedCourierMap?.clearGps();
  }
- mountCourierMapIfNeeded();
+ nearbyArrival=arrivalProximity(current,mapLastGps,arrivalSignals);
+ if(!document.querySelector(".app-view[data-view=rotas]")?.hidden)mountCourierMapIfNeeded();
  renderRouteSuggestions(current);
  const target=$("cards");target.replaceChildren();
  if(!current.length){

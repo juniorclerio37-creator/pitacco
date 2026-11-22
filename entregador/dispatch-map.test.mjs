@@ -32,12 +32,16 @@ test('courier and merchant use the SAME orange storefront SVG and OSM base',()=>
  assert.match(courier,/courier-map-moto/);
  assert.match(courier,/courier-map-destination/);
 });
-test('map is embedded in CURRENT delivery screen and preserves operations',()=>{
+test('map is in the new Routes tab, not the Pedidos home, and preserves operations',()=>{
  const page=read('entregador/painel.html');
  const css=read('entregador/painel.css');
  const auth=read('entregador/supabase-client.mjs');
  assert.match(page,/import \{mountCourierSharedMap,freshGps\} from "\.\/dispatch-map\.mjs"/);
- assert.match(page,/id="courierMap"/);
+ const home=page.slice(page.indexOf('id="viewPedidos"'),page.indexOf('id="viewRotas"'));
+ const routes=page.slice(page.indexOf('id="viewRotas"'),page.indexOf('id="viewGanhos"'));
+ assert.doesNotMatch(home,/id="courierMap"/);
+ assert.match(routes,/id="courierMap"/);
+ assert.match(page,/data-tab="rotas"/);
  assert.match(page,/id="courierMapGps"/);
  assert.match(page,/id="courierMapAll"/);
  assert.match(page,/sb\.rpc\("pitacco_driver_route_origins"\)/);
@@ -78,6 +82,7 @@ test('the rider has one orange illustrated motorcycle in courier, merchant and c
  assert.match(merchant,/illustratedCourierIcon\(L,\{customer:true\}\)/);
  assert.match(merchant,/iconAnchor:\[36,61\]/);
  assert.match(courier,/iconAnchor:\[36,61\]/);
+ assert.match(courier,/zIndexOffset:2000/);
  assert.match(fleetStyles,/\.pitacco-courier-moto-stale svg/);
  assert.match(courierStyles,/\.courier-map-moto svg/);
  assert.match(customer,/\.pitacco-courier-moto-pin svg/);

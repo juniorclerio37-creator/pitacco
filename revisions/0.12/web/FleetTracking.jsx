@@ -71,7 +71,7 @@ export default function FleetTracking({client, storeId, onBack}) {
           // couriers. Filtering couriers.store_id hid the test-store rider.
           client.rpc('pitacco_store_couriers', {p_store: storeId}),
           client.from('deliveries')
-            .select('id,order_id,store_id,courier_id,status,logistics_provider,latitude,longitude,batch_id,address,customer_name,created_at')
+            .select('id,order_id,store_id,courier_id,status,logistics_provider,latitude,longitude,batch_id,address,customer_name,collected_at,arrived_at,created_at')
             .eq('store_id', storeId).order('created_at', {ascending: false}).limit(200),
         ]);
         const failure = storeResult.error || couriersResult.error || deliveriesResult.error;
@@ -149,7 +149,7 @@ export default function FleetTracking({client, storeId, onBack}) {
     const position = positions.get(c.id);
     const signal = gpsStatus(c, position);
     const jobs = active.filter(d => d.courier_id === c.id);
-    const phase = jobs.some(d => d.status === 'retirada') ? 'Em entrega' : jobs.length ? 'Em coleta' : 'Disponível';
+    const phase = jobs.some(d => d.status === 'retirada' && d.arrived_at) ? 'Chegou ao cliente' : jobs.some(d => d.status === 'retirada') ? 'Em entrega' : jobs.length ? 'Em coleta' : 'Disponível';
     const motion=motions.get(c.id);
     const freshMotion=signal==='online'&&motion?.motion_observed_at&&
       Date.now()-Date.parse(motion.motion_observed_at)<120000;
@@ -232,7 +232,7 @@ export default function FleetTracking({client, storeId, onBack}) {
                   <small>{courier?.name || 'Sem motoboy'} · {route.stops.length} parada(s)</small></span>
               </button>
               {route.stops.map(d => <div className="fleet-stop" key={d.id}>
-                <span><strong>{d.customer_name || 'Entrega'}</strong><small>{d.address || 'Endereço não informado'} · {d.status}</small></span>
+                <span><strong>{d.customer_name || 'Entrega'}</strong><small>{d.address || 'Endereço não informado'} · {d.status==='retirada'&&d.arrived_at?'Chegou ao cliente':d.status==='retirada'?'Em entrega':d.status==='aceita'?'Coletada':d.status==='atribuida'?'Aguardando coleta':d.status}</small></span>
                 {mapsStopUrl(d) ? <a href={mapsStopUrl(d)} target="_blank" rel="noopener noreferrer" aria-label={'Ir para entrega ' + (d.customer_name || '')}><Navigation size={17}/> Ir</a>
                   : <small title="É necessário cadastrar coordenadas da entrega">Sem GPS</small>}
               </div>)}

@@ -71,5 +71,6 @@ test("no duplicate Maps tab or navigation settings inside profile",()=>{
  assert.match(html,/buildNavigationUrl\(d,navProvider,navMode\)/);
  assert.match(html,/data-nav-choice="google"/);
  assert.match(html,/data-nav-choice="waze"/);
- assert.match(html,/const validViews=\["pedidos","ganhos","perfil","config"\]/);
+ assert.match(html,/data-tab="rotas"/);
+ assert.match(html,/const validViews=\["pedidos","rotas","ganhos","perfil","config"\]/);
 });
