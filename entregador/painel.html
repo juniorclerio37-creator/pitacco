@@ -72,7 +72,11 @@ a.btn{text-decoration:none}
 <header class="bar">
   <div class="barinner">
     <div class="app-brand"><div class="app-logo" aria-hidden="true"><img src="./logo-entregador.svg" width="44" height="44" alt=""></div><div><strong>Pitacco</strong><small>ENTREGADOR</small></div></div>
-    <div class="header-right"><span class="store-pill" id="storeChip" title="Loja ativa">Minha loja</span><button class="header-refresh" id="refresh" type="button" aria-label="Atualizar informações" title="Atualizar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-5L4 8m0-4v4h4M4 13a8 8 0 0 0 14 5l2-2m0 4v-4h-4"/></svg></button></div>
+    <div class="header-right">
+      <span class="store-pill" id="storeChip" title="Loja ativa">Minha loja</span>
+      <div class="status-banner header-online"><span class="status-dot" id="onlineDot"></span><button class="btn primary" id="online" type="button" disabled aria-label="Alterar disponibilidade do entregador">Carregando...</button></div>
+      <button class="header-refresh" id="refresh" type="button" aria-label="Atualizar informações" title="Atualizar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-5L4 8m0-4v4h4M4 13a8 8 0 0 0 14 5l2-2m0 4v-4h-4"/></svg></button>
+    </div>
   </div>
 </header>
 <div id="connectionBanner" role="status" aria-live="polite" hidden>
@@ -80,11 +84,26 @@ a.btn{text-decoration:none}
 </div>
 <main class="app-shell">
 <section class="app-view" data-view="pedidos" id="viewPedidos">
-  <div class="order-header">
-    <div><span class="eyebrow">SUA OPERAÇÃO</span><h1 id="greeting">Minhas entregas</h1><p class="sub">Pedidos enviados diretamente pela loja.</p></div>
-    <button type="button" class="today-mini" id="miniEarnings" aria-label="Abrir ganhos de hoje"><small>GANHOS DE HOJE</small><b id="miniToday">R$ 0,00</b><span id="miniTodayCount">0 entregas</span></button>
+  <div class="dashboard-legacy-fields" aria-hidden="true">
+    <span id="greeting">Minhas entregas</span>
+    <button type="button" id="miniEarnings" tabindex="-1"><b id="miniToday">R$ 0,00</b><span id="miniTodayCount">0 entregas</span></button>
+    <span id="availability">Carregando disponibilidade...</span>
+    <span id="availableHelp">Sua loja organiza as entregas para você.</span>
   </div>
-  <div class="status-banner"><div class="status-copy"><span class="status-dot" id="onlineDot"></span><div><b id="availability">Carregando disponibilidade...</b><span id="availableHelp">Sua loja organiza as entregas para você.</span></div></div><button class="btn primary" id="online" type="button" disabled>Carregando...</button></div>
+  <section class="courier-dashboard-balances" aria-label="Resumo financeiro e entregas de hoje">
+    <button class="balance-stat balance-stat--today" id="homeBalanceLink" type="button" aria-label="Abrir ganhos e saldo de hoje">
+      <span class="balance-stat-icon" aria-hidden="true">▣</span>
+      <span class="balance-stat-copy"><small>Saldo do dia</small><strong id="homeTodayBalance">R$ 0,00</strong></span>
+    </button>
+    <div class="balance-stat">
+      <span class="balance-stat-icon balance-stat-icon--bike" aria-hidden="true">🛵</span>
+      <span class="balance-stat-copy"><small>Entregas hoje</small><strong id="homeTodayCount">0</strong></span>
+    </div>
+    <div class="balance-stat">
+      <span class="balance-stat-icon" aria-hidden="true">▤</span>
+      <span class="balance-stat-copy"><small>Ganhos no mês</small><strong id="homeMonthBalance">R$ 0,00</strong></span>
+    </div>
+  </section>
   <div id="pushBanner" class="panel-white courier-tech-internal" aria-hidden="true" inert role="status" aria-live="polite" hidden
     style="padding:13px 16px;margin:12px 0;border:1px solid #f0c48e;border-radius:14px;background:#fff9f2;display:none;flex-wrap:wrap;align-items:center;gap:10px">
     <span id="pushBannerText" style="flex:1;min-width:210px;font-size:13px">Verificando alertas de novas entregas...</span>
@@ -94,16 +113,30 @@ a.btn{text-decoration:none}
     <p id="pushQuickStatus" role="status" aria-live="polite" data-state="checking">Conferindo o Firebase e o cadastro do aparelho…</p>
     <small>Cadastro automático após login. Este botão não cria pedidos nem dispara som.</small>
   </section>
-  <div class="summary">
-    <div class="stat"><span class="stat-icon orange">↗</span><strong id="active">—</strong><span>Entregas em andamento</span></div>
-    <div class="stat"><span class="stat-icon green">✓</span><strong id="done">—</strong><span>Concluídas hoje</span></div>
+  <div class="dashboard-legacy-fields" aria-hidden="true">
+    <strong id="active">—</strong><strong id="done">—</strong>
   </div>
-
+  <nav class="delivery-bucket-nav" role="group" aria-label="Filtrar pedidos por etapa">
+    <button type="button" data-order-bucket="coleta" class="delivery-bucket-btn" aria-pressed="true">
+      <span class="bucket-icon" aria-hidden="true">🛵</span>
+      <span>Aguardando coleta <b id="bucketCollectCount">0</b></span>
+    </button>
+    <button type="button" data-order-bucket="andamento" class="delivery-bucket-btn" aria-pressed="false">
+      <span class="bucket-icon" aria-hidden="true">◷</span>
+      <span>Entregas em andamento <b id="bucketProgressCount">0</b></span>
+    </button>
+    <button type="button" data-order-bucket="concluidas" class="delivery-bucket-btn" aria-pressed="false">
+      <span class="bucket-icon" aria-hidden="true">✓</span>
+      <span>Entregas concluídas <b id="bucketCompletedCount">0</b></span>
+    </button>
+  </nav>
   <p id="notice" role="alert" aria-live="polite"></p>
-  <h2 class="section-title">Seus pedidos <span class="auto-pill">Atualiza automaticamente</span></h2>
-
-  <section id="cards" class="grid" aria-label="Pedidos atribuídos"><div class="empty">Carregando entregas...</div></section>
-  <p class="note-inline">Pedidos são atribuídos pela loja, sem necessidade de aceitar. Registre a chegada ao cliente antes de validar o código da entrega. Integração 99Food em homologação.</p>
+  <div class="delivery-bucket-summary" aria-live="polite">
+    <strong id="bucketTitle">Aguardando coleta</strong>
+    <span class="auto-pill">Atualiza automaticamente</span>
+  </div>
+  <section id="cards" class="grid courier-order-list" aria-label="Pedidos atribuídos"><div class="empty">Carregando entregas...</div></section>
+  <p class="note-inline dashboard-hint">Os pedidos são atribuídos pela loja e atualizados automaticamente. Conclusões exigem confirmação oficial do código.</p>
 </section>
 <section class="app-view" data-view="rotas" id="viewRotas" hidden>
   <div class="page-title"><span class="eyebrow">SUAS ENTREGAS</span><h1>Rotas</h1><p>Acompanhe sua moto, a loja e os destinos atribuídos.</p></div>
@@ -239,6 +272,7 @@ import {mountCourierSharedMap,freshGps} from "./dispatch-map.mjs";
 import {courierActionStage} from "./delivery-flow.mjs";
 import {arrivalProximity} from "./arrival-proximity.mjs";
 import {paymentSummaryPanel,courierCollectStep} from "./payment-ui.mjs";
+import {deliveryBucket,compactPaymentChip,safeFinishedToday} from "./compact-dashboard.mjs";
 import {pickupReminderType,showPickupReminder} from "./pickup-reminder.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
