@@ -183,8 +183,8 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
   if(!uuid.test(input?.delivery??'')||!['arrival','verify','dispatch'].includes(input?.action)){
    return reply(400,{error:'Entrega ou ação inválida'});
   }
-  if(input.action==='verify' && (typeof input.code!=='string'||! /^\d{4,8}$/.test(input.code))) {
-   return reply(400,{error:'Informe o código numérico do cliente'});
+  if(input.action==='verify' && (typeof input.code!=='string'||! /^\d{4}$/.test(input.code))) {
+   return reply(400,{error:'Informe os 4 dígitos do código iFood'});
   }
   try{
    if(input.action==='dispatch'){
