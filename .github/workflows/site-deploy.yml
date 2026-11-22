@@ -31,7 +31,9 @@ jobs:
         id: check
         shell: bash
         env:
-          PITACCO_SITE_TOKEN: ${{ secrets.PITACCO_SITE_CLOUDFLARE_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+          PITACCO_SITE_TOKEN: ${{ secrets.PITACCO_SITE_CLOUDFLARE_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN || secrets.PITACCO_ADMIN_CLOUDFLARE_API_TOKEN }}
+          PITACCO_ADMIN_ACCOUNT: ${{ vars.PITACCO_ADMIN_CLOUDFLARE_ACCOUNT_ID }}
+          USING_ADMIN_TOKEN: ${{ secrets.PITACCO_SITE_CLOUDFLARE_API_TOKEN == '' && secrets.CLOUDFLARE_API_TOKEN == '' && secrets.PITACCO_ADMIN_CLOUDFLARE_API_TOKEN != '' }}
         run: |
           set -euo pipefail
           if [[ -z "$PITACCO_SITE_TOKEN" ]]; then
@@ -42,7 +44,13 @@ jobs:
               echo "O aplicativo em produção permanece intacto até a credencial existir."
             } >> "$GITHUB_STEP_SUMMARY"
             echo "::warning::Token de publicação do Pitacco Site não configurado no GitHub."
+          elif [[ "$USING_ADMIN_TOKEN" == "true" && "$PITACCO_ADMIN_ACCOUNT" != "f6dc4301a05e5b950e9766e68354f1ac" ]]; then
+            echo "::error::A credencial alternativa do Admin não está associada à conta esperada do Pitacco."
+            exit 1
           else
+            if [[ "$USING_ADMIN_TOKEN" == "true" ]]; then
+              echo "Usando a credencial Cloudflare existente do Admin na mesma conta; nenhum segredo foi alterado." >> "$GITHUB_STEP_SUMMARY"
+            fi
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -78,7 +86,7 @@ jobs:
         shell: bash
         env:
           CLOUDFLARE_ACCOUNT_ID: f6dc4301a05e5b950e9766e68354f1ac
-          CLOUDFLARE_API_TOKEN: ${{ secrets.PITACCO_SITE_CLOUDFLARE_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.PITACCO_SITE_CLOUDFLARE_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN || secrets.PITACCO_ADMIN_CLOUDFLARE_API_TOKEN }}
         run: |
           npx --yes wrangler@4.162.0 deploy --config wrangler.jsonc --keep-vars
       - name: Verificar disponibilidade das páginas oficiais
