@@ -14,7 +14,7 @@ insert into public.loyalty_programs(store_id,points_enabled,points_per_real,min_
  values('20000000-0000-0000-0000-000000000091',true,1,100,1000,true,1,500,true,10,100,true,300,200,true);
 
 create function pg_temp.loyalty_buy(k text,reward text default '',coupon text default '',req uuid default gen_random_uuid(),referral text default '') returns jsonb
-language plpgsql as $ declare result jsonb;begin
+language plpgsql as $$ declare result jsonb;begin
  result:=public.pitacco_loyalty_checkout('loyalty-test',req,'Cliente',k,'',
   '[{"product_id":"30000000-0000-0000-0000-000000000091","quantity":1,"options":[]}]','pickup','pix_manual','',referral,coupon,reward);
  -- Remove apenas o rate-limit temporal no banco descartável, nunca em produção.
