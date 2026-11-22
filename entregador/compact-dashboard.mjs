@@ -23,12 +23,12 @@ export function paymentChipInfo(payment){
  const card=/cartão|cartao|crédito|credito|débito|debito|maquininha/.test(name);
  const cash=/dinheiro|cash/.test(name);
  return {
-  tone:paid?"paid":collect?"collect":"unknown",
-  label:paid?"Pago"+(name==="online"?" (Online)":""):collect
+  tone:p.state==="no_collect"?"paid":paid?"paid":collect?"collect":"unknown",
+  label:p.state==="no_collect"?"Sem cobrança na entrega":paid?"Pago"+(name==="online"?" (Online)":""):collect
    ?card?"Cartão na entrega":cash?"Dinheiro na entrega":"A cobrar":"Pagamento a verificar",
-  hint:collect?(card?"Leve a maquininha":cash?"Leve o troco":method):paid?method:"Confira com a loja",
+  hint:p.state==="no_collect"?"Não cobrar o cliente":collect?(card?"Leve a maquininha":cash?"Leve o troco":method):paid?method:"Confira com a loja",
   value:p.amount!=null&&Number.isFinite(Number(p.amount))?money(p.amount):null,
-  icon:paid?"✓":card?"▤":cash?"R$":"!"
+  icon:p.state==="no_collect"?"✓":paid?"✓":card?"▤":cash?"R$":"!"
  };
 }
 function node(tag,cls,value){
