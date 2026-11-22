@@ -6,9 +6,13 @@ const formatDate = new Intl.DateTimeFormat('pt-BR', {dateStyle: 'short', timeSty
 export default function Inventory({client, storeId, manager, products}) {
   const [ingredients, setIngredients] = useState([]);
   const [recipes, setRecipes] = useState([]);
+  const [optionRecipes, setOptionRecipes] = useState([]);
+  const [optionGroups, setOptionGroups] = useState([]);
+  const [catalogOptions, setCatalogOptions] = useState([]);
   const [movements, setMovements] = useState([]);
   const [view, setView] = useState('Insumos');
   const [productId, setProductId] = useState('');
+  const [optionId, setOptionId] = useState('');
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -25,7 +29,10 @@ export default function Inventory({client, storeId, manager, products}) {
       const results = await Promise.all([
         client.from('pitacco_ingredients').select('*').eq('store_id',storeId).order('name'),
         client.from('pitacco_recipe_lines').select('*').eq('store_id',storeId),
-        client.from('pitacco_stock_movements').select('*').eq('store_id',storeId).order('created_at',{ascending:false}).limit(50)
+        client.from('pitacco_stock_movements').select('*').eq('store_id',storeId).order('created_at',{ascending:false}).limit(50),
+        client.from('pitacco_option_recipe_lines').select('*').eq('store_id',storeId),
+        client.from('product_option_groups').select('id,product_id,name,sort_order').eq('store_id',storeId).order('sort_order'),
+        client.from('product_options').select('id,group_id,name,available,sort_order').eq('store_id',storeId).order('sort_order')
       ]);
       if (requestVersion.current !== version) return;
       const error = results.find(result=>result.error)?.error;
@@ -33,6 +40,9 @@ export default function Inventory({client, storeId, manager, products}) {
       setIngredients(results[0].data);
       setRecipes(results[1].data);
       setMovements(results[2].data);
+      setOptionRecipes(results[3].data||[]);
+      setOptionGroups(results[4].data||[]);
+      setCatalogOptions(results[5].data||[]);
       setFailure('');
     } catch (error) {
       if (requestVersion.current === version) setFailure(error.message || 'Não foi possível carregar o estoque.');
@@ -92,6 +102,24 @@ export default function Inventory({client, storeId, manager, products}) {
     save(operation, 'Ficha técnica atualizada.', ()=>form.reset());
   }
 
+  function saveOptionRecipe(event) {
+    event.preventDefault();
+    const form=event.currentTarget;
+    const data=new FormData(form);
+    const ingredientId=String(data.get('ingredient'));
+    const quantity=Number(data.get('quantity'));
+    if(!selectedOption||!manager||!Number.isFinite(quantity)||quantity<=0) {
+      setFailure('Selecione um complemento e informe uma quantidade válida.');
+      return;
+    }
+    const exists=optionRecipes.some(row=>row.option_id===selectedOption.id&&row.ingredient_id===ingredientId);
+    const table=client.from('pitacco_option_recipe_lines');
+    const operation=exists
+      ?table.update({quantity}).eq('store_id',storeId).eq('option_id',selectedOption.id).eq('ingredient_id',ingredientId).select('option_id').single()
+      :table.insert({store_id:storeId,option_id:selectedOption.id,ingredient_id:ingredientId,quantity});
+    save(operation,'Ficha técnica do complemento atualizada.',()=>form.reset());
+  }
+
   function saveMovement(event) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -112,9 +140,14 @@ export default function Inventory({client, storeId, manager, products}) {
   const stockOptions = ingredients.map(item=><option key={item.id} value={item.id}>{item.name} ({item.unit})</option>);
   const shortages = ingredients.filter(item=>Number(item.balance)<=Number(item.minimum));
   const visibleRecipe = recipes.filter(row=>row.product_id===productId);
+  const groupsForProduct=optionGroups.filter(group=>group.product_id===productId);
+  const groupNames=new Map(groupsForProduct.map(group=>[group.id,group.name]));
+  const optionsForProduct=catalogOptions.filter(option=>groupNames.has(option.group_id));
+  const selectedOption=optionsForProduct.find(option=>option.id===optionId)||null;
+  const visibleOptionRecipe=optionRecipes.filter(row=>row.option_id===selectedOption?.id);
   return <section className="panel" aria-label="Controle de estoque" aria-busy={loading||busy}>
     <div className="pitacco-local-tabs" role="group" aria-label="Seções de estoque">
-      {['Insumos','Fichas técnicas','Movimentações'].map(tab=><button key={tab} type="button" aria-pressed={view===tab} className={view===tab?'active':'secondary'} onClick={()=>setView(tab)}>{tab}</button>)}
+      {['Insumos','Fichas técnicas','Complementos','Movimentações'].map(tab=><button key={tab} type="button" aria-pressed={view===tab} className={view===tab?'active':'secondary'} onClick={()=>setView(tab)}>{tab}</button>)}
     </div>
     {loading&&<p role="status">Carregando estoque…</p>}
     {message&&<p role="status">{message}</p>}
@@ -138,6 +171,7 @@ export default function Inventory({client, storeId, manager, products}) {
     </>}
     {view==='Fichas técnicas'&&<>
       <h3>Ingredientes por unidade vendida</h3>
+      <p>Cadastre também a embalagem como insumo na unidade <strong>un</strong>, quando consumida por unidade do produto.</p>
       <label>Produto <select value={productId} onChange={event=>setProductId(event.target.value)}>
         <option value="">Selecione</option>{products.map(product=><option key={product.id} value={product.id}>{product.name}</option>)}
       </select></label>
@@ -156,6 +190,43 @@ export default function Inventory({client, storeId, manager, products}) {
             onClick={()=>save(client.from('pitacco_recipe_lines').delete().eq('store_id',storeId).eq('product_id',productId).eq('ingredient_id',line.ingredient_id).select('ingredient_id').single(),'Insumo removido da ficha.')}>Remover</button>}
         </li>;
       })}</ul>
+    </>}
+    {view==='Complementos'&&<>
+      <h3>Ficha técnica de cada complemento</h3>
+      <p>Associe ingredientes aos adicionais existentes do cardápio. O consumo será contabilizado quando o pedido for aceito, sem lançar estoque de pedidos anteriores.</p>
+      <label>Produto <select value={productId} onChange={event=>{setProductId(event.target.value);setOptionId('');}}>
+        <option value="">Selecione</option>{products.map(product=><option key={product.id} value={product.id}>{product.name}</option>)}
+      </select></label>
+      {productId&&<>
+        <label>Complemento <select value={selectedOption?.id||''} onChange={event=>setOptionId(event.target.value)}>
+          <option value="">Selecione</option>
+          {optionsForProduct.map(option=><option key={option.id} value={option.id}>
+            {groupNames.get(option.group_id)} · {option.name}{option.available?'':' (indisponível)'}
+          </option>)}
+        </select></label>
+        {!loading&&!optionsForProduct.length&&<p>Este produto ainda não possui complementos cadastrados.</p>}
+      </>}
+      {selectedOption&&<>
+        <h4>{selectedOption.name} — consumo por seleção</h4>
+        {manager&&<form onSubmit={saveOptionRecipe}>
+          <label>Insumo <select name="ingredient" required><option value="">Selecione</option>{stockOptions}</select></label>
+          <label>Quantidade por complemento <input name="quantity" type="number" required min="0.001" max="1000000" step="0.001"/></label>
+          <button disabled={busy||loading||!ingredients.length}>Salvar ingrediente do complemento</button>
+        </form>}
+        {!loading&&!visibleOptionRecipe.length&&<p>Este complemento ainda não tem ficha técnica. O sistema não presumirá ingredientes.</p>}
+        <ul>{visibleOptionRecipe.map(line=>{
+          const ingredient=ingredientById.get(line.ingredient_id);
+          return <li key={line.ingredient_id}>
+            <strong>{ingredient?.name||'Insumo indisponível'}</strong> · {formatQuantity(line.quantity)} {ingredient?.unit||''}
+            {manager&&<button type="button" className="secondary" disabled={busy}
+              aria-label={'Remover '+(ingredient?.name||'insumo')+' do complemento'}
+              onClick={()=>save(client.from('pitacco_option_recipe_lines').delete()
+                .eq('store_id',storeId).eq('option_id',selectedOption.id)
+                .eq('ingredient_id',line.ingredient_id).select('ingredient_id').single(),
+                'Insumo removido do complemento.')}>Remover</button>}
+          </li>;
+        })}</ul>
+      </>}
     </>}
     {view==='Movimentações'&&<>
       <h3>Entradas, saídas e consumo por pedido</h3>
