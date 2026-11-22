@@ -20,6 +20,10 @@ insert into public.product_options(id,group_id,store_id,name,additional_price) v
  ('50000000-0000-0000-0000-000000000002','40000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','Leite em pó',3);
 insert into public.loyalty_coupons(store_id,code,discount_type,discount_value,max_uses)
  values ('20000000-0000-0000-0000-000000000001','TESTE10','percent',10,1);
+update public.loyalty_coupons set starts_at=now()-interval '1 day' where code='TESTE10';
+insert into public.loyalty_coupons(store_id,code,discount_type,discount_value,starts_at,expires_at)
+ values ('20000000-0000-0000-0000-000000000001','FUTURO','percent',10,now()+interval '1 day',now()+interval '2 days'),
+ ('20000000-0000-0000-0000-000000000001','VENCIDO','percent',10,now()-interval '2 days',now()-interval '1 day');
 
 set local role anon;
 do $regression$
@@ -30,7 +34,17 @@ declare
  result jsonb;
  replay jsonb;
  tracking jsonb;
+ invalid_coupon text;
 begin
+ foreach invalid_coupon in array array['FUTURO','VENCIDO'] loop
+  begin
+   perform public.checkout_public_order_coupon('checkout-fixture',gen_random_uuid(),'Cliente','11999999999','Rua de teste 123',
+     jsonb_build_array(first_line),'pickup','pix_manual','',invalid_coupon);
+   raise exception 'Cupom fora do período não pode ser usado';
+  exception when raise_exception then
+   if sqlerrm <> 'Cupom indisponível ou expirado' then raise;end if;
+  end;
+ end loop;
  result:=public.checkout_public_order('checkout-fixture',key,'Cliente','11999999999','Rua de teste 123',jsonb_build_array(first_line,second_line),'pickup','pix_manual');
  assert (result->>'total')::numeric=68, 'Prices and modifiers are calculated per variant; pickup has no freight';
  assert result->>'payment_status'='pending', 'Manual Pix remains pending';
@@ -71,6 +85,8 @@ reset role;
 do $regression$
 begin
  assert (select uses from public.loyalty_coupons where code='TESTE10')=1, 'Coupon was used exactly once';
+ assert (select sum(uses)=0 from public.loyalty_coupons where code in ('FUTURO','VENCIDO')),
+   'Cupons fora do período não consomem utilizações';
  assert (select count(*) from public.orders)=2, 'Replays did not duplicate orders';
 end
 $regression$;
