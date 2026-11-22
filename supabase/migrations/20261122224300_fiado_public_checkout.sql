@@ -54,7 +54,7 @@ begin
  if exists(select 1 from public.acceptance_settings where store_id=cfg.store_id and source='proprio' and mode='automatic' and enabled) and not (p_payment='fiado' and exists(select 1 from public.pitacco_fiado_customers fc where fc.id=nullif(current_setting('pitacco.fiado_customer',true),'')::uuid and fc.approval_mode='manual')) then perform public.dg_accept_own(oid);end if;
  select status into st from public.orders where id=oid;
  return jsonb_build_object('order_id',oid,'tracking_token',token,'total',total,'status',st,'payment_status','pending','payment_instructions',case when p_payment='pix_manual' then cfg.pix_instructions else '' end);
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.pitacco_checkout_scheduled_order(p_slug text, p_request uuid, p_customer text, p_phone text, p_address text, p_items jsonb, p_fulfillment text, p_payment text, p_notes text, p_scheduled_for timestamp with time zone)
  RETURNS jsonb
@@ -116,7 +116,7 @@ begin
 
  select status into st from public.orders where id=oid;
  return jsonb_build_object('order_id',oid,'tracking_token',token,'total',total,'status',st,'payment_status','pending','payment_instructions',case when p_payment='pix_manual' then cfg.pix_instructions else '' end);
-end $function$
+end $function$;
 
 
 -- Exige código individual compartilhado pelo lojista. Não aceitamos apenas telefone.
