@@ -1111,7 +1111,7 @@ function card(d){
  }
  identity.append(top);
  identity.append(element("span","compact-customer",d.customer_name||"Cliente"));
- if(permittedStores.size>1)identity.append(element("small","compact-store",d.store_name||"Loja de origem"));
+ if(permittedStores.size>1)identity.append(element("small","compact-store","LOJA • "+(d.store_name||"Loja de origem")));
  if(d.notes)identity.append(element("small","compact-note-flag","• Observações no detalhe"));
  opener.append(source,identity);
  details.append(opener);
@@ -1135,7 +1135,11 @@ function card(d){
  const stage=courierActionStage(d);
  const actions=element("div","actions");
  const collecting=stage==="collect";
- if(collecting)actions.append(createAction("Coletar","primary",()=>requestCourierPickup(d)));
+ if(collecting){
+  const collectButton=createAction("Coletar","primary",()=>requestCourierPickup(d));
+  collectButton.setAttribute("aria-label","Coletar pedido");
+  actions.append(collectButton);
+ }
  if(stage==="depart"&&d.source==="ifood"&&d.logistics_provider==="loja"){
   const syncTools=element("details","courier-secondary-tools");
   syncTools.append(element("summary","","Problemas ao sincronizar com iFood?"));
