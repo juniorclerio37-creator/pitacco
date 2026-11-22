@@ -2,6 +2,12 @@
 -- A sessão do courier é simulada, mas o vínculo entre loja/courier/order
 -- e a exigência de evento DISPATCHED são executados pelo SQL de produção.
 begin;
+-- A fixture de migrações não inclui todos os campos da entrega adicionados
+-- por scripts operacionais antigos; só no teste reproduzimos o esquema de produção.
+alter table public.deliveries add column if not exists arrived_at timestamptz;
+alter table public.deliveries add column if not exists collected_at timestamptz;
+alter table public.deliveries add column if not exists arrival_provider_state text not null default 'none';
+alter table public.deliveries add column if not exists delivery_code_verified_at timestamptz;
 insert into auth.users(id,email) values
  ('10000000-0000-0000-0000-000000000071','driver-dispatch-gate@example.invalid'),
  ('10000000-0000-0000-0000-000000000072','outsider-dispatch-gate@example.invalid');
