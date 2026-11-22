@@ -59,6 +59,12 @@ begin
  exception when foreign_key_violation then null;
  end;
 end $test$;
+-- Preços informados pelo lojista, por grama ou por unidade de embalagem.
+set local role authenticated;
+insert into public.pitacco_ingredient_unit_costs(store_id,ingredient_id,cost_per_unit) values
+ ('20000000-0000-0000-0000-000000000091','60000000-0000-0000-0000-000000000091',0.015),
+ ('20000000-0000-0000-0000-000000000091','60000000-0000-0000-0000-000000000092',0.040),
+ ('20000000-0000-0000-0000-000000000091','60000000-0000-0000-0000-000000000093',0.500);
 set local role anon;
 select set_config('request.jwt.claim.sub','',true);
 select public.checkout_public_order(
@@ -89,10 +95,81 @@ begin
   'Um único movimento consolidado por insumo, sem duplicidade';
  assert (select count(*)=1 from public.pitacco_stock_movements
   where order_id=oid and ingredient_id='60000000-0000-0000-0000-000000000091' and quantity=-500);
+ assert (select calculated_cost=10.90 from public.pitacco_order_material_cost_summary where order_id=oid),
+  'R$ 7,50 açaí + R$ 2,40 Nutella + R$ 1,00 embalagens';
+ assert (select estimated_known_cost=10.90 and missing_ingredient_prices=0
+  and missing_product_recipes=0 and missing_option_recipes=0
+  from public.pitacco_order_material_cost_summary where order_id=oid),
+  'Ficha completa e preço de todos os insumos';
+ assert (select count(*)=3 from public.pitacco_order_material_cost_lines where order_id=oid),
+  'Snapshot apenas uma vez por ingrediente compartilhado no produto e complemento';
+ assert (select r.goods_cost=10.90 and r.result is null from
+  public.pitacco_order_profit_report('20000000-0000-0000-0000-000000000091',
+  current_date-1,current_date+1,0) r where r.order_id=oid),
+  'O relatório utiliza custo automático, mas não inventa custos operacionais ausentes';
+ assert public.pitacco_order_cost_breakdown('20000000-0000-0000-0000-000000000091',oid)
+   ->>'status'='automatic', 'Detalhamento de custo completo';
+ update public.pitacco_ingredient_unit_costs set cost_per_unit=0.99
+  where ingredient_id='60000000-0000-0000-0000-000000000091';
+ assert (select calculated_cost=10.90 from public.pitacco_order_material_cost_summary where order_id=oid),
+   'Alterar preço hoje não pode mudar pedido aceito ontem';
+ insert into public.pitacco_order_costs(order_id,store_id,goods_cost,processing_fees,delivery_cost,other_cost,merchant_discount)
+ values(oid,'20000000-0000-0000-0000-000000000091',13,0,0,0,0);
+ assert (select r.goods_cost=13 from public.pitacco_order_profit_report(
+  '20000000-0000-0000-0000-000000000091',current_date-1,current_date+1,0) r
+  where r.order_id=oid), 'Correção manual deve prevalecer';
+ update public.pitacco_order_costs set goods_cost=null where order_id=oid;
+ assert (select r.goods_cost=10.90 from public.pitacco_order_profit_report(
+  '20000000-0000-0000-0000-000000000091',current_date-1,current_date+1,0) r
+  where r.order_id=oid), 'Limpar custo manual volta ao snapshot sem alterar histórico';
 end $test$;
+-- Pedido seguinte com insumo sem preço: não estimar custo completo.
+reset role;
+insert into public.pitacco_ingredients(id,store_id,name,unit,minimum)
+values('60000000-0000-0000-0000-000000000095',
+       '20000000-0000-0000-0000-000000000091','Leite sem custo','ml',0);
+insert into public.pitacco_recipe_lines(store_id,product_id,ingredient_id,quantity)
+values('20000000-0000-0000-0000-000000000091',
+       '30000000-0000-0000-0000-000000000091',
+       '60000000-0000-0000-0000-000000000095',10);
+set local role anon;
+select set_config('request.jwt.claim.sub','',true);
+select public.checkout_public_order(
+ 'estoque-complementos-teste','70000000-0000-0000-0000-000000000092',
+ 'Cliente sem preço','21999999999','',
+ '[{"product_id":"30000000-0000-0000-0000-000000000091","quantity":1,"options":[]}]'::jsonb,
+ 'pickup','pix_manual','');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000091',true);
+do $test$
+declare oid uuid;
+begin
+ select id into oid from public.orders where request_id='70000000-0000-0000-0000-000000000092';
+ perform public.accept_order(oid);
+ assert (select calculated_cost is null and missing_ingredient_prices=1
+  and estimated_known_cost>0 from public.pitacco_order_material_cost_summary
+  where order_id=oid), 'Preço não cadastrado impede margem completa';
+ assert public.pitacco_order_cost_breakdown('20000000-0000-0000-0000-000000000091',oid)
+  ->>'status'='pending','Cliente tem custo de ingrediente pendente';
+ assert (select r.goods_cost is null and r.result is null from public.pitacco_order_profit_report(
+  '20000000-0000-0000-0000-000000000091',current_date-1,current_date+1,0) r
+  where r.order_id=oid), 'Lucro não pode aparecer se falta preço';
+end $test$;
+set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000092',true);
 do $test$
 begin
+ assert not exists(select 1 from public.pitacco_ingredient_unit_costs),
+  'Preços dos ingredientes são privados por loja';
+ assert not exists(select 1 from public.pitacco_order_material_cost_summary),
+  'Resumo financeiro de outro estabelecimento não fica visível';
+ begin
+  perform public.pitacco_order_cost_breakdown(
+   '20000000-0000-0000-0000-000000000091',
+   (select id from public.orders where request_id='70000000-0000-0000-0000-000000000091'));
+  raise exception 'Gestor de outra loja não pode consultar custos';
+ exception when insufficient_privilege then null;
+ end;
  assert not exists (select 1 from public.pitacco_option_recipe_lines),
   'Outra loja não pode ler fichas de complementos';
  begin
