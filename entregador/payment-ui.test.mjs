@@ -17,7 +17,8 @@ test("payment card always shows real payment state, amount and method",()=>{
  assert.match(page,/pitacco_driver_payment_cards/);
 });
 test("courier-only collection goes before code, never adds a merchant order stage",()=>{
- assert.match(page,/courierCollectStep\(payment,\(\)=>confirmCourierCollection\(d\)\)/);
+ assert.match(page,/onConfirmPayment:\(\)=>confirmCourierCollection\(d\)/);
+ assert.match(readFileSync(new URL("./delivery-confirmation.mjs",import.meta.url),"utf8"),/codeStep\(ctx,delivery,result/);
  assert.match(page,/pitacco_driver_confirm_payment/);
  assert.match(source,/Cobrar pagamento/);
  assert.match(source,/Confirmar pagamento recebido/);

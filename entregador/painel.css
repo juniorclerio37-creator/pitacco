@@ -710,3 +710,195 @@ button{font-family:inherit}button:focus-visible,a:focus-visible{outline:3px soli
  .compact-customer{font-size:10px}
  .compact-order-number{font-size:14px}
 }
+
+
+/* Fluxo aprovado: cartões pequenos e janelas nativas apenas após tocar na ação. */
+.card-modern.compact-delivery-card .compact-stage-extras{
+ margin-top:6px;padding-top:6px;border:0;
+}
+.card-modern.compact-delivery-card .compact-arrival-tag,
+.card-modern.compact-delivery-card .compact-arrival-notice{
+ display:inline-flex;align-items:center;gap:5px;
+ max-width:100%;padding:6px 10px;margin:2px 0 0;
+ border-radius:999px;border:1px solid #c1e7ce;
+ background:#e9f8ed;color:#177543;font-size:10px;font-weight:900;line-height:1.25
+}
+.card-modern.compact-delivery-card .compact-arrival-notice{
+ border-color:#f7d6b0;background:#fff8ec;color:#955115
+}
+.card-modern.compact-delivery-card .compact-card-action .compact-finish{
+ background:linear-gradient(160deg,#30be49,#008c2b)!important;
+ border-color:#079237!important;
+ box-shadow:0 3px 0 #07742db8!important;
+ color:#fff!important;
+ font-weight:950!important;
+}
+.pitacco-delivery-sheet{
+ position:fixed;inset:auto 0 0;box-sizing:border-box;
+ width:min(100vw,520px);max-width:100vw;
+ max-height:min(92dvh,820px);
+ margin:auto auto 0;
+ border:0;border-radius:27px 27px 0 0;
+ box-shadow:0 -8px 38px rgba(13,24,46,.22);
+ background:#fff;
+ padding:0;color:#17243b;
+ overflow-y:auto;overscroll-behavior:contain;
+ -webkit-overflow-scrolling:touch;
+}
+.pitacco-delivery-sheet::backdrop{
+ background:rgba(21,31,49,.72);
+ backdrop-filter:blur(4px);
+ -webkit-backdrop-filter:blur(4px)
+}
+.delivery-sheet-body{
+ position:relative;
+ padding:16px 22px max(24px,env(safe-area-inset-bottom));
+ background:#fff;
+}
+.delivery-sheet-handle{
+ width:52px;height:5px;border-radius:5px;background:#cdd2da;margin:0 auto 14px
+}
+.delivery-sheet-x{
+ position:absolute;right:17px;top:17px;
+ display:grid;place-items:center;
+ width:36px;height:36px;border-radius:50%;
+ background:#f3f5f9;color:#435068;
+ font-size:26px;font-weight:400;border:0;
+ cursor:pointer;z-index:2
+}
+.delivery-sheet-head{text-align:center;padding:5px 0 13px}
+.delivery-sheet-icon{
+ display:grid;place-items:center;margin:0 auto 11px;
+ width:73px;height:70px;border-radius:22px;
+ background:linear-gradient(130deg,#fff1df,#ffe7c9);
+ color:#f4770c;font-size:43px;font-weight:900;
+ box-shadow:inset 0 0 0 1px #fbe1c3
+}
+.delivery-sheet-icon--cash{font-size:30px;color:#23833e;background:#e8f8ec}
+.delivery-sheet-icon--card{font-size:43px;color:#135cad;background:#ebf3ff}
+.delivery-sheet-icon--done{background:#dbf8e4;color:#139248;border-radius:50%;font-size:42px}
+.delivery-sheet-icon--warning{background:#fff0e9;color:#ae3c23}
+.delivery-sheet-icon--arrive{font-size:45px}
+.delivery-sheet-title{
+ color:#17233b;font-weight:950;font-size:clamp(22px,5.6vw,29px);
+ letter-spacing:-.75px;line-height:1.12;margin:0 0 8px
+}
+.delivery-sheet-lead{margin:0 auto 14px;color:#526177;font-size:14px;line-height:1.5;
+ max-width:430px}
+.delivery-sheet-order{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:12px;margin:5px 0 0;
+ padding:11px 15px;
+ background:#fff1e6;border-radius:13px;
+ color:#344155;font-size:13px
+}
+.delivery-sheet-order strong{font-size:13px;color:#13233b;overflow-wrap:anywhere}
+.delivery-sheet-order span{color:#a84811;font-weight:900;white-space:nowrap}
+.delivery-sheet-content{display:block}
+.delivery-sheet-buttons{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.6fr);
+ gap:10px;margin:18px 0 0}
+.delivery-sheet-button{
+ border-radius:13px;min-height:49px;padding:9px;
+ font-family:inherit;font-weight:900;font-size:13px;line-height:1.25;
+ cursor:pointer
+}
+.delivery-sheet-button.is-primary{
+ color:#fff;border:1px solid #e6670a;
+ background:linear-gradient(155deg,#ff891a,#f5680e);
+ box-shadow:0 3px 0 #db5c0a
+}
+.delivery-sheet-button.is-secondary{
+ background:#fff;color:#35445b;border:1.5px solid #c4cdda;
+ box-shadow:0 2px 0 #e0e4eb
+}
+.delivery-sheet-button:disabled,.delivery-sheet-x:disabled{opacity:.55;cursor:wait}
+.pitacco-delivery-sheet button:focus-visible,.pitacco-delivery-sheet input:focus-visible{
+ outline:3px solid #f9a15a;outline-offset:2px
+}
+.delivery-sheet-payment{
+ border:1px solid #f8d7bd;border-radius:14px;background:#fff8f0;
+ padding:7px 14px;margin:11px 0 0
+}
+.delivery-sheet-payment-row{
+ display:flex;justify-content:space-between;gap:12px;align-items:baseline;
+ border-bottom:1px solid #f7dfca;padding:9px 0;color:#49576d;font-size:12px
+}
+.delivery-sheet-payment-row:last-child{border-bottom:0}
+.delivery-sheet-payment-row strong{font-weight:950;font-size:14px;color:#192940;
+ text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.delivery-sheet-payment-row:nth-child(2) strong{color:#b95b10;font-size:17px}
+.delivery-sheet-notice,.delivery-sheet-warning{
+ padding:10px 12px;border-radius:10px;margin:13px 0 0;
+ background:#fff7e8;color:#855520;font-size:11px;line-height:1.55
+}
+.delivery-sheet-warning{background:#fff3ef;color:#9c4125}
+.delivery-sheet-error{
+ border:1px solid #fec7c7;border-radius:10px;background:#fff3f2;
+ color:#b02c30;font-size:12px;line-height:1.45;
+ font-weight:750;margin:13px 0 0;padding:10px
+}
+.delivery-sheet-error[hidden]{display:none!important}
+.delivery-sheet-pin-wrap{position:relative;margin:10px 0 2px}
+.delivery-sheet-pin-cells{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;
+ min-height:62px}
+.delivery-sheet-pin-cell{
+ display:grid;place-items:center;min-width:0;min-height:60px;
+ border:1.5px solid #c6cfdd;border-radius:11px;
+ font-size:23px;font-weight:850;color:#25334b;
+ background:#fff;font-variant-numeric:tabular-nums
+}
+.delivery-sheet-pin-wrap.is-six-digit:focus-within .delivery-sheet-pin-cell{
+ border-color:#f2ab77
+}
+.delivery-sheet-pin-wrap.is-six-digit .delivery-sheet-pin-input{
+ position:absolute;left:0;top:0;width:100%;height:62px;
+ opacity:.025;color:transparent!important;caret-color:transparent!important;
+ background:transparent!important;border:0!important;
+ font-size:17px!important;z-index:1;padding:0!important;margin:0!important
+}
+.delivery-sheet-pin-wrap:not(.is-six-digit) .delivery-sheet-pin-input{
+ width:100%;box-sizing:border-box;border:1.5px solid #cad1df;border-radius:11px;
+ min-height:58px;background:#fff;padding:13px 16px;
+ font-size:17px;letter-spacing:2px;color:#17243b
+}
+.delivery-sheet-pin-wrap .verify-error{
+ padding:8px 0 0;margin:0;color:#b02c30;font-size:12px;font-weight:750
+}
+.delivery-sheet-pin-wrap .verify-error[hidden]{display:none!important}
+.delivery-sheet-code-form .delivery-sheet-buttons{margin-top:18px}
+.delivery-sheet-ifood-help{
+ margin:16px 0 0;border-top:1px solid #e7ebf2;padding:12px 0 0;
+ color:#526179;font-size:12px;line-height:1.45
+}
+.delivery-sheet-ifood-help summary{cursor:pointer;font-weight:850;color:#4e5d74}
+.delivery-sheet-ifood-help p{margin:9px 0}
+.delivery-sheet-official,.delivery-sheet-copy{
+ display:block;width:100%;box-sizing:border-box;margin:8px 0;border:1px solid #bcd3f5;
+ padding:10px 12px;border-radius:10px;background:#f3f8ff;
+ color:#1559a0;font-size:12px;text-align:center;text-decoration:none;font-weight:900
+}
+.delivery-sheet-copy{font-family:inherit;cursor:pointer}
+.delivery-sheet-success{
+ margin-top:16px;padding:15px 13px;text-align:center;border-radius:12px;
+ background:#e9f9ef;border:1px solid #b7e7c9;
+ color:#137740;font-size:13px;font-weight:850
+}
+@media(min-width:600px){
+ .pitacco-delivery-sheet{inset:0;margin:auto;border-radius:23px;max-width:480px;max-height:90dvh}
+ .delivery-sheet-body{padding:19px 26px 24px}
+}
+@media(max-width:360px){
+ .delivery-sheet-body{padding:12px 13px max(15px,env(safe-area-inset-bottom))}
+ .delivery-sheet-buttons{gap:7px}
+ .delivery-sheet-pin-cells{gap:4px}
+ .delivery-sheet-pin-cell{min-height:51px;font-size:19px}
+ .delivery-sheet-pin-wrap.is-six-digit .delivery-sheet-pin-input{height:55px}
+ .delivery-sheet-lead{font-size:12px}
+}
+@media(prefers-reduced-motion:no-preference){
+ .pitacco-delivery-sheet[open]{animation:pitaccoSheetRise .20s ease-out}
+ @keyframes pitaccoSheetRise{
+  from{opacity:.75;transform:translateY(14px)}
+  to{opacity:1;transform:translateY(0)}
+ }
+}

@@ -29,7 +29,7 @@ test("courier card only advances by user action and verified code",()=>{
  assert.match(html,/collectButton\.setAttribute\("aria-label","Coletar pedido"\)/);
  assert.match(html,/createAction\("Sair para entrega"/);
  assert.match(html,/closeToCustomer\?"Confirmar chegada":"Cheguei na entrega"/);
- assert.match(html,/createAction\("Finalizar entrega"/);
+ assert.match(html,/createAction\("Concluir","primary compact-finish",\(\)=>openDeliveryFinish\(d\)\)/);
  assert.match(html,/pitacco_driver_collect/);
  assert.match(html,/pitacco_driver_depart/);
  assert.match(html,/pitacco_driver_arrive/);
