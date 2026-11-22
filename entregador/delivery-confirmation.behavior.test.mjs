@@ -7,6 +7,7 @@ class FakeElement {
   this.tagName=tag;this.children=[];this.parent=null;this.attributes={};
   this.listeners={};this.className="";this.textContent="";this.disabled=false;
   this.hidden=false;this.open=false;this.dataset={};this.value="";
+  this.classList={add:(...names)=>{this.className=[...new Set([...this.className.split(/\s+/).filter(Boolean),...names])].join(" ")}};
  }
  setAttribute(name,value){this.attributes[name]=String(value);if(name==="id")this.id=String(value)}
  append(...children){
