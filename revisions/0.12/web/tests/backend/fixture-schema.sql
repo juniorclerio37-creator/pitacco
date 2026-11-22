@@ -40,12 +40,12 @@ insert into cron.job(jobname,command,active) values(
  'SELECT net.http_post(...) WHERE EXISTS(select 1 from pitacco_private.courier_push_settings where enabled) -- pitacco_push_cron_secret',
  false
 );
-create function cron.alter_job(p_job_id bigint, p_active boolean)
+create function cron.alter_job(job_id bigint, active boolean)
 returns bigint language plpgsql as $pitacco_fixture$
 begin
- update cron.job set active=p_active where jobid=p_job_id;
+ update cron.job set active=$2 where cron.job.jobid=$1;
  if not found then raise exception 'pg_cron fixture job not found'; end if;
- return p_job_id;
+ return $1;
 end;
 $pitacco_fixture$;
 create table pitacco_private.identity_secret (id boolean primary key, pepper text not null);
