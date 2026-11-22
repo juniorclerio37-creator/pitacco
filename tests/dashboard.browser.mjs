@@ -142,7 +142,7 @@ try {
         return route.fulfill({headers,json:{access_token:adminToken,refresh_token:'fixture-owner-refresh'}});
       }
       if(pathname==='/auth/v1/user'&&origin===realApi)return route.fulfill({headers,json:user});
-      if(pathname==='/rest/v1/rpc/pitacco_list_products'){
+      if(pathname==='/rest/v1/rpc/pitacco_list_products_with_beverage'){
         assert.equal(route.request().postDataJSON().p_store_id,store.id);
         return route.fulfill({headers,json:catalog});
       }
@@ -160,13 +160,14 @@ try {
         merchantGroup.options=[{id,name:input.p_name,price:input.p_price,available:input.p_available}];
         return route.fulfill({headers,json:id});
       }
-      if(pathname==='/rest/v1/rpc/pitacco_save_product'){
+      if(pathname==='/rest/v1/rpc/pitacco_save_product_with_beverage'){
         assert.ok(adminMode);
         const input=route.request().postDataJSON();
         assert.deepEqual(input,{p_store_id:store.id,p_product_id:null,p_name:'Açaí 500 ml',p_category:'Açaí',
-          p_description:'',p_price:16.5,p_cost:0,p_menu_active:true});
+          p_description:'',p_price:16.5,p_cost:0,p_menu_active:true,p_sealed_beverage:false});
         catalog.push({id:productId,name:input.p_name,category:input.p_category,description:'',
-          price:input.p_price,cost:input.p_cost,menu_active:input.p_menu_active});
+          price:input.p_price,cost:input.p_cost,menu_active:input.p_menu_active,
+           sealed_industrial_beverage:input.p_sealed_beverage});
         return route.fulfill({headers,json:productId});
       }
       if(pathname==='/rest/v1/rpc/pitacco_storefront_link'){
@@ -506,6 +507,35 @@ try {
           missing_option_recipes:0,missing_ingredient_prices:0,ingredients:[]
         }});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_cancelled_order_loss_report'){
+        const input=route.request().postDataJSON();
+        assert.equal(input.p_store,store.id);
+        return route.fulfill({headers,json:[{
+          order_id:'30000000-0000-0000-0000-000000000079',
+          reference:'C-079',created_at:'2026-11-14T12:00:00Z',
+          order_total:35,known_material_cost:13,recovered_cost:0,
+          known_material_loss:13,complete_cost:true,
+          returnable_items:[{
+            product_id:'40000000-0000-0000-0000-000000000079',
+            name:'Refrigerante lacrado',ordered_quantity:1,
+            returned_quantity:0,available_quantity:1
+          }]
+        }]});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_confirm_sealed_beverage_return'){
+        const input=route.request().postDataJSON();
+        assert.deepEqual({
+          p_store:input.p_store,p_order:input.p_order,
+          p_product:input.p_product,p_quantity:input.p_quantity,
+          p_received:input.p_received,p_sealed_intact:input.p_sealed_intact
+        },{
+          p_store:store.id,p_order:'30000000-0000-0000-0000-000000000079',
+          p_product:'40000000-0000-0000-0000-000000000079',
+          p_quantity:1,p_received:true,p_sealed_intact:true
+        });
+        assert.match(input.p_request,/^[0-9a-f-]{36}$/i);
+        return route.fulfill({headers,json:{already:false,returned_quantity:1}});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_order_profit_report'){
         const input=route.request().postDataJSON();
         assert.equal(input.p_store,store.id);
@@ -782,6 +812,15 @@ try {
     await costForm.getByRole('button',{name:'Salvar custos'}).click();
     await orderReport.getByText('Custos salvos.',{exact:true}).waitFor();
     await orderReport.getByRole('cell',{name:/55,00/}).waitFor();
+    await orderReport.getByRole('button',{name:'Perdas por cancelamento',exact:true}).click();
+    await orderReport.getByRole('button',{name:'Consultar cancelamentos'}).click();
+    await orderReport.getByRole('cell',{name:'C-079'}).waitFor();
+    await orderReport.getByRole('button',{name:'Confirmar retorno de Refrigerante lacrado'}).click();
+    const beverageReturn=orderReport.getByRole('form',{name:'Conferência de bebida retornada'});
+    await beverageReturn.getByLabel('Confirmo que a bebida retornou fisicamente à loja').check();
+    await beverageReturn.getByLabel('Confirmei que o lacre está intacto e o produto está apto à revenda').check();
+    await beverageReturn.getByRole('button',{name:'Registrar entrada no estoque'}).click();
+    await orderReport.getByText('Bebida recebida e saldo de estoque atualizado.').waitFor();
     await page.getByRole('button',{name:'Conciliação de repasses',exact:true}).click();
     const payouts=page.getByRole('region',{name:'Conciliação de repasses'});
     await payouts.getByLabel('Referência da conta').fill('loja-teste');
@@ -1027,6 +1066,8 @@ try {
     await editor.getByLabel('Nome do produto').fill('Açaí 500 ml');
     await editor.getByLabel('Categoria').fill('Açaí');
     await editor.getByLabel('Preço',{exact:true}).fill('16.50');
+    assert.equal(await editor.getByRole('checkbox',{name:/Bebida industrializada e lacrada/}).isChecked(),false,
+      'Alimentos nunca são classificados automaticamente como bebida retornável');
     await editor.getByRole('checkbox',{name:'Publicar no cardápio'}).check();
     await editor.getByRole('button',{name:'Salvar produto'}).click();
     await productCatalog.getByText('Produto salvo.').waitFor();

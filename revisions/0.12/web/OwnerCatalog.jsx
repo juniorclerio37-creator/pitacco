@@ -1,7 +1,7 @@
 import React,{useEffect,useState} from 'react';
 import ProductComplements from './ProductComplements.jsx';
 
-const empty={name:'',category:'',description:'',price:'',cost:'',menu_active:false};
+const empty={name:'',category:'',description:'',price:'',cost:'',menu_active:false,sealed_industrial_beverage:false};
 
 export default function OwnerCatalog({client,storeId}){
  const [products,setProducts]=useState(null),[draft,setDraft]=useState(null),[filter,setFilter]=useState('');
@@ -14,7 +14,7 @@ export default function OwnerCatalog({client,storeId}){
  }
  useEffect(()=>{
   let active=true;
-  rpc('pitacco_list_products').then(data=>{if(active)setProducts(data);}).catch(failure=>{if(active)setError(failure.message);});
+  rpc('pitacco_list_products_with_beverage').then(data=>{if(active)setProducts(data);}).catch(failure=>{if(active)setError(failure.message);});
   return()=>{active=false;};
  },[client,storeId]);
 
@@ -27,13 +27,13 @@ export default function OwnerCatalog({client,storeId}){
  function saveProduct(event){
   event.preventDefault();
   commit(async()=>{
-   await rpc('pitacco_save_product',{
+   await rpc('pitacco_save_product_with_beverage',{
     p_product_id:draft.id||null,p_name:draft.name.trim(),p_category:(draft.category||'').trim(),
     p_description:(draft.description||'').trim(),p_price:Number(draft.price),p_cost:Number(draft.cost||0),
-    p_menu_active:draft.menu_active
+    p_menu_active:draft.menu_active,p_sealed_beverage:!!draft.sealed_industrial_beverage
    });
    setDraft(null);
-   setProducts(await rpc('pitacco_list_products'));
+   setProducts(await rpc('pitacco_list_products_with_beverage'));
   },'Produto salvo.');
  }
 
@@ -47,7 +47,7 @@ export default function OwnerCatalog({client,storeId}){
    <button type="button" disabled={busy} onClick={()=>setDraft({...empty})}>Novo produto</button>
    <ul>{products.filter(product=>[product.name,product.category].some(value=>value?.toLowerCase().includes(filter.trim().toLowerCase()))).map(product=>
     <li className="line" key={product.id}>
-     <div><strong>{product.name}</strong><small> · {product.category||'Sem categoria'} · {product.menu_active?'Publicado':'Oculto'}</small></div>
+     <div><strong>{product.name}</strong><small> · {product.category||'Sem categoria'} · {product.menu_active?'Publicado':'Oculto'}{product.sealed_industrial_beverage?' · Bebida lacrada retornável':''}</small></div>
      <button type="button" className="secondary" disabled={busy} onClick={()=>setDraft({...product})}>Editar {product.name}</button>
      <button type="button" className="secondary" disabled={busy} onClick={()=>{setSelected({...product});}}>Complementos de {product.name}</button>
     </li>)}</ul>
@@ -58,7 +58,15 @@ export default function OwnerCatalog({client,storeId}){
    <label>Descrição <textarea maxLength={1000} value={draft.description||''} onChange={event=>setDraft({...draft,description:event.target.value})}/></label>
    <label>Preço <input type="number" required min={0} max={100000} step=".01" value={draft.price} onChange={event=>setDraft({...draft,price:event.target.value})}/></label>
    <label>Custo interno <input type="number" min={0} max={100000} step=".01" value={draft.cost} onChange={event=>setDraft({...draft,cost:event.target.value})}/></label>
-   <label><input type="checkbox" checked={draft.menu_active} onChange={event=>setDraft({...draft,menu_active:event.target.checked})}/> Publicar no cardápio</label>
+   <label><input type="checkbox" checked={!!draft.sealed_industrial_beverage}
+     onChange={event=>setDraft({...draft,sealed_industrial_beverage:event.target.checked})}/>
+     Bebida industrializada e lacrada (pode voltar ao estoque quando recuperada)</label>
+   <p>Marque apenas para bebidas prontas, fechadas de fábrica e aptas à revenda.
+     Bebidas abertas, sucos preparados na hora e alimentos não devem receber essa marcação.
+     O retorno nunca é automático: exige cancelamento e conferência física pela loja.
+     Cadastre a bebida e sua quantidade na ficha técnica do Estoque.</p>
+   <label><input type="checkbox" checked={draft.menu_active}
+     onChange={event=>setDraft({...draft,menu_active:event.target.checked})}/> Publicar no cardápio</label>
    <button disabled={busy}>Salvar produto</button>
    <button type="button" className="secondary" disabled={busy} onClick={()=>setDraft(null)}>Cancelar edição</button>
   </form>}

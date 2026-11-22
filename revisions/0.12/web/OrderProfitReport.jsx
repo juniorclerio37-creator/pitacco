@@ -17,17 +17,21 @@ export default function OrderProfitReport({client, storeId}) {
   const [start,setStart] = useState(today.slice(0,8)+'01');
   const [end,setEnd] = useState(today);
   const [report,setReport] = useState(null);
+  const [mode,setMode] = useState('profit');
+  const [returnDraft,setReturnDraft] = useState(null);
   const [draft,setDraft] = useState(null);
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState('');
   const [notice,setNotice] = useState('');
 
-  async function load(period, page) {
-    const {data,error} = await client.rpc('pitacco_order_profit_report',{
+  async function load(period, page, selectedMode=mode) {
+    const rpcName=selectedMode==='losses'
+      ?'pitacco_cancelled_order_loss_report':'pitacco_order_profit_report';
+    const {data,error} = await client.rpc(rpcName,{
       p_store:storeId,p_start:period.start,p_end:period.end,p_page:page
     });
     if(error) throw error;
-    setReport({...period,page,rows:data.slice(0,pageSize),hasMore:data.length>pageSize});
+    setReport({...period,page,mode:selectedMode,rows:data.slice(0,pageSize),hasMore:data.length>pageSize});
   }
 
   async function goTo(period, page) {
@@ -35,6 +39,7 @@ export default function OrderProfitReport({client, storeId}) {
     try {
       await load(period,page);
       setDraft(null);
+      setReturnDraft(null);
     } catch(failure) {
       setError(failure.message||'Não foi possível consultar os pedidos.');
     } finally {
@@ -52,6 +57,26 @@ export default function OrderProfitReport({client, storeId}) {
       setDraft({...row,material:data});
     }catch(failure){
       setError(failure.message||'Não foi possível consultar o detalhamento do custo.');
+    }finally{setBusy(false);}
+  }
+
+  async function saveBeverageReturn(event) {
+    event.preventDefault();
+    if(!returnDraft||busy)return;
+    setBusy(true);setError('');setNotice('');
+    try {
+      const {data,error}=await client.rpc('pitacco_confirm_sealed_beverage_return',{
+        p_store:storeId,p_order:returnDraft.orderId,p_product:returnDraft.productId,
+        p_quantity:returnDraft.quantity,p_request:returnDraft.requestId,
+        p_received:returnDraft.received,p_sealed_intact:returnDraft.sealed
+      });
+      if(error)throw error;
+      setReturnDraft(null);
+      await load({start:report.start,end:report.end},report.page,'losses');
+      setNotice(data?.already?'Devolução já registrada anteriormente.':
+        'Bebida recebida e saldo de estoque atualizado.');
+    }catch(failure) {
+      setError(failure.message||'Não foi possível registrar a devolução.');
     }finally{setBusy(false);}
   }
 
@@ -79,15 +104,25 @@ export default function OrderProfitReport({client, storeId}) {
 
   return <section className="panel" aria-label="Resultado por pedido" aria-busy={busy}>
     <h3>Resultado por pedido</h3>
-    <p>O resultado desconta da venda registrada as taxas do pedido e os custos diretos cadastrados. O custo dos ingredientes e complementos pode ser calculado a partir das fichas técnicas e dos preços cadastrados <strong>no momento do aceite</strong>. Se faltar algum preço, a estimativa não será considerada custo completo. As demais despesas devem ser informadas; não presumimos que sejam zero.</p>
+    <div className="pitacco-local-tabs" role="group" aria-label="Tipos de relatório financeiro">
+      <button type="button" className={mode==='profit'?'active':'secondary'}
+        aria-pressed={mode==='profit'} disabled={busy}
+        onClick={()=>{setMode('profit');setReport(null);setDraft(null);setReturnDraft(null);setError('');setNotice('');}}>Resultado por pedido</button>
+      <button type="button" className={mode==='losses'?'active':'secondary'}
+        aria-pressed={mode==='losses'} disabled={busy}
+        onClick={()=>{setMode('losses');setReport(null);setDraft(null);setReturnDraft(null);setError('');setNotice('');}}>Perdas por cancelamento</button>
+    </div>
+    {mode==='profit'
+      ?<p>O resultado desconta da venda registrada as taxas do pedido e os custos diretos cadastrados. O custo dos ingredientes e complementos pode ser calculado a partir das fichas técnicas e dos preços cadastrados <strong>no momento do aceite</strong>. Se faltar algum preço, a estimativa não será considerada custo completo. As demais despesas devem ser informadas; não presumimos que sejam zero.</p>
+      :<p>Aqui aparecem os pedidos próprios cancelados ou recusados e seus custos de materiais consumidos. Bebidas industrializadas lacradas podem voltar ao estoque somente quando a loja confirmar fisicamente o retorno intacto. Alimentos preparados não retornam. Custos sem cadastro ficam sinalizados como parciais; valores cancelados não são contabilizados como receita recebida.</p>}
     <form onSubmit={event=>{event.preventDefault();void goTo({start,end},0);}}>
       <label>Data inicial <input type="date" required value={start} max={end} onChange={event=>setStart(event.target.value)}/></label>
       <label>Data final <input type="date" required value={end} min={start} onChange={event=>setEnd(event.target.value)}/></label>
-      <button disabled={busy}>{busy?'Consultando…':'Consultar pedidos'}</button>
+      <button disabled={busy}>{busy?'Consultando…':mode==='losses'?'Consultar cancelamentos':'Consultar pedidos'}</button>
     </form>
     {error&&<p role="alert">{error}</p>}
     {notice&&<p role="status">{notice}</p>}
-    {draft&&<form key={draft.order_id} aria-label="Custos do pedido" onSubmit={save}>
+    {mode==='profit'&&draft&&<form key={draft.order_id} aria-label="Custos do pedido" onSubmit={save}>
       <h4>Custos do pedido {draft.reference}</h4>
       <p>Preencha com zero apenas quando souber que determinado custo não se aplica. O desconto é informativo, pois o valor da venda pode já incluí-lo. Não duplique taxas já descontadas do pedido.</p>
       {draft.material&&<section aria-label="Detalhamento dos ingredientes">
@@ -127,7 +162,7 @@ export default function OrderProfitReport({client, storeId}) {
       <button disabled={busy}>Salvar custos</button>
       <button disabled={busy} type="button" className="secondary" onClick={()=>setDraft(null)}>Cancelar</button>
     </form>}
-    {report&&(!report.rows.length?<p>Nenhum pedido nesse período.</p>:<>
+    {report&&report.mode==='profit'&&(!report.rows.length?<p>Nenhum pedido nesse período.</p>:<>
       <div style={{overflowX:'auto'}}>
         <table>
           <thead><tr><th>Pedido</th><th>Data</th><th>Canal</th><th>Venda</th><th>Taxas do pedido</th><th>Custos diretos</th><th>Resultado</th><th>Ações</th></tr></thead>
@@ -147,5 +182,70 @@ export default function OrderProfitReport({client, storeId}) {
         <button type="button" disabled={busy||!report.hasMore} onClick={()=>goTo(report,report.page+1)}>Próxima</button>
       </nav>
     </>)}
+    {report&&report.mode==='losses'&&(!report.rows.length
+      ?<p>Nenhum pedido próprio cancelado ou recusado nesse período.</p>:<>
+      <div style={{overflowX:'auto'}}>
+        <table>
+          <thead><tr><th>Pedido</th><th>Data</th><th>Valor cancelado</th>
+            <th>Custo registrado</th><th>Custo recuperado</th>
+            <th>Perda de materiais</th><th>Bebidas recuperáveis</th></tr></thead>
+          <tbody>{report.rows.map(row=><tr key={row.order_id}>
+            <td>{row.reference}</td>
+            <td>{dayFormat.format(new Date(row.created_at))}</td>
+            <td>{money.format(row.order_total)}</td>
+            <td>{row.known_material_cost===null?'Sem consumo registrado':
+              money.format(row.known_material_cost)}</td>
+            <td>{money.format(row.recovered_cost||0)}</td>
+            <td>{row.known_material_loss===null?'Sem consumo registrado':<>
+              {money.format(row.known_material_loss)}
+              {!row.complete_cost&&<small> · Parcial, custos pendentes</small>}
+            </>}</td>
+            <td>{Array.isArray(row.returnable_items)&&row.returnable_items.some(item=>item.available_quantity>0)
+              ?row.returnable_items.filter(item=>item.available_quantity>0).map(item=>
+               <div key={item.product_id}>
+                {item.name} · {item.available_quantity} un.
+                <button type="button" className="secondary" disabled={busy}
+                  aria-label={'Confirmar retorno de '+item.name}
+                  onClick={()=>{setReturnDraft({
+                    orderId:row.order_id,productId:item.product_id,name:item.name,
+                    available:item.available_quantity,quantity:1,
+                    received:false,sealed:false,requestId:crypto.randomUUID()
+                  });setError('');setNotice('');}}>
+                  Confirmar retorno</button>
+               </div>)
+              :<span>Nenhuma bebida retornável</span>}</td>
+          </tr>)}</tbody>
+        </table>
+      </div>
+      <nav className="dispatch-actions" aria-label="Páginas de perdas por cancelamento">
+        <button type="button" disabled={busy||report.page===0}
+          onClick={()=>void goTo(report,report.page-1)}>Anterior</button>
+        <span>Página {report.page+1}</span>
+        <button type="button" disabled={busy||!report.hasMore}
+          onClick={()=>void goTo(report,report.page+1)}>Próxima</button>
+      </nav>
+    </>)}
+    {mode==='losses'&&returnDraft&&<form onSubmit={saveBeverageReturn}
+      aria-label="Conferência de bebida retornada">
+      <h4>Confirmar devolução física — {returnDraft.name}</h4>
+      <p>Somente bebidas industrializadas, ainda lacradas e em condições de revenda.
+        A loja deve estar com o produto em mãos. Esta operação movimenta o estoque e não cancela pagamentos nem reabre o pedido.</p>
+      <label>Quantidade recebida
+        <input type="number" min="1" max={returnDraft.available} step="1"
+          required value={returnDraft.quantity}
+          onChange={event=>setReturnDraft({...returnDraft,quantity:Number(event.target.value)})}/>
+      </label>
+      <label><input type="checkbox" required checked={returnDraft.received}
+        onChange={event=>setReturnDraft({...returnDraft,received:event.target.checked})}/>
+        Confirmo que a bebida retornou fisicamente à loja</label>
+      <label><input type="checkbox" required checked={returnDraft.sealed}
+        onChange={event=>setReturnDraft({...returnDraft,sealed:event.target.checked})}/>
+        Confirmei que o lacre está intacto e o produto está apto à revenda</label>
+      <button type="submit" disabled={busy||!returnDraft.received||!returnDraft.sealed||
+        !Number.isInteger(returnDraft.quantity)||returnDraft.quantity<1||
+        returnDraft.quantity>returnDraft.available}>Registrar entrada no estoque</button>
+      <button type="button" className="secondary" disabled={busy}
+        onClick={()=>setReturnDraft(null)}>Cancelar</button>
+    </form>}
   </section>;
 }
