@@ -145,8 +145,10 @@ begin
  end if;
  if new.preparation_status='completed' and old.preparation_status is distinct from new.preparation_status
    and new.receipt->>'logistics'='retirada' then
-  update public.pitacco_fiado_charges set state='open',updated_at=now()
-   where order_id=new.id and state='reserved';
+  update public.pitacco_fiado_charges c set state='open',updated_at=now(),
+   due_at=now()+make_interval(days=>a.due_days)
+   from public.pitacco_fiado_customers a
+   where c.order_id=new.id and c.state='reserved' and a.id=c.customer_id;
  end if;
  return new;
 end $$;
@@ -158,8 +160,11 @@ create or replace function pitacco_private.fiado_delivery_completed()
 returns trigger language plpgsql security definer set search_path='' as $$
 begin
  if new.status='entregue' and old.status is distinct from new.status and new.order_id is not null then
-  update public.pitacco_fiado_charges set state='open',updated_at=now()
-   where order_id=new.order_id and store_id=new.store_id and state='reserved';
+  update public.pitacco_fiado_charges c set state='open',updated_at=now(),
+   due_at=now()+make_interval(days=>a.due_days)
+   from public.pitacco_fiado_customers a
+   where c.order_id=new.order_id and c.store_id=new.store_id
+    and c.state='reserved' and a.id=c.customer_id;
  end if;
  return new;
 end $$;
