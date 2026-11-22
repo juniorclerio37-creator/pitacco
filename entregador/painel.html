@@ -238,10 +238,11 @@ import {suggestedBatchRoutes} from "./route-sequence.mjs";
 import {mountCourierSharedMap,freshGps} from "./dispatch-map.mjs";
 import {courierActionStage} from "./delivery-flow.mjs";
 import {arrivalProximity} from "./arrival-proximity.mjs";
+import {paymentSummaryPanel,courierCollectStep} from "./payment-ui.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
-const orderDetails=createOrderDetailsController({supabase:sb,routeFor:delivery=>buildNavigationUrl(delivery,navProvider,navMode)});
+const orderDetails=createOrderDetailsController({supabase:sb,routeFor:delivery=>buildNavigationUrl(delivery,navProvider,navMode),paymentFor:delivery=>paymentCards.get(delivery.id)});
 let courier=null, busy=false,routeOrigins=new Map(),lastCompletedBatchStops=new Map();
 let sharedCourierMap=null,mapLoadPromise=null,mapLastAttempt=0,mapLastGps=null;
 const arrivalSignals=new Map();
@@ -535,7 +536,7 @@ window.addEventListener("online",()=>{
  if(courier)refresh().catch(error=>message("A conexão voltou, mas não foi possível sincronizar: "+String(error.message)));
 });
 updateConnectionBanner();
-let orderCardBadges=new Map();
+let orderCardBadges=new Map(),paymentCards=new Map();
 // Confirmation drafts are ephemeral: never stored on disk or localStorage.
 const codeDrafts=new Map();
 let lastHistoryRequest=0;
@@ -770,6 +771,19 @@ document.querySelectorAll("[data-earn-period]").forEach(button=>{
 });
 const statuses={pendente:"Aguardando loja",atribuida:"Aguardando coleta",aceita:"Coletada",retirada:"Saiu para entrega",entregue:"Entregue",cancelada:"Cancelada"};
 function message(text){$("notice").textContent=text||"";}
+function paymentOf(d){return paymentCards.get(d.id)||{state:"unknown",method:"Não informada",amount:null};}
+async function confirmCourierCollection(d){
+ if(busy)return;busy=true;message("");
+ try{
+  const {data,error}=await sb.rpc("pitacco_driver_confirm_payment",{p_delivery:d.id});
+  if(error)throw Error(error.message||"Não foi possível registrar o pagamento");
+  if(data?.state!=="paid"||!data.received_by_courier)throw Error("O servidor não confirmou o recebimento");
+  paymentCards.set(d.id,data);
+  await refresh(true);
+  message("Pagamento recebido e registrado para a loja. Agora informe o código do cliente.");
+ }catch(err){message(String(err?.message||"Pagamento não registrado. Tente novamente."))}
+ finally{busy=false}
+}
 async function api(action,payload={}){
  const {data:{session}}=await sb.auth.getSession();
  if(!session?.access_token)throw new Error("Sessão expirada");
@@ -877,6 +891,7 @@ async function verifyCode(d,code){
  if(busy)return;busy=true;message("");
  try{
   if(!d.arrived_at)throw Error("Registre primeiro a chegada ao cliente");
+  if(paymentOf(d).state==="collect")throw Error("Confirme o recebimento do pagamento antes de finalizar");
   const digits=String(code||"").trim();
   if(d.source==="proprio"){
    if(!/^[0-9]{6}$/.test(digits)){
@@ -1002,7 +1017,8 @@ function renderRouteSuggestions(deliveries){
  }
 }
 function card(d){
- const box=element("article","card");
+ const box=element("article","card card-modern");
+ box.setAttribute("data-origin",d.source||"proprio");
  box.setAttribute("data-delivery-id",d.id);
  const opener=element("button","card-open");
  opener.type="button";
@@ -1016,12 +1032,13 @@ function card(d){
  opener.append(head);
  const originName=d.store_name||"Loja de origem";
  opener.append(element("span","card-store-label","LOJA • "+originName));
- opener.append(element("div","customer",d.customer_name||"Cliente"));
+ const intro=element("div","card-customer-row");intro.append(element("div","customer",d.customer_name||"Cliente"));
+ opener.append(intro);
 
  if(badge?.localizer)opener.append(element("span","card-localizer",
    "LOCALIZADOR DE LIGAÇÃO • "+String(badge.localizer).replace(/\D/g,"").slice(0,16)));
  if(d.notes)opener.append(element("p","notes",d.notes));
- opener.append(element("span","card-detail-hint","Ver detalhes, itens e contato do cliente  ›"));
+ opener.append(element("span","card-detail-hint","Ver itens e contato  ↗"));
  box.append(opener);
  const addressRow=element("div","card-address-row");
  addressRow.append(element("p","address",d.address||"Endereço não informado"));
@@ -1034,7 +1051,8 @@ function card(d){
   addressRow.append(route);
  }
  box.append(addressRow);
- box.append(element("div","pay","Cobrança: a confirmar com a loja. Não presuma pagamento aprovado."));
+ const payment=paymentOf(d);
+ box.append(paymentSummaryPanel(payment));
  // O cartão exibe somente a ação que corresponde à etapa atual.
  const stage=courierActionStage(d);
  const actions=element("div","actions");
@@ -1089,10 +1107,12 @@ function card(d){
     }));
     box.append(arrivalTools);
    }
-   if(d.source==="proprio"||d.source==="ifood"){
+   if(payment.state==="collect"){
+    box.append(courierCollectStep(payment,()=>confirmCourierCollection(d)));
+   }else if(d.source==="proprio"||d.source==="ifood"){
     const verify=element("section","card-verify-block");
-    verify.append(element("strong","card-verify-title","Você chegou ao destino"));
-    verify.append(element("p","card-verify-help","Peça o código de confirmação ao cliente."));
+    verify.append(element("strong","card-verify-title","Confirmar entrega"));
+    verify.append(element("p","card-verify-help","Digite o código informado pelo cliente para finalizar."));
     const form=element("form","verify-form"),code=element("input","verify-input");
     form.noValidate=true;
     code.type="text";code.inputMode="numeric";code.autocomplete="one-time-code";
@@ -1222,13 +1242,14 @@ async function refreshSnapshot(){
  if(records.length!==1){await driver.signOut().catch(()=>{});location.replace("./acesso.html");return;}
  courier=records[0];
  // Independent, RLS-protected reads run concurrently to shorten launch time.
- const [authorized,list,badges,originsResult,gpsResult]=await Promise.all([
+ const [authorized,list,badges,originsResult,gpsResult,paymentsResult]=await Promise.all([
   driver.myAllowedStores(),
   driver.myDeliveries([courier.id]),
   sb.rpc("pitacco_driver_card_badges"),
   sb.rpc("pitacco_driver_route_origins"),
   sb.from('courier_positions').select('latitude,longitude,accuracy_m,observed_at')
-   .eq('courier_id',courier.id).maybeSingle()
+   .eq('courier_id',courier.id).maybeSingle(),
+  sb.rpc("pitacco_driver_payment_cards")
  ]);
  permittedStores=new Map(authorized.map(row=>[row.store_id,row.store_name]));
  if(!permittedStores.size)permittedStores.set(courier.store_id,storeName);
@@ -1261,6 +1282,8 @@ async function refreshSnapshot(){
  }else{
   orderCardBadges=new Map((Array.isArray(labels)?labels:[]).map(item=>[item.delivery_id,item]));
  }
+ paymentCards=new Map(!paymentsResult.error&&Array.isArray(paymentsResult.data)
+   ?paymentsResult.data.filter(x=>x?.delivery_id).map(x=>[x.delivery_id,x.payment]):[]);
  list.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
  const current=list.filter(d=>!["entregue","cancelada"].includes(d.status))
   .map(d=>({...d,store_name:permittedStores.get(d.store_id)||"Loja de origem"}));
