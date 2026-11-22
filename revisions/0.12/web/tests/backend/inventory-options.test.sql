@@ -1,5 +1,8 @@
 -- Isolado/rollback: teste de baixa de insumos, embalagens e adicionais selecionados.
 begin;
+-- Fixture histórica exige goods_cost NOT NULL; produção já permite NULL.
+-- Somente no teste igualamos o esquema para validar retorno ao automático.
+alter table public.pitacco_order_costs alter column goods_cost drop not null;
 insert into auth.users(id,email) values
  ('10000000-0000-0000-0000-000000000091','inventory-options-manager@example.invalid'),
  ('10000000-0000-0000-0000-000000000092','inventory-options-other@example.invalid');
