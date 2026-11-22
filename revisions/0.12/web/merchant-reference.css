@@ -27,10 +27,19 @@
 .store-sidebar-brand img {width:155px;height:38px;max-width:none;display:block}
 .store-sidebar-brand>strong {font-size:30px;letter-spacing:-1.3px;line-height:1}
 .app.store-reference-layout>aside .store-identity {
-  display:flex;align-items:center;gap:9px;min-height:50px;margin:0 0 14px;padding:8px 10px;
+  display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:9px;
+  min-height:50px;margin:0 0 14px;padding:8px 10px;
   border-radius:9px;border:1px solid #e75c3766;background:linear-gradient(125deg,#a63c20,#cc512d);color:white;
 }
-.app.store-reference-layout>aside .store-identity-placeholder {background:#ffffff22;color:white}
+.app.store-reference-layout>aside .store-identity-placeholder {
+  display:grid;place-items:center;max-width:none;background:#ffffff22;color:white;
+}
+.app.store-reference-layout>aside .store-identity-copy {
+  display:grid;gap:4px;min-width:0;max-width:none;
+}
+.app.store-reference-layout>aside .store-identity-copy :is(strong,small) {
+  display:block;margin:0;white-space:normal;overflow-wrap:anywhere;
+}
 .app.store-reference-layout>aside .store-identity-copy small {color:#fff1e8}
 .app.store-reference-layout>aside nav {gap:3px}
 .app.store-reference-layout>aside nav button {
