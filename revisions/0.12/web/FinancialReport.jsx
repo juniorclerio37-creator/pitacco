@@ -10,6 +10,9 @@ const labels = {
   taxas: 'Taxas registradas',
   pedidos_pendentes: 'Pedidos aguardando aceite',
   recebimentos: 'Recebimentos confirmados no caixa',
+  recebimentos_fiado: 'Recebimentos registrados na caderneta',
+  fiado_a_receber: 'Fiado em aberto — saldo atual das vendas do período',
+  fiado_reservado: 'Fiado reservado — pedidos do período ainda não entregues',
   despesas: 'Despesas lançadas',
   acertos_entregadores: 'Pagamentos registrados aos entregadores'
 };
@@ -96,6 +99,7 @@ export default function FinancialReport({client,store}) {
     {view==='orders'&&<OrderProfitReport client={client} storeId={store.id}/>}
     {view==='report'&&<section className="panel" aria-label="Relatório financeiro" aria-busy={busy}>
     <h3>Resumo financeiro por período</h3>
+    <p>Vendas registradas não significam dinheiro recebido. Os pagamentos da caderneta aparecem separadamente dos recebimentos do caixa. Os saldos de fiado mostram a situação atual dos pedidos criados no período selecionado.</p>
     <form onSubmit={load}>
       <label>Data inicial <input type="date" required value={start} max={end||undefined} onChange={event=>setStart(event.target.value)}/></label>
       <label>Data final <input type="date" required value={end} min={start||undefined} onChange={event=>setEnd(event.target.value)}/></label>

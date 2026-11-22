@@ -30,6 +30,10 @@ begin
  assert not has_function_privilege('anon','public.pitacco_fiado_overview(uuid)','execute');
  assert not has_function_privilege('anon','public.pitacco_fiado_rotate_code(uuid,uuid)','execute');
  assert not has_table_privilege('authenticated','public.pitacco_fiado_customers','select');
+ assert pitacco_private.courier_payment_details(
+   '{"payment":"fiado","payment_status":"fiado","fiado_customer_id":"segredo","debt":80}'::jsonb,20)
+   ='{"state":"no_collect","method":"Sem cobrança na entrega","amount":null,"change_for":null,"change_due":null,"received_by_courier":false,"received_at":null}'::jsonb,
+   'Entregador recebe somente instrução de não cobrar, sem situação financeira';
  c:=public.pitacco_fiado_save_customer(store,'Cliente Fiado','21988887777',25,true,7,'automatic',true);
  secret:=public.pitacco_fiado_rotate_code(store,c);
  assert length(secret)=10 and secret ~ '^[0-9]{10}$';
@@ -61,6 +65,15 @@ begin
  assert (select state='open' from public.pitacco_fiado_charges where order_id=v_order_id);
  payment_result:=public.pitacco_fiado_receive(store,c,8,'pix',payment_request,'Pagamento parcial');
  assert (payment_result->>'remaining')::numeric=12;
+ assert (select amount=8 from public.pitacco_period_financial_report(store,
+   (now() at time zone 'America/Sao_Paulo')::date,(now() at time zone 'America/Sao_Paulo')::date)
+   where metric='recebimentos_fiado'), 'Somente pagamento efetivo entra como recebimento fiado';
+ assert (select amount=12 from public.pitacco_period_financial_report(store,
+   (now() at time zone 'America/Sao_Paulo')::date,(now() at time zone 'America/Sao_Paulo')::date)
+   where metric='fiado_a_receber'), 'Saldo parcial continua separado do dinheiro recebido';
+ assert (select amount=0 from public.pitacco_period_financial_report(store,
+   (now() at time zone 'America/Sao_Paulo')::date,(now() at time zone 'America/Sao_Paulo')::date)
+   where metric='recebimentos'), 'Caderneta não duplica recebimento de caixa';
  assert (select paid=8 from public.pitacco_fiado_charges where order_id=v_order_id);
  payment_result:=public.pitacco_fiado_receive(store,c,8,'pix',payment_request,'Pagamento parcial');
  assert (payment_result->>'duplicate')::boolean, 'Retentativa jamais debita em duplicidade';
@@ -69,12 +82,35 @@ begin
  assert (payment_result->>'remaining')::numeric=0;
  assert (select state='settled' from public.pitacco_fiado_charges where order_id=v_order_id);
  assert (select used=0 from public.pitacco_fiado_customers where id=c);
+ assert (select amount=20 and entries=2 from public.pitacco_period_financial_report(store,
+   (now() at time zone 'America/Sao_Paulo')::date,(now() at time zone 'America/Sao_Paulo')::date)
+   where metric='recebimentos_fiado'), 'Retentativa não duplica recebimentos no relatório';
  -- Um novo pedido cancelado precisa devolver o limite reservado.
  created:=public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
     payload,'pickup','',secret);
  second_order:=(created->>'order_id')::uuid;
+ assert (select amount=20 from public.pitacco_period_financial_report(store,
+   (now() at time zone 'America/Sao_Paulo')::date,(now() at time zone 'America/Sao_Paulo')::date)
+   where metric='fiado_reservado'), 'Reserva não é recebimento nem dívida exigível';
  update public.orders set status='cancelled' where id=second_order;
  assert (select state='cancelled' from public.pitacco_fiado_charges where order_id=second_order);
+ assert (select used=0 from public.pitacco_fiado_customers where id=c);
+ assert not exists(select 1 from public.pitacco_period_financial_report(store,
+   (now() at time zone 'America/Sao_Paulo')::date,(now() at time zone 'America/Sao_Paulo')::date)
+   where metric in ('fiado_a_receber','fiado_reservado')), 'Cancelamento e quitação eliminam os saldos abertos';
+ -- Autorização manual não permite aceitar nem entregar antes da decisão da loja.
+ perform public.pitacco_fiado_save_customer(store,'Cliente Fiado','21988887777',25,true,7,'manual',true);
+ created:=public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
+    payload,'pickup','',secret);
+ second_order:=(created->>'order_id')::uuid;
+ begin
+  update public.orders set status='accepted' where id=second_order;
+  raise exception 'Deveria aguardar aprovação';
+ exception when invalid_parameter_value then null;end;
+ assert public.pitacco_fiado_approve(store,second_order,true);
+ update public.orders set status='accepted' where id=second_order;
+ assert (select approved_at is not null from public.pitacco_fiado_charges where order_id=second_order);
+ update public.orders set status='cancelled' where id=second_order;
  assert (select used=0 from public.pitacco_fiado_customers where id=c);
  -- O gerente não pode enxergar cadastro alheio pela mesma RPC.
  begin
