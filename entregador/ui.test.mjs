@@ -263,28 +263,30 @@ test("first opening asks for notification permission and offers explicit shift s
  assert.match(css,/\.settings-row\[hidden\]\{display:none!important\}/);
 });
 
-test("cartão mostra Ir ao lado do endereço e PIN após Cheguei sem abrir detalhes",()=>{
+test("card mantém rota e abre PIN apenas ao clicar em Concluir",()=>{
  const page=read("painel.html");
+ const modal=read("delivery-confirmation.mjs");
  const android=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
  const css=read("painel.css");
  assert.match(page,/card-address-row/);
  assert.match(page,/element\("a","card-route-link","Ir"\)/);
  assert.match(page,/data-route-delivery/);
  assert.doesNotMatch(page,/createAction\("Abrir rota"/);
- assert.match(page,/Confirmar entrega/);
-  assert.match(page,/courierActionStage\(d\)/);
-  assert.doesNotMatch(page,/courierProgress\(d\)/);
-  assert.match(page,/createAction\("Coletar"/);
-  assert.match(page,/collectButton\.setAttribute\("aria-label","Coletar pedido"\)/);
-  assert.match(page,/createAction\("Finalizar entrega"/);
- assert.match(page,/Digite o código informado pelo cliente para finalizar/);
- assert.match(page,/element\("a","btn secondary card-ifood-confirm","Abrir confirmação no iFood"\)/);
- assert.match(page,/https:\/\/confirmacao-entrega-propria\.ifood\.com\.br\//);
+ assert.match(page,/courierActionStage\(d\)/);
+ assert.doesNotMatch(page,/courierProgress\(d\)/);
+ assert.match(page,/createAction\("Coletar"/);
+ assert.match(page,/collectButton\.setAttribute\("aria-label","Coletar pedido"\)/);
+ assert.match(page,/createAction\("Concluir","primary compact-finish",\(\)=>openDeliveryFinish\(d\)\)/);
+ assert.doesNotMatch(page,/stageExtras\.append\(verify\)/);
+ assert.match(modal,/Confirmar entrega/);
+ assert.match(modal,/Digite o código de 6 dígitos/);
+ assert.match(modal,/Abrir confirmação no iFood/);
+ assert.match(modal,/confirmacao-entrega-propria\.ifood\.com\.br/);
  assert.match(android,/confirmacao-entrega-propria\.ifood\.com\.br/);
  assert.doesNotMatch(page,/pitacco_driver_reconcile_ifood/);
- assert.match(page,/if\(d\.source==="proprio"\|\|d\.source==="ifood"\)/);
  assert.match(css,/\.card-address-row\{/);
 });
+
 test("sequência agrupada aparece somente para lotes válidos e navega por preferência",()=>{
  const page=read("painel.html");
  const source=read("route-sequence.mjs");
@@ -344,14 +346,15 @@ test("múltiplas paradas têm opção de percurso Maps só quando não há chega
  assert.match(navigation,/provider!=='google'/);
 });
 
-test("iFood external confirmation opens a browser or offers a copy fallback",()=>{
- const page=read("painel.html"),css=read("painel.css");
- assert.match(page,/external\.target=window\.PitaccoPush\?\.postMessage\?"_self":"_blank"/);
- assert.match(page,/window\.location\.assign\(officialUrl\)/);
- assert.match(page,/navigator\.clipboard\.writeText\(officialUrl\)/);
+test("iFood fallback oficial fica acessível dentro da confirmação",()=>{
+ const page=read("painel.html"),modal=read("delivery-confirmation.mjs"),css=read("painel.css");
+ assert.match(modal,/link\.target=window\.PitaccoPush\?\.postMessage\?"_self":"_blank"/);
+ assert.match(modal,/window\.location\.assign\(officialUrl\)/);
+ assert.match(modal,/navigator\.clipboard\.writeText\(officialUrl\)/);
  assert.doesNotMatch(page,/Já confirmei no iFood • Atualizar/);
- assert.match(css,/\.card-ifood-copy\{/);
+ assert.match(css,/\.delivery-sheet-copy\{/);
 });
+
 test("servidor encerra pedidos iFood oficiais e cancelados sem contabilizar ganhos",()=>{
  const sql=read("../supabase/migrations/20261118171000_pitacco_courier_terminal_status_sync.sql");
  const page=read("painel.html");
@@ -369,25 +372,24 @@ test("servidor encerra pedidos iFood oficiais e cancelados sem contabilizar ganh
  assert.match(page,/\.filter\(d=>!\["entregue","cancelada"\]\.includes\(d\.status\)\)/);
 });
 
-test("código incorreto aparece só sob campo, não no topo, e some ao editar",()=>{
- const page=read("painel.html"),css=read("painel.css");
+test("PIN fica só no modal, erros são exibidos junto ao campo e somem ao editar",()=>{
+ const page=read("painel.html"),modal=read("delivery-confirmation.mjs");
+ const css=read("painel.css");
  assert.match(page,/const codeDrafts=new Map\(\)/);
  assert.match(page,/function inlineCodeError\(deliveryId,errorText\)/);
- assert.match(page,/const feedback=element\("p","verify-error",draft\.error\)/);
- assert.match(page,/feedback\.setAttribute\("aria-live","polite"\)/);
- assert.match(page,/fields\.append\(code,feedback\)/);
- assert.match(page,/feedback\.textContent="";feedback\.hidden=true/);
- assert.match(page,/code\.setAttribute\("aria-invalid","false"\)/);
+ assert.match(page,/const currentModal=modal\?\.dataset\.deliveryId/);
+ assert.match(modal,/const error=el\("p","verify-error",""\)/);
+ assert.match(modal,/error\.setAttribute\("aria-live","polite"\)/);
+ assert.match(modal,/wrap\.append\(input,error\)/);
+ assert.match(modal,/error\.hidden=true;input\.setAttribute\("aria-invalid","false"\)/);
  assert.match(page,/inlineCodeError\(d\.id,"Código incorreto"\)/);
- assert.match(page,/form\.noValidate=true/);
+ assert.match(modal,/form\.noValidate=true/);
  assert.match(css,/\.verify-error\[hidden\]\{display:none!important\}/);
- const block=page.slice(page.indexOf("async function verifyCode(d,code){"),
-     page.indexOf("async function loadSafeHistory(){"));
- assert.doesNotMatch(block,/catch\(error\)\{message\(/);
- assert.doesNotMatch(block,/Tentativas restantes:/);
- assert.match(page,/codeDrafts\.delete\(id\)/);
+ assert.match(page,/codeDrafts\.delete\(d\.id\)/);
+ assert.doesNotMatch(page,/stageExtras\.append\(verify\)/);
  assert.doesNotMatch(page,/Aguardando o iFood confirmar a entrega\. Acompanhe a página oficial e tente atualizar novamente\./);
 });
+
 test("ganhos de entregas concluídas usam regra individual e valor único para loja e motoboy",()=>{
  const sql=read("../supabase/migrations/20261118174000_pitacco_courier_completion_earnings.sql");
  const manager=read("../revisions/0.12/web/CourierWorkspace.jsx");
