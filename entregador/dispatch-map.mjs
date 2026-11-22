@@ -113,7 +113,7 @@ export async function mountCourierSharedMap(container,{onOpenOrder,onNavigate}={
   const accuracy=Number(position.accuracy_m??position.accuracy);
   gpsPoint=point;
   if(!rider){
-   rider=L.marker(point,{icon:motoIcon,title:'Sua localização pelo GPS'}).addTo(gpsLayer);
+   rider=L.marker(point,{icon:motoIcon,zIndexOffset:2000,title:'Sua localização pelo GPS'}).addTo(gpsLayer);
    const popup=document.createElement('div');el(popup,'strong','Você está aqui');
    el(popup,'p','Posição obtida pelo GPS do dispositivo.');
    rider.bindPopup(popup);
