@@ -54,7 +54,7 @@ test('courier app uses arrival before code, no completed PII from ordinary list'
  assert.match(page,/pitacco_driver_arrive/);
  assert.match(page,/pitacco_driver_verify_own_code/);
  assert.match(page,/pitacco_driver_history/);
- assert.match(page,/Confirmar entrega/);
+ assert.match(page,/Finalizar entrega/);
  assert.match(page,/Registre primeiro a chegada ao cliente/);
  assert.match(client,/\.in\('status', \['pendente','atribuida','aceita','retirada'\]\)/);
  assert.doesNotMatch(page,/set_delivery_status/);
