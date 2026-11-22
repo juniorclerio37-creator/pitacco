@@ -1,0 +1,56 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+const read=(path)=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
+const sql=read("supabase/migrations/20261122185000_store_delivery_code_digits_ifood_four.sql");
+const ui=read("revisions/0.12/web/DeliveryCodeSettings.jsx");
+const web=read("revisions/0.12/web/StorefrontSettings.jsx");
+const merchant=read("revisions/0.12/web/OwnerMenuSettings.jsx");
+const courier=read("entregador/painel.html");
+const modal=read("entregador/delivery-confirmation.mjs");
+const handler=read("supabase/functions/ifood-orders/handler.mjs");
+
+test("store owner can set 4 to 8 digits for future own deliveries, default remains 6",()=>{
+ assert.match(sql,/digits smallint not null default 6 check \(digits between 4 and 8\)/);
+ assert.match(sql,/public\.is_store_manager\(p_store\)/);
+ assert.match(sql,/p_digits not between 4 and 8/);
+ assert.match(sql,/pg_catalog\.lpad\(n::text,digits,'0'\)/);
+ assert.match(sql,/pitacco_private\.issue_own_delivery_code\(\)/);
+ assert.match(sql,/on conflict\(delivery_id\) do nothing/);
+ for(const length of [4,5,6,7,8])assert.match(ui,new RegExp("\\b"+length+"\\b"));
+ assert.match(ui,/pitacco_save_store_delivery_code_length/);
+ assert.match(ui,/pitacco_store_delivery_code_length/);
+ assert.match(web,/DeliveryCodeSettings client=\{client\} storeId=\{storeId\}/);
+ assert.match(merchant,/DeliveryCodeSettings client=\{client\} storeId=\{storeId\}/);
+});
+test("no PIN leaks to courier; original PIN length remains valid on existing orders",()=>{
+ assert.match(sql,/from public\.pitacco_own_delivery_codes pin/);
+ assert.match(sql,/'digits',pg_catalog\.length\(pin.code\)/);
+ assert.doesNotMatch(sql,/'code',pin\.code/);
+ assert.match(sql,/pg_catalog\.length\(p_code\)<>pg_catalog\.length\(code_row\.code\)/);
+ assert.match(sql,/if code_row\.attempts>=5 then/);
+ assert.match(sql,/status='entregue'/);
+ assert.match(sql,/row level security/);
+ assert.match(sql,/revoke all on public\.pitacco_store_delivery_code_settings from public, anon, authenticated/);
+ assert.match(sql,/c\.user_id=\(select auth\.uid\(\)\)/);
+ assert.match(courier,/pitacco_driver_own_code_lengths/);
+ assert.match(courier,/ownCodeLengths\.set\(d\.id,codeLength\)/);
+ assert.match(courier,/code_length:codeLength/);
+ assert.match(modal,/length:max/);
+});
+test("iFood only accepts 4-digit code with official provider confirmation; errors remain red",()=>{
+ assert.match(handler,/!\s*\/\^\\d\{4\}\$\/\.test\(input\.code\)/);
+ assert.match(handler,/verification\?\.valid===true/);
+ assert.match(handler,/verification\?\.valid===false/);
+ assert.match(handler,/provider_state:'invalid_code'/);
+ assert.match(handler,/pitacco_ifood_driver_result/);
+ assert.match(courier,/error\.providerState==="invalid_code"/);
+ assert.match(courier,/Código incorreto/);
+ assert.match(courier,/ifoodDriverAction\(d\.id,"verify",digits\)/);
+ assert.match(courier,/!\s*\/\^\[0-9\]\{4\}\$\/\.test\(digits\)/);
+ assert.match(modal,/Código iFood \(4 dígitos\)/);
+ assert.match(modal,/const expected=delivery\.source==="proprio"\?Number\(delivery\.code_length\|\|6\):4/);
+ const css=read("entregador/painel.css");
+ assert.match(css,/\.delivery-sheet-pin-wrap \.verify-error\{/);
+ assert.match(css,/color:#b02c30/);
+});
