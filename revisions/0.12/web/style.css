@@ -75,3 +75,110 @@
 .order-card .dispatch-highlight{background:#e96b20;color:#fff;border:1px solid #c85512;font-weight:800;box-shadow:0 3px 9px #b94c1630}
 .order-card .dispatch-highlight:hover:not(:disabled){background:#c85512;color:#fff}
 .order-card .dispatch-highlight:focus-visible{outline:3px solid #ffba79;outline-offset:2px}
+
+
+/* Pitacco UI refinement — merchant sidebar identity and compact order board. */
+.app>aside .brand{
+  width:100%;
+  min-width:0;
+  min-height:64px;
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
+  padding:0 8px 16px;
+  margin:0 0 14px;
+  border-bottom:1px solid var(--line,#e5e9f0);
+}
+.app>aside .brand img{
+  display:block;
+  width:52px;
+  height:52px;
+  min-width:52px;
+  max-width:52px;
+  object-fit:contain;
+  margin:0;
+  flex:none;
+}
+.app>aside .brand span{
+  display:block;
+  min-width:0;
+  max-width:100%;
+  overflow-wrap:anywhere;
+  font-size:12px;
+  line-height:1.35;
+  white-space:normal;
+}
+.app>aside{min-width:0}
+.app>main{min-width:0;width:100%}
+.app>main>header{
+  min-width:0;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:14px 20px;
+}
+.app>main>header>div{min-width:0;flex:1 1 260px}
+.app>main>header .eyebrow{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px;
+  min-width:0;
+  line-height:1.4;
+}
+.app>main>header select{flex:0 1 280px;max-width:100%;min-width:180px}
+.kanban{align-items:start;gap:12px}
+.kanban-column{min-width:0}
+.kanban .column-header{padding:11px 12px;min-height:56px}
+.kanban .column-header h3{font-size:13px;line-height:1.25}
+.kanban .column-header small{font-size:10px}
+.kanban .column-body{padding:7px;min-height:300px}
+.kanban .order-card{
+  padding:11px;
+  margin-bottom:8px;
+  border-radius:10px;
+  box-shadow:0 1px 4px #22222208;
+}
+.kanban .order-card .card-heading{gap:6px;align-items:center}
+.kanban .order-card .card-heading>b{font-size:12px}
+.kanban .order-card .card-heading .order-time{font-size:10px}
+.kanban .order-card .card-heading button{padding:6px;font-size:11px}
+.kanban .order-card h3{font-size:13px;line-height:1.3;margin:9px 0 3px}
+.kanban .order-card p{font-size:11px;line-height:1.35;margin:4px 0}
+.kanban .order-card .operations-order-localizer{margin:6px 0}
+.kanban .order-card .order-items{
+  padding:7px 0 9px;
+  font-size:11px;
+  line-height:1.35;
+}
+.kanban .order-card .card-payment{
+  gap:6px;
+  align-items:flex-start;
+  margin:7px 0;
+  font-size:11px;
+}
+.kanban .order-card .card-payment strong{font-size:13px}
+.kanban .order-card .card-payment span{font-size:10px;line-height:1.35}
+.kanban .order-card .logistics-state{padding-top:7px;margin-top:7px}
+.kanban .order-card .logistics-state small{font-size:10px;line-height:1.35;margin-top:3px}
+.kanban .order-card .order-actions{gap:6px;margin-top:9px}
+.kanban .order-card .order-actions button{font-size:10px;line-height:1.3;padding:8px 9px;min-height:34px}
+.kanban .order-card>.linkbutton{font-size:10px;padding:5px 0}
+@media(max-width:800px){
+  .app>aside .brand{min-height:48px;gap:9px;padding:0 0 10px;margin-bottom:6px}
+  .app>aside .brand img{width:42px;height:42px;min-width:42px;max-width:42px}
+  .app>aside .brand span{font-size:11px;max-width:calc(100% - 52px)}
+  .app>main{width:100%;min-width:0}
+  .app>main>header{align-items:stretch;gap:10px}
+  .app>main>header>div{flex-basis:100%}
+  .app>main>header select{width:100%;max-width:100%;flex:1 1 100%}
+  .kanban{grid-template-columns:repeat(4,minmax(250px,1fr));gap:10px}
+  .kanban .column-body{padding:6px}
+  .kanban .order-card{padding:10px}
+}
+@media(max-width:420px){
+  .app>aside .brand img{width:38px;height:38px;min-width:38px;max-width:38px}
+  .app>aside .brand span{font-size:10px}
+  .kanban{grid-template-columns:repeat(4,240px)}
+}
