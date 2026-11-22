@@ -51,3 +51,14 @@ test('customer tracking mounts the same Leaflet module as the merchant and hides
  assert.match(html,/renderLocation\(d\.courier_position\)/);
  assert.match(html,/if\(document\.visibilityState==='visible'\)/);
 });
+
+
+test('customer tracking exposes actual merchant-configured delivery PIN of 4 to 8 digits',()=>{
+ const html=readFileSync(new URL('../marketing/acompanhar.html',import.meta.url),'utf8');
+ const sql=readFileSync(new URL('../supabase/migrations/20261122185000_store_delivery_code_digits_ifood_four.sql',import.meta.url),'utf8');
+ assert.match(html,/const pinVisible=\/\^\[0-9\]\{4,8\}\$\/\.test\(pin\)/);
+ assert.match(html,/deliveryPinCard'\)\.hidden=!pinVisible/);
+ assert.match(html,/deliveryPin'\)\.textContent=pinVisible\?pin:''/);
+ assert.match(sql,/digits smallint not null default 6 check \(digits between 4 and 8\)/);
+ assert.match(html,/setInterval\(refresh,15000\)/);
+});
