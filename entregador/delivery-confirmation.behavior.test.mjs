@@ -50,7 +50,7 @@ function setup(){
  globalThis.document={body,activeElement:null,
   createElement:tag=>new FakeElement(tag)};
  globalThis.window={PitaccoPush:undefined,location:{assign:()=>{}}};
- globalThis.navigator={clipboard:{writeText:async()=>{}}};
+ Object.defineProperty(globalThis,"navigator",{configurable:true,value:{clipboard:{writeText:async()=>{}}}});
  return body;
 }
 const order={id:"order-1",source:"proprio",public_number:"4587"};
