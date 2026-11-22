@@ -227,10 +227,12 @@ body.store-closed .dock{display:none}
 </fieldset><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço, marque o destino no mapa e calcule o frete conforme a área da loja.</p></div></div><label for="payment">Forma de pagamento</label><select id="payment" required></select>
 <section id="loyaltyBox" class="fiado-access" aria-label="Fideliza+ do cliente" hidden>
  <h3>Fideliza+ · Benefícios desta loja</h3><p id="loyaltyTerms"></p><div id="loyaltyCampaigns"></div>
- <div id="loyaltyAnonymous"><p>Informe seu nome e telefone acima para criar sua carteira. O saldo é protegido por uma chave pessoal; somente o telefone não dá acesso.</p>
- <label for="loyaltyReferral">Código de indicação (opcional, no primeiro cadastro)</label><input id="loyaltyReferral" maxlength="32" autocomplete="off"><button type="button" id="loyaltyJoin" class="secondary">Participar do Fideliza+</button></div>
- <label for="loyaltyKey">Sua chave pessoal de acesso</label><input id="loyaltyKey" type="password" maxlength="64" autocomplete="off" spellcheck="false" placeholder="Cole sua chave para acessar em outro aparelho">
- <button type="button" id="loyaltyShowKey" class="secondary">Mostrar ou ocultar chave</button><button type="button" id="loyaltyLogin" class="secondary">Acessar carteira</button><button type="button" id="loyaltyCopyKey" class="secondary">Copiar chave</button>
+ <div id="loyaltyAnonymous">
+ <p>Seus pontos, créditos e benefícios pertencem ao telefone informado no pedido. Não é preciso criar senha nem guardar chave. Para consultar ou resgatar o saldo, confirme seu número por SMS.</p>
+ <label for="loyaltyReferral">Código de indicação (opcional, antes da primeira compra)</label><input id="loyaltyReferral" maxlength="32" autocomplete="off">
+ <button type="button" id="loyaltyJoin" class="secondary">Acessar com meu telefone</button>
+ <div id="loyaltyOtpBlock" hidden><label for="loyaltyOtp">Código temporário recebido por SMS</label><input id="loyaltyOtp" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="6 dígitos"><button type="button" id="loyaltyVerify" class="secondary">Confirmar código</button></div>
+ </div>
  <div id="loyaltyMember" hidden><p id="loyaltyBalance"></p><button type="button" id="loyaltyLogout" class="secondary">Sair desta carteira</button>
  <div id="loyaltyShareBlock" hidden><label for="loyaltyShare">Seu link de indicação</label><input id="loyaltyShare" readonly><button type="button" id="loyaltyCopyShare" class="secondary">Copiar indicação</button></div>
  <details><summary>Movimentações da carteira</summary><div id="loyaltyHistory"></div></details></div>
@@ -757,11 +759,12 @@ $('fiadoCheck').addEventListener('click',async()=>{
  finally{button.disabled=false;}
 });
 
-// Carteira por loja: somente uma chave pessoal aleatória dá acesso ao saldo.
-let loyaltyProgram=null,loyaltyWallet=null,loyaltyKey='',loyaltyPreview=null,loyaltyStamp='',loyaltyBusy=false;
-const loyaltyStorage='pitacco-loyalty:'+slug;
+// A carteira pertence ao telefone. A sessão técnica é privada e nunca mostrada ao cliente.
+let loyaltyProgram=null,loyaltyWallet=null,loyaltySessionToken='',loyaltyPreview=null,loyaltyStamp='',loyaltyBusy=false,loyaltyRequestedPhone='';
+const loyaltyStorage='pitacco-loyalty-session:'+slug;
+const loyaltyPhoneDigits=value=>{const digits=String(value||'').replace(/\D/g,'');return digits.startsWith('55')&&(digits.length===12||digits.length===13)?digits.slice(2):digits;};
 const loyaltyItems=()=>cart.map(({product_id,quantity,options})=>({product_id,quantity,options:[...options]}));
-const loyaltyFingerprint=()=>JSON.stringify([loyaltyItems(),loyaltyKey,$('loyaltyCoupon').value.trim().toUpperCase(),$('loyaltyReward').value]);
+const loyaltyFingerprint=()=>JSON.stringify([loyaltyItems(),loyaltySessionToken,$('loyaltyCoupon').value.trim().toUpperCase(),$('loyaltyReward').value]);
 const loyaltyDiscount=()=>loyaltyPreview&&loyaltyStamp===loyaltyFingerprint()?Number(loyaltyPreview.discount_cents)/100:0;
 function loyaltyNotice(text){$('loyaltyStatus').textContent=text||'';}
 function invalidateLoyalty(){loyaltyPreview=null;loyaltyStamp='';if(menu)renderCart();}
@@ -804,12 +807,13 @@ function renderLoyalty(){
   row.append(use);offers.append(row);
  }
 }
-async function enterLoyalty(key){
- const {data,error}=await client.rpc('pitacco_loyalty_wallet',{p_slug:slug,p_key:key});
+async function enterLoyalty(token){
+ const {data,error}=await client.rpc('pitacco_loyalty_wallet',{p_slug:slug,p_key:token});
  if(error)throw error;if(data?.error)throw Error(data.error);if(!data?.customer_id)throw Error('Não foi possível acessar sua carteira.');
- loyaltyKey=key;loyaltyWallet=data;$('loyaltyKey').value=key;
- try{localStorage.setItem(loyaltyStorage,key)}catch{loyaltyNotice('Guarde sua chave. Este navegador não permite salvar o acesso.');}
- if(!$('customer').value)$('customer').value=data.name;if(!$('phone').value)$('phone').value=data.phone;
+ loyaltySessionToken=token;loyaltyWallet=data;
+ try{localStorage.setItem(loyaltyStorage,token)}catch{loyaltyNotice('Sua sessão não será mantida após fechar esta página.');}
+ if(!$('customer').value)$('customer').value=data.name;
+ if(!$('phone').value)$('phone').value=data.phone;
  invalidateLoyalty();renderLoyalty();
 }
 async function loadLoyalty(){
@@ -817,15 +821,29 @@ async function loadLoyalty(){
   const {data,error}=await client.rpc('pitacco_loyalty_program',{p_slug:slug});if(error)throw error;
   if(!data?.rules)return;
   loyaltyProgram=data;$('loyaltyBox').hidden=false;$('loyaltyOpen').hidden=false;renderLoyalty();
-  try{const saved=localStorage.getItem(loyaltyStorage);if(saved)await enterLoyalty(saved)}catch(error){loyaltyNotice(error.message||'Entre novamente com sua chave pessoal.');}
- }catch{ $('loyaltyOpen').hidden=false;$('loyaltyBox').hidden=false;loyaltyNotice('Não foi possível carregar o Fideliza+. Tente novamente. Seu pedido comum continua disponível.'); }
+  const {data:authData}=await client.auth.getUser();
+  const user=authData?.user;
+  if(user?.phone_confirmed_at && user.phone){
+   const saved=localStorage.getItem(loyaltyStorage);
+   if(saved){try{await enterLoyalty(saved);return;}catch{localStorage.removeItem(loyaltyStorage);}}
+   try{
+    const {data:access,error:accessError}=await client.rpc('pitacco_loyalty_phone_access',{
+     p_slug:slug,p_name:$('customer').value.trim(),p_phone:user.phone,p_referral:''
+    });
+    if(!accessError&&access?.session_token)await enterLoyalty(access.session_token);
+   }catch{}
+  }
+ }catch{
+  $('loyaltyOpen').hidden=false;$('loyaltyBox').hidden=false;
+  loyaltyNotice('Não foi possível carregar o Fideliza+. Você ainda pode fazer seu pedido normalmente.');
+ }
 }
 async function refreshLoyaltyWallet(){
- if(!loyaltyKey||submitting||(pendingRequest&&!completed)||loyaltyBusy||document.hidden||!$('cartDialog').open)return;
- const key=loyaltyKey;
+ if(!loyaltySessionToken||submitting||(pendingRequest&&!completed)||loyaltyBusy||document.hidden||!$('cartDialog').open)return;
+ const key=loyaltySessionToken;
  try{
   const {data,error}=await client.rpc('pitacco_loyalty_wallet',{p_slug:slug,p_key:key});
-  if(key!==loyaltyKey||error||data?.error||!data?.customer_id)return;
+  if(key!==loyaltySessionToken||error||data?.error||!data?.customer_id)return;
   const before=JSON.stringify([loyaltyWallet?.points,loyaltyWallet?.orders,loyaltyWallet?.cashback_cents,loyaltyWallet?.rules]);
   const after=JSON.stringify([data.points,data.orders,data.cashback_cents,data.rules]);
   loyaltyWallet=data;
@@ -842,24 +860,53 @@ $('loyaltyOpen').onclick=()=>{
  $('loyaltyBox').scrollIntoView({block:'start'});void refreshLoyaltyWallet();
 };
 $('loyaltyJoin').onclick=async()=>{
- if(loyaltyBusy||pendingRequest)return;loyaltyBusy=true;$('loyaltyJoin').disabled=true;loyaltyNotice('Criando sua carteira…');
+ if(loyaltyBusy||pendingRequest)return;
+ const digits=loyaltyPhoneDigits($('phone').value);
+ if(!/^[0-9]{10,11}$/.test(digits)){loyaltyNotice('Informe um telefone com DDD antes de continuar.');$('phone').focus();return;}
+ loyaltyBusy=true;$('loyaltyJoin').disabled=true;loyaltyNotice('Solicitando código de confirmação por SMS…');
  try{
-  const {data,error}=await client.rpc('pitacco_loyalty_join',{p_slug:slug,p_name:$('customer').value.trim(),p_phone:$('phone').value,p_referral:$('loyaltyReferral').value.trim()});
-  if(error)throw error;if(data?.error)throw Error(data.error);if(!data?.key)throw Error('Cadastro não confirmado.');
-  await enterLoyalty(data.key);loyaltyNotice('Carteira criada. Guarde sua chave pessoal para acessar em outro aparelho.');
- }catch(error){loyaltyNotice(error.message||'Não foi possível criar a carteira.');}finally{loyaltyBusy=false;$('loyaltyJoin').disabled=false;}
+  const {error}=await client.auth.signInWithOtp({phone:'+55'+digits});
+  if(error)throw error;
+  loyaltyRequestedPhone=digits;
+  $('loyaltyOtpBlock').hidden=false;
+  loyaltyNotice('Enviamos um código temporário para o telefone informado. Digite-o para acessar seus benefícios.');
+  $('loyaltyOtp').focus();
+ }catch(error){
+  loyaltyNotice('Não foi possível enviar o SMS. Confira seu número ou solicite à loja a ativação da confirmação por telefone. '+(error.message||''));
+ }finally{loyaltyBusy=false;$('loyaltyJoin').disabled=false;}
 };
-$('loyaltyLogin').onclick=async()=>{
- if(loyaltyBusy||pendingRequest)return;loyaltyBusy=true;$('loyaltyLogin').disabled=true;
- try{await enterLoyalty($('loyaltyKey').value.trim().toLowerCase());loyaltyNotice('Carteira conectada. Use o mesmo telefone no pedido.');}catch(error){loyaltyNotice(error.message);}finally{loyaltyBusy=false;$('loyaltyLogin').disabled=false;}
+$('loyaltyVerify').onclick=async()=>{
+ if(loyaltyBusy||pendingRequest)return;
+ const digits=loyaltyPhoneDigits($('phone').value),otp=$('loyaltyOtp').value.replace(/\D/g,'');
+ if(!loyaltyRequestedPhone||digits!==loyaltyRequestedPhone){loyaltyNotice('O telefone mudou. Solicite um novo código.');return;}
+ if(!/^[0-9]{6}$/.test(otp)){loyaltyNotice('Digite os 6 dígitos do SMS.');return;}
+ loyaltyBusy=true;$('loyaltyVerify').disabled=true;
+ try{
+  const {error:otpError}=await client.auth.verifyOtp({phone:'+55'+digits,token:otp,type:'sms'});
+  if(otpError)throw otpError;
+  const {data,error}=await client.rpc('pitacco_loyalty_phone_access',{
+   p_slug:slug,p_name:$('customer').value.trim(),p_phone:digits,p_referral:$('loyaltyReferral').value.trim()
+  });
+  if(error)throw error;if(data?.error)throw Error(data.error);
+  if(!data?.session_token)throw Error('A sessão de fidelidade não foi confirmada.');
+  await enterLoyalty(data.session_token);
+  $('loyaltyOtpBlock').hidden=true;$('loyaltyOtp').value='';loyaltyRequestedPhone='';
+  loyaltyNotice('Telefone confirmado. Seus benefícios estão vinculados a este número.');
+ }catch(error){loyaltyNotice(error.message||'Não foi possível confirmar o código.');}
+ finally{loyaltyBusy=false;$('loyaltyVerify').disabled=false;}
 };
-$('loyaltyLogout').onclick=()=>{
- if(pendingRequest)return;loyaltyKey='';loyaltyWallet=null;$('loyaltyKey').value='';$('loyaltyKey').type='password';$('loyaltyReward').value='';$('loyaltyCoupon').value='';$('loyaltyBalance').textContent='';$('loyaltyHistory').replaceChildren();$('loyaltyShare').value='';
- try{localStorage.removeItem(loyaltyStorage)}catch{}invalidateLoyalty();renderLoyalty();loyaltyNotice('Acesso removido deste aparelho.');
+$('loyaltyLogout').onclick=async()=>{
+ if(pendingRequest)return;
+ loyaltySessionToken='';loyaltyWallet=null;$('loyaltyReward').value='';$('loyaltyCoupon').value='';
+ $('loyaltyBalance').textContent='';$('loyaltyHistory').replaceChildren();$('loyaltyShare').value='';
+ $('loyaltyOtpBlock').hidden=true;$('loyaltyOtp').value='';loyaltyRequestedPhone='';
+ try{localStorage.removeItem(loyaltyStorage)}catch{}
+ try{await client.auth.signOut()}catch{}
+ invalidateLoyalty();renderLoyalty();loyaltyNotice('Você saiu da carteira deste telefone.');
 };
-$('loyaltyShowKey').onclick=()=>{$('loyaltyKey').type=$('loyaltyKey').type==='password'?'text':'password';};
-for(const [id,target] of [['loyaltyCopyKey','loyaltyKey'],['loyaltyCopyShare','loyaltyShare']])$(id).onclick=async()=>{
- try{await navigator.clipboard.writeText($(target).value);loyaltyNotice('Copiado.');}catch{$(target).focus();$(target).select();loyaltyNotice('Selecione e copie o texto.');}
+$('loyaltyCopyShare').onclick=async()=>{
+ try{await navigator.clipboard.writeText($('loyaltyShare').value);loyaltyNotice('Indicação copiada.');}
+ catch{$('loyaltyShare').focus();$('loyaltyShare').select();loyaltyNotice('Selecione e copie o link.');}
 };
 $('loyaltyReward').onchange=()=>{
  if($('loyaltyReward').value)$('loyaltyCoupon').value='';$('loyaltyCoupon').disabled=!!$('loyaltyReward').value;invalidateLoyalty();loyaltyNotice('Toque em Aplicar benefício para conferir o valor.');
@@ -869,7 +916,7 @@ $('loyaltyClear').onclick=()=>{$('loyaltyCoupon').value='';$('loyaltyReward').va
 $('loyaltyApply').onclick=async()=>{
  if(loyaltyBusy||pendingRequest)return;loyaltyBusy=true;$('loyaltyApply').disabled=true;const fingerprint=loyaltyFingerprint();
  try{
-  const {data,error}=await client.rpc('pitacco_loyalty_preview',{p_slug:slug,p_items:loyaltyItems(),p_key:loyaltyKey,p_coupon:$('loyaltyCoupon').value.trim().toUpperCase(),p_reward:$('loyaltyReward').value});
+  const {data,error}=await client.rpc('pitacco_loyalty_preview',{p_slug:slug,p_items:loyaltyItems(),p_key:loyaltySessionToken,p_coupon:$('loyaltyCoupon').value.trim().toUpperCase(),p_reward:$('loyaltyReward').value});
   if(error)throw error;if(data?.error)throw Error(data.error);if(!Number.isInteger(data?.discount_cents))throw Error('Desconto não confirmado.');
   if(fingerprint!==loyaltyFingerprint())throw Error('A sacola mudou. Confira novamente o benefício.');
   loyaltyPreview=data;loyaltyStamp=fingerprint;renderCart();loyaltyNotice('Desconto conferido: '+money(data.discount_cents/100)+'. A disponibilidade será confirmada ao enviar o pedido.');
@@ -969,7 +1016,7 @@ $('checkout').onsubmit=async event=>{
    $('address').focus();
    return;
   }
-  if(loyaltyKey&&loyaltyWallet?.phone!==phoneDigits){msg('Use o telefone da sua carteira ou saia do Fideliza+ para este pedido.');return;}
+  if(loyaltySessionToken&&loyaltyWallet?.phone!==phoneDigits){msg('Use o telefone da sua carteira ou saia do Fideliza+ para este pedido.');return;}
   if(($('loyaltyCoupon').value.trim()||$('loyaltyReward').value)&&(!loyaltyPreview||loyaltyStamp!==loyaltyFingerprint())){
    msg('Aplique novamente o benefício após alterar a sacola.');$('loyaltyApply').focus();return;
   }
@@ -1000,8 +1047,8 @@ $('checkout').onsubmit=async event=>{
    p_notes:$('notes').value
   };
   if(payment==='fiado')pendingRequest.p_code=$('fiadoCode').value.trim();
-  if(loyaltyKey||$('loyaltyCoupon').value.trim()||$('loyaltyReward').value){
-   pendingRequest.p_key=loyaltyKey;pendingRequest.p_coupon=$('loyaltyCoupon').value.trim().toUpperCase();pendingRequest.p_reward=$('loyaltyReward').value;
+  if(loyaltyProgram||loyaltySessionToken||$('loyaltyCoupon').value.trim()||$('loyaltyReward').value){
+   pendingRequest.p_key=loyaltySessionToken;pendingRequest.p_coupon=$('loyaltyCoupon').value.trim().toUpperCase();pendingRequest.p_reward=$('loyaltyReward').value;
   }
   if(routeMode)pendingRequest.p_quote=deliveryQuote.id;
   // The quoted checkout recovers the customer's exact pin on the server
@@ -1041,7 +1088,7 @@ $('checkout').onsubmit=async event=>{
   }
   if(!data?.order_id)throw Error('O servidor não retornou a confirmação do pedido.');
   completed=true;submitting=false;
-  if(usingLoyalty&&loyaltyKey)enterLoyalty(loyaltyKey).catch(()=>{});
+  if(usingLoyalty&&loyaltySessionToken)enterLoyalty(loyaltySessionToken).catch(()=>{});
   $('checkout').hidden=true;$('cartReview').hidden=true;$('cartFooter').hidden=true;
   $('cartTitle').textContent='Pedido confirmado';$('cartAction').textContent='Ver pedido';
   $('success').hidden=false;
