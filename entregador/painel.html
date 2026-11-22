@@ -274,6 +274,7 @@ import {arrivalProximity} from "./arrival-proximity.mjs";
 import {paymentSummaryPanel,courierCollectStep} from "./payment-ui.mjs";
 import {deliveryBucket,compactPaymentChip,safeFinishedToday} from "./compact-dashboard.mjs";
 import {pickupReminderType,showPickupReminder} from "./pickup-reminder.mjs";
+import {showArrivalConfirmation,showDeliveryFinish} from "./delivery-confirmation.mjs";
 const $=id=>document.getElementById(id);
 const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true}});
 const driver=createDriverAuth(sb);
@@ -813,16 +814,20 @@ const statuses={pendente:"Aguardando loja",atribuida:"Aguardando coleta",aceita:
 function message(text){$("notice").textContent=text||"";}
 function paymentOf(d){return paymentCards.get(d.id)||{state:"unknown",method:"Não informada",amount:null};}
 async function confirmCourierCollection(d){
- if(busy)return;busy=true;message("");
+ if(busy)throw Error("Aguarde a operação anterior terminar.");
+ busy=true;message("");
  try{
   const {data,error}=await sb.rpc("pitacco_driver_confirm_payment",{p_delivery:d.id});
   if(error)throw Error(error.message||"Não foi possível registrar o pagamento");
-  if(data?.state!=="paid"||!data.received_by_courier)throw Error("O servidor não confirmou o recebimento");
+  if(data?.state!=="paid"||data?.received_by_courier!==true)
+   throw Error("O servidor não confirmou o recebimento.");
   paymentCards.set(d.id,data);
-  await refresh(true);
-  message("Pagamento recebido e registrado para a loja. Agora informe o código do cliente.");
- }catch(err){message(String(err?.message||"Pagamento não registrado. Tente novamente."))}
- finally{busy=false}
+  try{await refresh(true);}catch{message("Pagamento registrado no Pitacco. Atualize a lista quando houver conexão.");}
+  return data;
+ }catch(err){
+  message(String(err?.message||"Pagamento não registrado. Tente novamente."));
+  throw err;
+ }finally{busy=false;}
 }
 async function api(action,payload={}){
  const {data:{session}}=await sb.auth.getSession();
@@ -904,25 +909,27 @@ async function collectCourierOrder(d){
  finally{busy=false}
 }
 async function markArrival(d){
- if(busy)return;busy=true;message("");
+ if(busy)return false;
+ busy=true;message("");let saved=false;
  try{
   const {error}=await sb.rpc("pitacco_driver_arrive",{p_delivery:d.id});
   if(error)throw Error(error.message||"Chegada não registrada");
+  saved=true;
   let info="Chegada registrada no Pitacco. O pedido ainda não foi concluído.";
   if(d.source==="ifood"){
    try{
     const result=await ifoodDriverAction(d.id,"arrival");
-    if(result.provider_state==="submitted")info="Chegada registrada. Peça o código ao cliente.";
+    if(result.provider_state==="submitted")info="Chegada registrada e aviso enviado ao iFood.";
    }catch(error){info+=" Aviso iFood ainda não confirmado: "+String(error.message);}
-  }else if(d.source==="99food")info+=" Aviso à 99Food ainda não homologado; não há confirmação de notificação ao cliente.";
+  }else if(d.source==="99food")info+=" Aviso à 99Food ainda não homologado.";
   else if(d.source==="keeta")info+=" Aviso à Keeta ainda não homologado.";
-  await refresh(true);message(info);
-  const activeCard=[...document.querySelectorAll(".card[data-delivery-id]")]
-   .find(card=>card.getAttribute("data-delivery-id")===d.id);
-  const input=activeCard?.querySelector(".card-verify-block .verify-input");
-  if(input&&document.visibilityState==="visible")input.focus({preventScroll:true});
- }catch(error){message(String(error.message||"Erro ao registrar chegada"))}
- finally{busy=false}
+  try{await refresh(true);}catch{info+=" Atualize a lista para conferir o registro.";}
+  message(info);
+  return true;
+ }catch(error){
+  message(String(error?.message||"Erro ao registrar chegada"));
+  return saved;
+ }finally{busy=false;}
 }
 // Apenas entrega confirmada vira o ponto de partida do próximo destino.
 // Estas coordenadas ficam em memória, sem gravar endereços ou PINs.
@@ -937,53 +944,94 @@ function rememberCompletedBatchStop(d){
 }
 function inlineCodeError(deliveryId,errorText){
  const draft=codeDrafts.get(deliveryId)||{value:"",error:""};
- draft.error=errorText;
- codeDrafts.set(deliveryId,draft);
- const card=[...document.querySelectorAll(".card[data-delivery-id]")]
+ draft.error=errorText;codeDrafts.set(deliveryId,draft);
+ // A janela de confirmação, não o cartão, apresenta erros de código.
+ const modal=$("deliveryFinishDialog");
+ const currentModal=modal?.dataset.deliveryId===String(deliveryId)?modal:null;
+ const previousCard=[...document.querySelectorAll(".card[data-delivery-id]")]
   .find(node=>node.getAttribute("data-delivery-id")===deliveryId);
- const feedback=card?.querySelector(".verify-error"),input=card?.querySelector(".verify-input");
+ const owner=currentModal||previousCard;
+ const feedback=owner?.querySelector(".verify-error"),input=owner?.querySelector(".verify-input");
  if(feedback){feedback.textContent=errorText;feedback.hidden=!errorText;}
  if(input)input.setAttribute("aria-invalid",String(!!errorText));
 }
 async function verifyCode(d,code){
- if(busy)return;busy=true;message("");
+ if(busy)return false;
+ busy=true;message("");
  try{
   if(!d.arrived_at)throw Error("Registre primeiro a chegada ao cliente");
-  if(paymentOf(d).state==="collect")throw Error("Confirme o recebimento do pagamento antes de finalizar");
+  if(paymentOf(d).state==="collect")
+   throw Error("Confirme o recebimento do pagamento antes de finalizar");
   const digits=String(code||"").trim();
   if(d.source==="proprio"){
    if(!/^[0-9]{6}$/.test(digits)){
-    inlineCodeError(d.id,"Código incorreto");return;
+    inlineCodeError(d.id,"Código incorreto");return false;
    }
    const {data,error}=await sb.rpc("pitacco_driver_verify_own_code",{p_delivery:d.id,p_code:digits});
    if(error)throw Error(error.message||"Código não validado");
-   if(!data?.verified){inlineCodeError(d.id,"Código incorreto");return;}
+   if(!data?.verified){inlineCodeError(d.id,"Código incorreto");return false;}
   }else if(d.source==="ifood"){
    if(!/^[0-9]{4,8}$/.test(digits)){
-    inlineCodeError(d.id,"Código incorreto");return;
+    inlineCodeError(d.id,"Código incorreto");return false;
    }
    let result;
    try{result=await ifoodDriverAction(d.id,"verify",digits);}
    catch(error){
-    if(error.status===409 && /iFood não validou esse código|código incorreto|código inválido/i.test(String(error.message))){
-     inlineCodeError(d.id,"Código incorreto");return;
+    if(error.status===409&&/iFood não validou esse código|código incorreto|código inválido/i.test(String(error.message))){
+     inlineCodeError(d.id,"Código incorreto");return false;
     }
     throw error;
    }
-   if(!result?.verified){inlineCodeError(d.id,"Código incorreto");return;}
+   if(!result?.verified){inlineCodeError(d.id,"Código incorreto");return false;}
   }else throw Error("A validação oficial desta plataforma ainda depende de homologação");
   codeDrafts.delete(d.id);
   orderDetails.close();
   rememberCompletedBatchStop(d);
-  await refresh(true);
+  try{await refresh(true);}
+  catch{message("Entrega validada. Atualize a lista para conferir o registro.");}
   message("Entrega concluída! Ganho registrado conforme o valor configurado pela loja.");
+  return true;
  }catch(error){
   const details=String(error?.message||"Erro ao confirmar a entrega");
   inlineCodeError(d.id,/tentativas esgotadas/i.test(details)?
    "Tentativas esgotadas. Solicite ajuda à loja.":
-   /Registre primeiro a chegada/.test(details)?details:
+   /Registre primeiro a chegada|Confirme o recebimento/.test(details)?details:
+   /código incorreto|código inválido/i.test(details)?"Código incorreto":
    "Não foi possível confirmar a entrega. Verifique a conexão e tente novamente.");
+  return false;
  }finally{busy=false;}
+}
+async function openDeliveryFinish(d){
+ if(busy)return false;
+ const badge=orderCardBadges.get(d.id);
+ let payment=paymentOf(d);
+ // Recarregue a situação diretamente do servidor antes de oferecer qualquer confirmação.
+ try{
+  const {data,error}=await sb.rpc("pitacco_driver_payment_cards");
+  if(!error&&Array.isArray(data)){
+   const row=data.find(item=>item.delivery_id===d.id);
+   if(row?.payment){payment=row.payment;paymentCards.set(d.id,payment);}
+  }
+ }catch{/* A verificação final no servidor continuará obrigatória. */}
+ const delivery={...d,public_number:badge?.public_number};
+ return showDeliveryFinish({
+  delivery,payment,
+  onConfirmPayment:()=>confirmCourierCollection(d),
+  onVerifyCode:digits=>verifyCode(d,digits),
+  onProviderRetry:d.source==="ifood"?async()=>{
+   const result=await ifoodDriverAction(d.id,"arrival");
+   if(result.provider_state!=="submitted"&&result.provider_state!=="confirmed")
+    throw Error("Aviso de chegada ainda pendente.");
+   try{await refresh(true);}catch{}
+  }:undefined
+ });
+}
+function requestArrivalConfirmation(d){
+ const badge=orderCardBadges.get(d.id);
+ return showArrivalConfirmation({
+  delivery:{...d,public_number:badge?.public_number},
+  onConfirm:()=>markArrival(d)
+ });
 }
 async function loadSafeHistory(){
  const key=++lastHistoryRequest,target=$("safeHistory");
