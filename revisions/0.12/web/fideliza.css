@@ -18,3 +18,57 @@
 @media(max-width:1199px){.fl-benefits{grid-template-columns:repeat(2,minmax(0,1fr))}.fl-bottom{grid-template-columns:1fr}.fl-metric{padding:18px 16px;gap:11px}.fl-metric strong{font-size:23px}.fl-heading h2{font-size:26px}}
 @media(max-width:640px){.loyalty-page{padding:6px 0 22px}.fl-heading{align-items:flex-start;flex-direction:column;gap:16px;margin-bottom:20px}.fl-heading h2{font-size:26px;max-width:320px}.fl-heading p{line-height:1.6}.fl-breadcrumb{margin-bottom:14px}.fl-metrics{gap:9px;margin-bottom:25px}.fl-metric{padding:14px 10px;display:block;min-height:122px}.fl-metric-icon{width:32px;height:32px;border-radius:8px;margin-bottom:10px}.fl-metric-icon svg{width:19px;height:19px}.fl-metric div>span{font-size:10px;line-height:1.4;min-height:28px}.fl-metric strong{font-size:20px;letter-spacing:-.5px}.fl-benefits{grid-template-columns:1fr;gap:15px}.fl-card-main{min-height:150px;padding:22px}.fl-card-copy h4{font-size:17px}.fl-card-copy p{font-size:12px}.fl-bottom{gap:12px;margin-top:18px}.fl-preview{flex-wrap:wrap}.fl-preview .fl-button{margin-left:41px}.fl-trust{align-items:flex-start}.fl-drawer-heading{padding:22px 19px}.fl-drawer-content{padding:18px 15px}.fl-drawer-content .panel{padding:18px}.fl-drawer-footer{flex-wrap:wrap;padding:15px 18px}.fl-drawer-footer .fl-button{width:100%;margin:6px 0 0}.fl-dialog{border-left:0}}
 @media(prefers-reduced-motion:reduce){.fl-benefit,.fl-switch span{transition:none}}
+
+
+/* Fideliza+: subtemas independentes dentro do botão Configurar de cada cartão. */
+.fl-dialog{width:min(720px,100%)}
+.fl-drawer-heading{background:linear-gradient(125deg,#fff 58%,#fff1e4);padding:27px 30px}
+.fl-drawer-heading--purple{background:linear-gradient(125deg,#fff 58%,#f5efff)}
+.fl-drawer-heading--blue{background:linear-gradient(125deg,#fff 58%,#ecf3ff)}
+.fl-drawer-heading--green{background:linear-gradient(125deg,#fff 58%,#eaf7ee)}
+.fl-drawer-heading-copy{flex:1;min-width:0}
+.fl-eyebrow{font-size:11px;color:#8793a4;font-weight:660}
+.fl-drawer-title-row{display:flex;align-items:center;gap:15px;margin-top:16px}
+.fl-drawer-title-row h2{margin:0 0 6px;font-size:23px}
+.fl-drawer-title-row p{line-height:1.55}
+.fl-drawer-hero-icon{width:54px;height:54px;border-radius:15px;display:grid;place-items:center;flex-shrink:0;background:#fff0e5;color:#e9782c}
+.fl-drawer-heading--purple .fl-drawer-hero-icon{background:#f1eaff;color:#8e68c0}
+.fl-drawer-heading--blue .fl-drawer-hero-icon{background:#e5efff;color:#6f95c9}
+.fl-drawer-heading--green .fl-drawer-hero-icon{background:#e4f4e9;color:#5eaa76}
+.fl-drawer-content{padding:25px 30px}
+.fl-drawer-content .panel{border-radius:14px;box-shadow:0 3px 12px #1e304309;border-color:#e8ebf0;padding:24px}
+.fl-drawer-content form.fl-setting-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 14px}
+.fl-setting-form > :is(.fl-subsection-title,.fl-setting-toggle,p,button){grid-column:1/-1}
+.fl-setting-form > .field{min-width:0}
+.fl-setting-form .field input,.fl-setting-form .field select{min-height:43px}
+.fl-subsection-title{display:flex;gap:12px;align-items:center;grid-column:1/-1}
+.fl-subsection-title>svg{flex-shrink:0;color:#f17a2a;background:#fff0e5;box-sizing:content-box;border-radius:11px;padding:12px}
+.fl-subsection-title>div{min-width:0}
+.fl-drawer-content .fl-subsection-title h3{margin:0 0 4px;font-size:16px}
+.fl-subsection-title p{font-size:12px;line-height:1.55;color:#8893a1}
+.fl-setting-form .fl-subsection-title--second{margin-top:6px;border-top:1px solid #e8ebf0;padding-top:22px}
+.fl-drawer-content .fl-setting-toggle{background:#fafbfc;padding:13px 15px;border-radius:10px;border:1px solid #e7eaf0;font-weight:630}
+.fl-drawer-content .fl-setting-toggle input[type=checkbox]{appearance:none;position:relative;width:40px;height:23px;border-radius:13px;background:#cfd6e0;border:0;cursor:pointer;transition:background .15s}
+.fl-drawer-content .fl-setting-toggle input[type=checkbox]::before{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0002;transition:transform .15s}
+.fl-drawer-content .fl-setting-toggle input[type=checkbox]:checked{background:#f47828}
+.fl-drawer-content .fl-setting-toggle input[type=checkbox]:checked::before{transform:translateX(17px)}
+.fl-drawer-content .fl-setting-toggle input[type=checkbox]:focus-visible{outline:3px solid #ffbc86;outline-offset:3px}
+.fl-drawer-content .fl-setting-form > p{background:#f3efff;border-radius:12px;padding:16px;color:#5b627a;font-size:12px;line-height:1.7}
+.fl-drawer-content .fl-cashback-form > p{background:#e8f7ec}
+.fl-drawer-content .fl-referral-form > p{background:#eff4ff}
+.fl-drawer-content .fl-setting-form > button:not(.secondary){min-height:44px;font-size:13px;font-weight:680;border-radius:9px}
+.fl-drawer-content .fl-setting-form .secondary{background:#fff;color:#778292;border:1px solid #e7eaf0}
+.fl-offer-list .line,.fl-customers-panel .line{border:1px solid #e8eaf0;border-radius:10px;padding:14px;margin-bottom:9px}
+.fl-offer-list .line b,.fl-customers-panel .line b{font-size:13px}
+.pitacco-theme-dark .fl-drawer-heading,.pitacco-theme-dark .fl-drawer-heading--purple,.pitacco-theme-dark .fl-drawer-heading--blue,.pitacco-theme-dark .fl-drawer-heading--green{background:#202a39}
+.pitacco-theme-dark .fl-setting-form .fl-setting-toggle,.pitacco-theme-dark .fl-offer-list .line,.pitacco-theme-dark .fl-customers-panel .line{background:#253244;border-color:#364152}
+.pitacco-theme-dark .fl-setting-form > p{background:#30394e;color:#d0d7e1}
+@media(max-width:640px){
+ .fl-drawer-heading{padding:21px 16px}
+ .fl-drawer-title-row{align-items:flex-start;gap:12px}
+ .fl-drawer-title-row h2{font-size:20px}
+ .fl-drawer-hero-icon{width:44px;height:44px;border-radius:12px}
+ .fl-drawer-content{padding:17px 12px}
+ .fl-drawer-content .panel{padding:18px 15px}
+ .fl-drawer-content form.fl-setting-form{grid-template-columns:1fr}
+}
