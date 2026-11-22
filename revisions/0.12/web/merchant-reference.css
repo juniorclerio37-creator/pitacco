@@ -167,7 +167,13 @@
 .store-reference-layout .pitacco-workspace--orders .pedidos-tabs .selected {background:#c94120;border-color:#c94120;color:#fff}
 .store-reference-layout .pitacco-workspace--orders .pedidos-split {grid-template-columns:minmax(210px,.86fr) minmax(0,1.6fr)}
 .store-reference-layout .pitacco-workspace--orders .pedidos-list {padding:2px}
-.store-reference-layout .pitacco-workspace--orders .pedidos-card.order-card {min-height:auto;padding:9px 11px;gap:6px;border:1px solid var(--store-border);background:var(--store-surface);color:var(--store-ink);box-shadow:var(--store-shadow)}
+.store-reference-layout .pitacco-workspace--orders .pedidos-card.order-card {min-height:auto;padding:0;gap:0;border:1px solid var(--store-border);background:var(--store-surface);color:var(--store-ink);box-shadow:var(--store-shadow)}
+.store-reference-layout .pitacco-workspace--orders .pedidos-card-select {padding:9px 10px;gap:5px}
+.store-reference-layout .pitacco-workspace--orders .pedidos-card-actions {padding:0 10px 8px}
+.store-reference-layout .pitacco-workspace--orders .pedidos-card-item {
+  min-width:0;font-size:.8rem;line-height:1.35;overflow-wrap:anywhere;
+}
+.store-reference-layout .pitacco-workspace--orders .pedidos-card-item small {color:var(--store-muted)}
 .store-reference-layout:not(.pitacco-theme-dark) .pitacco-workspace--orders .pedidos-card.selected {background:#fff4ef}
 .store-reference-layout .pitacco-workspace--orders :is(.pedidos-detail,.pedidos-detail-pair section,.pedidos-items) {background:var(--store-surface);border-color:var(--store-border);color:var(--store-ink)}
 .store-reference-layout .pedidos-detail {box-shadow:var(--store-shadow)}

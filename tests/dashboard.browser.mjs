@@ -22,6 +22,13 @@ try {
     const windowsPings=[];
     let ifoodOrder=null;
     let logisticsOrders=[],logisticsDeliveries=[];
+    const flowOrder={id:'30000000-0000-0000-0000-000000000050',store_id:store.id,source:'proprio',
+      status:'pending',gross:28,created_at:new Date().toISOString(),
+      receipt:{display_number:'D-FLUXO',customer:'Cliente do fluxo',logistics:'loja',
+        address:{street:'Rua do Teste',number:'50'},items:[{name:'Açaí do fluxo',quantity:1}]}};
+    const flowDelivery={id:'40000000-0000-0000-0000-000000000050',order_id:flowOrder.id,store_id:store.id,
+      logistics_provider:'loja',status:'pendente',courier_id:null};
+    const flowCourier={id:'50000000-0000-0000-0000-000000000050',name:'Motoboy de teste',fleet_type:'propria',available:true};
     let adminMode=false,moduleEnabled=true,ownerMigrationApplied=false,readOnlyChecks=0,failFeatureCheck=false;
     const catalog=[];
     const productId='70000000-0000-0000-0000-000000000001';
@@ -501,6 +508,25 @@ try {
         Object.assign(costOrder,input,{direct_cost:35,result:55});
         return route.fulfill({headers,status:201});
       }
+      if (pathname==='/rest/v1/rpc/accept_order'&&logisticsOrders.includes(flowOrder)){
+        assert.deepEqual(route.request().postDataJSON(),{p_order:flowOrder.id});
+        Object.assign(flowOrder,{status:'accepted',preparation_status:'preparing'});
+        logisticsDeliveries=[flowDelivery];
+        return route.fulfill({headers,json:null});
+      }
+      if (pathname==='/rest/v1/rpc/set_order_preparation'&&logisticsOrders.includes(flowOrder)){
+        assert.deepEqual(route.request().postDataJSON(),{p_order:flowOrder.id,p_status:'ready'});
+        flowOrder.preparation_status='ready';
+        return route.fulfill({headers,json:null});
+      }
+      if (pathname==='/rest/v1/rpc/pitacco_store_couriers'&&logisticsOrders.includes(flowOrder)){
+        return route.fulfill({headers,json:[flowCourier]});
+      }
+      if (pathname==='/rest/v1/rpc/assign_order_courier'&&logisticsOrders.includes(flowOrder)){
+        assert.deepEqual(route.request().postDataJSON(),{p_delivery:flowDelivery.id,p_courier:flowCourier.id,p_confirm_deviation:false});
+        Object.assign(flowDelivery,{status:'atribuida',courier_id:flowCourier.id});
+        return route.fulfill({headers,json:null});
+      }
       if (pathname === '/rest/v1/rpc/pitacco_decide_pending_order') {
         const payload = route.request().postDataJSON();
         assert.deepEqual(payload,{p_order:pendingOrder.id,p_status:'rejected',p_reason:'Item indisponível'});
@@ -636,6 +662,40 @@ try {
     await page.getByRole('button', { name:'Confirmar recusa', exact:true }).click();
     await page.getByRole('button', { name:'Recusados (1)', exact:true }).click();
     await page.locator('.pedidos-card').getByText('Cliente do pedido').waitFor();
+    if(width===1440){
+      await page.waitForURL(url=>url.searchParams.get('aba')==='Pedidos');
+      await page.reload();
+      const ordersRegion=page.getByRole('region',{name:'Central de pedidos',exact:true});
+      await ordersRegion.waitFor();
+      logisticsOrders=[flowOrder];
+      const card=ordersRegion.getByRole('article',{name:'Card do pedido D-FLUXO',exact:true});
+      const expectStage=label=>card.getByText(label,{exact:true}).waitFor({timeout:12000});
+      await expectStage('Em análise');
+      await card.getByRole('img',{name:'Plataforma Loja'}).waitFor();
+      await card.getByText('1 × Açaí do fluxo',{exact:true}).waitFor();
+      await card.getByRole('button',{name:'Aceitar',exact:true}).click();
+      await expectStage('Em preparo');
+      await card.getByRole('button',{name:'Marcar pedido pronto',exact:true}).click();
+      await expectStage('Pronto');
+      await card.getByRole('button',{name:'Selecionar entregador',exact:true}).click();
+      const dispatch=page.locator('dialog.dispatch-only');
+      await dispatch.getByText('Rua do Teste, 50',{exact:true}).waitFor();
+      await dispatch.getByRole('radio',{name:/Motoboy de teste/}).check();
+      await dispatch.getByRole('button',{name:'Confirmar despacho',exact:true}).click();
+      await dispatch.getByText(/Despacho registrado/).waitFor();
+      await dispatch.getByRole('button',{name:'Fechar',exact:true}).click();
+      await card.getByText('Entregador selecionado · aguardando saída').waitFor();
+      await expectStage('Pronto');
+      flowDelivery.status='retirada';
+      await expectStage('Em entrega');
+      assert.equal(await ordersRegion.getByRole('button',{name:'Concluído (0)',exact:true}).count(),1);
+      flowDelivery.status='entregue';
+      await ordersRegion.getByRole('button',{name:'Concluído (1)',exact:true}).click();
+      await expectStage('Concluído');
+      logisticsOrders=[];logisticsDeliveries=[];
+      await card.waitFor({state:'hidden',timeout:12000});
+      console.log('PASS merchant order flow, compact dispatch and restored Orders tab');
+    }
     if(width===768){
       appointment.scheduled_release_at=new Date(Date.now()-1_000).toISOString();
       await page.getByRole('button',{name:'Em análise (1)',exact:true}).click();
@@ -701,8 +761,8 @@ try {
       await page.getByRole('button',{name:'Área de entrega',exact:true}).click();
       await page.getByRole('slider',{name:/Raio de atendimento/}).press('ArrowLeft');
       await page.getByLabel('Até 1 km (R$)').fill('4.50');
-      await page.getByRole('button',{name:'Salvar e ativar área de entrega'}).click();
-      await page.getByText(/Área e valores de entrega salvos/).waitFor();
+      await page.getByRole('button',{name:'Salvar e ativar círculo de entrega'}).click();
+      await page.getByText(/Taxas do círculo por quilômetro salvas/).waitFor();
       await page.getByRole('button',{name:'Pagamentos',exact:true}).click();
       await page.getByRole('checkbox',{name:'InfinitePay'}).check();
       await page.getByRole('button',{name:'Salvar preferências de integração'}).click();
@@ -994,11 +1054,15 @@ try {
         receipt:{display_number:'IF-'+number,customer:'Cliente iFood',items:[],ifood_received_at:new Date().toISOString()}});
       const logistics=[['99food','loja','LOJA-23'],['99food','marketplace','99-24'],['ifood','marketplace','IF-25'],['keeta','marketplace','KT-26']];
       logisticsOrders=logistics.map(([source,mode,number],i)=>({id:'30000000-0000-0000-0000-00000000006'+i,store_id:store.id,
-        source,status:'accepted',preparation_status:'ready',gross:39,created_at:new Date().toISOString(),receipt:{display_number:number,customer:'Cliente',items:[],logistics:mode}}));
+        source,status:'accepted',preparation_status:'ready',gross:39,created_at:new Date().toISOString(),receipt:{display_number:number,customer:'Cliente',items:i===0?[{name:'Açaí de teste',quantity:2}]:[],logistics:mode,
+          address:i===0?{street:'Rua de Teste',number:'23',neighborhood:'Centro'}:null}}));
       logisticsDeliveries=logisticsOrders.map((order,i)=>({id:'40000000-0000-0000-0000-00000000006'+i,store_id:store.id,
         order_id:order.id,source:order.source,logistics_provider:logistics[i][1],status:'pendente'}));
       const ownCard=liveOrders.getByRole('article',{name:'Card do pedido LOJA-23',exact:true});
       await ownCard.getByText('Entrega própria',{exact:true}).waitFor();
+      await ownCard.getByRole('img',{name:'Plataforma 99Food'}).waitFor();
+      await ownCard.getByText('2 × Açaí de teste',{exact:true}).waitFor();
+      await ownCard.getByText('Rua de Teste, 23 · Centro',{exact:true}).waitFor();
       await page.evaluate(()=>{
         window.__browserComandas=[];
         window.__browserPrints=0;
@@ -1014,7 +1078,9 @@ try {
       assert.ok(printEvidence.html.includes('PAGAMENTO A CONFERIR'));
       assert.ok(!printEvidence.html.includes('*** PAGO ONLINE ***'));
       await ownCard.getByRole('button',{name:'Selecionar entregador',exact:true}).click();
-      await page.getByRole('dialog').getByRole('heading',{name:'Motoboy próprio',exact:true}).waitFor();
+      const dispatch=page.locator('dialog.dispatch-only');
+      await dispatch.getByRole('heading',{name:'Motoboy próprio',exact:true}).waitFor();
+      await dispatch.getByText('Rua de Teste, 23 · Centro',{exact:true}).waitFor();
       await page.getByRole('dialog').getByRole('button',{name:'Fechar detalhes',exact:true}).click();
       for(const [number,provider] of [['99-24','99Food'],['IF-25','iFood'],['KT-26','Keeta']]){
         const card=liveOrders.getByRole('article',{name:'Card do pedido '+number,exact:true});

@@ -22,3 +22,15 @@ export function validLocalizer(badge) {
   const value=String(badge?.localizer ?? '').replace(/\D/g,'').slice(0,16);
   return value || null;
 }
+
+export function orderAddress(value) {
+  if(typeof value==='string')return value.trim();
+  if(!value||typeof value!=='object')return '';
+  const street=value.street||value.street_name||value.logradouro||value.rua||value.line1;
+  const number=value.number||value.numero;
+  const district=value.neighborhood||value.bairro;
+  const city=[value.city||value.cidade,value.state||value.uf].filter(Boolean).join('/');
+  const address=[street,number].filter(Boolean).join(', ');
+  return [address,value.complement||value.complemento||value.line2,district,city]
+    .filter(part=>typeof part==='string'&&part.trim()).join(' · ');
+}

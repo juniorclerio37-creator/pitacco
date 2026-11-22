@@ -4,7 +4,7 @@ import './pedidos.css';
 import FleetTracking from './FleetTracking.jsx';
 import {deliveryLabel,sourceLabel} from './DeliveryDialog.jsx';
 import {receiptItems} from './receiptItems.mjs';
-import {publicOrderNumber,validLocalizer} from './orderDisplay.mjs';
+import {orderAddress,publicOrderNumber,validLocalizer} from './orderDisplay.mjs';
 const scheduledTime=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'});
 const stages=[['scheduled','Agendados'],['analysis','Em análise'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega'],['completed','Concluído'],['cancelled','Cancelados'],['rejected','Recusados']];
 const summary=[['analysis','Em análise',Clock3],['preparing','Em preparo',ChefHat],['ready','Prontos',ShoppingBag],['delivery','Em entrega',Bike],['completed','Concluídos',CheckCircle2]];
@@ -46,12 +46,6 @@ function PlatformIcon({source}){
  const labels={ '99food':'99Food',ifood:'iFood',keeta:'Keeta',loja:'Loja',outros:'Outra origem'};
  const mark=platform==='99food'?'99':platform==='ifood'?'iF':platform==='keeta'?'K':<ShoppingBag size={14} aria-hidden="true"/>;
  return <span className="pedidos-platform-icon" data-platform={platform} role="img" aria-label={'Plataforma '+labels[platform]}>{mark}</span>;
-}
-function cardAddress(receipt){
- const a=receipt?.address||receipt?.delivery_address;
- if(typeof a==='string')return a;
- if(!a||typeof a!=='object')return '';
- return [a.street||a.logradouro||a.rua,[a.number||a.numero,a.neighborhood||a.bairro].filter(Boolean).join(' · ')].filter(Boolean).join(', ');
 }
 function cardPayment(order){
  const receipt=order?.receipt||{},status=String(receipt.payment_status||'').toLowerCase();
@@ -129,6 +123,9 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],badges=[
     {group.items.map(o=>{
    const delivery=deliveriesByOrder.get(o.id);
    const source=sourceLabel(o.source)||o.channel||'Loja';
+   const items=receiptItems(o.receipt);
+   const firstItem=items[0];
+   const address=orderAddress(delivery?.address)||orderAddress(o.receipt?.address||o.receipt?.delivery_address);
    return <article key={o.id} aria-label={'Card do pedido '+number(o)} data-source={o.source}
     className={'pedidos-card order-card '+(current?.id===o.id?'selected':'')}>
     <button type="button" className="pedidos-card-select" aria-pressed={current?.id===o.id} onClick={()=>setSelected(o.id)}>
@@ -137,8 +134,11 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],badges=[
       <small>{o.scheduled_for?'Agendado '+scheduledTime.format(new Date(o.scheduled_for)):o.created_at?new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</small></span>
      <span className="pedidos-card-row"><span>{o.receipt?.customer||'Cliente'}</span><b>{brl(o.gross)}</b></span>
      {(o.receipt?.phone||o.receipt?.customer_phone)&&<span className="pedidos-card-row pedidos-card-contact"><span>{o.receipt?.phone||o.receipt?.customer_phone}</span></span>}
-     {cardAddress(o.receipt)&&<span className="pedidos-card-row pedidos-card-address"><span>{cardAddress(o.receipt)}</span></span>}
-     <span className="pedidos-card-row pedidos-card-info"><small>{receiptItems(o.receipt).reduce((n,item)=>n+(Number(item.quantity)||1),0)} item(ns)</small><span className="pedidos-payment-pill" data-payment={cardPayment(o).state}>{cardPayment(o).label}</span></span>
+     {address&&<span className="pedidos-card-row pedidos-card-address"><span>{address}</span></span>}
+     {merchantLayout&&firstItem&&<span className="pedidos-card-item">
+      {firstItem.quantity||1} × {firstItem.name}{items.length>1&&<small> +{items.length-1} {items.length===2?'outro':'outros'}</small>}
+     </span>}
+     <span className="pedidos-card-row pedidos-card-info"><small>{items.reduce((n,item)=>n+(Number(item.quantity)||1),0)} item(ns)</small><span className="pedidos-payment-pill" data-payment={cardPayment(o).state}>{cardPayment(o).label}</span></span>
      {validLocalizer(badgeByOrder.get(o.id))&&<span className="pedidos-localizer" aria-label="Localizador de ligação do pedido"><strong>LOCALIZADOR</strong><b>{validLocalizer(badgeByOrder.get(o.id))}</b></span>}
      <DeliveryBadge order={o} delivery={delivery}/>
     </button>
@@ -176,7 +176,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],badges=[
    </article>;
   })}</section>)}</div>
   {popupLayout&&current&&<div className="pedidos-modal-backdrop" aria-hidden="true" onClick={()=>{setSelected(null);setDecision(null)}}/>}
-  {current?<article className={"pedidos-detail"+(popupLayout?" pedidos-detail-modal":"")} role={popupLayout?"dialog":undefined} aria-modal={popupLayout?"true":undefined} aria-label={popupLayout?"Detalhes do pedido "+number(current):undefined}><div className="pedidos-detail-heading"><h3><ShoppingBag size={23} aria-hidden="true"/> Pedido #{number(current)}</h3>{popupLayout&&<button className="secondary pedidos-modal-close" type="button" onClick={()=>{setSelected(null);setDecision(null)}}>Fechar ✕</button>}<span className="store-stage" data-stage={stage(current)}>{stages.find(([id])=>id===stage(current))?.[1]||'Em andamento'}</span></div>{currentLocalizer&&<div className="pedidos-localizer pedidos-localizer-detail"><strong>LOCALIZADOR DE LIGAÇÃO</strong><b>{currentLocalizer}</b></div>}<div className="pedidos-detail-pair"><section><h4><UserRound size={17} aria-hidden="true"/> Cliente</h4><strong>{current.receipt?.customer||'Não informado'}</strong><p>{current.receipt?.phone||''}</p><p>{current.receipt?.address||''}</p></section><section><h4><CreditCard size={17} aria-hidden="true"/> Pagamento</h4><p>{current.receipt?.payment||'Não informado'}</p><DeliveryBadge order={current} delivery={currentDelivery}/></section></div><section className="pedidos-items"><h4><ShoppingBag size={17} aria-hidden="true"/> Itens do pedido</h4>{receiptItems(current.receipt).map((item,i)=><div key={i}><span>{item.quantity||1} × {item.name}<small>{Array.isArray(item.modifiers)?readableModifiers(item.modifiers):''}</small></span><span>{item.total!=null?brl(item.total):''}</span></div>)}{current.receipt?.subtotal!=null&&<div><span>Subtotal</span><strong>{brl(current.receipt.subtotal)}</strong></div>}
+  {current?<article className={"pedidos-detail"+(popupLayout?" pedidos-detail-modal":"")} role={popupLayout?"dialog":undefined} aria-modal={popupLayout?"true":undefined} aria-label={popupLayout?"Detalhes do pedido "+number(current):undefined}><div className="pedidos-detail-heading"><h3><ShoppingBag size={23} aria-hidden="true"/> Pedido #{number(current)}</h3>{popupLayout&&<button className="secondary pedidos-modal-close" type="button" onClick={()=>{setSelected(null);setDecision(null)}}>Fechar ✕</button>}<span className="store-stage" data-stage={stage(current)}>{stages.find(([id])=>id===stage(current))?.[1]||'Em andamento'}</span></div>{currentLocalizer&&<div className="pedidos-localizer pedidos-localizer-detail"><strong>LOCALIZADOR DE LIGAÇÃO</strong><b>{currentLocalizer}</b></div>}<div className="pedidos-detail-pair"><section><h4><UserRound size={17} aria-hidden="true"/> Cliente</h4><strong>{current.receipt?.customer||'Não informado'}</strong><p>{current.receipt?.phone||''}</p><p>{orderAddress(currentDelivery?.address)||orderAddress(current.receipt?.address||current.receipt?.delivery_address)}</p></section><section><h4><CreditCard size={17} aria-hidden="true"/> Pagamento</h4><p>{current.receipt?.payment||'Não informado'}</p><DeliveryBadge order={current} delivery={currentDelivery}/></section></div><section className="pedidos-items"><h4><ShoppingBag size={17} aria-hidden="true"/> Itens do pedido</h4>{receiptItems(current.receipt).map((item,i)=><div key={i}><span>{item.quantity||1} × {item.name}<small>{Array.isArray(item.modifiers)?readableModifiers(item.modifiers):''}</small></span><span>{item.total!=null?brl(item.total):''}</span></div>)}{current.receipt?.subtotal!=null&&<div><span>Subtotal</span><strong>{brl(current.receipt.subtotal)}</strong></div>}
   {current.receipt?.delivery_fee!=null&&<div><span>Taxa de entrega</span><strong>{brl(current.receipt.delivery_fee)}</strong></div>}
   <footer><b>Total</b><strong>{brl(current.gross)}</strong></footer></section><div className="pedidos-actions">
 <button onClick={()=>onDetail(current)}>Entrega e entregador</button>

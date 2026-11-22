@@ -1,4 +1,6 @@
 import React,{useEffect,useRef,useState} from 'react';
+import {orderAddress,publicOrderNumber} from './orderDisplay.mjs';
+import {receiptItems} from './receiptItems.mjs';
 export const sourceLabel=s=>({ifood:'iFood','99food':'99Food',keeta:'Keeta',proprio:'Cardápio próprio'}[s]||s);
 export const deliveryLabel=d=>!d?'Aguardando aceite':d.logistics_provider==='marketplace'?`Entrega via ${sourceLabel(d.source)}`:d.status==='retirada'&&d.arrived_at?'Chegou ao cliente':({pendente:'Aguardando entregador',atribuida:'Entregador atribuído',aceita:'Em coleta',retirada:'Em entrega',entregue:'Entregue',cancelada:'Cancelada'}[d.status]||d.status);
 export default function DeliveryDialog({client,order,storeId,deliveryId,onClose,onUpdate,dispatchOnly=false}){
@@ -9,9 +11,9 @@ export default function DeliveryDialog({client,order,storeId,deliveryId,onClose,
  const active=c=>stops.filter(d=>d.courier_id===c&& !['entregue','cancelada'].includes(d.status));
  const group=active(selected),prepared=order?.status==='accepted'&&order?.preparation_status==='ready',mayAssign=prepared&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id;
  function distance(c){const p=positions.find(p=>p.courier_id===c);if(!p||store?.latitude==null||store?.longitude==null)return 'Distância indisponível';const rad=Math.PI/180,a=Math.sin((p.latitude-store.latitude)*rad/2)**2+Math.cos(store.latitude*rad)*Math.cos(p.latitude*rad)*Math.sin((p.longitude-store.longitude)*rad/2)**2;return `${(6371*2*Math.asin(Math.sqrt(a))).toFixed(1)} km em linha reta`}
- return <dialog className={`delivery-dialog ${dispatchOnly?'dispatch-only':''}`} ref={ref} onCancel={onClose}><div className="modal-heading"><div><span className="eyebrow">PEDIDO #{order.id.slice(0,8)}</span><h2>{dispatchOnly?'Despachar entrega':'Entrega e entregador'}</h2></div><button className="secondary" aria-label="Fechar detalhes" onClick={onClose}>✕</button></div><div className="modal-body">
- <h3>{order.receipt?.customer||'Cliente'}</h3><p>{delivery?.address||order.receipt?.address}</p><div className="detail-pills"><span>{sourceLabel(order.source)}</span><span>{deliveryLabel(delivery)}</span></div>
- {!dispatchOnly&&<div className="detail-summary"><b>Itens do pedido</b>{(order.receipt?.items||[]).map((x,i)=><p key={i}>{x.quantity} × {x.name}</p>)}<p>Pagamento: {order.receipt?.payment||'Não informado'} · Confira a confirmação no financeiro.</p>{order.receipt?.notes&&<p>{order.receipt.notes}</p>}</div>}
+ return <dialog className={`delivery-dialog ${dispatchOnly?'dispatch-only':''}`} ref={ref} onCancel={onClose}><div className="modal-heading"><div><span className="eyebrow">PEDIDO #{publicOrderNumber(order)}</span><h2>{dispatchOnly?'Despachar entrega':'Entrega e entregador'}</h2></div><button className="secondary" aria-label="Fechar detalhes" onClick={onClose}>✕</button></div><div className="modal-body">
+ <h3>{order.receipt?.customer||'Cliente'}</h3><p>{orderAddress(delivery?.address)||orderAddress(order.receipt?.address||order.receipt?.delivery_address)}</p><div className="detail-pills"><span>{sourceLabel(order.source)}</span><span>{deliveryLabel(delivery)}</span></div>
+ {!dispatchOnly&&<div className="detail-summary"><b>Itens do pedido</b>{receiptItems(order.receipt).map((x,i)=><p key={i}>{x.quantity} × {x.name}</p>)}<p>Pagamento: {order.receipt?.payment||'Não informado'} · Confira a confirmação no financeiro.</p>{order.receipt?.notes&&<p>{order.receipt.notes}</p>}</div>}
  {error&&<p className="notice error" role="alert">{error}</p>}{notice&&<p className="notice" role="status">{notice}</p>}
  {busy&&<p>Atualizando informações…</p>}
  {!busy&&order?.status==='accepted'&&!prepared&&delivery?.logistics_provider==='loja'&&<p className="notice" role="status">O pedido ainda está em preparo. Marque como pronto na lista de pedidos para liberar a seleção do entregador.</p>}
