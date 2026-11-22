@@ -13,7 +13,7 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
  const [tab,setTab]=useState('clientes'),[items,setItems]=useState({});
  const [choices,setChoices]=useState({}),[note,setNote]=useState('');
  const [paymentAmount,setPaymentAmount]=useState(''),[paymentMethod,setPaymentMethod]=useState('pix');
- const [paymentNote,setPaymentNote]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true);
+ const [paymentNote,setPaymentNote]=useState(''),[paymentRequestKey,setPaymentRequestKey]=useState(null),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true);
  const [error,setError]=useState(''),[notice,setNotice]=useState(''),[issuedCode,setIssuedCode]=useState('');
  const [reload,setReload]=useState(0),[requestKey,setRequestKey]=useState(null);
  const customers=overview?.customers||[],charges=overview?.charges||[],payments=overview?.payments||[];
@@ -68,7 +68,7 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
  }
  async function rpc(name,params){const {data,error}=await client.rpc(name,params);if(error)throw error;return data;}
  function selectCustomer(id){
-  setSelected(id);setPaymentAmount('');setIssuedCode('');
+  setSelected(id);setPaymentAmount('');setPaymentRequestKey(null);setIssuedCode('');
   const target=customers.find(x=>x.id===id);
   if(target)setForm({name:target.name,phone:target.phone,limit:String(target.limit),
    enabled:target.enabled,due_days:target.due_days,
@@ -93,11 +93,13 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
   setReload(n=>n+1);
  })}
  function pay(e){e.preventDefault();if(!customer)return;void run(async()=>{
-  const request=crypto.randomUUID();
+  // Reutilize a MESMA chave depois de timeout: evita duas baixas da dívida.
+  const request=paymentRequestKey||crypto.randomUUID();
+  if(!paymentRequestKey)setPaymentRequestKey(request);
   const result=await rpc('pitacco_fiado_receive',{
    p_store:storeId,p_customer:customer.id,p_amount:Number(paymentAmount),
    p_method:paymentMethod,p_request:request,p_note:paymentNote});
-  setPaymentAmount('');setPaymentNote('');
+  setPaymentRequestKey(null);setPaymentAmount('');setPaymentNote('');
   reloadData('Pagamento registrado. Saldo restante: '+fmt(result.remaining));
  })}
  function approve(charge,approved){void run(async()=>{
@@ -213,11 +215,11 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
     </div>}
     <form className="fiado-form" onSubmit={pay}>
      <label>Valor recebido<input type="number" min="0.01" step="0.01" required
-      value={paymentAmount} onChange={e=>setPaymentAmount(e.target.value)}/></label>
-     <label>Forma de pagamento<select value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)}>
+      value={paymentAmount} onChange={e=>{setPaymentRequestKey(null);setPaymentAmount(e.target.value)}}/></label>
+     <label>Forma de pagamento<select value={paymentMethod} onChange={e=>{setPaymentRequestKey(null);setPaymentMethod(e.target.value)}}>
       <option value="pix">Pix</option><option value="dinheiro">Dinheiro</option>
       <option value="cartao">Cartão</option><option value="outro">Outro</option></select></label>
-     <label>Observações<input maxLength={500} value={paymentNote} onChange={e=>setPaymentNote(e.target.value)}/></label>
+     <label>Observações<input maxLength={500} value={paymentNote} onChange={e=>{setPaymentRequestKey(null);setPaymentNote(e.target.value)}}/></label>
      <button disabled={busy||!customer||!(due>0)}>Registrar pagamento</button>
     </form>
     <h4>Recebimentos anteriores</h4>
