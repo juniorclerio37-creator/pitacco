@@ -22,6 +22,16 @@ export default function Fideliza({client,storeId,manager}){
   }catch(e){if(request===version.current)setError(e.message||String(e))}finally{if(request===version.current)setLoading(false)}
  },[client,storeId,manager]);
  useEffect(()=>{setReady(false);setProgram(defaults);setMessage('');setEditing(null);setRecovered(null);setCoupons([]);setCustomers([]);void refresh();return()=>{version.current++}},[refresh]);
+ useEffect(()=>{
+  if(!storeId||!manager)return;let active=true;
+  const timer=setInterval(async()=>{
+   if(document.hidden)return;
+   try{const {data,error}=await client.rpc('pitacco_loyalty_customers',{p_store:storeId});
+    if(active&&!error)setCustomers(data||[]);
+   }catch{}
+  },30000);
+  return()=>{active=false;clearInterval(timer)};
+ },[client,storeId,manager]);
  const update=(key,value)=>setProgram(old=>({...old,[key]:value}));
  async function saveProgram(e){
   e.preventDefault();if(loading)return;setLoading(true);setError('');setMessage('');

@@ -527,7 +527,11 @@ $('addProduct').onclick=()=>{
  }else cartFeedback('Adicionado à sacola');
  renderCart();$('productDialog').close();
 };
+let renderingCart=false,cartRenderPending=false;
 function renderCart(){
+ if(renderingCart){cartRenderPending=true;return;}
+ renderingCart=true;
+ try{
  const root=$('cart');root.replaceChildren();
  if(!cart.length)root.append(el('p','Sua sacola está vazia.'));
  for(const item of cart){
@@ -585,7 +589,12 @@ function renderCart(){
  $('continueCheckout').disabled=(!storeOpening?.open&&!pendingRequest)||!cart.length||!$('fulfillment').value||!$('payment').value;
  $('send').disabled=(!storeOpening?.open&&!pendingRequest)||submitting||!cart.length||!$('fulfillment').value||!$('payment').value||
    ($('fulfillment').value==='delivery'&&(!routeMode||!quoteValid));
+ }finally{
+  renderingCart=false;
+  if(cartRenderPending){cartRenderPending=false;queueMicrotask(renderCart);}
+ }
 }
+
 function cartStep(checkout){
  $('checkout').hidden=!checkout;
  $('cart').hidden=checkout;
@@ -811,7 +820,22 @@ async function loadLoyalty(){
   try{const saved=localStorage.getItem(loyaltyStorage);if(saved)await enterLoyalty(saved)}catch(error){loyaltyNotice(error.message||'Entre novamente com sua chave pessoal.');}
  }catch{ $('loyaltyOpen').hidden=false;$('loyaltyBox').hidden=false;loyaltyNotice('Não foi possível carregar o Fideliza+. Tente novamente. Seu pedido comum continua disponível.'); }
 }
-$('loyaltyOpen').onclick=()=>{$('cartDialog').showModal();cartStep(true);$('loyaltyBox').scrollIntoView({block:'start'});};
+async function refreshLoyaltyWallet(){
+ if(!loyaltyKey||submitting||pendingRequest||loyaltyBusy||document.hidden||!$('cartDialog').open)return;
+ const key=loyaltyKey;
+ try{
+  const {data,error}=await client.rpc('pitacco_loyalty_wallet',{p_slug:slug,p_key:key});
+  if(key!==loyaltyKey||error||data?.error||!data?.customer_id)return;
+  const before=JSON.stringify([loyaltyWallet?.points,loyaltyWallet?.orders,loyaltyWallet?.cashback_cents,loyaltyWallet?.rules]);
+  const after=JSON.stringify([data.points,data.orders,data.cashback_cents,data.rules]);
+  loyaltyWallet=data;
+  if(before!==after){invalidateLoyalty();loyaltyNotice('Carteira atualizada. Confira e aplique novamente o benefício escolhido.');}
+  renderLoyalty();
+ }catch{}
+}
+setInterval(()=>{void refreshLoyaltyWallet()},20000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshLoyaltyWallet()});
+$('loyaltyOpen').onclick=()=>{$('cartDialog').showModal();cartStep(true);$('loyaltyBox').scrollIntoView({block:'start'});void refreshLoyaltyWallet();};
 $('loyaltyJoin').onclick=async()=>{
  if(loyaltyBusy||pendingRequest)return;loyaltyBusy=true;$('loyaltyJoin').disabled=true;loyaltyNotice('Criando sua carteira…');
  try{

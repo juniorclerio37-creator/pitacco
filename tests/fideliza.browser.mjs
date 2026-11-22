@@ -10,7 +10,7 @@ const rules={points_enabled:true,points_per_real:1,min_points_to_redeem:100,poin
 try{
  for(const width of [375,1440]){
   const page=await browser.newPage({viewport:{width,height:1000}}),errors=[],sent=[];
-  page.on('pageerror',e=>errors.push(e.message));
+  page.on('pageerror',e=>errors.push(e.stack||e.message));
   await page.route('**/*',async route=>{
    const url=new URL(route.request().url()),name=url.pathname.split('/').pop();
    if(url.origin===origin&&url.pathname==='/loyalty-test')return route.fulfill({contentType:'text/html',body:source});
@@ -64,7 +64,7 @@ try{
  // Exercise the actual merchant component with deterministic API fixtures.
  const bundled=await build({stdin:{contents:`import React from 'react';import{createRoot}from'react-dom/client';import Fideliza from '../revisions/0.12/web/Fideliza.jsx';createRoot(document.getElementById('root')).render(<Fideliza client={window.fixtureClient} storeId="store" manager={true}/>);`,resolveDir:fileURLToPath(new URL('../web/',import.meta.url)),loader:'jsx'},nodePaths:[fileURLToPath(new URL('../web/node_modules/',import.meta.url))],bundle:true,write:false,format:'iife'});
  for(const width of [375,1440]){
-  const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.stack||e.message));
   await page.addInitScript(()=>{
    window.fixtureProgram=null;window.fixtureCoupons=[];
    window.fixtureClient={rpc:async(name,p)=>({data:name==='pitacco_loyalty_customers'?[{id:'customer',name:'Cliente',phone:'21999990001',points:120,orders:3,cashback_cents:500}]:'b'.repeat(64),error:null}),from(table){
