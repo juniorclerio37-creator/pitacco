@@ -272,7 +272,7 @@ import {mountCourierSharedMap,freshGps} from "./dispatch-map.mjs";
 import {courierActionStage} from "./delivery-flow.mjs";
 import {arrivalProximity} from "./arrival-proximity.mjs";
 import {paymentSummaryPanel,courierCollectStep} from "./payment-ui.mjs";
-import {deliveryBucket,compactPaymentChip,safeFinishedToday} from "./compact-dashboard.mjs";
+import {deliveryBucket,compactPaymentChip,safeFinishedToday,isNotificationDiagnostic} from "./compact-dashboard.mjs";
 import {pickupReminderType,showPickupReminder} from "./pickup-reminder.mjs";
 import {showArrivalConfirmation,showDeliveryFinish} from "./delivery-confirmation.mjs";
 const $=id=>document.getElementById(id);
@@ -1007,6 +1007,10 @@ async function verifyCode(d,code){
  }finally{busy=false;}
 }
 async function openDeliveryFinish(d){
+ if(isNotificationDiagnostic(d)){
+  message("Este registro é apenas um teste interno de notificação, sem cliente ou código de entrega. Não é possível concluí-lo.");
+  return false;
+ }
  if(busy)return false;
  const badge=orderCardBadges.get(d.id);
  let payment=paymentOf(d);
@@ -1026,10 +1030,12 @@ async function openDeliveryFinish(d){
    const entry=Array.isArray(data)?data.find(x=>x.delivery_id===d.id):null;
    codeLength=Number(entry?.digits);
    if(!Number.isInteger(codeLength)||codeLength<4||codeLength>8)
-    throw Error("O servidor não encontrou o código desta entrega.");
+    throw Error("Este pedido não possui código de entrega gerado. Peça à loja para conferir o pedido.");
    ownCodeLengths.set(d.id,codeLength);
   }catch(err){
-   message("Não foi possível consultar a regra do código. Confira a conexão ou peça ajuda à loja.");
+   const detail=String(err?.message||"");
+   message(/não possui código de entrega/.test(detail)
+    ?detail:"Não foi possível consultar o código deste pedido. Verifique a conexão e tente novamente.");
    return false; // Fail closed: do not guess digit count or expose a wrong PIN form.
   }
  }
@@ -1415,7 +1421,7 @@ async function refreshSnapshot(){
  paymentCards=new Map(!paymentsResult.error&&Array.isArray(paymentsResult.data)
    ?paymentsResult.data.filter(x=>x?.delivery_id).map(x=>[x.delivery_id,x.payment]):[]);
  list.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
- const current=list.filter(d=>!["entregue","cancelada"].includes(d.status))
+ const current=list.filter(d=>!["entregue","cancelada"].includes(d.status)&&!isNotificationDiagnostic(d))
   .map(d=>({...d,store_name:permittedStores.get(d.store_id)||"Loja de origem"}));
  $("active").textContent=String(current.length);
  // Finished deliveries are never included in the raw private order list.

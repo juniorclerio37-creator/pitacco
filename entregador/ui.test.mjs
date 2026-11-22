@@ -370,7 +370,7 @@ test("servidor encerra pedidos iFood oficiais e cancelados sem contabilizar ganh
  assert.match(sql,/case when d\.status='entregue' then d\.courier_payment else 0 end/);
  assert.match(page,/const canceled=x\.status==="cancelada"/);
  assert.match(page,/canceled\?"R\$ 0,00"/);
- assert.match(page,/\.filter\(d=>!\["entregue","cancelada"\]\.includes\(d\.status\)\)/);
+ assert.match(page,/\.filter\(d=>!\["entregue","cancelada"\]\.includes\(d\.status\)&&!isNotificationDiagnostic\(d\)\)/);
 });
 
 test("PIN fica só no modal, erros são exibidos junto ao campo e somem ao editar",()=>{

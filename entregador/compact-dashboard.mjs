@@ -1,6 +1,16 @@
 import {money} from "./payment-ui.mjs";
 import {courierActionStage} from "./delivery-flow.mjs";
 
+// Um teste interno de FCM não é pedido comercial, não tem cliente real nem PIN.
+// Identificação restrita evita ocultar pedidos legítimos com dados incompletos.
+export function isNotificationDiagnostic(delivery){
+ return delivery?.source==="proprio" &&
+  delivery.order_id==null &&
+  /^PITACCO_FCM_DIAG_[0-9]{8}_[0-9]+$/.test(String(delivery.notes||"")) &&
+  /^TESTE INTERNO PITACCO\b/.test(String(delivery.customer_name||"")) &&
+  /^SEM DESTINO\s*[—–-]\s*TESTE DE NOTIFICAÇÃO\b/.test(String(delivery.address||""));
+}
+
 export function deliveryBucket(delivery){
  if(!delivery || ["entregue","cancelada"].includes(delivery.status))return "terminal";
  return courierActionStage(delivery)==="collect"?"coleta":"andamento";
