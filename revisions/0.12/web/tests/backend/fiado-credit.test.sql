@@ -53,7 +53,7 @@ begin
   perform public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
     payload,'pickup','',secret);
   raise exception 'O limite deveria impedir a segunda compra';
- exception when raise_exception then
+ exception when others then
   if sqlerrm <> 'Limite do fiado insuficiente para este pedido' then raise;end if;
  end;
  -- Retirada entregue pelo funcionário converte a reserva em conta a receber.
