@@ -44,14 +44,14 @@ test("public checkout never accepts fiado from telephone alone and uses original
  assert.match(checkout,/p_payment<>'fiado'/);
  assert.match(shop,/pitacco_fiado_public_eligibility/);
  assert.match(shop,/pitacco_checkout_fiado/);
- assert.match(shop,/p_code:\$('fiadoCode'\)/);
+ assert.match(shop,/pendingRequest\.p_code=\$('fiadoCode'\)\.value\.trim\(\)/);
  assert.match(shop,/fiadoCheckedPhone/);
  assert.match(shop,/Não foi possível/); // Other normal error handler preserved
 });
 test("fiado never appears on courier financial display; pickup reminders and code flow preserved",()=>{
  assert.match(courier,/Sem cobrança na entrega/);
  assert.match(courier,/'state','no_collect'/);
- assert.doesNotMatch(courier,/'amount',amount/); // When credit, amount intentionally null
+ assert.match(courier,/'amount',null/); // Quando fiado, nenhum valor é fornecido ao motoboy
  assert.match(driver,/state==="no_collect"/);
  assert.match(driver,/Não cobrar o cliente/);
  assert.match(file("entregador/pickup-reminder.mjs"),/payment\?\.state !== "collect"/);
