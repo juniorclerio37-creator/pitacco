@@ -279,7 +279,8 @@ test("card mantém rota e abre PIN apenas ao clicar em Concluir",()=>{
  assert.match(page,/createAction\("Concluir","primary compact-finish",\(\)=>openDeliveryFinish\(d\)\)/);
  assert.doesNotMatch(page,/stageExtras\.append\(verify\)/);
  assert.match(modal,/Confirmar entrega/);
- assert.match(modal,/Digite o código de 6 dígitos/);
+ assert.match(modal,/Number\(delivery\.code_length\|\|6\)\+" dígitos informado pelo cliente/);
+ assert.match(modal,/Código iFood \(4 dígitos\)/);
  assert.match(modal,/Abrir confirmação no iFood/);
  assert.match(modal,/confirmacao-entrega-propria\.ifood\.com\.br/);
  assert.match(android,/confirmacao-entrega-propria\.ifood\.com\.br/);

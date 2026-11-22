@@ -1,5 +1,6 @@
 import React,{useEffect,useState} from 'react';
 import {storefrontLink} from './storefrontLink.mjs';
+import DeliveryCodeSettings from './DeliveryCodeSettings.jsx';
 
 const payments={dinheiro:'Dinheiro',cartao_entrega:'Cartão na entrega',pix_manual:'Pix manual'};
 const defaults={slug:'',enabled:false,delivery_enabled:true,pickup_enabled:false,delivery_fee:0,payment_methods:['dinheiro'],pix_instructions:'',preparation_minutes:30};
@@ -58,5 +59,6 @@ export default function OwnerMenuSettings({client,storeId,storefrontOrigin}){
     <button disabled={busy}>Salvar tempo de preparo</button>
    </form>}
   </>}
+  <DeliveryCodeSettings client={client} storeId={storeId}/>
  </section>;
 }

@@ -572,7 +572,7 @@ window.addEventListener("online",()=>{
  if(courier)refresh().catch(error=>message("A conexão voltou, mas não foi possível sincronizar: "+String(error.message)));
 });
 updateConnectionBanner();
-let orderCardBadges=new Map(),paymentCards=new Map();
+let orderCardBadges=new Map(),paymentCards=new Map(),ownCodeLengths=new Map();
 // Confirmation drafts are ephemeral: never stored on disk or localStorage.
 const codeDrafts=new Map();
 let lastHistoryRequest=0;
@@ -861,6 +861,7 @@ async function ifoodDriverAction(delivery,action,code){
  if(!response.ok){
   const failure=new Error(out.error||"Operação iFood não confirmada");
   failure.status=response.status;
+  failure.providerState=out.provider_state||null;
   throw failure;
  }
  return out;
@@ -964,20 +965,24 @@ async function verifyCode(d,code){
    throw Error("Confirme o recebimento do pagamento antes de finalizar");
   const digits=String(code||"").trim();
   if(d.source==="proprio"){
-   if(!/^[0-9]{6}$/.test(digits)){
+   const expected=ownCodeLengths.get(d.id);
+   if(!Number.isInteger(expected)||expected<4||expected>8)
+    throw Error("A regra do código deste pedido não foi carregada. Atualize a lista.");
+   if(!/^[0-9]+$/.test(digits)||digits.length!==expected){
     inlineCodeError(d.id,"Código incorreto");return false;
    }
    const {data,error}=await sb.rpc("pitacco_driver_verify_own_code",{p_delivery:d.id,p_code:digits});
    if(error)throw Error(error.message||"Código não validado");
    if(!data?.verified){inlineCodeError(d.id,"Código incorreto");return false;}
   }else if(d.source==="ifood"){
-   if(!/^[0-9]{4,8}$/.test(digits)){
+   if(!/^[0-9]{4}$/.test(digits)){
     inlineCodeError(d.id,"Código incorreto");return false;
    }
    let result;
    try{result=await ifoodDriverAction(d.id,"verify",digits);}
    catch(error){
-    if(error.status===409&&/iFood não validou esse código|código incorreto|código inválido/i.test(String(error.message))){
+    if(error.providerState==="invalid_code"||
+       (error.status===409&&/iFood não validou esse código|código incorreto|código inválido/i.test(String(error.message)))){
      inlineCodeError(d.id,"Código incorreto");return false;
     }
     throw error;
@@ -1013,7 +1018,23 @@ async function openDeliveryFinish(d){
    if(row?.payment){payment=row.payment;paymentCards.set(d.id,payment);}
   }
  }catch{/* A verificação final no servidor continuará obrigatória. */}
- const delivery={...d,public_number:badge?.public_number};
+ let codeLength;
+ if(d.source==="proprio"){
+  try{
+   const {data,error}=await sb.rpc("pitacco_driver_own_code_lengths");
+   if(error)throw Error(error.message||"Código indisponível");
+   const entry=Array.isArray(data)?data.find(x=>x.delivery_id===d.id):null;
+   codeLength=Number(entry?.digits);
+   if(!Number.isInteger(codeLength)||codeLength<4||codeLength>8)
+    throw Error("O servidor não encontrou o código desta entrega.");
+   ownCodeLengths.set(d.id,codeLength);
+  }catch(err){
+   message("Não foi possível consultar a regra do código. Confira a conexão ou peça ajuda à loja.");
+   return false; // Fail closed: do not guess digit count or expose a wrong PIN form.
+  }
+ }
+ const delivery={...d,public_number:badge?.public_number,
+  ...(d.source==="proprio"?{code_length:codeLength}:{code_length:4})};
  return showDeliveryFinish({
   delivery,payment,
   onConfirmPayment:()=>confirmCourierCollection(d),

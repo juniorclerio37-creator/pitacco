@@ -160,13 +160,15 @@ function paymentStep(ctx,delivery,payment,{onConfirmPayment,onVerifyCode,onProvi
  ]);
 }
 function addPinInput(ctx,delivery){
- const own=delivery.source==="proprio",max=own?6:8;
+ const own=delivery.source==="proprio";
+ const configured=Number(delivery.code_length);
+ const max=own&&Number.isInteger(configured)&&configured>=4&&configured<=8?configured:own?6:4;
  const wrap=el("div","delivery-sheet-pin-wrap");
  const input=el("input","verify-input delivery-sheet-pin-input");
  input.type="text";input.inputMode="numeric";input.autocomplete="one-time-code";
- input.maxLength=max;input.pattern=own?"[0-9]{6}":"[0-9]{4,8}";
- input.setAttribute("aria-label",own?"Código Pitacco de seis dígitos":"Código iFood de quatro a oito dígitos");
- input.placeholder=own?"Código de 6 dígitos":"Código iFood (4 a 8 dígitos)";
+ input.maxLength=max;input.pattern="[0-9]{"+max+"}";
+ input.setAttribute("aria-label",own?"Código Pitacco de "+max+" dígitos":"Código iFood de 4 dígitos");
+ input.placeholder=own?"Código de "+max+" dígitos":"Código iFood (4 dígitos)";
  const error=el("p","verify-error","");
  error.hidden=true;error.setAttribute("role","status");error.setAttribute("aria-live","polite");
  error.id="verify-error-"+delivery.id;
@@ -174,20 +176,21 @@ function addPinInput(ctx,delivery){
  input.setAttribute("aria-invalid","false");
  if(own){
   const cells=el("div","delivery-sheet-pin-cells");
-  const spans=Array.from({length:6},()=>el("span","delivery-sheet-pin-cell","—"));
+  const spans=Array.from({length:max},()=>el("span","delivery-sheet-pin-cell","—"));
   for(const cell of spans)cells.append(cell);
+  cells.setAttribute("style","grid-template-columns:repeat("+max+",minmax(0,1fr))");
   wrap.append(cells);
   wrap.classList.add("is-six-digit");
   wrap.addEventListener("click",()=>input.focus());
   const update=()=>{
-   input.value=input.value.replace(/[^0-9]/g,"").slice(0,6);
-   for(let i=0;i<6;i++)spans[i].textContent=input.value.charAt(i)||"—";
+   input.value=input.value.replace(/[^0-9]/g,"").slice(0,max);
+   for(let i=0;i<max;i++)spans[i].textContent=input.value.charAt(i)||"—";
    error.hidden=true;input.setAttribute("aria-invalid","false");
   };
   input.addEventListener("input",update);update();
  }else{
   input.addEventListener("input",()=>{
-   input.value=input.value.replace(/[^0-9]/g,"").slice(0,8);
+   input.value=input.value.replace(/[^0-9]/g,"").slice(0,4);
    error.hidden=true;input.setAttribute("aria-invalid","false");
   });
  }
@@ -240,7 +243,9 @@ function codeStep(ctx,delivery,payment,{onVerifyCode,onProviderRetry}){
   return;
  }
  header(ctx,{kind:"code",title:"Confirmar entrega",
-  text:delivery.source==="proprio"?"Digite o código de 6 dígitos informado pelo cliente.":"Digite o código de confirmação fornecido pelo cliente para o iFood.",
+  text:delivery.source==="proprio"
+    ?"Digite o código de "+Number(delivery.code_length||6)+" dígitos informado pelo cliente."
+    :"Digite o código de 4 dígitos do iFood. Ele será validado diretamente no iFood.",
   delivery});
  if(payment?.state==="unknown")ctx.content.append(
   el("p","delivery-sheet-warning","Pagamento sem confirmação no Pitacco. Confira a situação com a loja antes de concluir."));
@@ -259,9 +264,13 @@ function codeStep(ctx,delivery,payment,{onVerifyCode,onProviderRetry}){
   event.preventDefault();
   if(ctx.isRunning())return;
   const digits=input.value.trim();
-  const valid=delivery.source==="proprio"?/^[0-9]{6}$/.test(digits):/^[0-9]{4,8}$/.test(digits);
+  const expected=delivery.source==="proprio"?Number(delivery.code_length||6):4;
+  const valid=/^[0-9]+$/.test(digits)&&digits.length===expected;
   if(!valid){
-   ctx.fail(delivery.source==="proprio"?"Informe os seis dígitos do código do cliente.":"Informe o código válido do iFood.");
+   const msg="Informe o código de "+expected+" dígitos.";
+   const error=ctx.content.querySelector(".verify-error");
+   if(error){error.textContent=msg;error.hidden=false;}
+   else ctx.fail(msg);
    input.setAttribute("aria-invalid","true");return;
   }
   ctx.setBusy(true);ctx.clear();
@@ -271,7 +280,12 @@ function codeStep(ctx,delivery,payment,{onVerifyCode,onProviderRetry}){
     throw Error(notice&&!notice.hidden?notice.textContent:"Código não confirmado. Confira e tente novamente.");
    }
    input.value="";ctx.setBusy(false);successStep(ctx,delivery);
-  }catch(err){ctx.setBusy(false);ctx.fail(err?.message||"Não foi possível validar o código.");}
+  }catch(err){
+   ctx.setBusy(false);
+   const pinError=ctx.content.querySelector(".verify-error");
+   if(pinError&&!pinError.hidden){input.setAttribute("aria-invalid","true");return;}
+   ctx.fail(err?.message||"Não foi possível validar o código.");
+  }
  });
  ctx.content.append(form);
  if(delivery.source==="ifood")addIfoodFallback(ctx,onProviderRetry);

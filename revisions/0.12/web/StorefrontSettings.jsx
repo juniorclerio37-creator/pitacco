@@ -3,6 +3,7 @@ import {invoke} from './printBridge.mjs';
 import {mountDeliveryCoverageMap} from './deliveryMap.mjs';
 import {shopPoint,locateStoreByAddress} from './mapOrigin.mjs';
 import {storefrontLink} from './storefrontLink.mjs';
+import DeliveryCodeSettings from './DeliveryCodeSettings.jsx';
 
 const origin=import.meta.env.VITE_PITACCO_HOMOLOGACAO==='1'
  ? import.meta.env.VITE_PITACCO_HOMOLOG_SITE_ORIGIN || window.location.origin
@@ -110,6 +111,7 @@ export function StorefrontPayments({client,storeId,resource}){
     </button>
    </form>}
   </section>
+  <DeliveryCodeSettings client={client} storeId={storeId}/>
   <PaymentProviders client={client} storeId={storeId}/>
  </>;
 }

@@ -141,3 +141,46 @@ test("unhomologated marketplace cannot display or verify fabricated code",async(
  assert.equal(calls,0);
  await buttonWith(dlg,"Voltar").emit("click");
 });
+
+
+test("merchant configured four-digit PIN uses exactly four visual cells",async()=>{
+ const body=setup();let codes=0;
+ showDeliveryFinish({delivery:{...order,code_length:4},
+  payment:{state:"paid",method:"Online",amount:24},
+  onConfirmPayment:async()=>{throw Error("Already paid")},
+  onVerifyCode:async code=>{codes++;return code==="1234";}
+ });
+ const dlg=find(body,"#deliveryFinishDialog");
+ const pin=find(dlg,".delivery-sheet-pin-input");
+ assert.equal(pin.maxLength,4);
+ assert.equal(find(dlg,".delivery-sheet-pin-cells").children.length,4);
+ pin.value="1234";await pin.emit("input");
+ await find(dlg,".delivery-sheet-code-form").emit("submit");
+ assert.equal(codes,1);
+ assert.match(textOf(dlg),/Entrega concluída!/);
+ await buttonWith(dlg,"Fechar").emit("click");
+});
+test("iFood requires four digits, and its rejected code appears red without completing",async()=>{
+ const body=setup();let queries=0;
+ showDeliveryFinish({delivery:{...order,source:"ifood"},
+  payment:{state:"paid",method:"Online",amount:24},
+  onConfirmPayment:async()=>{throw Error("Already paid")},
+  onVerifyCode:async code=>{
+   queries++;
+   const msg=find(body,".verify-error");
+   msg.textContent="Código incorreto";msg.hidden=false;
+   return false;
+  }
+ });
+ const dlg=find(body,"#deliveryFinishDialog");
+ const pin=find(dlg,".delivery-sheet-pin-input");
+ assert.equal(pin.maxLength,4);
+ assert.match(pin.placeholder,/4 dígitos/);
+ pin.value="1234";await pin.emit("input");
+ await find(dlg,".delivery-sheet-code-form").emit("submit");
+ assert.equal(queries,1);
+ assert.equal(find(dlg,".verify-error").textContent,"Código incorreto");
+ assert.equal(pin.attributes["aria-invalid"],"true");
+ assert.doesNotMatch(textOf(dlg),/Entrega concluída!/);
+ await buttonWith(dlg,"Cancelar").emit("click");
+});
