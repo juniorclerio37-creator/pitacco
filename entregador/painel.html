@@ -1040,8 +1040,10 @@ function card(d){
  const actions=element("div","actions");
  const collecting=stage==="collect";
  if(collecting)actions.append(createAction("Coletar pedido","primary",()=>collectCourierOrder(d)));
- if(d.status==="aceita"&&d.collected_at&&d.source==="ifood"&&d.logistics_provider==="loja"){
-  actions.append(createAction("Sincronizar despacho com iFood","secondary",async()=>{
+ if(stage==="depart"&&d.source==="ifood"&&d.logistics_provider==="loja"){
+  const syncTools=element("details","courier-secondary-tools");
+  syncTools.append(element("summary","","Problemas ao sincronizar com iFood?"));
+  syncTools.append(createAction("Sincronizar despacho com iFood","secondary",async()=>{
    if(busy)return;busy=true;message("");
    try{
     const result=await ifoodDriverAction(d.id,"dispatch");
@@ -1051,6 +1053,7 @@ function card(d){
    }catch(err){message(String(err?.message||"Não foi possível sincronizar o despacho"))}
    finally{busy=false}
   }));
+  box.append(syncTools);
  }
  if(stage==="depart")
   actions.append(createAction("Sair para entrega","primary",()=>d.batch_id
@@ -1075,13 +1078,16 @@ function card(d){
      d.source==="keeta"?"Aviso à Keeta ainda não homologado.":"Peça o código de seis dígitos ao cliente.");
    box.append(element("p","arrival-provider",statusText));
    if(d.source==="ifood"&&!synced){
-    actions.append(createAction("Tentar avisar iFood","secondary",async()=>{
+    const arrivalTools=element("details","courier-secondary-tools");
+    arrivalTools.append(element("summary","","Problemas ao avisar o iFood?"));
+    arrivalTools.append(createAction("Tentar avisar iFood","secondary",async()=>{
      if(busy)return;busy=true;
      try{const result=await ifoodDriverAction(d.id,"arrival");
        message(result.provider_state==="submitted"?"Chegada enviada ao iFood; aguardando confirmação.":"Aviso iFood pendente.");
        await refresh();
      }catch(error){message(String(error.message))}finally{busy=false}
     }));
+    box.append(arrivalTools);
    }
    if(d.source==="proprio"||d.source==="ifood"){
     const verify=element("section","card-verify-block");
