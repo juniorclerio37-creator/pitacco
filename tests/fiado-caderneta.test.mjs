@@ -1,0 +1,81 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+const file=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
+const schema=file("supabase/migrations/20261122224000_fiado_schema.sql");
+const manager=file("supabase/migrations/20261122224100_fiado_manager_api.sql");
+const ledger=file("supabase/migrations/20261122224200_fiado_credit_engine.sql");
+const checkout=file("supabase/migrations/20261122224300_fiado_public_checkout.sql");
+const courier=file("supabase/migrations/20261122224400_fiado_courier_privacy.sql");
+const pos=file("supabase/migrations/20261122224500_fiado_balcao.sql");
+const shop=file("marketing/cardapio.html");
+const app=file("revisions/0.12/web/src.jsx");
+const panel=file("revisions/0.12/web/FiadoCaderneta.jsx");
+const driver=file("entregador/compact-dashboard.mjs");
+const orders=file("revisions/0.12/web/Pedidos.jsx");
+test("schema is tenant-isolated and no credit ledger is direct-readable by anonymous or couriers",()=>{
+ for(const table of ["settings","customers","charges","payments","allocations"]){
+  assert.match(schema,new RegExp("alter table public.pitacco_fiado_"+table+" enable row level security"));
+  assert.match(schema,new RegExp("revoke all on public.pitacco_fiado_"+table+" from public,anon,authenticated"));
+ }
+ assert.match(schema,/unique\(store_id,phone\)/);
+ assert.match(schema,/foreign key \(store_id,customer_id\)/);
+ assert.match(schema,/unique\(store_id,request_id\)/);
+ assert.match(manager,/public\.is_store_manager\(p_store\)/);
+ assert.match(manager,/pitacco_fiado_overview/);
+ assert.match(manager,/pitacco_fiado_approve/);
+ assert.match(manager,/pitacco_fiado_receive/);
+ assert.match(manager,/for update/);
+ assert.match(manager,/payment_id/);
+ assert.match(manager,/duplicate/);
+});
+test("public checkout never accepts fiado from telephone alone and uses original server prices and delivery quote",()=>{
+ assert.match(ledger,/credential_hash=encode\(sha256/);
+ assert.match(manager,/credential_hash=encode\(sha256/);
+ assert.match(ledger,/credential_bad_attempts/);
+ assert.match(ledger,/Fiado não autorizado para este pedido/);
+ assert.match(ledger,/account\.used\+new\.gross>account\.credit_limit/);
+ assert.match(ledger,/fiado_credit_reserved/);
+ assert.match(checkout,/pitacco\.fiado_customer/);
+ assert.match(checkout,/pitacco_private\.fiado_customer_access/);
+ assert.match(checkout,/pitacco_checkout_quoted_delivery/);
+ assert.match(checkout,/pitacco_checkout_scheduled_order/);
+ assert.match(checkout,/checkout_public_order/);
+ assert.match(checkout,/p_payment<>'fiado'/);
+ assert.match(shop,/pitacco_fiado_public_eligibility/);
+ assert.match(shop,/pitacco_checkout_fiado/);
+ assert.match(shop,/p_code:\$('fiadoCode'\)/);
+ assert.match(shop,/fiadoCheckedPhone/);
+ assert.match(shop,/Não foi possível/); // Other normal error handler preserved
+});
+test("fiado never appears on courier financial display; pickup reminders and code flow preserved",()=>{
+ assert.match(courier,/Sem cobrança na entrega/);
+ assert.match(courier,/'state','no_collect'/);
+ assert.doesNotMatch(courier,/'amount',amount/); // When credit, amount intentionally null
+ assert.match(driver,/state==="no_collect"/);
+ assert.match(driver,/Não cobrar o cliente/);
+ assert.match(file("entregador/pickup-reminder.mjs"),/payment\?\.state !== "collect"/);
+ assert.match(file("entregador/delivery-confirmation.mjs"),/payment\?\.state==="collect"/);
+ assert.match(file("entregador/painel.html"),/pitacco_driver_verify_own_code/);
+ assert.match(file("entregador/painel.html"),/ifoodDriverAction\(d\.id,"verify",digits\)/);
+ assert.match(orders,/label:'Fiado · a receber'/);
+});
+test("manager controls customers, partial receipts, manager approvals and POS securely",()=>{
+ assert.match(app,/FiadoCaderneta/);
+ assert.match(app,/Fiado \/ Caderneta/);
+ assert.match(app,/!isDriver&&manager&&tab==='Fiado \/ Caderneta'/);
+ assert.match(panel,/pitacco_fiado_toggle/);
+ assert.match(panel,/pitacco_fiado_save_customer/);
+ assert.match(panel,/pitacco_fiado_rotate_code/);
+ assert.match(panel,/pitacco_fiado_receive/);
+ assert.match(panel,/pitacco_fiado_approve/);
+ assert.match(panel,/pitacco_fiado_balcao_create/);
+ assert.match(pos,/public\.pitacco_validate_item_options/);
+ assert.match(pos,/public\.is_store_manager\(p_store\)/);
+ assert.match(pos,/pitacco\.fiado_customer/);
+ assert.match(ledger,/state='cancelled'/);
+ assert.match(ledger,/used=used-charge\.amount/);
+ assert.match(ledger,/fiado_guard_order_update/);
+ assert.match(ledger,/approved_at is null/);
+ assert.match(ledger,/due_at=now\(\)\+make_interval\(days=>a\.due_days\)/);
+});
