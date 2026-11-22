@@ -269,7 +269,9 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    }
    const access=await distributed.accessFor(assigned.merchant_id) ??
       (clientId&&clientSecret?await token():null);
-   if(!access)return reply(503,{error:'Conexão iFood não homologada. Chegada registrada somente no Pitacco.'});
+   if(!access)return reply(503,{error:input.action==='arrival'
+    ?'Conexão iFood não homologada. Chegada registrada somente no Pitacco.'
+    :'Conexão iFood indisponível para confirmar a entrega.'});
    // MERCHANT own-delivery codes use the Order module: {valid:true}.
    // The Logistics endpoint requires a separate courier lifecycle (assign/dispatch).
    const endpoint=origin+(input.action==='arrival'
@@ -281,25 +283,31 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
     body:input.action==='arrival'?'{}':JSON.stringify({code:input.code}),
     signal:AbortSignal.timeout(9000),redirect:'error',
    });
-   // Arrival can be asynchronous; code confirmation MUST be unequivocally verified.
-   let verified=false;
-   if(input.action==='verify' && response.status===200){
-    const verification=await response.json().catch(()=>null);
-    verified=verification?.valid===true;
-   }
-   const isSuccess=input.action==='arrival'?[200,202,204].includes(response.status):verified;
+   // The Order API confirms a code only with HTTP 200 and a boolean result.
+   // A conflict, permission error or malformed response is not an invalid PIN.
+   const isVerify=input.action==='verify';
+   const verification=isVerify&&response.status===200?await response.json().catch(()=>null):null;
+   const isSuccess=isVerify?verification?.valid===true:[200,202,204].includes(response.status);
    const permanent=[400,403,404,409,412,422].includes(response.status);
-   // The service-role result is written ONLY after authenticated ownership was checked.
-   if(input.action==='arrival'||isSuccess){
-    const persisted=await rpc('pitacco_ifood_driver_result',{
-     p_delivery:input.delivery,p_external:assigned.external_order_id,
-     p_action:input.action,p_success:isSuccess,p_permanent:permanent,
+   if(!isSuccess&&isVerify){
+    if(verification?.valid===false)return reply(409,{
+     error:'O iFood não validou esse código. Confira com o cliente.',provider_state:'invalid_code',
     });
-    if(persisted!==true)return reply(409,{error:'A entrega mudou de estado; atualize os pedidos.'});
+    const unavailable=response.ok||[401,403,429].includes(response.status)||response.status>=500;
+    return reply(unavailable?503:409,{
+     error:unavailable?'Não foi possível confirmar a entrega com o iFood. Tente novamente.':
+      'O iFood ainda não confirmou a entrega. Confira o status do pedido na plataforma.',
+     provider_state:'not_confirmed',
+    });
    }
+   // The service-role result is written only after the courier scope check.
+   const persisted=await rpc('pitacco_ifood_driver_result',{
+    p_delivery:input.delivery,p_external:assigned.external_order_id,
+    p_action:input.action,p_success:isSuccess,p_permanent:permanent,
+   });
+   if(persisted!==true)return reply(409,{error:'A entrega mudou de estado; atualize os pedidos.'});
    if(!isSuccess)return reply(response.status>=500||response.status===429?503:409,{
-    error:input.action==='verify'?'O iFood não validou esse código. Confira com o cliente.':
-      'Chegada registrada no Pitacco, mas ainda não confirmada pelo iFood.',
+    error:'Chegada registrada no Pitacco, mas ainda não confirmada pelo iFood.',
     provider_state:'not_confirmed',
    });
    return reply(200,input.action==='arrival'?

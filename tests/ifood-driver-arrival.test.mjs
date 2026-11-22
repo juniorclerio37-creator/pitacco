@@ -10,7 +10,7 @@ const url='https://db.example.test/functions/v1/ifood-orders/driver-action';
 const origin='https://entregador.pitacco.com.br';
 const reply=(value,status=200)=>Response.json(value,{status});
 
-function createHarness(providerStatus=200,providerBody={valid:true},scoped=true){
+function createHarness(providerStatus=200,providerBody={valid:true},scoped=true,persisted=true){
  const calls=[];
  const app=createIfoodOrders({
   clientId:'id',clientSecret:'secret',publicKey:'publishable',
@@ -35,7 +35,7 @@ function createHarness(providerStatus=200,providerBody={valid:true},scoped=true)
    if(path.endsWith('/pitacco_ifood_poll_credential'))return reply(null);
    if(path.endsWith('/oauth/token'))return reply({accessToken:'token-mock',expiresIn:3600});
    if(path.includes('/arrivedAtDestination')||path.includes('/verifyDeliveryCode'))return reply(providerBody,providerStatus);
-   if(path.endsWith('/pitacco_ifood_driver_result'))return reply(true);
+   if(path.endsWith('/pitacco_ifood_driver_result'))return reply(persisted);
    throw Error('Unexpected '+path);
   },
  });
@@ -66,9 +66,10 @@ test('unscoped delivery is blocked before any marketplace request',async()=>{
 });
 
 test('delivery code does not complete if provider only accepted async request',async()=>{
- const {calls,call}=createHarness(202,{valid:false});
+ const {calls,call}=createHarness(202,{valid:true});
  const response=await call('verify','1234');
- assert.equal(response.status,409);
+ assert.equal(response.status,503);
+ assert.equal((await response.json()).provider_state,'not_confirmed');
  assert.equal(calls.some(x=>x.path.endsWith('/pitacco_ifood_driver_result')),false);
 });
 
@@ -85,8 +86,10 @@ test('verified provider response completes only after service DB commit',async()
 });
 
 test('wrong provider code or invalid code never signals delivered',async()=>{
- const {calls,call}=createHarness(422,{error:'wrong code'});
- assert.equal((await call('verify','1234')).status,409);
+ const {calls,call}=createHarness(200,{valid:false});
+ const rejected=await call('verify','1234');
+ assert.equal(rejected.status,409);
+ assert.equal((await rejected.json()).provider_state,'invalid_code');
  assert.equal((await call('verify','four')).status,400);
  assert.equal(calls.some(x=>x.path.endsWith('/pitacco_ifood_driver_result')),false);
 });
@@ -99,9 +102,10 @@ test('preflight is limited to courier origin, without auth bypass',async()=>{
 });
 
 test('a 200 response without valid:true never completes delivery',async()=>{
- const {calls,call}=createHarness(200,{status:'VERIFIED',valid:false});
+ const {calls,call}=createHarness(200,{status:'VERIFIED'});
  const response=await call('verify','1234');
- assert.equal(response.status,409);
+ assert.equal(response.status,503);
+ assert.equal((await response.json()).provider_state,'not_confirmed');
  assert.equal(calls.some(x=>x.path.endsWith('/pitacco_ifood_driver_result')),false);
 });
 
@@ -132,4 +136,26 @@ test('only local pickup button invokes provider dispatch on merchant iFood deliv
  assert.match(page,/if\(d\.source==="ifood"&&d\.logistics_provider==="loja"\)/);
  assert.match(page,/ifoodDriverAction\(d\.id,"dispatch"\)/);
  assert.match(page,/Sair para entrega/);
+});
+
+
+test('provider conflicts and access errors never claim an incorrect code',async()=>{
+ for(const [upstream,http] of [[401,503],[403,503],[404,409],[409,409],[412,409],[422,409],[429,503],[500,503]]){
+  const {calls,call}=createHarness(upstream,{valid:false});
+  const response=await call('verify','1234');
+  assert.equal(response.status,http);
+  const data=await response.json();
+  assert.equal(data.provider_state,'not_confirmed');
+  assert.doesNotMatch(data.error,/código incorreto|não validou esse código/i);
+  assert.equal(calls.some(x=>x.path.endsWith('/pitacco_ifood_driver_result')),false);
+ }
+});
+
+test('iFood acceptance never reports completed when local commit refuses the transition',async()=>{
+ const {call}=createHarness(200,{valid:true},true,false);
+ const response=await call('verify','1234');
+ assert.equal(response.status,409);
+ const data=await response.json();
+ assert.equal(data.delivered,undefined);
+ assert.match(data.error,/entrega mudou de estado/);
 });
