@@ -215,7 +215,7 @@ declare
  until_time timestamptz := (p_end+1)::timestamp at time zone 'America/Sao_Paulo';
 begin
  if auth.uid() is null or not public.is_store_manager(p_store) then
-  raise exception 'Sem permissão para consultar os pedidos desta loja' using errcode='42501';
+  raise exception 'Sem permissão para consultar os pedidos desta loja';
  end if;
  if p_start is null or p_end is null or p_end < p_start or p_end-p_start>365
     or p_page is null or p_page not between 0 and 10000 then
