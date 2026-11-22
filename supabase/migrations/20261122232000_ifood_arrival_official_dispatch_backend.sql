@@ -44,7 +44,7 @@ begin
  if v_external is null or v_merchant is null then
    raise exception 'Conexão logística iFood não homologada para esta loja' using errcode='22023'; end if;
  return pg_catalog.jsonb_build_object('already',false,'external_order_id',v_external,'merchant_id',v_merchant);
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.pitacco_ifood_driver_result(p_delivery uuid, p_external uuid, p_action text, p_success boolean, p_permanent boolean DEFAULT false)
@@ -91,7 +91,7 @@ begin
   return true;
  end if;
  return false;
-end $function$
+end $function$;
 
 
 -- As permissões originais são preservadas pela substituição das funções.
