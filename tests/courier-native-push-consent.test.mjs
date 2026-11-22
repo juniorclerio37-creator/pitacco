@@ -88,7 +88,8 @@ test('courier push readiness reports scheduler and Vault presence without exposi
  assert.doesNotMatch(sql,/decrypted_secret/);
  assert.match(panel,/data\.dispatch_scheduled!==true/);
  assert.match(panel,/data\.cron_credential_present/);
- assert.match(panel,/não testa uma mensagem Firebase/);
+ assert.doesNotMatch(panel,/não testa uma mensagem Firebase/);
+ assert.match(panel,/class="courier-push-check panel-white courier-tech-internal"/);
 });
 test('Firebase OAuth preflight never claims or consumes queued orders',()=>{
  const script=sender;
