@@ -90,12 +90,16 @@ function buttons(ctx,items){
 export async function showArrivalConfirmation({delivery,onConfirm}){
  const ctx=modalBase(delivery,"delivery-action-title");
  if(!ctx)return false;
- let resolve;
+ let resolve,settled=false;
  const outcome=new Promise(done=>{resolve=done;});
- const baseClose=ctx.close;
- const close=success=>{if(baseClose())resolve(!!success)};
- // The close icon and Android back cancel without calling the server.
- ctx.dlg.addEventListener("close",()=>resolve(false),{once:true});
+ const settle=value=>{if(!settled){settled=true;resolve(!!value);}};
+ const close=success=>{
+  if(ctx.isRunning())return;
+  // Resolva antes do evento "close" (nativo ou imediato no WebView).
+  settle(success);ctx.close();
+ };
+ // X e Voltar do Android nunca registram chegada.
+ ctx.dlg.addEventListener("close",()=>settle(false),{once:true});
  header(ctx,{kind:"arrive",title:"Cheguei na entrega",
   text:"Confirme que você realmente chegou ao endereço do cliente. Esta chegada será registrada para a loja.",
   delivery});
