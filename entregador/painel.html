@@ -1027,9 +1027,11 @@ function card(d){
  const head=element("div","cardhead");
  const badge=orderCardBadges.get(d.id);
  const number=String(badge?.public_number||"Aguardando número");
- head.append(element("span","order","PEDIDO #"+number));
+ head.append(element("span","order",number==="Aguardando número"?"Número pendente":"Pedido #"+number));
  head.append(element("span","tag",statuses[d.status]||d.status||"Em andamento"));
  opener.append(head);
+ const sourceLabels={proprio:"PITACCO",ifood:"iFood","99food":"99Food",keeta:"Keeta"};
+ opener.append(element("span","card-platform",sourceLabels[d.source]||"Pedido da loja"));
  const originName=d.store_name||"Loja de origem";
  opener.append(element("span","card-store-label","LOJA • "+originName));
  const intro=element("div","card-customer-row");intro.append(element("div","customer",d.customer_name||"Cliente"));
