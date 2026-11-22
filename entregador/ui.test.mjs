@@ -273,7 +273,7 @@ test("cartão mostra Ir ao lado do endereço e PIN após Cheguei sem abrir detal
  assert.doesNotMatch(page,/createAction\("Abrir rota"/);
  assert.match(page,/Você chegou ao destino/);
   assert.match(page,/courierActionStage\(d\)/);
-  assert.match(page,/courierProgress\(d\)/);
+  assert.doesNotMatch(page,/courierProgress\(d\)/);
   assert.match(page,/createAction\("Coletar pedido"/);
   assert.match(page,/createAction\("Finalizar entrega"/);
  assert.match(page,/Peça o código de confirmação ao cliente/);
@@ -665,4 +665,27 @@ test("GPS, Firebase e painéis técnicos não aparecem para o entregador",()=>{
  assert.match(page,/pitacco_courier_background_gps_start/);
  assert.doesNotMatch(page,/O botão acima testa o sino e a voz[\s\S]*?mensagem Firebase enviada/);
  assert.doesNotMatch(page,/Avisos em segundo plano exigem Firebase ativo/);
+});
+
+test("five tabs, a single current-stage action and merchant arrival sync",()=>{
+ const page=read("painel.html");
+ const source=read("dispatch-map.mjs");
+ const fleet=read("../revisions/0.12/web/FleetTracking.jsx");
+ const routeStart=page.indexOf('id="viewRotas"');
+ const routeEnd=page.indexOf('id="viewGanhos"',routeStart);
+ const home=page.slice(page.indexOf('id="viewPedidos"'),routeStart);
+ assert.ok(routeStart>0&&routeEnd>routeStart);
+ assert.doesNotMatch(home,/id="courierMap"/);
+ assert.match(page.slice(routeStart,routeEnd),/id="courierMap"/);
+ assert.match(page,/data-tab="rotas"/);
+ assert.match(page,/const validViews=\["pedidos","rotas","ganhos","perfil","config"\]/);
+ assert.doesNotMatch(page,/card-delivery-steps/);
+ assert.match(page,/stage==="collect"/);
+ assert.match(page,/stage==="arrive"/);
+ assert.match(page,/stage==="code"/);
+ assert.match(page,/arrivalProximity\(current,mapLastGps,arrivalSignals\)/);
+ assert.match(page,/pitacco_driver_depart_single/);
+ assert.match(source,/zIndexOffset:2000/);
+ assert.match(fleet,/arrived_at,created_at/);
+ assert.match(fleet,/Chegou ao cliente/);
 });
