@@ -1030,7 +1030,7 @@ $('checkout').onsubmit=async event=>{
   const response=await client.rpc(endpoint,payload);
   const {data,error,status}=response;
   if(error){
-   if(status>=400&&status<500&&status!==408)pendingRequest=null;
+   if(status>=400&&status<500&&status!==408){pendingRequest=null;if(usingLoyalty)invalidateLoyalty();}
    throw error;
   }
   if(data?.error){

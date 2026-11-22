@@ -30,13 +30,18 @@ end $$;
 do $test$
 declare s uuid:='20000000-0000-0000-0000-000000000091';a jsonb;b jsonb;k text;kb text;c uuid;cb uuid;
  r jsonb;rr jsonb;first_order uuid;points_order uuid;stamp_order uuid;cash_order uuid;ref_order uuid;ref_second uuid;cp_order uuid;req uuid;before_cash bigint;
- fiado_customer uuid;fiado_key text;fiado_order uuid;points_before bigint;slot timestamptz;quote_id uuid:=gen_random_uuid();
+ fiado_customer uuid;fiado_key text;fiado_order uuid;points_before bigint;slot timestamptz;quote_id uuid:=gen_random_uuid();legacy_request uuid:=gen_random_uuid();
 begin
+ perform public.checkout_public_order('loyalty-test',legacy_request,'Cliente','21999990001','',
+  '[{"product_id":"30000000-0000-0000-0000-000000000091","quantity":1,"options":[]}]','pickup','pix_manual','');
  a:=public.pitacco_loyalty_join('loyalty-test','Cliente A','21999990001');k:=a->>'key';c:=(a->>'customer_id')::uuid;
  assert length(k)=64 and c is not null;
  assert public.pitacco_loyalty_join('loyalty-test','Outra pessoa','21999990001') ? 'error', 'Não recuperar conta por telefone';
  assert public.pitacco_loyalty_wallet('loyalty-other',k) ? 'error', 'Isolamento entre lojas';
  assert public.pitacco_loyalty_wallet('loyalty-test',repeat('0',64)) ? 'error';
+ begin
+  perform pg_temp.loyalty_buy(k,'','',legacy_request);raise exception 'Não atribuir benefício retroativamente';
+ exception when raise_exception then if sqlerrm<>'Este pedido já foi criado fora do Fideliza+; consulte seu acompanhamento' then raise;end if;end;
  b:=public.pitacco_loyalty_join('loyalty-test','Cliente B','21999990002',public.pitacco_loyalty_wallet('loyalty-test',k)->>'referral_code');
  kb:=b->>'key';cb:=(b->>'customer_id')::uuid;assert kb is not null;
  r:=pg_temp.loyalty_buy(k);first_order:=(r->>'order_id')::uuid;
@@ -53,6 +58,9 @@ begin
  assert (r->>'total')::numeric=90;
  assert pitacco_private.loyalty_balance(s,c,'points')=0, 'Reserva de pontos imediata';
  rr:=pg_temp.loyalty_buy(k,'points','',req);assert r=rr;
+ insert into pitacco_private.store_feature_rules(store_id,feature,enabled) values(s,'fideliza',false);
+ rr:=pg_temp.loyalty_buy(k,'points','',req);assert r=rr,'Desativar módulo não apaga a confirmação de pedido já criado';
+ update pitacco_private.store_feature_rules set enabled=true where store_id=s and feature='fideliza';
  begin
   perform pg_temp.loyalty_buy(k,'points');raise exception 'Não pode resgatar saldo reservado';
  exception when raise_exception then if sqlerrm<>'Saldo insuficiente para este benefício' then raise;end if;end;

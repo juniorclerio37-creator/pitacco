@@ -106,7 +106,6 @@ declare s uuid;c uuid;v_phone text:=regexp_replace(coalesce(p_phone,''),'[^0-9]'
 begin
  select store_id into s from public.public_menu_settings where slug=p_slug for update;
  if s is null or p_request is null then raise exception 'Cardápio ou requisição inválida';end if;
- if not pitacco_private.loyalty_available(s) then raise exception 'Fideliza+ indisponível';end if;
  if coalesce(p_key,'')<>'' then
   c:=pitacco_private.loyalty_customer(s,p_key);
   if c is null then raise exception 'Chave pessoal inválida';end if;
@@ -125,6 +124,10 @@ begin
  if found then
   if prior.payload<>canonical then raise exception 'Chave reutilizada com dados diferentes';end if;
   return prior.response;
+ end if;
+ if not pitacco_private.loyalty_available(s) then raise exception 'Fideliza+ indisponível';end if;
+ if exists(select 1 from public.orders where store_id=s and request_id=p_request) then
+  raise exception 'Este pedido já foi criado fora do Fideliza+; consulte seu acompanhamento';
  end if;
  rules:=pitacco_private.loyalty_rules(s);
  perform set_config('pitacco.loyalty_customer',coalesce(c::text,''),true);
