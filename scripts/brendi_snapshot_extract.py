@@ -75,35 +75,3 @@ print('STORE',str(payload['store'])[:800])
 print('IMAGES',images[:5])
 print('CONTEXT',payload['sample_image_context'][:1])
 print('OUTPUT',output,len(output.read_bytes()))
-from concurrent.futures import ThreadPoolExecutor
-unique_images=sorted(set(im.get('src','') for im in images if im.get('alt') and im.get('src') and 'images.brendi.com.br/optimized/' in im.get('src','')))
-def check_image(url):
-    try:
-        response=requests.get(url,timeout=15,stream=True)
-        content_type=response.headers.get('content-type','')
-        response.close()
-        return {'url':url,'status':response.status_code,'type':content_type,'ok':response.status_code==200 and content_type.startswith('image/')}
-    except Exception as exc:
-        return {'url':url,'status':0,'error':type(exc).__name__,'ok':False}
-with ThreadPoolExecutor(max_workers=7) as pool:
-    checked=list(pool.map(check_image,unique_images))
-print('PHOTO_CHECK',json.dumps({'count':len(checked),'passed':sum(im['ok'] for im in checked),'failed':[im for im in checked if not im['ok']]},ensure_ascii=False))
-
-
-
-# Diagnóstico de acesso às imagens para migração com fotos preservadas.
-photo_url='https://images.brendi.com.br/optimized/1e6d9ea1eec50efc572c1c7673dd804b'
-headertests={
- 'referer': {'Referer':'https://menu.brendi.com.br/acai-do-linho/'},
- 'browser': {'User-Agent':'Mozilla/5.0 (Linux; Android 17) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36', 'Accept':'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8','Referer':'https://menu.brendi.com.br/acai-do-linho/','Sec-Fetch-Site':'same-site','Sec-Fetch-Mode':'no-cors','Sec-Fetch-Dest':'image'},
- 'browser_origin': {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0.0.0 Safari/537.36','Accept':'image/avif,image/webp,image/*,*/*;q=0.8','Origin':'https://menu.brendi.com.br','Referer':'https://menu.brendi.com.br/'}
-}
-for label,headers in headertests.items():
- try:
-  resp=requests.get(photo_url,headers=headers,timeout=13,stream=True)
-  print('IMAGE_DIAG',label,resp.status_code,resp.headers.get('content-type'),dict((k,v) for k,v in resp.headers.items() if k.lower() in ['server','via','x-cache','content-type','location']),resp.url)
-  resp.close()
- except Exception as e:print('IMAGE_DIAG_ERROR',label,type(e).__name__,str(e))
-for marker in ['storage.googleapis.com','firebasestorage.googleapis.com','storageBucket','storageBucket:', 'cdn.brendi.com.br', 'images.brendi.com.br','/optimized/']:
- starts=[m.start() for m in re.finditer(re.escape(marker),resp.text)] if False else [m.start() for m in re.finditer(re.escape(marker),cap.script_data[0])][:2]
- print('HTML_MARKER',marker,resp.text.find(marker) if False else starts[:2])
