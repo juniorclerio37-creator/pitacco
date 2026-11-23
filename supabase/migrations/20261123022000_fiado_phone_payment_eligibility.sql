@@ -31,6 +31,7 @@ begin
     select 1 from public.pitacco_fiado_customers c
     where c.store_id=sid and c.phone=v_phone
       and c.enabled
+      and c.credential_hash is not null
       and c.credit_limit>c.used
       and (c.credential_locked_until is null or c.credential_locked_until<=now())
       and not (
