@@ -22,7 +22,7 @@ submenu_new="'Meu Cardápio':[['Produtos','Editor de cardápio'],['Importar card
 assert s.count(submenu_old)==1, 'Submenu do catálogo não encontrado ou alterado'
 s=s.replace(submenu_old,submenu_new,1)
 editor_old="<MenuStudio client={supabase} storeId={selected} products={products} onRefresh={loadDetails}/>"
-editor_new="<MenuStudio client={supabase} storeId={selected} products={products} onRefresh={loadDetails} onImport={()=>setTab('Importar cardápio')}/>"
+editor_new="<MenuStudio client={supabase} storeId={selected} products={products} store={active} manager={manager} onRefresh={loadDetails} onImport={()=>setTab('Importar cardápio')}/>"
 assert s.count(editor_old)==1, 'Editor do cardápio não encontrado para ligação ao importador'
 s=s.replace(editor_old,editor_new,1)
 
