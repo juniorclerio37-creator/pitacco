@@ -5,7 +5,7 @@ import {build} from '../web/node_modules/esbuild/lib/main.js';
 import {chromium} from '../web/node_modules/playwright/index.mjs';
 const source=await readFile(new URL('../marketing/cardapio.html',import.meta.url),'utf8');
 const browser=await chromium.launch({executablePath:process.env.PITACCO_CHROMIUM});
-const origin='http://localhost:4191',key='a'.repeat(64);
+const origin='http://localhost:4191';
 const rules={points_enabled:true,points_per_real:1,min_points_to_redeem:100,points_reward_cents:1000,orders_enabled:true,orders_required:3,orders_reward_cents:500,coupons_enabled:true,campaigns_enabled:true,cashback_enabled:true,cashback_percent:5,cashback_max_redeem_percent:50,referrals_enabled:true,referral_reward_cents:300,referral_welcome_cents:200,minimum_order_cents:0};
 try{
  for(const width of [375,1440]){
@@ -21,14 +21,17 @@ try{
    if(name==='pitacco_public_store_open')return route.fulfill({json:{open:true,reason:'open'}});
    if(name==='pitacco_public_schedule_slots')return route.fulfill({json:[]});
    if(name==='pitacco_loyalty_program')return route.fulfill({json:{rules,campaigns:[{id:'campaign',title:'Oferta da semana',code:'SEMANA5',discount_type:'fixed',discount_value:5,minimum_order_cents:0}]}});
-   if(name==='pitacco_loyalty_join'){assert.equal(p.p_phone,'21999990001');assert.equal(p.p_referral,'INDICADOR');return route.fulfill({json:{key,customer_id:'customer'}})}
-   if(name==='pitacco_loyalty_wallet'){assert.equal(p.p_key,key);return route.fulfill({json:{customer_id:'customer',name:'Cliente',phone:'21999990001',points:120,orders:3,cashback_cents:500,rules,referral_code:'PESSOAL',history:[]}})}
+   if(name==='pitacco_loyalty_phone_wallet'){
+    assert.equal(p.p_phone,'21999990001');
+    return route.fulfill({json:{linked:true,points:120,orders:3,cashback_cents:500,rules,referral_code:'PESSOAL',offers:[],history:[]}});
+   }
    if(name==='pitacco_loyalty_preview'){
+    assert.equal(p.p_key,'21999990001','prévia usa telefone, não chave');
     const subtotal=p.p_items.reduce((sum,x)=>sum+5000*x.quantity,0),discount=p.p_reward==='points'?1000:500;
     return route.fulfill({json:{subtotal_cents:subtotal,discount_cents:discount,products_total_cents:subtotal-discount}});
    }
    if(name==='pitacco_loyalty_checkout'){
-    sent.push(p);assert.equal(p.p_key,key);assert.equal(p.p_items[0].quantity,2);assert.equal(p.p_payment,'pix_manual');
+    sent.push(p);assert.equal(p.p_key,'INDICADOR');assert.equal(p.p_items[0].quantity,2);assert.equal(p.p_payment,'pix_manual');
     assert.equal(p.p_reward,width===375?'points':'');assert.equal(p.p_coupon,width===375?'':'SEMANA5');
     if(sent.length===1)return route.fulfill({status:503,json:{message:'Conexão interrompida'}});
     assert.deepEqual(sent[0],sent[1],'retry preserves request and reserved benefit');
@@ -39,9 +42,9 @@ try{
   await page.goto(origin+'/loyalty-test?indicacao=INDICADOR');
   await page.getByRole('button',{name:'Meu Fideliza+',exact:true}).click();
   await page.locator('#customer').fill('Cliente');await page.locator('#phone').fill('21999990001');
-  await page.getByRole('button',{name:'Participar do Fideliza+',exact:true}).click();
   await page.locator('#loyaltyBalance').filter({hasText:'120 pontos'}).waitFor();
-  assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-loyalty:loyalty-test')),key);
+  assert.equal(await page.locator('#loyaltyOtp, #loyaltyKey, #loyaltyJoin').count(),0,'nenhuma chave, SMS ou cadastro');
+  assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(k=>k.startsWith('pitacco-loyalty'))),false,'nenhum token pessoal armazenado');
   assert.match(await page.locator('#loyaltyShare').inputValue(),/indicacao=PESSOAL/);
   await page.locator('#closeCart').click();
   await page.getByRole('button',{name:'Personalizar Açaí',exact:true}).click();
@@ -127,7 +130,7 @@ try{
   await page.getByLabel('Cliente exclusivo',{exact:true}).selectOption('customer');await page.getByLabel('Limite por cliente (exige acesso à carteira)',{exact:true}).fill('1');
   await page.getByRole('button',{name:'Cadastrar oferta',exact:true}).click();await page.waitForFunction(()=>window.fixtureCoupons.some(x=>x.code==='PESSOAL10'&&x.target_customer_id==='customer'&&x.per_customer_limit===1));
   await page.getByRole('button',{name:'Fechar configuração',exact:true}).click();
-  await page.getByRole('button',{name:'Ver clientes',exact:true}).click();await page.getByLabel('Buscar cliente',{exact:true}).fill('inexistente');assert.equal(await page.getByRole('button',{name:'Recuperar acesso',exact:true}).count(),0);
+  await page.getByRole('button',{name:'Ver clientes',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Recuperar acesso',exact:true}).count(),0);await page.getByLabel('Buscar cliente',{exact:true}).fill('inexistente');
   await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog').count(),0);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'no horizontal overflow');
   assert.deepEqual(errors,[]);console.log('PASS Fideliza merchant configuration for all modalities',width);await page.close();

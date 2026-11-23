@@ -13,11 +13,10 @@ insert into public.loyalty_programs(store_id,points_enabled,points_per_real,min_
  referrals_enabled,referral_reward_cents,referral_welcome_cents,campaigns_enabled)
  values('20000000-0000-0000-0000-000000000091',true,1,100,1000,true,1,500,true,10,100,true,300,200,true);
 
-create function pg_temp.loyalty_buy(k text,reward text default '',coupon text default '',req uuid default gen_random_uuid()) returns jsonb
-language plpgsql as $$ declare p text;result jsonb;begin
- select phone into p from pitacco_private.loyalty_customers where key_hash=encode(sha256(convert_to(k,'UTF8')),'hex');
- result:=public.pitacco_loyalty_checkout('loyalty-test',req,'Cliente',p,'',
-  '[{"product_id":"30000000-0000-0000-0000-000000000091","quantity":1,"options":[]}]','pickup','pix_manual','',k,coupon,reward);
+create function pg_temp.loyalty_buy(k text,reward text default '',coupon text default '',req uuid default gen_random_uuid(),referral text default '') returns jsonb
+language plpgsql as $$ declare result jsonb;begin
+ result:=public.pitacco_loyalty_checkout('loyalty-test',req,'Cliente',k,'',
+  '[{"product_id":"30000000-0000-0000-0000-000000000091","quantity":1,"options":[]}]','pickup','pix_manual','',referral,coupon,reward);
  -- Remove apenas o rate-limit temporal no banco descartável, nunca em produção.
  update public.public_checkouts set created_at=now()-interval '1 hour';
  return result;
@@ -34,17 +33,24 @@ declare s uuid:='20000000-0000-0000-0000-000000000091';a jsonb;b jsonb;k text;kb
 begin
  perform public.checkout_public_order('loyalty-test',legacy_request,'Cliente','21999990001','',
   '[{"product_id":"30000000-0000-0000-0000-000000000091","quantity":1,"options":[]}]','pickup','pix_manual','');
- a:=public.pitacco_loyalty_join('loyalty-test','Cliente A','21999990001');k:=a->>'key';c:=(a->>'customer_id')::uuid;
- assert length(k)=64 and c is not null;
- assert public.pitacco_loyalty_join('loyalty-test','Outra pessoa','21999990001') ? 'error', 'Não recuperar conta por telefone';
- assert public.pitacco_loyalty_wallet('loyalty-other',k) ? 'error', 'Isolamento entre lojas';
- assert public.pitacco_loyalty_wallet('loyalty-test',repeat('0',64)) ? 'error';
+ k:='21999990001';kb:='21999990002';
+ a:=public.pitacco_loyalty_phone_wallet('loyalty-test',k);
+ assert a->>'linked'='false','Telefone sem compra não cria carteira';
+ assert public.pitacco_loyalty_phone_wallet('loyalty-other',k)->>'linked'='false','Loja isolada';
+ assert public.pitacco_loyalty_phone_wallet('loyalty-test','invalid') ? 'error';
  begin
   perform pg_temp.loyalty_buy(k,'','',legacy_request);raise exception 'Não atribuir benefício retroativamente';
  exception when raise_exception then if sqlerrm<>'Este pedido já foi criado fora do Fideliza+; consulte seu acompanhamento' then raise;end if;end;
- b:=public.pitacco_loyalty_join('loyalty-test','Cliente B','21999990002',public.pitacco_loyalty_wallet('loyalty-test',k)->>'referral_code');
- kb:=b->>'key';cb:=(b->>'customer_id')::uuid;assert kb is not null;
  r:=pg_temp.loyalty_buy(k);first_order:=(r->>'order_id')::uuid;
+ select id into c from pitacco_private.loyalty_customers where store_id=s and phone=k;
+ assert c is not null,'Primeira compra registra cliente automaticamente';
+ assert public.pitacco_loyalty_phone_wallet('loyalty-test',k)->>'linked'='true';
+ assert (public.pitacco_loyalty_phone_wallet('loyalty-test',k)->>'points')::integer=0;
+ r:=pg_temp.loyalty_buy(kb,'','',gen_random_uuid(),
+  public.pitacco_loyalty_phone_wallet('loyalty-test',k)->>'referral_code');
+ ref_order:=(r->>'order_id')::uuid;
+ select id into cb from pitacco_private.loyalty_customers where store_id=s and phone=kb;
+ assert cb is not null and (select referred_by=c from pitacco_private.loyalty_customers where id=cb);
  perform pg_temp.loyalty_finish(first_order,false);
  assert pitacco_private.loyalty_balance(s,c,'points')=0, 'Entrega sem pagamento não gera benefício';
  update public.orders set receipt=receipt||'{"payment_status":"paid"}'::jsonb where id=first_order;
@@ -80,7 +86,7 @@ begin
  assert pitacco_private.loyalty_balance(s,c,'cashback')=1950;
 
  before_cash:=pitacco_private.loyalty_balance(s,c,'cashback');
- r:=pg_temp.loyalty_buy(kb);ref_order:=(r->>'order_id')::uuid;perform pg_temp.loyalty_finish(ref_order);
+ perform pg_temp.loyalty_finish(ref_order);
  assert pitacco_private.loyalty_balance(s,c,'cashback')=before_cash+300;
  assert pitacco_private.loyalty_balance(s,cb,'cashback')=1200;
  r:=pg_temp.loyalty_buy(kb);ref_second:=(r->>'order_id')::uuid;perform pg_temp.loyalty_finish(ref_second);
@@ -93,8 +99,8 @@ begin
 
  insert into public.loyalty_coupons(store_id,code,title,kind,discount_type,discount_value,target_customer_id,max_uses,per_customer_limit)
  values(s,'PESSOAL20','Campanha pessoal','campaign','percent',20,c,1,1);
- assert jsonb_array_length(public.pitacco_loyalty_wallet('loyalty-test',k)->'offers')=1,'Oferta pessoal aparece só na carteira correta';
- assert jsonb_array_length(public.pitacco_loyalty_wallet('loyalty-test',kb)->'offers')=0;
+ assert jsonb_array_length(public.pitacco_loyalty_phone_wallet('loyalty-test',k)->'offers')=1,'Oferta pessoal aparece só na carteira correta';
+ assert jsonb_array_length(public.pitacco_loyalty_phone_wallet('loyalty-test',kb)->'offers')=0;
  begin
   perform pg_temp.loyalty_buy(kb,'','PESSOAL20');raise exception 'Outro cliente não pode usar cupom pessoal';
  exception when raise_exception then if sqlerrm<>'Cupom exclusivo para outro cliente' then raise;end if;end;
@@ -110,23 +116,22 @@ begin
  r:=pg_temp.loyalty_buy(k,'points');
  update public.orders set status='cancelled' where id=first_order;
  assert pitacco_private.loyalty_balance(s,c,'points')=-5;
- assert (public.pitacco_loyalty_wallet('loyalty-test',k)->>'points')::integer=0;
+ assert (public.pitacco_loyalty_phone_wallet('loyalty-test',k)->>'points')::integer=0;
  assert not has_function_privilege('anon','pitacco_private.loyalty_entry(uuid,uuid,uuid,text,integer,text,text,jsonb)','execute');
  assert not has_table_privilege('anon','pitacco_private.loyalty_customers','select');
  assert not has_table_privilege('authenticated','public.loyalty_ledger','insert');
  perform set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000091',true);
  assert jsonb_array_length(public.pitacco_loyalty_customers(s))=2;
- rr:=public.pitacco_loyalty_wallet('loyalty-test',k);
- k:=public.pitacco_loyalty_reset_key(s,c);
- assert public.pitacco_loyalty_wallet('loyalty-test',a->>'key') ? 'error','Chave antiga revogada';
- assert public.pitacco_loyalty_wallet('loyalty-test',k)->>'customer_id'=c::text;
+ rr:=public.pitacco_loyalty_phone_wallet('loyalty-test',k);
+ assert rr->>'linked'='true','Telefone localiza a mesma carteira';
+ assert not has_function_privilege('authenticated','public.pitacco_loyalty_reset_key(uuid,uuid)','execute');
  -- A caderneta participa apenas depois da quitação integral e da entrega.
  fiado_customer:=public.pitacco_fiado_save_customer(s,'Cliente A','21999990001',500,true,7,'automatic',true);
  fiado_key:=public.pitacco_fiado_rotate_code(s,fiado_customer);perform public.pitacco_fiado_toggle(s,true);
  update public.public_checkouts set created_at=now()-interval '1 hour';
  points_before:=pitacco_private.loyalty_balance(s,c,'points');
  r:=public.pitacco_loyalty_checkout('loyalty-test',gen_random_uuid(),'Cliente A','21999990001','',
-  '[{"product_id":"30000000-0000-0000-0000-000000000091","quantity":1}]','pickup','fiado','',k,'','',null,null,fiado_key);
+  '[{"product_id":"30000000-0000-0000-0000-000000000091","quantity":1}]','pickup','fiado','','','','',null,null,fiado_key);
  fiado_order:=(r->>'order_id')::uuid;assert fiado_order is not null;
  update public.orders set status='accepted',preparation_status='completed' where id=fiado_order;
  perform public.pitacco_fiado_receive(s,fiado_customer,30,'pix',gen_random_uuid(),'Parcial');
@@ -141,7 +146,7 @@ begin
  insert into public.loyalty_coupons(store_id,code,discount_type,discount_value) values(s,'FRETE5','fixed',5);
  update public.public_checkouts set created_at=now()-interval '1 hour';
  r:=public.pitacco_loyalty_checkout('loyalty-test',gen_random_uuid(),'Cliente A','21999990001','',
-  '[{"product_id":"30000000-0000-0000-0000-000000000091","quantity":1}]','pickup','pix_manual','',k,'FRETE5','',null,slot);
+  '[{"product_id":"30000000-0000-0000-0000-000000000091","quantity":1}]','pickup','pix_manual','','','FRETE5','',null,slot);
  assert (r->>'total')::numeric=95;
  assert (select scheduled_for=slot from public.orders where id=(r->>'order_id')::uuid);
  update public.stores set address='Rua Teste 100',city='Nova Iguaçu',state='RJ' where id=s;
@@ -152,13 +157,13 @@ begin
  select quote_id,s,req,'Rua Teste 100',1000,7.50,updated_at,now()+interval '5 minutes',-22.91,-43.46 from public.pitacco_delivery_pricing where store_id=s;
  update public.public_checkouts set created_at=now()-interval '1 hour';
  r:=public.pitacco_loyalty_checkout('loyalty-test',req,'Cliente A','21999990001','Rua Teste 100',
-  '[{"product_id":"30000000-0000-0000-0000-000000000091","quantity":1}]','delivery','pix_manual','',k,'FRETE5','',quote_id);
+  '[{"product_id":"30000000-0000-0000-0000-000000000091","quantity":1}]','delivery','pix_manual','','','FRETE5','',quote_id);
  assert (r->>'total')::numeric=102.50;
  assert (select receipt->'delivery_location'->>'latitude'='-22.91' from public.orders where id=(r->>'order_id')::uuid),'Cupom mantém o destino da cotação';
  assert (select (receipt->>'delivery_fee')::numeric=7.50 from public.orders where id=(r->>'order_id')::uuid);
  insert into public.loyalty_coupons(store_id,code,discount_type,discount_value,target_customer_id)
  values(s,'SECRET5','fixed',5,c);
- perform set_config('fideliza.fixture.key',k,true);
+ perform set_config('fideliza.fixture.phone',k,true);
  begin perform public.pitacco_loyalty_customers('20000000-0000-0000-0000-000000000092');raise exception 'Outra loja';
  exception when insufficient_privilege then null;end;
 end $test$;
@@ -166,7 +171,9 @@ set local role anon;
 select set_config('request.jwt.claim.sub','',true);
 do $anon$
 begin
- assert (public.pitacco_loyalty_wallet('loyalty-test',current_setting('fideliza.fixture.key'))->>'phone')='21999990001';
+ assert public.pitacco_loyalty_phone_wallet('loyalty-test',current_setting('fideliza.fixture.phone'))->>'linked'='true';
+ assert not (public.pitacco_loyalty_phone_wallet('loyalty-test',current_setting('fideliza.fixture.phone')) ? 'name'),
+  'Telefone não revela dados pessoais';
  begin
   perform public.checkout_public_order_coupon('loyalty-test',gen_random_uuid(),'Cliente A','21999990001','',
    '[{"product_id":"30000000-0000-0000-0000-000000000091","quantity":1}]','pickup','pix_manual','','SECRET5');

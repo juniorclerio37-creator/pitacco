@@ -6,7 +6,7 @@ if(process.env.DATABASE_URL){const {Client}=await import('pg');const pg=new Clie
 await db.exec(`
 create role anon; create role authenticated; create role service_role bypassrls;
 create schema auth; create schema storage;
-create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}',email_confirmed_at timestamptz,banned_until timestamptz);
+create table auth.users(id uuid primary key,email text,phone text,phone_confirmed_at timestamptz,raw_user_meta_data jsonb default '{}',email_confirmed_at timestamptz,banned_until timestamptz);
 create function auth.uid() returns uuid language sql stable as $authuid$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $authuid$;
 -- Supabase defines auth.jwt() in production. Stub only in isolated migration tests.
 create function auth.jwt() returns jsonb language sql stable as $authjwt$ select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb $authjwt$;

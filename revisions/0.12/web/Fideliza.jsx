@@ -7,7 +7,7 @@ const defaults={points_enabled:false,points_per_real:1,min_points_to_redeem:100,
 const dateValue=value=>value?new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo'}).format(new Date(value)):'';
 export default function Fideliza({client,storeId,manager}){
  const [section,setSection]=useState('Visão geral'),[program,setProgram]=useState(defaults),[coupons,setCoupons]=useState([]),[customers,setCustomers]=useState([]);
- const [ready,setReady]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[editing,setEditing]=useState(null),[recovered,setRecovered]=useState(null);
+ const [ready,setReady]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[editing,setEditing]=useState(null);
  const version=useRef(0),dialogRef=useRef(null),openerRef=useRef(null);
  const [savedProgram,setSavedProgram]=useState(defaults),[filter,setFilter]=useState('Todos'),[customerQuery,setCustomerQuery]=useState(''),[menuLink,setMenuLink]=useState(''),[used,setUsed]=useState(null),[statsError,setStatsError]=useState(''),[offerDirty,setOfferDirty]=useState(false);
  const refresh=useCallback(async()=>{
@@ -27,7 +27,7 @@ export default function Fideliza({client,storeId,manager}){
    setUsed(redemptions.error?null:redemptions.count);setStatsError(redemptions.error?'Não foi possível atualizar os benefícios utilizados.':'');setCoupons(c.data||[]);setCustomers(people.data||[]);
   }catch(e){if(request===version.current)setError(e.message||String(e))}finally{if(request===version.current)setLoading(false)}
  },[client,storeId,manager]);
- useEffect(()=>{setSection('Visão geral');setMenuLink('');setUsed(null);setReady(false);setProgram(defaults);setMessage('');setEditing(null);setRecovered(null);setCoupons([]);setCustomers([]);void refresh();return()=>{version.current++}},[refresh]);
+ useEffect(()=>{setSection('Visão geral');setMenuLink('');setUsed(null);setReady(false);setProgram(defaults);setMessage('');setEditing(null);setCoupons([]);setCustomers([]);void refresh();return()=>{version.current++}},[refresh]);
  useEffect(()=>{
   if(!storeId||!manager)return;let active=true;
   const timer=setInterval(async()=>{
@@ -84,19 +84,15 @@ export default function Fideliza({client,storeId,manager}){
    setMessage('Oferta excluída.');await refresh();
   }catch(e){setError(e.message||String(e))}finally{setLoading(false)}
  }
- async function resetKey(c){
-  if(loading||!window.confirm('Confirme a identidade de '+c.name+' antes de recuperar o acesso. A chave anterior deixará de funcionar.'))return;
-  setLoading(true);setError('');setRecovered(null);
-  try{const {data,error}=await client.rpc('pitacco_loyalty_reset_key',{p_store:storeId,p_customer:c.id});if(error)throw error;setRecovered({name:c.name,key:data})}catch(e){setError(e.message||String(e))}finally{setLoading(false)}
- }
+
  function openDrawer(name,opener,draft=savedProgram){
-  openerRef.current=opener;setProgram({...defaults,...draft});setEditing(null);setRecovered(null);setOfferDirty(false);setError('');setMessage('');setSection(name);
+  openerRef.current=opener;setProgram({...defaults,...draft});setEditing(null);setOfferDirty(false);setError('');setMessage('');setSection(name);
  }
  function closeDrawer(force=false,values=savedProgram){
   if(loading&&!force)return;
   const changed=Object.keys(defaults).some(key=>String(program[key])!==String(savedProgram[key]));
   if(!force&&(changed||offerDirty)&&!window.confirm('Descartar as alterações que ainda não foram salvas?'))return;
-  setProgram({...defaults,...values});setSection('Visão geral');setEditing(null);setRecovered(null);setOfferDirty(false);
+  setProgram({...defaults,...values});setSection('Visão geral');setEditing(null);setOfferDirty(false);
  }
  useEffect(()=>{
   const dialog=dialogRef.current;if(!dialog)return;
@@ -138,7 +134,7 @@ export default function Fideliza({client,storeId,manager}){
   'Campanhas':{icon:Megaphone,tone:'blue',description:'Crie e gerencie somente campanhas promocionais.'},
   'Cashback':{icon:RefreshCw,tone:'green',description:'Escolha quanto retorna ao cliente em crédito.'},
   'Indique e ganhe':{icon:UserPlus,tone:'orange',description:'Defina os créditos para indicações de novos clientes.'},
-  'Clientes e carteiras':{icon:Users,tone:'blue',description:'Acompanhe clientes, saldos e acesso às carteiras.'}
+  'Clientes e carteiras':{icon:Users,tone:'blue',description:'Cada carteira pertence ao telefone do cliente. O acesso ao saldo é confirmado por SMS.'}
  }[section]||{icon:Gift,tone:'orange',description:'Configure os benefícios desta modalidade.'};
  const DrawerIcon=drawerMeta.icon;
  const shownCustomers=customers.filter(c=>(c.name+' '+c.phone).toLocaleLowerCase('pt-BR').includes(customerQuery.toLocaleLowerCase('pt-BR')));
@@ -173,8 +169,8 @@ export default function Fideliza({client,storeId,manager}){
    {number('minimum_order_cents','Compra mínima para acumular (R$)',0,1000000)}
    <p className="hint">Um pedido pago e entregue acumula uma participação. O resgate desconta a quantidade configurada; o saldo restante é preservado.</p><button disabled={loading||!ready}>Salvar regras de pontos</button></form>
    </>}
-  {section==='Clientes e carteiras'&&<><label className="fl-customer-search"><Search size={18}/><input aria-label="Buscar cliente" placeholder="Buscar por nome ou telefone" value={customerQuery} onChange={e=>setCustomerQuery(e.target.value)}/></label><div className="panel fl-customers-panel"><div className="fl-subsection-title"><Users size={21}/><div><h3>Clientes e carteiras</h3><p>Consulte os benefícios desta loja.</p></div></div>{!customers.length&&<p>Os clientes aparecerão após aderirem ao Fideliza+ pelo cardápio.</p>}{shownCustomers.map(c=><div className="line" key={c.id}><b>{c.name}</b><span>{c.phone} · {c.points} pontos · {c.orders} pedidos · Créditos {money(c.cashback_cents)}</span><button className="secondary" disabled={loading||!ready} onClick={()=>resetKey(c)}>Recuperar acesso</button></div>)}
-   {recovered&&<div role="status"><p>Nova chave de {recovered.name}. Entregue somente ao cliente após conferir a identidade.</p><input aria-label="Nova chave pessoal" readOnly value={recovered.key} onFocus={e=>e.target.select()}/><button type="button" onClick={()=>setRecovered(null)}>Ocultar chave</button></div>}</div></>}
+  {section==='Clientes e carteiras'&&<><label className="fl-customer-search"><Search size={18}/><input aria-label="Buscar cliente" placeholder="Buscar por nome ou telefone" value={customerQuery} onChange={e=>setCustomerQuery(e.target.value)}/></label><div className="panel fl-customers-panel"><div className="fl-subsection-title"><Users size={21}/><div><h3>Clientes e carteiras</h3><p>Consulte os benefícios desta loja.</p></div></div>{!customers.length&&<p>Os clientes aparecerão após aderirem ao Fideliza+ pelo cardápio.</p>}{shownCustomers.map(c=><div className="line" key={c.id}><b>{c.name}</b><span>{c.phone} · {c.points} pontos · {c.orders} pedidos · Créditos {money(c.cashback_cents)}</span><small className="fl-phone-identity">Vinculado ao telefone · acesso por SMS</small></div>)}
+   </div></>}
   {['Cupons','Campanhas'].includes(section)&&<>
    <form className="panel fl-setting-form fl-activation-form" onSubmit={saveProgram}><div className="fl-subsection-title">{section==='Cupons'?<Ticket size={21}/>:<Megaphone size={21}/>}<div><h3>Disponibilidade no cardápio</h3><p>Ative somente esta modalidade para os clientes.</p></div></div>{toggle(section==='Campanhas'?'campaigns_enabled':'coupons_enabled','Ativar '+section.toLowerCase()+' no cardápio')}<button disabled={loading||!ready}>Salvar ativação</button></form>
    <form className="panel fl-setting-form fl-offer-form" key={editing?.id||section} onChangeCapture={()=>setOfferDirty(true)} onSubmit={saveCoupon}><div className="fl-subsection-title">{section==='Cupons'?<Ticket size={21}/>:<Megaphone size={21}/>}<div><h3>{editing?'Editar oferta':section==='Campanhas'?'Criar campanha':'Criar cupom'}</h3><p>Defina desconto, validade e limites do benefício.</p></div></div>
