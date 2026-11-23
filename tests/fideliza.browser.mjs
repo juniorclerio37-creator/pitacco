@@ -66,7 +66,7 @@ try{
 
   assert.equal(await page.locator('#v2LoyaltyPage').isVisible(),true,'Fideliza+ usa tela exclusiva V2');
   await page.locator('#v2LoyaltyPhone').fill('21999990001');
-  await page.locator('#loyaltyStatus').filter({hasText:'Nenhuma compra vinculada'}).waitFor();
+  await page.locator('#loyaltyStatus').filter({hasText:'Nenhuma compra vinculada'}).waitFor({state:'attached'});
   assert.equal(await page.locator('#loyaltyReward option').count(),1,'No locked rewards are listed');
   assert.equal(await page.locator('#loyaltyRewardBlock').isVisible(),false);
   assert.equal(await page.locator('#loyaltyReferral').count(),0,'No referral code field in checkout');
