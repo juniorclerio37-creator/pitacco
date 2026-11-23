@@ -80,7 +80,7 @@ export default function StorefrontLivePreview({client,store,design,step,viewport
   {error&&<p className="design-preview-message" role="alert">{error}</p>}
   <iframe ref={iframe} title="Prévia fiel do cardápio digital" src={src} sandbox="allow-scripts allow-same-origin"
     loading="eager" referrerPolicy="strict-origin-when-cross-origin"
-    onLoad={()=>setReady(false)} className="design-preview-iframe" />
+    className="design-preview-iframe" />
   <a className="design-preview-open" target="_blank" rel="noreferrer" href={origin+'/'+encodeURIComponent(slug)}>Abrir o cardápio publicado</a>
   <small className="design-preview-note">Prévia isolada do mesmo cardápio que o cliente verá. Os rascunhos não são publicados e pedidos não podem ser enviados.</small>
  </>;
