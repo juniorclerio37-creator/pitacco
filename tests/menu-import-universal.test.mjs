@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {parsePublicMenu} from '../supabase/functions/menu-import/parser.mjs';
+import {ifoodMerchantFromUrl} from '../supabase/functions/menu-import/source-link.mjs';
 
 test('leitura genérica de dados estruturados sem plataforma específica',()=>{
  const markup='<html><script type="application/ld+json">'+JSON.stringify({
@@ -78,4 +79,29 @@ test('análise auxiliar consulta somente a ficha pública da origem, sem rotas p
  assert.match(edge,/\/api\/stores\/by-slug\//);
  assert.doesNotMatch(edge,/\/api\/stores\/item\b|\/api\/stores\/group\b/);
  assert.match(edge,/sourceStatus:"products_not_public"/);
+});
+
+test('identificar com segurança a loja iFood no link compartilhado',()=>{
+ const url=new URL('https://www.ifood.com.br/delivery/nova-iguacu-rj/acai-do-linho-miguel-couto/ba78be72-a327-40ed-a8f4-dc3b7b007e5b?UTM_Medium=share');
+ assert.equal(ifoodMerchantFromUrl(url),'ba78be72-a327-40ed-a8f4-dc3b7b007e5b');
+ assert.equal(ifoodMerchantFromUrl(new URL('https://www.ifood.com.br/delivery/nova-iguacu-rj/acai-do-linho-miguel-couto/ba78be72-a327-40ed-a8f4-dc3b7b007e5b/')),'ba78be72-a327-40ed-a8f4-dc3b7b007e5b');
+ assert.equal(ifoodMerchantFromUrl(new URL('https://evil-ifood.com.br/delivery/x/y/ba78be72-a327-40ed-a8f4-dc3b7b007e5b')),null);
+ assert.equal(ifoodMerchantFromUrl(new URL('https://www.ifood.com.br/dashboard/admin')),null);
+});
+test('iFood só consulta vínculos da própria loja; não promete importação sem autorização',()=>{
+ const code=readFileSync(new URL('../supabase/functions/menu-import/index.ts',import.meta.url),'utf8');
+ assert.match(code,/pitacco_ifood_connections/);
+ assert.match(code,/p_store:storeId/);
+ assert.match(code,/matching\.enabled!==true/);
+ assert.match(code,/sourceStatus="ifood_not_connected"/);
+ assert.match(code,/ifood_catalog_integration_required/);
+ assert.match(code,/if\(ifoodMerchant\)/);
+ assert.doesNotMatch(code,/stores\/item\?store_id=/);
+});
+test('importador permite consultar integrações da loja após analisar link do iFood',()=>{
+ const ui=readFileSync(new URL('../revisions/0.12/web/UniversalMenuImporter.jsx',import.meta.url),'utf8');
+ const mount=readFileSync(new URL('../revisions/0.12/mount_universal_menu_import.py',import.meta.url),'utf8');
+ assert.match(ui,/onOpenIntegrations/);
+ assert.match(ui,/Consultar integração iFood desta loja/);
+ assert.match(mount,/onOpenIntegrations=\{\(\)=>setTab\('Integrações'\)\}/);
 });
