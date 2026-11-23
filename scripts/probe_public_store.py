@@ -37,7 +37,7 @@ try:
    js=fetch(url,5_000_000)
    found=sorted(set(re.findall(r'[/]api[/][a-zA-Z0-9_/$+?{}-]{5,140}',js)))
    print('JS_API_PATHS',url.split('/')[-1],len(js),found[:70])
-   endpoints=sorted(set(re.findall(r'\\.get\\([\\\"\\']([a-zA-Z][a-zA-Z0-9_:/{}.?=+\\-]{3,110})[\\\"\\']',js)))
+   endpoints=sorted(set(re.findall(r'\\.get\\("([^"\\n]+)"',js)))
    selected=[x for x in endpoints if re.search('item|group|product|menu|cardapio|catalog|store',x,re.I)]
    if selected:print('JS_ENDPOINTS',url.split('/')[-1],selected[:150])
    for needle in ['stores/by-slug','groups/','group-items','/items','menu-items','store-items','storeItem','/menu','getItems']:
