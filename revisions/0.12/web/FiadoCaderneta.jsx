@@ -4,7 +4,7 @@ import './fiado.css';
 const brl=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const fmt=n=>brl.format(Number(n||0));
 const day=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
-const initial={name:'',phone:'',limit:'100',enabled:true,due_days:7,approval_mode:'manual',block_overdue:true};
+const initial={name:'',phone:'',limit:'100',enabled:true,due_days:7,approval_mode:'manual',block_overdue:true,birth_date:''};
 
 export default function FiadoCaderneta({client,storeId,onNavigate}){
  const [overview,setOverview]=useState(null),[products,setProducts]=useState([]);
@@ -72,15 +72,16 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
   const target=customers.find(x=>x.id===id);
   if(target)setForm({name:target.name,phone:target.phone,limit:String(target.limit),
    enabled:target.enabled,due_days:target.due_days,
-   approval_mode:target.approval_mode,block_overdue:target.block_overdue});
+   approval_mode:target.approval_mode,block_overdue:target.block_overdue,birth_date:''});
  }
  function newCustomer(){setSelected('');setForm(initial);setTab('clientes')}
  function saveCustomer(e){e.preventDefault();void run(async()=>{
-  const id=await rpc('pitacco_fiado_save_customer',{
+  const id=await rpc('pitacco_fiado_save_customer_identity',{
    p_store:storeId,p_name:form.name,p_phone:form.phone,p_limit:Number(form.limit),
    p_enabled:form.enabled,p_due_days:Number(form.due_days),
-   p_mode:form.approval_mode,p_block_overdue:form.block_overdue});
-  setSelected(id);reloadData('Cliente salvo. A loja autoriza cada compra, ou pode liberar aprovação automática para este cliente.');
+   p_mode:form.approval_mode,p_block_overdue:form.block_overdue,
+   p_birth_date:form.birth_date||null});
+  setSelected(id);setForm(previous=>({...previous,birth_date:''}));reloadData('Cliente salvo. A loja autoriza cada compra, ou pode liberar aprovação automática para este cliente.');
  })}
  function toggle(e){void run(async()=>{
   const enabled=e.target.checked;
@@ -151,7 +152,7 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
     {customers.map(c=><button type="button" className={'fiado-customer'+(selected===c.id?' selected':'')}
       key={c.id} onClick={()=>selectCustomer(c.id)}>
       <strong>{c.name}</strong><span>{c.phone}</span>
-      <span>{c.enabled?'Autorizado':'Suspenso'} · Em uso {fmt(c.used)} · Disponível {fmt(c.available)}</span>
+      <span>{c.enabled?'Autorizado':'Suspenso'} · {c.birth_date_set?'Nascimento verificado':'Nascimento pendente'} · Em uso {fmt(c.used)} · Disponível {fmt(c.available)}</span>
       {c.overdue&&<em>Pagamento vencido</em>}
      </button>)}
    </section>
@@ -160,6 +161,10 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
     <form className="fiado-form" onSubmit={saveCustomer}>
      <label>Nome<input required minLength={2} value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label>
      <label>Telefone com DDD<input required inputMode="tel" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}/></label>
+     <label>Data de nascimento<input type="date" required={!selected||!customer?.birth_date_set}
+       value={form.birth_date} onChange={e=>setForm({...form,birth_date:e.target.value})}
+       min="1900-01-01" max={new Date().toISOString().slice(0,10)} />
+       <small>{selected&&customer?.birth_date_set?'Já cadastrada. Deixe em branco para manter; preencha somente para atualizar.':'Obrigatória para liberar compras fiadas. Não ficará visível após salvar.'}</small></label>
      <label>Limite individual (R$)<input required type="number" min="0" max="100000" step="0.01" value={form.limit} onChange={e=>setForm({...form,limit:e.target.value})}/></label>
      <label>Prazo de pagamento (dias)<input required type="number" min="1" max="365" value={form.due_days} onChange={e=>setForm({...form,due_days:e.target.value})}/></label>
      <label>Aprovação<select value={form.approval_mode} onChange={e=>setForm({...form,approval_mode:e.target.value})}>
@@ -169,8 +174,8 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
      <button disabled={busy}>Salvar cadastro e regras</button>
     </form>
     <div className="fiado-customer-actions">
-     <p><strong>Como funciona:</strong> o cliente informa o telefone no cardápio e escolhe Fiado. No modo manual, a loja confirma ou recusa o pedido antes do preparo. No automático, a compra é autorizada imediatamente somente para este cliente, respeitando o limite e os bloqueios definidos aqui.</p>
-     {form.approval_mode==='automatic'&&<p>Ao liberar aprovação automática, qualquer pedido que informe este telefone poderá usar o crédito dentro das regras. Ative apenas para clientes em que você confia.</p>}
+     <p><strong>Como funciona:</strong> o cliente confirma o telefone e a data de nascimento no cardápio e escolhe Fiado. No modo manual, a loja confirma ou recusa o pedido antes do preparo. No automático, a compra é autorizada imediatamente somente para este cliente, respeitando o limite e os bloqueios definidos aqui.</p>
+     {form.approval_mode==='automatic'&&<p>Ao liberar aprovação automática, qualquer pessoa que informe o telefone e a data de nascimento corretos poderá usar o crédito dentro das regras. Ative apenas para clientes em que você confia.</p>}
     </div>
    </section>
   </div>}

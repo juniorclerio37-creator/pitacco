@@ -212,10 +212,13 @@ try {
     if(width===375){
       await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
       await page.locator('#payment').selectOption('fiado');
-      assert.equal(await page.locator('#fiadoAuth').isVisible(),true,'Aviso da autorização da loja ao escolher Fiado');
+      assert.equal(await page.locator('#fiadoAuth').isVisible(),true,'Nascimento solicitado somente ao selecionar Fiado');
       assert.equal(await page.locator('#fiadoCode').count(),0,'Nenhum código particular exigido');
+      assert.equal(await page.locator('#fiadoBirthDate').count(),1,'Campo de nascimento disponível');
+      assert.equal(await page.locator('#fiadoBirthDate').getAttribute('required'),'','Nascimento é obrigatório no Fiado');
       await page.locator('#payment').selectOption('pix_manual');
       assert.equal(await page.locator('#fiadoAuth').isVisible(),false);
+      assert.equal(await page.locator('#fiadoBirthDate').getAttribute('required'),null,'Outros pagamentos não exigem nascimento');
       const disableFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
       await page.locator('#phone').fill('21999999998');
       await disableFiado;
