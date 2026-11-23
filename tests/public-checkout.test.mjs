@@ -62,3 +62,17 @@ test('menu uses saved category icons and custom pizza SVG in every template',()=
  assert.match(html,/@media\(prefers-reduced-motion:reduce\)/);
  assert.match(html,/const tab=button\('','chip'\)/);
 });
+
+test('V2 principal mostra o banner completo e a recuperação silenciosa do carrinho',()=>{
+ assert.match(html,/id="v2BrandBanner"/);
+ assert.match(html,/id="v2BrandBannerImage"/);
+ assert.match(html,/\.v2-brand-banner>img\{[\s\S]*?object-fit:contain/);
+ assert.match(html,/showV2BrandBanner\(shop\.banner_url\)/);
+ assert.match(html,/showV2BrandBanner\(visibleCover\)/);
+ assert.match(html,/cartRestoreWarning/);
+ assert.match(html,/if\(cartRestoreWarning\)root\.append/);
+ assert.doesNotMatch(html,/Sua sacola foi recuperada\. Confira os preços e calcule o frete novamente\./);
+ // A sacola continua persistente sem guardar dados de pagamento ou endereço.
+ assert.match(html,/localStorage\.setItem\(cartStorageKey/);
+ assert.match(html,/const restored=reconcileCartDraft\(draft\.items,menu\.products\)/);
+});
