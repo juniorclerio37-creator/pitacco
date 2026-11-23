@@ -22,7 +22,7 @@ select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000081'
 do $test$
 declare
  store uuid:='20000000-0000-0000-0000-000000000081';
- c uuid; secret text; v_order_id uuid; second_order uuid;
+ c uuid; v_order_id uuid; second_order uuid;
  request uuid:='60000000-0000-0000-0000-000000000081';
  payload jsonb:='[{"product_id":"30000000-0000-0000-0000-000000000081","quantity":1,"options":[]}]'::jsonb;
  created jsonb; replay jsonb; payment_result jsonb; payment_request uuid:='70000000-0000-0000-0000-000000000081';
@@ -35,14 +35,14 @@ begin
    ='{"state":"no_collect","method":"Sem cobrança na entrega","amount":null,"change_for":null,"change_due":null,"received_by_courier":false,"received_at":null}'::jsonb,
    'Entregador recebe somente instrução de não cobrar, sem situação financeira';
  c:=public.pitacco_fiado_save_customer(store,'Cliente Fiado','21988887777',25,true,7,'automatic',true);
- secret:=public.pitacco_fiado_rotate_code(store,c);
- assert length(secret)=10 and secret ~ '^[0-9]{10}$';
- assert (public.pitacco_fiado_public_eligibility('fiado-fixture','21988887777',secret)->>'eligible')::boolean=false,
-   'Fiado desativado deve permanecer oculto';
+ assert not has_function_privilege('authenticated','public.pitacco_fiado_rotate_code(uuid,uuid)','execute'),
+  'A loja não deve gerar códigos para clientes';
+ assert not has_function_privilege('anon','public.pitacco_fiado_public_eligibility(text,text,text)','execute'),
+  'A consulta pública antiga por código foi desativada';
  assert (public.pitacco_fiado_phone_eligibility('fiado-fixture','21988887777')->>'eligible')::boolean=false,
    'Opção Fiado só aparece quando loja e cliente estiverem ativos';
  perform public.pitacco_fiado_toggle(store,true);
- assert (public.pitacco_fiado_public_eligibility('fiado-fixture','21988887777',secret)->>'eligible')::boolean;
+
  assert (public.pitacco_fiado_phone_eligibility('fiado-fixture','21988887777')->>'eligible')::boolean,
    'Telefone autorizado recebe Fiado automaticamente';
  assert public.pitacco_fiado_checkout_status('fiado-fixture','21988887777',20) @> '{"visible":true,"enabled":true}'::jsonb,
@@ -53,8 +53,8 @@ begin
    and not (public.pitacco_fiado_checkout_status('fiado-fixture','21988887777',20) ? 'credit_limit')
    and not (public.pitacco_fiado_checkout_status('fiado-fixture','21988887777',20) ? 'used'),
    'RPC pública não envia limite, saldo ou valor consumido';
- assert not (public.pitacco_fiado_public_eligibility('fiado-fixture','21988887777',secret) ? 'available'),
-   'RPC legada não devolve mais limite disponível';
+ assert not (public.pitacco_fiado_checkout_status('fiado-fixture','21988887777',20) ? 'available'),
+   'Consulta não revela limite disponível';
  assert public.pitacco_fiado_checkout_status('fiado-fixture','21911112222',20) @> '{"visible":false,"enabled":false}'::jsonb,
    'Não autorizado não vê a opção';
  assert (public.pitacco_fiado_phone_eligibility('fiado-fixture','21911112222')->>'eligible')::boolean=false,
@@ -62,9 +62,10 @@ begin
  assert not public.pitacco_fiado_phone_eligibility('fiado-fixture','21988887777') ? 'phone',
    'Consulta não expõe telefone, dívidas nem limites';
  created:=public.pitacco_checkout_fiado('fiado-fixture',request,'Cliente Fiado','21988887777','',
-    payload,'pickup','',secret);
+    payload,'pickup','',null);
  v_order_id:=(created->>'order_id')::uuid;
  assert v_order_id is not null;
+ assert created->>'fiado_approval'='approved', 'Modo automático autoriza Fiado sem código';
  assert (select used=20 from public.pitacco_fiado_customers where id=c), 'Crédito reservado na criação';
  assert (public.pitacco_fiado_phone_eligibility('fiado-fixture','21988887777')->>'eligible')::boolean,
    'A elegibilidade por telefone continua positiva se ainda existe algum crédito';
@@ -73,13 +74,13 @@ begin
  assert (select state='reserved' from public.pitacco_fiado_charges where order_id=v_order_id);
  -- Reenviar mesma requisição quando saldo disponível é menor que o pedido não duplica dívida.
  replay:=public.pitacco_checkout_fiado('fiado-fixture',request,'Cliente Fiado','21988887777','',
-    payload,'pickup','',secret);
+    payload,'pickup','',null);
  assert replay->>'order_id'=created->>'order_id';
  assert (select count(*)=1 from public.pitacco_fiado_charges where customer_id=c);
  assert (select used=20 from public.pitacco_fiado_customers where id=c);
  begin
   perform public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
-    payload,'pickup','',secret);
+    payload,'pickup','',null);
   raise exception 'O limite deveria impedir a segunda compra';
  exception when others then
   if sqlerrm <> 'Limite do fiado insuficiente para este pedido' then raise;end if;
@@ -111,7 +112,7 @@ begin
    where metric='recebimentos_fiado'), 'Retentativa não duplica recebimentos no relatório';
  -- Um novo pedido cancelado precisa devolver o limite reservado.
  created:=public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
-    payload,'pickup','',secret);
+    payload,'pickup','',null);
  second_order:=(created->>'order_id')::uuid;
  assert (select amount=20 from public.pitacco_period_financial_report(store,
    (now() at time zone 'America/Sao_Paulo')::date,(now() at time zone 'America/Sao_Paulo')::date)
@@ -125,13 +126,18 @@ begin
  -- Autorização manual não permite aceitar nem entregar antes da decisão da loja.
  perform public.pitacco_fiado_save_customer(store,'Cliente Fiado','21988887777',25,true,7,'manual',true);
  created:=public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
-    payload,'pickup','',secret);
+    payload,'pickup','',null);
  second_order:=(created->>'order_id')::uuid;
+ assert created->>'fiado_approval'='pending','Modo manual aguarda a loja';
+ assert (select approval_required and approved_at is null from public.pitacco_fiado_charges where order_id=second_order),
+  'Crédito reservado mas ainda não autorizado';
  begin
   update public.orders set status='accepted' where id=second_order;
   raise exception 'Deveria aguardar aprovação';
  exception when invalid_parameter_value then null;end;
  assert public.pitacco_fiado_approve(store,second_order,true);
+ assert (select receipt->>'fiado_approval'='approved' from public.orders where id=second_order),
+  'Aprovação no gestor aparece no pedido';
  update public.orders set status='accepted' where id=second_order;
  assert (select approved_at is not null from public.pitacco_fiado_charges where order_id=second_order);
  update public.orders set status='cancelled' where id=second_order;
