@@ -589,7 +589,8 @@ body:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=ur
 body:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) .hero{background:var(--hero,#24352b)}
 body:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) .hero::after{background:linear-gradient(90deg,var(--hero,#24352b),transparent)}
 body:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) :is(.product-open,.v2-store-nav,.dialog-footer,.total,.options){background:var(--paper,#fff)}
-body:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) :is(.primary,.dock button,.chip[aria-pressed=true]){background:var(--brand,#217c5a);color:var(--on-brand,#fff)}
+body:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) :is(.primary,.dock button,.chip[aria-pressed=true],.product-plus,.v2-nav-button[aria-current=page]){background:var(--brand,#217c5a);color:var(--on-brand,#fff)}
+body:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) .product-text>strong:not(.product-name){color:var(--brand,#217c5a)}
 @media(max-width:900px){body.pitacco-designed[data-menu-skin=urbano] .category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:590px){
  body[data-menu-skin=essencial] .v2-home,body[data-menu-skin=editorial] .v2-home,body[data-menu-skin=urbano] .v2-home{grid-template-columns:1fr}
