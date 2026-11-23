@@ -28,6 +28,13 @@ begin
  select count(*) into v_total_templates from public.pitacco_complement_templates where store_id=v_store;
  select count(*) into v_linked from public.product_option_groups where store_id=v_store and library_template_id is not null;
 
+ -- Ambientes de CI, homologação e novas instalações não possuem os dados
+ -- desta loja de produção. Não criar modelos fictícios nem falhar no bootstrap.
+ if v_total_groups=0 and v_total_options=0 and v_total_templates=0 and v_linked=0
+    and not exists(select 1 from public.stores where id=v_store) then
+  return;
+ end if;
+
  if exists(select 1 from pitacco_private.menu_centralization_backups where store_id=v_store) then
   if v_total_groups=142 and v_total_options=1216 and v_total_templates=18 and v_linked=142
     and (select count(*) from public.product_options where store_id=v_store and library_option_id is not null)=1216
