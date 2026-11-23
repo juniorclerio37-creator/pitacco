@@ -72,7 +72,7 @@ test("fiado uses merchant approval without PIN and validates credit on the serve
  assert.match(shop,/pitacco_checkout_fiado/);
  assert.match(shop,/if\(data\?\.error\)\{/);
  assert.match(shop,/Recusa antes da criação[\s\S]{0,190}pendingRequest=null/);
- assert.doesNotMatch(shop,/fiadoCode|pendingRequest\.p_code|p_fiado_code/);
+ assert.doesNotMatch(shop,/fiadoCode|Código particular para confirmar/);
  assert.match(shop,/Confirme sua data de nascimento/);
  assert.match(shop,/pitacco_fiado_verify_birthdate/);
  assert.match(shop,/pendingRequest\.p_code=identity\.token/);
