@@ -92,9 +92,12 @@ try{
   const principal=template==='pitacco-v2';
   if(principal){
     await page.locator('#v2CheckoutNext').click();
+    await page.locator('#cartDialog[data-v2-stage="customer"]').waitFor();
     await page.locator('#customer').fill('Cliente');
     await page.locator('#v2CheckoutNext').click();
+    await page.locator('#cartDialog[data-v2-stage="address"]').waitFor();
     await page.locator('#v2CheckoutNext').click();
+    await page.locator('#cartDialog[data-v2-stage="payment"]').waitFor();
     await page.locator('#v2PaymentCards [data-kind="pix_manual"]').click();
     assert.equal(await page.locator('#payment').inputValue(),'pix_manual');
   }else await page.locator('#customer').fill('Cliente');
@@ -102,13 +105,21 @@ try{
   else await page.getByRole('button',{name:'Usar SEMANA5',exact:true}).click();
   await page.locator('#loyaltyApply').click();await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).waitFor();
   if(principal){
-    for(let i=0;i<4;i++)await page.locator('#v2CheckoutBack').click();
+    for(const stage of ['address','customer','identify']){
+     await page.locator('#v2CheckoutBack').click();
+     await page.locator('#cartDialog[data-v2-stage="'+stage+'"]').waitFor();
+    }
+    await page.locator('#v2CheckoutBack').click();
+    await page.locator('#cartReview').waitFor({state:'visible'});
   }else await page.locator('#backToCart').click();
   await page.locator('#cart input').fill('2');await page.locator('#cart input').dispatchEvent('change');
   assert.equal(await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).count(),0,'cart edit invalidates quoted discount');
   await page.locator('#continueCheckout').click();
   if(principal){
-    for(let i=0;i<3;i++)await page.locator('#v2CheckoutNext').click();
+    for(const stage of ['customer','address','payment']){
+     await page.locator('#v2CheckoutNext').click();
+     await page.locator('#cartDialog[data-v2-stage="'+stage+'"]').waitFor();
+    }
     await page.locator('#v2PaymentCards [data-kind="pix_manual"]').click();
   }
   await page.locator('#loyaltyApply').click();
