@@ -1728,7 +1728,7 @@ async function v2LoadTopSellers(){
 const pitaccoCategoryIconKeys=new Set(["flame","star","discount","crown","trophy","tag","megaphone","acai","ice-cream-cone","ice-cream-cup","dessert","combo-burger","combo-pizza","combo-acai","combo-ice-cream","combo-meal","combo-mixed","pizza-slice","pizza-whole","pizza-sweet","meal-box","plate","meal","buffet","pf","healthy","homemade","burger","snack","sandwich","hot-dog","soda","juice","energy","beer","water","drink","fries","appetizer","rings","board","plus","cheese","sauce","spice","calendar","more","pizza"]);
 const pitaccoCategoryEmojis={
  star:'⭐',discount:'💯',crown:'👑',trophy:'🏆',tag:'🏷️',megaphone:'📣',
- acai:'🥣','ice-cream-cone':'🍦','ice-cream-cup':'🍨',dessert:'🍧',
+ 'ice-cream-cone':'🍦','ice-cream-cup':'🍨',dessert:'🍧',
  'pizza-whole':'🍕','pizza-sweet':'🍫','meal-box':'🍱',plate:'🍽️',meal:'🍛',
  buffet:'🍲',pf:'🥘',healthy:'🥗',homemade:'🍲',burger:'🍔',snack:'🥪',
  sandwich:'🥪','hot-dog':'🌭',soda:'🥤',juice:'🧃',energy:'⚡',beer:'🍺',
@@ -1736,7 +1736,7 @@ const pitaccoCategoryEmojis={
  plus:'➕',cheese:'🧀',sauce:'🥫',spice:'🧂',calendar:'🗓️',more:'⋯'
 };
 const pitaccoComboParts={
- 'combo-burger':['🍔','🥤'],'combo-pizza':['pizza','🥤'],'combo-acai':['🥣','🥤'],
+ 'combo-burger':['🍔','🥤'],'combo-pizza':['pizza','🥤'],'combo-acai':['acai','🥤'],
  'combo-ice-cream':['🍦','🍨'],'combo-meal':['🍱','🥤'],'combo-mixed':['🎁','⭐']
 };
 const pitaccoSvgNS='http://www.w3.org/2000/svg';
@@ -1755,6 +1755,27 @@ function pitaccoPizzaSlice(){
  for(const [cx,cy,r] of [[23,29,5.2],[40,30,4.8],[31,43,4.5]])
   svg.append(pitaccoSvgNode('circle',{cx,cy,r,fill:'#D73F27',stroke:'#B72F23','stroke-width':'1'}));
  svg.append(pitaccoSvgNode('path',{d:'M30 24 q4 -4 7 0 m-15 13 q2 -3 5 0',fill:'none',stroke:'#51A046','stroke-width':'2.3','stroke-linecap':'round'}));
+ return svg;
+}
+// Mesmo ícone vetorial de açaí cheio do editor do lojista.
+function pitaccoAcaiCup(){
+ const svg=pitaccoSvgNode('svg',{viewBox:'0 0 64 64','aria-hidden':'true',focusable:'false'});
+ const add=(tag,attrs)=>svg.append(pitaccoSvgNode(tag,attrs));
+ add('path',{d:'M17 27 L21 59 Q32 63 43 59 L47 27Z',fill:'#7A248C',stroke:'#431252','stroke-width':2.4,'stroke-linejoin':'round'});
+ add('path',{d:'M22 33 L26 56 Q34 59 39 56 L43 33Z',fill:'#A847B0'});
+ add('path',{d:'M22 35 L25 52',fill:'none',stroke:'#CF81D0','stroke-width':3.5,'stroke-linecap':'round'});
+ add('ellipse',{cx:32,cy:28,rx:21,ry:7,fill:'#4B155D',stroke:'#3A104C','stroke-width':2});
+ add('path',{d:'M13 28 Q15 18 25 20 Q25 11 34 13 Q42 13 42 20 Q53 19 51 28 Q45 34 32 32 Q18 34 13 28Z',fill:'#732184',stroke:'#461057','stroke-width':1.8});
+ add('path',{d:'M21 23 Q26 18 33 21 Q42 22 43 25',fill:'none',stroke:'#BB6CC8','stroke-width':3,'stroke-linecap':'round'});
+ add('path',{d:'M31 13 Q29 6 37 6 Q43 6 44 12',fill:'#942E9E',stroke:'#51145F','stroke-width':1.5});
+ add('path',{d:'M37 12 Q43 5 50 9 Q45 17 37 12Z',fill:'#4CAC54'});
+ add('path',{d:'M38 14 Q42 12 47 11',fill:'none',stroke:'#287B37','stroke-width':1.3});
+ add('path',{d:'M12 17 Q13 9 21 11 Q27 12 26 20 Q22 27 16 23Z',fill:'#F34B62',stroke:'#C52B48','stroke-width':1.8});
+ add('path',{d:'M13 15 Q18 10 23 16',fill:'none',stroke:'#FF9AAA','stroke-width':2.3,'stroke-linecap':'round'});
+ add('path',{d:'M16 11 L19 7 L22 11',fill:'#40984E'});
+ for(const [cx,cy,rx,ry] of [[27,16,2.6,1.8],[31,23,2.7,2],[38,22,2.4,1.8],[46,22,2.4,1.7],[25,28,2,1.5]])
+  add('ellipse',{cx,cy,rx,ry,fill:'#F8CD66'});
+ add('path',{d:'M15 32 Q32 37 49 32',fill:'none',stroke:'#6A1C7C','stroke-width':1.5});
  return svg;
 }
 function pitaccoFire(){
@@ -1805,11 +1826,12 @@ function pitaccoCategoryIconNode(key,animated=true){
  root.setAttribute('aria-hidden','true');
  if(safe==='flame')root.append(pitaccoFire());
  else if(safe==='pizza-slice')root.append(pitaccoPizzaSlice());
+ else if(safe==='acai')root.append(pitaccoAcaiCup());
  else if(pitaccoComboParts[safe]){
   const container=el('span',undefined,'pitacco-combo-icons');
   for(const part of pitaccoComboParts[safe]){
    const node=el('span');
-   if(part==='pizza')node.append(pitaccoPizzaSlice());else node.textContent=part;
+   if(part==='pizza')node.append(pitaccoPizzaSlice());else if(part==='acai')node.append(pitaccoAcaiCup());else node.textContent=part;
    container.append(node);
   }
   root.append(container);
