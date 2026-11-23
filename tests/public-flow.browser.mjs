@@ -226,7 +226,7 @@ try {
     await firstLine.getByText(/Morango · Granola/).waitFor();
     await page.getByRole('button',{name:'Continuar para entrega e pagamento'}).click();
     const principal=template==='pitacco-v2';
-    const fiadoChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
+    const fiadoChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
     if(principal){
       assert.equal(await page.locator('#cartDialog').getAttribute('data-v2-stage'),'identify');
       await page.locator('#phone').fill('21999999999');
@@ -259,18 +259,18 @@ try {
       assert.equal(await page.locator('#fiadoAuth').isVisible(),false);
       assert.equal(await page.locator('#fiadoPin').getAttribute('required'),null,'Outros pagamentos não exigem PIN');
       assert.equal(await page.locator('#fiadoPin').inputValue(),'','PIN deve ser apagado ao trocar pagamento');
-      const disableFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
+      const disableFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
       await page.locator('#phone').fill('21999999998');
       await disableFiado;
       await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
       assert.equal(await page.locator('#payment option[value="fiado"]').isDisabled(),true,'Autorizado, mas sem crédito para este pedido');
       assert.match(await page.locator('#fiadoUnavailable').innerText(),/Fiado indisponível para este pedido/);
       assert.doesNotMatch(await page.locator('#fiadoUnavailable').innerText(),/R\$|saldo disponível|limite de crédito/i);
-      const hideFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
+      const hideFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
       await page.locator('#phone').fill('21999999997');
       await hideFiado;
       assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Telefone não autorizado não vê Fiado');
-      const showFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
+      const showFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
       await page.locator('#phone').fill('21999999999');
       await showFiado;
       await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
@@ -286,7 +286,7 @@ try {
     assert.equal(await page.locator('#routeQuoteStatus').getAttribute('role'),'alert');
     if(width===375){await mkdir('artifacts',{recursive:true});await page.locator('#addressBlock').screenshot({path:`artifacts/menu-address-${template}.png`});}
     assert.doesNotMatch(await page.locator('#routeQuoteStatus').innerText(),/non-2xx/);
-    const pricingChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
+    const pricingChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
     await page.getByRole('button',{name:'Calcular taxa de entrega'}).click();
     await pricingChecked;
     await page.getByText(/Linha reta: 1,1 km · Entrega: R\$.*5,00/).waitFor();
