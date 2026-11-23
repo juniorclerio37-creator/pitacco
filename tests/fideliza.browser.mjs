@@ -51,7 +51,8 @@ try{
   await page.waitForFunction(()=>document.body.dataset.menuSkin);
   await page.locator('.product-open').first().waitFor();
   await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
-  await page.evaluate(()=>Promise.all([...document.images].filter(i=>i.currentSrc.includes('fixtures.pitacco.test')).map(i=>i.decode().catch(()=>{}))));
+  await page.evaluate(()=>{for(const image of document.images)if(image.src.includes('fixtures.pitacco.test'))image.loading='eager';});
+  await page.waitForFunction(()=>[...document.images].filter(i=>i.src.includes('fixtures.pitacco.test')).every(i=>i.complete&&i.naturalWidth>0),null,{timeout:10000});
   assert.equal(await page.locator('.product').first().evaluate(card=>{const photo=card.querySelector('.product-visual').getBoundingClientRect(),image=card.querySelector('.product-visual img').getBoundingClientRect();return image.bottom<=photo.bottom+1&&image.height<=photo.height+1;}),true,'Foto real limitada à área visual sem cobrir texto');
   if(['pitacco-v2','urbano'].includes(template))assert.equal(await page.locator('#v2HeroImage').evaluate(img=>img.getBoundingClientRect().left>document.getElementById('v2HeaderBack').getBoundingClientRect().right),true,'Foto decorativa à direita sem sobrepor o controle de voltar');
   assert.equal(await page.locator('body').getAttribute('data-menu-skin'),template==='pitacco-v2'?'principal':template);
