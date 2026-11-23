@@ -847,9 +847,12 @@ body[data-menu-skin=urbano] :is(.v2-top-product,#v2HomeLoyalty){border-radius:12
  <p id="loyaltyStatus" role="status" aria-live="polite"></p>
 </section>
 <p id="fiadoUnavailable" class="fiado-unavailable" role="status" aria-live="polite" hidden></p>
-<p id="fiadoAuth" class="fiado-payment-confirmation" hidden role="status">
- A loja autoriza o Fiado deste pedido. Para clientes com aprovação manual, o pedido aguardará a decisão da loja antes do preparo. Se a loja ativou autorização automática para você, a análise será imediata.
-</p><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea></section>
+<div id="fiadoAuth" class="fiado-payment-confirmation" hidden>
+ <label for="fiadoBirthDate">Confirme sua data de nascimento</label>
+ <input type="date" id="fiadoBirthDate" min="1900-01-01" autocomplete="bday" aria-describedby="fiadoBirthHelp">
+ <p id="fiadoBirthHelp" role="status">O telefone do pedido e sua data de nascimento serão conferidos com o cadastro autorizado pela loja. Não é necessário criar chave ou código.</p>
+ <p>A autorização do Fiado será automática apenas se a loja tiver liberado essa opção para você. Caso contrário, seu pedido aguardará aprovação da loja antes do preparo.</p>
+</div><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea></section>
 <section class="v2-checkout-confirm"><p>Confira seus dados, produtos, endereço e forma de pagamento antes de confirmar.</p>
 <p><button class="primary" id="send" type="submit">Confirmar pedido</button></p></section></form>
   <div id="success" hidden></div>
@@ -1606,6 +1609,8 @@ function clearFiadoAccess(){
  fiadoLookupFingerprint='';
  fiadoEligiblePhone='';
  $('fiadoAuth').hidden=true;
+ $('fiadoBirthDate').required=false;
+ $('fiadoBirthDate').value='';
  $('fiadoUnavailable').hidden=true;
  $('fiadoUnavailable').textContent='';
  removeFiadoOption();
@@ -1623,7 +1628,7 @@ function scheduleFiadoStatusCheck(total){
  fiadoEligiblePhone='';
  const old=$('payment').querySelector('option[value="fiado"]');
  if(old){old.disabled=true;if($('payment').value==='fiado')$('payment').value='';}
- $('fiadoAuth').hidden=true;
+ $('fiadoAuth').hidden=true;$('fiadoBirthDate').required=false;$('fiadoBirthDate').value='';
  if(old){$('fiadoUnavailable').hidden=false;$('fiadoUnavailable').textContent='Conferindo Fiado para este pedido…';}
  if(fiadoLookupTimer)clearTimeout(fiadoLookupTimer);
  fiadoLookupTimer=setTimeout(()=>void refreshFiadoEligibility(phone,rounded,request),350);
@@ -1661,6 +1666,8 @@ $('payment').addEventListener('change',()=>{
  const isFiado=$('payment').value==='fiado'&&!!option&&!option.disabled&&
   fiadoEligiblePhone===fiadoPhoneDigits($('phone').value);
  $('fiadoAuth').hidden=!isFiado;
+ $('fiadoBirthDate').required=isFiado;
+ if(!isFiado)$('fiadoBirthDate').value='';
 });
 // A carteira é identificada pelo telefone digitado no pedido, sem chaves ou SMS.
 let loyaltyProgram=null,loyaltyWallet=null,loyaltyPhone='',loyaltyPreview=null,loyaltyStamp='',loyaltyBusy=false,loyaltyPhoneRequest=0,loyaltyPhoneTimer=null;
@@ -1840,7 +1847,7 @@ async function loadSchedule(){
 }
 
 function lockCheckout(locked){
- for(const id of ['products','cart','customer','phone','address','deliveryPoint','fulfillment','payment','notes','schedule','loyaltyBox'])$(id).inert=locked;
+ for(const id of ['products','cart','customer','phone','address','deliveryPoint','fulfillment','payment','notes','schedule','fiadoBirthDate','loyaltyBox'])$(id).inert=locked;
  $('backToCart').disabled=locked;
 }
 
@@ -1861,6 +1868,11 @@ $('checkout').onsubmit=async event=>{
   const phoneDigits=$('phone').value.replace(/\D/g,'');
   if(payment==='fiado'&&fiadoPhoneDigits(phoneDigits)!==fiadoEligiblePhone){
    msg('Este pedido não está habilitado para Fiado. Escolha outro pagamento ou fale com a loja.');
+   return;
+  }
+  if(payment==='fiado'&&!/^\d{4}-\d{2}-\d{2}$/.test($('fiadoBirthDate').value)){
+   msg('Informe sua data de nascimento para confirmar o Fiado.');
+   $('fiadoBirthDate').focus();
    return;
   }
   if(phoneDigits.length<10||phoneDigits.length>11){
@@ -1920,6 +1932,21 @@ $('checkout').onsubmit=async event=>{
  $('send').textContent='Enviando…';
  $('checkout').setAttribute('aria-busy','true');
  try{
+  // A data de nascimento é enviada somente à RPC de verificação privada.
+  // O checkout recebe apenas um token aleatório temporário e de uso único.
+  if(pendingRequest.p_payment==='fiado'&&!pendingRequest.p_code&&!pendingRequest.p_fiado_code){
+   const {data:identity,error:identityError}=await client.rpc('pitacco_fiado_verify_birthdate',{
+    p_slug:slug,p_phone:pendingRequest.p_phone,p_birth_date:$('fiadoBirthDate').value,
+    p_request:pendingRequest.p_request
+   });
+   if(identityError||identity?.verified!==true||!identity?.token){
+    pendingRequest=null;
+    throw Error(identityError?.message||identity?.message||'Não foi possível validar o Fiado. Confira os dados com a loja.');
+   }
+   if(Object.hasOwn(pendingRequest,'p_key'))pendingRequest.p_fiado_code=identity.token;
+   else pendingRequest.p_code=identity.token;
+   $('fiadoBirthDate').value='';
+  }
   let endpoint=pendingRequest.p_payment==='fiado'?'pitacco_checkout_fiado'
    :Object.hasOwn(pendingRequest,'p_quote')?'pitacco_checkout_quoted_delivery'
    :Object.hasOwn(pendingRequest,'p_latitude')?'pitacco_checkout_geocoded_order'
