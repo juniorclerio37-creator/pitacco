@@ -6,12 +6,12 @@ const first=(o,keys)=>keys.map(k=>o?.[k]).find(v=>v!==undefined&&v!==null&&v!=='
 function price(value,cents=false){
  if(value===null||value===undefined||value==='')return null;
  if(typeof value==='object')return price(first(value,['price','value','amount','currentPrice']),cents);
- if(typeof value==='number')return Number.isFinite(value)?Math.round(value*(cents?.01:100))/100:null;
+ if(typeof value==='number')return Number.isFinite(value)?(cents?Math.round(value)/100:Math.round(value*100)/100):null;
  let str=String(value).trim().replace(/R\$|\s|BRL/gi,'');
  if(!str)return null;
  if(str.includes(','))str=str.replace(/\./g,'').replace(',','.');
  else if((str.match(/\./g)||[]).length>1)str=str.replace(/\./g,'');
- const n=Number(str);return Number.isFinite(n)?Math.round(n*(cents?.01:100))/100:null;
+ const n=Number(str);return Number.isFinite(n)?(cents?Math.round(n)/100:Math.round(n*100)/100):null;
 }
 function imgUrl(src,origin){
  if(src&&typeof src==='object')src=first(src,['url','src','original','image','path']);
@@ -52,6 +52,7 @@ function productFrom(record,category,origin,forcedCents=false){
  const cat=clean(first(record,['category','categoryName','category_name'])||category||'Outros').slice(0,80);
  let cents=forcedCents||record.priceCents!==undefined||record.currentPriceCents!==undefined;
  let raw=first(record,['currentPriceCents','priceCents','currentPrice','salePrice','price','basePrice','valor','preco','amount']);
+ if(raw===undefined)raw=first(record.offers,['price','lowPrice','priceSpecification']);
  let value=price(raw,cents);
  const groups=groupsFrom(record);
  // Cardápios com preço definido pelo tamanho obrigatório.
@@ -150,7 +151,11 @@ export function parsePublicMenu(body,origin,contentType='text/html'){
  }
  const images=imagesByAlt(body,origin);
  let products=[];
- if(parsed){products=scanObject(parsed,origin,images);if(products.length)sources.push('dados estruturados');}
+ if(parsed){
+  products=scanObject(parsed,origin,images);
+  if(!products.length&&Array.isArray(parsed))products=parsed.map(p=>productFrom(p,'Outros',origin)).filter(Boolean);
+  if(products.length)sources.push('dados estruturados');
+ }
  if(!products.length){
   for(const script of body.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)){
    const attrs=parseAttrs(script[1]),content=script[2]?.trim();
