@@ -134,6 +134,18 @@ try {
     await page.goto(origin + (width===375?'/cardapio/?loja=loja-teste':'/loja-teste?utm_source=qr&loja=outro'));
     const productCard=page.getByRole('button',{name:'Personalizar Açaí',exact:true});
     await productCard.waitFor();
+    assert.equal(await page.locator('body').getAttribute('data-menu-template'),'pitacco-v2','Versão 2 é o template principal');
+    await page.locator('#v2StoreNav').waitFor();
+    await page.getByRole('button',{name:'Sobre',exact:true}).click();
+    await page.locator('#v2AboutPage').waitFor();
+    assert.equal(await page.locator('#v2AboutPage').isVisible(),true);
+    await page.getByRole('button',{name:'Cardápio',exact:true}).click();
+    await productCard.waitFor();
+    const saveFavorite=page.getByRole('button',{name:'Salvar Açaí nos favoritos'});
+    await saveFavorite.click();
+    await page.getByRole('button',{name:'♡ Favoritos',exact:true}).click();
+    assert.equal(await productCard.count(),1,'Favoritos locais mantêm produto escolhido');
+    await page.getByRole('button',{name:'Cardápio',exact:true}).click();
     await page.getByRole('heading',{name:'Açaís',exact:true}).waitFor();
     assert.equal(await page.getByText('Leite em pó',{exact:true}).count(),0);
     await page.getByRole('button',{name:'Bebidas',exact:true}).click();
