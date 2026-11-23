@@ -4,7 +4,7 @@ const formatQuantity = new Intl.NumberFormat('pt-BR', {maximumFractionDigits: 3}
 const formatDate = new Intl.DateTimeFormat('pt-BR', {dateStyle: 'short', timeStyle: 'short'}).format;
 const costNumber = new Intl.NumberFormat('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:6});
 
-export default function Inventory({client, storeId, manager, products}) {
+export default function Inventory({client, storeId, manager, products, initialView='Insumos'}) {
   const [ingredients, setIngredients] = useState([]);
   const [recipes, setRecipes] = useState([]);
   const [optionRecipes, setOptionRecipes] = useState([]);
@@ -12,7 +12,7 @@ export default function Inventory({client, storeId, manager, products}) {
   const [optionGroups, setOptionGroups] = useState([]);
   const [catalogOptions, setCatalogOptions] = useState([]);
   const [movements, setMovements] = useState([]);
-  const [view, setView] = useState('Insumos');
+  const [view, setView] = useState(initialView);
   const [productId, setProductId] = useState('');
   const [optionId, setOptionId] = useState('');
   const [editing, setEditing] = useState(null);
