@@ -60,7 +60,7 @@ grant execute on function public.pitacco_fiado_save_customer_pin(uuid,text,text,
 create or replace function public.pitacco_fiado_verify_pin(
  p_slug text,p_phone text,p_pin text,p_request uuid
 ) returns jsonb language plpgsql security definer set search_path='' as $pin$
-declare sid uuid; account public.pitacco_fiado_customers%rowtype; phone text; token uuid;
+declare sid uuid; account public.pitacco_fiado_customers%rowtype; phone text; v_token uuid;
 begin
  if p_request is null then
   return jsonb_build_object('verified',false,'message','Não foi possível validar o Fiado. Confira os dados com a loja.');end if;
@@ -88,8 +88,8 @@ begin
  update public.pitacco_fiado_customers
  set pin_failed_attempts=0,pin_locked_until=null where id=account.id and store_id=sid;
  insert into pitacco_private.fiado_pin_verifications(store_id,customer_id,request_id)
- values(sid,account.id,p_request) returning token into token;
- return jsonb_build_object('verified',true,'token',token);
+ values(sid,account.id,p_request) returning token into v_token;
+ return jsonb_build_object('verified',true,'token',v_token);
 end $pin$;
 revoke all on function public.pitacco_fiado_verify_pin(text,text,text,uuid) from public,anon,authenticated;
 grant execute on function public.pitacco_fiado_verify_pin(text,text,text,uuid) to anon,authenticated;
