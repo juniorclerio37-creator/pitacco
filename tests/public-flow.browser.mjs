@@ -128,7 +128,10 @@ try {
         if(payload.address.startsWith('Rua Fora Entrega'))
           return route.fulfill({status:422,json:{error:'Este endereço está fora do círculo de entregas da loja.'}});
         if(++quoteAttempts===1)return route.fulfill({status:409,json:{error:'Existe uma região poligonal inválida. Corrija em Área de Entrega.'}});
-        assert.deepEqual([payload.latitude,payload.longitude],[-22.71,-43.4]);
+        if(payload.latitude!==undefined||payload.longitude!==undefined||template!=='pitacco-v2')
+          assert.deepEqual([payload.latitude,payload.longitude],[-22.71,-43.4]);
+        else
+          assert.equal(payload.latitude,undefined,'Endereço completo no V2 cota sem ponto obrigatório');
         return route.fulfill({json:{quote_id:'30000000-0000-0000-0000-000000000011',
           request_id:payload.request_id,fee:5,distance_m:1112,distance_type:'straight',
           expires_at:new Date(Date.now()+5*60*1000).toISOString()}});
