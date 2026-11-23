@@ -124,7 +124,9 @@ try {
       if (pathname.endsWith('/delivery-quote')) {
         const payload=route.request().postDataJSON();
         assert.equal(payload.slug,'loja-teste');
-        assert.equal(payload.address,'Rua Teste, 123, Centro, Nova Iguaçu, RJ');
+        assert.match(payload.address,/^Rua (Teste|Fora Entrega), 123, Centro, Nova Iguaçu, RJ/);
+        if(payload.address.startsWith('Rua Fora Entrega'))
+          return route.fulfill({status:422,json:{error:'Este endereço está fora do círculo de entregas da loja.'}});
         if(++quoteAttempts===1)return route.fulfill({status:409,json:{error:'Existe uma região poligonal inválida. Corrija em Área de Entrega.'}});
         assert.deepEqual([payload.latitude,payload.longitude],[-22.71,-43.4]);
         return route.fulfill({json:{quote_id:'30000000-0000-0000-0000-000000000011',
@@ -218,7 +220,7 @@ try {
     await product.getByRole('button',{name:/Salvar alterações/}).click();
     await cart.getByText('Item atualizado na sacola.',{exact:true}).waitFor();
     assert.match(await cart.locator('#total').innerText(),/69,00/);
-    assert.match(await cart.locator('#total').innerText(),/calcule o frete/i);
+    assert.match(await cart.locator('#total').innerText(),template==='pitacco-v2'?/valor da entrega.*automaticamente/i:/calcule o frete/i);
     await firstLine.getByText(/Morango · Granola/).waitFor();
     await firstLine.getByRole('button',{name:'Editar complementos',exact:true}).click();
     await product.getByRole('checkbox',{name:/Granola/}).uncheck();
@@ -279,18 +281,36 @@ try {
       assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Fiado oculto para telefone não autorizado');
     }
     }
-    await page.getByRole('button',{name:'Usar minha localização'}).click();
-    await page.getByText('Ponto marcado. Confira o endereço e calcule o frete.').waitFor();
-    await page.getByRole('button',{name:'Calcular taxa de entrega'}).click();
-    await page.locator('#routeQuoteStatus').filter({hasText:'A loja precisa revisar'}).waitFor();
-    assert.equal(await page.locator('#routeQuoteStatus').getAttribute('role'),'alert');
+    const pricingChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
+    if(principal){
+      assert.equal(await page.locator('#quoteDelivery').isVisible(),false,'V2 não mostra botão de calcular frete');
+      await page.locator('#routeQuoteStatus').filter({hasText:'A loja precisa revisar'}).waitFor();
+      assert.equal(await page.locator('#routeQuoteStatus').getAttribute('role'),'alert');
+      await page.getByRole('button',{name:'Usar minha localização'}).click();
+      await page.getByText('Localização confirmada. A taxa será atualizada automaticamente.').waitFor();
+      await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
+      await pricingChecked;
+      assert.match(await page.locator('#total').innerText(),/74,00/);
+      // Não atendemos a região: erro do servidor bloqueia checkout.
+      await page.locator('#addressStreet').fill('Rua Fora Entrega');
+      await page.locator('#routeQuoteStatus').filter({hasText:'Não atendemos essa região'}).waitFor();
+      assert.equal(await page.locator('#routeQuoteStatus').getAttribute('role'),'alert');
+      await page.locator('#addressStreet').fill('Rua Teste');
+      await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
+      assert.match(await page.locator('#total').innerText(),/74,00/);
+    }else{
+      await page.getByRole('button',{name:'Usar minha localização'}).click();
+      await page.getByText('Ponto marcado. Confira o endereço e calcule o frete.').waitFor();
+      await page.getByRole('button',{name:'Calcular taxa de entrega'}).click();
+      await page.locator('#routeQuoteStatus').filter({hasText:'A loja precisa revisar'}).waitFor();
+      assert.equal(await page.locator('#routeQuoteStatus').getAttribute('role'),'alert');
+      await page.getByRole('button',{name:'Calcular taxa de entrega'}).click();
+      await pricingChecked;
+      await page.getByText(/Linha reta: 1,1 km · Entrega: R\$.*5,00/).waitFor();
+      assert.match(await page.locator('#total').innerText(),/74,00/);
+    }
     if(width===375){await mkdir('artifacts',{recursive:true});await page.locator('#addressBlock').screenshot({path:`artifacts/menu-address-${template}.png`});}
     assert.doesNotMatch(await page.locator('#routeQuoteStatus').innerText(),/non-2xx/);
-    const pricingChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
-    await page.getByRole('button',{name:'Calcular taxa de entrega'}).click();
-    await pricingChecked;
-    await page.getByText(/Linha reta: 1,1 km · Entrega: R\$.*5,00/).waitFor();
-    assert.match(await page.locator('#total').innerText(),/74,00/);
     if(scheduled)await page.getByLabel('Quando deseja receber?').selectOption(scheduled);
     if(principal){
       await page.locator('#v2CheckoutNext').click();
