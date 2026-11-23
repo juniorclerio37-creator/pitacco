@@ -73,7 +73,7 @@ try {
       if (pathname.endsWith('/get_public_menu')) {
         assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
         return route.fulfill({ json: {
-          store: { appearance:{template}, name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true,
+          store: { appearance:{template,primary:'#217c5a'}, primary_color:'#e04020', name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true,
             delivery_fee: 0, route_pricing:{enabled:true,mode:'circle',max_radius_km:3},
             delivery_area:area, payment_methods: ['pix_manual'],
             opening_hours:{open:true,reason:'open',next_open_at:null} },
@@ -134,6 +134,7 @@ try {
     await page.goto(origin + (width===375?'/cardapio/?loja=loja-teste':'/loja-teste?utm_source=qr&loja=outro'));
     const productCard=page.getByRole('button',{name:'Personalizar Açaí',exact:true});
     await productCard.waitFor();
+    assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--brand')),'#217c5a','Published studio palette takes precedence over old branding');
     assert.equal(await page.locator('body').getAttribute('data-menu-template'),'pitacco-v2','Versão 2 é o template principal');
     await page.locator('#v2StoreNav').waitFor();
     await page.getByRole('button',{name:'Sobre',exact:true}).click();

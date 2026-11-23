@@ -1547,11 +1547,12 @@ function initOptions(){
  $('v2FavoritesNav').hidden=document.body.dataset.menuTemplate!=='pitacco-v2';
  $('storeInitial').textContent=shop.name.trim().slice(0,1).toUpperCase();
  document.title='Cardápio | '+shop.name;
- if(/^#[0-9a-fA-F]{6}$/.test(shop.primary_color||'')){
-  const contrast=[1,3,5].map(pos=>parseInt(shop.primary_color.slice(pos,pos+2),16)/255)
+ const displayPrimary=/^#[0-9a-fA-F]{6}$/.test(shop.appearance?.primary||'')?shop.appearance.primary:shop.primary_color;
+ if(/^#[0-9a-fA-F]{6}$/.test(displayPrimary||'')){
+  const contrast=[1,3,5].map(pos=>parseInt(displayPrimary.slice(pos,pos+2),16)/255)
    .map(value=>value<=.04045?value/12.92:((value+.055)/1.055)**2.4);
   const luminance=contrast[0]*.2126+contrast[1]*.7152+contrast[2]*.0722;
-  document.documentElement.style.setProperty('--brand',shop.primary_color);
+  document.documentElement.style.setProperty('--brand',displayPrimary);
   document.documentElement.style.setProperty('--on-brand',luminance>.179?'#000':'#fff');
  }
  for(const [image,value] of [['storeLogo',shop.logo_url||studioAsset(shop.profile_logo_path)],['storeBanner',shop.banner_url]]){

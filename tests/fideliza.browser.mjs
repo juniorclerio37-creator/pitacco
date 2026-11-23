@@ -17,7 +17,7 @@ try{
    if(url.origin==='https://esm.sh')return route.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:`export function createClient(){return {rpc:async(name,payload)=>{const r=await fetch('/fixture/'+name,{method:'POST',body:JSON.stringify(payload)});const data=await r.json();return {data:r.ok?data:null,error:r.ok?null:data,status:r.status}}}}`});
    if(!url.pathname.startsWith('/fixture/'))return route.abort();
    const p=route.request().postDataJSON();
-   if(name==='get_public_menu')return route.fulfill({json:{store:{appearance:{template},name:'Loja Fideliza',delivery_enabled:false,pickup_enabled:true,payment_methods:['pix_manual'],opening_hours:{open:true,reason:'open'}},products:[{id:'p1',name:'Açaí',category:'Açaí',price:50,option_groups:[]}]}});
+   if(name==='get_public_menu')return route.fulfill({json:{store:{appearance:{template},name:'Loja Fideliza',delivery_enabled:false,pickup_enabled:true,payment_methods:['pix_manual'],opening_hours:{open:true,reason:'open'}},products:[{id:'p1',name:'Açaí',category:'Açaí',price:50,option_groups:[]},{id:'p2',name:'Creme de cupuaçu',category:'Açaí',price:50,option_groups:[]},{id:'p3',name:'Combo da casa',category:'Açaí',price:50,option_groups:[]}]}});
    if(name==='pitacco_public_store_open')return route.fulfill({json:{open:true,reason:'open'}});
    if(name==='pitacco_public_schedule_slots')return route.fulfill({json:[]});
    if(name==='pitacco_loyalty_program')return route.fulfill({json:{rules,campaigns:[{id:'campaign',title:'Oferta da semana',code:'SEMANA5',discount_type:'fixed',discount_value:5,minimum_order_cents:0}]}});

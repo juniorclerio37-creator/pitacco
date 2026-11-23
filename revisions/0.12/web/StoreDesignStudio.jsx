@@ -2,12 +2,6 @@ import React,{useEffect,useMemo,useState} from 'react';
 import {uploadStoreImage,mediaUrl} from './StoreProfile.jsx';
 import './store-design-studio.css';
 
-const themes={
- moderno:{primary:'#e86b23',secondary:'#7b4e37',background:'#f9f5f1',paper:'#ffffff',foreground:'#30251f',hero:'#40221f',highlight:'#fff0e0'},
- premium:{primary:'#cba052',secondary:'#806c48',background:'#12141a',paper:'#22252e',foreground:'#faf4e9',hero:'#11141b',highlight:'#343026'},
- minimalista:{primary:'#247a5a',secondary:'#53756c',background:'#f1f5f1',paper:'#ffffff',foreground:'#22342c',hero:'#284c3c',highlight:'#e2f3e8'},
- colorido:{primary:'#bb368b',secondary:'#7742cf',background:'#fff4fb',paper:'#ffffff',foreground:'#37203a',hero:'#6b2f92',highlight:'#ffe0f4'}
-};
 const templates=[
  {id:'pitacco-v2',name:'Principal',description:'Roxo e laranja, fotos em grade e destaque para benefícios.',theme:'colorido',primary:'#ff7a08',secondary:'#6f4b80',background:'#faf7fd',paper:'#ffffff',foreground:'#261033',hero:'#4b075e',highlight:'#f4e5fb',layout:'grade',font:'sistema',radius:20},
  {id:'essencial',name:'Essencial',description:'Verde, espaços leves e produtos em uma lista compacta.',theme:'minimalista',primary:'#217c5a',secondary:'#53756c',background:'#f5f8f6',paper:'#ffffff',foreground:'#173a2d',hero:'#174c39',highlight:'#e5f2e9',layout:'lista',font:'sistema',radius:16},
@@ -20,8 +14,8 @@ const fonts=[['sistema','Moderna'],['arredondada','Arredondada'],['serifada','El
 const photoSizes=[['pequeno','Pequena'],['medio','Média'],['grande','Grande']];
 const field=(label,value,change,props={})=><label className="design-field">{label}<input value={value||''} onChange={event=>change(event.target.value)} {...props}/></label>;
 const cash=value=>Number(value||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const defaultDesign={template:'pitacco-v2',theme:'moderno',...themes.moderno,layout:'lista',radius:20,font:'sistema',photo_size:'medio',
- show_descriptions:true,slogan:'Cardápio digital',instagram:'',logo_path:'',cover_path:'',banners:[]};
+const defaultDesign=(()=>{const {id,name,description,...style}=templates[0];return {template:id,...style,photo_size:'medio',
+ show_descriptions:true,slogan:'Cardápio digital',instagram:'',logo_path:'',cover_path:'',banners:[]};})();
 const stamp=value=>value?new Date(value).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
 const fontFace=font=>font==='serifada'?'Georgia,serif':font==='arredondada'?'Trebuchet MS,system-ui,sans-serif':'Inter,system-ui,sans-serif';
 const ownDate=v=>v?new Date(v).toLocaleString('sv-SE',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).replace(' ','T'):'';
