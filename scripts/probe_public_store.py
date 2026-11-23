@@ -37,5 +37,9 @@ try:
    js=fetch(url,5_000_000)
    found=sorted(set(re.findall(r'[/]api[/][a-zA-Z0-9_/$+?{}-]{5,140}',js)))
    print('JS_API_PATHS',url.split('/')[-1],len(js),found[:70])
+   for needle in ['stores/by-slug','groups/','group-items','/items','menu-items','store-items','storeItem','/menu','getItems']:
+    indices=[m.start() for m in re.finditer(re.escape(needle),js,re.I)]
+    if indices:
+     print('JS_MENU_ENDPOINT_CONTEXT',url.split('/')[-1],needle,len(indices),[js[max(0,i-95):i+160] for i in indices[:3]])
   except Exception as e:print('JS_FAILURE',str(e)[:160])
 except Exception as e:print('HTML_FAILURE',str(e)[:300])
