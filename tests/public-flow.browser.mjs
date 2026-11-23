@@ -158,6 +158,41 @@ try {
     await page.goto(origin + (width===375?'/cardapio/?loja=loja-teste':'/loja-teste?utm_source=qr&loja=outro'));
     const productCard=page.getByRole('button',{name:'Personalizar Açaí',exact:true});
     await productCard.waitFor();
+    if(template==='classic'){
+      // Classic has different navigation from V2. Test its real checkout path
+      // without asserting V2-only hero, favourites and product cards.
+      assert.equal(await page.locator('body').getAttribute('data-menu-template'),'classic');
+      await productCard.click();
+      const product=page.getByRole('dialog',{name:'Açaí'});
+      await product.getByRole('radio',{name:/Morango/}).check();
+      await product.getByRole('button',{name:/Adicionar à sacola/}).click();
+      await page.locator('#openCart').click();
+      const cart=page.getByRole('dialog',{name:'Sua sacola'});
+      assert.match(await cart.locator('#total').innerText(),/valor da entrega.*automaticamente/i);
+      await cart.getByRole('button',{name:'Continuar para entrega e pagamento'}).click();
+      await page.locator('#customer').fill('Cliente Teste');
+      await page.locator('#phone').fill('21999999999');
+      for(const [id,value] of [['addressStreet','Rua Teste'],['addressNumber','123'],['addressNeighborhood','Centro'],['addressCity','Nova Iguaçu']])
+        await page.locator('#'+id).fill(value);
+      await page.locator('#addressState').selectOption('RJ');
+      assert.equal(await page.locator('#quoteDelivery').isVisible(),false,'O Clássico também não tem botão de frete');
+      await page.locator('#routeQuoteStatus').filter({hasText:'A loja precisa revisar'}).waitFor();
+      await page.getByRole('button',{name:'Usar minha localização'}).click();
+      await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
+      await page.locator('#payment').selectOption('pix_manual');
+      assert.match(await page.locator('#total').innerText(),/Taxa de entrega/);
+      assert.equal(await page.locator('#send').isDisabled(),false,'Classic pode confirmar apenas com cotação válida');
+      await page.locator('#addressStreet').fill('Rua Fora Entrega');
+      await page.locator('#routeQuoteStatus').filter({hasText:'Não atendemos essa região'}).waitFor();
+      assert.equal(await page.locator('#send').isDisabled(),true,'Classic bloqueia pedidos fora da cobertura');
+      await page.locator('#addressStreet').fill('Rua Teste');
+      await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
+      assert.equal(await page.locator('#send').isDisabled(),false);
+      assert.deepEqual(errors,[]);
+      await page.close();
+      console.log('PASS classic automatic quote at '+width+'px');
+      continue;
+    }
     assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--brand')),'#217c5a','Published studio palette takes precedence over old branding');
     assert.equal(await page.locator('body').getAttribute('data-menu-template'),'pitacco-v2','Versão 2 é o template principal');
     await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
