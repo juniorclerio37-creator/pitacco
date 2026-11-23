@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {uploadStoreImage,mediaUrl} from './StoreProfile.jsx';
 import './store-design-studio.css';
+import StorefrontLivePreview from './StorefrontLivePreview.jsx';
 
 const templates=[
  {id:'pitacco-v2',name:'Principal',description:'Roxo e laranja, fotos em grade e destaque para benefícios.',theme:'colorido',primary:'#ff7a08',secondary:'#6f4b80',background:'#faf7fd',paper:'#ffffff',foreground:'#261033',hero:'#4b075e',highlight:'#f4e5fb',layout:'grade',font:'sistema',radius:20},
@@ -146,62 +147,6 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
   }catch(e){setError(e.message||'Não foi possível restaurar esta versão.')}
   finally{setWorking(false)}
  }
- const activeBanners=useMemo(()=>design?.banners?.filter(b=>{
-  const now=Date.now();return (!b.starts_at||new Date(b.starts_at).getTime()<=now)
-   &&(!b.ends_at||new Date(b.ends_at).getTime()>=now);
- })||[],[design?.banners]);
- const display=design&&<div className={'design-live-menu design-layout-'+design.layout+' design-template-'+design.template}
-   style={{...moneyColors,'--studio-primary':design.primary,'--studio-secondary':design.secondary,
-    '--studio-paper':design.paper,'--studio-highlight':design.highlight,
-    '--studio-radius':design.radius+'px','--studio-on-brand':onBrand}}>
-   <div className="design-live-hero" style={{background:design.hero,color:'#fff'}}>
-    {imageFor('cover',design.cover_path)&&<BannerImage url={imageFor('cover',design.cover_path)} className="design-live-cover"/>}
-    <div className="design-live-brand">{imageFor('logo',design.logo_path||store.logo_path)
-      ?<BannerImage url={imageFor('logo',design.logo_path||store.logo_path)} className="design-live-logo"/>
-      :<span className="design-live-initial">{store.name?.slice(0,1)}</span>}
-     <div><strong>{store.name}</strong><small>{design.slogan||'Cardápio digital'}</small></div>
-    </div>
-   </div>
-   {activeBanners.length>0&&<div className="design-live-banners">
-    {activeBanners.slice(0,2).map((b,i)=><div key={i} className="design-live-promo" style={{background:design.highlight}}>
-     {imageFor('banner-'+design.banners.indexOf(b),b.image_path)&&
-      <BannerImage url={imageFor('banner-'+design.banners.indexOf(b),b.image_path)} />}
-     <div><strong>{b.title}</strong><small>{b.subtitle}</small></div>
-    </div>)}
-   </div>}
-   <div className="design-live-body">
-    {previewStep==='inicial'&&<>
-     <div className="design-live-toolbar"><strong>Nosso cardápio</strong><span>Buscar produtos</span></div>
-     <div className="design-live-products">
-      {catalog.slice(0,4).map(item=><div className="design-live-product" key={item.id}>
-       <div className="design-live-copy"><strong>{item.name}</strong>
-        {design.show_descriptions&&<small>{item.description||item.category||'Produto especial'}</small>}
-        <b>{cash(item.price)}</b></div>
-       <div className={'design-live-photo photo-'+design.photo_size}>{item.image_url
-        ?<img src={item.image_url} alt=""/>:<span>🍽️</span>}</div>
-      </div>)}
-      {!catalog.length&&<div className="design-live-product"><div><strong>Seu primeiro produto</strong><small>Cadastre itens no Meu Cardápio para visualizar aqui.</small></div><b>—</b></div>}
-     </div>
-    </>}
-    {previewStep==='produto'&&<div className="design-live-detail">
-      <h3>{catalog[0]?.name||'Seu produto'}</h3>
-      <p>{catalog[0]?.description||'Descrição e complementos do produto aparecerão aqui.'}</p>
-      <strong>{catalog[0]?cash(catalog[0].price):'R$ 0,00'}</strong>
-      <label>Complementos e opções</label><div className="design-live-skeleton">Escolha os complementos disponíveis</div>
-      <button type="button" disabled>Adicionar ao pedido</button>
-    </div>}
-    {previewStep==='checkout'&&<div className="design-live-detail">
-      <h3>Finalizar pedido</h3>
-      <label>Seu nome</label><div className="design-live-skeleton">Nome do cliente</div>
-      <label>Entrega ou retirada</label><div className="design-live-skeleton">Endereço e taxa de entrega</div>
-      <label>Pagamento</label><div className="design-live-skeleton">Selecione a forma de pagamento</div>
-      <button type="button" disabled>Confirmar pedido</button>
-      <small>Prévia visual; nenhuma compra será realizada.</small>
-    </div>}
-   </div>
-   {design.instagram&&<div className="design-live-footer">Instagram: {design.instagram}</div>}
-   <div className="design-live-credit">Impulsionado por Pitacco</div>
-  </div>;
  if(loading)return <div className="panel" role="status">Carregando Estúdio de Cardápio…</div>;
  if(!design)return <section className="panel"><h3>Estúdio de Cardápio</h3><p role="alert">{error||'Não foi possível carregar.'}</p><button onClick={()=>window.location.reload()}>Tentar novamente</button></section>;
  return <section className="design-studio" aria-label="Estúdio de Cardápio Pitacco">
@@ -277,7 +222,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
      </section>
     </>:<>
      <section className="design-control-card"><h4>Conferir e publicar</h4>
-      <p>Veja a página inicial, o produto e uma simulação visual do checkout antes de publicar. Nenhum pagamento ou pedido é criado nesta prévia.</p>
+      <p>Confira a página inicial, o produto e o checkout exatamente com os componentes do cardápio público. O rascunho aparece apenas nesta prévia.</p>
       <p>{dirty?'Existem alterações não salvas. Volte à aparência e salve o rascunho.':'Rascunho salvo e pronto para publicação.'}</p>
       <button type="button" disabled={!manager||working||dirty} onClick={publish}>Publicar alterações para os clientes</button>
       <p className="design-tip">O cardápio e o checkout continuam usando as regras de preço, complementos, entrega e pagamento já existentes.</p>
@@ -303,8 +248,10 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
     </div>
     <div className="design-preview-steps">{[['inicial','Início'],['produto','Produto'],['checkout','Checkout']].map(([key,label])=>
      <button type="button" key={key} className={previewStep===key?'active':''} onClick={()=>setPreviewStep(key)}>{label}</button>)}</div>
-    <div className={'design-preview-device '+(viewport==='celular'?'mobile':'desktop')}>{display}</div>
-    <small>Prévia ilustrativa com produtos cadastrados. Para conferir todos os detalhes, use o link público após a publicação.</small>
+    <div className={'design-preview-device '+(viewport==='celular'?'mobile':'desktop')}>
+     <StorefrontLivePreview client={client} store={store} design={design} step={previewStep} viewport={viewport} files={files}/>
+    </div>
+    <small>Visualização real do cardápio, com o rascunho aplicado temporariamente. Nenhum pedido pode ser enviado pela prévia.</small>
    </aside>
   </div>
  </section>;
