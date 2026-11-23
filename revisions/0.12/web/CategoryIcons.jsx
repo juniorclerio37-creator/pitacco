@@ -28,7 +28,7 @@ export const CATEGORY_ICON_GROUPS=[
 ];
 export const CATEGORY_ICON_KEYS=CATEGORY_ICON_GROUPS.flatMap(group=>group.icons.map(([key])=>key));
 const EMOJIS={
- star:'⭐',discount:'💯',crown:'👑',trophy:'🏆',tag:'🏷️',megaphone:'📣',acai:'🥣',
+ star:'⭐',discount:'💯',crown:'👑',trophy:'🏆',tag:'🏷️',megaphone:'📣',
  'ice-cream-cone':'🍦','ice-cream-cup':'🍨',dessert:'🍧',
  'pizza-whole':'🍕','pizza-sweet':'🍫', 'meal-box':'🍱',plate:'🍽️',meal:'🍛',
  buffet:'🍲',pf:'🥘',healthy:'🥗',homemade:'🍲',burger:'🍔',snack:'🥪',
@@ -39,7 +39,7 @@ const EMOJIS={
 const COMBOS={
  'combo-burger':['🍔','🥤'],
  'combo-pizza':['pizza','🥤'],
- 'combo-acai':['🥣','🥤'],
+ 'combo-acai':['acai','🥤'],
  'combo-ice-cream':['🍦','🍨'],
  'combo-meal':['🍱','🥤'],
  'combo-mixed':['🎁','⭐']
@@ -53,6 +53,25 @@ function PizzaSlice(){
   <circle cx="40" cy="30" r="4.8" fill="#D73F27" stroke="#B72F23" strokeWidth="1"/>
   <circle cx="31" cy="43" r="4.5" fill="#D73F27" stroke="#B72F23" strokeWidth="1"/>
   <path d="M30 24 q4 -4 7 0 m-15 13 q2 -3 5 0" fill="none" stroke="#51A046" strokeWidth="2.3" strokeLinecap="round"/>
+ </svg>;
+}
+// Açaí preenchido: copo roxo com creme, granola, morango e folha; não utiliza emoji de tigela.
+function AcaiCup(){
+ return <svg className="pitacco-acai-svg" viewBox="0 0 64 64" role="presentation" aria-hidden="true">
+  <path d="M17 27 L21 59 Q32 63 43 59 L47 27Z" fill="#7A248C" stroke="#431252" strokeWidth="2.4" strokeLinejoin="round"/>
+  <path d="M22 33 L26 56 Q34 59 39 56 L43 33Z" fill="#A847B0"/>
+  <path d="M22 35 L25 52" fill="none" stroke="#CF81D0" strokeWidth="3.5" strokeLinecap="round"/>
+  <ellipse cx="32" cy="28" rx="21" ry="7" fill="#4B155D" stroke="#3A104C" strokeWidth="2"/>
+  <path d="M13 28 Q15 18 25 20 Q25 11 34 13 Q42 13 42 20 Q53 19 51 28 Q45 34 32 32 Q18 34 13 28Z" fill="#732184" stroke="#461057" strokeWidth="1.8"/>
+  <path d="M21 23 Q26 18 33 21 Q42 22 43 25" fill="none" stroke="#BB6CC8" strokeWidth="3" strokeLinecap="round"/>
+  <path d="M31 13 Q29 6 37 6 Q43 6 44 12" fill="#942E9E" stroke="#51145F" strokeWidth="1.5"/>
+  <path d="M37 12 Q43 5 50 9 Q45 17 37 12Z" fill="#4CAC54"/>
+  <path d="M38 14 Q42 12 47 11" fill="none" stroke="#287B37" strokeWidth="1.3"/>
+  <path d="M12 17 Q13 9 21 11 Q27 12 26 20 Q22 27 16 23Z" fill="#F34B62" stroke="#C52B48" strokeWidth="1.8"/>
+  <path d="M13 15 Q18 10 23 16" fill="none" stroke="#FF9AAA" strokeWidth="2.3" strokeLinecap="round"/>
+  <path d="M16 11 L19 7 L22 11" fill="#40984E"/>
+  <g fill="#F8CD66"><ellipse cx="27" cy="16" rx="2.6" ry="1.8"/><ellipse cx="31" cy="23" rx="2.7" ry="2"/><ellipse cx="38" cy="22" rx="2.4" ry="1.8"/><ellipse cx="46" cy="22" rx="2.4" ry="1.7"/><ellipse cx="25" cy="28" rx="2" ry="1.5"/></g>
+  <path d="M15 32 Q32 37 49 32" fill="none" stroke="#6A1C7C" strokeWidth="1.5"/>
  </svg>;
 }
 function Fire(){
@@ -97,7 +116,8 @@ export function CategoryIcon({icon='more',size=30,animated=true}){
  let body;
  if(key==='flame')body=<Fire/>;
  else if(key==='pizza-slice')body=<PizzaSlice/>;
- else if(COMBOS[key])body=<span className="pitacco-combo-icons">{COMBOS[key].map((item,i)=><span key={i}>{item==='pizza'?<PizzaSlice/>:item}</span>)}</span>;
+ else if(key==='acai')body=<AcaiCup/>;
+ else if(COMBOS[key])body=<span className="pitacco-combo-icons">{COMBOS[key].map((item,i)=><span key={i}>{item==='pizza'?<PizzaSlice/>:item==='acai'?<AcaiCup/>:item}</span>)}</span>;
  else body=EMOJIS[key]||'🍽️';
  return <span className={'pitacco-category-icon '+(key==='flame'&&animated?'pitacco-flame-animated':'')} style={{fontSize:size}} aria-hidden="true">{body}</span>;
 }
