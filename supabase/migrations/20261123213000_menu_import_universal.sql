@@ -171,3 +171,17 @@ end;
 $$;
 revoke all on function public.pitacco_menu_import_apply(uuid,jsonb,text,text) from public,anon;
 grant execute on function public.pitacco_menu_import_apply(uuid,jsonb,text,text) to authenticated;
+
+-- Fotos dos produtos importados: a gravação só é autorizada na pasta da própria loja.
+-- A política antiga continua válida; esta inclui também o papel "lojista" habilitado ao catálogo.
+drop policy if exists "pitacco_media_catalog_import_insert" on storage.objects;
+create policy "pitacco_media_catalog_import_insert" on storage.objects
+ for insert to authenticated
+ with check (
+  bucket_id='pitacco-media'
+  and name ~ '^products/[0-9a-fA-F-]{36}/[0-9a-fA-F-]{36}[.](jpg|png|webp)$'
+  and public.pitacco_menu_import_allowed(
+     case when split_part(name,'/',2) ~ '^[0-9a-fA-F-]{36}$'
+          then split_part(name,'/',2)::uuid else null end
+  )
+);
