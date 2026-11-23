@@ -853,7 +853,7 @@ try {
       await page.getByRole('button',{name:'Aparência do cardápio',exact:true}).click();
       const studio=page.getByRole('region',{name:'Estúdio de Cardápio Pitacco'});
       await studio.getByRole('heading',{name:'Estúdio de Cardápio'}).waitFor();
-      await studio.getByRole('button',{name:/Urbano Cabeçalho/}).click();
+      await studio.getByRole('button',{name:/Urbano Blocos/}).click();
       await studio.getByLabel('Cor Principal').fill('#b43e24');
       await studio.getByLabel('Slogan').fill('O melhor da cidade');
       await studio.getByRole('button',{name:'Computador'}).click();

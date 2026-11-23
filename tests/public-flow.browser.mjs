@@ -143,7 +143,12 @@ try {
     await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
     assert.equal(await page.locator('#v2TopProducts .v2-top-product').count(),2,'Início mostra exatamente dois destaques');
     assert.equal(await page.locator('.v2-top-badge').first().evaluate(e=>parseFloat(getComputedStyle(e).fontSize)<20),true,'Selo de destaque não herda tamanho da imagem');
-    assert.equal(await page.locator('#storeInitial').evaluate(e=>getComputedStyle(e).color),'rgb(255, 255, 255)','Inicial da loja legível sem logotipo');
+    const initialColor=await page.locator('#storeInitial').evaluate(e=>getComputedStyle(e).color);
+    if(['essencial','editorial'].includes(template))assert.notEqual(initialColor,'rgb(255, 255, 255)','Inicial escura no cabeçalho claro');else assert.equal(initialColor,'rgb(255, 255, 255)','Inicial clara no cabeçalho escuro');
+    const placement=await page.locator('.v2-top-product').first().evaluate(card=>{const photo=card.querySelector('.v2-top-photo').getBoundingClientRect(),details=card.querySelector('.v2-top-product-details').getBoundingClientRect();return {photoLeft:photo.left,detailsLeft:details.left,caption:getComputedStyle(card.querySelector('.v2-top-product-details')).backgroundColor};});
+    if(template==='essencial')assert.ok(placement.photoLeft<placement.detailsLeft,'Essencial apresenta a foto à esquerda');
+    if(template==='editorial')assert.ok(placement.photoLeft>placement.detailsLeft,'Editorial apresenta a foto à direita');
+    if(template==='urbano')assert.equal(placement.caption,'rgb(23, 35, 48)','Urbano tem legenda escura contrastante');
     assert.equal(await page.locator('#layout #products .product').count(),2,'Todos os itens aparecem no catálogo abaixo dos destaques');
     await page.getByRole('heading',{name:'Todo o cardápio',exact:true}).waitFor();
     await page.locator('#v2HeaderAbout').click();
