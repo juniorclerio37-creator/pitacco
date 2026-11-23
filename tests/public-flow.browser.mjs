@@ -26,7 +26,7 @@ const orderId = '10000000-0000-0000-0000-000000000001';
 const token = '20000000-0000-0000-0000-000000000001';
 
 try {
-  for(const template of ['pitacco-v2','essencial','editorial','urbano']) for (const width of [375, 768, 1440]) {
+  for(const template of ['pitacco-v2','essencial','editorial','urbano','classic']) for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     page.setDefaultTimeout(30000);
     page.setDefaultNavigationTimeout(30000);
