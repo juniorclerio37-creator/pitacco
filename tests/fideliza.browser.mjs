@@ -6,9 +6,15 @@ import {chromium} from '../web/node_modules/playwright/index.mjs';
 const source=await readFile(new URL('../marketing/cardapio.html',import.meta.url),'utf8');
 const browser=await chromium.launch({executablePath:process.env.PITACCO_CHROMIUM});
 const origin='http://localhost:4191';
+const templatePalettes={
+ 'pitacco-v2':{primary:'#ff7a08',hero:'#4b075e',background:'#faf7fd',paper:'#ffffff',foreground:'#261033'},
+ essencial:{primary:'#217c5a',hero:'#174c39',background:'#f5f8f6',paper:'#ffffff',foreground:'#173a2d'},
+ editorial:{primary:'#bc5435',hero:'#41271f',background:'#fbf7f0',paper:'#ffffff',foreground:'#38271f'},
+ urbano:{primary:'#24364a',hero:'#172330',background:'#f4f6f8',paper:'#ffffff',foreground:'#172330'}
+};
 const rules={points_enabled:true,points_per_real:1,min_points_to_redeem:100,points_reward_cents:1000,orders_enabled:true,orders_required:3,orders_reward_cents:500,coupons_enabled:true,campaigns_enabled:true,cashback_enabled:true,cashback_percent:5,cashback_max_redeem_percent:50,referrals_enabled:true,referral_reward_cents:300,referral_welcome_cents:200,minimum_order_cents:0};
 try{
- for(const width of [375,1440]){
+ for(const template of ['pitacco-v2','essencial','editorial','urbano']) for(const width of [375,1440]){
   const page=await browser.newPage({viewport:{width,height:1000}}),errors=[],sent=[];
   page.on('pageerror',e=>errors.push(e.stack||e.message));
   await page.route('**/*',async route=>{
@@ -17,7 +23,7 @@ try{
    if(url.origin==='https://esm.sh')return route.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:`export function createClient(){return {rpc:async(name,payload)=>{const r=await fetch('/fixture/'+name,{method:'POST',body:JSON.stringify(payload)});const data=await r.json();return {data:r.ok?data:null,error:r.ok?null:data,status:r.status}}}}`});
    if(!url.pathname.startsWith('/fixture/'))return route.abort();
    const p=route.request().postDataJSON();
-   if(name==='get_public_menu')return route.fulfill({json:{store:{name:'Loja Fideliza',delivery_enabled:false,pickup_enabled:true,payment_methods:['pix_manual'],opening_hours:{open:true,reason:'open'}},products:[{id:'p1',name:'Açaí',category:'Açaí',price:50,option_groups:[]}]}});
+   if(name==='get_public_menu')return route.fulfill({json:{store:{appearance:{template,...templatePalettes[template]},name:'Loja Fideliza',delivery_enabled:false,pickup_enabled:true,payment_methods:['pix_manual'],opening_hours:{open:true,reason:'open'}},products:[{id:'p1',name:'Açaí',category:'Açaí',price:50,option_groups:[]},{id:'p2',name:'Creme de cupuaçu',category:'Açaí',price:50,option_groups:[]},{id:'p3',name:'Combo da casa',category:'Açaí',price:50,option_groups:[]}]}});
    if(name==='pitacco_public_store_open')return route.fulfill({json:{open:true,reason:'open'}});
    if(name==='pitacco_public_schedule_slots')return route.fulfill({json:[]});
    if(name==='pitacco_loyalty_program')return route.fulfill({json:{rules,campaigns:[{id:'campaign',title:'Oferta da semana',code:'SEMANA5',discount_type:'fixed',discount_value:5,minimum_order_cents:0}]}});
@@ -40,7 +46,14 @@ try{
    return route.fulfill({status:404,json:{message:'Unexpected '+name}});
   });
   await page.goto(origin+'/loyalty-test?indicacao=INDICADOR');
+
+  await page.waitForFunction(()=>document.body.dataset.menuSkin);
+  await page.locator('.product-open').first().waitFor();
+  assert.equal(await page.locator('body').getAttribute('data-menu-skin'),template==='pitacco-v2'?'principal':template);
+  await mkdir('artifacts',{recursive:true});
+  await page.screenshot({path:`artifacts/menu-${template}-${width}.png`,fullPage:true});
   await page.locator('#v2HomeLoyaltyGo').click();
+
   assert.equal(await page.locator('#v2LoyaltyPage').isVisible(),true,'Fideliza+ usa tela exclusiva V2');
   await page.locator('#v2LoyaltyPhone').fill('21999990001');
   await page.locator('#v2PointsValue').filter({hasText:'120'}).waitFor();
@@ -68,7 +81,7 @@ try{
   assert.equal(await page.locator('#v2LoyaltyPage').isVisible(),true);
   assert.equal(await page.locator('#v2PointsValue').isVisible(),true);
   assert.equal(sent.length,2);assert.deepEqual(errors,[]);
-  console.log('PASS Fideliza customer wallet, campaign/reward, cart invalidation and retry',width);
+  console.log('PASS Fideliza customer wallet, campaign/reward, cart invalidation and retry',template,width);
   await page.close();
  }
  // Exercise the actual merchant component with deterministic API fixtures.

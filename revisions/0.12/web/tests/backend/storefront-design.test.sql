@@ -13,12 +13,26 @@ insert into public.products(id,store_id,name,price,cost,menu_active) values
 set local role authenticated;
 select set_config('request.jwt.claim.sub','91000000-0000-0000-0000-000000000001',true);
 do $test$
-declare state jsonb; d jsonb; result jsonb;
+declare state jsonb; d jsonb; result jsonb; template_id text;
 begin
  state:=public.pitacco_storefront_studio_state('92000000-0000-0000-0000-000000000001');
  assert state->>'draft_version'='0';
  assert state->'published'='null'::jsonb;
- d:=jsonb_set(state->'draft','{primary}','"#183e85"'::jsonb);
+ -- Optional template: legacy drafts remain valid, invalid/extra keys rejected.
+ foreach template_id in array array['pitacco-v2','essencial','editorial','urbano'] loop
+ begin
+  perform public.pitacco_storefront_save_draft('92000000-0000-0000-0000-000000000001',state->'draft'||jsonb_build_object('template',template_id),0);
+  raise exception using errcode='PT001',message='template validated';
+ exception when sqlstate 'PT001' then null;
+ end;
+ end loop;
+ begin
+  perform public.pitacco_storefront_save_draft('92000000-0000-0000-0000-000000000001',state->'draft'||'{"template":"legacy"}'::jsonb,0);
+  raise exception 'Invalid template accepted';
+ exception when raise_exception then
+  if sqlerrm<>'Modelo de cardápio inválido' then raise;end if;
+ end;
+ d:=jsonb_set(state->'draft'||'{"template":"editorial"}'::jsonb,'{primary}','"#183e85"'::jsonb);
  d:=jsonb_set(d,'{banners}',jsonb_build_array(jsonb_build_object(
   'title','Combo da semana','subtitle','Um destaque da loja','image_path','',
   'starts_at',null,'ends_at',null,'product_id','93000000-0000-0000-0000-000000000001')));
@@ -33,6 +47,7 @@ begin
  end;
  result:=public.pitacco_storefront_publish('92000000-0000-0000-0000-000000000001',1,0);
  assert result->>'published_version'='1';
+ assert (public.pitacco_storefront_studio_state('92000000-0000-0000-0000-000000000001')->'published'->>'template')='editorial';
  assert (public.pitacco_storefront_studio_state('92000000-0000-0000-0000-000000000001')->'published'->>'primary')='#183e85';
  begin
   perform public.pitacco_storefront_publish('92000000-0000-0000-0000-000000000001',1,0);

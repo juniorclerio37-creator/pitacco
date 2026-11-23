@@ -26,7 +26,7 @@ const orderId = '10000000-0000-0000-0000-000000000001';
 const token = '20000000-0000-0000-0000-000000000001';
 
 try {
-  for (const width of [375, 768, 1440]) {
+  for(const template of ['pitacco-v2','essencial','editorial','urbano']) for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const tracking = {
       375: { status: 'accepted', delivery_status: 'cancelada', fulfillment: 'delivery', label: 'Pedido cancelado' },
@@ -73,7 +73,7 @@ try {
       if (pathname.endsWith('/get_public_menu')) {
         assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
         return route.fulfill({ json: {
-          store: { name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true,
+          store: { appearance:{template,primary:'#217c5a'}, primary_color:'#e04020', name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true,
             delivery_fee: 0, route_pricing:{enabled:true,mode:'circle',max_radius_km:3},
             delivery_area:area, payment_methods: ['pix_manual'],
             opening_hours:{open:true,reason:'open',next_open_at:null} },
@@ -138,9 +138,12 @@ try {
     await page.goto(origin + (width===375?'/cardapio/?loja=loja-teste':'/loja-teste?utm_source=qr&loja=outro'));
     const productCard=page.getByRole('button',{name:'Personalizar Açaí',exact:true});
     await productCard.waitFor();
+    assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--brand')),'#217c5a','Published studio palette takes precedence over old branding');
     assert.equal(await page.locator('body').getAttribute('data-menu-template'),'pitacco-v2','Versão 2 é o template principal');
     await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
     assert.equal(await page.locator('#v2TopProducts .v2-top-product').count(),2,'Início mostra exatamente dois destaques');
+    assert.equal(await page.locator('.v2-top-badge').first().evaluate(e=>parseFloat(getComputedStyle(e).fontSize)<20),true,'Selo de destaque não herda tamanho da imagem');
+    assert.equal(await page.locator('#storeInitial').evaluate(e=>getComputedStyle(e).color),'rgb(255, 255, 255)','Inicial da loja legível sem logotipo');
     assert.equal(await page.locator('#layout #products .product').count(),2,'Todos os itens aparecem no catálogo abaixo dos destaques');
     await page.getByRole('heading',{name:'Todo o cardápio',exact:true}).waitFor();
     await page.locator('#v2HeaderAbout').click();
