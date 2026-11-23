@@ -135,7 +135,7 @@ export default function UniversalMenuImporter({client,storeId,onCompleted}){
    setSelected(0);setLimit(24);setAllowMissing(false);setReplaceConfirm(false);
    setNotice(hasProducts
     ?'Análise concluída. Revise os produtos antes de importar. Nenhum cadastro foi alterado.'
-    :'O link foi analisado, mas nenhum produto foi disponibilizado para importação. Seu cardápio atual não foi alterado.');
+    :'');
   }catch(e){setError(e.message||'Não foi possível analisar este endereço.');}
   finally{setPhase('');}
  }
