@@ -26,7 +26,7 @@ const orderId = '10000000-0000-0000-0000-000000000001';
 const token = '20000000-0000-0000-0000-000000000001';
 
 try {
-  for(const template of ['pitacco-v2','essencial','editorial','urbano']) for (const width of [375, 768, 1440]) {
+  for(const template of ['pitacco-v2','essencial','editorial','urbano','classic']) for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     page.setDefaultTimeout(30000);
     page.setDefaultNavigationTimeout(30000);
@@ -124,9 +124,14 @@ try {
       if (pathname.endsWith('/delivery-quote')) {
         const payload=route.request().postDataJSON();
         assert.equal(payload.slug,'loja-teste');
-        assert.equal(payload.address,'Rua Teste, 123, Centro, Nova Iguaçu, RJ');
+        assert.match(payload.address,/^Rua (Teste|Fora Entrega), 123, Centro, Nova Iguaçu, RJ/);
+        if(payload.address.startsWith('Rua Fora Entrega'))
+          return route.fulfill({status:422,json:{error:'Este endereço está fora do círculo de entregas da loja.'}});
         if(++quoteAttempts===1)return route.fulfill({status:409,json:{error:'Existe uma região poligonal inválida. Corrija em Área de Entrega.'}});
-        assert.deepEqual([payload.latitude,payload.longitude],[-22.71,-43.4]);
+        if(payload.latitude!==undefined||payload.longitude!==undefined)
+          assert.deepEqual([payload.latitude,payload.longitude],[-22.71,-43.4]);
+        else
+          assert.equal(payload.latitude,undefined,'Endereço completo cota sem ponto obrigatório em todos os templates');
         return route.fulfill({json:{quote_id:'30000000-0000-0000-0000-000000000011',
           request_id:payload.request_id,fee:5,distance_m:1112,distance_type:'straight',
           expires_at:new Date(Date.now()+5*60*1000).toISOString()}});
@@ -153,6 +158,41 @@ try {
     await page.goto(origin + (width===375?'/cardapio/?loja=loja-teste':'/loja-teste?utm_source=qr&loja=outro'));
     const productCard=page.getByRole('button',{name:'Personalizar Açaí',exact:true});
     await productCard.waitFor();
+    if(template==='classic'){
+      // Classic has different navigation from V2. Test its real checkout path
+      // without asserting V2-only hero, favourites and product cards.
+      assert.equal(await page.locator('body').getAttribute('data-menu-template'),'classic');
+      await productCard.click();
+      const product=page.getByRole('dialog',{name:'Açaí'});
+      await product.getByRole('radio',{name:/Morango/}).check();
+      await product.getByRole('button',{name:/Adicionar à sacola/}).click();
+      await page.locator('#openCart').click();
+      const cart=page.getByRole('dialog',{name:'Sua sacola'});
+      assert.match(await cart.locator('#total').innerText(),/valor da entrega.*automaticamente/i);
+      await cart.getByRole('button',{name:'Continuar para entrega e pagamento'}).click();
+      await page.locator('#customer').fill('Cliente Teste');
+      await page.locator('#phone').fill('21999999999');
+      for(const [id,value] of [['addressStreet','Rua Teste'],['addressNumber','123'],['addressNeighborhood','Centro'],['addressCity','Nova Iguaçu']])
+        await page.locator('#'+id).fill(value);
+      await page.locator('#addressState').selectOption('RJ');
+      assert.equal(await page.locator('#quoteDelivery').isVisible(),false,'O Clássico também não tem botão de frete');
+      await page.locator('#routeQuoteStatus').filter({hasText:'A loja precisa revisar'}).waitFor();
+      await page.getByRole('button',{name:'Usar minha localização'}).click();
+      await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
+      await page.locator('#payment').selectOption('pix_manual');
+      assert.match(await page.locator('#total').innerText(),/Taxa de entrega/);
+      assert.equal(await page.locator('#send').isDisabled(),false,'Classic pode confirmar apenas com cotação válida');
+      await page.locator('#addressStreet').fill('Rua Fora Entrega');
+      await page.locator('#routeQuoteStatus').filter({hasText:'Não atendemos essa região'}).waitFor();
+      assert.equal(await page.locator('#send').isDisabled(),true,'Classic bloqueia pedidos fora da cobertura');
+      await page.locator('#addressStreet').fill('Rua Teste');
+      await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
+      assert.equal(await page.locator('#send').isDisabled(),false);
+      assert.deepEqual(errors,[]);
+      await page.close();
+      console.log('PASS classic automatic quote at '+width+'px');
+      continue;
+    }
     assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--brand')),'#217c5a','Published studio palette takes precedence over old branding');
     assert.equal(await page.locator('body').getAttribute('data-menu-template'),'pitacco-v2','Versão 2 é o template principal');
     await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
@@ -218,7 +258,7 @@ try {
     await product.getByRole('button',{name:/Salvar alterações/}).click();
     await cart.getByText('Item atualizado na sacola.',{exact:true}).waitFor();
     assert.match(await cart.locator('#total').innerText(),/69,00/);
-    assert.match(await cart.locator('#total').innerText(),/calcule o frete/i);
+    assert.match(await cart.locator('#total').innerText(),/valor da entrega.*automaticamente/i);
     await firstLine.getByText(/Morango · Granola/).waitFor();
     await firstLine.getByRole('button',{name:'Editar complementos',exact:true}).click();
     await product.getByRole('checkbox',{name:/Granola/}).uncheck();
@@ -279,18 +319,25 @@ try {
       assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Fiado oculto para telefone não autorizado');
     }
     }
-    await page.getByRole('button',{name:'Usar minha localização'}).click();
-    await page.getByText('Ponto marcado. Confira o endereço e calcule o frete.').waitFor();
-    await page.getByRole('button',{name:'Calcular taxa de entrega'}).click();
+    const pricingChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
+    assert.equal(await page.locator('#quoteDelivery').isVisible(),false,'Nenhum template mostra botão manual de frete');
     await page.locator('#routeQuoteStatus').filter({hasText:'A loja precisa revisar'}).waitFor();
     assert.equal(await page.locator('#routeQuoteStatus').getAttribute('role'),'alert');
+    await page.getByRole('button',{name:'Usar minha localização'}).click();
+    await page.getByText('Localização confirmada. A taxa será atualizada automaticamente.').waitFor();
+    await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
+    await pricingChecked;
+    assert.match(await page.locator('#total').innerText(),/74,00/);
+    // O servidor decide a cobertura; fora da região não pode haver valor presumido.
+    await page.locator('#addressStreet').fill('Rua Fora Entrega');
+    await page.locator('#routeQuoteStatus').filter({hasText:'Não atendemos essa região'}).waitFor();
+    assert.equal(await page.locator('#routeQuoteStatus').getAttribute('role'),'alert');
+    assert.doesNotMatch(await page.locator('#total').innerText(),/Taxa de entrega.+5,00/i);
+    await page.locator('#addressStreet').fill('Rua Teste');
+    await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
+    assert.match(await page.locator('#total').innerText(),/74,00/);
     if(width===375){await mkdir('artifacts',{recursive:true});await page.locator('#addressBlock').screenshot({path:`artifacts/menu-address-${template}.png`});}
     assert.doesNotMatch(await page.locator('#routeQuoteStatus').innerText(),/non-2xx/);
-    const pricingChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
-    await page.getByRole('button',{name:'Calcular taxa de entrega'}).click();
-    await pricingChecked;
-    await page.getByText(/Linha reta: 1,1 km · Entrega: R\$.*5,00/).waitFor();
-    assert.match(await page.locator('#total').innerText(),/74,00/);
     if(scheduled)await page.getByLabel('Quando deseja receber?').selectOption(scheduled);
     if(principal){
       await page.locator('#v2CheckoutNext').click();

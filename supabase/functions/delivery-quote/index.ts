@@ -179,6 +179,55 @@ async function approximateStoreAddress(store:any,db:any):Promise<Geo & {approxim
   neighborhood:store.neighborhood||'',approximate:!Boolean(first.address?.house_number)};
 }
 
+/**
+ * Resolve an address for a circle/polygon quote only when a configured
+ * provider returns a verified street + house number + municipality match.
+ * Never guess from a bairro, CEP centroid or city centre. When confidence is
+ * insufficient the client must confirm the point on its visual map.
+ * Coordinates are used for an authoritative server-side quote only.
+ */
+async function customerDeliveryLocation(address:string,geoapifyKey?:string,googleKey?:string):Promise<Point>{
+ const parts=address.split(',').map(p=>p.trim());
+ const street=parts[0]||'',number=parts[1]||'',city=parts[3]||'';
+ const postal=(address.match(/\bCEP\s*([0-9]{5}-?[0-9]{3})\b/i)?.[1]||'').replace(/\D/g,'');
+ if(street.length<3||!number||!city)throw Error('Preencha rua, número, bairro e cidade para calcular o frete.');
+ if(geoapifyKey){
+  try{
+   const url=new URL('https://api.geoapify.com/v1/geocode/search');
+   url.searchParams.set('text',address+', Brasil');
+   url.searchParams.set('filter','countrycode:br');
+   url.searchParams.set('format','json');url.searchParams.set('limit','5');
+   url.searchParams.set('apiKey',geoapifyKey);
+   const res=await fetch(url,{signal:AbortSignal.timeout(7000)});
+   if(res.ok){
+    const data=await res.json();
+    for(const found of Array.isArray(data.results)?data.results:[]){
+     if(String(found.country_code||'').toLowerCase()!=='br')continue;
+     if(!finiteBrazil(Number(found.lat),Number(found.lon)))continue;
+     if(!sameRoad(found.street,street))continue;
+     if(String(found.housenumber||'').trim()!==number)continue;
+     if(![found.city,found.municipality,found.county].some((v:any)=>normalize(String(v||''))===normalize(city)))continue;
+     if(postal&&found.postcode&&!samePostal(postal,found.postcode))continue;
+     if(!['building','amenity','house'].includes(String(found.result_type||'').toLowerCase()))continue;
+     if(Number(found.rank?.confidence||0)<0.80)continue;
+     return [Number(found.lat),Number(found.lon)];
+    }
+   }
+  }catch{ /* The exact pin can always be supplied by the customer. */ }
+ }
+ if(googleKey){
+  try{
+   const found=await geocode(address+', Brasil',googleKey);
+   if(found.country==='BR'&&finiteBrazil(found.lat,found.lng)
+     &&sameRoad(found.street,street)&&String(found.houseNumber||'').trim()===number
+     &&normalize(found.city)===normalize(city)
+     &&(!postal||!found.postalCode||samePostal(postal,found.postalCode))){
+    return [found.lat,found.lng];
+   }
+  }catch{ /* A map pin remains the safe fallback. */ }
+ }
+ throw Error('Não foi possível localizar este endereço com precisão. Marque a entrega no mapa ou use sua localização atual.');
+}
 async function roadDistance(origin:Geo,destination:Geo,key:string):Promise<number>{
  const res=await fetch('https://routes.googleapis.com/directions/v2:computeRoutes',{
   method:'POST',
@@ -341,9 +390,16 @@ Deno.serve(async request=>{
    // Customer confirms drop-off coordinates on the same map the store
    // configured. Never trust a typed address for polygon membership.
    const lat=body.latitude,lng=body.longitude;
-   if(typeof lat!=='number'||typeof lng!=='number'||!finiteBrazil(lat,lng))
-    return problem(422,'Marque e confirme o ponto exato da entrega no mapa.',origin);
-   to=[lat,lng];
+   if(typeof lat==='number'&&typeof lng==='number'&&finiteBrazil(lat,lng)){
+    to=[lat,lng];
+   }else if(lat!=null||lng!=null){
+    return problem(422,'Localização inválida. Marque novamente a entrega no mapa.',origin);
+   }else{
+    // Selecting a saved or freshly typed address quotes automatically if a
+    // configured provider resolves its exact house. No fallback to centroids.
+    try{to=await customerDeliveryLocation(address,geoapifyKey||undefined,key||undefined);}
+    catch(error){return problem(422,error instanceof Error?error.message:'Confirme o ponto de entrega no mapa.',origin);}
+   }
    meters=directDistance(from,to);
    if(mode==='circle'){
     // Keep existing per-kilometre circle brackets completely unchanged.
