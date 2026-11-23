@@ -18,6 +18,9 @@ const browser = await chromium.launch({ executablePath: process.env.PITACCO_CHRO
 try {
   for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
+    page.setDefaultTimeout(30000);
+    page.setDefaultNavigationTimeout(30000);
+    console.log('RUN dashboard',width);
     const errors = [];
     const windowsPings=[];
     let ifoodOrder=null;

@@ -16,7 +16,7 @@ const rules={points_enabled:true,points_per_real:1,min_points_to_redeem:100,poin
 try{
  for(const template of ['pitacco-v2','essencial','editorial','urbano']) for(const width of [375,1440]){
   const page=await browser.newPage({viewport:{width,height:1000}}),errors=[],sent=[];
-  page.on('pageerror',e=>errors.push(e.stack||e.message));
+  page.on('pageerror',e=>errors.push(e.stack||e.message));page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(30000);
   await page.route('**/*',async route=>{
    const url=new URL(route.request().url()),name=url.pathname.split('/').pop();
    if(url.hostname==='fixtures.pitacco.test')return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="600" height="500" viewBox="0 0 600 500"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="#f5e8dc"/><stop offset="1" stop-color="#d6bba5"/></linearGradient></defs><rect width="600" height="500" fill="url(#g)"/><ellipse cx="300" cy="430" rx="165" ry="20" fill="#4b075e" opacity=".15"/><path d="M175 160H425L395 425H205Z" fill="#4b075e"/><path d="M190 230H415L410 270H195Z" fill="#e9c6a1"/><ellipse cx="300" cy="160" rx="135" ry="48" fill="#751079"/><g fill="#dd3442"><circle cx="242" cy="132" r="35"/><circle cx="306" cy="118" r="35"/><circle cx="364" cy="140" r="35"/></g><g fill="#edbd60"><circle cx="209" cy="165" r="12"/><circle cx="284" cy="166" r="12"/><circle cx="343" cy="174" r="12"/><circle cx="390" cy="167" r="12"/></g></svg>'});
@@ -95,7 +95,7 @@ try{
  // Exercise the actual merchant component with deterministic API fixtures.
  const bundled=await build({stdin:{contents:`import React from 'react';import{createRoot}from'react-dom/client';import Fideliza from '../revisions/0.12/web/Fideliza.jsx';createRoot(document.getElementById('root')).render(<Fideliza client={window.fixtureClient} storeId="store" manager={true}/>);`,resolveDir:fileURLToPath(new URL('../web/',import.meta.url)),loader:'jsx'},nodePaths:[fileURLToPath(new URL('../web/node_modules/',import.meta.url))],bundle:true,write:false,outfile:'merchant.js',format:'iife'});
  for(const width of [375,1440]){
-  const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.stack||e.message));
+  const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.stack||e.message));page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(30000);
   await page.addInitScript(()=>{
    window.fixtureProgram=null;window.fixtureCoupons=[];
    window.fixtureClient={rpc:async(name,p)=>({data:name==='pitacco_loyalty_customers'?[{id:'customer',name:'Cliente',phone:'21999990001',points:120,orders:3,cashback_cents:500}]:'b'.repeat(64),error:null}),from(table){

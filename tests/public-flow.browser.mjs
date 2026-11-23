@@ -28,6 +28,9 @@ const token = '20000000-0000-0000-0000-000000000001';
 try {
   for(const template of ['pitacco-v2','essencial','editorial','urbano']) for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
+    page.setDefaultTimeout(30000);
+    page.setDefaultNavigationTimeout(30000);
+    console.log('RUN public-flow',template,width);
     const tracking = {
       375: { status: 'accepted', delivery_status: 'cancelada', fulfillment: 'delivery', label: 'Pedido cancelado' },
       768: { status: 'accepted', delivery_status: 'retirada', preparation_status: 'ready', fulfillment: 'delivery', label: 'Saiu para entrega' },
