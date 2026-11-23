@@ -46,11 +46,34 @@ begin
  assert c is not null,'Primeira compra registra cliente automaticamente';
  assert public.pitacco_loyalty_phone_wallet('loyalty-test',k)->>'linked'='true';
  assert (public.pitacco_loyalty_phone_wallet('loyalty-test',k)->>'points')::integer=0;
+ -- A customer may generate their own link before purchasing through a friend's link.
+ a:=public.pitacco_loyalty_referral_link('loyalty-test',kb);
+ assert a=public.pitacco_loyalty_referral_link('loyalty-test',kb),'Exclusive link is stable on repeated requests';
+ assert (select count(*) from jsonb_object_keys(a))=1,'Link API returns no personal or financial details';
+ assert (public.pitacco_loyalty_phone_wallet('loyalty-test',kb)->>'points')::integer=0,'Generating link earns nothing';
+ assert not exists(select 1 from public.public_checkouts where phone=kb and store_id=s),'Link generation creates no order';
+ begin
+  perform public.pitacco_loyalty_referral_link('loyalty-other',kb);raise exception 'Disabled referral program must not generate links';
+ exception when raise_exception then if sqlerrm<>'Indicações não estão ativas nesta loja' then raise;end if;end;
  r:=pg_temp.loyalty_buy(kb,'','',gen_random_uuid(),
   public.pitacco_loyalty_phone_wallet('loyalty-test',k)->>'referral_code');
  ref_order:=(r->>'order_id')::uuid;
  select id into cb from pitacco_private.loyalty_customers where store_id=s and phone=kb;
  assert cb is not null and (select referred_by=c from pitacco_private.loyalty_customers where id=cb);
+ assert pitacco_private.loyalty_customer_for_order(s,'Cliente',k,a->>'referral_code')=c;
+ assert (select referred_by is null from pitacco_private.loyalty_customers where id=c),'Existing purchaser cannot be retrospectively referred';
+ a:=public.pitacco_loyalty_referral_link('loyalty-test','21999990003');
+ perform pitacco_private.loyalty_customer_for_order(s,'Cliente','21999990003',a->>'referral_code');
+ assert (select referred_by is null from pitacco_private.loyalty_customers where store_id=s and phone='21999990003'),'No self referral';
+ insert into pitacco_private.loyalty_customers(store_id,name,phone,key_hash) values('20000000-0000-0000-0000-000000000092','Outro','21999990003',null) returning jsonb_build_object('referral_code',referral_code) into a;
+ perform pitacco_private.loyalty_customer_for_order(s,'Cliente','21999990003',a->>'referral_code');
+ assert (select referred_by is null from pitacco_private.loyalty_customers where store_id=s and phone='21999990003'),'Other-store link grants no attribution';
+ update pitacco_private.loyalty_customers set active=false where store_id=s and phone='21999990003';
+ begin
+  perform public.pitacco_loyalty_referral_link('loyalty-test','21999990003');raise exception 'Inactive profile must remain inactive';
+ exception when raise_exception then if sqlerrm<>'Indicação indisponível para este cadastro' then raise;end if;end;
+ update pitacco_private.loyalty_customers set active=true where store_id=s and phone='21999990003';
+
  perform pg_temp.loyalty_finish(first_order,false);
  assert pitacco_private.loyalty_balance(s,c,'points')=0, 'Entrega sem pagamento não gera benefício';
  update public.orders set receipt=receipt||'{"payment_status":"paid"}'::jsonb where id=first_order;
@@ -121,7 +144,7 @@ begin
  assert not has_table_privilege('anon','pitacco_private.loyalty_customers','select');
  assert not has_table_privilege('authenticated','public.loyalty_ledger','insert');
  perform set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000091',true);
- assert jsonb_array_length(public.pitacco_loyalty_customers(s))=2;
+ assert jsonb_array_length(public.pitacco_loyalty_customers(s))=3,'Explicit link generation adds the third customer without creating an order';
  rr:=public.pitacco_loyalty_phone_wallet('loyalty-test',k);
  assert rr->>'linked'='true','Telefone localiza a mesma carteira';
  assert not has_function_privilege('authenticated','public.pitacco_loyalty_reset_key(uuid,uuid)','execute');
@@ -174,6 +197,7 @@ set local role anon;
 select set_config('request.jwt.claim.sub','',true);
 do $anon$
 begin
+ assert public.pitacco_loyalty_referral_link('loyalty-test',current_setting('fideliza.fixture.phone')) ? 'referral_code';
  assert public.pitacco_loyalty_phone_wallet('loyalty-test',current_setting('fideliza.fixture.phone'))->>'linked'='true';
  assert not (public.pitacco_loyalty_phone_wallet('loyalty-test',current_setting('fideliza.fixture.phone')) ? 'name'),
   'Telefone não revela dados pessoais';

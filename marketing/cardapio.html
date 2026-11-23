@@ -945,7 +945,7 @@ body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-s
 <section id="loyaltyBox" class="fiado-access" aria-label="Fideliza+ do cliente" hidden>
  <h3>Fideliza+ · Benefícios desta loja</h3><p id="loyaltyTerms"></p><div id="loyaltyCampaigns"></div>
  <div id="loyaltyAnonymous"><p>Seu número de celular com DDD é seu acesso ao Fideliza+. Ao digitar o telefone do pedido, seus pontos e créditos aparecem automaticamente. Na primeira compra, o cadastro da carteira é automático.</p>
- <label for="loyaltyReferral">Código de indicação (opcional, na primeira compra)</label><input id="loyaltyReferral" maxlength="32" autocomplete="off"></div>
+ </div>
  <div id="loyaltyMember" hidden><p id="loyaltyBalance"></p>
  <div id="loyaltyShareBlock" hidden><label for="loyaltyShare">Seu link de indicação</label><input id="loyaltyShare" readonly><button type="button" id="loyaltyCopyShare" class="secondary">Copiar indicação</button></div></div>
  <div id="loyaltyCouponBlock"><label for="loyaltyCoupon">Cupom ou código da campanha</label><input id="loyaltyCoupon" maxlength="32" autocomplete="off" placeholder="Código da oferta"></div>
@@ -1370,12 +1370,14 @@ function v2ShowBenefit(mode,scroll=true){
   line(money((wallet?.cashback_cents||0)/100)+' de créditos','Utilização sujeita às regras da loja','Usar agora',()=>v2BenefitPurchase('reward','cashback'),!(wallet?.cashback_cents>0));
   line('Acumule em suas compras','Créditos são concedidos apenas depois do pedido pago e entregue.');
  }else if(mode==='indicacoes'){
-  if(wallet?.referral_code)line('Seu código: '+wallet.referral_code,'Compartilhe com amigos que ainda não compraram aqui.','Copiar link',()=>{
-   const url=location.origin+'/'+slug+'?indicacao='+encodeURIComponent(wallet.referral_code);
-   if(navigator.clipboard?.writeText)navigator.clipboard.writeText(url).then(()=>root.append(el('p','Link copiado.'))).catch(()=>root.append(el('p',url)));
-   else root.append(el('p',url));
-  });
-  else line('Indique amigos','Informe seu celular no campo acima. As vantagens dependem das regras da loja.');
+  if(wallet?.referral_code){
+   line('Seu link exclusivo','Compartilhe o cardápio. Você recebe os benefícios definidos pela loja após a primeira compra válida do indicado, paga e entregue.','Copiar link',()=>{
+    const url=referralLink(wallet.referral_code);
+    if(navigator.clipboard?.writeText)navigator.clipboard.writeText(url).then(()=>root.append(el('p','Link copiado.'))).catch(()=>root.append(el('p',url)));
+    else root.append(el('p',url));
+   });
+   const link=el('input');link.readOnly=true;link.value=referralLink(wallet.referral_code);link.setAttribute('aria-label','Link exclusivo para indicar esta loja');root.append(link);
+  }else line('Indique amigos','Informe seu celular acima e gere seu link exclusivo para compartilhar o cardápio.','Gerar meu link',()=>void generateReferralLink(),!/^\d{10,11}$/.test(loyaltyPhone));
  }else if(mode==='cupons'||mode==='campanhas'){
   const all=[...(loyaltyProgram?.campaigns||[]),...(wallet?.offers||[])];
   const offers=mode==='campanhas'?all.filter(o=>!o.personal):all;
@@ -1869,6 +1871,33 @@ $('payment').addEventListener('change',()=>{
 let loyaltyProgram=null,loyaltyWallet=null,loyaltyPhone='',loyaltyPreview=null,loyaltyStamp='',loyaltyBusy=false,loyaltyPhoneRequest=0,loyaltyPhoneTimer=null;
 const loyaltyPhoneDigits=value=>{const digits=String(value||'').replace(/\D/g,'');return digits.startsWith('55')&&(digits.length===12||digits.length===13)?digits.slice(2):digits;};
 const loyaltyItems=()=>cart.map(({product_id,quantity,options})=>({product_id,quantity,options:[...options]}));
+const referralStorageKey='pitacco-referral:'+slug;
+let referralCode='';
+try{
+ const incoming=(new URLSearchParams(location.search).get('indicacao')||'').trim().toUpperCase();
+ if(/^[A-Z0-9]{1,32}$/.test(incoming)){referralCode=incoming;localStorage.setItem(referralStorageKey,incoming);}
+ else{const saved=localStorage.getItem(referralStorageKey)||'';if(/^[A-Z0-9]{1,32}$/.test(saved))referralCode=saved;}
+}catch{referralCode=(new URLSearchParams(location.search).get('indicacao')||'').trim().toUpperCase();if(!/^[A-Z0-9]{1,32}$/.test(referralCode))referralCode='';}
+const referralLink=code=>location.origin+'/'+slug+'?indicacao='+encodeURIComponent(code);
+async function generateReferralLink(){
+ const phone=loyaltyPhone;
+ if(!/^\d{10,11}$/.test(phone)){loyaltyNotice('Informe seu celular com DDD no Fideliza+.');return;}
+ try{
+  const {data,error}=await client.rpc('pitacco_loyalty_referral_link',{p_slug:slug,p_phone:phone});
+  if(error||data?.error)throw Error(data?.error||error.message);
+  if(phone!==loyaltyPhone)return;
+  await refreshLoyaltyWallet();
+  loyaltyNotice('Seu link exclusivo está pronto para compartilhar.');
+ }catch(error){loyaltyNotice(error.message||'Não foi possível gerar o link. Tente novamente.');}
+}
+function availableLoyaltyRewards(wallet){
+ if(!wallet)return [];
+ const rules=wallet.rules||{},list=[];
+ if(rules.points_enabled&&Number(rules.points_reward_cents)>0&&Number(rules.min_points_to_redeem)>0&&Number(wallet.points)>=Number(rules.min_points_to_redeem))list.push({value:'points',label:rules.min_points_to_redeem+' pontos por '+money(rules.points_reward_cents/100)});
+ if(rules.orders_enabled&&Number(rules.orders_reward_cents)>0&&Number(rules.orders_required)>0&&Number(wallet.orders)>=Number(rules.orders_required))list.push({value:'orders',label:rules.orders_required+' pedidos por '+money(rules.orders_reward_cents/100)});
+ if((rules.cashback_enabled||rules.referrals_enabled)&&Number(wallet.cashback_cents)>0&&Number(rules.cashback_max_redeem_percent)>0)list.push({value:'cashback',label:'Usar créditos: até '+money(wallet.cashback_cents/100)+' (limite '+rules.cashback_max_redeem_percent+'% dos produtos)'});
+ return list;
+}
 const loyaltyFingerprint=()=>JSON.stringify([loyaltyItems(),loyaltyPhone,$('loyaltyCoupon').value.trim().toUpperCase(),$('loyaltyReward').value]);
 const loyaltyDiscount=()=>loyaltyPreview&&loyaltyStamp===loyaltyFingerprint()?Number(loyaltyPreview.discount_cents)/100:0;
 function loyaltyNotice(text){$('loyaltyStatus').textContent=text||'';}
@@ -1881,12 +1910,9 @@ function renderLoyalty(){
  select.replaceChildren(new Option('Não usar saldo nesta compra',''));
  if(loyaltyWallet){
   $('loyaltyBalance').textContent='Este celular: '+loyaltyWallet.points+' pontos · '+loyaltyWallet.orders+' pedidos · Créditos '+money(loyaltyWallet.cashback_cents/100);
-  const add=(name,value,available)=>{const option=new Option(name,value);option.disabled=!available;select.add(option)};
-  if(rules.points_enabled)add(rules.min_points_to_redeem+' pontos por '+money(rules.points_reward_cents/100),'points',loyaltyWallet.points>=rules.min_points_to_redeem);
-  if(rules.orders_enabled)add(rules.orders_required+' pedidos por '+money(rules.orders_reward_cents/100),'orders',loyaltyWallet.orders>=rules.orders_required);
-  if(rules.cashback_enabled||rules.referrals_enabled)add('Usar créditos: até '+money(loyaltyWallet.cashback_cents/100)+' (limite '+rules.cashback_max_redeem_percent+'% dos produtos)','cashback',loyaltyWallet.cashback_cents>0);
+  for(const reward of availableLoyaltyRewards(loyaltyWallet))select.add(new Option(reward.label,reward.value));
   $('loyaltyShareBlock').hidden=!rules.referrals_enabled||!loyaltyWallet.referral_code;
-  $('loyaltyShare').value=location.origin+'/'+slug+'?indicacao='+encodeURIComponent(loyaltyWallet.referral_code);
+  $('loyaltyShare').value=referralLink(loyaltyWallet.referral_code);
  }
  if([...select.options].some(x=>x.value===chosen&&!x.disabled))select.value=chosen;
  $('loyaltyRewardBlock').hidden=!loyaltyWallet||select.options.length<2;
@@ -1972,7 +1998,7 @@ $('loyaltyApply').onclick=async()=>{
   loyaltyPreview=data;loyaltyStamp=fingerprint;renderCart();loyaltyNotice('Desconto conferido: '+money(data.discount_cents/100)+'. A disponibilidade será confirmada ao enviar o pedido.');
  }catch(error){invalidateLoyalty();loyaltyNotice(error.message||'Não foi possível aplicar o benefício.');}finally{loyaltyBusy=false;$('loyaltyApply').disabled=false;}
 };
-$('loyaltyReferral').value=new URLSearchParams(location.search).get('indicacao')||'';
+// Referral attribution comes only from the store-scoped link, never a checkout input.
 
 function initOptions(){
  const shop=menu.store;
@@ -2114,8 +2140,8 @@ $('checkout').onsubmit=async event=>{
    p_notes:$('notes').value
   };
   // O telefone identifica o cliente; a autorização do pedido é feita pela loja.
-  if(loyaltyProgram||loyaltyPhone||$('loyaltyCoupon').value.trim()||$('loyaltyReward').value){
-   pendingRequest.p_key=$('loyaltyReferral').value.trim().toUpperCase();pendingRequest.p_coupon=$('loyaltyCoupon').value.trim().toUpperCase();pendingRequest.p_reward=$('loyaltyReward').value;
+  if(referralCode||loyaltyProgram||loyaltyPhone||$('loyaltyCoupon').value.trim()||$('loyaltyReward').value){
+   pendingRequest.p_key=referralCode;pendingRequest.p_coupon=$('loyaltyCoupon').value.trim().toUpperCase();pendingRequest.p_reward=$('loyaltyReward').value;
   }
   if(routeMode)pendingRequest.p_quote=deliveryQuote.id;
   // The quoted checkout recovers the customer's exact pin on the server
@@ -2168,6 +2194,7 @@ $('checkout').onsubmit=async event=>{
    throw Error(String(data.error));
   }
   if(!data?.order_id)throw Error('O servidor não retornou a confirmação do pedido.');
+  referralCode='';try{localStorage.removeItem(referralStorageKey);}catch{}
   completed=true;submitting=false;cartRecoveryId=null;persistCartDraft();$('cartDraftNotice').hidden=true;
   if(usingLoyalty)void refreshLoyaltyWallet();
   $('checkout').hidden=true;$('cartReview').hidden=true;$('cartFooter').hidden=true;

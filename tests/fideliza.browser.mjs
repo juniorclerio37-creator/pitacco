@@ -16,6 +16,7 @@ const rules={points_enabled:true,points_per_real:1,min_points_to_redeem:100,poin
 try{
  for(const template of ['pitacco-v2','essencial','editorial','urbano']) for(const width of [375,1440]){
   const page=await browser.newPage({viewport:{width,height:1000}}),errors=[],sent=[];
+  let linkGenerated=false;
   page.on('pageerror',e=>errors.push(e.stack||e.message));page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(30000);
   await page.route('**/*',async route=>{
    const url=new URL(route.request().url()),name=url.pathname.split('/').pop();
@@ -29,9 +30,10 @@ try{
    if(name==='pitacco_public_store_open')return route.fulfill({json:{open:true,reason:'open'}});
    if(name==='pitacco_public_schedule_slots')return route.fulfill({json:[]});
    if(name==='pitacco_loyalty_program')return route.fulfill({json:{rules,campaigns:[{id:'campaign',title:'Oferta da semana',code:'SEMANA5',discount_type:'fixed',discount_value:5,minimum_order_cents:0}]}});
+   if(name==='pitacco_loyalty_referral_link'){assert.equal(p.p_phone,'21999990001');linkGenerated=true;return route.fulfill({json:{referral_code:'PESSOAL'}});}
    if(name==='pitacco_loyalty_phone_wallet'){
     assert.equal(p.p_phone,'21999990001');
-    return route.fulfill({json:{linked:true,points:120,orders:3,cashback_cents:500,rules,referral_code:'PESSOAL',offers:[],history:[]}});
+    return route.fulfill({json:linkGenerated?{linked:true,points:120,orders:3,cashback_cents:500,rules,referral_code:'PESSOAL',offers:[],history:[]}:{linked:false,points:0,orders:0,cashback_cents:0,rules,referral_code:null,offers:[],history:[]}});
    }
    if(name==='pitacco_loyalty_preview'){
     assert.equal(p.p_key,'21999990001','prévia usa telefone, não chave');
@@ -64,7 +66,17 @@ try{
 
   assert.equal(await page.locator('#v2LoyaltyPage').isVisible(),true,'Fideliza+ usa tela exclusiva V2');
   await page.locator('#v2LoyaltyPhone').fill('21999990001');
+  await page.locator('#loyaltyStatus').filter({hasText:'Nenhuma compra vinculada'}).waitFor();
+  assert.equal(await page.locator('#loyaltyReward option').count(),1,'No locked rewards are listed');
+  assert.equal(await page.locator('#loyaltyRewardBlock').isVisible(),false);
+  assert.equal(await page.locator('#loyaltyReferral').count(),0,'No referral code field in checkout');
+  await page.locator('[data-v2-benefit="indicacoes"]').click();
+  await page.getByRole('button',{name:'Gerar meu link',exact:true}).click();
+  await page.getByLabel('Link exclusivo para indicar esta loja').waitFor();
+  assert.match(await page.getByLabel('Link exclusivo para indicar esta loja').inputValue(),/loyalty-test\?indicacao=PESSOAL$/);
   await page.locator('#v2PointsValue').filter({hasText:'120'}).waitFor();
+  assert.equal(await page.locator('#loyaltyReward option').count(),4,'Only the three unlocked rewards plus neutral choice');
+
   assert.equal(await page.locator('#loyaltyOtp, #loyaltyKey, #loyaltyJoin').count(),0,'nenhuma chave, SMS ou cadastro');
   assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(k=>k.startsWith('pitacco-loyalty'))),false,'nenhum token pessoal armazenado');
   assert.match(await page.locator('#loyaltyShare').inputValue(),/indicacao=PESSOAL/);
@@ -88,6 +100,7 @@ try{
   assert.equal(await page.locator('#send').isVisible(),false,'wallet remains accessible after ordering without reopening checkout');
   assert.equal(await page.locator('#v2LoyaltyPage').isVisible(),true);
   assert.equal(await page.locator('#v2PointsValue').isVisible(),true);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-referral:loyalty-test')),null,'Confirmed purchase clears attribution');
   assert.equal(sent.length,2);assert.deepEqual(errors,[]);
   console.log('PASS Fideliza customer wallet, campaign/reward, cart invalidation and retry',template,width);
   await page.close();
