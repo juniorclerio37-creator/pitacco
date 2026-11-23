@@ -129,6 +129,10 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
  }
  async function saveAndPublish(){
   if(!manager||!design||working)return;
+  if(!needsPublishing){
+   setError('');setNotice('A aparência já está publicada. Nenhuma alteração nova para publicar.');
+   return;
+  }
   // Publicação direta no clique, sem confirmação redundante.
   setWorking(true);setError('');setNotice('');
   let next=null,phase='validar a aparência';
