@@ -27,6 +27,32 @@ function contrast(hex){
  return channels.reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);
 }
 const isHex=value=>/^#[0-9a-fA-F]{6}$/.test(value||'');
+const isNetworkError=e=>/failed to fetch|fetch failed|networkerror|load failed|network request failed/i.test(String(e?.message||e||''));
+function studioError(e,action){
+ if(isNetworkError(e)||navigator.onLine===false)
+  return 'Falha de conexão ao '+action+'. Suas alterações continuam nesta tela, sem publicação. Confira sua internet e tente novamente.';
+ const detail=String(e?.message||e||'');
+ if(/jwt|token|sess[aã]o|401|403|unauthorized/i.test(detail))
+  return 'Sua sessão não está autorizada a '+action+'. Entre novamente no painel para continuar.';
+ if(/outro dispositivo|alterado|vers[aã]o/i.test(detail))
+  return 'O estúdio foi alterado em outra aba ou dispositivo. Recarregue os dados antes de salvar novamente.';
+ return detail||'Não foi possível '+action+'.';
+}
+async function loadStudioState(client,storeId){
+ for(let attempt=0;attempt<2;attempt++){
+  try{
+   const {data,error}=await client.rpc('pitacco_storefront_studio_state',{p_store:storeId});
+   if(error)throw error;
+   return data;
+  }catch(e){if(attempt||!isNetworkError(e))throw e;await new Promise(resolve=>setTimeout(resolve,600));}
+ }
+}
+function equalDesign(a,b){
+ const normalize=value=>Array.isArray(value)?value.map(normalize)
+  :value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(k=>[k,normalize(value[k])])):value;
+ return JSON.stringify(normalize(a))===JSON.stringify(normalize(b));
+}
+
 function BannerImage({url,...props}){return url?<img src={url} alt="" {...props}/>:null;}
 
 export default function StoreDesignStudio({client,store,manager,products=[]}){
@@ -35,6 +61,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
  const [mode,setMode]=useState('editar'),[viewport,setViewport]=useState('celular'),[previewStep,setPreviewStep]=useState('inicial');
  const [files,setFiles]=useState({}),[fileUrls,setFileUrls]=useState({});
  const [working,setWorking]=useState(false),[loading,setLoading]=useState(true),[notice,setNotice]=useState(''),[error,setError]=useState('');
+ const [loadAttempt,setLoadAttempt]=useState(0);
  const [catalog,setCatalog]=useState(products.slice(0,8));
  const dirty=design&&saved?JSON.stringify(design)!==JSON.stringify(saved)||Object.keys(files).length>0:false;
  const photo=path=>path?mediaUrl(client,path):'';
@@ -45,19 +72,18 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
  useEffect(()=>{
   let alive=true;
   setLoading(true);setError('');setNotice('');
-  client.rpc('pitacco_storefront_studio_state',{p_store:store.id}).then(({data,error})=>{
-   if(error)throw error;
+  loadStudioState(client,store.id).then(data=>{
    if(!alive)return;
    const next={...defaultDesign,...data.draft,banners:data.draft?.banners||[]};
    setSaved(next);setDesign(structuredClone(next));setVersion(data.draft_version);
    setPublishedVersion(data.published_version);setHistory(data.history||[]);
    setPublishedAt(data.published_at);
-  }).catch(e=>{if(alive)setError(e.message||'Não foi possível carregar o estúdio.')})
+  }).catch(e=>{if(alive)setError(studioError(e,'carregar o estúdio'))})
    .finally(()=>{if(alive)setLoading(false)});
   client.from('products').select('id,name,price,category,description,image_url').eq('store_id',store.id)
    .eq('menu_active',true).limit(8).then(({data})=>{if(alive&&data)setCatalog(data)}).catch(()=>{});
   return()=>{alive=false};
- },[client,store.id]);
+ },[client,store.id,loadAttempt]);
  useEffect(()=>()=>Object.values(fileUrls).forEach(url=>URL.revokeObjectURL(url)),[fileUrls]);
  const update=(key,value)=>setDesign(d=>({...d,[key]:value}));
  const setBanner=(index,key,value)=>setDesign(d=>({...d,banners:d.banners.map((b,i)=>i===index?{...b,[key]:value}:b)}));
@@ -92,10 +118,12 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
  async function saveDraft(){
   if(!manager||!design) return false;
   setWorking(true);setError('');setNotice('');
+  let phase='salvar as alterações',next;
   try{
-   const next=structuredClone(design);
+   next=structuredClone(design);
    validate(next);
    for(const [key,file] of Object.entries(files)){
+    phase='enviar imagem para o armazenamento da loja';
     const path=await uploadStoreImage(client,store.id,file,'stores');
     if(key==='logo')next.logo_path=path;
     else if(key==='cover')next.cover_path=path;
@@ -104,6 +132,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
      if(next.banners[index])next.banners[index].image_path=path;
     }
    }
+   phase='salvar as alterações';
    const {data,error}=await client.rpc('pitacco_storefront_save_draft',{p_store:store.id,p_design:next,p_expected_version:version});
    if(error)throw error;
    if(!data?.saved)throw Error('O servidor não confirmou o rascunho.');
@@ -111,8 +140,20 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
    setFiles({});setFileUrls({});
    setNotice('Rascunho salvo. O cardápio público ainda não foi alterado.');
    return true;
-  }catch(e){setError(e.message||'Não foi possível salvar o rascunho.');return false}
-  finally{setWorking(false)}
+  }catch(e){
+   if(next&&phase==='salvar as alterações'&&isNetworkError(e)){
+    try{
+     const state=await loadStudioState(client,store.id);
+     if(state.draft_version>version&&equalDesign(state.draft,next)){
+      setSaved(next);setDesign(structuredClone(next));setVersion(state.draft_version);
+      setFiles({});setFileUrls({});
+      setNotice('Rascunho salvo e confirmado após a reconexão.');
+      return true;
+     }
+    }catch{}
+   }
+   setError(studioError(e,phase));return false;
+  }finally{setWorking(false)}
  }
  async function publish(){
   if(!manager||!design)return;
@@ -127,8 +168,18 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
    setPublishedVersion(data.published_version);setPublishedAt(new Date().toISOString());
    setHistory(items=>[{id:null,version:data.published_version,created_at:new Date().toISOString()},...items].slice(0,20));
    setNotice('Aparência publicada! O cardápio poderá levar alguns instantes para atualizar no navegador do cliente.');
-  }catch(e){setError(e.message||'Não foi possível publicar.');}
-  finally{setWorking(false)}
+  }catch(e){
+   if(isNetworkError(e)){
+    try{
+     const state=await loadStudioState(client,store.id);
+     if(state.published_version>publishedVersion&&equalDesign(state.published,design)){
+      setPublishedVersion(state.published_version);setPublishedAt(state.published_at);setHistory(state.history||[]);
+      setNotice('A publicação foi confirmada após a reconexão.');return;
+     }
+    }catch{}
+   }
+   setError(studioError(e,'publicar a aparência'));
+  }finally{setWorking(false)}
  }
  async function restore(revision){
   if(dirty){setError('Há alterações não salvas. Salve ou descarte antes de restaurar.');return}
@@ -144,11 +195,11 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
    const next={...defaultDesign,...state.data.draft};
    setDesign(structuredClone(next));setSaved(next);setVersion(state.data.draft_version);
    setMode('editar');setNotice('Versão '+revision+' restaurada como rascunho. Revise e publique quando desejar.');
-  }catch(e){setError(e.message||'Não foi possível restaurar esta versão.')}
+  }catch(e){setError(studioError(e,'restaurar a versão'))}
   finally{setWorking(false)}
  }
  if(loading)return <div className="panel" role="status">Carregando Estúdio de Cardápio…</div>;
- if(!design)return <section className="panel"><h3>Estúdio de Cardápio</h3><p role="alert">{error||'Não foi possível carregar.'}</p><button onClick={()=>window.location.reload()}>Tentar novamente</button></section>;
+ if(!design)return <section className="panel"><h3>Estúdio de Cardápio</h3><p role="alert">{error||'Não foi possível carregar.'}</p><button type="button" onClick={()=>setLoadAttempt(n=>n+1)}>Tentar novamente</button></section>;
  return <section className="design-studio" aria-label="Estúdio de Cardápio Pitacco">
   <div className="design-studio-heading"><div><span className="eyebrow">ADMINISTRAR LOJA · APARÊNCIA</span>
    <h3>Estúdio de Cardápio</h3><p>Personalize a identidade da sua loja. As alterações só chegam aos clientes depois de publicadas.</p></div>
