@@ -176,12 +176,9 @@ body.pitacco-designed[data-design-layout=grade] .product-open{padding:9px}
 body.store-closed .dock{display:none}
 
 .fiado-access{margin:12px 0;padding:13px;border-radius:14px;background:#fff8f1;border:1px solid #f3d1b5}
-.fiado-access .fiado-toggle{width:100%;border-color:#f4aa73;color:#8b421a;background:#fff}
-.fiado-access #fiadoAuth{display:grid;gap:9px;margin-top:12px}
-.fiado-access #fiadoAuth[hidden]{display:none}
-.fiado-hint{font-size:.86rem;line-height:1.4;margin:0;color:#645464}
-#fiadoStatus{font-size:.87rem;line-height:1.4;min-height:1.2em;margin:3px 0;color:#8e431c}
-#fiadoStatus[data-valid=true]{color:#176c3d;font-weight:750}
+.fiado-payment-confirmation{display:grid;gap:9px;margin:12px 0;padding:14px;border-radius:12px;background:#fff8f1;border:1px solid #f3d1b5}
+.fiado-payment-confirmation[hidden]{display:none}
+#fiadoStatus{font-size:.82rem;line-height:1.45;margin:3px 0;color:#8e431c}
 
 #checkout.loyalty-only>:not(#loyaltyBox){display:none!important}#loyaltyBox{overflow-wrap:anywhere}#loyaltyBox input,#loyaltyBox select{max-width:100%;box-sizing:border-box}#loyaltyBox button{margin:5px 5px 5px 0}.loyalty-offer{padding:12px;border:1px solid #e8d6c9;border-radius:12px;margin:8px 0}#loyaltyBalance{font-weight:800}#loyaltyStatus{color:#9a3412}
 </style></head><body>
@@ -236,16 +233,11 @@ body.store-closed .dock{display:none}
  <button type="button" id="loyaltyApply" class="secondary">Aplicar benefício</button><button type="button" id="loyaltyClear" class="secondary">Remover desconto</button>
  <p id="loyaltyStatus" role="status" aria-live="polite"></p>
 </section>
-<section class="fiado-access" aria-label="Acesso ao fiado">
- <button type="button" id="fiadoToggle" class="secondary fiado-toggle">Tenho fiado autorizado pela loja</button>
- <div id="fiadoAuth" hidden>
-  <p class="fiado-hint">Informe o código particular da loja. Somente o telefone não autoriza o fiado.</p>
-  <label for="fiadoCode">Código de autorização</label>
-  <input id="fiadoCode" type="password" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="off" placeholder="10 dígitos" aria-describedby="fiadoStatus">
-  <button id="fiadoCheck" class="secondary" type="button">Verificar autorização</button>
-  <p id="fiadoStatus" role="status" aria-live="polite"></p>
- </div>
-</section><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea><p><button class="primary" id="send" type="submit">Confirmar pedido</button></p></form>
+<div id="fiadoAuth" class="fiado-payment-confirmation" hidden>
+ <label for="fiadoCode">Código particular para confirmar pagamento fiado</label>
+ <input id="fiadoCode" type="password" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="off" placeholder="Código de 10 dígitos" aria-describedby="fiadoStatus">
+ <p id="fiadoStatus" role="status" aria-live="polite">O pagamento fiado será confirmado com a autorização fornecida pela loja.</p>
+</div><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea><p><button class="primary" id="send" type="submit">Confirmar pedido</button></p></form>
   <div id="success" hidden></div>
  </div>
  <footer class="dialog-footer" id="cartFooter"><button id="continueCheckout" type="button" class="primary">Continuar para entrega e pagamento</button><button id="backToCart" type="button" class="secondary" hidden>Voltar à sacola</button></footer>
@@ -259,7 +251,7 @@ const slug=segments[0]==='cardapio'
  ? new URLSearchParams(location.search).get('loja')||segments[1]||''
  : segments[0]||'';
 let menu,cart=[],pendingRequest=null,submitting=false,scheduleRequest=0;
-let fiadoCheckedPhone='',fiadoAvailable=0,fiadoDueDays=0;
+let fiadoEligiblePhone='',fiadoLookupCounter=0,fiadoLookupTimer=null;
 let storeOpening=null;
 let deliveryPoint=null,deliveryMap,deliveryQuote=null;
 function selectDeliveryPoint(point){
@@ -712,48 +704,49 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 
-function clearFiadoAccess(text=''){
- fiadoCheckedPhone='';fiadoAvailable=0;fiadoDueDays=0;
+// Verificação automática por telefone: nunca anuncia o fiado a não autorizados.
+const fiadoPhoneDigits=value=>{
+ const digits=String(value||'').replace(/\D/g,'');
+ return digits.startsWith('55')&&(digits.length===12||digits.length===13)?digits.slice(2):digits;
+};
+function clearFiadoAccess(){
+ fiadoLookupCounter++;
+ fiadoEligiblePhone='';
+ $('fiadoCode').value='';
+ $('fiadoCode').required=false;
+ $('fiadoAuth').hidden=true;
  const option=$('payment').querySelector('option[value="fiado"]');
- if(option){if($('payment').value==='fiado')$('payment').value='';option.remove();}
- $('fiadoStatus').textContent=text;$('fiadoStatus').dataset.valid='false';
+ if(option){
+  if($('payment').value==='fiado')$('payment').value='';
+  option.remove();
+ }
  renderCart();
 }
-$('fiadoToggle').addEventListener('click',()=>{
- $('fiadoAuth').hidden=!$('fiadoAuth').hidden;
- if(!$('fiadoAuth').hidden)$('fiadoCode').focus();
-});
-$('phone').addEventListener('input',()=>clearFiadoAccess(''));
-$('fiadoCode').addEventListener('input',()=>{
- if(fiadoCheckedPhone)clearFiadoAccess('Verifique novamente após alterar o código.');
-});
-$('fiadoCheck').addEventListener('click',async()=>{
- const phone=$('phone').value.replace(/\D/g,'');
- const code=$('fiadoCode').value.trim();
- if(!/^[0-9]{10,13}$/.test(phone)||!/^[0-9]{10}$/.test(code)){
-  clearFiadoAccess('Informe telefone com DDD e o código particular de 10 dígitos.');return;
- }
- const button=$('fiadoCheck');button.disabled=true;
- $('fiadoStatus').textContent='Verificando autorização…';
+async function refreshFiadoEligibility(){
+ const phone=fiadoPhoneDigits($('phone').value),request=++fiadoLookupCounter;
+ if(!/^[0-9]{10,11}$/.test(phone))return;
  try{
-  const {data,error}=await client.rpc('pitacco_fiado_public_eligibility',{
-   p_slug:slug,p_phone:phone,p_code:code});
-  if(error)throw error;
-  if(!data?.eligible||!(Number(data.available)>0))
-   throw Error('Fiado indisponível. Confira a autorização com a loja.');
-  clearFiadoAccess();
-  fiadoCheckedPhone=phone;fiadoAvailable=Number(data.available);
-  fiadoDueDays=Number(data.due_days)||7;
-  $('payment').add(new Option('Pagar depois — Fiado','fiado'));
-  $('payment').value='fiado';
-  $('fiadoStatus').textContent='Fiado autorizado. Disponível: '+
-   money(fiadoAvailable)+'. Prazo: '+fiadoDueDays+' dias.';
-  $('fiadoStatus').dataset.valid='true';
-  renderCart();
- }catch(error){clearFiadoAccess(error.message||'Fiado indisponível. Consulte a loja.');}
- finally{button.disabled=false;}
+  const {data,error}=await client.rpc('pitacco_fiado_phone_eligibility',{p_slug:slug,p_phone:phone});
+  if(request!==fiadoLookupCounter||phone!==fiadoPhoneDigits($('phone').value))return;
+  if(error||data?.eligible!==true)return;
+  fiadoEligiblePhone=phone;
+  if(!$('payment').querySelector('option[value="fiado"]'))
+   $('payment').add(new Option('Fiado — pagar depois','fiado'));
+ }catch{
+  // Não expor a opção quando a consulta de elegibilidade falha.
+ }
+}
+$('phone').addEventListener('input',()=>{
+ if(fiadoLookupTimer)clearTimeout(fiadoLookupTimer);
+ clearFiadoAccess();
+ fiadoLookupTimer=setTimeout(()=>{void refreshFiadoEligibility()},350);
 });
-
+$('payment').addEventListener('change',()=>{
+ const isFiado=$('payment').value==='fiado'&&fiadoEligiblePhone===fiadoPhoneDigits($('phone').value);
+ $('fiadoAuth').hidden=!isFiado;
+ $('fiadoCode').required=isFiado;
+ if(!isFiado)$('fiadoCode').value='';
+});
 // A carteira é identificada pelo telefone digitado no pedido, sem chaves ou SMS.
 let loyaltyProgram=null,loyaltyWallet=null,loyaltyPhone='',loyaltyPreview=null,loyaltyStamp='',loyaltyBusy=false,loyaltyPhoneRequest=0,loyaltyPhoneTimer=null;
 const loyaltyPhoneDigits=value=>{const digits=String(value||'').replace(/\D/g,'');return digits.startsWith('55')&&(digits.length===12||digits.length===13)?digits.slice(2):digits;};
@@ -884,7 +877,11 @@ function initOptions(){
   $('storeServices').append(el('span',value==='delivery'?'Frete calculado pela área da loja':'Retirada na loja'));
  }
  const labels={dinheiro:'Dinheiro na entrega',cartao_entrega:'Cartão na entrega',pix_manual:'Pix manual — aguardar conferência'};
- for(const method of shop.payment_methods||[])$('payment').add(new Option(labels[method]||method,method));
+ for(const method of shop.payment_methods||[]){
+  if(method==='fiado')continue; // Fiado depende da autorização deste telefone.
+  $('payment').add(new Option(labels[method]||method,method));
+ }
+ void refreshFiadoEligibility();
  $('fulfillment').onchange=()=>{
   $('addressBlock').hidden=$('fulfillment').value!=='delivery';
   $('address').required=!$('addressBlock').hidden;
@@ -918,7 +915,7 @@ async function loadSchedule(){
 }
 
 function lockCheckout(locked){
- for(const id of ['products','cart','customer','phone','address','deliveryPoint','fulfillment','payment','notes','schedule','fiadoCode','fiadoCheck','fiadoToggle','loyaltyBox'])$(id).inert=locked;
+ for(const id of ['products','cart','customer','phone','address','deliveryPoint','fulfillment','payment','notes','schedule','fiadoCode','loyaltyBox'])$(id).inert=locked;
  $('backToCart').disabled=locked;
 }
 
@@ -937,8 +934,8 @@ $('checkout').onsubmit=async event=>{
    return;
   }
   const phoneDigits=$('phone').value.replace(/\D/g,'');
-  if(payment==='fiado'&&(phoneDigits!==fiadoCheckedPhone||!/^[0-9]{10}$/.test($('fiadoCode').value.trim()))){
-   msg('Verifique sua autorização do fiado antes de confirmar o pedido.');
+  if(payment==='fiado'&&(fiadoPhoneDigits(phoneDigits)!==fiadoEligiblePhone||!/^[0-9]{10}$/.test($('fiadoCode').value.trim()))){
+   msg('Para pagar fiado, informe o código particular fornecido pela loja.');
    return;
   }
   if(phoneDigits.length<10||phoneDigits.length>11){
