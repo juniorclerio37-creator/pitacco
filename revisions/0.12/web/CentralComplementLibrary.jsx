@@ -14,16 +14,27 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
  const productName=new Map(products.map(p=>[p.id,p.name]));
  const assignedIds=useMemo(()=>new Set(existing.filter(g=>g.library_template_id===draft.id&&g.enabled!==false).map(g=>g.product_id)),[existing,draft.id]);
  const totalAssigned=existing.filter(g=>g.library_template_id&&g.enabled!==false).length;
+ async function readPages(table,fields,sort){
+  // A API pagina os resultados em lotes de 1000. Uma loja pode ter milhares de complementos.
+  const all=[];
+  for(let page=0;page<30;page++){
+   const {data,error:requestError}=await client.from(table).select(fields).eq('store_id',storeId)
+    .order(sort).order('id').range(page*1000,page*1000+999);
+   if(requestError)throw requestError;
+   all.push(...(data||[]));
+   if((data||[]).length<1000)return all;
+  }
+  throw Error('A lista de complementos excede o limite de consulta. Consulte o suporte.');
+ }
  async function load(){
   setLoading(true);setError('');
   try{
    const [t,g,o]=await Promise.all([
-    client.from('pitacco_complement_templates').select('*').eq('store_id',storeId).order('name'),
-    client.from('product_option_groups').select('id,product_id,name,min_select,max_select,enabled,library_template_id').eq('store_id',storeId).order('name'),
-    client.from('product_options').select('id,group_id,name,additional_price,available,image_url').eq('store_id',storeId).order('sort_order')
+    readPages('pitacco_complement_templates','*','name'),
+    readPages('product_option_groups','id,product_id,name,min_select,max_select,enabled,library_template_id','name'),
+    readPages('product_options','id,group_id,name,additional_price,available,image_url','sort_order')
    ]);
-   const bad=[t,g,o].find(v=>v.error)?.error;if(bad)throw bad;
-   setTemplates(t.data||[]);setExisting(g.data||[]);setExistingOptions(o.data||[]);
+   setTemplates(t);setExisting(g);setExistingOptions(o);
   }catch(e){setError('Falha ao carregar grupos: '+(e.message||String(e)));}
   finally{setLoading(false);}
  }
