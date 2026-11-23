@@ -13,7 +13,7 @@ start=s.find(start_marker)
 end=s.find(end_marker,start)
 assert start>=0 and end>start,'A antiga aba Importar cardápio mudou; não substituir às cegas'
 replacement="""{tab==='Importar cardápio'&&active&&!nativeAvailable()&&!isDriver&&
- <UniversalMenuImporter key={selected} client={supabase} storeId={selected} onCompleted={loadDetails}/>}
+ <UniversalMenuImporter key={selected} client={supabase} storeId={selected} onCompleted={loadDetails} onOpenIntegrations={()=>setTab('Integrações')}/>}
  """
 s=s[:start]+replacement+s[end:]
 # Unificar acesso: uma única importação no Meu Cardápio e no botão do editor.
