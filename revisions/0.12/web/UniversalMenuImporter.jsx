@@ -108,7 +108,7 @@ function zipMatch(entries,source){
  return entries.get(normalized)||[...entries].find(([name])=>name.endsWith('/'+normalized)||name.split('/').pop()===normalized.split('/').pop())?.[1];
 }
 function safePhotoUrl(value){try{const u=new URL(value);return u.protocol==='https:'&&u.username===''&&u.password==='';}catch{return false}}
-export default function UniversalMenuImporter({client,storeId,onCompleted}){
+export default function UniversalMenuImporter({client,storeId,onCompleted,onOpenIntegrations}){
  const [link,setLink]=useState(''),[items,setItems]=useState([]),[origin,setOrigin]=useState(''),[warnings,setWarnings]=useState([]);
  const [zipImages,setZipImages]=useState(new Map()),[mode,setMode]=useState('add'),[replaceConfirm,setReplaceConfirm]=useState(false);
  const [allowMissing,setAllowMissing]=useState(false),[selected,setSelected]=useState(0),[limit,setLimit]=useState(24);
@@ -131,7 +131,7 @@ export default function UniversalMenuImporter({client,storeId,onCompleted}){
    if(!Array.isArray(data?.products))throw Error('A resposta do cardápio está incompleta. Tente novamente.');
    const hasProducts=data.products.length>0;
    setItems(hasProducts?review(data.products):[]);setZipImages(new Map());setOrigin(data.url||link.trim());
-   setWarnings(data.warnings||[]);setSourceInfo({name:data.sourceTitle||'',categories:data.counts?.categories??null,status:data.sourceStatus||''});
+   setWarnings(data.warnings||[]);setSourceInfo({name:data.sourceTitle||'',categories:data.counts?.categories??null,status:data.sourceStatus||'',provider:data.sourceProvider||'',merchantId:data.sourceMerchantId||'',canLink:data.canLinkIfood===true});
    setSelected(0);setLimit(24);setAllowMissing(false);setReplaceConfirm(false);
    setNotice(hasProducts
     ?'Análise concluída. Revise os produtos antes de importar. Nenhum cadastro foi alterado.'
@@ -258,11 +258,13 @@ export default function UniversalMenuImporter({client,storeId,onCompleted}){
   {error&&<p role="alert" className="mi-error">{error}</p>}
   {notice&&<p role="status" className="mi-success">{notice}</p>}
   {items.length===0&&warnings.length>0&&<section className="mi-warning" role="status" aria-label="Diagnóstico do link do cardápio">
-   <strong>Este endereço não disponibilizou produtos para importação.</strong>
+   <strong>{sourceInfo?.provider==='ifood'?'O acesso ao catálogo precisa de autorização oficial.':'Este endereço não disponibilizou produtos para importação.'}</strong>
+   {sourceInfo?.provider==='ifood'&&sourceInfo.merchantId&&<p className="mi-hint">Loja identificada no link: <code>{sourceInfo.merchantId}</code></p>}
    {sourceInfo?.categories!=null&&<p>{sourceInfo.name?sourceInfo.name+': ':''}{sourceInfo.categories} categoria(s) identificada(s), mas nenhum item com nome e preço acessível publicamente.</p>}
    {warnings.map((warning,i)=><p key={i}>{warning}</p>)}
+   {sourceInfo?.provider==='ifood'&&onOpenIntegrations&&<button type="button" className="secondary" onClick={onOpenIntegrations}>Consultar integração iFood desta loja</button>}
    {origin.startsWith('https://')&&<a href={origin} target="_blank" rel="noopener noreferrer">Abrir o cardápio original como cliente</a>}
-   <p>Para continuar, use o arquivo CSV, JSON ou ZIP acima. Não é necessário excluir os produtos já cadastrados.</p>
+   <p>O cardápio atual da loja permanece preservado. Use o arquivo CSV, JSON ou ZIP acima quando a leitura por link não estiver disponível.</p>
   </section>}
   {items.length>0&&<>
    <div className="mi-stats">
