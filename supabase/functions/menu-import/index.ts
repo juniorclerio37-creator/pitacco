@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import {createClient} from "npm:@supabase/supabase-js@2.113.1";
+import {createClient} from "npm:@supabase/supabase-js@2.112.3";
 import {parsePublicMenu} from "./parser.mjs";
 
 const origins=new Set(["https://app.pitacco.com.br","https://admin.pitacco.com.br","https://pitacco.com.br","http://localhost:5173","http://localhost:4179","http://127.0.0.1:5173"]);
