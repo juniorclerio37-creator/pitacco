@@ -9,6 +9,7 @@ const checkout=file("supabase/migrations/20261122224300_fiado_public_checkout.sq
 const phoneOption=file("supabase/migrations/20261123022000_fiado_phone_payment_eligibility.sql");
 const privateStatus=file("supabase/migrations/20261123025500_fiado_private_credit_status.sql");
 const approval=file("supabase/migrations/20261123082500_fiado_store_approval_without_code.sql");
+const birthday=file("supabase/migrations/20261123090500_fiado_birthdate_verification.sql");
 const courier=file("supabase/migrations/20261122224400_fiado_courier_privacy.sql");
 const pos=file("supabase/migrations/20261122224500_fiado_balcao.sql");
 const shop=file("marketing/cardapio.html");
@@ -38,6 +39,17 @@ test("fiado uses merchant approval without PIN and validates credit on the serve
  assert.match(approval,/receipt=receipt\|\|jsonb_build_object\('fiado_approval','approved'\)/);
  assert.match(approval,/pitacco_fiado_checkout_status/);
  assert.match(approval,/p_code text default null/);
+ assert.match(birthday,/birth_date_hash text/);
+ assert.match(birthday,/birth_date_salt text/);
+ assert.match(birthday,/public\.pitacco_fiado_verify_birthdate/);
+ assert.match(birthday,/birth_date_locked_until/);
+ assert.match(birthday,/interval '30 minutes'/);
+ assert.match(birthday,/pitacco_private\.fiado_birth_verifications/);
+ assert.match(birthday,/confirmation\.used_at is not null/);
+ assert.match(birthday,/confirmation\.expires_at<now\(\)/);
+ assert.match(birthday,/birth_date_hash is null/);
+ assert.match(birthday,/birth_date_hash is not null/);
+ assert.match(birthday,/pg_temp|revoke all on pitacco_private\.fiado_birth_verifications/);
 
 
  assert.match(ledger,/Fiado não autorizado para este pedido/);
@@ -60,8 +72,11 @@ test("fiado uses merchant approval without PIN and validates credit on the serve
  assert.match(shop,/pitacco_checkout_fiado/);
  assert.match(shop,/if\(data\?\.error\)\{/);
  assert.match(shop,/Recusa antes da criação[\s\S]{0,190}pendingRequest=null/);
- assert.doesNotMatch(shop,/fiadoCode|pendingRequest\.p_code|p_fiado_code/);
- assert.match(shop,/A loja autoriza o Fiado deste pedido/);
+ assert.doesNotMatch(shop,/fiadoCode|Código particular para confirmar/);
+ assert.match(shop,/Confirme sua data de nascimento/);
+ assert.match(shop,/pitacco_fiado_verify_birthdate/);
+ assert.match(shop,/pendingRequest\.p_code=identity\.token/);
+ assert.match(shop,/pendingRequest\.p_fiado_code=identity\.token/);
  assert.match(shop,/aguarda autorização da loja/);
  assert.match(shop,/fiadoEligiblePhone/);
  assert.doesNotMatch(shop,/Tenho fiado autorizado pela loja/);
@@ -74,6 +89,9 @@ test("fiado uses merchant approval without PIN and validates credit on the serve
  assert.match(shop,/fiadoAuth'\)\.hidden=!isFiado/);
  assert.doesNotMatch(panel,/pitacco_fiado_rotate_code|Gerar ou renovar código do cliente/);
  assert.match(panel,/manual — a loja autoriza cada pedido/i);
+ assert.match(panel,/pitacco_fiado_save_customer_identity/);
+ assert.match(panel,/form\.birth_date/);
+ assert.match(panel,/Nascimento pendente/);
  assert.doesNotMatch(shop,/Seu limite de fiado|Saldo disponível em Fiado|Limite disponível para o fiado/i);
  assert.match(shop,/Não foi possível/); // Other normal error handler preserved
 });
