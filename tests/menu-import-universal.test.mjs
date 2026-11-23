@@ -67,7 +67,7 @@ test('cardápio SPA sem itens públicos recebe orientação, sem produtos invent
 });
 test('a interface mantém o catálogo intacto quando o link não publica itens',()=>{
  const ui=readFileSync(new URL('../revisions/0.12/web/UniversalMenuImporter.jsx',import.meta.url),'utf8');
- assert.match(ui,/Nenhum produto foi disponibilizado para importação|nenhum produto foi disponibilizado para importação/i);
+ assert.match(ui,/Este endereço não disponibilizou produtos para importação/i);
  assert.match(ui,/Diagnóstico do link do cardápio/);
  assert.match(ui,/Abrir o cardápio original como cliente/);
  assert.match(ui,/setItems\(hasProducts\?review\(data\.products\):\[\]\)/);
