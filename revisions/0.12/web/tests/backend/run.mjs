@@ -34,61 +34,28 @@ try{await db.exec(await fs.readFile(web+'tests/013_logistics_routes.test.sql','u
 for(const file of ['011_public_checkout.test.sql','012_order_board.test.sql']){await db.exec(await fs.readFile(web+'tests/'+file,'utf8'));console.log('PASS post-logistics regression',file);}
 const fixtureDirectory=new URL('./',import.meta.url);
 await db.exec(await fs.readFile(web+'016_fideliza.sql','utf8'));
-// O pipeline PostgreSQL 17 exercita pgcrypto/bcrypt reais. PGlite não inclui
-// essa extensão: usa um emulador DETERMINÍSTICO apenas para testes funcionais.
-// Nunca envie esse emulador ou seus hashes para o banco de produção.
-const liteCryptoShim = String.raw`
+// No PostgreSQL 17, testes usam pgcrypto real. No PGlite, a extensão não
+// existe; somente o harness isolado fornece emulação funcional.
+const liteCryptoShim=String.raw`
 create function extensions.hmac(document text, key text, algorithm text) returns bytea
  language sql immutable as $lite$ select convert_to(md5(document||key||algorithm),'UTF8') $lite$;
 create function extensions.gen_salt(kind text, rounds integer) returns text
- language sql volatile as $lite$ select '$2a$11
-const migrationsDirectory=new URL('../../../supabase/migrations/',import.meta.url);
-for (const file of (await fs.readdir(migrationsDirectory)).filter(name=>name.endsWith('.sql')).sort()) {
- let sql=await fs.readFile(new URL(file,migrationsDirectory),'utf8');
- if(!process.env.DATABASE_URL)
-  sql=sql.replace('create extension if not exists pgcrypto with schema extensions;','-- PGlite usa o emulador de teste criptográfico definido apenas no fixture');
- await db.exec(sql);
- console.log('PASS production compatibility migration',file);
-}
-for (const file of ['checkout-variants.test.sql','fideliza-runtime.test.sql','fiado-credit.test.sql','store-trial.test.sql','inventory.test.sql','inventory-options.test.sql','cancelled-beverage-returns.test.sql','order-decisions.test.sql','financial-report.test.sql','scheduled-orders.test.sql','operational-alerts.test.sql','subscription-entitlement.test.sql','asaas-subscription.test.sql','delivery-tracking.test.sql','marketplace-settlements.test.sql','admin-homologation.test.sql','platform-owner.test.sql','storefront-settings.test.sql','delivery-pricing.test.sql','support-center.test.sql','incident-monitor.test.sql','storefront-design.test.sql','store-opening-hours.test.sql','onboarding-preflight.test.sql','windows-presence.test.sql','windows-paper-confirmation.test.sql','ifood-events.test.sql','ifood-arrival-dispatch-gate.test.sql','owner-platform-dashboard.test.sql','commercial-plans.test.sql','app-releases.test.sql','courier-push.test.sql']) {
- try {
-  await db.exec(await fs.readFile(new URL(file,fixtureDirectory),'utf8'));
- } catch (error) {
-  console.error('FAIL SQL regression',file,error.message,error.detail,error.where);
-  process.exit(1);
- }
- console.log('PASS SQL regression',file);
-}
-await db.close();
-||substr(replace(gen_random_uuid()::text,'-',''),1,22) $lite$;
+ language sql volatile as $lite$ select '$2a$11$'||substr(replace(gen_random_uuid()::text,'-',''),1,22) $lite$;
 create function extensions.crypt(secret text, salt text) returns text
- language sql immutable as $lite$ select '$2a$11
-const migrationsDirectory=new URL('../../../supabase/migrations/',import.meta.url);
-for (const file of (await fs.readdir(migrationsDirectory)).filter(name=>name.endsWith('.sql')).sort()) {
- await db.exec(await fs.readFile(new URL(file,migrationsDirectory),'utf8'));
- console.log('PASS production compatibility migration',file);
-}
-for (const file of ['checkout-variants.test.sql','fideliza-runtime.test.sql','fiado-credit.test.sql','store-trial.test.sql','inventory.test.sql','inventory-options.test.sql','cancelled-beverage-returns.test.sql','order-decisions.test.sql','financial-report.test.sql','scheduled-orders.test.sql','operational-alerts.test.sql','subscription-entitlement.test.sql','asaas-subscription.test.sql','delivery-tracking.test.sql','marketplace-settlements.test.sql','admin-homologation.test.sql','platform-owner.test.sql','storefront-settings.test.sql','delivery-pricing.test.sql','support-center.test.sql','incident-monitor.test.sql','storefront-design.test.sql','store-opening-hours.test.sql','onboarding-preflight.test.sql','windows-presence.test.sql','windows-paper-confirmation.test.sql','ifood-events.test.sql','ifood-arrival-dispatch-gate.test.sql','owner-platform-dashboard.test.sql','commercial-plans.test.sql','app-releases.test.sql','courier-push.test.sql']) {
- try {
-  await db.exec(await fs.readFile(new URL(file,fixtureDirectory),'utf8'));
- } catch (error) {
-  console.error('FAIL SQL regression',file,error.message,error.detail,error.where);
-  process.exit(1);
- }
- console.log('PASS SQL regression',file);
-}
-await db.close();
-||substr(salt,8,22)||md5(secret||substr(salt,8,22)) $lite$;
+ language sql immutable as $lite$ select '$2a$11$'||substr(salt,8,22)||md5(secret||substr(salt,8,22)) $lite$;
 `;
 for (const file of ['fixture-schema.sql','production-function-fixture.sql']) {
  let sql=await fs.readFile(new URL(file,fixtureDirectory),'utf8');
  if(!process.env.DATABASE_URL&&file==='fixture-schema.sql')
-  sql=sql.replace('create extension if not exists pgcrypto with schema extensions;',liteCryptoShim);
+  sql=sql.replace('create extension if not exists pgcrypto with schema extensions;',()=>liteCryptoShim);
  await db.exec(sql);
 }
 const migrationsDirectory=new URL('../../../supabase/migrations/',import.meta.url);
 for (const file of (await fs.readdir(migrationsDirectory)).filter(name=>name.endsWith('.sql')).sort()) {
- await db.exec(await fs.readFile(new URL(file,migrationsDirectory),'utf8'));
+ let sql=await fs.readFile(new URL(file,migrationsDirectory),'utf8');
+ if(!process.env.DATABASE_URL)
+  sql=sql.replace('create extension if not exists pgcrypto with schema extensions;','-- PGlite: emulador usado somente em fixtures de teste');
+ await db.exec(sql);
  console.log('PASS production compatibility migration',file);
 }
 for (const file of ['checkout-variants.test.sql','fideliza-runtime.test.sql','fiado-credit.test.sql','store-trial.test.sql','inventory.test.sql','inventory-options.test.sql','cancelled-beverage-returns.test.sql','order-decisions.test.sql','financial-report.test.sql','scheduled-orders.test.sql','operational-alerts.test.sql','subscription-entitlement.test.sql','asaas-subscription.test.sql','delivery-tracking.test.sql','marketplace-settlements.test.sql','admin-homologation.test.sql','platform-owner.test.sql','storefront-settings.test.sql','delivery-pricing.test.sql','support-center.test.sql','incident-monitor.test.sql','storefront-design.test.sql','store-opening-hours.test.sql','onboarding-preflight.test.sql','windows-presence.test.sql','windows-paper-confirmation.test.sql','ifood-events.test.sql','ifood-arrival-dispatch-gate.test.sql','owner-platform-dashboard.test.sql','commercial-plans.test.sql','app-releases.test.sql','courier-push.test.sql']) {
