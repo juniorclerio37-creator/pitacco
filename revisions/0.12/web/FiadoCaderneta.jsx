@@ -81,7 +81,7 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
    p_enabled:form.enabled,p_due_days:Number(form.due_days),
    p_mode:form.approval_mode,p_block_overdue:form.block_overdue,
    p_birth_date:form.birth_date||null});
-  setSelected(id);reloadData('Cliente salvo. A loja autoriza cada compra, ou pode liberar aprovação automática para este cliente.');
+  setSelected(id);setForm(previous=>({...previous,birth_date:''}));reloadData('Cliente salvo. A loja autoriza cada compra, ou pode liberar aprovação automática para este cliente.');
  })}
  function toggle(e){void run(async()=>{
   const enabled=e.target.checked;
