@@ -93,7 +93,7 @@ test('iFood só consulta vínculos da própria loja; não promete importação s
  assert.match(code,/pitacco_ifood_connections/);
  assert.match(code,/p_store:storeId/);
  assert.match(code,/matching\.enabled!==true/);
- assert.match(code,/sourceStatus:"ifood_not_connected"/);
+ assert.match(code,/sourceStatus="ifood_not_connected"/);
  assert.match(code,/ifood_catalog_integration_required/);
  assert.match(code,/if\(ifoodMerchant\)/);
  assert.doesNotMatch(code,/stores\/item\?store_id=/);
