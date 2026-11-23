@@ -1047,6 +1047,21 @@ body:not([data-menu-skin="principal"]) #v2NameFields>h3,
 body:not([data-menu-skin="principal"]) #v2NameFields>p,
 body:not([data-menu-skin="principal"]) .v2-checkout-confirm>h3,
 body:not([data-menu-skin="principal"]) #v2OrderSummary{display:none!important}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #quoteDelivery{display:none!important}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #routeQuoteControls{margin:13px 0 6px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #routeQuoteStatus{
+ display:block;font-size:.92rem;font-weight:720;line-height:1.55;border-radius:16px;
+ padding:17px 16px;background:#f1e7fa;border:1px solid #dcc5e9;color:#66267d
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #routeQuoteStatus[data-state="loading"]{
+ background:#f6eefb;border-color:#cfa8de;color:#771294
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #routeQuoteStatus[data-state="success"]{
+ background:#e9f7ed;border-color:#b9dfc3;color:#196339
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #routeQuoteStatus[data-state="error"]{
+ background:#fff0f0;border-color:#f2b2b6;color:#9c1f35
+}
 </style></head><body>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
@@ -1320,18 +1335,25 @@ function selectDeliveryPoint(point){
  deliveryPoint=point;
  deliveryQuote=null;
  deliveryMap?.setPoint(point);
- $('deliveryPointStatus').textContent='Ponto marcado. Confira o endereço e calcule o frete.';
- if(menu?.store?.route_pricing?.enabled)$('routeQuoteStatus').textContent='Ponto alterado. Calcule novamente a taxa de entrega.';
+ $('deliveryPointStatus').textContent=v2Only()?'Localização confirmada. A taxa será atualizada automaticamente.':'Ponto marcado. Confira o endereço e calcule o frete.';
+ if(menu?.store?.route_pricing?.enabled&&!v2Only())$('routeQuoteStatus').textContent='Ponto alterado. Calcule novamente a taxa de entrega.';
+ if(v2Only()){quoteGeneration++;v2ScheduleDeliveryQuote(true);}
  if(menu)renderCart();
 }
 $('address').addEventListener('input',event=>{
  deliveryQuote=null;
+ const keepPoint=Boolean(event.detail?.keepPoint);
+ if(deliveryPoint&&!keepPoint){
+  deliveryPoint=null;deliveryMap?.clearPoint();
+  $('deliveryPointStatus').textContent='Confirme novamente a localização do endereço.';
+ }
+ if(v2Only()){
+  quoteGeneration++;
+  v2ScheduleDeliveryQuote();
+ }else if(menu?.store?.route_pricing?.enabled){
+  $('routeQuoteStatus').textContent='Endereço alterado. Calcule novamente a taxa de entrega.';
+ }
  if(menu)renderCart();
- if(menu?.store?.route_pricing?.enabled)$('routeQuoteStatus').textContent='Endereço alterado. Calcule novamente a taxa de entrega.';
- if(!deliveryPoint||event.detail?.keepPoint)return;
- deliveryPoint=null;
- deliveryMap?.clearPoint();
- $('deliveryPointStatus').textContent='Confirme novamente a localização do endereço.';
 });
 $('showDeliveryMap').onclick=async()=>{
  const button=$('showDeliveryMap'),container=$('deliveryMap');
@@ -1980,8 +2002,10 @@ function renderCart(){
  const totalLine=(label,value)=>{const line=el('div');line.append(el('span',label),el('span',money(value)));return line};
  $('total').replaceChildren(totalLine('Produtos',subtotal));
  if($('fulfillment').value==='delivery'&&cart.length){
-  if(!routeMode||!quoteValid)$('total').append(el('p','Confirme o endereço e calcule o frete para ver o total final.'));
-  else $('total').append(totalLine('Entrega',fee));
+  if(!routeMode||!quoteValid)$('total').append(el('p',v2Only()?
+   'O valor da entrega será exibido automaticamente após confirmar seu endereço ou localização.':
+   'Confirme o endereço e calcule o frete para ver o total final.'));
+  else $('total').append(totalLine('Taxa de entrega',fee));
  }
  const benefit=loyaltyDiscount();
  if(benefit>0)$('total').append(totalLine('Desconto Fideliza+',-benefit));
@@ -1995,7 +2019,7 @@ function renderCart(){
  $('continueCheckout').disabled=Boolean(cartRecoveryId)||(!storeOpening?.open&&!pendingRequest)||!cart.length||(!v2Only()&&(!$('fulfillment').value||!$('payment').value));
  $('cart').inert=Boolean(cartRecoveryId)||Boolean(pendingRequest);
  $('send').disabled=Boolean(cartRecoveryId)||(!storeOpening?.open&&!pendingRequest)||submitting||!cart.length||!$('fulfillment').value||!$('payment').value||
-   ($('fulfillment').value==='delivery'&&(v2Only()?routeMode&&!quoteValid:(!routeMode||!quoteValid)));
+   ($('fulfillment').value==='delivery'&&(!routeMode||!quoteValid));
  }finally{
   persistCartDraft();
   renderingCart=false;
@@ -2378,8 +2402,9 @@ function initOptions(){
   for(const id of ['addressExtra','addressPostal'])$(id).disabled=$('addressBlock').hidden;
   $('deliveryPoint').hidden=$('addressBlock').hidden||!shop.delivery_area||
     (shop.route_pricing?.mode==='road');
-  $('routeQuoteControls').hidden=$('addressBlock').hidden||!shop.route_pricing?.enabled;
+  $('routeQuoteControls').hidden=$('addressBlock').hidden||(!v2Only()&&!shop.route_pricing?.enabled);
   if(!$('deliveryPoint').hidden)deliveryMap?.resize();
+  if(v2Only()){quoteGeneration++;v2ScheduleDeliveryQuote(true);}
   renderCart();loadSchedule();
  };
  $('fulfillment').dispatchEvent(new Event('change'));
@@ -2459,12 +2484,18 @@ $('checkout').onsubmit=async event=>{
     Date.parse(deliveryQuote.expiresAt)<=Date.now()||
     (deliveryQuote.point&&(!deliveryPoint||deliveryQuote.point[0]!==deliveryPoint[0]||
       deliveryQuote.point[1]!==deliveryPoint[1])))){
-   msg('Calcule a taxa de entrega para confirmar o valor do pedido.');
-   $('quoteDelivery').focus();return;
+   if(v2Only()){
+    msg('Não foi possível confirmar a taxa de entrega. Confira o endereço e aguarde a cotação automática.');
+    v2ShowCheckoutStage('address');v2ScheduleDeliveryQuote(true);
+   }else{
+    msg('Calcule a taxa de entrega para confirmar o valor do pedido.');
+    $('quoteDelivery').focus();
+   }
+   return;
   }
   const needsPin=fulfillment==='delivery'&&Boolean(menu.store.delivery_area)&&
     menu.store.route_pricing?.mode!=='road';
-  if(needsPin&&!deliveryPoint){
+  if(needsPin&&!deliveryPoint&&!(v2Only()&&deliveryQuote)){
    msg('Marque a localização do endereço para conferir se a loja entrega no local.');
    $('showDeliveryMap').focus();
    return;
@@ -2801,13 +2832,16 @@ async function v2AdvanceCheckout(){
    if(!$('fulfillment').value){msg('Escolha entrega ou retirada.');return;}
    if($('fulfillment').value==='delivery'){
     if(!completeDeliveryAddress()){msg('Confira o endereço de entrega.');return;}
-    const requiresPoint=Boolean(menu.store.delivery_area)&&menu.store.route_pricing?.mode!=='road';
-    if(requiresPoint&&!deliveryPoint){msg('Marque a localização no mapa para verificar a entrega.');return;}
-    if(menu.store.route_pricing?.enabled){
-     if(!deliveryQuote||deliveryQuote.address!==$('address').value.trim()||Date.parse(deliveryQuote.expiresAt)<=Date.now()){
-      msg('Calcule a taxa de entrega conforme a área da loja antes de continuar.');return;
+    if(!menu.store.route_pricing?.enabled){
+     msg('Esta loja ainda não configurou a taxa de entrega. Escolha retirada ou fale com a loja.');return;
+    }
+    if(!v2QuoteCurrent()){
+     clearTimeout(v2QuoteTimer);
+     if(!await requestDeliveryQuote(true)){
+      msg($('routeQuoteStatus').textContent||'Não foi possível confirmar a região de entrega.');return;
      }
     }
+    if(!v2QuoteCurrent()){msg('Não foi possível confirmar a taxa de entrega. Confira o endereço.');return;}
     v2SaveCurrentAddress();await v2SaveProfile();
    }
    v2ShowCheckoutStage('payment');
