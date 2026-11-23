@@ -75,3 +75,17 @@ print('STORE',str(payload['store'])[:800])
 print('IMAGES',images[:5])
 print('CONTEXT',payload['sample_image_context'][:1])
 print('OUTPUT',output,len(output.read_bytes()))
+from concurrent.futures import ThreadPoolExecutor
+unique_images=sorted(set(im.get('src','') for im in images if im.get('alt') and im.get('src') and 'images.brendi.com.br/optimized/' in im.get('src','')))
+def check_image(url):
+    try:
+        response=requests.get(url,timeout=15,stream=True)
+        content_type=response.headers.get('content-type','')
+        response.close()
+        return {'url':url,'status':response.status_code,'type':content_type,'ok':response.status_code==200 and content_type.startswith('image/')}
+    except Exception as exc:
+        return {'url':url,'status':0,'error':type(exc).__name__,'ok':False}
+with ThreadPoolExecutor(max_workers=7) as pool:
+    checked=list(pool.map(check_image,unique_images))
+print('PHOTO_CHECK',json.dumps({'count':len(checked),'passed':sum(im['ok'] for im in checked),'failed':[im for im in checked if not im['ok']]},ensure_ascii=False))
+
