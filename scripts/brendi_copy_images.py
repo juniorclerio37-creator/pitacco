@@ -18,7 +18,7 @@ headers={
 items=data['products']
 sources=sorted(set(item.get('source_image_url') or item['image_url'] for item in items))
 def download(url):
-    m=re.fullmatch(r'https://images\\.brendi\\.com\\.br/optimized/([0-9a-f]{32})',url)
+    m=re.fullmatch(r'https://images\.brendi\.com\.br/optimized/([0-9a-f]{32})',url)
     if not m:raise RuntimeError('External image URL not in public Brendi image domain: '+url)
     filename=m.group(1)+'.webp'
     dest=target/filename
