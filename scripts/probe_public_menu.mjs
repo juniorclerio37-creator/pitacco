@@ -19,7 +19,16 @@ page.on('response',async r=>{
  try{
   if(ct.includes('json')||ct.includes('javascript')){
    const text=await r.text();
-   if(ct.includes('json')&&text.length<1800000)event.shape=keys(JSON.parse(text));
+   if(ct.includes('json')&&text.length<1800000){
+    const data=JSON.parse(text);event.shape=keys(data);
+    if(u.pathname.includes('by-slug')){
+      console.log('STORE_KEYS',JSON.stringify(Object.keys(data)));
+      for(const [name,v] of Object.entries(data)){
+        if(/categor|product|group|item|menu|subgroup|complement/i.test(name))
+          console.log('STORE_CATALOG_FIELD',name,JSON.stringify(keys(v)).slice(0,10000));
+      }
+    }
+   }
    else event.bytes=text.length;
   }else event.bytes=(await r.body()).length;
  }catch(e){event.error=e.message.slice(0,90)}
@@ -33,7 +42,24 @@ try{
  await page.waitForTimeout(6500);
  console.log('URL_FINAL',page.url());
  console.log('TITLE',await page.title());
- console.log('BODY_TEXT',(await page.locator('body').innerText().catch(()=>'' )).slice(0,5200));
+ console.log('BODY_TEXT',(await page.locator('body').innerText().catch(()=>'' )).slice(0,6500));
+ console.log('BUTTON_TEXTS',(await page.locator('button').allTextContents().catch(()=>[])).slice(0,50));
+ console.log('PAGE_HTML_MARKERS',JSON.stringify({length:(await page.content()).length,hasPrice:(await page.content()).includes('R
+ console.log('LS_KEYS',await page.evaluate(()=>Object.keys(localStorage)).catch(()=>[]));
+ console.log('SCRIPTS',(await page.locator('script[src]').evaluateAll(nodes=>nodes.map(x=>x.src))).slice(0,50));
+ const scripts=await page.locator('script[src]').evaluateAll(nodes=>nodes.map(x=>x.src));
+ for(const jsUrl of scripts.filter(x=>!x.includes('googletagmanager')&&!x.includes('analytics')).slice(0,9)){
+  try{
+   const r=await page.request.get(jsUrl,{timeout:20000});
+   const body=await r.text();
+   const paths=[...new Set((body.match(/https?:\/\/[^"'\s\`\\]{10,120}|\/api\/[a-zA-Z0-9\-_/{}]{5,100}|\/v\d\/[a-zA-Z0-9\-_/{}]{5,100}/g)||[]))].slice(0,90);
+   console.log('SCRIPT_SCAN',JSON.stringify({name:new URL(jsUrl).pathname.split('/').pop(),status:r.status(),bytes:body.length,paths}).slice(0,14000));
+  }catch(e){console.log('SCRIPT_ERROR',e.message.slice(0,200))}
+ }
+}catch(err){console.log('PROBE_ERROR',err.message.slice(0,400))}
+finally{await browser.close()}
+),hasCategory:(await page.content()).includes('Categorias')}));
+ await page.mouse.wheel(0,2400);await page.waitForTimeout(4000);console.log('BODY_AFTER_SCROLL',(await page.locator('body').innerText().catch(()=>'' )).slice(0,6500));
  console.log('LS_KEYS',await page.evaluate(()=>Object.keys(localStorage)).catch(()=>[]));
  console.log('SCRIPTS',(await page.locator('script[src]').evaluateAll(nodes=>nodes.map(x=>x.src))).slice(0,50));
  const scripts=await page.locator('script[src]').evaluateAll(nodes=>nodes.map(x=>x.src));
