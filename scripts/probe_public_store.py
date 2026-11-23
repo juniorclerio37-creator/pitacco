@@ -61,3 +61,15 @@ try:
      print('JS_MENU_ENDPOINT_CONTEXT',url.split('/')[-1],needle,len(indices),[js[max(0,i-95):i+160] for i in indices[:3]])
   except Exception as e:print('JS_FAILURE',str(e)[:160])
 except Exception as e:print('HTML_FAILURE',str(e)[:300])
+
+
+for path in [
+ 'stores/item?store_id=25179',
+ 'stores/group?store_id=25179',
+ 'stores/complement/by-group?group_id=638998'
+]:
+ try:
+  obj=json.loads(fetch('https://app.instadelivery.com.br/api/'+path,limit=1_500_000))
+  print('PUBLIC_API_CHECK',path,'schema',json.dumps(shape(obj),ensure_ascii=False)[:4500],
+   'count',len(obj) if isinstance(obj,list) else None)
+ except Exception as error:print('PUBLIC_API_DENIED',path,type(error).__name__,str(error)[:250])
