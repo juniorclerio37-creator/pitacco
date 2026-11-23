@@ -60,7 +60,7 @@ function BannerImage({url,...props}){
  return <img src={url} alt="" onError={()=>setBroken(true)} {...props}/>;
 }
 
-export default function StoreDesignStudio({client,store,manager,products=[]}){
+export default function StoreDesignStudio({client,store,manager,products=[],focus='all'}){
  const [saved,setSaved]=useState(null),[design,setDesign]=useState(null),[version,setVersion]=useState(0);
  const [publishedDesign,setPublishedDesign]=useState(null);
  const [publishedVersion,setPublishedVersion]=useState(0),[history,setHistory]=useState([]),[publishedAt,setPublishedAt]=useState(null);
@@ -207,19 +207,20 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
  if(!design)return <section className="panel"><h3>Estúdio de Cardápio</h3><p role="alert">{error||'Não foi possível carregar.'}</p><button type="button" onClick={()=>setLoadAttempt(n=>n+1)}>Tentar novamente</button></section>;
  return <section className="design-studio" aria-label="Estúdio de Cardápio Pitacco">
   <div className="design-studio-heading"><div><span className="eyebrow">ADMINISTRAR LOJA · APARÊNCIA</span>
-   <h3>Estúdio de Cardápio</h3><p>Personalize a identidade da sua loja. As alterações só chegam aos clientes depois de publicadas.</p></div>
+   <h3>{focus==='banners'?'Banners do cardápio':'Estúdio de Cardápio'}</h3><p>{focus==='banners'?'Crie, agende e publique banners com imagens. Confira a prévia real antes de publicar.':'Personalize a identidade da sua loja. As alterações só chegam aos clientes depois de publicadas.'}</p></div>
    <div className="design-studio-status"><span>{needsPublishing?'● Alterações pendentes de publicação':'✓ Aparência publicada'}</span>
     <small>{publishedVersion?'Versão '+publishedVersion+' publicada em '+stamp(publishedAt):'Nenhuma versão visual personalizada publicada'}</small></div>
   </div>
-  <nav className="design-studio-nav" aria-label="Etapas do Estúdio de Cardápio">
+{focus!=='banners'&&<nav className="design-studio-nav" aria-label="Etapas do Estúdio de Cardápio">
    <button type="button" className={mode==='editar'?'active':'secondary'} onClick={()=>setMode('editar')}>1 · Aparência do cardápio</button>
    <button type="button" className={mode==='publicar'?'active':'secondary'} onClick={()=>setMode('publicar')}>2 · Prévia e publicação</button>
-  </nav>
+  </nav>}
   {error&&<p role="alert" className="notice error">{error}</p>}
   {notice&&<p role="status" className="notice">{notice}</p>}
   <div className="design-studio-grid">
    <div className="design-studio-controls">
     {mode==='editar'?<>
+     {focus!=='banners'&&<>
      <section className="design-control-card"><h4>Templates do cardápio</h4><p>Quatro visuais, as mesmas funcionalidades atuais. Escolha, visualize e toque em Salvar e publicar quando estiver pronto.</p>
       <div className="design-template-options" role="group" aria-label="Template do cardápio">{templates.map(model=><button type="button" key={model.id}
        aria-pressed={design.template===model.id} className={'design-template-option'+(design.template===model.id?' active':'')}
@@ -257,6 +258,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
       <label className="design-check"><input type="checkbox" checked={design.show_descriptions} disabled={!manager||working}
        onChange={e=>update('show_descriptions',e.target.checked)}/> Exibir descrições dos produtos</label>
      </section>
+     </>}
      <section className="design-control-card"><div className="design-section-head"><h4>Banners promocionais</h4>
        <button type="button" className="secondary" disabled={!manager||working||design.banners.length>=6}
         onClick={()=>update('banners',[...design.banners,{title:'',subtitle:'',image_path:'',starts_at:null,ends_at:null,product_id:null}])}>+ Adicionar banner</button></div>
@@ -296,8 +298,8 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
     </>}
     <div className="design-studio-actions">
      <button type="button" disabled={!manager||working||!design} onClick={saveAndPublish}>{working?'Salvando e publicando…':'Salvar e publicar'}</button>
-     <button type="button" className="secondary" onClick={()=>setMode(mode==='editar'?'publicar':'editar')}>
-      {mode==='editar'?'Ver prévia':'Voltar à aparência'}</button>
+{focus!=='banners'&&<button type="button" className="secondary" onClick={()=>setMode(mode==='editar'?'publicar':'editar')}>
+      {mode==='editar'?'Ver prévia':'Voltar à aparência'}</button>}
     </div>
    </div>
    <aside className="design-studio-preview" aria-label="Prévia do cardápio em tempo real">
