@@ -39,13 +39,23 @@ begin
  assert length(secret)=10 and secret ~ '^[0-9]{10}$';
  assert (public.pitacco_fiado_public_eligibility('fiado-fixture','21988887777',secret)->>'eligible')::boolean=false,
    'Fiado desativado deve permanecer oculto';
+ assert (public.pitacco_fiado_phone_eligibility('fiado-fixture','21988887777')->>'eligible')::boolean=false,
+   'Opção Fiado só aparece quando loja e cliente estiverem ativos';
  perform public.pitacco_fiado_toggle(store,true);
  assert (public.pitacco_fiado_public_eligibility('fiado-fixture','21988887777',secret)->>'eligible')::boolean;
+ assert (public.pitacco_fiado_phone_eligibility('fiado-fixture','21988887777')->>'eligible')::boolean,
+   'Telefone autorizado recebe Fiado automaticamente';
+ assert (public.pitacco_fiado_phone_eligibility('fiado-fixture','21911112222')->>'eligible')::boolean=false,
+   'Telefone não cadastrado não vê Fiado';
+ assert not public.pitacco_fiado_phone_eligibility('fiado-fixture','21988887777') ? 'phone',
+   'Consulta não expõe telefone, dívidas nem limites';
  created:=public.pitacco_checkout_fiado('fiado-fixture',request,'Cliente Fiado','21988887777','',
     payload,'pickup','',secret);
  v_order_id:=(created->>'order_id')::uuid;
  assert v_order_id is not null;
  assert (select used=20 from public.pitacco_fiado_customers where id=c), 'Crédito reservado na criação';
+ assert (public.pitacco_fiado_phone_eligibility('fiado-fixture','21988887777')->>'eligible')::boolean,
+   'Saldo de crédito positivo continua elegível para novos pedidos (checkout verifica valor total)';
  assert (select state='reserved' from public.pitacco_fiado_charges where order_id=v_order_id);
  -- Reenviar mesma requisição quando saldo disponível é menor que o pedido não duplica dívida.
  replay:=public.pitacco_checkout_fiado('fiado-fixture',request,'Cliente Fiado','21988887777','',
