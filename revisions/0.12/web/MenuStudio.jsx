@@ -178,7 +178,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
     title="Subir produto" aria-label={'Mover produto '+p.name+' para cima'} onClick={()=>moveProduct(p,-1)}>↑</button>
    <button type="button" className="secondary catalog-sort-arrow" disabled={busy||orderedProducts.filter(x=>categoryName(x.category)===categoryName(p.category)).at(-1)?.id===p.id}
     title="Descer produto" aria-label={'Mover produto '+p.name+' para baixo'} onClick={()=>moveProduct(p,1)}>↓</button>
-   <button type="button" className="secondary" onClick={()=>begin(p)}>✎ Editar</button>
+   <button type="button" className="secondary" aria-label="Editar" onClick={()=>begin(p)}>✎ Editar</button>
    <button type="button" className="secondary" disabled={busy} onClick={()=>toggle(p)}>{p.menu_active===false?'Ativar':'Desativar'}</button>
   </div>
  </article>)}
