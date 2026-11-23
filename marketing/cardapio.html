@@ -2005,7 +2005,7 @@ function renderCart(){
   if(!routeMode||!quoteValid)$('total').append(el('p',v2Only()?
    'O valor da entrega será exibido automaticamente após confirmar seu endereço ou localização.':
    'Confirme o endereço e calcule o frete para ver o total final.'));
-  else $('total').append(totalLine('Taxa de entrega',fee));
+  else $('total').append(totalLine(v2Only()?'Taxa de entrega':'Entrega',fee));
  }
  const benefit=loyaltyDiscount();
  if(benefit>0)$('total').append(totalLine('Desconto Fideliza+',-benefit));
