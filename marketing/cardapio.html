@@ -3246,10 +3246,9 @@ async function startPublicMenu(){
   if(studioPreviewActive)cartStoragePaused=true;
   else restoreCartDraft();
   // Preparar Fideliza+, produtos em destaque e endereço regional antes da exibição.
-  const prepared=await prepareMenuStartup();
+  const [prepared]=await Promise.all([prepareMenuStartup(),warmMenuStartupImages()]);
   setMenuTemplate(menu.store);
   applyMenuStartupData(prepared);
-  await warmMenuStartupImages();
   initOptions();
   await waitForMenuIdentityPaint();
   if(studioPreviewActive){
