@@ -65,7 +65,8 @@ test('menu uses saved category icons and custom pizza SVG in every template',()=
 
 test('V2 principal integra banner ao cabeçalho e recupera carrinho sem aviso na home',()=>{
  assert.match(html,/id="storeBanner"/);
- assert.match(html,/\.hero>img#storeBanner\{\s*display:block;opacity:1;object-fit:cover/);
+ assert.match(html,/\.hero>img#storeBanner\{\s*opacity:1;object-fit:cover/);
+ assert.match(html,/\.hero>img#storeBanner\[hidden\]\{\s*display:none!important/);
  assert.match(html,/\.hero:has\(> #storeBanner:not\(\[hidden\]\)\)::after\{[\s\S]*?linear-gradient/);
  assert.match(html,/#v2HeroImage\{\s*display:none!important/);
  assert.doesNotMatch(html,/id="v2BrandBanner"/);
