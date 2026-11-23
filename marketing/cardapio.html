@@ -601,7 +601,7 @@ body[data-menu-template="pitacco-v2"] #v2TopProducts{display:grid;grid-template-
 body[data-menu-template="pitacco-v2"] .v2-top-product{position:relative;background:#fff;border:1px solid hsl(var(--template-hue,307.50) calc(18.18% * var(--template-chroma,1)) 91.37%);border-radius:22px;box-shadow:0 6px 16px hsl(var(--template-hue,286.67) calc(81.82% * var(--template-chroma,1)) 15.10% / 0.0784);overflow:hidden;min-width:0}
 body[data-menu-template="pitacco-v2"] .v2-top-photo{height:225px;background:hsl(var(--template-hue,303.33) calc(30.00% * var(--template-chroma,1)) 88.24%);display:grid;place-items:center;position:relative;overflow:hidden}
 body[data-menu-template="pitacco-v2"] .v2-top-photo img{width:100%;height:100%;object-fit:cover}
-body[data-menu-template="pitacco-v2"] .v2-top-photo>span{font-size:3.7rem}
+body[data-menu-template="pitacco-v2"] .v2-top-photo>span:not(.v2-top-badge){font-size:3.7rem}
 body[data-menu-template="pitacco-v2"] .v2-top-badge{position:absolute;top:12px;left:12px;padding:7px 10px;border-radius:999px;background:linear-gradient(115deg,hsl(var(--template-hue,293.25) calc(69.55% * var(--template-chroma,1)) 47.65%),hsl(var(--template-hue,281.08) calc(79.27% * var(--template-chroma,1)) 32.16%));color:#fff;font-size:.73rem;font-weight:850}
 body[data-menu-template="pitacco-v2"] .v2-top-badge[data-combo=true]{background:linear-gradient(105deg,hsl(var(--template-accent-hue,35.62) calc(100.00% * var(--template-chroma,1)) 49.22%),hsl(var(--template-accent-hue,25.02) calc(100.00% * var(--template-chroma,1)) 46.08%))}
 body[data-menu-template="pitacco-v2"] .v2-top-heart{position:absolute;top:11px;right:11px;border:0;width:38px;height:38px;border-radius:50%;background:#fff;color:hsl(var(--template-hue,288.11) calc(86.05% * var(--template-chroma,1)) 25.29%);font-size:1.45rem;display:grid;place-items:center}
@@ -657,6 +657,7 @@ body[data-menu-template="pitacco-v2"] #cartDock .dock-count{display:none}
  body[data-menu-template="pitacco-v2"] .v2-dock-icon{margin-right:3px}
 }
 
+body[data-menu-template="pitacco-v2"] .store-mark #storeInitial{color:#fff}
 /* Current V2 engine, alternate presentation only. No duplicate checkout or wallet. */
 body[data-menu-skin=essencial]{--template-hue:155;--template-accent-hue:155;--template-chroma:.62;background:#f5f8f6}
 body[data-menu-skin=editorial]{--template-hue:24;--template-accent-hue:18;--template-chroma:.55;background:#fbf7f0}

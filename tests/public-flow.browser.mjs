@@ -142,6 +142,8 @@ try {
     assert.equal(await page.locator('body').getAttribute('data-menu-template'),'pitacco-v2','Versão 2 é o template principal');
     await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
     assert.equal(await page.locator('#v2TopProducts .v2-top-product').count(),2,'Início mostra exatamente dois destaques');
+    assert.equal(await page.locator('.v2-top-badge').first().evaluate(e=>parseFloat(getComputedStyle(e).fontSize)<20),true,'Selo de destaque não herda tamanho da imagem');
+    assert.equal(await page.locator('#storeInitial').evaluate(e=>getComputedStyle(e).color),'rgb(255, 255, 255)','Inicial da loja legível sem logotipo');
     assert.equal(await page.locator('#layout #products .product').count(),2,'Todos os itens aparecem no catálogo abaixo dos destaques');
     await page.getByRole('heading',{name:'Todo o cardápio',exact:true}).waitFor();
     await page.locator('#v2HeaderAbout').click();
