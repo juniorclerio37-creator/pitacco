@@ -30,7 +30,7 @@ const isHex=value=>/^#[0-9a-fA-F]{6}$/.test(value||'');
 const isNetworkError=e=>/failed to fetch|fetch failed|networkerror|load failed|network request failed/i.test(String(e?.message||e||''));
 function studioError(e,action){
  if(isNetworkError(e)||navigator.onLine===false)
-  return 'Falha de conexão ao '+action+'. Suas alterações continuam nesta tela, sem publicação. Confira sua internet e tente novamente.';
+  return 'Falha de conexão ao '+action+'. Suas alterações continuam nesta tela; não foi possível confirmar o resultado no servidor. Confira a conexão antes de tentar novamente.';
  const detail=String(e?.message||e||'');
  if(/jwt|token|sess[aã]o|401|403|unauthorized/i.test(detail))
   return 'Sua sessão não está autorizada a '+action+'. Entre novamente no painel para continuar.';
@@ -264,9 +264,9 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
      </section>
     </>:<>
      <section className="design-control-card"><h4>Conferir e publicar</h4>
-      <p>Confira a página inicial, o produto e o checkout exatamente com os componentes do cardápio público. O rascunho aparece apenas nesta prévia.</p>
+      <p>Confira a página inicial, o produto e o checkout exatamente com os componentes do cardápio público. As alterações aparecem somente nesta prévia até você publicar.</p>
       <p>{needsPublishing?'Há alterações prontas para salvar e publicar diretamente.':'A versão apresentada já está publicada para os clientes.'}</p>
-      <p className="design-tip">Use o botão Salvar e publicar abaixo. Não é necessário salvar rascunho primeiro.</p>
+      <p className="design-tip">Use o botão Salvar e publicar abaixo. A publicação é realizada em uma única etapa, mantendo o histórico de versões.</p>
       <p className="design-tip">O cardápio e o checkout continuam usando as regras de preço, complementos, entrega e pagamento já existentes.</p>
      </section>
      <section className="design-control-card"><h4>Histórico e restauração</h4><p>Restaurar uma versão recupera a aparência para edição. Os clientes só verão a mudança após Salvar e publicar.</p>
