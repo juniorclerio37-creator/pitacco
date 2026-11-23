@@ -86,9 +86,8 @@ test('primeira exibição estável: Fideliza+ e destaques antes do cardápio vis
  assert.match(html,/Promise\.all\(\[\s*menuStartupRpc\('pitacco_loyalty_program'/);
  assert.match(html,/menuStartupRpc\('pitacco_public_top_sellers'/);
  assert.match(html,/menuStartupRpc\('pitacco_public_store_region'/);
- assert.match(html,/const prepared=await prepareMenuStartup\(\)/);
+ assert.match(html,/const \[prepared\]=await Promise\.all\(\[prepareMenuStartup\(\),warmMenuStartupImages\(\)\]\)/);
  assert.match(html,/applyMenuStartupData\(prepared\)/);
- assert.match(html,/await warmMenuStartupImages\(\)/);
  assert.match(html,/await waitForMenuIdentityPaint\(\)/);
  assert.match(html,/initOptions\(\);\s*await waitForMenuIdentityPaint\(\)/);
  assert.match(html,/\$\('menuStartup'\)\.hidden=true/);
