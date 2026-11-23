@@ -48,6 +48,14 @@ begin
  result:=public.checkout_public_order('checkout-fixture',key,'Cliente','11999999999','Rua de teste 123',jsonb_build_array(first_line,second_line),'pickup','pix_manual');
  assert (result->>'total')::numeric=68, 'Prices and modifiers are calculated per variant; pickup has no freight';
  assert result->>'payment_status'='pending', 'Manual Pix remains pending';
+ replay:=public.pitacco_public_checkout_recovery('checkout-fixture',key);
+ assert replay->>'confirmed'='true' and replay->>'order_id'=result->>'order_id'
+  and replay->>'tracking_token'=result->>'tracking_token', 'Anonymous recovery finds only its confirmed request';
+ assert (select count(*) from jsonb_object_keys(replay))=4, 'Recovery contains only confirmation, order ID, tracking token and total';
+ assert public.pitacco_public_checkout_recovery('other-store',key)='{"confirmed":false}'::jsonb, 'Store cannot recover another store request';
+ assert public.pitacco_public_checkout_recovery('checkout-fixture',gen_random_uuid())='{"confirmed":false}'::jsonb, 'Unknown request cannot enumerate orders';
+ assert public.pitacco_public_checkout_recovery('checkout-fixture',null)='{"confirmed":false}'::jsonb, 'Missing request reveals nothing';
+
  replay:=public.checkout_public_order('checkout-fixture',key,'Cliente','11999999999','Rua de teste 123',jsonb_build_array(second_line,first_line),'pickup','pix_manual');
  assert replay=result, 'Reordered variants retry the same order';
  tracking:=public.pitacco_track_public_order((result->>'tracking_token')::uuid);

@@ -11,9 +11,9 @@ test('checkout uses a stable idempotency request key and backend RPC',()=>{
  assert.match(html,/p_payment==='fiado'\?'pitacco_checkout_fiado'/);
 });
 test('checkout blocks concurrent submissions even if cart rerenders',()=>{
- assert.match(html,/if\(submitting\|\|!cart\.length\)return/);
+ assert.match(html,/if\(submitting\|\|cartRecoveryId\|\|!cart\.length\)return/);
  assert.match(html,/submitting=true/);
- assert.match(html,/disabled=\(!storeOpening\?\.open&&!pendingRequest\)\|\|submitting\|\|!cart\.length/);
+ assert.match(html,/disabled=Boolean\(cartRecoveryId\)\|\|\(!storeOpening\?\.open&&!pendingRequest\)\|\|submitting\|\|!cart\.length/);
  assert.match(html,/lockCheckout\(Boolean\(pendingRequest\)\)/);
 });
 test('checkout validates address, phone, and payment',()=>{
