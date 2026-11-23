@@ -182,7 +182,8 @@ body.store-closed .dock{display:none}
 .fiado-unavailable{margin:8px 0;padding:11px 13px;border:1px solid #efc19f;background:#fff6ee;color:#8c431a;border-radius:10px;font-size:.85rem;line-height:1.5}
 .fiado-unavailable[hidden]{display:none}
 
-#checkout.loyalty-only>:not(#loyaltyBox){display:none!important}#loyaltyBox{overflow-wrap:anywhere}#loyaltyBox input,#loyaltyBox select{max-width:100%;box-sizing:border-box}#loyaltyBox button{margin:5px 5px 5px 0}.loyalty-offer{padding:12px;border:1px solid #e8d6c9;border-radius:12px;margin:8px 0}#loyaltyBalance{font-weight:800}#loyaltyStatus{color:#9a3412}
+#checkout.loyalty-only>:not(.v2-checkout-panel--payment){display:none!important}
+#checkout.loyalty-only>.v2-checkout-panel--payment>:not(#loyaltyBox){display:none!important}#loyaltyBox{overflow-wrap:anywhere}#loyaltyBox input,#loyaltyBox select{max-width:100%;box-sizing:border-box}#loyaltyBox button{margin:5px 5px 5px 0}.loyalty-offer{padding:12px;border:1px solid #e8d6c9;border-radius:12px;margin:8px 0}#loyaltyBalance{font-weight:800}#loyaltyStatus{color:#9a3412}
 
 /* Pitacco Cardápio V2 — template principal. Outros templates podem coexistir por data-menu-template. */
 body[data-menu-template="pitacco-v2"]{
@@ -434,6 +435,39 @@ body[data-menu-template="pitacco-v2"] .v2-about p{color:#705477}
 body[data-menu-template="pitacco-v2"] .v2-about .v2-about-chip{border-radius:12px;background:#f8ecff;padding:10px 13px;margin:9px 0}
 body[data-menu-template="pitacco-v2"] .v2-hidden{display:none!important}
 body[data-menu-template="pitacco-v2"] .product{position:relative}
+
+/* Etapas visuais do checkout do template principal sem ocultar campos exigidos */
+body[data-menu-template="pitacco-v2"] .v2-checkout-panel{
+ border-radius:17px;border:1px solid #e9dcec;background:#fff;padding:19px;margin:17px 0;
+ box-shadow:0 4px 15px #3004420b
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-panel>h3{
+ color:#45035c;font-size:1.18rem;letter-spacing:-.025em;margin:0 0 5px
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-panel>p:first-of-type{
+ color:#70557c;font-size:.84rem;margin:0 0 14px
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-panel label{
+ font-size:.86rem;color:#3e2051;margin:13px 0 5px;font-weight:750
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-panel #payment{
+ background:#faf4ff;border:1px solid #dcc6e8;font-weight:650
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-confirm{
+ background:linear-gradient(125deg,#fbf2ff,#fff);border:1px solid #e7daee;
+ border-radius:16px;padding:16px;margin-top:13px
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-confirm p:first-child{font-size:.84rem;color:#70577c}
+body[data-menu-template="pitacco-v2"] .v2-checkout-confirm .primary{width:100%;min-height:52px}
+body[data-menu-template="pitacco-v2"] #success::before{
+ content:"✓";display:grid;place-items:center;background:#e2f9e9;color:#23854a;
+ border-radius:50%;width:69px;height:69px;margin:0 auto 14px;font-size:2.15rem;font-weight:850;
+}
+@media(max-width:600px){
+ body[data-menu-template="pitacco-v2"] .v2-checkout-panel{margin:12px 0;padding:15px}
+ body[data-menu-template="pitacco-v2"] .v2-checkout-confirm{padding:14px}
+}
+
 body[data-menu-template="pitacco-v2"] .pitacco-promos{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
 body[data-menu-template="pitacco-v2"] .pitacco-promo{border-color:#eedcf4;background:#f7ebff;color:#34114b}
 body[data-menu-template="pitacco-v2"] .pitacco-promo-link{color:#8215b0}
@@ -583,14 +617,16 @@ body[data-menu-template="pitacco-v2"] .pitacco-footer{color:#725779}
  <div class="dialog-scroll" id="cartBody">
   <p id="checkoutMessage" class="msg" role="status" hidden></p>
   <div id="cartReview"><div id="cart"></div><div id="total" class="total"></div></div>
-  <form id="checkout" hidden><div class="v2-checkout-progress" aria-label="Etapas do pedido"><span>✓ Sacola</span><span data-active="true">2. Seus dados</span><span>3. Entrega</span><span>4. Pagamento</span></div><h3>Seus dados</h3><label for="customer">Seu nome</label><input id="customer" autocomplete="name" required minlength="2" maxlength="120"><label for="phone">Telefone com DDD</label><input id="phone" autocomplete="tel-national" required inputmode="tel" maxlength="30"><label for="fulfillment">Como deseja receber?</label><select id="fulfillment"></select><div id="scheduleBlock" hidden><label for="schedule">Quando deseja receber?</label><select id="schedule"><option value="">Assim que possível</option></select><small>Horários de Brasília. Para entrega, o horário é uma previsão.</small></div><div id="addressBlock"><label for="address">Endereço de entrega</label><textarea id="address" autocomplete="street-address" rows="2" maxlength="500"></textarea><fieldset id="deliveryPoint" hidden>
+  <form id="checkout" hidden><div class="v2-checkout-progress" aria-label="Etapas do pedido"><span>✓ Sacola</span><span data-active="true">2. Seus dados</span><span>3. Entrega</span><span>4. Pagamento</span></div><section class="v2-checkout-panel v2-checkout-panel--customer"><h3>👤 Seus dados</h3><p>Informe seus dados para continuar com o pedido.</p><label for="customer">Seu nome</label><input id="customer" autocomplete="name" required minlength="2" maxlength="120"><label for="phone">Telefone com DDD</label><input id="phone" autocomplete="tel-national" required inputmode="tel" maxlength="30"></section>
+<section class="v2-checkout-panel v2-checkout-panel--delivery"><h3>📍 Entrega ou retirada</h3><p>Escolha como deseja receber seu pedido.</p><label for="fulfillment">Como deseja receber?</label><select id="fulfillment"></select><div id="scheduleBlock" hidden><label for="schedule">Quando deseja receber?</label><select id="schedule"><option value="">Assim que possível</option></select><small>Horários de Brasília. Para entrega, o horário é uma previsão.</small></div><div id="addressBlock"><label for="address">Endereço de entrega</label><textarea id="address" autocomplete="street-address" rows="2" maxlength="500"></textarea><fieldset id="deliveryPoint" hidden>
  <legend>Localização da entrega</legend>
  <p>Marque o endereço no mapa ou use sua localização atual se estiver no local da entrega.</p>
  <button id="showDeliveryMap" type="button" class="secondary">Abrir mapa</button>
  <button id="locateDelivery" type="button" class="secondary">Usar minha localização</button>
  <div id="deliveryMap" aria-label="Mapa da área de entrega" hidden style="height:260px;margin:12px 0;z-index:0"></div>
  <p id="deliveryPointStatus" role="status"></p>
-</fieldset><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço, marque o destino no mapa e calcule o frete conforme a área da loja.</p></div></div><label for="payment">Forma de pagamento</label><select id="payment" required></select>
+</fieldset><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço, marque o destino no mapa e calcule o frete conforme a área da loja.</p></div></div></section><section class="v2-checkout-panel v2-checkout-panel--payment">
+<h3>💳 Forma de pagamento</h3><p>Escolha como deseja pagar seu pedido.</p><label for="payment">Forma de pagamento</label><select id="payment" required></select>
 <section id="loyaltyBox" class="fiado-access" aria-label="Fideliza+ do cliente" hidden>
  <h3>Fideliza+ · Benefícios desta loja</h3><p id="loyaltyTerms"></p><div id="loyaltyCampaigns"></div>
  <div id="loyaltyAnonymous"><p>Seu número de celular com DDD é seu acesso ao Fideliza+. Ao digitar o telefone do pedido, seus pontos e créditos aparecem automaticamente. Na primeira compra, o cadastro da carteira é automático.</p>
@@ -607,7 +643,9 @@ body[data-menu-template="pitacco-v2"] .pitacco-footer{color:#725779}
  <label for="fiadoCode">Código particular para confirmar pagamento fiado</label>
  <input id="fiadoCode" type="password" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="off" placeholder="Código de 10 dígitos" aria-describedby="fiadoStatus">
  <p id="fiadoStatus" role="status" aria-live="polite">O pagamento fiado será confirmado com a autorização fornecida pela loja.</p>
-</div><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea><p><button class="primary" id="send" type="submit">Confirmar pedido</button></p></form>
+</div><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea></section>
+<section class="v2-checkout-confirm"><p>Confira seus dados, produtos, endereço e forma de pagamento antes de confirmar.</p>
+<p><button class="primary" id="send" type="submit">Confirmar pedido</button></p></section></form>
   <div id="success" hidden></div>
  </div>
  <footer class="dialog-footer" id="cartFooter"><button id="continueCheckout" type="button" class="primary">Continuar para entrega e pagamento</button><button id="backToCart" type="button" class="secondary" hidden>Voltar à sacola</button></footer>
