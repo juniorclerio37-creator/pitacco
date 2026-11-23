@@ -847,11 +847,9 @@ body[data-menu-skin=urbano] :is(.v2-top-product,#v2HomeLoyalty){border-radius:12
  <p id="loyaltyStatus" role="status" aria-live="polite"></p>
 </section>
 <p id="fiadoUnavailable" class="fiado-unavailable" role="status" aria-live="polite" hidden></p>
-<div id="fiadoAuth" class="fiado-payment-confirmation" hidden>
- <label for="fiadoCode">Código particular para confirmar pagamento fiado</label>
- <input id="fiadoCode" type="password" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="off" placeholder="Código de 10 dígitos" aria-describedby="fiadoStatus">
- <p id="fiadoStatus" role="status" aria-live="polite">O pagamento fiado será confirmado com a autorização fornecida pela loja.</p>
-</div><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea></section>
+<p id="fiadoAuth" class="fiado-payment-confirmation" hidden role="status">
+ A loja autoriza o Fiado deste pedido. Para clientes com aprovação manual, o pedido aguardará a decisão da loja antes do preparo. Se a loja ativou autorização automática para você, a análise será imediata.
+</p><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea></section>
 <section class="v2-checkout-confirm"><p>Confira seus dados, produtos, endereço e forma de pagamento antes de confirmar.</p>
 <p><button class="primary" id="send" type="submit">Confirmar pedido</button></p></section></form>
   <div id="success" hidden></div>
@@ -1607,8 +1605,6 @@ function clearFiadoAccess(){
  fiadoLookupCounter++;
  fiadoLookupFingerprint='';
  fiadoEligiblePhone='';
- $('fiadoCode').value='';
- $('fiadoCode').required=false;
  $('fiadoAuth').hidden=true;
  $('fiadoUnavailable').hidden=true;
  $('fiadoUnavailable').textContent='';
@@ -1627,7 +1623,7 @@ function scheduleFiadoStatusCheck(total){
  fiadoEligiblePhone='';
  const old=$('payment').querySelector('option[value="fiado"]');
  if(old){old.disabled=true;if($('payment').value==='fiado')$('payment').value='';}
- $('fiadoAuth').hidden=true;$('fiadoCode').required=false;$('fiadoCode').value='';
+ $('fiadoAuth').hidden=true;
  if(old){$('fiadoUnavailable').hidden=false;$('fiadoUnavailable').textContent='Conferindo Fiado para este pedido…';}
  if(fiadoLookupTimer)clearTimeout(fiadoLookupTimer);
  fiadoLookupTimer=setTimeout(()=>void refreshFiadoEligibility(phone,rounded,request),350);
@@ -1665,8 +1661,6 @@ $('payment').addEventListener('change',()=>{
  const isFiado=$('payment').value==='fiado'&&!!option&&!option.disabled&&
   fiadoEligiblePhone===fiadoPhoneDigits($('phone').value);
  $('fiadoAuth').hidden=!isFiado;
- $('fiadoCode').required=isFiado;
- if(!isFiado)$('fiadoCode').value='';
 });
 // A carteira é identificada pelo telefone digitado no pedido, sem chaves ou SMS.
 let loyaltyProgram=null,loyaltyWallet=null,loyaltyPhone='',loyaltyPreview=null,loyaltyStamp='',loyaltyBusy=false,loyaltyPhoneRequest=0,loyaltyPhoneTimer=null;
@@ -1846,7 +1840,7 @@ async function loadSchedule(){
 }
 
 function lockCheckout(locked){
- for(const id of ['products','cart','customer','phone','address','deliveryPoint','fulfillment','payment','notes','schedule','fiadoCode','loyaltyBox'])$(id).inert=locked;
+ for(const id of ['products','cart','customer','phone','address','deliveryPoint','fulfillment','payment','notes','schedule','loyaltyBox'])$(id).inert=locked;
  $('backToCart').disabled=locked;
 }
 
@@ -1865,8 +1859,8 @@ $('checkout').onsubmit=async event=>{
    return;
   }
   const phoneDigits=$('phone').value.replace(/\D/g,'');
-  if(payment==='fiado'&&(fiadoPhoneDigits(phoneDigits)!==fiadoEligiblePhone||!/^[0-9]{10}$/.test($('fiadoCode').value.trim()))){
-   msg('Para pagar fiado, informe o código particular fornecido pela loja.');
+  if(payment==='fiado'&&fiadoPhoneDigits(phoneDigits)!==fiadoEligiblePhone){
+   msg('Este pedido não está habilitado para Fiado. Escolha outro pagamento ou fale com a loja.');
    return;
   }
   if(phoneDigits.length<10||phoneDigits.length>11){
@@ -1909,7 +1903,7 @@ $('checkout').onsubmit=async event=>{
    p_payment:payment,
    p_notes:$('notes').value
   };
-  if(payment==='fiado')pendingRequest.p_code=$('fiadoCode').value.trim();
+  // O telefone identifica o cliente; a autorização do pedido é feita pela loja.
   if(loyaltyProgram||loyaltyPhone||$('loyaltyCoupon').value.trim()||$('loyaltyReward').value){
    pendingRequest.p_key=$('loyaltyReferral').value.trim().toUpperCase();pendingRequest.p_coupon=$('loyaltyCoupon').value.trim().toUpperCase();pendingRequest.p_reward=$('loyaltyReward').value;
   }
@@ -1932,8 +1926,7 @@ $('checkout').onsubmit=async event=>{
    :pendingRequest.p_scheduled_for?'pitacco_checkout_scheduled_order':'checkout_public_order';
   const usingLoyalty=Object.hasOwn(pendingRequest,'p_key');
   if(usingLoyalty)endpoint='pitacco_loyalty_checkout';
-  const payload=usingLoyalty
-   ?Object.fromEntries(Object.entries({...pendingRequest,...(pendingRequest.p_code?{p_fiado_code:pendingRequest.p_code}:{})}).filter(([key])=>key!=='p_code'))
+  const payload=usingLoyalty?pendingRequest
    :pendingRequest.p_payment==='fiado'
     ?Object.fromEntries(Object.entries(pendingRequest).filter(([key])=>key!=='p_payment'))
     :pendingRequest;
@@ -1944,8 +1937,7 @@ $('checkout').onsubmit=async event=>{
    throw error;
   }
   if(data?.error){
-   // Autorização negada antes da criação não pode deixar o carrinho bloqueado.
-   // Permite corrigir credencial, voltar para Pix ou escolher outro pagamento.
+   // Recusa antes da criação libera o carrinho para escolher outro pagamento.
    pendingRequest=null;
    throw Error(String(data.error));
   }
@@ -1960,7 +1952,9 @@ $('checkout').onsubmit=async event=>{
    el('p','Número do pedido: '+data.order_id),
    el('p','Total confirmado: '+money(data.total)),
    el('p',pendingRequest.p_payment==='fiado'
-     ?'Compra registrada na caderneta da loja. O pagamento será feito depois, conforme o prazo combinado.'
+     ?data.fiado_approval==='pending'
+      ?'Fiado solicitado. O pedido aguarda autorização da loja e só seguirá para preparo após a aprovação.'
+      :'Fiado autorizado pela loja. O pagamento será feito depois, conforme o prazo combinado.'
      :data.payment_status==='paid_manual'?'Pagamento registrado.':'Pagamento pendente de confirmação.')
   );
   if(pendingRequest.p_scheduled_for)$('success').append(el('p','Agendado para '+scheduleFormat.format(new Date(pendingRequest.p_scheduled_for))+'.'));
