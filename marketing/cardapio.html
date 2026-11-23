@@ -889,11 +889,17 @@ function v2SaveFavorite(id){
 let v2TopSellerIds=[];
 async function v2LoadTopSellers(){
  if(!menu||document.body.dataset.menuTemplate!=='pitacco-v2')return;
- try{
-  const {data,error}=await client.rpc('pitacco_public_top_sellers',{p_slug:slug});
-  if(error)throw error;
-  if(Array.isArray(data))v2TopSellerIds=data.filter(id=>typeof id==='string').slice(0,2);
- }catch{v2TopSellerIds=[]}
+ const results=await Promise.allSettled([
+  client.rpc('pitacco_public_top_sellers',{p_slug:slug}),
+  client.rpc('pitacco_public_store_region',{p_slug:slug})
+ ]);
+ const best=results[0].status==='fulfilled'?results[0].value:null;
+ const region=results[1].status==='fulfilled'?results[1].value:null;
+ if(!best?.error&&Array.isArray(best?.data))v2TopSellerIds=best.data.filter(id=>typeof id==='string').slice(0,2);
+ if(!region?.error&&typeof region?.data==='string'&&region.data.trim()){
+  $('v2HeroLocation').textContent='📍 '+region.data.trim();
+  $('v2HeroLocation').hidden=false;
+ }
  v2Feature();
 }
 function v2CategoryIcon(name){
