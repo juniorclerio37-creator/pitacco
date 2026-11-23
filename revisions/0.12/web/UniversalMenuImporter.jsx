@@ -153,20 +153,27 @@ export default function UniversalMenuImporter({client,storeId,onCompleted}){
   setItems(old=>old.map((x,i)=>i!==index?x:{...x,groups:x.groups.map((g,j)=>j!==gIndex?g:{...g,options:g.options.map((o,k)=>k!==oIndex?o:{...o,...patch})})}));
  }
  async function uploadLocalPhotos(itemsToImport){
-  if(!zipImages.size)return {products:itemsToImport,failed:[]};
+  if(!zipImages.size){
+   const failed=[];
+   const products=itemsToImport.map(p=>{
+    if(p.image_url&&!safePhotoUrl(p.image_url)){failed.push(p.name);return {...p,image_url:''};}
+    return {...p};
+   });
+   return {products,failed};
+  }
   const imported=itemsToImport.map(p=>({...p}));const failed=[];
   for(let i=0;i<imported.length;i++){
    const item=imported[i];if(!item.image_url)continue;
    const entry=zipMatch(zipImages,item.image_url);
-   if(!entry){if(!safePhotoUrl(item.image_url))failed.push(item.name);continue;}
+   if(!entry){if(!safePhotoUrl(item.image_url)){failed.push(item.name);item.image_url='';}continue;}
    const type=entry.name.toLowerCase().split('.').pop(),ext=type==='jpeg'?'jpg':type;
-   if(!['png','jpg','webp'].includes(ext)){failed.push(item.name);continue;}
+   if(!['png','jpg','webp'].includes(ext)){failed.push(item.name);item.image_url='';continue;}
    const bytes=await entry.async('uint8array');
-   if(bytes.length<100||bytes.length>5_000_000){failed.push(item.name);continue;}
+   if(bytes.length<100||bytes.length>5_000_000){failed.push(item.name);item.image_url='';continue;}
    const path='products/'+storeId+'/'+crypto.randomUUID()+'.'+ext;
    const mime=ext==='jpg'?'image/jpeg':'image/'+ext;
    const {error:err}=await client.storage.from('pitacco-media').upload(path,bytes,{contentType:mime,upsert:false});
-   if(err){failed.push(item.name);continue;}
+   if(err){failed.push(item.name);item.image_url='';continue;}
    item.image_url=client.storage.from('pitacco-media').getPublicUrl(path).data.publicUrl;
    setPhase('Copiando fotos do arquivo: '+(i+1)+'/'+imported.length);
   }
