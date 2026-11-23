@@ -35,6 +35,10 @@ try{
     assert.equal(p.p_phone,'21999990001');
     return route.fulfill({json:linkGenerated?{linked:true,points:120,orders:3,cashback_cents:500,rules,referral_code:'PESSOAL',offers:[],history:[]}:{linked:false,points:0,orders:0,cashback_cents:0,rules,referral_code:null,offers:[],history:[]}});
    }
+   if(name==='pitacco_v2_customer_profile'){
+    if(p.p_action==='load')return route.fulfill({json:{found:false,addresses:[]}});
+    return route.fulfill({json:{found:true,name:p.p_name,addresses:p.p_addresses||[]}});
+   }
    if(name==='pitacco_loyalty_preview'){
     assert.equal(p.p_key,'21999990001','prévia usa telefone, não chave');
     const subtotal=p.p_items.reduce((sum,x)=>sum+5000*x.quantity,0),discount=p.p_reward==='points'?1000:500;
@@ -85,17 +89,35 @@ try{
   await page.getByRole('button',{name:'Personalizar Açaí',exact:true}).click();
   await page.getByRole('button',{name:/Adicionar à sacola/}).click();
   await page.locator('#openCart').click();await page.locator('#continueCheckout').click();
-  await page.locator('#customer').fill('Cliente');
+  const principal=template==='pitacco-v2';
+  if(principal){
+    await page.locator('#v2CheckoutNext').click();
+    await page.locator('#customer').fill('Cliente');
+    await page.locator('#v2CheckoutNext').click();
+    await page.locator('#v2CheckoutNext').click();
+    await page.locator('#v2PaymentCards [data-kind="pix_manual"]').click();
+    assert.equal(await page.locator('#payment').inputValue(),'pix_manual');
+  }else await page.locator('#customer').fill('Cliente');
   if(width===375)await page.locator('#loyaltyReward').selectOption('points');
   else await page.getByRole('button',{name:'Usar SEMANA5',exact:true}).click();
   await page.locator('#loyaltyApply').click();await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).waitFor();
-  await page.locator('#backToCart').click();await page.locator('#cart input').fill('2');await page.locator('#cart input').dispatchEvent('change');
+  if(principal){
+    for(let i=0;i<4;i++)await page.locator('#v2CheckoutBack').click();
+  }else await page.locator('#backToCart').click();
+  await page.locator('#cart input').fill('2');await page.locator('#cart input').dispatchEvent('change');
   assert.equal(await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).count(),0,'cart edit invalidates quoted discount');
-  await page.locator('#continueCheckout').click();await page.locator('#loyaltyApply').click();
+  await page.locator('#continueCheckout').click();
+  if(principal){
+    for(let i=0;i<3;i++)await page.locator('#v2CheckoutNext').click();
+    await page.locator('#v2PaymentCards [data-kind="pix_manual"]').click();
+  }
+  await page.locator('#loyaltyApply').click();
   await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).waitFor();
+  if(principal)await page.locator('#v2CheckoutNext').click();
   await page.locator('#send').click();await page.getByRole('button',{name:'Tentar novamente',exact:true}).waitFor();
   assert.equal(await page.locator('#loyaltyBox').evaluate(e=>e.inert),true);
-  await page.locator('#send').click();await page.getByRole('heading',{name:'Pedido recebido!',exact:true}).waitFor();
+  await page.locator('#send').click();
+  await page.getByRole('heading',{name:principal?'✓ Pedido confirmado!':'Pedido recebido!',exact:true}).waitFor();
   await page.locator('#closeCart').click();await page.getByRole('button',{name:'Meu Fideliza+',exact:true}).click();
   assert.equal(await page.locator('#send').isVisible(),false,'wallet remains accessible after ordering without reopening checkout');
   assert.equal(await page.locator('#v2LoyaltyPage').isVisible(),true);
