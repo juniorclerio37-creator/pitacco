@@ -46,12 +46,14 @@ try{
    return route.fulfill({status:404,json:{message:'Unexpected '+name}});
   });
   await page.goto(origin+'/loyalty-test?indicacao=INDICADOR');
+
   await page.waitForFunction(()=>document.body.dataset.menuSkin);
   await page.locator('.product-open').first().waitFor();
   assert.equal(await page.locator('body').getAttribute('data-menu-skin'),template==='pitacco-v2'?'principal':template);
   await mkdir('artifacts',{recursive:true});
   await page.screenshot({path:`artifacts/menu-${template}-${width}.png`,fullPage:true});
-  await page.getByRole('button',{name:'Meu Fideliza+',exact:true}).click();
+  await page.locator('#v2HomeLoyaltyGo').click();
+
   assert.equal(await page.locator('#v2LoyaltyPage').isVisible(),true,'Fideliza+ usa tela exclusiva V2');
   await page.locator('#v2LoyaltyPhone').fill('21999990001');
   await page.locator('#v2PointsValue').filter({hasText:'120'}).waitFor();
