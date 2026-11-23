@@ -433,6 +433,7 @@ body[data-menu-template="pitacco-v2"] .v2-about h2{color:#48075d}
 body[data-menu-template="pitacco-v2"] .v2-about p{color:#705477}
 body[data-menu-template="pitacco-v2"] .v2-about .v2-about-chip{border-radius:12px;background:#f8ecff;padding:10px 13px;margin:9px 0}
 body[data-menu-template="pitacco-v2"] .v2-hidden{display:none!important}
+body[data-menu-template="pitacco-v2"] .product{position:relative}
 body[data-menu-template="pitacco-v2"] .pitacco-promos{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
 body[data-menu-template="pitacco-v2"] .pitacco-promo{border-color:#eedcf4;background:#f7ebff;color:#34114b}
 body[data-menu-template="pitacco-v2"] .pitacco-promo-link{color:#8215b0}
@@ -560,9 +561,9 @@ body[data-menu-template="pitacco-v2"] .pitacco-footer{color:#725779}
 
  <p id="msg" class="msg" role="status">Carregando cardápio…</p>
  <section id="layout" aria-label="Produtos da loja" hidden>
-  <div class="catalog-tools"><div class="toolbar"><h2>Cardápio</h2><label class="search"><span class="visually-hidden">Buscar no cardápio</span>
+  <div class="catalog-tools"><div class="toolbar"><h2 id="v2CatalogTitle">Cardápio</h2><label class="search"><span class="visually-hidden">Buscar no cardápio</span>
    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
-   <input type="search" id="search" placeholder="Buscar no cardápio"></label></div>
+   <input type="search" id="search" placeholder="Buscar no cardápio"></label><button type="button" id="v2FavoritesNav" class="secondary" hidden>♡ Favoritos</button><button type="button" id="v2ClassicLoyalty" class="secondary" hidden>Meu Fideliza+</button></div>
   <nav class="nav" id="categories" aria-label="Categorias"></nav></div>
   <div class="products" id="products"></div>
  </section>
@@ -700,6 +701,162 @@ $('quoteDelivery').onclick=async()=>{
 const scheduleFormat=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 
 const moneyFormat=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+
+// Template principal do cardápio, sem alterar o motor de pedidos. Cada futuro
+// modelo poderá ter outro id em appearance.template.
+let v2Page='inicio',v2Detail='',v2FavoritesOnly=false;
+const v2FavoritesKey='pitacco-favoritos:'+slug;
+let v2Favorites=new Set();
+try{const data=JSON.parse(localStorage.getItem(v2FavoritesKey)||'[]');if(Array.isArray(data))v2Favorites=new Set(data.filter(x=>typeof x==='string'));}catch{}
+function setMenuTemplate(shop){
+ const preference=String(shop.appearance?.template||shop.appearance?.template_id||'pitacco-v2').toLowerCase();
+ const classic=['classic','classico','legacy'].includes(preference);
+ document.body.dataset.menuTemplate=classic?'classic':'pitacco-v2';
+ $('v2StoreNav').hidden=classic;
+ $('v2ClassicLoyalty').hidden=true;
+}
+function v2SaveFavorite(id){
+ if(v2Favorites.has(id))v2Favorites.delete(id);else v2Favorites.add(id);
+ try{localStorage.setItem(v2FavoritesKey,JSON.stringify([...v2Favorites].slice(-100)))}catch{}
+ renderProducts();
+}
+function v2Feature(){
+ if(document.body.dataset.menuTemplate!=='pitacco-v2'||!menu)return;
+ const p=menu.products.find(x=>imageUrl(x.image_url))||menu.products[0];
+ $('v2Feature').hidden=!p;
+ if(p){
+  $('v2FeatureTitle').textContent=p.name;
+  $('v2FeaturePrice').textContent=money(p.price);
+  $('v2FeatureImage').hidden=!imageUrl(p.image_url);
+  if(imageUrl(p.image_url))$('v2FeatureImage').src=p.image_url;
+  $('v2Feature').onclick=()=>openProduct(p);
+ }
+ $('v2HomeLoyalty').hidden=!loyaltyProgram;
+}
+function v2Go(page,initial=false){
+ if(document.body.dataset.menuTemplate!=='pitacco-v2')return;
+ v2Page=page;v2FavoritesOnly=page==='favoritos';
+ $('v2Home').hidden=page!=='inicio';
+ $('v2LoyaltyPage').hidden=page!=='fideliza';
+ $('v2AboutPage').hidden=page!=='sobre';
+ const listing=page!=='fideliza'&&page!=='sobre';
+ $('layout').hidden=!listing;
+ $('pitaccoPromos').hidden=!['inicio','promocoes'].includes(page)||$('pitaccoPromos').childElementCount===0;
+ for(const b of $('v2StoreNav').querySelectorAll('[data-v2-nav]')){
+  if(b.dataset.v2Nav===page)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');
+ }
+ if(listing&&menu){
+  category=null;$('search').value='';
+  const names={inicio:'Cardápio',cardapio:'Escolha seu favorito',promocoes:'Ofertas e destaques',favoritos:'Meus favoritos'};
+  $('v2CatalogTitle').textContent=names[page]||'Cardápio';
+  renderCategories();renderProducts();
+ }
+ if(page==='fideliza'){
+  $('v2LoyaltyPhone').value=$('phone').value;
+  v2RenderWallet();
+  if(menu)void refreshLoyaltyWallet();
+ }
+ if(page==='sobre'&&menu){
+  $('v2AboutTitle').textContent=menu.store.name;
+  $('v2AboutIntro').textContent=menu.store.appearance?.slogan||'Conheça os serviços disponíveis nesta loja.';
+  const area=$('v2AboutServices');area.replaceChildren();
+  for(const item of $('storeServices').children)area.append(el('p',item.textContent,'v2-about-chip'));
+  area.append(el('p','Horários de atendimento e disponibilidade de pedidos definidos pela loja.','v2-about-chip'));
+ }
+ if(!initial)window.scrollTo({top:0,behavior:'smooth'});
+}
+for(const b of $('v2StoreNav').querySelectorAll('[data-v2-nav]')){
+ if(b.id!=='loyaltyOpen')b.onclick=()=>v2Go(b.dataset.v2Nav);
+}
+$('v2HomeLoyaltyGo').onclick=()=>v2Go('fideliza');
+$('v2FavoritesNav').onclick=()=>v2Go('favoritos');
+$('v2ClassicLoyalty').onclick=()=>{if(!$('loyaltyOpen').hidden)$('loyaltyOpen').click()};
+$('v2LoyaltyPhone').addEventListener('input',e=>{
+ $('phone').value=e.target.value;
+ $('phone').dispatchEvent(new Event('input',{bubbles:true}));
+});
+$('phone').addEventListener('input',()=>{
+ if(document.activeElement!==$('v2LoyaltyPhone'))$('v2LoyaltyPhone').value=$('phone').value;
+});
+function v2BenefitPurchase(type,value){
+ if(type==='coupon'){$('loyaltyCoupon').value=value;$('loyaltyReward').value='';}
+ else{$('loyaltyReward').value=value;$('loyaltyCoupon').value='';}
+ invalidateLoyalty();
+ if(!cart.length){v2Go('cardapio');return;}
+ $('cartDialog').showModal();cartStep(true);
+ $('loyaltyBox').scrollIntoView({block:'start'});
+ loyaltyNotice('Toque em Aplicar benefício para conferir o desconto.');
+}
+function v2RenderWallet(){
+ if(document.body.dataset.menuTemplate!=='pitacco-v2')return;
+ const wallet=loyaltyWallet,rule=wallet?.rules||loyaltyProgram?.rules||{};
+ $('v2PointsValue').textContent=String(wallet?.points||0);
+ $('v2CashbackValue').textContent=money((wallet?.cashback_cents||0)/100);
+ const offers=[...(loyaltyProgram?.campaigns||[]),...(wallet?.offers||[])];
+ $('v2OffersValue').textContent=String(offers.length);
+ const digits=loyaltyPhoneDigits($('phone').value);
+ $('v2ConnectionNote').textContent=digits.length!==10&&digits.length!==11?
+  'Digite seu celular com DDD para consultar seus benefícios.':
+  wallet?.linked?'Carteira localizada automaticamente para este celular nesta loja.':
+  'Este celular ainda não possui compras vinculadas. A primeira compra inicia os benefícios.';
+ for(const b of $('v2BenefitGrid').querySelectorAll('[data-v2-benefit]')){
+  const name=b.dataset.v2Benefit;
+  b.hidden=(name==='pontos'&&!rule.points_enabled&&!rule.orders_enabled)
+   ||(name==='cupons'&&!rule.coupons_enabled)
+   ||(name==='recompensas'&&!rule.points_enabled&&!rule.orders_enabled)
+   ||(name==='cashback'&&!rule.cashback_enabled)
+   ||(name==='indicacoes'&&!rule.referrals_enabled)
+   ||(name==='campanhas'&&!rule.campaigns_enabled);
+ }
+ if(v2Detail)v2ShowBenefit(v2Detail,false);
+}
+function v2ShowBenefit(mode,scroll=true){
+ v2Detail=mode;
+ const root=$('v2LoyaltyDetail');root.hidden=false;root.replaceChildren();
+ const wallet=loyaltyWallet,rule=wallet?.rules||loyaltyProgram?.rules||{};
+ const title={pontos:'Meus pontos',cupons:'Meus cupons',recompensas:'Resgatar recompensas',cashback:'Cashback',indicacoes:'Indique e ganhe',campanhas:'Campanhas',ajuda:'Como funciona?'};
+ root.append(el('h3',title[mode]||'Fideliza+'));
+ const line=(heading,detail,action,callback,disabled=false)=>{
+  const article=el('article'),content=el('div');
+  content.append(el('strong',heading));
+  if(detail)content.append(el('small',detail));
+  article.append(content);
+  if(action){const btn=button(action);btn.disabled=disabled;btn.onclick=callback;article.append(btn);}
+  root.append(article);
+ };
+ if(mode==='pontos'){
+  line((wallet?.points||0)+' pontos','Pontos entram depois que o pedido é pago e entregue.');
+  if(rule.orders_enabled)line((wallet?.orders||0)+' pedidos acumulados','Contador de pedidos elegíveis desta loja.');
+  line('Movimentações detalhadas','Por privacidade, o extrato completo não pode ser exibido apenas com um telefone digitado.');
+ }else if(mode==='recompensas'){
+  if(rule.points_enabled)line(money((rule.points_reward_cents||0)/100)+' de desconto','Precisa de '+(rule.min_points_to_redeem||0)+' pontos','Resgatar',()=>v2BenefitPurchase('reward','points'),(wallet?.points||0)<(rule.min_points_to_redeem||Infinity));
+  if(rule.orders_enabled)line(money((rule.orders_reward_cents||0)/100)+' de desconto','Precisa de '+(rule.orders_required||0)+' pedidos','Resgatar',()=>v2BenefitPurchase('reward','orders'),(wallet?.orders||0)<(rule.orders_required||Infinity));
+ }else if(mode==='cashback'){
+  line(money((wallet?.cashback_cents||0)/100)+' de créditos','Utilização sujeita às regras da loja','Usar agora',()=>v2BenefitPurchase('reward','cashback'),!(wallet?.cashback_cents>0));
+  line('Acumule em suas compras','Créditos são concedidos apenas depois do pedido pago e entregue.');
+ }else if(mode==='indicacoes'){
+  if(wallet?.referral_code)line('Seu código: '+wallet.referral_code,'Compartilhe com amigos que ainda não compraram aqui.','Copiar link',()=>{
+   const url=location.origin+'/'+slug+'?indicacao='+encodeURIComponent(wallet.referral_code);
+   if(navigator.clipboard?.writeText)navigator.clipboard.writeText(url).then(()=>root.append(el('p','Link copiado.'))).catch(()=>root.append(el('p',url)));
+   else root.append(el('p',url));
+  });
+  else line('Indique amigos','Informe seu celular no campo acima. As vantagens dependem das regras da loja.');
+ }else if(mode==='cupons'||mode==='campanhas'){
+  const all=[...(loyaltyProgram?.campaigns||[]),...(wallet?.offers||[])];
+  const offers=mode==='campanhas'?all.filter(o=>!o.personal):all;
+  if(!offers.length)line('Nenhuma oferta disponível','Os benefícios cadastrados pela loja aparecerão aqui.');
+  for(const c of offers)line(c.title||c.code,(c.discount_type==='percent'?c.discount_value+'%':money(c.discount_value))+' · Código '+c.code,'Usar',()=>v2BenefitPurchase('coupon',c.code));
+  if(mode==='cupons')line('Já tem um código?','Digite-o na etapa de benefícios do checkout.','Abrir sacola',()=>v2BenefitPurchase('coupon',''));
+ }else{
+  line('Compre e acumule','Seu telefone com DDD identifica os benefícios desta loja.');
+  line('Troque por vantagens','Use pontos, cupons, campanhas e cashback conforme a configuração.');
+  line('Quando são liberados?','Somente após pagamento e entrega ou retirada confirmados.');
+ }
+ if(scroll)root.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+for(const b of $('v2BenefitGrid').querySelectorAll('[data-v2-benefit]'))
+ b.onclick=()=>v2ShowBenefit(b.dataset.v2Benefit);
+
 const categoryOf=product=>product.category?.trim()||'Outros';
 const normal=text=>text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 const button=(name,cls)=>{const node=el('button',name,cls);node.type='button';return node};
@@ -1182,6 +1339,7 @@ function renderLoyalty(){
  if(rules.cashback_enabled)terms.push(rules.cashback_percent+'% de cashback');
  if(rules.referrals_enabled)terms.push('Indique e ganhe '+money(rules.referral_reward_cents/100)+'; o novo participante ganha '+money(rules.referral_welcome_cents/100)+' após a primeira compra paga e entregue');
  $('loyaltyTerms').textContent=(terms.join(' · ')||'Cupons e ofertas desta loja')+'. Acúmulo sobre produtos após descontos, sem frete. Mínimo para acumular: '+money(rules.minimum_order_cents/100)+'. Um desconto por pedido. Cancelamentos revertem benefícios.';
+ v2RenderWallet();
  const offers=$('loyaltyCampaigns');offers.replaceChildren();
  for(const campaign of [...(loyaltyProgram?.campaigns||[]),...(loyaltyWallet?.offers||[])]){
   const row=el('div',undefined,'loyalty-offer');
@@ -1215,6 +1373,8 @@ async function loadLoyalty(){
   const {data,error}=await client.rpc('pitacco_loyalty_program',{p_slug:slug});
   if(error)throw error;if(!data?.rules)return;
   loyaltyProgram=data;$('loyaltyBox').hidden=false;$('loyaltyOpen').hidden=false;
+  $('v2ClassicLoyalty').hidden=document.body.dataset.menuTemplate==='pitacco-v2';
+  v2Feature();
   renderLoyalty();void refreshLoyaltyWallet();
  }catch{
   $('loyaltyOpen').hidden=false;$('loyaltyBox').hidden=false;
@@ -1230,6 +1390,7 @@ $('phone').addEventListener('input',()=>{
 setInterval(()=>{if(!document.hidden&&$('cartDialog').open)void refreshLoyaltyWallet()},20000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&$('cartDialog').open)void refreshLoyaltyWallet()});
 $('loyaltyOpen').onclick=()=>{
+ if(document.body.dataset.menuTemplate==='pitacco-v2'){v2Go('fideliza');return;}
  $('cartDialog').showModal();
  if(completed){$('checkout').hidden=false;$('checkout').classList.add('loyalty-only');$('cartTitle').textContent='Meu Fideliza+';}
  else cartStep(true);
@@ -1257,8 +1418,11 @@ $('loyaltyReferral').value=new URLSearchParams(location.search).get('indicacao')
 
 function initOptions(){
  const shop=menu.store;
+ setMenuTemplate(shop);
  applyStudioDesign(shop);
  $('storeName').textContent=shop.name;
+ $('v2AboutTitle').textContent=shop.name;
+ $('v2FavoritesNav').hidden=document.body.dataset.menuTemplate!=='pitacco-v2';
  $('storeInitial').textContent=shop.name.trim().slice(0,1).toUpperCase();
  document.title='Cardápio | '+shop.name;
  if(/^#[0-9a-fA-F]{6}$/.test(shop.primary_color||'')){
@@ -1295,8 +1459,9 @@ function initOptions(){
   renderCart();loadSchedule();
  };
  $('fulfillment').dispatchEvent(new Event('change'));
- renderCategories();renderProducts();void loadLoyalty();
+ renderCategories();renderProducts();void loadLoyalty();v2Feature();
  $('hero').hidden=false;$('layout').hidden=false;$('cartDock').hidden=false;
+ v2Go('inicio',true);
  showStoreOpening(shop.opening_hours);
  msg(!$('fulfillment').options.length?'Esta loja está sem modalidade de atendimento.':!$('payment').options.length?'Esta loja ainda está configurando o pagamento.':'');
 }
