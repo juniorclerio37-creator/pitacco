@@ -332,6 +332,8 @@ body[data-menu-template="pitacco-v2"] .product-intro p{background:#fff;color:hsl
 body[data-menu-template="pitacco-v2"] .options{background:white;border-color:hsl(var(--template-hue,290.53) calc(33.33% * var(--template-chroma,1)) 88.82%);border-radius:15px}
 body[data-menu-template="pitacco-v2"] .options legend{color:hsl(var(--template-hue,283.76) calc(77.98% * var(--template-chroma,1)) 21.37%)}
 body[data-menu-template="pitacco-v2"] .option:has(input:checked){background:hsl(var(--template-hue,277.50) calc(100.00% * var(--template-chroma,1)) 96.86%);border-color:hsl(var(--template-hue,286.24) calc(48.88% * var(--template-chroma,1)) 56.27%)}
+.option .option-thumbnail{width:47px;height:47px;object-fit:contain;flex:none;border-radius:10px;background:#faf3fc;border:1px solid #ece0f0;margin:0 6px}
+@media(max-width:600px){.option .option-thumbnail{width:42px;height:42px;margin:0 4px}}
 body[data-menu-template="pitacco-v2"] .option input{accent-color:hsl(var(--template-hue,280.66) calc(80.00% * var(--template-chroma,1)) 37.25%)}
 body[data-menu-template="pitacco-v2"] .cartline{
  border:1px solid hsl(var(--template-hue,285.00) calc(33.33% * var(--template-chroma,1)) 90.59%);border-radius:15px;padding:13px;margin:0 0 12px;background:white;
@@ -2143,7 +2145,13 @@ function openProduct(product,item=null){
    input.addEventListener('change',()=>{
     field.removeAttribute('data-invalid');$('productError').hidden=true;updateProduct();
    });
-   label.append(input,el('span',option?.name??'Sem complemento'),el('span',Number(option?.price)>0?'+ '+money(option.price):option?'Incluído':'','option-price'));
+   label.append(input);
+   if(option?.image_url&&imageUrl(option.image_url)){
+    const thumb=el('img',undefined,'option-thumbnail');thumb.src=option.image_url;
+    thumb.alt='';thumb.loading='lazy';thumb.decoding='async';
+    thumb.addEventListener('error',()=>thumb.remove(),{once:true});label.append(thumb);
+   }
+   label.append(el('span',option?.name??'Sem complemento'),el('span',Number(option?.price)>0?'+ '+money(option.price):option?'Incluído':'','option-price'));
    field.append(label);
    if(option)choices.push({input,option});
   };
