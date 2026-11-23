@@ -1298,6 +1298,20 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .hero:has(> #sto
 <button id="v2CheckoutBack" class="secondary" type="button" hidden>← Voltar</button>
 <button id="v2CheckoutNext" class="primary" type="button" hidden>Continuar →</button></footer>
 </div></dialog>
+<script>
+/* A inicialização é um módulo externo; se a rede bloquear seu carregamento,
+   mostrar uma falha clara, em vez de manter o cliente preso no skeleton. */
+setTimeout(()=>{
+ const loading=document.getElementById('menuStartup');
+ if(!loading||loading.hidden)return;
+ loading.hidden=true;
+ const message=document.getElementById('msg');
+ if(message){
+  message.hidden=false;
+  message.textContent='O cardápio demorou para carregar. Verifique a conexão e atualize a página para tentar novamente.';
+ }
+},12000);
+</script>
 <script type="module">
 import{createClient}from'https://esm.sh/@supabase/supabase-js@2';
 const client=createClient('https://mdevzehqcpcgxspwbiyz.supabase.co','sb_publishable_JLIp1y5II26GrztrKDNIyQ_ryETrCuj');
