@@ -73,7 +73,7 @@ try{
   }else{
    assert.deepEqual(top.map(p=>p.fit),['cover','cover'],'Outras lojas e templates mantêm o enquadramento antigo');
   }
-  await page.locator('[data-v2-nav="cardapio"]').first().click();
+  await page.locator('[data-v2-nav="cardapio"]').first().evaluate(button=>button.click());
   const products=page.locator('.category-grid .product-visual img');
   await products.first().waitFor({state:'visible'});
   await page.waitForFunction(()=>[...document.querySelectorAll('.category-grid .product-visual img')].every(img=>img.complete&&img.naturalWidth>0));
