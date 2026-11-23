@@ -79,3 +79,19 @@ test('V2 principal integra banner ao cabeçalho e recupera carrinho sem aviso na
  assert.match(html,/localStorage\.setItem\(cartStorageKey/);
  assert.match(html,/const restored=reconcileCartDraft\(draft\.items,menu\.products\)/);
 });
+
+test('primeira exibição estável: Fideliza+ e destaques antes do cardápio visível',()=>{
+ assert.match(html,/id="menuStartup"/);
+ assert.match(html,/MENU_STARTUP_RPC_LIMIT_MS=3400/);
+ assert.match(html,/Promise\.all\(\[\s*menuStartupRpc\('pitacco_loyalty_program'/);
+ assert.match(html,/menuStartupRpc\('pitacco_public_top_sellers'/);
+ assert.match(html,/menuStartupRpc\('pitacco_public_store_region'/);
+ assert.match(html,/const prepared=await prepareMenuStartup\(\)/);
+ assert.match(html,/applyMenuStartupData\(prepared\)/);
+ assert.match(html,/await warmMenuStartupImages\(\)/);
+ assert.match(html,/await waitForMenuIdentityPaint\(\)/);
+ assert.match(html,/initOptions\(\);\s*await waitForMenuIdentityPaint\(\)/);
+ assert.match(html,/\$\('menuStartup'\)\.hidden=true/);
+ assert.doesNotMatch(html,/renderCategories\(\);renderProducts\(\);void loadLoyalty\(\)/);
+ assert.match(html,/cartRestoreWarning/);
+});
