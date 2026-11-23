@@ -1,3 +1,4 @@
+import {polygonValid} from './deliveryCoverageGeometry.mjs';
 import React, {useEffect,useRef,useState} from 'react';
 import {invoke} from './printBridge.mjs';
 import {mountDeliveryCoverageMap} from './deliveryMap.mjs';
@@ -146,6 +147,7 @@ export function StoreDeliveryArea({client,store}){
  const [reloadAreas,setReloadAreas]=useState(0);
  const container=useRef(null),map=useRef(null);
  const activeRegion=regions.find(region=>region.id===activeRegionId)||null;
+ const invalidRegions=regions.filter(r=>r.vertices.length>=3&&!polygonValid(r.vertices));
  const polygon=activeRegion?.vertices||[];
  const liveMapOptions=useRef({mode,radius,regions,activeRegionId});
  liveMapOptions.current={mode,radius,regions,activeRegionId};
@@ -296,6 +298,7 @@ export function StoreDeliveryArea({client,store}){
       throw Error('Informe um nome de até 60 caracteres para cada região.');
      if(!Array.isArray(region.vertices)||region.vertices.length<3||region.vertices.length>30)
       throw Error('A região "'+region.name+'" precisa ter de 3 a 30 pontos no mapa.');
+     if(!polygonValid(region.vertices))throw Error('A região "'+region.name+'" tem linhas cruzadas ou pontos inválidos. Redesenhe o contorno sem cruzar as linhas.');
      if(!Number.isFinite(Number(region.fee))||Number(region.fee)<0||Number(region.fee)>999.99)
       throw Error('Confira o valor do frete da região "'+region.name+'".');
     }
@@ -330,6 +333,7 @@ export function StoreDeliveryArea({client,store}){
  }
  return <section className="panel" aria-label="Área de entrega">
   <h3>Administrar Loja · Área de Entrega</h3>
+  {mode==='polygon'&&invalidRegions.length>0&&<p role="alert" style={{color:'#b42333'}}>Revise {invalidRegions.map(r=>r.name).join(', ')}: o contorno tem linhas cruzadas ou pontos inválidos. Selecione a região, limpe os pontos e desenhe o contorno em ordem, sem cruzar linhas. O frete depende dessa correção; os valores cadastrados foram preservados.</p>}
   <p>Configure o círculo com taxas por km ou várias regiões poligonais com um preço por região. O cardápio utiliza somente o modo que você salvar.</p>
   <p><strong>Loja:</strong> {address||'Cadastre o endereço em Dados e identidade.'}</p>
   {!origin&&<p role="status">Aguardando a posição confirmada da loja. Você pode desenhar as regiões, mas só poderá ativar o frete quando confirmar o ponto de partida.</p>}
@@ -364,7 +368,7 @@ export function StoreDeliveryArea({client,store}){
         onClick={()=>{setActiveRegionId(region.id);map.current?.focusRegion(region.id)}}>
         <span className="delivery-region-dot" style={{backgroundColor:deliveryRegionColors[index%deliveryRegionColors.length]}}/>
         <span><strong>{index+1}. {region.name||'Região sem nome'}</strong>
-         <small>{region.vertices.length} pontos · R$ {Number(region.fee||0).toFixed(2).replace('.',',')}</small>
+         <small>{region.vertices.length>=3&&!polygonValid(region.vertices)?'⚠ Contorno inválido · ':''}{region.vertices.length} pontos · R$ {Number(region.fee||0).toFixed(2).replace('.',',')}</small>
         </span>
        </button>
        <div className="delivery-region-item-actions">

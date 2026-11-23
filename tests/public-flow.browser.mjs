@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir } from 'node:fs/promises';
 import { chromium } from '../web/node_modules/playwright/index.mjs';
 
 const [menuPage, trackingPage] = await Promise.all(
@@ -40,7 +40,7 @@ try {
     const area = {latitude:-22.7,longitude:-43.4,radius_m:3000,coverage_type:'circle',polygon:[]};
     await page.context().grantPermissions(['geolocation']);
     await page.context().setGeolocation({latitude:-22.71,longitude:-43.4});
-    let polls=0;
+    let polls=0,quoteAttempts=0,recoveryConfirmed=false;
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     const requests = [];
@@ -65,7 +65,7 @@ try {
             const invoke=async (name,payload)=>{
               const response=await fetch('/fixture/' + name,{method:'POST',body:JSON.stringify(payload)});
               const data=await response.json();
-              return {status:response.status,data:response.ok?data:null,error:response.ok?null:data};
+              return {status:response.status,data:response.ok?data:null,error:response.ok?null:{message:'Edge Function returned a non-2xx status code',context:new Response(JSON.stringify(data))}};
             };
             return {rpc:invoke,functions:{invoke:async (name,options)=>invoke(name,options.body)}};
           }`
@@ -88,6 +88,7 @@ try {
           }] },{id:'agua',name:'Água',category:'Bebidas',price:5,option_groups:[]}]
         } });
       }
+      if(pathname.endsWith('/pitacco_public_checkout_recovery'))return route.fulfill({json:recoveryConfirmed?{confirmed:true,order_id:orderId,tracking_token:token,total:74}:{confirmed:false}});
       if(pathname.endsWith('/pitacco_public_top_sellers')){
         assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
         return route.fulfill({json:['acai','agua']});
@@ -113,7 +114,8 @@ try {
       if (pathname.endsWith('/delivery-quote')) {
         const payload=route.request().postDataJSON();
         assert.equal(payload.slug,'loja-teste');
-        assert.equal(payload.address,'Rua Teste 123');
+        assert.equal(payload.address,'Rua Teste, 123, Centro, Nova Iguaçu, RJ');
+        if(++quoteAttempts===1)return route.fulfill({status:409,json:{error:'Existe uma região poligonal inválida. Corrija em Área de Entrega.'}});
         assert.deepEqual([payload.latitude,payload.longitude],[-22.71,-43.4]);
         return route.fulfill({json:{quote_id:'30000000-0000-0000-0000-000000000011',
           request_id:payload.request_id,fee:5,distance_m:1112,distance_type:'straight',
@@ -191,6 +193,8 @@ try {
     await productCard.click();
     await product.getByRole('radio',{name:/Leite em pó/}).check();
     await add.click();
+    await page.reload();
+    await page.locator('#cartDraftNotice').filter({hasText:'Sua sacola foi recuperada'}).waitFor();
     await page.locator('#openCart').click();
     assert.equal(await page.locator('#cart .cartline').count(),2);
     assert.equal(await page.locator('#cart input').first().inputValue(),'2');
@@ -212,9 +216,10 @@ try {
     await firstLine.getByText(/Morango · Granola/).waitFor();
     await page.getByRole('button',{name:'Continuar para entrega e pagamento'}).click();
     const fiadoChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
-    for (const [id, value] of [['customer', 'Cliente Teste'], ['phone', '21999999999'], ['address', 'Rua Teste 123']]) {
+    for (const [id, value] of [['customer', 'Cliente Teste'], ['phone', '21999999999'], ['addressStreet','Rua Teste'], ['addressNumber','123'], ['addressNeighborhood','Centro'], ['addressCity','Nova Iguaçu']]) {
       await page.locator('#' + id).fill(value);
     }
+    await page.locator('#addressState').selectOption('RJ');
     await fiadoChecked;
     assert.equal(await page.getByRole('button',{name:'Tenho fiado autorizado pela loja'}).count(),0);
     assert.equal(await page.locator('#fiadoAuth').isVisible(),false);
@@ -251,6 +256,11 @@ try {
     }
     await page.getByRole('button',{name:'Usar minha localização'}).click();
     await page.getByText('Ponto marcado. Confira o endereço e calcule o frete.').waitFor();
+    await page.getByRole('button',{name:'Calcular taxa de entrega'}).click();
+    await page.locator('#routeQuoteStatus').filter({hasText:'A loja precisa revisar'}).waitFor();
+    assert.equal(await page.locator('#routeQuoteStatus').getAttribute('role'),'alert');
+    if(width===375){await mkdir('artifacts',{recursive:true});await page.locator('#addressBlock').screenshot({path:`artifacts/menu-address-${template}.png`});}
+    assert.doesNotMatch(await page.locator('#routeQuoteStatus').innerText(),/non-2xx/);
     const pricingChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
     await page.getByRole('button',{name:'Calcular taxa de entrega'}).click();
     await pricingChecked;
@@ -266,6 +276,7 @@ try {
     releaseResponse();
     await page.getByRole('button', { name: 'Tentar novamente' }).click();
     await page.getByRole('heading', { name: 'Pedido recebido!' }).waitFor();
+    assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-cart:loja-teste')),null,'Confirmed order clears saved cart');
     assert.equal(requests.length, 2);
     assert.deepEqual(requests[0], requests[1]);
     assert.equal(requests[0].p_scheduled_for,scheduled||undefined);
@@ -298,6 +309,19 @@ try {
       assert.equal(await inlineMap.isVisible(),false);
     }
     if (width === 375) assert.equal(await page.locator('#steps li').count(), 0);
+    if(width===375){
+      await page.evaluate(()=>localStorage.setItem('pitacco-cart:loja-teste',JSON.stringify({version:1,items:[{product_id:'agua',quantity:2,options:[]}],pending_request:'60000000-0000-4000-8000-000000000001'})));
+      await page.goto(origin+'/loja-teste');
+      await page.locator('#cartDraftText').filter({hasText:'ainda não tem confirmação'}).waitFor();
+      assert.equal(await page.locator('#continueCheckout').isDisabled(),true);
+      assert.equal(await page.locator('#cart').evaluate(node=>node.inert),true);
+      assert.equal(requests.length,2,'Recovery never submits another order');
+      recoveryConfirmed=true;
+      await page.locator('#checkPendingCart').click();
+      await page.locator('#recoveredOrderLink').waitFor();
+      assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-cart:loja-teste')),null);
+      assert.equal(requests.length,2);
+    }
     assert.deepEqual(errors, []);
     await page.close();
     console.log(`PASS public checkout and tracking at ${width}px`);

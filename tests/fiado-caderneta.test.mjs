@@ -72,7 +72,7 @@ test("fiado uses merchant approval with PIN set by the store and validates credi
  assert.match(phoneOption,/return jsonb_build_object\('eligible',coalesce\(allowed,false\)\)/);
  assert.match(shop,/pitacco_checkout_fiado/);
  assert.match(shop,/if\(data\?\.error\)\{/);
- assert.match(shop,/Recusa antes da criação[\s\S]{0,190}pendingRequest=null/);
+ assert.match(shop,/Recusa antes da criação[\s\S]{0,190}clearPendingCart\(\)/);
  assert.doesNotMatch(shop,/fiadoCode|Código particular para confirmar/);
  assert.match(shop,/PIN pessoal de 6 dígitos/);
  assert.match(shop,/pitacco_fiado_verify_pin/);
