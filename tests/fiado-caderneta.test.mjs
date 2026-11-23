@@ -8,6 +8,7 @@ const ledger=file("supabase/migrations/20261122224200_fiado_credit_engine.sql");
 const checkout=file("supabase/migrations/20261122224300_fiado_public_checkout.sql");
 const phoneOption=file("supabase/migrations/20261123022000_fiado_phone_payment_eligibility.sql");
 const privateStatus=file("supabase/migrations/20261123025500_fiado_private_credit_status.sql");
+const approval=file("supabase/migrations/20261123082500_fiado_store_approval_without_code.sql");
 const courier=file("supabase/migrations/20261122224400_fiado_courier_privacy.sql");
 const pos=file("supabase/migrations/20261122224500_fiado_balcao.sql");
 const shop=file("marketing/cardapio.html");
@@ -31,15 +32,19 @@ test("schema is tenant-isolated and no credit ledger is direct-readable by anony
  assert.match(manager,/payment_id/);
  assert.match(manager,/duplicate/);
 });
-test("public checkout never accepts fiado from telephone alone and uses original server prices and delivery quote",()=>{
- assert.match(ledger,/credential_hash=encode\(sha256/);
- assert.match(manager,/credential_hash=encode\(sha256/);
- assert.match(ledger,/credential_bad_attempts/);
+test("fiado uses merchant approval without PIN and validates credit on the server",()=>{
+ assert.match(approval,/alter column approval_mode set default 'manual'/);
+ assert.match(approval,/p_mode text default 'manual'/);
+ assert.match(approval,/receipt=receipt\|\|jsonb_build_object\('fiado_approval','approved'\)/);
+ assert.match(approval,/pitacco_fiado_checkout_status/);
+ assert.match(approval,/p_code text default null/);
+
+
  assert.match(ledger,/Fiado não autorizado para este pedido/);
  assert.match(ledger,/account\.used\+new\.gross>account\.credit_limit/);
  assert.match(ledger,/fiado_credit_reserved/);
  assert.match(checkout,/pitacco\.fiado_customer/);
- assert.match(checkout,/pitacco_private\.fiado_customer_access/);
+ assert.match(approval,/select \* into account from public\.pitacco_fiado_customers/);
  assert.match(checkout,/pitacco_checkout_quoted_delivery/);
  assert.match(checkout,/pitacco_checkout_scheduled_order/);
  assert.match(checkout,/checkout_public_order/);
@@ -49,13 +54,15 @@ test("public checkout never accepts fiado from telephone alone and uses original
  assert.match(privateStatus,/jsonb_build_object\(\s*'visible',true/);
  assert.doesNotMatch(privateStatus,/jsonb_build_object\('eligible',true,'available'/);
  assert.match(shop,/fiadoUnavailable/);
- assert.match(phoneOption,/c\.credential_hash is not null/);
+ assert.doesNotMatch(approval.match(/create or replace function public\.pitacco_fiado_phone_eligibility[\s\S]*?end\s*\$fiado\$;/)?.[0]||'',/credential_hash/);
  assert.match(phoneOption,/c\.credit_limit>c\.used/);
  assert.match(phoneOption,/return jsonb_build_object\('eligible',coalesce\(allowed,false\)\)/);
  assert.match(shop,/pitacco_checkout_fiado/);
  assert.match(shop,/if\(data\?\.error\)\{\s*\/\/ Autorização negada/);
  assert.match(shop,/Autorização negada[\s\S]{0,190}pendingRequest=null/);
- assert.ok(shop.includes("pendingRequest.p_code=$('fiadoCode').value.trim()"));
+ assert.doesNotMatch(shop,/fiadoCode|pendingRequest\.p_code|p_fiado_code/);
+ assert.match(shop,/A loja autoriza o Fiado deste pedido/);
+ assert.match(shop,/aguarda autorização da loja/);
  assert.match(shop,/fiadoEligiblePhone/);
  assert.doesNotMatch(shop,/Tenho fiado autorizado pela loja/);
  assert.doesNotMatch(shop,/fiadoToggle|fiadoCheck/);
@@ -65,6 +72,8 @@ test("public checkout never accepts fiado from telephone alone and uses original
  assert.match(shop,/fiadoEligiblePhone===fiadoPhoneDigits/);
  assert.match(shop,/if\(method==='fiado'\)continue/);
  assert.match(shop,/fiadoAuth'\)\.hidden=!isFiado/);
+ assert.doesNotMatch(panel,/pitacco_fiado_rotate_code|Gerar ou renovar código do cliente/);
+ assert.match(panel,/manual — a loja autoriza cada pedido/i);
  assert.doesNotMatch(shop,/Seu limite de fiado|Saldo disponível em Fiado|Limite disponível para o fiado/i);
  assert.match(shop,/Não foi possível/); // Other normal error handler preserved
 });
@@ -79,6 +88,8 @@ test("fiado never appears on courier financial display; pickup reminders and cod
  assert.match(file("entregador/painel.html"),/pitacco_driver_verify_own_code/);
  assert.match(file("entregador/painel.html"),/ifoodDriverAction\(d\.id,"verify",digits\)/);
  assert.match(orders,/label:'Fiado · a receber'/);
+ assert.match(file("revisions/0.12/web/Operations.jsx"),/Fiado aguardando autorização da loja/);
+ assert.match(file("revisions/0.12/web/Operations.jsx"),/pitacco_fiado_approve/);
 });
 test("manager controls customers, partial receipts, manager approvals and POS securely",()=>{
  assert.match(app,/FiadoCaderneta/);
@@ -86,7 +97,7 @@ test("manager controls customers, partial receipts, manager approvals and POS se
  assert.match(app,/!isDriver&&manager&&tab==='Fiado \/ Caderneta'/);
  assert.match(panel,/pitacco_fiado_toggle/);
  assert.match(panel,/pitacco_fiado_save_customer/);
- assert.match(panel,/pitacco_fiado_rotate_code/);
+ assert.match(approval,/revoke all on function public\.pitacco_fiado_rotate_code/);
  assert.match(panel,/pitacco_fiado_receive/);
  assert.match(panel,/pitacco_fiado_approve/);
  assert.match(panel,/pitacco_fiado_balcao_create/);
