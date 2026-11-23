@@ -43,7 +43,7 @@ try{
   await page.getByRole('button',{name:'Meu Fideliza+',exact:true}).click();
   assert.equal(await page.locator('#v2LoyaltyPage').isVisible(),true,'Fideliza+ usa tela exclusiva V2');
   await page.locator('#v2LoyaltyPhone').fill('21999990001');
-  await page.locator('#loyaltyBalance').filter({hasText:'120 pontos'}).waitFor();
+  await page.locator('#v2PointsValue').filter({hasText:'120'}).waitFor();
   assert.equal(await page.locator('#loyaltyOtp, #loyaltyKey, #loyaltyJoin').count(),0,'nenhuma chave, SMS ou cadastro');
   assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(k=>k.startsWith('pitacco-loyalty'))),false,'nenhum token pessoal armazenado');
   assert.match(await page.locator('#loyaltyShare').inputValue(),/indicacao=PESSOAL/);
