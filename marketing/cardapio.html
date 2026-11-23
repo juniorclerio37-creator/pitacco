@@ -839,6 +839,202 @@ body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-s
 .cart-draft-notice{border:1px solid #d9e6dc;background:#f0f8f2;color:#28533b;border-radius:12px;padding:13px 16px;margin:16px 0;font-size:.84rem}.cart-draft-notice p{margin:0 0 7px}.cart-draft-notice a{color:inherit;font-weight:750}.cart-draft-notice button{font-size:.8rem}
 @media(max-width:400px){.address-grid{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}.address-grid input,.address-grid select{min-width:0;width:100%}.address-fields legend{font-size:1rem}}
 
+
+/* V2 aprovado: todas as regras abaixo são isoladas ao template pitacco-v2. */
+body:not([data-menu-template="pitacco-v2"]) .v2-payment-cards,
+body:not([data-menu-template="pitacco-v2"]) .v2-change-block,
+body:not([data-menu-template="pitacco-v2"]) .v2-address-title{display:none!important}
+body[data-menu-template="pitacco-v2"] #cartDialog,
+body[data-menu-template="pitacco-v2"] #productDialog{background:#faf6ff;border:1px solid #ead4f2}
+body[data-menu-template="pitacco-v2"] #cartDialog{width:min(540px,100% - 18px);max-height:96dvh;border-radius:24px}
+body[data-menu-template="pitacco-v2"] #cartDialog .dialog-shell{max-height:96dvh}
+body[data-menu-template="pitacco-v2"] #cartDialog .dialog-header,
+body[data-menu-template="pitacco-v2"] #productDialog .dialog-header{
+ background:linear-gradient(125deg,#31013f,#55076b 70%,#620c7d);color:white;border:0;
+ padding:19px 20px;border-bottom:3px solid #ab24c4
+}
+body[data-menu-template="pitacco-v2"] #cartDialog .dialog-header h2,
+body[data-menu-template="pitacco-v2"] #productDialog .dialog-header h2{font-size:1.34rem;font-weight:850;color:#fff;letter-spacing:-.03em}
+body[data-menu-template="pitacco-v2"] #cartDialog .dialog-scroll{background:#fdf9ff;padding:16px}
+body[data-menu-template="pitacco-v2"] #cartDialog .dialog-footer{background:#fff9ff;border-top:1px solid #ead9f0;gap:7px;padding:13px 16px max(18px,env(safe-area-inset-bottom))}
+body[data-menu-template="pitacco-v2"] #cartDialog .dialog-footer .primary{
+ background:linear-gradient(125deg,#ff9b05,#fb6400);color:white;border:0;border-radius:16px;min-height:52px;font-size:1.04rem;font-weight:850;box-shadow:0 5px 13px #e9721a31
+}
+body[data-menu-template="pitacco-v2"] #cartDialog .dialog-footer .secondary{border-radius:14px;background:#fff;color:#710a92}
+body[data-menu-template="pitacco-v2"] #cartDialog .v2-checkout-panel{
+ border:none;box-shadow:none;background:transparent;padding:7px 0 15px;margin:0
+}
+body[data-menu-template="pitacco-v2"] #cartDialog .v2-checkout-panel h3{
+ color:#260431;font-size:1.48rem;font-weight:850;margin:11px 0 4px;letter-spacing:-.04em
+}
+body[data-menu-template="pitacco-v2"] #cartDialog .v2-checkout-panel p{color:#55465c}
+body[data-menu-template="pitacco-v2"] #cartDialog .v2-checkout-panel label{font-size:.9rem;color:#3d2147;font-weight:780;margin-top:14px}
+body[data-menu-template="pitacco-v2"] #cartDialog .v2-checkout-panel input,
+body[data-menu-template="pitacco-v2"] #cartDialog .v2-checkout-panel select,
+body[data-menu-template="pitacco-v2"] #cartDialog .v2-checkout-panel textarea{
+ min-height:49px;background:#fff;border:1px solid #ded0e5;border-radius:14px;padding:11px 13px;box-shadow:0 2px 6px #30064409
+}
+body[data-menu-template="pitacco-v2"] #cartDialog .v2-checkout-panel input:focus,
+body[data-menu-template="pitacco-v2"] #cartDialog .v2-checkout-panel textarea:focus,
+body[data-menu-template="pitacco-v2"] #cartDialog .v2-checkout-panel select:focus{outline:2px solid #8d1ab5;outline-offset:1px}
+body[data-menu-template="pitacco-v2"] .v2-checkout-progress{
+ display:flex;align-items:stretch;justify-content:space-between;gap:5px;padding:7px 0 20px;
+ background:transparent;border:0;border-radius:0;position:relative
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-progress span{
+ display:flex;flex:1;flex-direction:column;align-items:center;gap:6px;line-height:1.15;
+ font-size:1.1rem;color:#fff;background:#b9b3c1;border-radius:50%;width:38px;height:38px;
+ max-width:38px;justify-content:center;position:relative;font-weight:820;margin:0 auto
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-progress span:before{
+ content:"";height:2px;background:#d9ccdF;position:absolute;left:calc(-100% - 20px);top:18px;width:calc(100% + 17px)
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-progress span:first-child:before{display:none}
+body[data-menu-template="pitacco-v2"] .v2-checkout-progress span[data-status=done]{
+ background:#760c99
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-progress span[data-status=active]{
+ background:#ff8708;box-shadow:0 0 0 4px #fff2e5
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-progress span small{
+ position:absolute;top:43px;white-space:nowrap;font-size:.68rem;font-weight:760;color:#3e2548
+}
+body[data-menu-template="pitacco-v2"] .v2-identity-art{
+ display:flex;justify-content:center;align-items:center;gap:15px;min-height:140px;
+ background:radial-gradient(ellipse at 50% 45%,#f6dfff,#faf5ff 60%);border-radius:28px;
+ font-size:2.7rem;color:#8016b6;margin:7px 0 22px
+}
+body[data-menu-template="pitacco-v2"] .v2-identity-art span{
+ width:75px;height:100px;display:grid;place-items:center;border-radius:14px;background:#c84fe5;color:white;transform:rotate(-5deg);box-shadow:0 9px 16px #5b068a2a
+}
+body[data-menu-template="pitacco-v2"] .v2-privacy-note{
+ background:#faf0ff;border:1px solid #e7caf4;padding:12px;border-radius:13px;color:#652783;font-size:.82rem;margin:14px 0
+}
+body[data-menu-template="pitacco-v2"] .v2-address-book{padding:3px 0 12px}
+body[data-menu-template="pitacco-v2"] .v2-address-book h3{font-size:1.24rem;margin-bottom:4px}
+body[data-menu-template="pitacco-v2"] .v2-address-list{display:grid;gap:9px;margin:13px 0 11px}
+body[data-menu-template="pitacco-v2"] .v2-saved-address{
+ display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;border-radius:16px;
+ border:1px solid #dfd3e4;background:#fff;padding:14px 12px;color:#361044;cursor:pointer;width:100%;text-align:left
+}
+body[data-menu-template="pitacco-v2"] .v2-saved-address[data-selected=true]{
+ border:2px solid #a020be;background:#f9e9ff;padding:13px 11px
+}
+body[data-menu-template="pitacco-v2"] .v2-saved-address .v2-address-icon{font-size:1.6rem;color:#8517a4}
+body[data-menu-template="pitacco-v2"] .v2-saved-address strong{display:block;color:#320941;font-weight:850}
+body[data-menu-template="pitacco-v2"] .v2-saved-address small{display:block;color:#705e79;font-size:.76rem}
+body[data-menu-template="pitacco-v2"] .v2-saved-address .v2-address-radio{
+ width:18px;height:18px;border:2px solid #8e7397;border-radius:50%;display:grid;place-items:center
+}
+body[data-menu-template="pitacco-v2"] .v2-saved-address[data-selected=true] .v2-address-radio{
+ background:#890fae;border-color:#890fae;color:#fff
+}
+body[data-menu-template="pitacco-v2"] .v2-add-address{
+ display:block;width:100%;padding:13px;border:2px dashed #b99ac4;border-radius:15px;
+ background:#fff;color:#850eae;font-weight:790
+}
+body[data-menu-template="pitacco-v2"] #v2AddressEditor{padding:10px 0 0}
+body[data-menu-template="pitacco-v2"] .v2-address-title{display:grid;grid-template-columns:1fr auto;align-items:end;gap:8px}
+body[data-menu-template="pitacco-v2"] .v2-address-title label{margin:0}
+body[data-menu-template="pitacco-v2"] .v2-address-title select{width:180px}
+body[data-menu-template="pitacco-v2"] .address-fields{padding:0;border:0;margin:10px 0 16px}
+body[data-menu-template="pitacco-v2"] .address-fields legend{font-weight:860;color:#55076c}
+body[data-menu-template="pitacco-v2"] .v2-payment-native-label,
+body[data-menu-template="pitacco-v2"] #payment{
+ position:absolute!important;width:1px!important;height:1px!important;padding:0!important;
+ margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important
+}
+body[data-menu-template="pitacco-v2"] .v2-payment-cards{display:grid;gap:11px;margin:16px 0}
+body[data-menu-template="pitacco-v2"] .v2-payment-choice{
+ display:flex;align-items:center;gap:12px;min-height:83px;padding:12px;border-radius:17px;border:1px solid #ddd4e0;
+ background:#fff;color:#1c1024;width:100%;text-align:left;box-shadow:0 3px 9px #29053d0a
+}
+body[data-menu-template="pitacco-v2"] .v2-payment-choice[data-selected=true]{
+ border:2px solid #981bb5;background:#faebff;padding:11px
+}
+body[data-menu-template="pitacco-v2"] .v2-payment-choice:disabled{background:#eeedf1;color:#77737e;opacity:1}
+body[data-menu-template="pitacco-v2"] .v2-payment-icon{
+ font-size:1.63rem;width:59px;height:57px;display:grid;place-items:center;background:#f3e3ff;color:#7f12b5;border-radius:14px;flex:none
+}
+body[data-menu-template="pitacco-v2"] .v2-payment-choice[data-kind=pix_manual] .v2-payment-icon,
+body[data-menu-template="pitacco-v2"] .v2-payment-choice[data-kind=pix] .v2-payment-icon{background:#e8faf5;color:#03a888}
+body[data-menu-template="pitacco-v2"] .v2-payment-choice[data-kind=dinheiro] .v2-payment-icon{background:#eaf9e9;color:#16833a}
+body[data-menu-template="pitacco-v2"] .v2-payment-choice strong{display:block;font-size:1.03rem;color:#25102f;font-weight:860}
+body[data-menu-template="pitacco-v2"] .v2-payment-choice small{display:block;font-size:.78rem;line-height:1.32;color:#716479}
+body[data-menu-template="pitacco-v2"] .v2-payment-choice .v2-radio-mark{margin-left:auto;color:#7e118d;font-size:1.55rem}
+body[data-menu-template="pitacco-v2"] .v2-payment-choice:disabled strong,
+body[data-menu-template="pitacco-v2"] .v2-payment-choice:disabled .v2-radio-mark{color:#88838e}
+body[data-menu-template="pitacco-v2"] #fiadoAuth{background:#f8ebff;border:1px solid #d7b8e9;border-radius:16px}
+body[data-menu-template="pitacco-v2"] #fiadoUnavailable{background:#f0eff2;border:1px solid #ded9e0;color:#605767}
+body[data-menu-template="pitacco-v2"] .v2-change-block{padding:11px 13px;background:#fff6e8;border:1px solid #f2dfb9;border-radius:15px}
+body[data-menu-template="pitacco-v2"] #loyaltyBox{margin-top:18px}
+body[data-menu-template="pitacco-v2"] .v2-checkout-confirm{
+ background:transparent;border:none;padding:0;margin:6px 0 15px
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-confirm h3{font-size:1.5rem;color:#330740}
+body[data-menu-template="pitacco-v2"] .v2-review-summary{display:grid;gap:14px}
+body[data-menu-template="pitacco-v2"] .v2-review-group{
+ background:white;padding:15px;border:1px solid #e7dbed;border-radius:16px
+}
+body[data-menu-template="pitacco-v2"] .v2-review-group h4{color:#710b91;margin:0 0 10px;font-size:.92rem}
+body[data-menu-template="pitacco-v2"] .v2-review-line{display:flex;justify-content:space-between;gap:8px;padding:5px 0}
+body[data-menu-template="pitacco-v2"] .v2-review-line strong{color:#45045c;white-space:nowrap}
+body[data-menu-template="pitacco-v2"] .v2-review-total{background:#f8e7ff;color:#49035e;padding:11px;border-radius:12px;font-size:1.03rem;font-weight:850}
+body[data-menu-template="pitacco-v2"] .v2-checkout-confirm .primary{background:linear-gradient(130deg,#a518cc,#670989);border:0;border-radius:17px;min-height:55px}
+body[data-menu-template="pitacco-v2"] .v2-fiado-hero::after{content:"▣"}
+body[data-menu-template="pitacco-v2"] .v2-login-card{padding:12px 0}
+body[data-menu-template="pitacco-v2"] .v2-login-card label{display:block;color:#502c65;font-weight:800;margin:13px 0 5px}
+body[data-menu-template="pitacco-v2"] .v2-login-card input{border:1px solid #ddcee7;border-radius:13px;min-height:49px;background:white}
+body[data-menu-template="pitacco-v2"] .v2-login-card button{width:100%;margin:16px 0}
+body[data-menu-template="pitacco-v2"] .v2-finance-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:5px 0 24px}
+body[data-menu-template="pitacco-v2"] .v2-finance-metrics div{
+ display:grid;gap:4px;background:#faf0ff;border:1px solid #e7d4f0;border-radius:15px;padding:16px 11px
+}
+body[data-menu-template="pitacco-v2"] .v2-finance-metrics small{font-size:.78rem;color:#4e3e56}
+body[data-menu-template="pitacco-v2"] .v2-finance-metrics strong{font-size:1.3rem;color:#640a81}
+body[data-menu-template="pitacco-v2"] .v2-finance-list{display:grid;gap:8px;margin:13px 0 23px}
+body[data-menu-template="pitacco-v2"] .v2-finance-entry{display:flex;justify-content:space-between;align-items:center;gap:8px;background:white;border:1px solid #e7d8ed;border-radius:13px;padding:12px}
+body[data-menu-template="pitacco-v2"] .v2-finance-entry small{display:block;color:#65546e}
+body[data-menu-template="pitacco-v2"] .v2-finance-entry strong{color:#5c096f}
+body[data-menu-template="pitacco-v2"] .v2-finance-entry em{font-style:normal;font-size:.74rem;background:#fff0c7;color:#785019;padding:5px 8px;border-radius:99px}
+body[data-menu-template="pitacco-v2"] .v2-finance-entry em[data-paid=true]{background:#e4f8e9;color:#287343}
+body[data-menu-template="pitacco-v2"] .v2-message{color:#654b73;line-height:1.5;font-size:.86rem}
+body[data-menu-template="pitacco-v2"] #v2FiadoPay{width:100%;background:linear-gradient(120deg,#ff9b0b,#ff6403);border-radius:16px;min-height:52px}
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=identify] .v2-checkout-panel--delivery,
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=identify] .v2-checkout-panel--payment,
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=identify] .v2-checkout-confirm,
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=customer] .v2-checkout-panel--delivery,
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=customer] .v2-checkout-panel--payment,
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=customer] .v2-checkout-confirm,
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=address] .v2-checkout-panel--customer,
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=address] .v2-checkout-panel--payment,
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=address] .v2-checkout-confirm,
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=payment] .v2-checkout-panel--customer,
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=payment] .v2-checkout-panel--delivery,
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=payment] .v2-checkout-confirm,
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=review] .v2-checkout-panel{display:none!important}
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=review] .v2-checkout-confirm{display:block}
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=payment] #notes{margin-bottom:13px}
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=payment] #loyaltyBox{margin-top:11px}
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=identify] #v2NameFields,
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=customer] #v2PhoneFields{display:none!important}
+@media(max-width:600px){
+ body[data-menu-template="pitacco-v2"] #cartDialog,
+ body[data-menu-template="pitacco-v2"] #productDialog{
+  width:100%;height:100dvh;max-height:100dvh;margin:0;border-radius:0;border:0
+ }
+ body[data-menu-template="pitacco-v2"] #cartDialog .dialog-shell,
+ body[data-menu-template="pitacco-v2"] #productDialog .dialog-shell{height:100dvh;max-height:100dvh}
+ body[data-menu-template="pitacco-v2"] #cartDialog .dialog-header{min-height:82px;padding:21px 18px}
+ body[data-menu-template="pitacco-v2"] #cartDialog .dialog-scroll{padding:14px 18px}
+ body[data-menu-template="pitacco-v2"] .v2-checkout-progress{padding-bottom:29px}
+ body[data-menu-template="pitacco-v2"] .v2-checkout-progress span{width:34px;height:34px;font-size:1rem}
+ body[data-menu-template="pitacco-v2"] .v2-checkout-progress span small{font-size:.65rem;top:41px}
+ body[data-menu-template="pitacco-v2"] .v2-checkout-progress span:before{top:16px}
+ body[data-menu-template="pitacco-v2"] .v2-identity-art{min-height:125px}
+ body[data-menu-template="pitacco-v2"] #cartDialog .v2-checkout-panel h3{font-size:1.27rem}
+}
+
 </style></head><body>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
