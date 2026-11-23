@@ -4,7 +4,7 @@ import './fiado.css';
 const brl=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const fmt=n=>brl.format(Number(n||0));
 const day=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
-const initial={name:'',phone:'',limit:'100',enabled:true,due_days:7,approval_mode:'automatic',block_overdue:true};
+const initial={name:'',phone:'',limit:'100',enabled:true,due_days:7,approval_mode:'manual',block_overdue:true};
 
 export default function FiadoCaderneta({client,storeId,onNavigate}){
  const [overview,setOverview]=useState(null),[products,setProducts]=useState([]);
@@ -14,11 +14,11 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
  const [choices,setChoices]=useState({}),[note,setNote]=useState('');
  const [paymentAmount,setPaymentAmount]=useState(''),[paymentMethod,setPaymentMethod]=useState('pix');
  const [paymentNote,setPaymentNote]=useState(''),[paymentRequestKey,setPaymentRequestKey]=useState(null),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true);
- const [error,setError]=useState(''),[notice,setNotice]=useState(''),[issuedCode,setIssuedCode]=useState('');
+ const [error,setError]=useState(''),[notice,setNotice]=useState('');
  const [reload,setReload]=useState(0),[requestKey,setRequestKey]=useState(null);
  const customers=overview?.customers||[],charges=overview?.charges||[],payments=overview?.payments||[];
  const customer=customers.find(x=>x.id===selected)||null;
- useEffect(()=>setIssuedCode(''),[storeId]);
+
  const customerCharges=charges.filter(x=>x.customer_id===selected);
  const reserved=customerCharges.filter(x=>x.state==='reserved').reduce((a,x)=>a+Number(x.amount)-Number(x.paid),0);
  const due=customerCharges.filter(x=>x.state==='open').reduce((a,x)=>a+Number(x.amount)-Number(x.paid),0);
@@ -61,36 +61,31 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
  }
  async function run(action){
   if(busy)return;
-  setBusy(true);setError('');setNotice('');setIssuedCode('');
+  setBusy(true);setError('');setNotice('');
   try{await action()}
   catch(e){setError(e.message||'A operação não pôde ser concluída.')}
   finally{setBusy(false);}
  }
  async function rpc(name,params){const {data,error}=await client.rpc(name,params);if(error)throw error;return data;}
  function selectCustomer(id){
-  setSelected(id);setPaymentAmount('');setPaymentRequestKey(null);setIssuedCode('');
+  setSelected(id);setPaymentAmount('');setPaymentRequestKey(null);
   const target=customers.find(x=>x.id===id);
   if(target)setForm({name:target.name,phone:target.phone,limit:String(target.limit),
    enabled:target.enabled,due_days:target.due_days,
    approval_mode:target.approval_mode,block_overdue:target.block_overdue});
  }
- function newCustomer(){setSelected('');setForm(initial);setIssuedCode('');setTab('clientes')}
+ function newCustomer(){setSelected('');setForm(initial);setTab('clientes')}
  function saveCustomer(e){e.preventDefault();void run(async()=>{
   const id=await rpc('pitacco_fiado_save_customer',{
    p_store:storeId,p_name:form.name,p_phone:form.phone,p_limit:Number(form.limit),
    p_enabled:form.enabled,p_due_days:Number(form.due_days),
    p_mode:form.approval_mode,p_block_overdue:form.block_overdue});
-  setSelected(id);reloadData('Cliente e limite salvos. Gere o código particular antes de liberar compras online.');
+  setSelected(id);reloadData('Cliente salvo. A loja autoriza cada compra, ou pode liberar aprovação automática para este cliente.');
  })}
  function toggle(e){void run(async()=>{
   const enabled=e.target.checked;
   await rpc('pitacco_fiado_toggle',{p_store:storeId,p_enabled:enabled});
   reloadData(enabled?'Caderneta ativada para esta loja.':'Novas compras fiadas desativadas nesta loja.');
- })}
- function issueCode(){if(!selected)return;void run(async()=>{
-  const code=await rpc('pitacco_fiado_rotate_code',{p_store:storeId,p_customer:selected});
-  setIssuedCode(String(code));setNotice('Código gerado. Entregue-o somente ao cliente e guarde-o em segurança.');
-  setReload(n=>n+1);
  })}
  function pay(e){e.preventDefault();if(!customer)return;void run(async()=>{
   // Reutilize a MESMA chave depois de timeout: evita duas baixas da dívida.
@@ -129,7 +124,7 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
  const pending=charges.filter(x=>x.approval_required&&!x.approved&&x.state==='reserved');
  return <section className="fiado-page" aria-label="Fiado e caderneta digital">
   <header className="fiado-header">
-   <div><h2>Fiado / Caderneta Digital</h2><p>Crédito autorizado por loja, balcão, cardápio e contas a receber.</p></div>
+   <div><h2>Fiado / Caderneta Digital</h2><p>A loja autoriza pedidos sem chave. Escolha aprovação manual ou automática individualmente para cada cliente.</p></div>
    <label className="fiado-switch">
     <input type="checkbox" checked={!!overview?.enabled} onChange={toggle} disabled={busy||loading}/>
     <span>{overview?.enabled?'Fiado ativo na loja':'Habilitar fiado nesta loja'}</span>
@@ -137,12 +132,7 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
   </header>
   {error&&<p role="alert" className="fiado-alert">{error}</p>}
   {notice&&<p role="status" className="fiado-info">{notice}</p>}
-  {issuedCode&&<div className="fiado-code-once" role="status">
-   <strong>Código particular (exibido uma única vez)</strong>
-   <code>{issuedCode}</code>
-   <button type="button" onClick={()=>navigator.clipboard?.writeText(issuedCode)}>Copiar código</button>
-   <p>Compartilhe privadamente com o cliente. Nunca mostre ao entregador.</p>
-  </div>}
+
   <div className="fiado-metrics">
    <article><small>Crédito utilizado</small><strong>{fmt(totals.used)}</strong></article>
    <article><small>Contas a receber</small><strong>{fmt(totals.receivable)}</strong></article>
@@ -173,22 +163,22 @@ export default function FiadoCaderneta({client,storeId,onNavigate}){
      <label>Limite individual (R$)<input required type="number" min="0" max="100000" step="0.01" value={form.limit} onChange={e=>setForm({...form,limit:e.target.value})}/></label>
      <label>Prazo de pagamento (dias)<input required type="number" min="1" max="365" value={form.due_days} onChange={e=>setForm({...form,due_days:e.target.value})}/></label>
      <label>Aprovação<select value={form.approval_mode} onChange={e=>setForm({...form,approval_mode:e.target.value})}>
-      <option value="automatic">Automática dentro do limite</option><option value="manual">Manual, pedido por pedido</option></select></label>
+      <option value="manual">Manual — a loja autoriza cada pedido</option><option value="automatic">Automática — somente este cliente</option></select></label>
      <label className="fiado-check"><input type="checkbox" checked={form.enabled} onChange={e=>setForm({...form,enabled:e.target.checked})}/>Permitir novas compras</label>
      <label className="fiado-check"><input type="checkbox" checked={form.block_overdue} onChange={e=>setForm({...form,block_overdue:e.target.checked})}/>Bloquear fiado quando houver dívida vencida</label>
      <button disabled={busy}>Salvar cadastro e regras</button>
     </form>
-    {selected&&<div className="fiado-customer-actions">
-     <button type="button" className="secondary" disabled={busy} onClick={issueCode}>Gerar ou renovar código do cliente</button>
-     <p>O código não é enviado ao motoboy e não fica visível após fechar esta tela.</p>
-    </div>}
+    <div className="fiado-customer-actions">
+     <p><strong>Como funciona:</strong> o cliente informa o telefone no cardápio e escolhe Fiado. No modo manual, a loja confirma ou recusa o pedido antes do preparo. No automático, a compra é autorizada imediatamente somente para este cliente, respeitando o limite e os bloqueios definidos aqui.</p>
+     {form.approval_mode==='automatic'&&<p>Ao liberar aprovação automática, qualquer pedido que informe este telefone poderá usar o crédito dentro das regras. Ative apenas para clientes em que você confia.</p>}
+    </div>
    </section>
   </div>}
   {!loading&&tab==='pedidos'&&<div className="fiado-columns">
    <section className="panel">
     <h3>Pedidos na caderneta</h3>
     {pending.length>0&&<div className="fiado-pending"><strong>{pending.length} pedido(s) aguardando aprovação manual</strong>
-     {pending.map(p=><article key={p.order_id}><span>#{p.order_id.slice(0,8)} · {fmt(p.amount)}</span>
+     {pending.map(p=><article key={p.order_id}><span>{customers.find(c=>c.id===p.customer_id)?.name||'Cliente'} · Pedido #{p.order_id.slice(0,8)} · {fmt(p.amount)}</span>
       <div><button type="button" disabled={busy} onClick={()=>approve(p,true)}>Autorizar</button>
        <button type="button" disabled={busy} className="secondary" onClick={()=>approve(p,false)}>Recusar</button></div>
      </article>)}

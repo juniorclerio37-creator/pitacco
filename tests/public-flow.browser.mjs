@@ -212,8 +212,8 @@ try {
     if(width===375){
       await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
       await page.locator('#payment').selectOption('fiado');
-      assert.equal(await page.locator('#fiadoAuth').isVisible(),true,'Código só ao escolher Fiado');
-      assert.equal(await page.locator('#fiadoCode').getAttribute('required'),'');
+      assert.equal(await page.locator('#fiadoAuth').isVisible(),true,'Aviso da autorização da loja ao escolher Fiado');
+      assert.equal(await page.locator('#fiadoCode').count(),0,'Nenhum código particular exigido');
       await page.locator('#payment').selectOption('pix_manual');
       assert.equal(await page.locator('#fiadoAuth').isVisible(),false);
       const disableFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
