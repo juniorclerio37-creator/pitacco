@@ -28,6 +28,9 @@ const token = '20000000-0000-0000-0000-000000000001';
 try {
   for(const template of ['pitacco-v2','essencial','editorial','urbano']) for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
+    page.setDefaultTimeout(30000);
+    page.setDefaultNavigationTimeout(30000);
+    console.log('RUN public-flow',template,width);
     const tracking = {
       375: { status: 'accepted', delivery_status: 'cancelada', fulfillment: 'delivery', label: 'Pedido cancelado' },
       768: { status: 'accepted', delivery_status: 'retirada', preparation_status: 'ready', fulfillment: 'delivery', label: 'Saiu para entrega' },
@@ -143,7 +146,13 @@ try {
     await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
     assert.equal(await page.locator('#v2TopProducts .v2-top-product').count(),2,'Início mostra exatamente dois destaques');
     assert.equal(await page.locator('.v2-top-badge').first().evaluate(e=>parseFloat(getComputedStyle(e).fontSize)<20),true,'Selo de destaque não herda tamanho da imagem');
-    assert.equal(await page.locator('#storeInitial').evaluate(e=>getComputedStyle(e).color),'rgb(255, 255, 255)','Inicial da loja legível sem logotipo');
+    const initialColor=await page.locator('#storeInitial').evaluate(e=>getComputedStyle(e).color);
+    if(['essencial','editorial'].includes(template))assert.notEqual(initialColor,'rgb(255, 255, 255)','Inicial escura no cabeçalho claro');else assert.equal(initialColor,'rgb(255, 255, 255)','Inicial clara no cabeçalho escuro');
+    const placement=await page.locator('.v2-top-product').first().evaluate(card=>{const photo=card.querySelector('.v2-top-photo').getBoundingClientRect(),details=card.querySelector('.v2-top-product-details').getBoundingClientRect();return {photoLeft:photo.left,detailsLeft:details.left,caption:getComputedStyle(card.querySelector('.v2-top-product-details')).backgroundColor,priceColor:getComputedStyle(card.querySelector('.v2-top-price')).color,addColor:getComputedStyle(card.querySelector('.v2-top-add')).backgroundColor};});
+    if(template==='essencial')assert.ok(placement.photoLeft<placement.detailsLeft,'Essencial apresenta a foto à esquerda');
+    if(template==='editorial')assert.ok(placement.photoLeft>placement.detailsLeft,'Editorial apresenta a foto à direita');
+    if(template==='urbano'){assert.equal(placement.caption,'rgb(23, 35, 48)','Urbano tem legenda escura contrastante');assert.equal(placement.priceColor,'rgb(255, 255, 255)','Preço urbano legível');assert.equal(placement.addColor,'rgb(255, 203, 50)','Controle urbano amarelo');}
+    if(template==='essencial'){const order=await productCard.evaluate(card=>({photo:card.querySelector('.product-visual').getBoundingClientRect().left,text:card.querySelector('.product-text').getBoundingClientRect().left}));assert.ok(order.photo<order.text,'Fotos do catálogo Essencial à esquerda');}
     assert.equal(await page.locator('#layout #products .product').count(),2,'Todos os itens aparecem no catálogo abaixo dos destaques');
     await page.getByRole('heading',{name:'Todo o cardápio',exact:true}).waitFor();
     await page.locator('#v2HeaderAbout').click();

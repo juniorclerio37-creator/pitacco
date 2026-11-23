@@ -4,9 +4,9 @@ import './store-design-studio.css';
 
 const templates=[
  {id:'pitacco-v2',name:'Principal',description:'Roxo e laranja, fotos em grade e destaque para benefícios.',theme:'colorido',primary:'#ff7a08',secondary:'#6f4b80',background:'#faf7fd',paper:'#ffffff',foreground:'#261033',hero:'#4b075e',highlight:'#f4e5fb',layout:'grade',font:'sistema',radius:20},
- {id:'essencial',name:'Essencial',description:'Verde, espaços leves e produtos em uma lista compacta.',theme:'minimalista',primary:'#217c5a',secondary:'#53756c',background:'#f5f8f6',paper:'#ffffff',foreground:'#173a2d',hero:'#174c39',highlight:'#e5f2e9',layout:'lista',font:'sistema',radius:16},
- {id:'editorial',name:'Editorial',description:'Tons quentes, fotos amplas e tipografia elegante.',theme:'moderno',primary:'#bc5435',secondary:'#806551',background:'#fbf7f0',paper:'#ffffff',foreground:'#38271f',hero:'#41271f',highlight:'#f8ebdd',layout:'destaques',font:'serifada',radius:8},
- {id:'urbano',name:'Urbano',description:'Cabeçalho escuro, contraste marcante e catálogo em grade.',theme:'premium',primary:'#24364a',secondary:'#66778a',background:'#f4f6f8',paper:'#ffffff',foreground:'#172330',hero:'#172330',highlight:'#f3e7d3',layout:'grade',font:'sistema',radius:12}
+ {id:'essencial',name:'Essencial',description:'Cabeçalho claro, categorias em pílulas e fotos à esquerda.',theme:'minimalista',primary:'#217c5a',secondary:'#53756c',background:'#f5f8f6',paper:'#ffffff',foreground:'#173a2d',hero:'#174c39',highlight:'#e5f2e9',layout:'lista',font:'sistema',radius:16},
+ {id:'editorial',name:'Editorial',description:'Capa fotográfica, navegação em abas e cartões editoriais.',theme:'moderno',primary:'#bc5435',secondary:'#806551',background:'#fbf7f0',paper:'#ffffff',foreground:'#38271f',hero:'#41271f',highlight:'#f8ebdd',layout:'destaques',font:'serifada',radius:8},
+ {id:'urbano',name:'Urbano',description:'Blocos em azul escuro, detalhes amarelos e cartões contrastantes.',theme:'premium',primary:'#24364a',secondary:'#66778a',background:'#f4f6f8',paper:'#ffffff',foreground:'#172330',hero:'#172330',highlight:'#f3e7d3',layout:'grade',font:'sistema',radius:12}
 ];
 const colors=[['primary','Principal'],['secondary','Secundária'],['background','Fundo'],['paper','Cartões'],['foreground','Textos'],['hero','Cabeçalho'],['highlight','Destaques']];
 const layouts=[['lista','Lista organizada'],['grade','Grade de produtos'],['destaques','Cartões grandes']];

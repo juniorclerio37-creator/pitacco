@@ -18,6 +18,9 @@ const browser = await chromium.launch({ executablePath: process.env.PITACCO_CHRO
 try {
   for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
+    page.setDefaultTimeout(30000);
+    page.setDefaultNavigationTimeout(30000);
+    console.log('RUN dashboard',width);
     const errors = [];
     const windowsPings=[];
     let ifoodOrder=null;
@@ -853,7 +856,7 @@ try {
       await page.getByRole('button',{name:'Aparência do cardápio',exact:true}).click();
       const studio=page.getByRole('region',{name:'Estúdio de Cardápio Pitacco'});
       await studio.getByRole('heading',{name:'Estúdio de Cardápio'}).waitFor();
-      await studio.getByRole('button',{name:/Urbano Cabeçalho/}).click();
+      await studio.getByRole('button',{name:/Urbano Blocos/}).click();
       await studio.getByLabel('Cor Principal').fill('#b43e24');
       await studio.getByLabel('Slogan').fill('O melhor da cidade');
       await studio.getByRole('button',{name:'Computador'}).click();
