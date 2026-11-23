@@ -212,13 +212,15 @@ try {
     if(width===375){
       await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
       await page.locator('#payment').selectOption('fiado');
-      assert.equal(await page.locator('#fiadoAuth').isVisible(),true,'Nascimento solicitado somente ao selecionar Fiado');
-      assert.equal(await page.locator('#fiadoCode').count(),0,'Nenhum código particular exigido');
-      assert.equal(await page.locator('#fiadoBirthDate').count(),1,'Campo de nascimento disponível');
-      assert.equal(await page.locator('#fiadoBirthDate').getAttribute('required'),'','Nascimento é obrigatório no Fiado');
+      assert.equal(await page.locator('#fiadoAuth').isVisible(),true,'PIN solicitado somente ao selecionar Fiado');
+      assert.equal(await page.locator('#fiadoPin').count(),1,'Campo de PIN disponível');
+      assert.equal(await page.locator('#fiadoPin').getAttribute('type'),'password','O PIN fica mascarado');
+      assert.equal(await page.locator('#fiadoPin').getAttribute('required'),'','PIN é obrigatório no Fiado');
+      await page.locator('#fiadoPin').fill('438216');
       await page.locator('#payment').selectOption('pix_manual');
       assert.equal(await page.locator('#fiadoAuth').isVisible(),false);
-      assert.equal(await page.locator('#fiadoBirthDate').getAttribute('required'),null,'Outros pagamentos não exigem nascimento');
+      assert.equal(await page.locator('#fiadoPin').getAttribute('required'),null,'Outros pagamentos não exigem PIN');
+      assert.equal(await page.locator('#fiadoPin').inputValue(),'','PIN deve ser apagado ao trocar pagamento');
       const disableFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
       await page.locator('#phone').fill('21999999998');
       await disableFiado;
