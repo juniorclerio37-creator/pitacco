@@ -15,6 +15,22 @@ insert into public.public_menu_settings(store_id,slug,enabled,delivery_enabled,p
 insert into public.products(id,store_id,name,price,cost,menu_active)
  values ('30000000-0000-0000-0000-000000000081','20000000-0000-0000-0000-000000000081','Produto teste fiado',20,5,true);
 
+-- Helper de regressão: simula cliente que informa a data, recebe um token
+-- interno e usa esse token somente para a requisição correspondente.
+create or replace function pg_temp.fiado_checkout_test(
+ p_slug text,p_request uuid,p_customer text,p_phone text,p_address text,
+ p_items jsonb,p_fulfillment text,p_notes text,p_code text,
+ p_quote uuid default null,p_scheduled_for timestamptz default null
+) returns jsonb language plpgsql as $testcheckout$
+declare verified jsonb;
+begin
+ verified:=public.pitacco_fiado_verify_birthdate(p_slug,p_phone,'1992-04-17',p_request);
+ if coalesce((verified->>'verified')::boolean,false) is not true then
+  return jsonb_build_object('error','Não foi possível validar o Fiado');end if;
+ return public.pitacco_checkout_fiado(p_slug,p_request,p_customer,p_phone,p_address,
+  p_items,p_fulfillment,p_notes,verified->>'token',p_quote,p_scheduled_for);
+end $testcheckout$;
+
 -- Os asserts conferem tabelas internas como papel de teste privilegiado; as RPCs
 -- verificam o gestor por auth.uid, e as permissões do papel authenticated são
 -- checadas explicitamente com has_table_privilege/has_function_privilege.
@@ -22,7 +38,7 @@ select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000081'
 do $test$
 declare
  store uuid:='20000000-0000-0000-0000-000000000081';
- c uuid; v_order_id uuid; second_order uuid;
+ c uuid; v_order_id uuid; second_order uuid; i integer;
  request uuid:='60000000-0000-0000-0000-000000000081';
  payload jsonb:='[{"product_id":"30000000-0000-0000-0000-000000000081","quantity":1,"options":[]}]'::jsonb;
  created jsonb; replay jsonb; payment_result jsonb; payment_request uuid:='70000000-0000-0000-0000-000000000081';
@@ -34,7 +50,11 @@ begin
    '{"payment":"fiado","payment_status":"fiado","fiado_customer_id":"segredo","debt":80}'::jsonb,20)
    ='{"state":"no_collect","method":"Sem cobrança na entrega","amount":null,"change_for":null,"change_due":null,"received_by_courier":false,"received_at":null}'::jsonb,
    'Entregador recebe somente instrução de não cobrar, sem situação financeira';
- c:=public.pitacco_fiado_save_customer(store,'Cliente Fiado','21988887777',25,true,7,'automatic',true);
+ c:=public.pitacco_fiado_save_customer_identity(store,'Cliente Fiado','21988887777',25,true,7,'automatic',true,'1992-04-17');
+ assert (select birth_date_hash is not null from public.pitacco_fiado_customers where id=c),
+  'Lojista cadastra data como hash, não em texto simples';
+ assert not has_table_privilege('anon','public.pitacco_fiado_customers','select');
+ assert not has_table_privilege('authenticated','public.pitacco_fiado_customers','select');
  assert not has_function_privilege('authenticated','public.pitacco_fiado_rotate_code(uuid,uuid)','execute'),
   'A loja não deve gerar códigos para clientes';
  assert not has_function_privilege('anon','public.pitacco_fiado_public_eligibility(text,text,text)','execute'),
@@ -42,6 +62,13 @@ begin
  assert (public.pitacco_fiado_phone_eligibility('fiado-fixture','21988887777')->>'eligible')::boolean=false,
    'Opção Fiado só aparece quando loja e cliente estiverem ativos';
  perform public.pitacco_fiado_toggle(store,true);
+ assert (public.pitacco_fiado_verify_birthdate('fiado-fixture','21988887777','1992-04-18',gen_random_uuid())->>'verified')::boolean=false,
+  'Aniversário errado não deve emitir autorização';
+ assert (public.pitacco_fiado_verify_birthdate('fiado-fixture','21988887777','1992-04-17',gen_random_uuid())->>'verified')::boolean,
+  'Aniversário correto emite token de uso curto';
+ assert (public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
+   '[{"product_id":"30000000-0000-0000-0000-000000000081","quantity":1,"options":[]}]'::jsonb,
+   'pickup','',null) ? 'error'),'Sem token não é possível comprar';
 
  assert (public.pitacco_fiado_phone_eligibility('fiado-fixture','21988887777')->>'eligible')::boolean,
    'Telefone autorizado recebe Fiado automaticamente';
@@ -61,7 +88,7 @@ begin
    'Telefone não cadastrado não vê Fiado';
  assert not public.pitacco_fiado_phone_eligibility('fiado-fixture','21988887777') ? 'phone',
    'Consulta não expõe telefone, dívidas nem limites';
- created:=public.pitacco_checkout_fiado('fiado-fixture',request,'Cliente Fiado','21988887777','',
+ created:=pg_temp.fiado_checkout_test('fiado-fixture',request,'Cliente Fiado','21988887777','',
     payload,'pickup','',null);
  v_order_id:=(created->>'order_id')::uuid;
  assert v_order_id is not null;
@@ -73,13 +100,13 @@ begin
    'Pedido acima do restante apresenta opção desabilitada';
  assert (select state='reserved' from public.pitacco_fiado_charges where order_id=v_order_id);
  -- Reenviar mesma requisição quando saldo disponível é menor que o pedido não duplica dívida.
- replay:=public.pitacco_checkout_fiado('fiado-fixture',request,'Cliente Fiado','21988887777','',
+ replay:=pg_temp.fiado_checkout_test('fiado-fixture',request,'Cliente Fiado','21988887777','',
     payload,'pickup','',null);
  assert replay->>'order_id'=created->>'order_id';
  assert (select count(*)=1 from public.pitacco_fiado_charges where customer_id=c);
  assert (select used=20 from public.pitacco_fiado_customers where id=c);
  begin
-  perform public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
+  perform pg_temp.fiado_checkout_test('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
     payload,'pickup','',null);
   raise exception 'O limite deveria impedir a segunda compra';
  exception when others then
@@ -111,7 +138,7 @@ begin
    (now() at time zone 'America/Sao_Paulo')::date,(now() at time zone 'America/Sao_Paulo')::date)
    where metric='recebimentos_fiado'), 'Retentativa não duplica recebimentos no relatório';
  -- Um novo pedido cancelado precisa devolver o limite reservado.
- created:=public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
+ created:=pg_temp.fiado_checkout_test('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
     payload,'pickup','',null);
  second_order:=(created->>'order_id')::uuid;
  assert (select amount=20 from public.pitacco_period_financial_report(store,
@@ -125,7 +152,7 @@ begin
    where metric in ('fiado_a_receber','fiado_reservado')), 'Cancelamento e quitação eliminam os saldos abertos';
  -- Autorização manual não permite aceitar nem entregar antes da decisão da loja.
  perform public.pitacco_fiado_save_customer(store,'Cliente Fiado','21988887777',25,true,7,'manual',true);
- created:=public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
+ created:=pg_temp.fiado_checkout_test('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
     payload,'pickup','',null);
  second_order:=(created->>'order_id')::uuid;
  assert created->>'fiado_approval'='pending','Modo manual aguarda a loja';
@@ -143,7 +170,7 @@ begin
  update public.orders set status='cancelled' where id=second_order;
  assert (select used=0 from public.pitacco_fiado_customers where id=c);
  -- Recusa manual devolve integralmente o crédito reservado, sem gerar contas a receber.
- created:=public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
+ created:=pg_temp.fiado_checkout_test('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
     payload,'pickup','',null);
  second_order:=(created->>'order_id')::uuid;
  assert created->>'fiado_approval'='pending';
@@ -153,10 +180,21 @@ begin
  assert (select state='cancelled' from public.pitacco_fiado_charges where order_id=second_order);
  assert (select used=0 from public.pitacco_fiado_customers where id=c),'Recusa libera reserva';
  -- Um número sem autorização não cria pedido, ainda que enviado com pagamento Fiado.
- created:=public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Pessoa sem fiado','21911119999','',
+ created:=pg_temp.fiado_checkout_test('fiado-fixture',gen_random_uuid(),'Pessoa sem fiado','21911119999','',
     payload,'pickup','',null);
  assert created ? 'error';
- -- O gerente não pode enxergar cadastro alheio pela mesma RPC.
+ -- Cinco tentativas inválidas bloqueiam temporariamente o cliente;
+ -- após atualizar a data no painel, o gestor pode redefinir o bloqueio.
+ for i in 1..5 loop
+  assert (public.pitacco_fiado_verify_birthdate('fiado-fixture','21988887777','1992-04-18',gen_random_uuid())->>'verified')::boolean=false;
+ end loop;
+ assert (select birth_date_locked_until>now() from public.pitacco_fiado_customers where id=c);
+ assert (public.pitacco_fiado_verify_birthdate('fiado-fixture','21988887777','1992-04-17',gen_random_uuid())->>'verified')::boolean=false,
+  'Data correta durante bloqueio não permite crédito';
+ perform public.pitacco_fiado_save_customer_identity(store,'Cliente Fiado','21988887777',25,true,7,'manual',true,'1992-04-17');
+ assert (select birth_date_locked_until is null from public.pitacco_fiado_customers where id=c),
+  'Lojista redefine acesso mediante atualização da data';
+  -- O gerente não pode enxergar cadastro alheio pela mesma RPC.
  begin
   perform public.pitacco_fiado_overview('20000000-0000-0000-0000-000000000082');
   raise exception 'Acesso indevido a outra loja';
