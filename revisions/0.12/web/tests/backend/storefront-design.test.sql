@@ -105,3 +105,24 @@ begin
  assert jsonb_array_length(public_design->'banners')=1;
 end $test$;
 rollback;
+
+
+-- As imagens do Estúdio devem ser públicas para os clientes e graváveis
+-- somente por gestores no caminho exclusivo da sua loja.
+do $studio_test$
+begin
+ assert exists(select 1 from storage.buckets where id='pitacco-media'
+  and public and file_size_limit=5242880), 'Bucket pitacco-media público com limite correto';
+ assert exists(select 1 from pg_policies where schemaname='storage'
+  and tablename='objects' and policyname='pitacco_media_store_manager_insert'),
+  'Política de upload por gestor deve existir';
+ assert exists(select 1 from pg_policies where schemaname='storage'
+  and tablename='objects' and policyname='pitacco_media_public_read'),
+  'Fotos devem estar visíveis no cardápio público';
+ assert 'stores/92000000-0000-0000-0000-000000000001/22000000-0000-0000-0000-000000000002.jpg'
+  ~ '^(stores|products)/[0-9a-fA-F-]{36}/[0-9a-fA-F-]{36}[.](jpg|png|webp)$';
+ assert 'stores/92000000-0000-0000-0000-000000000001/22000000-0000-0000-0000-000000000002.exe'
+  !~ '^(stores|products)/[0-9a-fA-F-]{36}/[0-9a-fA-F-]{36}[.](jpg|png|webp)$';
+ assert pg_get_functiondef('pitacco_private.validate_storefront_design(uuid,jsonb)'::regprocedure)
+  like '%photo !~ ''[.](jpg|png|webp)$''%', 'Validação das imagens corrigida';
+end $studio_test$;
