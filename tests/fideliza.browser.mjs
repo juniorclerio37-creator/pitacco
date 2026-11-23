@@ -56,6 +56,14 @@ try{
   await page.goto(origin+'/loyalty-test?indicacao=INDICADOR');
 
   await page.waitForFunction(()=>document.body.dataset.menuSkin);
+  await page.locator('#menuStartup').waitFor({state:'hidden'});
+  assert.equal(await page.locator('#v2HomeLoyalty').isVisible(),true,
+    'Fideliza+ deve estar presente desde a primeira exibição, sem empurrar categorias');
+  const firstCategoriesTop=await page.locator('#v2HomeCategories').evaluate(e=>e.getBoundingClientRect().top);
+  await page.waitForTimeout(240);
+  const finalCategoriesTop=await page.locator('#v2HomeCategories').evaluate(e=>e.getBoundingClientRect().top);
+  assert.ok(Math.abs(firstCategoriesTop-finalCategoriesTop)<2,
+    'Categorias não podem mudar de posição depois que o carregamento desaparece');
   await page.locator('.product-open').first().waitFor();
   await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
   await page.evaluate(()=>{for(const image of document.images)if(image.src.includes('fixtures.pitacco.test'))image.loading='eager';});
