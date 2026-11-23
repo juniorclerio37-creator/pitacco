@@ -1086,7 +1086,10 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] .v2-category-tile>.
    A arte permanece nítida e recebe um degradê leve SOMENTE para dar
    contraste às informações da loja, nunca opacidade no próprio arquivo. */
 body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .hero>img#storeBanner{
- display:block;opacity:1;object-fit:cover;object-position:center 48%
+ opacity:1;object-fit:cover;object-position:center 48%
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .hero>img#storeBanner[hidden]{
+ display:none!important
 }
 body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .hero:has(> #storeBanner:not([hidden]))::after{
  background:linear-gradient(100deg,rgba(29,3,39,.55) 0%,rgba(29,3,39,.27) 58%,rgba(29,3,39,.10) 100%)
