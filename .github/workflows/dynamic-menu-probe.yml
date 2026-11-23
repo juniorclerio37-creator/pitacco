@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/dynamic-menu-probe.yml'
       - 'scripts/probe_public_menu.mjs'
+      - 'scripts/probe_public_store.py'
 jobs:
   inspect:
     runs-on: ubuntu-24.04
@@ -14,6 +15,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Consultar dados públicos e scripts sem navegador
+        run: python3 scripts/probe_public_store.py
       - name: Instalar navegador temporário
         run: |
           npm install --prefix web --no-save --package-lock=false playwright@1.58.2
