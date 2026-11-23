@@ -183,7 +183,7 @@ try {
     assert.equal(await page.getByRole('button',{name:'Tenho fiado autorizado pela loja'}).count(),0);
     assert.equal(await page.locator('#fiadoAuth').isVisible(),false);
     if(width===375){
-      await page.locator('#payment option[value="fiado"]').waitFor();
+      await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
       await page.locator('#payment').selectOption('fiado');
       assert.equal(await page.locator('#fiadoAuth').isVisible(),true,'Código só ao escolher Fiado');
       assert.equal(await page.locator('#fiadoCode').getAttribute('required'),'');
@@ -196,7 +196,7 @@ try {
       const showFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_phone_eligibility'));
       await page.locator('#phone').fill('21999999999');
       await showFiado;
-      await page.locator('#payment option[value="fiado"]').waitFor();
+      await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
     }else{
       assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Fiado oculto para telefone não autorizado');
     }
