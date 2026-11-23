@@ -41,6 +41,7 @@ try {
     await page.context().grantPermissions(['geolocation']);
     await page.context().setGeolocation({latitude:-22.71,longitude:-43.4});
     let polls=0,quoteAttempts=0,recoveryConfirmed=false;
+    let savedProfile=null;
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     const requests = [];
@@ -87,6 +88,15 @@ try {
             id:'extras',name:'Extras',min:0,max:2,options:[{id:'granola',name:'Granola',price:1},{id:'banana',name:'Banana',price:0},{id:'mel',name:'Mel',price:0}]
           }] },{id:'agua',name:'Água',category:'Bebidas',price:5,option_groups:[]}]
         } });
+      }
+      if(pathname.endsWith('/pitacco_v2_customer_profile')){
+        const data=route.request().postDataJSON();
+        assert.equal(data.p_slug,'loja-teste');
+        assert.match(data.p_device,/^[0-9a-f-]{36}$/);
+        if(data.p_action==='load')return route.fulfill({json:savedProfile?{found:true,...savedProfile}:{found:false,addresses:[]}});
+        assert.equal(data.p_action,'save');
+        savedProfile={name:data.p_name,addresses:data.p_addresses||[]};
+        return route.fulfill({json:{found:true,...savedProfile}});
       }
       if(pathname.endsWith('/pitacco_public_checkout_recovery'))return route.fulfill({json:recoveryConfirmed?{confirmed:true,order_id:orderId,tracking_token:token,total:74}:{confirmed:false}});
       if(pathname.endsWith('/pitacco_public_top_sellers')){
@@ -215,12 +225,26 @@ try {
     await product.getByRole('button',{name:'Fechar produto',exact:true}).click();
     await firstLine.getByText(/Morango · Granola/).waitFor();
     await page.getByRole('button',{name:'Continuar para entrega e pagamento'}).click();
+    const principal=template==='pitacco-v2';
     const fiadoChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
-    for (const [id, value] of [['customer', 'Cliente Teste'], ['phone', '21999999999'], ['addressStreet','Rua Teste'], ['addressNumber','123'], ['addressNeighborhood','Centro'], ['addressCity','Nova Iguaçu']]) {
-      await page.locator('#' + id).fill(value);
+    if(principal){
+      assert.equal(await page.locator('#cartDialog').getAttribute('data-v2-stage'),'identify');
+      await page.locator('#phone').fill('21999999999');
+      await page.locator('#v2CheckoutNext').click();
+      assert.equal(await page.locator('#cartDialog').getAttribute('data-v2-stage'),'customer');
+      await page.locator('#customer').fill('Cliente Teste');
+      await page.locator('#v2CheckoutNext').click();
+      assert.equal(await page.locator('#cartDialog').getAttribute('data-v2-stage'),'address');
+    }else{
+      await page.locator('#customer').fill('Cliente Teste');
+      await page.locator('#phone').fill('21999999999');
     }
+    for (const [id,value] of [['addressStreet','Rua Teste'],['addressNumber','123'],['addressNeighborhood','Centro'],['addressCity','Nova Iguaçu']])
+      await page.locator('#'+id).fill(value);
     await page.locator('#addressState').selectOption('RJ');
     await fiadoChecked;
+    assert.equal(await page.getByRole('button',{name:'Tenho fiado autorizado pela loja'}).count(),0);
+    if(!principal){
     assert.equal(await page.getByRole('button',{name:'Tenho fiado autorizado pela loja'}).count(),0);
     assert.equal(await page.locator('#fiadoAuth').isVisible(),false);
     if(width===375){
@@ -254,6 +278,7 @@ try {
     }else{
       assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Fiado oculto para telefone não autorizado');
     }
+    }
     await page.getByRole('button',{name:'Usar minha localização'}).click();
     await page.getByText('Ponto marcado. Confira o endereço e calcule o frete.').waitFor();
     await page.getByRole('button',{name:'Calcular taxa de entrega'}).click();
@@ -267,15 +292,35 @@ try {
     await page.getByText(/Linha reta: 1,1 km · Entrega: R\$.*5,00/).waitFor();
     assert.match(await page.locator('#total').innerText(),/74,00/);
     if(scheduled)await page.getByLabel('Quando deseja receber?').selectOption(scheduled);
+    if(principal){
+      await page.locator('#v2CheckoutNext').click();
+      assert.equal(await page.locator('#cartDialog').getAttribute('data-v2-stage'),'payment');
+      const pixCard=page.locator('#v2PaymentCards [data-kind="pix_manual"]');
+      assert.equal(await pixCard.isVisible(),true,'Pix manual cadastrado aparece em card');
+      assert.equal(await page.locator('#v2PaymentCards [data-kind="dinheiro"]').count(),0,'Método não cadastrado não aparece');
+      if(width===375){
+        const fiadoCard=page.locator('#v2PaymentCards [data-kind="fiado"]');
+        await fiadoCard.waitFor();
+        assert.equal(await fiadoCard.isDisabled(),false,'Fiado elegível aparece habilitado');
+        await fiadoCard.click();
+        assert.equal(await page.locator('#fiadoPin').isVisible(),true);
+        await page.locator('#fiadoPin').fill('438216');
+      }
+      await pixCard.click();
+      assert.equal(await page.locator('#payment').inputValue(),'pix_manual');
+      await page.locator('#v2CheckoutNext').click();
+      assert.equal(await page.locator('#cartDialog').getAttribute('data-v2-stage'),'review');
+      assert.match(await page.locator('#v2OrderSummary').innerText(),/Pix manual/);
+    }
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
-    await page.getByRole('button', { name: 'Confirmar pedido' }).click();
+    await page.getByRole('button', { name: principal?'Finalizar pedido →':'Confirmar pedido' }).click();
     await page.getByRole('button', { name: 'Enviando…' }).waitFor();
     assert.equal(await page.locator('#send').isDisabled(), true);
     assert.equal(await page.locator('#cart').evaluate(element => element.inert), true);
     await page.locator('#checkout').evaluate(form => form.requestSubmit());
     releaseResponse();
     await page.getByRole('button', { name: 'Tentar novamente' }).click();
-    await page.getByRole('heading', { name: 'Pedido recebido!' }).waitFor();
+    await page.getByRole('heading', { name: principal?'✓ Pedido confirmado!':'Pedido recebido!' }).waitFor();
     assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-cart:loja-teste')),null,'Confirmed order clears saved cart');
     assert.equal(requests.length, 2);
     assert.deepEqual(requests[0], requests[1]);
