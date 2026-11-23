@@ -95,3 +95,17 @@
  .catalog-stat-row>span{padding:10px 7px}
  .catalog-stat-row strong{font-size:1.24rem}
 }
+
+/* Ordenação editorial por loja: controles acessíveis no celular e desktop. */
+.catalog-sort-arrow{display:inline-flex!important;align-items:center;justify-content:center;min-width:34px!important;min-height:34px;flex:0 0 34px!important;padding:5px!important;font-size:1rem!important;font-weight:900!important}
+.catalog-sort-arrow:disabled{opacity:.35;cursor:not-allowed}
+.catalog-product-card .catalog-card-actions{flex-wrap:wrap}
+.catalog-product-card .catalog-card-actions>button:nth-child(n+3){flex:1 1 60px}
+.catalog-template-sort-row{display:grid;grid-template-columns:minmax(0,1fr) 34px 34px;gap:5px;align-items:center}
+.catalog-template-sort-row>button:first-child{min-width:0;overflow-wrap:anywhere}
+.catalog-sort-tools{display:flex;align-items:center;gap:6px;margin:8px 0;font-size:.77rem;color:#725d7b}
+.catalog-sort-tools button{white-space:nowrap}
+.catalog-sort-tools span{font-weight:650}
+.catalog-draft-sort{grid-column:1/-1}
+.catalog-option-position{border:1px solid #eadcec;border-radius:12px;margin:10px 0;padding:10px;background:#fcf9fe}
+.catalog-option-position .complement-item{margin-top:8px}

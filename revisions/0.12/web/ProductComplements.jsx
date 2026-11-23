@@ -62,6 +62,24 @@ export default function ProductComplements({client,storeId,product,onClose,onGro
    if(!id)form.reset();
   },'Complemento salvo.');
  }
+ async function moveItems(kind,parent,ids,direction,index){
+  if(busy)return;
+  const target=index+direction;
+  if(target<0||target>=ids.length)return;
+  const ordered=[...ids];[ordered[index],ordered[target]]=[ordered[target],ordered[index]];
+  setBusy(true);setError('');setNotice('');
+  try{
+   const {data,error}=await client.rpc('pitacco_catalog_reorder',{
+    p_store:storeId,p_kind:kind,p_ids:ordered,p_parent:parent,p_category:null,p_categories:null
+   });
+   if(error)throw error;
+   if(!data?.saved)throw Error('Ordem não confirmada pelo servidor');
+   const updated=await rpc('pitacco_list_complements',{p_product_id:product.id});
+   setGroups(updated);onGroupsChange?.(updated);
+   setNotice('Nova ordem salva no cardápio público.');
+  }catch(e){setError('Não foi possível ordenar: '+(e.message||String(e)));}
+  finally{setBusy(false)}
+ }
  function groupForm(group){
   return <form onSubmit={event=>saveGroup(event,group?.id||null)}>
    <label>Nome do grupo <input name="name" required minLength={2} maxLength={100} defaultValue={group?.name}/></label>
@@ -95,9 +113,27 @@ export default function ProductComplements({client,storeId,product,onClose,onGro
    {onClose&&<button type="button" className="secondary" disabled={busy} onClick={onClose}>Fechar complementos</button>}
    {groups&&<>
     {groupForm(null)}
-    {groups.map(group=><details key={group.id} open><summary>{group.name} · {group.min} a {group.max} escolhas</summary>
+    {groups.map((group,index)=><details key={group.id} open>
+     <summary>{group.name} · {group.min} a {group.max} escolhas</summary>
+     <div className="catalog-sort-tools" aria-label={'Ordenação do grupo '+group.name}>
+      <button type="button" className="secondary" aria-label={'Subir grupo '+group.name} disabled={busy||index===0}
+       onClick={()=>moveItems('groups',product.id,groups.map(g=>g.id),-1,index)}>↑ Subir grupo</button>
+      <button type="button" className="secondary" aria-label={'Descer grupo '+group.name} disabled={busy||index===groups.length-1}
+       onClick={()=>moveItems('groups',product.id,groups.map(g=>g.id),1,index)}>↓ Descer grupo</button>
+     </div>
      {groupForm(group)}
-     {group.options.map(option=>optionForm(group,option))}
+     {group.options.map((option,optionIndex)=><div key={option.id} className="catalog-option-position">
+      <div className="catalog-sort-tools" aria-label={'Ordenação do complemento '+option.name}>
+       <button type="button" className="secondary" aria-label={'Subir complemento '+option.name}
+        disabled={busy||optionIndex===0}
+        onClick={()=>moveItems('options',group.id,group.options.map(o=>o.id),-1,optionIndex)}>↑</button>
+       <button type="button" className="secondary" aria-label={'Descer complemento '+option.name}
+        disabled={busy||optionIndex===group.options.length-1}
+        onClick={()=>moveItems('options',group.id,group.options.map(o=>o.id),1,optionIndex)}>↓</button>
+       <span>{optionIndex+1}º · {option.name}</span>
+      </div>
+      {optionForm(group,option)}
+     </div>)}
      {optionForm(group,null)}
     </details>)}
    </>}

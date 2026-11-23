@@ -13,8 +13,22 @@ const field={display:'grid',gap:5,marginBottom:13};
 export default function MenuStudio({client,storeId,products=[],store=null,manager=true,onRefresh,onImport}){
  const [draft,setDraft]=useState(empty),[editing,setEditing]=useState(null),[groups,setGroups]=useState([]),[photo,setPhoto]=useState(null),[previewUrl,setPreviewUrl]=useState(''),[filter,setFilter]=useState(''),[selectedCategory,setSelectedCategory]=useState('Todas'),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[section,setSection]=useState('Produtos'),[showEditor,setShowEditor]=useState(false);
  const [categoryIcons,setCategoryIcons]=useState({}),[configuringCategory,setConfiguringCategory]=useState(null),[iconBusy,setIconBusy]=useState(false);
- const categories=useMemo(()=>['Todas',...new Set(products.map(p=>p.category).filter(Boolean))],[products]);
- const filtered=products.filter(p=>(selectedCategory==='Todas'||p.category===selectedCategory)&&String(p.name||'').toLowerCase().includes(filter.toLowerCase()));
+ const [categoryRanks,setCategoryRanks]=useState({});
+ const categoryName=value=>String(value||'').trim()||'Outros';
+ const allCategories=useMemo(()=>[...new Set(products.map(p=>categoryName(p.category)))].sort((a,b)=>a.localeCompare(b,'pt-BR')),[products]);
+ const orderedCategories=useMemo(()=>[...allCategories].sort((a,b)=>{
+  const ra=categoryRanks[a],rb=categoryRanks[b];
+  return (ra==null?2147480000:ra)-(rb==null?2147480000:rb)||a.localeCompare(b,'pt-BR');
+ }),[allCategories,categoryRanks]);
+ const categories=['Todas',...orderedCategories];
+ const orderedProducts=useMemo(()=>[...products].sort((a,b)=>
+  ((categoryRanks[categoryName(a.category)]??2147480000)-(categoryRanks[categoryName(b.category)]??2147480000))
+  ||categoryName(a.category).localeCompare(categoryName(b.category),'pt-BR')
+  ||(Number(a.sort_order)||0)-(Number(b.sort_order)||0)
+  ||String(a.name||'').localeCompare(String(b.name||''),'pt-BR')
+  ||a.id.localeCompare(b.id)
+ ),[products,categoryRanks]);
+ const filtered=orderedProducts.filter(p=>(selectedCategory==='Todas'||categoryName(p.category)===selectedCategory)&&String(p.name||'').toLowerCase().includes(filter.toLowerCase()));
  useEffect(()=>{
   let active=true;
   setConfiguringCategory(null);
@@ -25,6 +39,46 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
   }).catch(err=>{if(active)setNotice('Não foi possível carregar os ícones: '+(err?.message||'falha de conexão'));});
   return()=>{active=false};
  },[client,storeId]);
+ useEffect(()=>{
+  let live=true;
+  client.from('pitacco_menu_category_order').select('category,sort_order').eq('store_id',storeId)
+   .then(({data,error})=>{
+    if(!live)return;
+    if(error){setNotice('Não foi possível consultar a ordem das categorias: '+error.message);return;}
+    setCategoryRanks(Object.fromEntries((data||[]).map(x=>[x.category,x.sort_order])));
+   }).catch(error=>{if(live)setNotice('Erro ao carregar ordem das categorias: '+error.message)});
+  return()=>{live=false};
+ },[client,storeId]);
+ async function persistOrder(kind,ids,{parent=null,category=null,categories=null}={}){
+  if(busy)return;
+  setBusy(true);setNotice('');
+  try{
+   const {data,error}=await client.rpc('pitacco_catalog_reorder',{
+    p_store:storeId,p_kind:kind,p_ids:kind==='categories'?null:ids,
+    p_parent:parent,p_category:category,p_categories:categories
+   });
+   if(error)throw error;
+   if(!data?.saved)throw Error('Servidor não confirmou a sequência.');
+   if(kind==='categories')setCategoryRanks(Object.fromEntries(categories.map((name,i)=>[name,(i+1)*10])));
+   setNotice('Ordem salva e aplicada ao cardápio público.');
+   if(kind!=='categories')await onRefresh?.();
+  }catch(error){setNotice('Não foi possível ordenar: '+(error.message||String(error)));}
+  finally{setBusy(false)}
+ }
+ function moveCategory(name,direction){
+  const ordered=[...orderedCategories],from=ordered.indexOf(name),to=from+direction;
+  if(to<0||to>=ordered.length)return;
+  [ordered[from],ordered[to]]=[ordered[to],ordered[from]];
+  persistOrder('categories',null,{categories:ordered});
+ }
+ function moveProduct(product,direction){
+  const key=categoryName(product.category);
+  const siblings=orderedProducts.filter(p=>categoryName(p.category)===key);
+  const from=siblings.findIndex(p=>p.id===product.id),to=from+direction;
+  if(from<0||to<0||to>=siblings.length)return;
+  [siblings[from],siblings[to]]=[siblings[to],siblings[from]];
+  persistOrder('products',siblings.map(p=>p.id),{category:key});
+ }
  const iconFor=name=>categoryIcons[name]&&CATEGORY_ICON_KEYS.includes(categoryIcons[name])?categoryIcons[name]:inferCategoryIcon(name);
  async function chooseCategoryIcon(category,key){
   if(iconBusy||!CATEGORY_ICON_KEYS.includes(key))return;
@@ -81,13 +135,19 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
   <Inventory client={client} storeId={storeId} manager={manager} products={products} initialView="Insumos"/>
  </div>}
  {section==='Produtos'&&<><div className="menu-studio-list">
- <div className="panel"><h3>Categorias</h3><p className="hint">Cada categoria pode ter seu próprio ícone. Os Destaques usam o foguinho animado 🔥.</p>
+ <div className="panel"><h3>Categorias</h3><p className="hint">Organize as categorias pelas setas: a mesma ordem será usada no cardápio dos clientes. Para mudar o ícone, toque na engrenagem.</p>
  {categories.map(c=><div key={c} style={{display:'flex',gap:6,alignItems:'center',marginBottom:7}}>
   <button type="button" className={selectedCategory===c?'active':'secondary'} style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:7,textAlign:'left'}} onClick={()=>setSelectedCategory(c)}>
    <CategoryIcon icon={c==='Todas'?'more':iconFor(c)} size={22}/>{c}
   </button>
-  {c!=='Todas'&&<button type="button" className="secondary" aria-label={'Configurar ícone da categoria '+c}
-    title={'Configurar ícone de '+c} onClick={()=>setConfiguringCategory(prev=>prev===c?null:c)}>⚙</button>}
+  {c!=='Todas'&&<>
+   <button type="button" className="secondary catalog-sort-arrow" disabled={busy||orderedCategories.indexOf(c)===0}
+    aria-label={'Mover categoria '+c+' para cima'} title="Subir categoria" onClick={()=>moveCategory(c,-1)}>↑</button>
+   <button type="button" className="secondary catalog-sort-arrow" disabled={busy||orderedCategories.indexOf(c)===orderedCategories.length-1}
+    aria-label={'Mover categoria '+c+' para baixo'} title="Descer categoria" onClick={()=>moveCategory(c,1)}>↓</button>
+   <button type="button" className="secondary catalog-sort-arrow" aria-label={'Configurar ícone da categoria '+c}
+    title={'Configurar ícone de '+c} onClick={()=>setConfiguringCategory(prev=>prev===c?null:c)}>⚙</button>
+  </>}
  </div>)}
  {configuringCategory&&categories.includes(configuringCategory)&&<div className="pitacco-category-settings">
   <h4>Ícone da categoria: {configuringCategory}</h4>
@@ -104,6 +164,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  </div>}
  </div>
  <div className="panel catalog-product-panel"><div className="line"><h3>Produtos</h3><button type="button" onClick={()=>begin(null)}>+ Novo produto</button></div>
+ <p className="hint">Use ↑ e ↓ para colocar os produtos na ordem desejada dentro de cada categoria. Ex.: Açaí 400 ml pode ficar primeiro, independente do nome.</p>
  <input aria-label="Buscar produto" placeholder="Buscar produtos..." value={filter} onChange={e=>setFilter(e.target.value)}/>
  <div className="catalog-card-grid">
  {filtered.map(p=><article className="catalog-product-card" key={p.id}>
@@ -112,7 +173,12 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
    <span className={'catalog-availability '+(p.menu_active===false?'inactive':'')}>{p.menu_active===false?'Inativo':'Ativo'}</span>
   </div>
   <div className="catalog-product-caption"><b>{p.name}</b><small>{p.category||'Sem categoria'}</small><strong>{brl(p.price)}</strong></div>
-  <div className="catalog-card-actions"><button type="button" className="secondary" onClick={()=>begin(p)}>✎ Editar</button>
+  <div className="catalog-card-actions">
+   <button type="button" className="secondary catalog-sort-arrow" disabled={busy||orderedProducts.filter(x=>categoryName(x.category)===categoryName(p.category))[0]?.id===p.id}
+    title="Subir produto" aria-label={'Mover produto '+p.name+' para cima'} onClick={()=>moveProduct(p,-1)}>↑</button>
+   <button type="button" className="secondary catalog-sort-arrow" disabled={busy||orderedProducts.filter(x=>categoryName(x.category)===categoryName(p.category)).at(-1)?.id===p.id}
+    title="Descer produto" aria-label={'Mover produto '+p.name+' para baixo'} onClick={()=>moveProduct(p,1)}>↓</button>
+   <button type="button" className="secondary" aria-label="Editar" onClick={()=>begin(p)}>✎ Editar</button>
    <button type="button" className="secondary" disabled={busy} onClick={()=>toggle(p)}>{p.menu_active===false?'Ativar':'Desativar'}</button>
   </div>
  </article>)}
