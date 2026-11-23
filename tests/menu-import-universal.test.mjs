@@ -57,3 +57,25 @@ test('não carregar fontes remotas não relacionadas na compilação',()=>{
  assert.match(source,/Nenhuma alteração será publicada antes da confirmação/);
  assert.doesNotMatch(source,/Brendi|brendi/i);
 });
+
+test('cardápio SPA sem itens públicos recebe orientação, sem produtos inventados',()=>{
+ const html='<html><head><script src="/js/app.chunk.js"></script></head><body><div id="app"></div></body></html>';
+ const out=parsePublicMenu(html,'https://loja.exemplo.com/cardapio');
+ assert.equal(out.products.length,0);
+ assert.match(out.warnings[0],/JavaScript/);
+ assert.match(out.warnings[0],/CSV, JSON ou ZIP/);
+});
+test('a interface mantém o catálogo intacto quando o link não publica itens',()=>{
+ const ui=readFileSync(new URL('../revisions/0.12/web/UniversalMenuImporter.jsx',import.meta.url),'utf8');
+ assert.match(ui,/Nenhum produto foi disponibilizado para importação|nenhum produto foi disponibilizado para importação/i);
+ assert.match(ui,/Diagnóstico do link do cardápio/);
+ assert.match(ui,/Abrir o cardápio original como cliente/);
+ assert.match(ui,/setItems\(hasProducts\?review\(data\.products\):\[\]\)/);
+});
+test('análise auxiliar consulta somente a ficha pública da origem, sem rotas privadas',()=>{
+ const edge=readFileSync(new URL('../supabase/functions/menu-import/index.ts',import.meta.url),'utf8');
+ assert.match(edge,/inspectPublicDynamicCatalog/);
+ assert.match(edge,/\/api\/stores\/by-slug\//);
+ assert.doesNotMatch(edge,/\/api\/stores\/item\b|\/api\/stores\/group\b/);
+ assert.match(edge,/sourceStatus:"products_not_public"/);
+});
