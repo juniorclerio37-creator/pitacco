@@ -85,6 +85,10 @@ try {
           }] },{id:'agua',name:'Água',category:'Bebidas',price:5,option_groups:[]}]
         } });
       }
+      if(pathname.endsWith('/pitacco_public_top_sellers')){
+        assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
+        return route.fulfill({json:['acai','agua']});
+      }
       if(pathname.endsWith('/pitacco_fiado_checkout_status')){
         const args=route.request().postDataJSON();
         assert.equal(args.p_slug,'loja-teste');
@@ -135,8 +139,11 @@ try {
     const productCard=page.getByRole('button',{name:'Personalizar Açaí',exact:true});
     await productCard.waitFor();
     assert.equal(await page.locator('body').getAttribute('data-menu-template'),'pitacco-v2','Versão 2 é o template principal');
-    await page.locator('#v2StoreNav').waitFor();
-    await page.getByRole('button',{name:'Sobre',exact:true}).click();
+    await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
+    assert.equal(await page.locator('#v2TopProducts .v2-top-product').count(),2,'Início mostra exatamente dois destaques');
+    assert.equal(await page.locator('#layout #products .product').count(),2,'Todos os itens aparecem no catálogo abaixo dos destaques');
+    await page.getByRole('heading',{name:'Todo o cardápio',exact:true}).waitFor();
+    await page.locator('#v2HeaderAbout').click();
     await page.locator('#v2AboutPage').waitFor();
     assert.equal(await page.locator('#v2AboutPage').isVisible(),true);
     await page.getByRole('button',{name:'Cardápio',exact:true}).click();
@@ -172,7 +179,7 @@ try {
     await productCard.click();
     await product.getByRole('radio',{name:/Leite em pó/}).check();
     await add.click();
-    await page.getByRole('button',{name:/Ver sacola/}).click();
+    await page.locator('#openCart').click();
     assert.equal(await page.locator('#cart .cartline').count(),2);
     assert.equal(await page.locator('#cart input').first().inputValue(),'2');
     const cart=page.getByRole('dialog',{name:'Sua sacola'});

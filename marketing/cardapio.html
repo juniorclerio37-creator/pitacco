@@ -536,11 +536,137 @@ body[data-menu-template="pitacco-v2"] .pitacco-footer{color:#725779}
  body[data-menu-template="pitacco-v2"] .v2-loyalty-detail article{align-items:flex-start;flex-wrap:wrap}
  body[data-menu-template="pitacco-v2"] .pitacco-promos{grid-template-columns:1fr}
 }
+
+/* Tela inicial V2 alinhada à referência aprovada — produtos e saldos reais */
+body:not([data-menu-template="pitacco-v2"]) .v2-header-back,
+body:not([data-menu-template="pitacco-v2"]) .v2-header-actions,
+body:not([data-menu-template="pitacco-v2"]) .v2-hero-info,
+body:not([data-menu-template="pitacco-v2"]) .v2-hero-visual{display:none!important}
+body[data-menu-template="pitacco-v2"][data-v2-page=inicio] #v2StoreNav{display:none!important}
+body[data-menu-template="pitacco-v2"] .hero{min-height:260px;padding:23px 0 64px;background:#4b0758;border:0;overflow:hidden}
+body[data-menu-template="pitacco-v2"] .hero::after{background:linear-gradient(95deg,#41054f 0%,#4d0a5fe8 68%,#520b5b9e 100%)}
+body[data-menu-template="pitacco-v2"] .hero>img#storeBanner{opacity:.17}
+body[data-menu-template="pitacco-v2"] .hero-content{min-height:105px;justify-content:flex-start;align-items:center;padding:0 74px}
+body[data-menu-template="pitacco-v2"] .hero h1{font-size:clamp(1.75rem,4vw,2.7rem);line-height:1.02;max-width:260px}
+body[data-menu-template="pitacco-v2"] .hero h1::after{content:"";display:block;width:78%;height:6px;border-radius:70%;background:#ffca27;transform:rotate(-2deg)}
+body[data-menu-template="pitacco-v2"] .store-mark{background:transparent;box-shadow:none;border:0;width:79px;height:79px;font-size:2.4rem}
+body[data-menu-template="pitacco-v2"] .store-mark img{object-fit:contain}
+body[data-menu-template="pitacco-v2"] .services{display:none}
+body[data-menu-template="pitacco-v2"] .store-open-status{display:none}
+body[data-menu-template="pitacco-v2"] .v2-header-back{position:absolute;left:18px;top:22px;z-index:4}
+body[data-menu-template="pitacco-v2"] .v2-header-actions{position:absolute;right:18px;top:22px;z-index:4;display:flex;gap:10px}
+body[data-menu-template="pitacco-v2"] .v2-header-control{position:relative;width:51px;height:51px;border:0;border-radius:17px;background:#ffffff21;color:white;font-size:1.6rem;display:grid;place-items:center}
+body[data-menu-template="pitacco-v2"] .v2-header-control:focus-visible{outline:3px solid #ffbc33}
+body[data-menu-template="pitacco-v2"] .v2-header-count{position:absolute;top:-7px;right:-7px;border-radius:99px;background:#ff890b;color:white;padding:2px 7px;font-size:.7rem;font-weight:850}
+body[data-menu-template="pitacco-v2"] .v2-header-count[hidden]{display:none}
+body[data-menu-template="pitacco-v2"] .v2-hero-visual{position:absolute;right:-37px;bottom:-26px;width:39%;max-width:380px;max-height:74%;object-fit:contain;z-index:1;filter:drop-shadow(0 10px 14px #1d022a66);pointer-events:none}
+body[data-menu-template="pitacco-v2"] .v2-hero-visual[hidden]{display:none}
+body[data-menu-template="pitacco-v2"] .v2-hero-info{position:relative;z-index:2;margin-top:16px}
+body[data-menu-template="pitacco-v2"] .v2-hero-info .v2-open-pill{background:#23984f;border-radius:999px;padding:5px 14px;color:white;font-weight:790}
+body[data-menu-template="pitacco-v2"] .v2-hero-info .v2-open-pill[data-open=false]{background:#776075}
+body[data-menu-template="pitacco-v2"] .v2-hero-info .v2-delivery-text{color:#fdf2fb;margin-left:10px;font-size:.88rem}
+body[data-menu-template="pitacco-v2"] .v2-hero-location{display:block;font-size:.85rem;color:#fff3fa;margin:12px 0 0;max-width:68%}
+body[data-menu-template="pitacco-v2"] .v2-hero-location[hidden]{display:none}
+body[data-menu-template="pitacco-v2"] .catalog{padding-top:0}
+body[data-menu-template="pitacco-v2"] #v2Home{display:block;margin:-31px 0 0;position:relative;z-index:3}
+body[data-menu-template="pitacco-v2"] #v2Home[hidden]{display:none}
+body[data-menu-template="pitacco-v2"] #v2HomeLoyalty{display:block;margin:0 0 25px;padding:20px;border-radius:30px;border:2px solid #ffe79b;outline:3px solid #fff5be;background:#fff8ff;box-shadow:0 10px 22px #3704461c;color:#4b0a5d}
+body[data-menu-template="pitacco-v2"] #v2HomeLoyalty[hidden]{display:none!important}
+body[data-menu-template="pitacco-v2"] .v2-loyalty-top{display:flex;gap:12px;align-items:center}
+body[data-menu-template="pitacco-v2"] .v2-loyalty-gift{font-size:2.7rem;line-height:1}
+body[data-menu-template="pitacco-v2"] .v2-loyalty-brand{font-size:2rem;line-height:1;font-weight:900;color:#4c075f}
+body[data-menu-template="pitacco-v2"] .v2-loyalty-brand em{font-style:normal;color:#fa8200}
+body[data-menu-template="pitacco-v2"] .v2-loyalty-top p{margin:4px 0;color:#55315e;font-size:.82rem;line-height:1.4}
+body[data-menu-template="pitacco-v2"] #v2HomeLoyaltyGo{margin-left:auto;background:transparent;color:#5b096d;box-shadow:none;border:1px solid #8122a5;font-size:.8rem;padding:10px;border-radius:13px;white-space:nowrap}
+body[data-menu-template="pitacco-v2"] .v2-progress-card{display:flex;gap:17px;align-items:center;background:#fff;border-radius:19px;padding:15px;margin-top:16px}
+body[data-menu-template="pitacco-v2"] .v2-points-box{flex:0 0 34%;border-right:1px solid #e7dbe9;display:flex;gap:7px;align-items:center;color:#4a0b60;font-size:.8rem;padding-right:11px}
+body[data-menu-template="pitacco-v2"] .v2-points-box .v2-star{font-size:2rem}
+body[data-menu-template="pitacco-v2"] .v2-points-box strong{display:block;font-size:1.45rem;color:#4b0668;line-height:1.2}
+body[data-menu-template="pitacco-v2"] .v2-progress-detail{flex:1;min-width:0}
+body[data-menu-template="pitacco-v2"] .v2-progress-detail p{margin:0 0 8px;font-size:.82rem;color:#4e2759}
+body[data-menu-template="pitacco-v2"] .v2-progress-detail p strong{color:#560869}
+body[data-menu-template="pitacco-v2"] .v2-progress-bottom{display:flex;gap:9px;align-items:center}
+body[data-menu-template="pitacco-v2"] .v2-progress-track{flex:1;height:11px;border-radius:99px;background:#e5e3e8;overflow:hidden}
+body[data-menu-template="pitacco-v2"] .v2-progress-fill{display:block;height:100%;background:linear-gradient(100deg,#cb28e6,#8018ae);border-radius:99px;width:0}
+body[data-menu-template="pitacco-v2"] .v2-progress-count{font-size:.75rem;white-space:nowrap;color:#623366}
+body[data-menu-template="pitacco-v2"] #v2HomeCategories{display:flex;gap:9px;overflow-x:auto;padding:3px 2px 11px;scrollbar-width:thin;margin:0 0 19px}
+body[data-menu-template="pitacco-v2"] .v2-category-tile{width:calc((100% - 36px)/5);min-width:100px;min-height:111px;flex:none;border:1px solid #e9ddec;border-radius:19px;background:#fff;color:#3b2144;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;font-size:.86rem;font-weight:720;box-shadow:0 4px 10px #39044a12}
+body[data-menu-template="pitacco-v2"] .v2-category-tile>span{font-size:1.95rem}
+body[data-menu-template="pitacco-v2"] .v2-category-tile[aria-pressed=true]{background:linear-gradient(130deg,#b825ce,#680c8e);color:#fff;border-color:#8f20b3}
+body[data-menu-template="pitacco-v2"] .v2-top-products-title{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:16px 0}
+body[data-menu-template="pitacco-v2"] .v2-top-products-title h2{margin:0;color:#500761;font-weight:850;font-size:1.45rem}
+body[data-menu-template="pitacco-v2"] #v2AllProductsButton{border:0;background:transparent;color:#8611aa;font-weight:850;padding:9px;white-space:nowrap}
+body[data-menu-template="pitacco-v2"] #v2TopProducts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+body[data-menu-template="pitacco-v2"] .v2-top-product{position:relative;background:#fff;border:1px solid #ede5ec;border-radius:22px;box-shadow:0 6px 16px #38074614;overflow:hidden;min-width:0}
+body[data-menu-template="pitacco-v2"] .v2-top-photo{height:225px;background:#ead8e9;display:grid;place-items:center;position:relative;overflow:hidden}
+body[data-menu-template="pitacco-v2"] .v2-top-photo img{width:100%;height:100%;object-fit:cover}
+body[data-menu-template="pitacco-v2"] .v2-top-photo>span{font-size:3.7rem}
+body[data-menu-template="pitacco-v2"] .v2-top-badge{position:absolute;top:12px;left:12px;padding:7px 10px;border-radius:999px;background:linear-gradient(115deg,#bb25ce,#6a1193);color:#fff;font-size:.73rem;font-weight:850}
+body[data-menu-template="pitacco-v2"] .v2-top-badge[data-combo=true]{background:linear-gradient(105deg,#fb9500,#eb6200)}
+body[data-menu-template="pitacco-v2"] .v2-top-heart{position:absolute;top:11px;right:11px;border:0;width:38px;height:38px;border-radius:50%;background:#fff;color:#620978;font-size:1.45rem;display:grid;place-items:center}
+body[data-menu-template="pitacco-v2"] .v2-top-product-details{padding:14px}
+body[data-menu-template="pitacco-v2"] .v2-top-name{display:block;font-size:1.08rem;line-height:1.2;color:#2e0d34;font-weight:850}
+body[data-menu-template="pitacco-v2"] .v2-top-description{font-size:.82rem;color:#5a3c5b;line-height:1.35;margin:6px 0 12px;min-height:37px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+body[data-menu-template="pitacco-v2"] .v2-top-bottom{display:flex;align-items:center;justify-content:space-between;gap:7px}
+body[data-menu-template="pitacco-v2"] .v2-top-price{font-weight:890;font-size:1.35rem;color:#52085f}
+body[data-menu-template="pitacco-v2"] .v2-top-add{background:linear-gradient(130deg,#bd28d2,#7809a4);color:white;width:45px;height:45px;border:0;border-radius:13px;font-size:1.6rem}
+body[data-menu-template="pitacco-v2"][data-v2-page=inicio] #layout{margin-top:29px;padding-top:20px;border-top:1px solid #eee6ef}
+body[data-menu-template="pitacco-v2"][data-v2-page=inicio] #v2CatalogTitle{font-size:1.5rem;color:#500761}
+body[data-menu-template="pitacco-v2"] #cartDock{width:min(690px,calc(100% - 32px))}
+body[data-menu-template="pitacco-v2"] #cartDock>button{min-height:63px;border-radius:22px;background:linear-gradient(110deg,#a016b7,#670777);font-size:1rem;box-shadow:0 7px 16px #41074e3d}
+body[data-menu-template="pitacco-v2"] .v2-dock-icon{font-size:1.6rem;margin-right:9px}
+body[data-menu-template="pitacco-v2"] .v2-dock-extra{margin-left:10px;font-size:1.18rem}
+body[data-menu-template="pitacco-v2"] #cartDock .dock-count{display:none}
+@media(max-width:600px){
+ body[data-menu-template="pitacco-v2"] .hero{min-height:240px;padding:20px 0 56px}
+ body[data-menu-template="pitacco-v2"] .hero-content{padding:0 54px;min-height:94px}
+ body[data-menu-template="pitacco-v2"] .store-mark{width:60px;height:60px}
+ body[data-menu-template="pitacco-v2"] .identity{gap:8px}
+ body[data-menu-template="pitacco-v2"] .hero h1{font-size:1.55rem;max-width:175px}
+ body[data-menu-template="pitacco-v2"] .v2-header-back{left:11px;top:23px}
+ body[data-menu-template="pitacco-v2"] .v2-header-actions{right:11px;top:23px;gap:6px}
+ body[data-menu-template="pitacco-v2"] .v2-header-control{width:37px;height:40px;border-radius:13px;font-size:1.25rem}
+ body[data-menu-template="pitacco-v2"] .v2-hero-visual{right:-34px;bottom:-7px;max-height:57%;width:45%}
+ body[data-menu-template="pitacco-v2"] .v2-hero-location{max-width:65%;font-size:.75rem}
+ body[data-menu-template="pitacco-v2"] .v2-hero-info{margin-top:13px}
+ body[data-menu-template="pitacco-v2"] #v2Home{margin-top:-24px}
+ body[data-menu-template="pitacco-v2"] #v2HomeLoyalty{padding:14px;border-radius:25px;margin-bottom:18px}
+ body[data-menu-template="pitacco-v2"] .v2-loyalty-gift{font-size:2rem}
+ body[data-menu-template="pitacco-v2"] .v2-loyalty-brand{font-size:1.55rem}
+ body[data-menu-template="pitacco-v2"] .v2-loyalty-top{gap:8px;flex-wrap:wrap}
+ body[data-menu-template="pitacco-v2"] #v2HomeLoyaltyGo{font-size:.74rem;padding:9px}
+ body[data-menu-template="pitacco-v2"] .v2-loyalty-top p{font-size:.72rem}
+ body[data-menu-template="pitacco-v2"] .v2-progress-card{gap:9px;padding:11px 9px;margin-top:12px}
+ body[data-menu-template="pitacco-v2"] .v2-points-box{flex-basis:37%;padding-right:7px;gap:4px;font-size:.72rem}
+ body[data-menu-template="pitacco-v2"] .v2-points-box .v2-star{font-size:1.4rem}
+ body[data-menu-template="pitacco-v2"] .v2-points-box strong{font-size:1.15rem}
+ body[data-menu-template="pitacco-v2"] .v2-progress-detail p{font-size:.7rem}
+ body[data-menu-template="pitacco-v2"] .v2-progress-count{font-size:.68rem}
+ body[data-menu-template="pitacco-v2"] .v2-category-tile{min-width:84px;width:84px;min-height:99px;font-size:.76rem;border-radius:16px}
+ body[data-menu-template="pitacco-v2"] .v2-category-tile>span{font-size:1.6rem}
+ body[data-menu-template="pitacco-v2"] .v2-top-products-title h2{font-size:1.2rem}
+ body[data-menu-template="pitacco-v2"] #v2TopProducts{gap:9px}
+ body[data-menu-template="pitacco-v2"] .v2-top-photo{height:160px}
+ body[data-menu-template="pitacco-v2"] .v2-top-product-details{padding:10px}
+ body[data-menu-template="pitacco-v2"] .v2-top-name{font-size:.9rem}
+ body[data-menu-template="pitacco-v2"] .v2-top-description{font-size:.7rem;min-height:37px}
+ body[data-menu-template="pitacco-v2"] .v2-top-price{font-size:1.02rem}
+ body[data-menu-template="pitacco-v2"] .v2-top-add{width:35px;height:35px;border-radius:10px}
+ body[data-menu-template="pitacco-v2"] #cartDock>button{min-height:59px;border-radius:20px;font-size:.85rem}
+ body[data-menu-template="pitacco-v2"] .v2-dock-icon{margin-right:3px}
+}
 </style></head><body>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
- <div class="shell hero-content"><div class="identity"><div class="store-mark" aria-hidden="true"><span id="storeInitial"></span><img id="storeLogo" alt="" hidden></div>
+ <button type="button" id="v2HeaderBack" class="v2-header-control v2-header-back" aria-label="Voltar">‹</button>
+ <div class="v2-header-actions"><button type="button" id="v2HeaderSearch" class="v2-header-control" aria-label="Buscar produtos">⌕</button>
+ <button type="button" id="v2HeaderAbout" class="v2-header-control" aria-label="Informações da loja">ⓘ</button>
+ <button type="button" id="v2HeaderCart" class="v2-header-control" aria-label="Ver meu pedido">🛒<span id="v2HeaderCount" class="v2-header-count" hidden>0</span></button></div>
+ <div class="shell hero-content"><div class="identity"><div class="store-mark" aria-hidden="true"><span id="storeInitial">🍧</span><img id="storeLogo" alt="" hidden></div>
  <div><h1 id="storeName"></h1><p id="storeSlogan">Cardápio digital</p></div></div><div id="storeServices" class="services"></div></div>
+ <div class="shell v2-hero-info"><span id="v2OpenPill" class="v2-open-pill">Consultando</span><span id="v2DeliveryText" class="v2-delivery-text"></span>
+ <span id="v2HeroLocation" class="v2-hero-location" hidden></span></div>
+ <img id="v2HeroImage" class="v2-hero-visual" alt="" hidden>
 </header>
 <nav id="v2StoreNav" class="shell v2-store-nav" aria-label="Seções do cardápio">
  <button type="button" class="v2-nav-button" data-v2-nav="inicio" aria-current="page"><span class="v2-nav-icon" aria-hidden="true">⌂</span>Início</button>
@@ -554,15 +680,19 @@ body[data-menu-template="pitacco-v2"] .pitacco-footer{color:#725779}
 <section id="pitaccoPromos" class="shell pitacco-promos" aria-label="Destaques da loja" hidden></section>
 <main class="shell catalog">
 
-<section id="v2Home" class="v2-home" aria-label="Destaques da loja" hidden>
- <button type="button" id="v2Feature" class="v2-feature" hidden>
-  <span class="v2-feature-copy"><small>✨ Destaque da loja</small><strong id="v2FeatureTitle"></strong><em id="v2FeaturePrice"></em></span>
-  <img id="v2FeatureImage" class="v2-feature-image" alt="" hidden>
- </button>
+<section id="v2Home" class="v2-home" aria-label="Início do cardápio" hidden>
  <div id="v2HomeLoyalty" class="v2-home-loyalty" hidden>
-  <div><strong>⭐ Fideliza+</strong><p>Faça pedidos, acumule pontos e aproveite benefícios desta loja.</p></div>
-  <button type="button" id="v2HomeLoyaltyGo">Ver meus benefícios →</button>
+  <div class="v2-loyalty-top"><span class="v2-loyalty-gift" aria-hidden="true">🎁</span><div>
+  <strong class="v2-loyalty-brand">Fideliza<em>+</em></strong><p>Compre, acumule pontos e resgate recompensas incríveis!</p></div>
+  <button type="button" id="v2HomeLoyaltyGo">Ver benefícios ›</button></div>
+  <div class="v2-progress-card"><div class="v2-points-box"><span class="v2-star">⭐</span><div>Seus pontos<strong id="v2HomePoints">—</strong></div></div>
+  <div class="v2-progress-detail"><p id="v2HomeProgressText">Informe o telefone no pedido para consultar seus pontos.</p>
+   <div class="v2-progress-bottom"><div class="v2-progress-track"><span id="v2HomeProgressFill" class="v2-progress-fill"></span></div><span id="v2HomeProgressCount" class="v2-progress-count">—</span></div>
+  </div></div>
  </div>
+ <nav id="v2HomeCategories" class="v2-home-categories" aria-label="Categorias do cardápio"></nav>
+ <div class="v2-top-products-title"><h2>🔥 Destaques da loja</h2><button type="button" id="v2AllProductsButton">Ver todos ›</button></div>
+ <div id="v2TopProducts" aria-label="Dois produtos em destaque"></div>
 </section>
 
 <section id="v2LoyaltyPage" class="v2-section-page" aria-label="Minha área Fideliza+" hidden>
@@ -603,7 +733,7 @@ body[data-menu-template="pitacco-v2"] .pitacco-footer{color:#725779}
  </section>
 </main>
 <footer class="pitacco-footer" id="pitaccoFooter" hidden>Impulsionado por <a href="https://pitacco.com.br/" rel="noopener">Pitacco</a><span id="pitaccoSocial"></span></footer>
-<div id="cartDock" class="dock" hidden><p id="cartFeedback" class="feedback" role="status" hidden></p><button id="openCart" type="button"><span><span class="dock-count" id="cartCount">0</span><span id="cartAction">Ver sacola</span></span><strong id="cartValue"></strong></button></div>
+<div id="cartDock" class="dock" hidden><p id="cartFeedback" class="feedback" role="status" hidden></p><button id="openCart" type="button"><span><span class="v2-dock-icon" aria-hidden="true">🛒</span><span class="dock-count" id="cartCount">0</span><span id="cartAction">Ver meu pedido</span></span><strong><span id="v2DockCount">0 itens · </span><span id="cartValue"></span><span class="v2-dock-extra" aria-hidden="true">›</span></strong></button></div>
 <dialog id="productDialog" aria-labelledby="productTitle"><div class="dialog-shell">
  <header class="dialog-header"><h2 class="dialog-title" id="productTitle"></h2><button type="button" class="close" id="closeProduct" aria-label="Fechar produto">×</button></header>
  <div class="dialog-scroll" id="productBody"></div>
@@ -758,36 +888,121 @@ function v2SaveFavorite(id){
  try{localStorage.setItem(v2FavoritesKey,JSON.stringify([...v2Favorites].slice(-100)))}catch{}
  renderProducts();
 }
+// Os dois primeiros são escolhidos por vendas confirmadas desta loja.
+// Na ausência de histórico, a vitrine usa itens reais do catálogo, sem inventar vendas.
+let v2TopSellerIds=[];
+async function v2LoadTopSellers(){
+ if(!menu||document.body.dataset.menuTemplate!=='pitacco-v2')return;
+ const results=await Promise.allSettled([
+  client.rpc('pitacco_public_top_sellers',{p_slug:slug}),
+  client.rpc('pitacco_public_store_region',{p_slug:slug})
+ ]);
+ const best=results[0].status==='fulfilled'?results[0].value:null;
+ const region=results[1].status==='fulfilled'?results[1].value:null;
+ if(!best?.error&&Array.isArray(best?.data))v2TopSellerIds=best.data.filter(id=>typeof id==='string').slice(0,2);
+ if(!region?.error&&typeof region?.data==='string'&&region.data.trim()){
+  $('v2HeroLocation').textContent='📍 '+region.data.trim();
+  $('v2HeroLocation').hidden=false;
+ }
+ v2Feature();
+}
+function v2CategoryIcon(name){
+ const text=normal(name);
+ if(/acai|aça/.test(text))return '🥣';
+ if(/creme|sorvete/.test(text))return '🍨';
+ if(/combo|promoc/.test(text))return '🏷️';
+ if(/bebida|suco|refrigerante/.test(text))return '🥤';
+ if(/lanche|sanduiche/.test(text))return '🍔';
+ if(/sobremesa|doce/.test(text))return '🍮';
+ return '🍽️';
+}
+function v2RenderHomeCategories(){
+ const root=$('v2HomeCategories');root.replaceChildren();
+ const keys=[...new Set(menu.products.map(categoryOf))];
+ const create=(key,title,iconText)=>{
+  const b=button('', 'v2-category-tile');
+  b.append(el('span',iconText),el('strong',title));
+  b.setAttribute('aria-pressed',String(key===null));
+  b.onclick=()=>{
+   if(key===null){v2Go('inicio');$('v2TopProducts').scrollIntoView({behavior:'smooth',block:'start'});return;}
+   v2Go('cardapio');category=key;renderCategories();renderProducts();
+   $('layout').scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  root.append(b);
+ };
+ create(null,'Destaques','🥣');
+ for(const key of keys)create(key,key,v2CategoryIcon(key));
+}
+function v2RenderHomeLoyaltyProgress(){
+ if(document.body.dataset.menuTemplate!=='pitacco-v2')return;
+ const active=loyaltyProgram?.rules;
+ $('v2HomeLoyalty').hidden=!active;
+ if(!active)return;
+ const digits=loyaltyPhoneDigits($('phone').value),identified=/^[0-9]{10,11}$/.test(digits);
+ const w=identified?loyaltyWallet:null;
+ $('v2HomePoints').textContent=w?String(w.points||0)+' pts':'—';
+ const goal=Number(active.min_points_to_redeem)||0,points=Number(w?.points)||0;
+ const benefit=Number(active.points_reward_cents)||0;
+ const hasGoal=active.points_enabled&&goal>0&&benefit>0;
+ $('v2HomeProgressText').textContent=!identified?'Digite seu celular no pedido para consultar os pontos.':
+  !w?'Consultando pontos deste telefone…':
+  hasGoal?(points>=goal?'Você já pode resgatar '+money(benefit/100)+' de desconto!':
+  'Faltam '+Math.max(0,goal-points)+' pontos para resgatar '+money(benefit/100)+' de desconto!'):
+  'Acompanhe seus benefícios e ofertas desta loja.';
+ $('v2HomeProgressFill').style.width=hasGoal&&w?Math.min(100,Math.round(points/goal*100))+'%':'0%';
+ $('v2HomeProgressCount').textContent=hasGoal&&w?points+' / '+goal+' pts':'—';
+}
 function v2Feature(){
  if(document.body.dataset.menuTemplate!=='pitacco-v2'||!menu)return;
- const p=menu.products.find(x=>imageUrl(x.image_url))||menu.products[0];
- $('v2Feature').hidden=!p;
- if(p){
-  $('v2FeatureTitle').textContent=p.name;
-  $('v2FeaturePrice').textContent=money(p.price);
-  $('v2FeatureImage').hidden=!imageUrl(p.image_url);
-  if(imageUrl(p.image_url))$('v2FeatureImage').src=p.image_url;
-  $('v2Feature').onclick=()=>openProduct(p);
+ const products=menu.products,ranked=v2TopSellerIds.map(id=>products.find(p=>p.id===id)).filter(Boolean);
+ const selected=[...ranked,...products.filter(p=>!ranked.some(r=>r.id===p.id))].slice(0,2);
+ const root=$('v2TopProducts');root.replaceChildren();
+ for(const product of selected){
+  const card=el('article',undefined,'v2-top-product'),image=el('div',undefined,'v2-top-photo');
+  if(imageUrl(product.image_url)){
+   const img=el('img');img.alt='';img.loading='lazy';img.src=product.image_url;image.append(img);
+  }else image.append(el('span','🍧'));
+  const isRanked=v2TopSellerIds.includes(product.id),isCombo=/combo/i.test(product.category+' '+product.name);
+  const badge=el('span',isCombo?'Combo':isRanked?'Mais pedido':'Destaque','v2-top-badge');
+  badge.dataset.combo=String(isCombo);image.append(badge);
+  const fav=button(v2Favorites.has(product.id)?'♥':'♡','v2-top-heart');
+  fav.setAttribute('aria-pressed',String(v2Favorites.has(product.id)));
+  fav.setAttribute('aria-label',(v2Favorites.has(product.id)?'Remover ':'Salvar ')+product.name+' nos favoritos');
+  fav.onclick=()=>{v2SaveFavorite(product.id);v2Feature()};image.append(fav);
+  const info=el('div',undefined,'v2-top-product-details');
+  const name=button(product.name,'v2-top-name');name.style.cssText='text-align:left;border:0;padding:0;background:none;cursor:pointer';
+  name.onclick=()=>openProduct(product);info.append(name);
+  const description=el('p',product.description||'Personalize seu pedido do jeito que preferir.','v2-top-description');
+  info.append(description);
+  const bottom=el('div',undefined,'v2-top-bottom');bottom.append(el('strong',money(product.price),'v2-top-price'));
+  const add=button('+','v2-top-add');add.setAttribute('aria-label','Personalizar '+product.name+' em destaque');
+  add.onclick=()=>openProduct(product);bottom.append(add);info.append(bottom);
+  card.append(image,info);root.append(card);
  }
- $('v2HomeLoyalty').hidden=!loyaltyProgram;
+ v2RenderHomeCategories();
+ v2RenderHomeLoyaltyProgress();
+ const heroProduct=selected.find(p=>imageUrl(p.image_url));
+ $('v2HeroImage').hidden=!heroProduct;
+ if(heroProduct)$('v2HeroImage').src=heroProduct.image_url;
 }
+
 function v2Go(page,initial=false){
  if(document.body.dataset.menuTemplate!=='pitacco-v2')return;
- v2Page=page;v2FavoritesOnly=page==='favoritos';
+ v2Page=page;document.body.dataset.v2Page=page;v2FavoritesOnly=page==='favoritos';
  $('v2Home').hidden=page!=='inicio';
  $('v2LoyaltyPage').hidden=page!=='fideliza';
  $('v2AboutPage').hidden=page!=='sobre';
  const listing=page!=='fideliza'&&page!=='sobre';
  $('layout').hidden=!listing;
- $('pitaccoPromos').hidden=!['inicio','promocoes'].includes(page)||$('pitaccoPromos').childElementCount===0;
+ $('pitaccoPromos').hidden=page!=='promocoes'||$('pitaccoPromos').childElementCount===0;
  for(const b of $('v2StoreNav').querySelectorAll('[data-v2-nav]')){
   if(b.dataset.v2Nav===page)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');
  }
  if(listing&&menu){
   category=null;$('search').value='';
-  const names={inicio:'Cardápio',cardapio:'Escolha seu favorito',promocoes:'Ofertas e destaques',favoritos:'Meus favoritos'};
+  const names={inicio:'Todo o cardápio',cardapio:'Escolha seu favorito',promocoes:'Ofertas e destaques',favoritos:'Meus favoritos'};
   $('v2CatalogTitle').textContent=names[page]||'Cardápio';
-  renderCategories();renderProducts();
+  renderCategories();renderProducts();if(page==='inicio')v2Feature();
  }
  if(page==='fideliza'){
   $('v2LoyaltyPhone').value=$('phone').value;
@@ -808,6 +1023,13 @@ for(const b of $('v2StoreNav').querySelectorAll('[data-v2-nav]')){
 }
 $('v2HomeLoyaltyGo').onclick=()=>v2Go('fideliza');
 $('v2FavoritesNav').onclick=()=>v2Go('favoritos');
+
+$('v2HeaderBack').onclick=()=>{if(v2Page!=='inicio')v2Go('inicio');else if(history.length>1)history.back();};
+$('v2HeaderSearch').onclick=()=>{v2Go('cardapio');$('search').focus();$('layout').scrollIntoView({behavior:'smooth'});};
+$('v2HeaderAbout').onclick=()=>v2Go('sobre');
+$('v2HeaderCart').onclick=()=>$('openCart').click();
+$('v2AllProductsButton').onclick=()=>{$('layout').scrollIntoView({behavior:'smooth',block:'start'});};
+
 $('v2ClassicLoyalty').onclick=()=>{if(!$('loyaltyOpen').hidden)$('loyaltyOpen').click()};
 $('v2LoyaltyPhone').addEventListener('input',e=>{
  $('phone').value=e.target.value;
@@ -828,6 +1050,7 @@ function v2BenefitPurchase(type,value){
 function v2RenderWallet(){
  if(document.body.dataset.menuTemplate!=='pitacco-v2')return;
  const wallet=loyaltyWallet,rule=wallet?.rules||loyaltyProgram?.rules||{};
+ v2RenderHomeLoyaltyProgress();
  $('v2PointsValue').textContent=String(wallet?.points||0);
  $('v2CashbackValue').textContent=money((wallet?.cashback_cents||0)/100);
  const offers=[...(loyaltyProgram?.campaigns||[]),...(wallet?.offers||[])];
@@ -1158,6 +1381,8 @@ function renderCart(){
  scheduleFiadoStatusCheck(subtotal+fee-benefit);
  $('cartCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0);
  $('cartValue').textContent=money(subtotal);
+ $('v2DockCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0)+' itens · ';
+ const n=cart.reduce((sum,item)=>sum+item.quantity,0);$('v2HeaderCount').textContent=String(n);$('v2HeaderCount').hidden=n===0;
  $('continueCheckout').disabled=(!storeOpening?.open&&!pendingRequest)||!cart.length||!$('fulfillment').value||!$('payment').value;
  $('send').disabled=(!storeOpening?.open&&!pendingRequest)||submitting||!cart.length||!$('fulfillment').value||!$('payment').value||
    ($('fulfillment').value==='delivery'&&(!routeMode||!quoteValid));
@@ -1258,6 +1483,8 @@ function showStoreOpening(opening){
  status.classList.toggle('is-open',isOpen);
  document.body.classList.toggle('store-closed',!isOpen);
  status.replaceChildren();
+ $('v2OpenPill').dataset.open=String(isOpen);
+ $('v2OpenPill').textContent=isOpen?'Aberto':'Fechado';
  const title=el('strong',isOpen?'● Loja aberta — pedidos disponíveis':
   storeOpening.reason==='paused'?'● Pedidos temporariamente pausados':
   '● Loja fechada — pedidos indisponíveis');
@@ -1477,6 +1704,7 @@ function initOptions(){
  applyStudioDesign(shop);
  $('storeName').textContent=shop.name;
  $('v2AboutTitle').textContent=shop.name;
+ $('v2DeliveryText').textContent=shop.delivery_enabled?'· Entrega disponível':shop.pickup_enabled?'· Retirada disponível':'';
  $('v2FavoritesNav').hidden=document.body.dataset.menuTemplate!=='pitacco-v2';
  $('storeInitial').textContent=shop.name.trim().slice(0,1).toUpperCase();
  document.title='Cardápio | '+shop.name;
@@ -1514,7 +1742,7 @@ function initOptions(){
   renderCart();loadSchedule();
  };
  $('fulfillment').dispatchEvent(new Event('change'));
- renderCategories();renderProducts();void loadLoyalty();v2Feature();
+ renderCategories();renderProducts();void loadLoyalty();v2Feature();void v2LoadTopSellers();
  $('hero').hidden=false;$('layout').hidden=false;$('cartDock').hidden=false;
  v2Go('inicio',true);
  showStoreOpening(shop.opening_hours);
