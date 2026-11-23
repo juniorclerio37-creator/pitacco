@@ -1410,6 +1410,7 @@ function setMenuTemplate(shop){
  $('v2ClassicLoyalty').hidden=true;
  $('v2NameFields').hidden=!classic&&document.body.dataset.menuSkin==='principal';
  $('v2PhoneFields').hidden=false;
+ $('send').textContent=!classic&&document.body.dataset.menuSkin==='principal'?'Finalizar pedido →':'Confirmar pedido';
  if(classic||document.body.dataset.menuSkin!=='principal'){
   const customer=$('v2NameFields').parentElement;
   customer.insertBefore($('v2NameFields'),$('v2PhoneFields'));
