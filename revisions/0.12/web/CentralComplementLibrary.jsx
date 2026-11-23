@@ -8,7 +8,7 @@ const currency=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency
 const optionNew=()=>({id:crypto.randomUUID(),name:'',price:0,available:true,image_url:''});
 export default function CentralComplementLibrary({client,storeId,products,onChanged}){
  const [templates,setTemplates]=useState([]),[existing,setExisting]=useState([]),[existingOptions,setExistingOptions]=useState([]);
- const [selected,setSelected]=useState(null),[draft,setDraft]=useState(fresh),[files,setFiles]=useState({});
+ const [selected,setSelected]=useState(null),[draft,setDraft]=useState(fresh),[files,setFiles]=useState({}),[fileUrls,setFileUrls]=useState({});
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [editingProduct,setEditingProduct]=useState(null),[showExisting,setShowExisting]=useState(false);
  const productName=new Map(products.map(p=>[p.id,p.name]));
@@ -28,8 +28,9 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
   finally{setLoading(false);}
  }
  useEffect(()=>{setSelected(null);setDraft(fresh());setEditingProduct(null);load()},[client,storeId]);
+ useEffect(()=>()=>Object.values(fileUrls).forEach(url=>URL.revokeObjectURL(url)),[fileUrls]);
  function openTemplate(t){
-  setSelected(t?.id||null);setFiles({});setError('');setNotice('');
+  setSelected(t?.id||null);setFiles({});setFileUrls({});setError('');setNotice('');
   if(!t){setDraft(fresh());return;}
   const attached=existing.filter(g=>g.library_template_id===t.id&&g.enabled!==false).map(g=>g.product_id);
   setDraft({id:t.id,name:t.name,min:t.min_select,max:t.max_select,options:(t.options||[]).map(o=>({...o})),assigned:attached});
@@ -38,7 +39,7 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
   const opts=existingOptions.filter(o=>o.group_id===g.id).map(o=>({
    id:crypto.randomUUID(),name:o.name,price:Number(o.additional_price),available:o.available,image_url:o.image_url||''
   }));
-  setSelected(null);setFiles({});setDraft({id:null,name:g.name,min:g.min_select,max:g.max_select,options:opts,assigned:[]});
+  setSelected(null);setFiles({});setFileUrls({});setDraft({id:null,name:g.name,min:g.min_select,max:g.max_select,options:opts,assigned:[]});
   setError('');setNotice('Modelo criado com os dados de '+(productName.get(g.product_id)||'produto')+'. Selecione os produtos que receberão uma cópia compartilhada antes de salvar.');
   setShowExisting(false);
  }
@@ -50,7 +51,7 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
   if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){
    setError('Selecione JPG, PNG ou WebP de até 5 MB.');return;
   }
-  setFiles(p=>({...p,[id]:file}));
+  setFiles(p=>({...p,[id]:file}));setFileUrls(p=>({...p,[id]:URL.createObjectURL(file)}));
  }
  async function save(){
   if(busy)return;setBusy(true);setError('');setNotice('');
@@ -70,7 +71,7 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
    });
    if(saveError)throw saveError;
    if(!data?.saved)throw Error('O servidor não confirmou o salvamento.');
-   setFiles({});setSelected(data.id);
+   setFiles({});setFileUrls({});setSelected(data.id);
    setNotice('Grupo salvo e aplicado a '+data.assigned_products+' produto(s). As alterações já estão disponíveis no cardápio.');
    await load();onChanged?.();
    setDraft({...draft,id:data.id,options:data.options,assigned:draft.assigned});
@@ -109,7 +110,7 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
     <div className="catalog-line-title"><h4>Itens do grupo</h4>
      <button type="button" className="secondary" disabled={busy||draft.options.length>=100} onClick={()=>edit('options',[...draft.options,optionNew()])}>+ Adicionar complemento</button></div>
     {draft.options.map(o=><div className="catalog-option-edit" key={o.id}>
-     <div className="catalog-option-photo">{files[o.id]?<img src={URL.createObjectURL(files[o.id])} alt="Nova foto selecionada"/>:o.image_url?<img src={o.image_url} alt={o.name}/>:<span>📷</span>}</div>
+     <div className="catalog-option-photo">{fileUrls[o.id]?<img src={fileUrls[o.id]} alt="Nova foto selecionada"/>:o.image_url?<img src={o.image_url} alt={o.name}/>:<span>📷</span>}</div>
      <label>Nome<input value={o.name} maxLength={100} onChange={e=>editOption(o.id,'name',e.target.value)}/></label>
      <label>Valor adicional (R$)<input type="number" min="0" max="100000" step=".01" value={o.price} onChange={e=>editOption(o.id,'price',Number(e.target.value))}/></label>
      <label>Foto<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>fileOption(o.id,e.target.files?.[0])}/></label>
