@@ -1,0 +1,21 @@
+.pitacco-category-icon{display:inline-flex;align-items:center;justify-content:center;flex:none;vertical-align:middle;line-height:1;width:1.15em;height:1.15em}
+.pitacco-category-icon svg{display:block;width:1.08em;height:1.08em;overflow:visible}
+.pitacco-combo-icons{display:inline-flex;align-items:center;justify-content:center;gap:0;white-space:nowrap;font-size:.79em;letter-spacing:-.09em;transform:translateX(-.04em)}
+.pitacco-combo-icons>span{display:inline-flex;width:1.04em;height:1.19em;align-items:center;justify-content:center}
+.pitacco-combo-icons svg{font-size:.94em;flex:none}
+.pitacco-fire-motion{transform-origin:32px 58px}
+.pitacco-flame-animated .pitacco-fire-motion{animation:pitacco-flame-dance 1.45s ease-in-out infinite}
+@keyframes pitacco-flame-dance{0%,100%{transform:rotate(-2deg) scale(.96,1)}30%{transform:rotate(3deg) scale(1,1.045)}66%{transform:rotate(-3deg) scale(.98,1.025)}}
+@media(prefers-reduced-motion:reduce){.pitacco-flame-animated .pitacco-fire-motion{animation:none!important}}
+.pitacco-icon-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:9px;margin:12px 0 18px}
+.pitacco-icon-choice{min-height:103px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:1px solid #d7c7dd;border-radius:14px;background:#fff;color:#3f1b4b;padding:10px 7px;text-align:center;cursor:pointer;transition:border-color .12s,background .12s}
+.pitacco-icon-choice[aria-pressed=true]{border:2px solid #7a0fa1;background:#f5e4ff;box-shadow:0 0 0 2px #edd2fb}
+.pitacco-icon-choice:focus-visible{outline:3px solid #e188ff;outline-offset:2px}
+.pitacco-icon-choice .pitacco-category-icon{font-size:37px!important}
+.pitacco-icon-choice small{font-weight:650;font-size:.77rem;line-height:1.25}
+.pitacco-category-settings{border:1px solid #e5d8ea;border-radius:14px;padding:11px;margin:10px 0;background:#fff}
+.pitacco-category-settings>summary{cursor:pointer;font-weight:760;display:flex;align-items:center;gap:7px}
+.pitacco-category-settings h4{margin:14px 0 5px;font-size:.9rem;color:#533369}
+.pitacco-category-settings .pitacco-icon-picker{margin-top:8px}
+.pitacco-category-settings p{margin:5px 0;color:#75647c;font-size:.86rem}
+@media(max-width:430px){.pitacco-icon-picker{grid-template-columns:repeat(3,minmax(0,1fr))}.pitacco-icon-choice{min-height:100px}}
