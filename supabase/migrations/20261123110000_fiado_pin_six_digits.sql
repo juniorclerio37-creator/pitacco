@@ -60,13 +60,37 @@ grant execute on function public.pitacco_fiado_save_customer_pin(uuid,text,text,
 create or replace function public.pitacco_fiado_verify_pin(
  p_slug text,p_phone text,p_pin text,p_request uuid
 ) returns jsonb language plpgsql security definer set search_path='' as $pin$
-declare sid uuid; account public.pitacco_fiado_customers%rowtype; phone text; v_token uuid;
+declare sid uuid; account public.pitacco_fiado_customers%rowtype; v_phone text; v_token uuid;
 begin
  if p_request is null then
   return jsonb_build_object('verified',false,'message','Não foi possível validar o Fiado. Confira os dados com a loja.');end if;
- phone:=regexp_replace(coalesce(p_phone,''),'[^0-9]','','g');
- if left(phone,2)='55' and length(phone) in (12,13) then phone:=substr(phone,3);end if;
- if phone !~ '^[0-9]{10,11}$' then
+ v_phone:=regexp_replace(coalesce(p_phone,''),'[^0-9]','','g');
+ if left(v_phone,2)='55' and length(v_phone) in (12,13) then v_phone:=substr(v_phone,3);end if;
+ if v_phone !~ '^[0-9]{10,11} then
+  return jsonb_build_object('verified',false,'message','Não foi possível validar o Fiado. Confira os dados com a loja.');end if;
+ select m.store_id into sid from public.public_menu_settings m
+ join public.pitacco_fiado_settings f on f.store_id=m.store_id and f.enabled
+ where m.slug=p_slug and m.enabled limit 1;
+ if sid is null then
+  return jsonb_build_object('verified',false,'message','Não foi possível validar o Fiado. Confira os dados com a loja.');end if;
+ select * into account from public.pitacco_fiado_customers c
+ where c.store_id=sid and c.phone=v_phone and c.enabled for update;
+ if not found or account.pin_hash is null or coalesce(account.pin_locked_until>now(),false) then
+  return jsonb_build_object('verified',false,'message','Não foi possível validar o Fiado. Confira os dados com a loja.');end if;
+ if p_pin is null or p_pin !~ '^[0-9]{6}$'
+  or extensions.crypt(p_pin,account.pin_hash)<>account.pin_hash then
+  update public.pitacco_fiado_customers c
+  set pin_failed_attempts=case when c.pin_failed_attempts>=4 then 0 else c.pin_failed_attempts+1 end,
+      pin_locked_until=case when c.pin_failed_attempts>=4 then now()+interval '30 minutes' else null end
+  where c.id=account.id and c.store_id=sid;
+  return jsonb_build_object('verified',false,'message','Não foi possível validar o Fiado. Confira os dados com a loja.');
+ end if;
+ update public.pitacco_fiado_customers
+ set pin_failed_attempts=0,pin_locked_until=null where id=account.id and store_id=sid;
+ insert into pitacco_private.fiado_pin_verifications(store_id,customer_id,request_id)
+ values(sid,account.id,p_request) returning token into v_token;
+ return jsonb_build_object('verified',true,'token',v_token);
+end $pin$ then
   return jsonb_build_object('verified',false,'message','Não foi possível validar o Fiado. Confira os dados com a loja.');end if;
  select m.store_id into sid from public.public_menu_settings m
  join public.pitacco_fiado_settings f on f.store_id=m.store_id and f.enabled
