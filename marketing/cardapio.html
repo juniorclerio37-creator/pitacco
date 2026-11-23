@@ -858,6 +858,7 @@ body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-s
  <button type="button" class="v2-nav-button" data-v2-nav="promocoes"><span class="v2-nav-icon" aria-hidden="true">🔥</span>Promoções</button>
  <button type="button" id="loyaltyOpen" class="v2-nav-button" aria-label="Meu Fideliza+" data-v2-nav="fideliza" hidden><span class="v2-nav-icon" aria-hidden="true">☆</span>Fideliza+</button>
  <button type="button" class="v2-nav-button" data-v2-nav="sobre"><span class="v2-nav-icon" aria-hidden="true">ⓘ</span>Sobre</button>
+ <button type="button" class="v2-nav-button" data-v2-nav="fiado"><span class="v2-nav-icon" aria-hidden="true">▣</span>Fiado</button>
 </nav>
 
 <section id="storeOpenStatus" class="shell store-open-status" role="status" aria-live="polite" hidden></section>
@@ -906,6 +907,25 @@ body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-s
 <section id="v2AboutPage" class="v2-section-page" aria-label="Sobre a loja" hidden>
  <div class="v2-about"><h2 id="v2AboutTitle">Sobre a loja</h2><p id="v2AboutIntro">Informações da loja e serviços disponíveis.</p><div id="v2AboutServices"></div></div>
 </section>
+<section id="v2FiadoPage" class="v2-section-page" aria-label="Meu Fiado" hidden>
+ <div class="v2-page-hero v2-fiado-hero"><h2>▣ Meu Fiado</h2><p>Acompanhe seus pedidos fiados e pagamentos.</p></div>
+ <div class="v2-page-body">
+  <div id="v2FiadoLogin" class="v2-login-card">
+   <h3>Consultar meus pagamentos</h3>
+   <p>Confirme seu telefone e o PIN cadastrado com a loja para proteger suas informações financeiras.</p>
+   <label for="v2FiadoPhone">Celular com DDD</label><input type="tel" id="v2FiadoPhone" inputmode="tel" autocomplete="tel-national" placeholder="(21) 99999-9999">
+   <label for="v2FiadoPin">PIN pessoal (6 dígitos)</label><input type="password" id="v2FiadoPin" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="off" placeholder="••••••">
+   <button type="button" id="v2FiadoCheck" class="primary">Consultar Meu Fiado</button>
+  </div>
+  <p id="v2FiadoNotice" class="v2-message" role="status" aria-live="polite"></p>
+  <section id="v2FiadoStatement" hidden aria-label="Compras e pagamentos fiados">
+   <div class="v2-finance-metrics"><div><small>Total em aberto</small><strong id="v2FiadoOpenTotal">R$ 0,00</strong></div><div><small>Próximo vencimento</small><strong id="v2FiadoDue">—</strong></div></div>
+   <h3>▤ Compras no Fiado</h3><div id="v2FiadoCharges" class="v2-finance-list"></div>
+   <h3>▣ Pagamentos realizados</h3><div id="v2FiadoPayments" class="v2-finance-list"></div>
+   <button type="button" id="v2FiadoPay" class="primary">Como pagar agora →</button><div id="v2FiadoPayInstructions" class="v2-message" hidden></div>
+  </section>
+ </div>
+</section>
 
  <p id="msg" class="msg" role="status">Carregando cardápio…</p>
  <section id="layout" aria-label="Produtos da loja" hidden>
@@ -931,9 +951,28 @@ body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-s
  <div class="dialog-scroll" id="cartBody">
   <p id="checkoutMessage" class="msg" role="status" hidden></p>
   <div id="cartReview"><div id="cart"></div><div id="total" class="total"></div></div>
-  <form id="checkout" hidden><div class="v2-checkout-progress" aria-label="Etapas do pedido"><span>✓ Sacola</span><span data-active="true">2. Seus dados</span><span>3. Entrega</span><span>4. Pagamento</span></div><section class="v2-checkout-panel v2-checkout-panel--customer"><h3>👤 Seus dados</h3><p>Informe seus dados para continuar com o pedido.</p><label for="customer">Seu nome</label><input id="customer" autocomplete="name" required minlength="2" maxlength="120"><label for="phone">Telefone com DDD</label><input id="phone" autocomplete="tel-national" required inputmode="tel" maxlength="30"></section>
-<section class="v2-checkout-panel v2-checkout-panel--delivery"><h3>📍 Entrega ou retirada</h3><p>Escolha como deseja receber seu pedido.</p><label for="fulfillment">Como deseja receber?</label><select id="fulfillment"></select><div id="scheduleBlock" hidden><label for="schedule">Quando deseja receber?</label><select id="schedule"><option value="">Assim que possível</option></select><small>Horários de Brasília. Para entrega, o horário é uma previsão.</small></div><div id="addressBlock"><fieldset id="addressFields" class="address-fields"><legend>Endereço de entrega</legend><p>Preencha o endereço e confira o ponto no mapa. Use o GPS apenas se estiver no local da entrega.</p>
-<div class="address-grid"><label>Rua ou avenida<input id="addressStreet" autocomplete="address-line1" maxlength="100" placeholder="Ex.: Rua Guaraná" required></label><label>Número<input id="addressNumber" autocomplete="off" maxlength="20" placeholder="Ex.: 5 ou s/n" required></label><label>Bairro<input id="addressNeighborhood" autocomplete="address-level3" maxlength="60" required></label><label>Cidade<input id="addressCity" autocomplete="address-level2" maxlength="60" required></label><label>Estado<select id="addressState" autocomplete="address-level1" required><option value="">Selecione</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></label><label>CEP (opcional)<input id="addressPostal" autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000"></label><label class="address-wide">Complemento e referência (opcional)<input id="addressExtra" autocomplete="address-line2" maxlength="100" placeholder="Casa, bloco, apartamento ou ponto de referência"></label></div><label for="address">Confira o endereço completo</label><textarea id="address" rows="2" maxlength="500" readonly aria-describedby="addressSummaryHelp"></textarea><small id="addressSummaryHelp">O frete será validado para o ponto confirmado no mapa.</small></fieldset><fieldset id="deliveryPoint" hidden>
+  <form id="checkout" hidden><div class="v2-checkout-progress" aria-label="Etapas do pedido"><span data-v2-progress="cart">✓<small>Carrinho</small></span><span data-v2-progress="customer">2<small>Seus dados</small></span><span data-v2-progress="payment">3<small>Pagamento</small></span><span data-v2-progress="review">4<small>Confirmação</small></span></div>
+<section class="v2-checkout-panel v2-checkout-panel--customer">
+ <div id="v2PhoneFields"><div class="v2-identity-art" aria-hidden="true">🍧 <span>▣</span> 📍</div>
+  <h3>Identifique-se para continuar</h3><p>Informe seu número de telefone para acessar sua conta e fazer o pedido.</p>
+  <label for="phone">Seu telefone (com DDD)</label><input id="phone" autocomplete="tel-national" required inputmode="tel" maxlength="30" placeholder="(XX) 9 9999-9999">
+  <p class="v2-privacy-note">♢ Seus dados ficam protegidos neste aparelho e não são compartilhados entre lojas.</p>
+ </div>
+ <div id="v2NameFields" hidden><h3>◉ Seus dados</h3><p>Confirme as informações para continuar com o pedido.</p>
+  <label for="customer">Nome completo</label><input id="customer" autocomplete="name" required minlength="2" maxlength="120" placeholder="Seu nome">
+  <p id="v2ProfileStatus" class="v2-privacy-note" role="status">Seu nome e endereços podem ser reutilizados neste aparelho em compras futuras.</p>
+ </div>
+</section>
+<section class="v2-checkout-panel v2-checkout-panel--delivery"><h3>📍 Entrega ou retirada</h3><p>Escolha como deseja receber seu pedido.</p><label for="fulfillment">Como deseja receber?</label><select id="fulfillment"></select><div id="scheduleBlock" hidden><label for="schedule">Quando deseja receber?</label><select id="schedule"><option value="">Assim que possível</option></select><small>Horários de Brasília. Para entrega, o horário é uma previsão.</small></div><div id="addressBlock">
+ <div id="v2AddressBook" class="v2-address-book" hidden>
+  <h3>⌖ Endereço de entrega</h3><p>Escolha um dos seus endereços salvos ou adicione um novo.</p>
+  <div id="v2AddressList" class="v2-address-list"></div>
+  <button type="button" id="v2AddAddress" class="v2-add-address">＋ Adicionar novo endereço</button>
+ </div>
+ <div id="v2AddressEditor"><div class="v2-address-title"><label for="v2AddressLabel">Salvar endereço como</label>
+  <select id="v2AddressLabel"><option value="Casa">⌂ Casa</option><option value="Trabalho">▤ Trabalho</option><option value="Outro">♡ Outro</option></select></div>
+ <fieldset id="addressFields" class="address-fields"><legend>Endereço de entrega</legend><p>Preencha o endereço e confira o ponto no mapa. Use o GPS apenas se estiver no local da entrega.</p>
+<div class="address-grid"><label>Rua ou avenida<input id="addressStreet" autocomplete="address-line1" maxlength="100" placeholder="Ex.: Rua Guaraná" required></label><label>Número<input id="addressNumber" autocomplete="off" maxlength="20" placeholder="Ex.: 5 ou s/n" required></label><label>Bairro<input id="addressNeighborhood" autocomplete="address-level3" maxlength="60" required></label><label>Cidade<input id="addressCity" autocomplete="address-level2" maxlength="60" required></label><label>Estado<select id="addressState" autocomplete="address-level1" required><option value="">Selecione</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></label><label>CEP (opcional)<input id="addressPostal" autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000"></label><label class="address-wide">Complemento e referência (opcional)<input id="addressExtra" autocomplete="address-line2" maxlength="100" placeholder="Casa, bloco, apartamento ou ponto de referência"></label></div><label for="address">Confira o endereço completo</label><textarea id="address" rows="2" maxlength="500" readonly aria-describedby="addressSummaryHelp"></textarea><small id="addressSummaryHelp">O frete será validado para o ponto confirmado no mapa.</small></fieldset></div><fieldset id="deliveryPoint" hidden>
  <legend>Localização da entrega</legend>
  <p>Marque o endereço no mapa ou use sua localização atual se estiver no local da entrega.</p>
  <button id="showDeliveryMap" type="button" class="secondary">Abrir mapa</button>
@@ -941,7 +980,9 @@ body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-s
  <div id="deliveryMap" aria-label="Mapa da área de entrega" hidden style="height:260px;margin:12px 0;z-index:0"></div>
  <p id="deliveryPointStatus" role="status"></p>
 </fieldset><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço, marque o destino no mapa e calcule o frete conforme a área da loja.</p></div></div></section><section class="v2-checkout-panel v2-checkout-panel--payment">
-<h3>💳 Forma de pagamento</h3><p>Escolha como deseja pagar seu pedido.</p><label for="payment">Forma de pagamento</label><select id="payment" required></select>
+<h3>▣ Forma de pagamento</h3><p>Escolha como deseja pagar o seu pedido.</p><label for="payment" class="v2-payment-native-label">Forma de pagamento</label><select id="payment" required></select>
+ <div id="v2PaymentCards" class="v2-payment-cards" role="radiogroup" aria-label="Formas de pagamento configuradas pela loja"></div>
+ <div id="v2ChangeBlock" class="v2-change-block" hidden><label for="v2CashChange">Precisa de troco para quanto?</label><input id="v2CashChange" inputmode="decimal" placeholder="R$ 0,00"></div>
 <section id="loyaltyBox" class="fiado-access" aria-label="Fideliza+ do cliente" hidden>
  <h3>Fideliza+ · Benefícios desta loja</h3><p id="loyaltyTerms"></p><div id="loyaltyCampaigns"></div>
  <div id="loyaltyAnonymous"><p>Seu número de celular com DDD é seu acesso ao Fideliza+. Ao digitar o telefone do pedido, seus pontos e créditos aparecem automaticamente. Na primeira compra, o cadastro da carteira é automático.</p>
@@ -960,11 +1001,14 @@ body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-s
  <p id="fiadoPinHelp" role="status">Digite o PIN definido com a loja para seu telefone autorizado. Não é necessário SMS nem data de nascimento.</p>
  <p>A autorização do Fiado será automática apenas se a loja tiver liberado essa opção para você. Caso contrário, seu pedido aguardará aprovação da loja antes do preparo.</p>
 </div><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea></section>
-<section class="v2-checkout-confirm"><p>Confira seus dados, produtos, endereço e forma de pagamento antes de confirmar.</p>
-<p><button class="primary" id="send" type="submit">Confirmar pedido</button></p></section></form>
+<section class="v2-checkout-confirm"><h3>▤ Revisão do pedido</h3><p>Confira seus itens e endereço antes de finalizar.</p>
+<div id="v2OrderSummary" class="v2-review-summary"></div>
+<p><button class="primary" id="send" type="submit">Finalizar pedido →</button></p></section></form>
   <div id="success" hidden></div>
  </div>
- <footer class="dialog-footer" id="cartFooter"><button id="continueCheckout" type="button" class="primary">Continuar para entrega e pagamento</button><button id="backToCart" type="button" class="secondary" hidden>Voltar à sacola</button></footer>
+ <footer class="dialog-footer" id="cartFooter"><button id="continueCheckout" type="button" class="primary">Continuar para entrega e pagamento</button><button id="backToCart" type="button" class="secondary" hidden>Voltar à sacola</button>
+<button id="v2CheckoutBack" class="secondary" type="button" hidden>← Voltar</button>
+<button id="v2CheckoutNext" class="primary" type="button" hidden>Continuar →</button></footer>
 </div></dialog>
 <script type="module">
 import{createClient}from'https://esm.sh/@supabase/supabase-js@2';
