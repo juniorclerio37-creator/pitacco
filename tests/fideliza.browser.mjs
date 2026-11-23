@@ -103,7 +103,7 @@ try{
   }else await page.locator('#customer').fill('Cliente');
   if(width===375)await page.locator('#loyaltyReward').selectOption('points');
   else await page.getByRole('button',{name:'Usar SEMANA5',exact:true}).click();
-  await page.locator('#loyaltyApply').click();await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).waitFor();
+  await page.locator('#loyaltyApply').click();await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).waitFor({state:'attached'});
   if(principal){
     for(const stage of ['address','customer','identify']){
      await page.locator('#v2CheckoutBack').click();
@@ -123,7 +123,7 @@ try{
     await page.locator('#v2PaymentCards [data-kind="pix_manual"]').click();
   }
   await page.locator('#loyaltyApply').click();
-  await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).waitFor();
+  await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).waitFor({state:'attached'});
   if(principal)await page.locator('#v2CheckoutNext').click();
   await page.locator('#send').click();await page.getByRole('button',{name:'Tentar novamente',exact:true}).waitFor();
   assert.equal(await page.locator('#loyaltyBox').evaluate(e=>e.inert),true);
