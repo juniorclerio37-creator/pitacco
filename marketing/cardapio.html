@@ -2196,22 +2196,27 @@ function applyStudioDesign(shop){
  if(d.logo_path){const url=studioAsset(d.logo_path);if(url)shop.logo_url=url}
  if(d.cover_path){const url=studioAsset(d.cover_path);if(url)shop.banner_url=url}
  const rootBanners=$('pitaccoPromos');
+ rootBanners.replaceChildren(); // Não duplicar banners durante as alterações na prévia.
  const banners=Array.isArray(d.banners)?d.banners.slice(0,6):[];
  const now=Date.now();
- for(const banner of banners){
+ for(const [index,banner] of banners.entries()){
   if(!banner||typeof banner.title!=='string')continue;
   if(banner.starts_at&&Date.parse(banner.starts_at)>now)continue;
   if(banner.ends_at&&Date.parse(banner.ends_at)<now)continue;
   const linked=menu.products.find(p=>p.id===banner.product_id);
   const card=linked?button(undefined,'pitacco-promo'):el('article',undefined,'pitacco-promo');
+  card.dataset.bannerIndex=String(index);
   if(linked){card.setAttribute('aria-label','Ver '+linked.name);card.onclick=()=>openProduct(linked);}
   const photo=studioAsset(banner.image_path);
   if(photo)addPhoto(card,photo);
-  const caption=el('span',undefined,'pitacco-promo-text');
-  caption.append(el('strong',banner.title));
-  if(banner.subtitle)caption.append(el('small',banner.subtitle));
-  if(linked)caption.append(el('span','Ver produto','pitacco-promo-link'));
-  card.append(caption);rootBanners.append(card);
+  if(banner.title.trim()||banner.subtitle||linked){
+   const caption=el('span',undefined,'pitacco-promo-text');
+   if(banner.title.trim())caption.append(el('strong',banner.title));
+   if(banner.subtitle)caption.append(el('small',banner.subtitle));
+   if(linked)caption.append(el('span','Ver produto','pitacco-promo-link'));
+   card.append(caption);
+  }
+  rootBanners.append(card);
  }
  rootBanners.hidden=rootBanners.childElementCount===0;
  const footer=$('pitaccoFooter');footer.hidden=false;
@@ -3083,11 +3088,12 @@ function studioPreviewApply(){
   studioPreviewSetImage('storeBanner',studioPreviewImage(studioPreviewFiles.cover)||
    studioAsset(d.cover_path)||menu.store.banner_url);
   const banners=$('pitaccoPromos');
-  for(let i=0;i<banners.children.length;i++){
-   const src=studioPreviewImage(studioPreviewFiles['banner-'+i]);
+  for(const card of banners.children){
+   const index=card.dataset.bannerIndex;
+   const src=studioPreviewImage(studioPreviewFiles['banner-'+index]);
    if(!src)continue;
-   let img=banners.children[i].querySelector('img');
-   if(!img){img=el('img');img.alt='';banners.children[i].prepend(img);}
+   let img=card.querySelector('img');
+   if(!img){img=el('img');img.alt='';card.prepend(img);}
    img.src=src;
   }
   renderCategories();renderProducts();v2Feature();v2Go('inicio',true);
