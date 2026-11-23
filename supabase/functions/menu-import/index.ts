@@ -111,6 +111,53 @@ function imageExtension(data:Uint8Array){
 function isUuid(x:unknown){return typeof x==="string"&&/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(x)}
 // Quando um SPA só entrega a estrutura da loja, consultar EXCLUSIVAMENTE
 // a ficha pública usada pelo próprio cardápio, sem rotas administrativas.
+// Links de vitrines do iFood não são credenciais de acesso ao catálogo.
+// A API oficial requer um vínculo OAuth concedido pelo gestor da MESMA loja.
+function ifoodMerchantFromUrl(link:URL):string|null{
+ const domain=link.hostname.toLowerCase();
+ if(domain!=="www.ifood.com.br"&&domain!=="ifood.com.br")return null;
+ const match=link.pathname.match(/^\/delivery\/[^/]+\/[^/]+\/([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})(?:\/|$)/i);
+ return match?match[1].toLowerCase():null;
+}
+async function checkIfoodSource(source:URL,merchantId:string,storeId:string,supa:ReturnType<typeof createClient>){
+ const [connections,linkStatus]=await Promise.all([
+  supa.rpc("pitacco_ifood_connections",{p_store:storeId}),
+  supa.rpc("pitacco_ifood_linking_status")
+ ]);
+ const list=Array.isArray(connections.data)?connections.data:[];
+ const production=list.filter((item:{test_only?:boolean})=>item&&item.test_only!==true);
+ const matching=production.find((item:{merchant_id?:string})=>String(item.merchant_id||"").toLowerCase()===merchantId);
+ const linkEnabled=linkStatus.data===true;
+ let sourceStatus="ifood_not_connected",message="";
+ if(connections.error){
+  sourceStatus="ifood_connection_unavailable";
+  message="Não foi possível conferir o vínculo oficial desta loja com o iFood. Consulte Integrações ou utilize um arquivo exportado.";
+ }else if(!matching&&production.length){
+  sourceStatus="ifood_merchant_mismatch";
+  message="A loja selecionada possui outra conta iFood cadastrada. Confira se a loja e o link pertencem ao mesmo estabelecimento. Nenhum produto foi importado.";
+ }else if(!matching){
+  sourceStatus="ifood_not_connected";
+  message="Esta loja ainda não autorizou o acesso do Pitacco ao seu catálogo iFood. O link compartilhado não dá permissão para consultar itens, fotos, preços ou complementos.";
+ }else if(matching.enabled!==true){
+  sourceStatus="ifood_connection_disabled";
+  message="O vínculo iFood desta loja está pausado. Reative a conta autorizada antes de usar uma integração de catálogo.";
+ }else{
+  sourceStatus="ifood_catalog_integration_required";
+  message="O vínculo de pedidos foi encontrado, mas a importação autenticada do catálogo ainda não está habilitada. Um link de cliente não fornece os dados completos de produtos e complementos.";
+ }
+ const warnings=[message];
+ if(sourceStatus==="ifood_not_connected"&&linkEnabled)
+  warnings.push("Vincule primeiro o estabelecimento em Integrações → iFood, autorizando pelo Portal do Parceiro. Em seguida, a importação precisará da leitura oficial do catálogo.");
+ else if(sourceStatus==="ifood_not_connected"&&!linkEnabled)
+  warnings.push("O cadastro de novos vínculos iFood ainda aguarda homologação no Pitacco. Até sua liberação, use uma exportação do cardápio em CSV, JSON ou ZIP.");
+ else
+  warnings.push("Para importar sem alterar o cadastro atual, utilize um arquivo CSV, JSON ou ZIP com produtos e complementos. A prévia será mostrada antes de publicar.");
+ return {products:[],sourceStatus,sourceProvider:"ifood",sourceTitle:"Cardápio iFood",
+  sourceMerchantId:merchantId,canLinkIfood:linkEnabled,
+  method:"conta de marketplace",counts:{products:0,groups:0,options:0,withPhotos:0},
+  warnings,url:source.toString()};
+}
+
 async function inspectPublicDynamicCatalog(sourceUrl:string,parsed:ReturnType<typeof parsePublicMenu>){
  if(parsed.products.length)return parsed;
  let page:URL;try{page=new URL(sourceUrl)}catch{return parsed}
@@ -157,6 +204,11 @@ Deno.serve(async req=>{
   if(aclError||allowed!==true)fail("Acesso negado ao catálogo desta loja.",403);
   if(payload.action==="scan"){
    const link=publicUrl(payload.url);
+   const ifoodMerchant=ifoodMerchantFromUrl(link);
+   if(ifoodMerchant){
+    const inspected=await checkIfoodSource(link,ifoodMerchant,payload.store_id,supa);
+    return reply(req,inspected);
+   }
    const result=await loadPublic(link.toString(),maxHtml,"text/html,application/json;q=0.9,*/*;q=0.2");
    if(!result.type.includes("html")&&!result.type.includes("json")&&!result.type.includes("text"))fail("A URL não contém um cardápio legível.",422);
    let parsed=parsePublicMenu(new TextDecoder().decode(result.bytes),result.url,result.type);
