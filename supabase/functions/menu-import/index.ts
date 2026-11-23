@@ -109,6 +109,37 @@ function imageExtension(data:Uint8Array){
  return "";
 }
 function isUuid(x:unknown){return typeof x==="string"&&/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(x)}
+// Quando um SPA só entrega a estrutura da loja, consultar EXCLUSIVAMENTE
+// a ficha pública usada pelo próprio cardápio, sem rotas administrativas.
+async function inspectPublicDynamicCatalog(sourceUrl:string,parsed:ReturnType<typeof parsePublicMenu>){
+ if(parsed.products.length)return parsed;
+ let page:URL;try{page=new URL(sourceUrl)}catch{return parsed}
+ if(!["instadelivery.com.br","www.instadelivery.com.br"].includes(page.hostname))return parsed;
+ const slug=page.pathname.split("/").filter(Boolean)[0]||"";
+ if(!/^[a-zA-Z0-9_-]{3,80}$/.test(slug))return parsed;
+ try{
+  const api="https://app.instadelivery.com.br/api/stores/by-slug/"+encodeURIComponent(slug);
+  const response=await loadPublic(api,maxHtml,"application/json");
+  if(!response.type.includes("json"))return parsed;
+  const data=JSON.parse(new TextDecoder().decode(response.bytes));
+  if(!data||typeof data!=="object"||!Array.isArray(data.groups))return parsed;
+  // A própria resposta pública pode futuramente conter itens estruturados.
+  const extra=parsePublicMenu(JSON.stringify(data),response.url,"application/json");
+  if(extra.products.length)return {...extra,url:sourceUrl,method:"dados públicos do cardápio"};
+  const categories=data.groups.filter((g:Record<string,unknown>)=>
+   g&&typeof g==="object"&&g.deleted_at==null&&Number(g.is_invisible||0)!==1).length;
+  return {...parsed,sourceStatus:"products_not_public",sourceTitle:String(data.name||"").slice(0,120),
+   counts:{...parsed.counts,categories},
+   warnings:[
+    "A loja e "+categories+" categoria(s) foram encontradas, mas esse endereço não disponibilizou produtos aos visitantes. No acesso público, nenhum item com nome e preço foi apresentado.",
+    "Confira se o cardápio de origem exibe os produtos para um cliente sem login. Para importar agora, utilize um arquivo CSV, JSON ou ZIP exportado pela loja."
+   ]};
+ }catch{
+  // A ficha auxiliar pode não estar disponível; preservar o diagnóstico do HTML.
+  return parsed;
+ }
+}
+
 Deno.serve(async req=>{
  if(req.method==="OPTIONS")return new Response("ok",{headers:cors(req)});
  if(req.method!=="POST")return reply(req,{error:"Método não permitido"},405);
@@ -128,7 +159,8 @@ Deno.serve(async req=>{
    const link=publicUrl(payload.url);
    const result=await loadPublic(link.toString(),maxHtml,"text/html,application/json;q=0.9,*/*;q=0.2");
    if(!result.type.includes("html")&&!result.type.includes("json")&&!result.type.includes("text"))fail("A URL não contém um cardápio legível.",422);
-   const parsed=parsePublicMenu(new TextDecoder().decode(result.bytes),result.url,result.type);
+   let parsed=parsePublicMenu(new TextDecoder().decode(result.bytes),result.url,result.type);
+   if(!parsed.products.length)parsed=await inspectPublicDynamicCatalog(result.url,parsed);
    return reply(req,{...parsed,url:result.url});
   }
   if(payload.action==="photos"){
