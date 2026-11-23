@@ -658,6 +658,9 @@ body[data-menu-template="pitacco-v2"] #cartDock .dock-count{display:none}
 }
 
 body[data-menu-template="pitacco-v2"] .store-mark #storeInitial{color:#fff}
+/* Bound real photos without changing the principal template composition. */
+body[data-menu-template="pitacco-v2"] #v2HeroImage{left:auto;top:auto}
+body[data-menu-template="pitacco-v2"] :is(.product-visual,.v2-top-photo)>img{position:absolute;inset:0;width:100%;height:100%;min-width:0;min-height:0;object-fit:cover}
 /* Approved template identities: one current storefront engine, distinct presentation. */
 body[data-menu-skin=essencial]{--template-hue:155;--template-accent-hue:155;--template-chroma:.62}
 body[data-menu-skin=editorial]{--template-hue:24;--template-accent-hue:18;--template-chroma:.55}
