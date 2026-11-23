@@ -35,7 +35,10 @@ test('distance pricing requires a server quote and exact delivery fee',()=>{
  assert.match(html,/pitacco_checkout_quoted_delivery/);
  assert.match(html,/client\.functions\.invoke\('delivery-quote'/);
  assert.match(html,/deliveryQuote\.fee/);
- assert.match(html,/Calcule a taxa de entrega/);
+ assert.match(html,/v2ScheduleDeliveryQuote/);
+ assert.match(html,/Taxa de entrega:/);
+ assert.match(html,/#quoteDelivery\{display:none!important\}/);
+ assert.match(html,/Não atendemos essa região/);
 });
 
 test('store opening hours block new orders in the browser and require server verification',()=>{
