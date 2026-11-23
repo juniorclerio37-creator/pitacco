@@ -34,6 +34,11 @@ cp marketing/configuracao.html "$dist_dir"/configuracao/index.html
 cp marketing/produtos.html "$dist_dir"/produtos/index.html
 cp marketing/complementos.html "$dist_dir"/complementos/index.html
 cp marketing/cardapio.html "$dist_dir"/cardapio/index.html
+# Fotos migradas são servidas pelo Pitacco, sem depender da CDN da plataforma anterior.
+if [[ -d marketing/assets/brendi-acai-do-linho ]]; then
+  mkdir -p "$dist_dir"/assets/brendi-acai-do-linho
+  cp marketing/assets/brendi-acai-do-linho/*.webp "$dist_dir"/assets/brendi-acai-do-linho/
+fi
 cp web/deliveryMap.mjs "$dist_dir"/assets/delivery-map.mjs
 cp marketing/pedidos.html "$dist_dir"/pedidos/index.html
 cp marketing/aceite.html "$dist_dir"/aceite/index.html
