@@ -1,11 +1,16 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import ProductComplements from './ProductComplements.jsx';
+import CentralComplementLibrary from './CentralComplementLibrary.jsx';
+import CatalogFinishedStock from './CatalogFinishedStock.jsx';
+import Inventory from './Inventory.jsx';
+import StoreDesignStudio from './StoreDesignStudio.jsx';
+import './catalog-studio-modern.css';
 import {uploadStoreImage,mediaUrl} from './StoreProfile.jsx';
 import {CategoryIcon,CATEGORY_ICON_GROUPS,CATEGORY_ICON_KEYS,inferCategoryIcon} from './CategoryIcons.jsx';
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const empty=()=>({name:'',description:'',category:'',price:'',cost:'',menu_active:true,image_url:''});
 const field={display:'grid',gap:5,marginBottom:13};
-export default function MenuStudio({client,storeId,products=[],onRefresh,onImport}){
+export default function MenuStudio({client,storeId,products=[],store=null,manager=true,onRefresh,onImport}){
  const [draft,setDraft]=useState(empty),[editing,setEditing]=useState(null),[groups,setGroups]=useState([]),[photo,setPhoto]=useState(null),[previewUrl,setPreviewUrl]=useState(''),[filter,setFilter]=useState(''),[selectedCategory,setSelectedCategory]=useState('Todas'),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[section,setSection]=useState('Produtos'),[showEditor,setShowEditor]=useState(false);
  const [categoryIcons,setCategoryIcons]=useState({}),[configuringCategory,setConfiguringCategory]=useState(null),[iconBusy,setIconBusy]=useState(false);
  const categories=useMemo(()=>['Todas',...new Set(products.map(p=>p.category).filter(Boolean))],[products]);
@@ -58,9 +63,23 @@ export default function MenuStudio({client,storeId,products=[],onRefresh,onImpor
 
  return <section className="menu-studio">
  <div className="page-intro"><div><span className="eyebrow">MEU CARDÁPIO</span><h3>Editor de cardápio</h3><p>Gerencie produtos e veja as alterações no cardápio do cliente enquanto edita.</p></div><button type="button" className="secondary" onClick={onImport}>Importar cardápio</button></div>
- <div className="quick-actions" style={{marginBottom:16}}>{['Produtos','Complementos','Banners','Estoque','Insumos'].map(t=><button type="button" key={t} className={section===t?'':'secondary'} onClick={()=>setSection(t)}>{t}</button>)}</div>
+ <div className="catalog-studio-tabs" role="tablist" aria-label="Gestão do cardápio">
+ {['Produtos','Complementos','Banners','Estoque','Insumos'].map(t=><button role="tab" aria-selected={section===t}
+  type="button" key={t} className={section===t?'active':'secondary'} onClick={()=>{setSection(t);setShowEditor(false);setNotice('')}}>{t}</button>)}
+ </div>
  {notice&&!showEditor&&<p className="notice" role="status">{notice}</p>}
- {section!=='Produtos'&&<div className="panel"><h3>{section}</h3><p>{section==='Complementos'?'Abra um produto para cadastrar e editar seus complementos.':'A gestão completa desta seção ainda depende do módulo de catálogo e de sua persistência.'}</p><button type="button" onClick={()=>setSection('Produtos')}>Ver produtos</button></div>}
+ {section==='Complementos'&&<CentralComplementLibrary client={client} storeId={storeId} products={products} onChanged={onRefresh}/>}
+ {section==='Banners'&&(store?<StoreDesignStudio key={storeId+'-banners'} client={client} store={store} manager={manager}
+  products={products} focus="banners"/>:<p role="alert">Não foi possível identificar a loja para abrir os banners.</p>)}
+ {section==='Estoque'&&<>
+   <CatalogFinishedStock client={client} storeId={storeId} products={products} manager={manager}/>
+   <div className="catalog-inventory-wrap"><h3>Movimentações e insumos vinculados</h3>
+    <Inventory client={client} storeId={storeId} manager={manager} products={products} initialView="Movimentações"/>
+   </div>
+ </>}
+ {section==='Insumos'&&<div className="catalog-inventory-wrap">
+  <Inventory client={client} storeId={storeId} manager={manager} products={products} initialView="Insumos"/>
+ </div>}
  {section==='Produtos'&&<><div className="menu-studio-list">
  <div className="panel"><h3>Categorias</h3><p className="hint">Cada categoria pode ter seu próprio ícone. Os Destaques usam o foguinho animado 🔥.</p>
  {categories.map(c=><div key={c} style={{display:'flex',gap:6,alignItems:'center',marginBottom:7}}>
@@ -84,7 +103,20 @@ export default function MenuStudio({client,storeId,products=[],onRefresh,onImpor
   </section>)}
  </div>}
  </div>
- <div className="panel"><div className="line"><h3>Produtos</h3><button onClick={()=>begin(null)}>+ Novo produto</button></div><input aria-label="Buscar produto" placeholder="Buscar produtos..." value={filter} onChange={e=>setFilter(e.target.value)}/>{filtered.map(p=><div className="line" key={p.id}><div><b>{p.name}</b><div><small>{p.category||'Sem categoria'} · {brl(p.price)}</small></div></div><div className="quick-actions"><button type="button" className="secondary" onClick={()=>begin(p)}>Editar</button><button type="button" className="secondary" disabled={busy} onClick={()=>toggle(p)}>{p.menu_active===false?'Ativar':'Desativar'}</button></div></div>)}{!filtered.length&&<p>Nenhum produto nesta categoria.</p>}</div>
+ <div className="panel catalog-product-panel"><div className="line"><h3>Produtos</h3><button type="button" onClick={()=>begin(null)}>+ Novo produto</button></div>
+ <input aria-label="Buscar produto" placeholder="Buscar produtos..." value={filter} onChange={e=>setFilter(e.target.value)}/>
+ <div className="catalog-card-grid">
+ {filtered.map(p=><article className="catalog-product-card" key={p.id}>
+  <div className="catalog-product-cover">
+   {p.image_url?<img src={p.image_url} alt={'Foto de '+p.name} loading="lazy"/>:<div className="catalog-product-photo-empty">📷 <small>Adicionar foto</small></div>}
+   <span className={'catalog-availability '+(p.menu_active===false?'inactive':'')}>{p.menu_active===false?'Inativo':'Ativo'}</span>
+  </div>
+  <div className="catalog-product-caption"><b>{p.name}</b><small>{p.category||'Sem categoria'}</small><strong>{brl(p.price)}</strong></div>
+  <div className="catalog-card-actions"><button type="button" className="secondary" onClick={()=>begin(p)}>✎ Editar</button>
+   <button type="button" className="secondary" disabled={busy} onClick={()=>toggle(p)}>{p.menu_active===false?'Ativar':'Desativar'}</button>
+  </div>
+ </article>)}
+ </div>{!filtered.length&&<p>Nenhum produto nesta categoria.</p>}</div>
  </div>
  {showEditor&&<div style={{position:'fixed',inset:0,zIndex:90,background:'rgba(0,0,0,.5)',display:'flex',justifyContent:'flex-end'}}>
  <div style={{background:'var(--background,#fff)',color:'var(--foreground,#222)',height:'100%',width:'min(1100px,100%)',overflowY:'auto',padding:22,boxSizing:'border-box'}}>
@@ -104,7 +136,7 @@ export default function MenuStudio({client,storeId,products=[],onRefresh,onImpor
  {editing?<ProductComplements key={editing} client={client} storeId={storeId} product={{id:editing,name:draft.name}}
   onGroupsChange={setGroups}/>:<p className="hint">Salve o produto para cadastrar os complementos.</p>}
  </div>
- <aside className="panel" style={{position:'sticky',top:0}}><span className="eyebrow">PRÉVIA AUTOMÁTICA · CLIENTE FINAL</span><div style={{border:'1px solid #ddd',borderRadius:18,overflow:'hidden',background:'white',color:'#222',marginTop:12}}>{(previewUrl||draft.image_url)?<img src={previewUrl||draft.image_url} alt="Foto selecionada" style={{width:'100%',height:170,objectFit:'cover'}}/>:<div style={{height:150,background:'#f0f1f3',display:'grid',placeItems:'center'}}>Foto do produto</div>}<div style={{padding:14}}><small>{draft.category||'Categoria'}</small><h3>{draft.name||'Nome do produto'}</h3><p>{draft.description||'Descrição do produto'}</p><h3>{brl(draft.price)}</h3>{groups.map((g,i)=><div key={i} style={{borderTop:'1px solid #eee',paddingTop:10,marginTop:10}}><b>{g.name}</b><small style={{display:'block'}}>Escolha {g.min} a {g.max} · {g.min>0?'Obrigatório':'Opcional'}</small>{g.options.filter(o=>o.available).map((o,j)=><p key={j} style={{margin:'7px 0'}}>◯ {o.name} · {brl(o.price)}</p>)}</div>)}<button type="button" disabled style={{width:'100%',marginTop:12}}>Adicionar ao pedido</button></div></div><p className="hint">Prévia ilustrativa em tempo real, sem publicação automática.</p></aside>
+ <aside className="panel" style={{position:'sticky',top:0}}><span className="eyebrow">PRÉVIA AUTOMÁTICA · CLIENTE FINAL</span><div style={{border:'1px solid #ddd',borderRadius:18,overflow:'hidden',background:'white',color:'#222',marginTop:12}}>{(previewUrl||draft.image_url)?<img src={previewUrl||draft.image_url} alt="Foto selecionada" style={{width:'100%',height:230,objectFit:'contain',background:'#faf4fa'}}/>:<div style={{height:150,background:'#f0f1f3',display:'grid',placeItems:'center'}}>Foto do produto</div>}<div style={{padding:14}}><small>{draft.category||'Categoria'}</small><h3>{draft.name||'Nome do produto'}</h3><p>{draft.description||'Descrição do produto'}</p><h3>{brl(draft.price)}</h3>{groups.map((g,i)=><div key={i} style={{borderTop:'1px solid #eee',paddingTop:10,marginTop:10}}><b>{g.name}</b><small style={{display:'block'}}>Escolha {g.min} a {g.max} · {g.min>0?'Obrigatório':'Opcional'}</small>{g.options.filter(o=>o.available).map((o,j)=><p key={j} style={{margin:'7px 0'}}>◯ {o.name} · {brl(o.price)}</p>)}</div>)}<button type="button" disabled style={{width:'100%',marginTop:12}}>Adicionar ao pedido</button></div></div><p className="hint">Prévia ilustrativa em tempo real, sem publicação automática.</p></aside>
  </div></div></div>}
  </>}
  </section>;
