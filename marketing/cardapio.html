@@ -538,6 +538,10 @@ body[data-menu-template="pitacco-v2"] .pitacco-footer{color:#725779}
 }
 
 /* Tela inicial V2 alinhada à referência aprovada — produtos e saldos reais */
+body:not([data-menu-template="pitacco-v2"]) .v2-header-back,
+body:not([data-menu-template="pitacco-v2"]) .v2-header-actions,
+body:not([data-menu-template="pitacco-v2"]) .v2-hero-info,
+body:not([data-menu-template="pitacco-v2"]) .v2-hero-visual{display:none!important}
 body[data-menu-template="pitacco-v2"][data-v2-page=inicio] #v2StoreNav{display:none!important}
 body[data-menu-template="pitacco-v2"] .hero{min-height:260px;padding:23px 0 64px;background:#4b0758;border:0;overflow:hidden}
 body[data-menu-template="pitacco-v2"] .hero::after{background:linear-gradient(95deg,#41054f 0%,#4d0a5fe8 68%,#520b5b9e 100%)}
