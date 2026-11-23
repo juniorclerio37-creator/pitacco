@@ -1039,7 +1039,14 @@ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[da
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage] #continueCheckout,
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage] #backToCart{display:none!important}
 body:not([data-menu-skin="principal"]) #v2FiadoPage,
-body:not([data-menu-skin="principal"]) [data-v2-nav="fiado"]{display:none!important}
+body:not([data-menu-skin="principal"]) [data-v2-nav="fiado"],
+body:not([data-menu-skin="principal"]) .v2-identity-art,
+body:not([data-menu-skin="principal"]) #v2PhoneFields>h3,
+body:not([data-menu-skin="principal"]) #v2PhoneFields>p,
+body:not([data-menu-skin="principal"]) #v2NameFields>h3,
+body:not([data-menu-skin="principal"]) #v2NameFields>p,
+body:not([data-menu-skin="principal"]) .v2-checkout-confirm>h3,
+body:not([data-menu-skin="principal"]) #v2OrderSummary{display:none!important}
 </style></head><body>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
@@ -1403,6 +1410,10 @@ function setMenuTemplate(shop){
  $('v2ClassicLoyalty').hidden=true;
  $('v2NameFields').hidden=!classic&&document.body.dataset.menuSkin==='principal';
  $('v2PhoneFields').hidden=false;
+ if(classic||document.body.dataset.menuSkin!=='principal'){
+  const customer=$('v2NameFields').parentElement;
+  customer.insertBefore($('v2NameFields'),$('v2PhoneFields'));
+ }
 }
 function v2SaveFavorite(id){
  if(v2Favorites.has(id))v2Favorites.delete(id);else v2Favorites.add(id);
@@ -1908,10 +1919,10 @@ function renderCart(){
  $('cartValue').textContent=money(subtotal);
  $('v2DockCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0)+' itens · ';
  const n=cart.reduce((sum,item)=>sum+item.quantity,0);$('v2HeaderCount').textContent=String(n);$('v2HeaderCount').hidden=n===0;
- $('continueCheckout').disabled=Boolean(cartRecoveryId)||(!storeOpening?.open&&!pendingRequest)||!cart.length||(document.body.dataset.menuTemplate!=='pitacco-v2'&&(!$('fulfillment').value||!$('payment').value));
+ $('continueCheckout').disabled=Boolean(cartRecoveryId)||(!storeOpening?.open&&!pendingRequest)||!cart.length||(!v2Only()&&(!$('fulfillment').value||!$('payment').value));
  $('cart').inert=Boolean(cartRecoveryId)||Boolean(pendingRequest);
  $('send').disabled=Boolean(cartRecoveryId)||(!storeOpening?.open&&!pendingRequest)||submitting||!cart.length||!$('fulfillment').value||!$('payment').value||
-   ($('fulfillment').value==='delivery'&&(document.body.dataset.menuTemplate==='pitacco-v2'?routeMode&&!quoteValid:(!routeMode||!quoteValid)));
+   ($('fulfillment').value==='delivery'&&(v2Only()?routeMode&&!quoteValid:(!routeMode||!quoteValid)));
  }finally{
   persistCartDraft();
   renderingCart=false;
@@ -2394,7 +2405,7 @@ $('checkout').onsubmit=async event=>{
    p_items:cart.map(({product_id,quantity,options})=>({product_id,quantity,options:[...options]})),
    p_fulfillment:fulfillment,
    p_payment:payment,
-   p_notes:$('notes').value+(payment==='dinheiro'&&$('v2CashChange').value.trim()&&document.body.dataset.menuTemplate==='pitacco-v2'?'\nTroco para: R$ '+$('v2CashChange').value.trim():'')
+   p_notes:$('notes').value+(payment==='dinheiro'&&$('v2CashChange').value.trim()&&v2Only()?'\nTroco para: R$ '+$('v2CashChange').value.trim():'')
   };
   // O telefone identifica o cliente; a autorização do pedido é feita pela loja.
   if(loyaltyProgram||loyaltyPhone||$('loyaltyCoupon').value.trim()||$('loyaltyReward').value){
@@ -2458,7 +2469,7 @@ $('checkout').onsubmit=async event=>{
   $('cartTitle').textContent='Pedido confirmado';$('cartAction').textContent='Ver pedido';
   $('success').hidden=false;
   $('success').replaceChildren(
-   el('h2',document.body.dataset.menuTemplate==='pitacco-v2'?'✓ Pedido confirmado!':'Pedido recebido!'),
+   el('h2',v2Only()?'✓ Pedido confirmado!':'Pedido recebido!'),
    el('p','Número do pedido: '+data.order_id),
    el('p','Total confirmado: '+money(data.total)),
    el('p',pendingRequest.p_payment==='fiado'
@@ -2469,7 +2480,7 @@ $('checkout').onsubmit=async event=>{
   );
   if(pendingRequest.p_scheduled_for)$('success').append(el('p','Agendado para '+scheduleFormat.format(new Date(pendingRequest.p_scheduled_for))+'.'));
   if(data.payment_instructions)$('success').append(el('p','Instruções de pagamento: '+data.payment_instructions));
-  if(document.body.dataset.menuTemplate==='pitacco-v2'){
+  if(v2Only()){
    const banner=el('div',undefined,'v2-review-group');
    banner.append(el('h4','✓ Pedido realizado com sucesso'),el('p','Seu pedido foi recebido e poderá ser acompanhado em tempo real.'));
    $('success').prepend(banner);
