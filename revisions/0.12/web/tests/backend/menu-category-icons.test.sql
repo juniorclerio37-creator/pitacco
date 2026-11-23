@@ -8,8 +8,10 @@ insert into public.stores(id,name) values
 insert into public.store_members values
  ('a2000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000001','gestor'),
  ('a2000000-0000-0000-0000-000000000002','a1000000-0000-0000-0000-000000000002','gestor');
-insert into public.public_menu_settings(store_id,slug,enabled,delivery_enabled,pickup_enabled,delivery_fee,payment_methods)
-values ('a2000000-0000-0000-0000-000000000001','icons-test-menu',true,false,true,0,array['dinheiro']::text[]);
+update public.public_menu_settings
+set slug='icons-test-menu',enabled=true,delivery_enabled=false,pickup_enabled=true,
+    delivery_fee=0,payment_methods=array['dinheiro']::text[]
+where store_id='a2000000-0000-0000-0000-000000000001';
 insert into public.products(id,store_id,name,price,cost,menu_active,category) values
  ('a3000000-0000-0000-0000-000000000001','a2000000-0000-0000-0000-000000000001','Combo marmita e bebida',29.9,10,true,'Combos'),
  ('a3000000-0000-0000-0000-000000000002','a2000000-0000-0000-0000-000000000001','Pizza fatia',12,4,true,'Pizzas');
