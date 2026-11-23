@@ -60,6 +60,7 @@ try {
       font:'sistema',photo_size:'medio',show_descriptions:true,slogan:'Cardápio digital',instagram:'',
       logo_path:'',cover_path:'',banners:[]};
     let studioPublished=null,studioDraftVersion=0,studioPublishedVersion=0,studioHistory=[];
+    let studioNetworkFailOnce=true;
     const evidence=[],food99Evidence=[];
     const ingredients = [];
     const movements = [];
@@ -219,6 +220,7 @@ try {
           history:studioHistory,published_at:studioPublishedVersion?new Date().toISOString():null}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_storefront_save_draft'){
+        if(studioNetworkFailOnce){studioNetworkFailOnce=false;return route.abort('failed');}
         const input=route.request().postDataJSON();
         assert.equal(input.p_store,store.id);
         assert.equal(input.p_expected_version,studioDraftVersion);
@@ -861,7 +863,14 @@ try {
       await studio.getByLabel('Slogan').fill('O melhor da cidade');
       await studio.getByRole('button',{name:'Computador'}).click();
       await studio.getByRole('button',{name:'Produto',exact:true}).click();
-      await studio.getByText('O melhor da cidade',{exact:true}).waitFor();
+      const liveFrame=studio.locator('iframe[title="Prévia fiel do cardápio digital"]');
+      await liveFrame.waitFor({state:'attached'});
+      assert.match(await liveFrame.getAttribute('src'),/\/cardapio\/\?loja=loja-teste&pitacco_studio_preview=/);
+      assert.equal(await studio.getByLabel('Slogan').inputValue(),'O melhor da cidade');
+      assert.equal(await studio.locator('.design-live-menu').count(),0,'A prévia genérica foi removida');
+      await studio.getByRole('button',{name:'Salvar rascunho'}).click();
+      await studio.getByRole('alert').filter({hasText:'Falha de conexão ao salvar as alterações'}).waitFor();
+      assert.equal(await studio.getByLabel('Slogan').inputValue(),'O melhor da cidade','Falha de rede não perde alterações do lojista');
       await studio.getByRole('button',{name:'Salvar rascunho'}).click();
       await studio.getByText('Rascunho salvo.',{exact:false}).waitFor();
       assert.equal(studioPublished,null,'Editing a draft must never change the public design');

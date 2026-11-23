@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {uploadStoreImage,mediaUrl} from './StoreProfile.jsx';
 import './store-design-studio.css';
+import StorefrontLivePreview from './StorefrontLivePreview.jsx';
 
 const templates=[
  {id:'pitacco-v2',name:'Principal',description:'Roxo e laranja, fotos em grade e destaque para benefícios.',theme:'colorido',primary:'#ff7a08',secondary:'#6f4b80',background:'#faf7fd',paper:'#ffffff',foreground:'#261033',hero:'#4b075e',highlight:'#f4e5fb',layout:'grade',font:'sistema',radius:20},
@@ -26,6 +27,32 @@ function contrast(hex){
  return channels.reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);
 }
 const isHex=value=>/^#[0-9a-fA-F]{6}$/.test(value||'');
+const isNetworkError=e=>/failed to fetch|fetch failed|networkerror|load failed|network request failed/i.test(String(e?.message||e||''));
+function studioError(e,action){
+ if(isNetworkError(e)||navigator.onLine===false)
+  return 'Falha de conexão ao '+action+'. Suas alterações continuam nesta tela, sem publicação. Confira sua internet e tente novamente.';
+ const detail=String(e?.message||e||'');
+ if(/jwt|token|sess[aã]o|401|403|unauthorized/i.test(detail))
+  return 'Sua sessão não está autorizada a '+action+'. Entre novamente no painel para continuar.';
+ if(/outro dispositivo|alterado|vers[aã]o/i.test(detail))
+  return 'O estúdio foi alterado em outra aba ou dispositivo. Recarregue os dados antes de salvar novamente.';
+ return detail||'Não foi possível '+action+'.';
+}
+async function loadStudioState(client,storeId){
+ for(let attempt=0;attempt<2;attempt++){
+  try{
+   const {data,error}=await client.rpc('pitacco_storefront_studio_state',{p_store:storeId});
+   if(error)throw error;
+   return data;
+  }catch(e){if(attempt||!isNetworkError(e))throw e;await new Promise(resolve=>setTimeout(resolve,600));}
+ }
+}
+function equalDesign(a,b){
+ const normalize=value=>Array.isArray(value)?value.map(normalize)
+  :value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(k=>[k,normalize(value[k])])):value;
+ return JSON.stringify(normalize(a))===JSON.stringify(normalize(b));
+}
+
 function BannerImage({url,...props}){return url?<img src={url} alt="" {...props}/>:null;}
 
 export default function StoreDesignStudio({client,store,manager,products=[]}){
@@ -34,6 +61,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
  const [mode,setMode]=useState('editar'),[viewport,setViewport]=useState('celular'),[previewStep,setPreviewStep]=useState('inicial');
  const [files,setFiles]=useState({}),[fileUrls,setFileUrls]=useState({});
  const [working,setWorking]=useState(false),[loading,setLoading]=useState(true),[notice,setNotice]=useState(''),[error,setError]=useState('');
+ const [loadAttempt,setLoadAttempt]=useState(0);
  const [catalog,setCatalog]=useState(products.slice(0,8));
  const dirty=design&&saved?JSON.stringify(design)!==JSON.stringify(saved)||Object.keys(files).length>0:false;
  const photo=path=>path?mediaUrl(client,path):'';
@@ -44,19 +72,18 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
  useEffect(()=>{
   let alive=true;
   setLoading(true);setError('');setNotice('');
-  client.rpc('pitacco_storefront_studio_state',{p_store:store.id}).then(({data,error})=>{
-   if(error)throw error;
+  loadStudioState(client,store.id).then(data=>{
    if(!alive)return;
    const next={...defaultDesign,...data.draft,banners:data.draft?.banners||[]};
    setSaved(next);setDesign(structuredClone(next));setVersion(data.draft_version);
    setPublishedVersion(data.published_version);setHistory(data.history||[]);
    setPublishedAt(data.published_at);
-  }).catch(e=>{if(alive)setError(e.message||'Não foi possível carregar o estúdio.')})
+  }).catch(e=>{if(alive)setError(studioError(e,'carregar o estúdio'))})
    .finally(()=>{if(alive)setLoading(false)});
   client.from('products').select('id,name,price,category,description,image_url').eq('store_id',store.id)
    .eq('menu_active',true).limit(8).then(({data})=>{if(alive&&data)setCatalog(data)}).catch(()=>{});
   return()=>{alive=false};
- },[client,store.id]);
+ },[client,store.id,loadAttempt]);
  useEffect(()=>()=>Object.values(fileUrls).forEach(url=>URL.revokeObjectURL(url)),[fileUrls]);
  const update=(key,value)=>setDesign(d=>({...d,[key]:value}));
  const setBanner=(index,key,value)=>setDesign(d=>({...d,banners:d.banners.map((b,i)=>i===index?{...b,[key]:value}:b)}));
@@ -91,10 +118,12 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
  async function saveDraft(){
   if(!manager||!design) return false;
   setWorking(true);setError('');setNotice('');
+  let phase='salvar as alterações',next;
   try{
-   const next=structuredClone(design);
+   next=structuredClone(design);
    validate(next);
    for(const [key,file] of Object.entries(files)){
+    phase='enviar imagem para o armazenamento da loja';
     const path=await uploadStoreImage(client,store.id,file,'stores');
     if(key==='logo')next.logo_path=path;
     else if(key==='cover')next.cover_path=path;
@@ -103,6 +132,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
      if(next.banners[index])next.banners[index].image_path=path;
     }
    }
+   phase='salvar as alterações';
    const {data,error}=await client.rpc('pitacco_storefront_save_draft',{p_store:store.id,p_design:next,p_expected_version:version});
    if(error)throw error;
    if(!data?.saved)throw Error('O servidor não confirmou o rascunho.');
@@ -110,8 +140,20 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
    setFiles({});setFileUrls({});
    setNotice('Rascunho salvo. O cardápio público ainda não foi alterado.');
    return true;
-  }catch(e){setError(e.message||'Não foi possível salvar o rascunho.');return false}
-  finally{setWorking(false)}
+  }catch(e){
+   if(next&&phase==='salvar as alterações'&&isNetworkError(e)){
+    try{
+     const state=await loadStudioState(client,store.id);
+     if(state.draft_version>version&&equalDesign(state.draft,next)){
+      setSaved(next);setDesign(structuredClone(next));setVersion(state.draft_version);
+      setFiles({});setFileUrls({});
+      setNotice('Rascunho salvo e confirmado após a reconexão.');
+      return true;
+     }
+    }catch{}
+   }
+   setError(studioError(e,phase));return false;
+  }finally{setWorking(false)}
  }
  async function publish(){
   if(!manager||!design)return;
@@ -126,8 +168,18 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
    setPublishedVersion(data.published_version);setPublishedAt(new Date().toISOString());
    setHistory(items=>[{id:null,version:data.published_version,created_at:new Date().toISOString()},...items].slice(0,20));
    setNotice('Aparência publicada! O cardápio poderá levar alguns instantes para atualizar no navegador do cliente.');
-  }catch(e){setError(e.message||'Não foi possível publicar.');}
-  finally{setWorking(false)}
+  }catch(e){
+   if(isNetworkError(e)){
+    try{
+     const state=await loadStudioState(client,store.id);
+     if(state.published_version>publishedVersion&&equalDesign(state.published,design)){
+      setPublishedVersion(state.published_version);setPublishedAt(state.published_at);setHistory(state.history||[]);
+      setNotice('A publicação foi confirmada após a reconexão.');return;
+     }
+    }catch{}
+   }
+   setError(studioError(e,'publicar a aparência'));
+  }finally{setWorking(false)}
  }
  async function restore(revision){
   if(dirty){setError('Há alterações não salvas. Salve ou descarte antes de restaurar.');return}
@@ -143,67 +195,11 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
    const next={...defaultDesign,...state.data.draft};
    setDesign(structuredClone(next));setSaved(next);setVersion(state.data.draft_version);
    setMode('editar');setNotice('Versão '+revision+' restaurada como rascunho. Revise e publique quando desejar.');
-  }catch(e){setError(e.message||'Não foi possível restaurar esta versão.')}
+  }catch(e){setError(studioError(e,'restaurar a versão'))}
   finally{setWorking(false)}
  }
- const activeBanners=useMemo(()=>design?.banners?.filter(b=>{
-  const now=Date.now();return (!b.starts_at||new Date(b.starts_at).getTime()<=now)
-   &&(!b.ends_at||new Date(b.ends_at).getTime()>=now);
- })||[],[design?.banners]);
- const display=design&&<div className={'design-live-menu design-layout-'+design.layout+' design-template-'+design.template}
-   style={{...moneyColors,'--studio-primary':design.primary,'--studio-secondary':design.secondary,
-    '--studio-paper':design.paper,'--studio-highlight':design.highlight,
-    '--studio-radius':design.radius+'px','--studio-on-brand':onBrand}}>
-   <div className="design-live-hero" style={{background:design.hero,color:'#fff'}}>
-    {imageFor('cover',design.cover_path)&&<BannerImage url={imageFor('cover',design.cover_path)} className="design-live-cover"/>}
-    <div className="design-live-brand">{imageFor('logo',design.logo_path||store.logo_path)
-      ?<BannerImage url={imageFor('logo',design.logo_path||store.logo_path)} className="design-live-logo"/>
-      :<span className="design-live-initial">{store.name?.slice(0,1)}</span>}
-     <div><strong>{store.name}</strong><small>{design.slogan||'Cardápio digital'}</small></div>
-    </div>
-   </div>
-   {activeBanners.length>0&&<div className="design-live-banners">
-    {activeBanners.slice(0,2).map((b,i)=><div key={i} className="design-live-promo" style={{background:design.highlight}}>
-     {imageFor('banner-'+design.banners.indexOf(b),b.image_path)&&
-      <BannerImage url={imageFor('banner-'+design.banners.indexOf(b),b.image_path)} />}
-     <div><strong>{b.title}</strong><small>{b.subtitle}</small></div>
-    </div>)}
-   </div>}
-   <div className="design-live-body">
-    {previewStep==='inicial'&&<>
-     <div className="design-live-toolbar"><strong>Nosso cardápio</strong><span>Buscar produtos</span></div>
-     <div className="design-live-products">
-      {catalog.slice(0,4).map(item=><div className="design-live-product" key={item.id}>
-       <div className="design-live-copy"><strong>{item.name}</strong>
-        {design.show_descriptions&&<small>{item.description||item.category||'Produto especial'}</small>}
-        <b>{cash(item.price)}</b></div>
-       <div className={'design-live-photo photo-'+design.photo_size}>{item.image_url
-        ?<img src={item.image_url} alt=""/>:<span>🍽️</span>}</div>
-      </div>)}
-      {!catalog.length&&<div className="design-live-product"><div><strong>Seu primeiro produto</strong><small>Cadastre itens no Meu Cardápio para visualizar aqui.</small></div><b>—</b></div>}
-     </div>
-    </>}
-    {previewStep==='produto'&&<div className="design-live-detail">
-      <h3>{catalog[0]?.name||'Seu produto'}</h3>
-      <p>{catalog[0]?.description||'Descrição e complementos do produto aparecerão aqui.'}</p>
-      <strong>{catalog[0]?cash(catalog[0].price):'R$ 0,00'}</strong>
-      <label>Complementos e opções</label><div className="design-live-skeleton">Escolha os complementos disponíveis</div>
-      <button type="button" disabled>Adicionar ao pedido</button>
-    </div>}
-    {previewStep==='checkout'&&<div className="design-live-detail">
-      <h3>Finalizar pedido</h3>
-      <label>Seu nome</label><div className="design-live-skeleton">Nome do cliente</div>
-      <label>Entrega ou retirada</label><div className="design-live-skeleton">Endereço e taxa de entrega</div>
-      <label>Pagamento</label><div className="design-live-skeleton">Selecione a forma de pagamento</div>
-      <button type="button" disabled>Confirmar pedido</button>
-      <small>Prévia visual; nenhuma compra será realizada.</small>
-    </div>}
-   </div>
-   {design.instagram&&<div className="design-live-footer">Instagram: {design.instagram}</div>}
-   <div className="design-live-credit">Impulsionado por Pitacco</div>
-  </div>;
  if(loading)return <div className="panel" role="status">Carregando Estúdio de Cardápio…</div>;
- if(!design)return <section className="panel"><h3>Estúdio de Cardápio</h3><p role="alert">{error||'Não foi possível carregar.'}</p><button onClick={()=>window.location.reload()}>Tentar novamente</button></section>;
+ if(!design)return <section className="panel"><h3>Estúdio de Cardápio</h3><p role="alert">{error||'Não foi possível carregar.'}</p><button type="button" onClick={()=>setLoadAttempt(n=>n+1)}>Tentar novamente</button></section>;
  return <section className="design-studio" aria-label="Estúdio de Cardápio Pitacco">
   <div className="design-studio-heading"><div><span className="eyebrow">ADMINISTRAR LOJA · APARÊNCIA</span>
    <h3>Estúdio de Cardápio</h3><p>Personalize a identidade da sua loja. As alterações só chegam aos clientes depois de publicadas.</p></div>
@@ -277,7 +273,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
      </section>
     </>:<>
      <section className="design-control-card"><h4>Conferir e publicar</h4>
-      <p>Veja a página inicial, o produto e uma simulação visual do checkout antes de publicar. Nenhum pagamento ou pedido é criado nesta prévia.</p>
+      <p>Confira a página inicial, o produto e o checkout exatamente com os componentes do cardápio público. O rascunho aparece apenas nesta prévia.</p>
       <p>{dirty?'Existem alterações não salvas. Volte à aparência e salve o rascunho.':'Rascunho salvo e pronto para publicação.'}</p>
       <button type="button" disabled={!manager||working||dirty} onClick={publish}>Publicar alterações para os clientes</button>
       <p className="design-tip">O cardápio e o checkout continuam usando as regras de preço, complementos, entrega e pagamento já existentes.</p>
@@ -303,8 +299,10 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
     </div>
     <div className="design-preview-steps">{[['inicial','Início'],['produto','Produto'],['checkout','Checkout']].map(([key,label])=>
      <button type="button" key={key} className={previewStep===key?'active':''} onClick={()=>setPreviewStep(key)}>{label}</button>)}</div>
-    <div className={'design-preview-device '+(viewport==='celular'?'mobile':'desktop')}>{display}</div>
-    <small>Prévia ilustrativa com produtos cadastrados. Para conferir todos os detalhes, use o link público após a publicação.</small>
+    <div className={'design-preview-device '+(viewport==='celular'?'mobile':'desktop')}>
+     <StorefrontLivePreview client={client} store={store} design={design} step={previewStep} viewport={viewport} files={files}/>
+    </div>
+    <small>Visualização real do cardápio, com o rascunho aplicado temporariamente. Nenhum pedido pode ser enviado pela prévia.</small>
    </aside>
   </div>
  </section>;
