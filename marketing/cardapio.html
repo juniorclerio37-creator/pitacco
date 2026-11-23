@@ -1111,7 +1111,23 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .hero:has(> #sto
   object-position:center 50%
  }
 }
+/* Nunca apresentar blocos intermediários antes de estabilizar o carregamento inicial. */
+.menu-startup{position:fixed;inset:0;z-index:50;background:var(--surface);display:grid;place-items:center;padding:24px;color:var(--ink)}
+.menu-startup__content{width:min(420px,100%);display:grid;gap:18px;text-align:center;justify-items:center}
+.menu-startup__indicator{width:42px;height:42px;border:4px solid #e7d9eb;border-top-color:#8e169e;border-radius:50%;animation:menu-startup-spin .8s linear infinite}
+.menu-startup__content strong{font-size:1.15rem;letter-spacing:-.02em}
+.menu-startup__content p{margin:0;color:var(--muted);font-size:.88rem}
+.menu-startup__skeleton{width:100%;height:118px;border-radius:20px;background:linear-gradient(115deg,#ede7ef,#f5f0f6,#ede7ef);background-size:200% 100%;animation:menu-startup-shimmer 1.7s ease-in-out infinite}
+@keyframes menu-startup-spin{to{transform:rotate(360deg)}}
+@keyframes menu-startup-shimmer{to{background-position:-200% 0}}
+@media(prefers-reduced-motion:reduce){.menu-startup__indicator,.menu-startup__skeleton{animation:none}}
 </style></head><body>
+<section id="menuStartup" class="menu-startup" role="status" aria-label="Carregando o cardápio">
+ <div class="menu-startup__content"><span class="menu-startup__indicator" aria-hidden="true"></span>
+  <strong>Preparando seu cardápio</strong><p>Organizando os produtos e benefícios da loja…</p>
+  <span class="menu-startup__skeleton" aria-hidden="true"></span>
+ </div>
+</section>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
  <button type="button" id="v2HeaderBack" class="v2-header-control v2-header-back" aria-label="Voltar">‹</button>
@@ -1576,6 +1592,52 @@ function v2SaveFavorite(id){
 // Os dois primeiros são escolhidos por vendas confirmadas desta loja.
 // Na ausência de histórico, a vitrine usa itens reais do catálogo, sem inventar vendas.
 let v2TopSellerIds=[];
+const MENU_STARTUP_RPC_LIMIT_MS=3400;
+function menuStartupRpc(name,args){
+ // Cada RPC tem prazo finito. Resultados atrasados não modificam a página já montada.
+ return new Promise(resolve=>{
+  let settled=false;
+  const finish=result=>{if(settled)return;settled=true;clearTimeout(timer);resolve(result)};
+  const timer=setTimeout(()=>finish(null),MENU_STARTUP_RPC_LIMIT_MS);
+  Promise.resolve().then(()=>client.rpc(name,args)).then(finish,()=>finish(null));
+ });
+}
+async function prepareMenuStartup(){
+ const [loyalty,best,region]=await Promise.all([
+  menuStartupRpc('pitacco_loyalty_program',{p_slug:slug}),
+  menuStartupRpc('pitacco_public_top_sellers',{p_slug:slug}),
+  menuStartupRpc('pitacco_public_store_region',{p_slug:slug})
+ ]);
+ return {loyalty,best,region};
+}
+function applyMenuStartupData(prepared){
+ const {loyalty,best,region}=prepared;
+ v2TopSellerIds=!best?.error&&Array.isArray(best?.data)
+  ?best.data.filter(id=>typeof id==='string').slice(0,2):[];
+ if(!region?.error&&typeof region?.data==='string'&&region.data.trim()){
+  $('v2HeroLocation').textContent='📍 '+region.data.trim();
+  $('v2HeroLocation').hidden=false;
+ }
+ if(!loyalty?.error&&loyalty?.data?.rules){
+  loyaltyProgram=loyalty.data;
+  $('loyaltyBox').hidden=false;$('loyaltyOpen').hidden=false;
+  $('v2ClassicLoyalty').hidden=document.body.dataset.menuTemplate==='pitacco-v2';
+  renderLoyalty();void refreshLoyaltyWallet();
+ }
+}
+async function warmMenuStartupImages(){
+ const shop=menu.store;
+ const featured=v2TopSellerIds.map(id=>menu.products.find(p=>p.id===id)).filter(Boolean);
+ const urls=[shop.logo_url||studioAsset(shop.profile_logo_path),shop.banner_url,
+  ...[...featured,...menu.products].slice(0,2).map(p=>p.image_url)].filter(imageUrl);
+ await Promise.all([...new Set(urls)].map(url=>new Promise(resolve=>{
+  const image=new Image();let finished=false;
+  const complete=()=>{if(finished)return;finished=true;clearTimeout(timer);resolve()};
+  const timer=setTimeout(complete,1200);
+  image.onload=complete;image.onerror=complete;image.src=url;
+  if(image.complete)complete();
+ })));
+}
 async function v2LoadTopSellers(){
  if(!menu||document.body.dataset.menuTemplate!=='pitacco-v2')return;
  const results=await Promise.allSettled([
@@ -2563,7 +2625,7 @@ function initOptions(){
   $('payment').value='';
   v2RenderPaymentCards();
  }
- renderCategories();renderProducts();void loadLoyalty();v2Feature();void v2LoadTopSellers();
+ renderCategories();renderProducts();v2Feature();
  $('hero').hidden=false;$('layout').hidden=false;$('cartDock').hidden=false;
  v2Go('inicio',true);
  showStoreOpening(shop.opening_hours);
@@ -3159,11 +3221,33 @@ if(studioPreviewActive&&studioPreviewOrigin){
  });
 }
 
-if(!/^[a-z0-9][a-z0-9-]{2,59}$/.test(slug)){msg('Informe o endereço do cardápio: /nome-da-loja')}else{client.rpc('get_public_menu',{p_slug:slug}).then(({data,error})=>{if(error)throw error;menu=data;
- if(studioPreviewActive)cartStoragePaused=true;
- else restoreCartDraft();
- initOptions();
- if(studioPreviewActive){studioPreviewReady=true;studioPreviewReport('pitacco-studio-preview-ready');studioPreviewApply();}
- else if(cartRecoveryId)void checkPendingCart();
-}).catch(err=>{msg('Cardápio indisponível: '+err.message);studioPreviewReport('pitacco-studio-preview-error')})}
+async function startPublicMenu(){
+ try{
+  const {data,error}=await client.rpc('get_public_menu',{p_slug:slug});
+  if(error)throw error;
+  if(!data?.store||!Array.isArray(data.products))throw Error('Cardápio inválido ou indisponível.');
+  menu=data;
+  if(studioPreviewActive)cartStoragePaused=true;
+  else restoreCartDraft();
+  // Preparar Fideliza+, produtos em destaque e endereço regional antes da exibição.
+  const prepared=await prepareMenuStartup();
+  setMenuTemplate(menu.store);
+  applyMenuStartupData(prepared);
+  await warmMenuStartupImages();
+  initOptions();
+  if(studioPreviewActive){
+   studioPreviewReady=true;studioPreviewReport('pitacco-studio-preview-ready');studioPreviewApply();
+  }
+  $('menuStartup').hidden=true;
+  if(!studioPreviewActive&&cartRecoveryId)void checkPendingCart();
+ }catch(err){
+  $('menuStartup').hidden=true;
+  msg('Cardápio indisponível: '+(err?.message||String(err)));
+  studioPreviewReport('pitacco-studio-preview-error');
+ }
+}
+if(!/^[a-z0-9][a-z0-9-]{2,59}$/.test(slug)){
+ $('menuStartup').hidden=true;
+ msg('Informe o endereço do cardápio: /nome-da-loja');
+}else void startPublicMenu();
 </script></body></html>
