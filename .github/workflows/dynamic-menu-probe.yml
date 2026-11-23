@@ -6,6 +6,7 @@ on:
       - '.github/workflows/dynamic-menu-probe.yml'
       - 'scripts/probe_public_menu.mjs'
       - 'scripts/probe_public_store.py'
+      - 'scripts/probe_other_menu.mjs'
 jobs:
   inspect:
     runs-on: ubuntu-24.04
@@ -23,3 +24,5 @@ jobs:
           (cd web && npx playwright install --with-deps chromium)
       - name: Observar respostas públicas do cardápio
         run: node scripts/probe_public_menu.mjs
+      - name: Comparar loja com produtos publicamente visíveis
+        run: node scripts/probe_other_menu.mjs
