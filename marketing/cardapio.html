@@ -884,36 +884,115 @@ function v2SaveFavorite(id){
  try{localStorage.setItem(v2FavoritesKey,JSON.stringify([...v2Favorites].slice(-100)))}catch{}
  renderProducts();
 }
+// Os dois primeiros são escolhidos por vendas confirmadas desta loja.
+// Na ausência de histórico, a vitrine usa itens reais do catálogo, sem inventar vendas.
+let v2TopSellerIds=[];
+async function v2LoadTopSellers(){
+ if(!menu||document.body.dataset.menuTemplate!=='pitacco-v2')return;
+ try{
+  const {data,error}=await client.rpc('pitacco_public_top_sellers',{p_slug:slug});
+  if(error)throw error;
+  if(Array.isArray(data))v2TopSellerIds=data.filter(id=>typeof id==='string').slice(0,2);
+ }catch{v2TopSellerIds=[]}
+ v2Feature();
+}
+function v2CategoryIcon(name){
+ const text=normal(name);
+ if(/acai|aça/.test(text))return '🥣';
+ if(/creme|sorvete/.test(text))return '🍨';
+ if(/combo|promoc/.test(text))return '🏷️';
+ if(/bebida|suco|refrigerante/.test(text))return '🥤';
+ if(/lanche|sanduiche/.test(text))return '🍔';
+ if(/sobremesa|doce/.test(text))return '🍮';
+ return '🍽️';
+}
+function v2RenderHomeCategories(){
+ const root=$('v2HomeCategories');root.replaceChildren();
+ const keys=[...new Set(menu.products.map(categoryOf))];
+ const create=(key,title,iconText)=>{
+  const b=button('', 'v2-category-tile');
+  b.append(el('span',iconText),el('strong',title));
+  b.setAttribute('aria-pressed',String(key===null));
+  b.onclick=()=>{
+   if(key===null){v2Go('inicio');$('v2TopProducts').scrollIntoView({behavior:'smooth',block:'start'});return;}
+   v2Go('cardapio');category=key;renderCategories();renderProducts();
+   $('layout').scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  root.append(b);
+ };
+ create(null,'Destaques','🥣');
+ for(const key of keys)create(key,key,v2CategoryIcon(key));
+}
+function v2RenderHomeLoyaltyProgress(){
+ if(document.body.dataset.menuTemplate!=='pitacco-v2')return;
+ const active=loyaltyProgram?.rules;
+ $('v2HomeLoyalty').hidden=!active;
+ if(!active)return;
+ const digits=loyaltyPhoneDigits($('phone').value),identified=/^[0-9]{10,11}$/.test(digits);
+ const w=identified?loyaltyWallet:null;
+ $('v2HomePoints').textContent=w?String(w.points||0)+' pts':'—';
+ const goal=Number(active.min_points_to_redeem)||0,points=Number(w?.points)||0;
+ const benefit=Number(active.points_reward_cents)||0;
+ const hasGoal=active.points_enabled&&goal>0&&benefit>0;
+ $('v2HomeProgressText').textContent=!identified?'Digite seu celular no pedido para consultar os pontos.':
+  !w?'Consultando pontos deste telefone…':
+  hasGoal?(points>=goal?'Você já pode resgatar '+money(benefit/100)+' de desconto!':
+  'Faltam '+Math.max(0,goal-points)+' pontos para resgatar '+money(benefit/100)+' de desconto!'):
+  'Acompanhe seus benefícios e ofertas desta loja.';
+ $('v2HomeProgressFill').style.width=hasGoal&&w?Math.min(100,Math.round(points/goal*100))+'%':'0%';
+ $('v2HomeProgressCount').textContent=hasGoal&&w?points+' / '+goal+' pts':'—';
+}
 function v2Feature(){
  if(document.body.dataset.menuTemplate!=='pitacco-v2'||!menu)return;
- const p=menu.products.find(x=>imageUrl(x.image_url))||menu.products[0];
- $('v2Feature').hidden=!p;
- if(p){
-  $('v2FeatureTitle').textContent=p.name;
-  $('v2FeaturePrice').textContent=money(p.price);
-  $('v2FeatureImage').hidden=!imageUrl(p.image_url);
-  if(imageUrl(p.image_url))$('v2FeatureImage').src=p.image_url;
-  $('v2Feature').onclick=()=>openProduct(p);
+ const products=menu.products,ranked=v2TopSellerIds.map(id=>products.find(p=>p.id===id)).filter(Boolean);
+ const selected=[...ranked,...products.filter(p=>!ranked.some(r=>r.id===p.id))].slice(0,2);
+ const root=$('v2TopProducts');root.replaceChildren();
+ for(const product of selected){
+  const card=el('article',undefined,'v2-top-product'),image=el('div',undefined,'v2-top-photo');
+  if(imageUrl(product.image_url)){
+   const img=el('img');img.alt='';img.loading='lazy';img.src=product.image_url;image.append(img);
+  }else image.append(el('span','🍧'));
+  const isRanked=v2TopSellerIds.includes(product.id),isCombo=/combo/i.test(product.category+' '+product.name);
+  const badge=el('span',isCombo?'Combo':isRanked?'Mais pedido':'Destaque','v2-top-badge');
+  badge.dataset.combo=String(isCombo);image.append(badge);
+  const fav=button(v2Favorites.has(product.id)?'♥':'♡','v2-top-heart');
+  fav.setAttribute('aria-pressed',String(v2Favorites.has(product.id)));
+  fav.setAttribute('aria-label',(v2Favorites.has(product.id)?'Remover ':'Salvar ')+product.name+' nos favoritos');
+  fav.onclick=()=>{v2SaveFavorite(product.id);v2Feature()};image.append(fav);
+  const info=el('div',undefined,'v2-top-product-details');
+  const name=button(product.name,'v2-top-name');name.style.cssText='text-align:left;border:0;padding:0;background:none;cursor:pointer';
+  name.onclick=()=>openProduct(product);info.append(name);
+  const description=el('p',product.description||'Personalize seu pedido do jeito que preferir.','v2-top-description');
+  info.append(description);
+  const bottom=el('div',undefined,'v2-top-bottom');bottom.append(el('strong',money(product.price),'v2-top-price'));
+  const add=button('+','v2-top-add');add.setAttribute('aria-label','Personalizar '+product.name+' em destaque');
+  add.onclick=()=>openProduct(product);bottom.append(add);info.append(bottom);
+  card.append(image,info);root.append(card);
  }
- $('v2HomeLoyalty').hidden=!loyaltyProgram;
+ v2RenderHomeCategories();
+ v2RenderHomeLoyaltyProgress();
+ const heroProduct=selected.find(p=>imageUrl(p.image_url));
+ $('v2HeroImage').hidden=!heroProduct;
+ if(heroProduct)$('v2HeroImage').src=heroProduct.image_url;
 }
+
 function v2Go(page,initial=false){
  if(document.body.dataset.menuTemplate!=='pitacco-v2')return;
- v2Page=page;v2FavoritesOnly=page==='favoritos';
+ v2Page=page;document.body.dataset.v2Page=page;v2FavoritesOnly=page==='favoritos';
  $('v2Home').hidden=page!=='inicio';
  $('v2LoyaltyPage').hidden=page!=='fideliza';
  $('v2AboutPage').hidden=page!=='sobre';
  const listing=page!=='fideliza'&&page!=='sobre';
  $('layout').hidden=!listing;
- $('pitaccoPromos').hidden=!['inicio','promocoes'].includes(page)||$('pitaccoPromos').childElementCount===0;
+ $('pitaccoPromos').hidden=page!=='promocoes'||$('pitaccoPromos').childElementCount===0;
  for(const b of $('v2StoreNav').querySelectorAll('[data-v2-nav]')){
   if(b.dataset.v2Nav===page)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');
  }
  if(listing&&menu){
   category=null;$('search').value='';
-  const names={inicio:'Cardápio',cardapio:'Escolha seu favorito',promocoes:'Ofertas e destaques',favoritos:'Meus favoritos'};
+  const names={inicio:'Todo o cardápio',cardapio:'Escolha seu favorito',promocoes:'Ofertas e destaques',favoritos:'Meus favoritos'};
   $('v2CatalogTitle').textContent=names[page]||'Cardápio';
-  renderCategories();renderProducts();
+  renderCategories();renderProducts();if(page==='inicio')v2Feature();
  }
  if(page==='fideliza'){
   $('v2LoyaltyPhone').value=$('phone').value;
@@ -934,6 +1013,13 @@ for(const b of $('v2StoreNav').querySelectorAll('[data-v2-nav]')){
 }
 $('v2HomeLoyaltyGo').onclick=()=>v2Go('fideliza');
 $('v2FavoritesNav').onclick=()=>v2Go('favoritos');
+
+$('v2HeaderBack').onclick=()=>{if(v2Page!=='inicio')v2Go('inicio');else if(history.length>1)history.back();};
+$('v2HeaderSearch').onclick=()=>{v2Go('cardapio');$('search').focus();$('layout').scrollIntoView({behavior:'smooth'});};
+$('v2HeaderAbout').onclick=()=>v2Go('sobre');
+$('v2HeaderCart').onclick=()=>$('openCart').click();
+$('v2AllProductsButton').onclick=()=>{$('layout').scrollIntoView({behavior:'smooth',block:'start'});};
+
 $('v2ClassicLoyalty').onclick=()=>{if(!$('loyaltyOpen').hidden)$('loyaltyOpen').click()};
 $('v2LoyaltyPhone').addEventListener('input',e=>{
  $('phone').value=e.target.value;
@@ -954,6 +1040,7 @@ function v2BenefitPurchase(type,value){
 function v2RenderWallet(){
  if(document.body.dataset.menuTemplate!=='pitacco-v2')return;
  const wallet=loyaltyWallet,rule=wallet?.rules||loyaltyProgram?.rules||{};
+ v2RenderHomeLoyaltyProgress();
  $('v2PointsValue').textContent=String(wallet?.points||0);
  $('v2CashbackValue').textContent=money((wallet?.cashback_cents||0)/100);
  const offers=[...(loyaltyProgram?.campaigns||[]),...(wallet?.offers||[])];
@@ -1284,6 +1371,8 @@ function renderCart(){
  scheduleFiadoStatusCheck(subtotal+fee-benefit);
  $('cartCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0);
  $('cartValue').textContent=money(subtotal);
+ $('v2DockCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0)+' itens · ';
+ const n=cart.reduce((sum,item)=>sum+item.quantity,0);$('v2HeaderCount').textContent=String(n);$('v2HeaderCount').hidden=n===0;
  $('continueCheckout').disabled=(!storeOpening?.open&&!pendingRequest)||!cart.length||!$('fulfillment').value||!$('payment').value;
  $('send').disabled=(!storeOpening?.open&&!pendingRequest)||submitting||!cart.length||!$('fulfillment').value||!$('payment').value||
    ($('fulfillment').value==='delivery'&&(!routeMode||!quoteValid));
@@ -1384,6 +1473,8 @@ function showStoreOpening(opening){
  status.classList.toggle('is-open',isOpen);
  document.body.classList.toggle('store-closed',!isOpen);
  status.replaceChildren();
+ $('v2OpenPill').dataset.open=String(isOpen);
+ $('v2OpenPill').textContent=isOpen?'Aberto':'Fechado';
  const title=el('strong',isOpen?'● Loja aberta — pedidos disponíveis':
   storeOpening.reason==='paused'?'● Pedidos temporariamente pausados':
   '● Loja fechada — pedidos indisponíveis');
@@ -1603,6 +1694,7 @@ function initOptions(){
  applyStudioDesign(shop);
  $('storeName').textContent=shop.name;
  $('v2AboutTitle').textContent=shop.name;
+ $('v2DeliveryText').textContent=shop.delivery_enabled?'· Entrega disponível':shop.pickup_enabled?'· Retirada disponível':'';
  $('v2FavoritesNav').hidden=document.body.dataset.menuTemplate!=='pitacco-v2';
  $('storeInitial').textContent=shop.name.trim().slice(0,1).toUpperCase();
  document.title='Cardápio | '+shop.name;
@@ -1640,7 +1732,7 @@ function initOptions(){
   renderCart();loadSchedule();
  };
  $('fulfillment').dispatchEvent(new Event('change'));
- renderCategories();renderProducts();void loadLoyalty();v2Feature();
+ renderCategories();renderProducts();void loadLoyalty();v2Feature();void v2LoadTopSellers();
  $('hero').hidden=false;$('layout').hidden=false;$('cartDock').hidden=false;
  v2Go('inicio',true);
  showStoreOpening(shop.opening_hours);
