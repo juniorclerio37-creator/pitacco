@@ -7,7 +7,7 @@ on:
       - 'scripts/probe_public_menu.mjs'
 jobs:
   inspect:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 7
     steps:
       - uses: actions/checkout@v4
