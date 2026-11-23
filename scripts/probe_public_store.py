@@ -50,6 +50,11 @@ try:
    endpoints=sorted(set(endpoints))
    selected=[x for x in endpoints if re.search('item|group|product|menu|cardapio|catalog|store',x,re.I)]
    if selected:print('JS_ENDPOINTS',url.split('/')[-1],selected[:150])
+   if url.split('/')[-1].startswith('46.'):
+    for needle in ['stores/item','stores/group','stores/complement/by-group','client/item','client/group','stores/by-slug']:
+     j=js.find('"'+needle+'"')
+     if j>=0:print('JS_METHOD_CONTEXT',needle,js[max(0,j-180):j+220])
+    print('JS_CLIENT_ENDPOINTS',[x for x in endpoints if x.startswith('client/')][:120])
    for needle in ['stores/by-slug','groups/','group-items','/items','menu-items','store-items','storeItem','/menu','getItems']:
     indices=[m.start() for m in re.finditer(re.escape(needle),js,re.I)]
     if indices:
