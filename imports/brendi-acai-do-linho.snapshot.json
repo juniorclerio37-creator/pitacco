@@ -19943,9 +19943,6 @@
   "featured": {
     "products": [
       {
-        "id": "ypqOtmsfXihk3AoVgBR2",
-        "slug": "acai-500ml",
-        "price": 2999,
         "active": true,
         "advertisingMetadata": {
           "analyzedBy": "regex",
@@ -19983,6 +19980,7 @@
         ],
         "description": "Nosso 'Açaí 500ml' é um clássico na categoria 'Açaí Tradicional'. Apresentado em um copo generoso, este açaí é uma delícia refrescante que certamente irá agradar o paladar. Seu sabor único e sua textura suave criam uma experiência culinária inesquecível. Perfeito para quem aprecia a autêntica culinária brasileira e busca por uma opção saudável e saborosa para qualquer hora do Dia. Desfrute do nosso 'Açaí 500ml', uma tradição em forma de prazer!",
         "fourthPicture": "",
+        "id": "ypqOtmsfXihk3AoVgBR2",
         "isRewardable": true,
         "mainCategory": "Açaí",
         "missing": false,
@@ -19990,19 +19988,18 @@
         "pdvCode": "ypqOtmsfXihk3AoVgBR2",
         "pdvCodeKey": "ypqOtmsfXihk3AoVgBR2",
         "picture": "public/stores/5hNj8SE17lR0pZncsYZ1/images/products/ypqOtmsfXihk3AoVgBR2.jpg",
+        "price": 2999,
         "requiredPoints": 1800,
         "schedule": {
           "enabled": false,
           "minTime": 0
         },
         "secondPicture": "",
+        "slug": "acai-500ml",
         "storiesPicture": "",
         "thirdPicture": ""
       },
       {
-        "id": "KFv8tND5KI7L79PmtXS3",
-        "slug": "acai-400ml",
-        "price": 2499,
         "active": true,
         "advertisingMetadata": {
           "analyzedBy": "regex",
@@ -20041,6 +20038,7 @@
         ],
         "description": "Delicioso e refrescante Açaí de 400ml da categoria 'Açaí Tradicional'. Este é um prato que exalta a vibração única da culinária brasileira, preparado com açaí autêntico e de alta qualidade. Desfrute de um copo de açaí intensamente saboroso e rico em nutrientes. Perfeito para um lanche saudável e energético a qualquer hora do Dia. Experimente e deixe-se envolver por esse sabor inconfundível e irresistível!",
         "fourthPicture": "",
+        "id": "KFv8tND5KI7L79PmtXS3",
         "isRewardable": true,
         "mainCategory": "Açaí",
         "missing": false,
@@ -20048,19 +20046,18 @@
         "pdvCode": "KFv8tND5KI7L79PmtXS3",
         "pdvCodeKey": "KFv8tND5KI7L79PmtXS3",
         "picture": "public/stores/5hNj8SE17lR0pZncsYZ1/images/products/KFv8tND5KI7L79PmtXS3.jpg",
+        "price": 2499,
         "requiredPoints": 1300,
         "schedule": {
           "enabled": false,
           "minTime": 0
         },
         "secondPicture": "",
+        "slug": "acai-400ml",
         "storiesPicture": "",
         "thirdPicture": ""
       },
       {
-        "id": "Rg7NkpxG1i2An2m113Sp",
-        "slug": "acai-770ml",
-        "price": 3499,
         "active": true,
         "advertisingMetadata": {
           "analyzedBy": "regex",
@@ -20098,6 +20095,7 @@
         ],
         "description": "Deliciando-se com o nosso Açaí Tradicional de 770ml, você será transportado direto para o coração da Amazônia. Este prato vibrante e refrescante, repleto de sabores autênticos, é feito com os mais frescos e suculentos grãos de açaí, cuidadosamente selecionados e preparados para oferecer uma experiência culinária excepcional. Cada colherada é um carinho para o seu paladar, uma combinação perfeita de sabor e saúde. Ideal para qualquer hora do Dia, é a escolha perfeita para quem busca uma alimentação equilibrada sem abrir mão do prazer gustativo. Experimente e sinta a verdadeira essência da natureza em cada mordida!",
         "fourthPicture": "",
+        "id": "Rg7NkpxG1i2An2m113Sp",
         "isRewardable": true,
         "mainCategory": "Açaí",
         "missing": false,
@@ -20105,19 +20103,18 @@
         "pdvCode": "Rg7NkpxG1i2An2m113Sp",
         "pdvCodeKey": "Rg7NkpxG1i2An2m113Sp",
         "picture": "public/stores/5hNj8SE17lR0pZncsYZ1/images/products/Rg7NkpxG1i2An2m113Sp.jpg",
+        "price": 3499,
         "requiredPoints": 2100,
         "schedule": {
           "enabled": false,
           "minTime": 0
         },
         "secondPicture": "",
+        "slug": "acai-770ml",
         "storiesPicture": "",
         "thirdPicture": ""
       },
       {
-        "id": "7Dyn1cVFYA6DisZXkPK0",
-        "slug": "maracuja-com-nutella",
-        "price": 0,
         "active": true,
         "advertisingMetadata": {
           "analyzedBy": "ai",
@@ -20154,18 +20151,21 @@
         ],
         "description": "Descubra a ousadia do nosso Açaí, uma das nossas excitantes novidades. Este prato é cuidadosamente coberto com uma refrescante e vibrante camada de maracujá, que contrasta maravilhosamente com o rico e indulgente sabor da Nutella. Além disso, é generosamente finalizado com um creme de maracujá suave e aveludado, que se mescla de forma incrível com o doce e avelãs da Nutella. Uma surpreendente combinação que promete aguçar seus sentidos e proporcionar uma experiência gastronômica inesquecível.",
         "fourthPicture": "",
+        "id": "7Dyn1cVFYA6DisZXkPK0",
         "isRewardable": true,
         "mainCategory": "Outros",
         "missing": false,
         "name": "Maracujá com Nutella",
         "pdvCode": "7Dyn1cVFYA6DisZXkPK0",
         "picture": "public/stores/5hNj8SE17lR0pZncsYZ1/images/products/7Dyn1cVFYA6DisZXkPK0.jpg",
+        "price": 0,
         "requiredPoints": 3500,
         "schedule": {
           "enabled": false,
           "minTime": 0
         },
         "secondPicture": "",
+        "slug": "maracuja-com-nutella",
         "storiesPicture": "",
         "thirdPicture": ""
       }
