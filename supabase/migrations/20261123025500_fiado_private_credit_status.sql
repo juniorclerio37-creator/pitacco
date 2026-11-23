@@ -28,7 +28,7 @@ begin
  end if;
  v_blocked:=
    account.credential_hash is null
-   or account.credential_locked_until>now()
+   or coalesce(account.credential_locked_until>now(),false)
    or (
      account.block_overdue and exists (
       select 1 from public.pitacco_fiado_charges d
