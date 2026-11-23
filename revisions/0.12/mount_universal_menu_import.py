@@ -16,4 +16,14 @@ replacement="""{tab==='Importar cardápio'&&active&&!nativeAvailable()&&!isDrive
  <UniversalMenuImporter key={selected} client={supabase} storeId={selected} onCompleted={loadDetails}/>}
  """
 s=s[:start]+replacement+s[end:]
+# Unificar acesso: uma única importação no Meu Cardápio e no botão do editor.
+submenu_old="'Meu Cardápio':[['Produtos','Editor de cardápio']]"
+submenu_new="'Meu Cardápio':[['Produtos','Editor de cardápio'],['Importar cardápio','Importar cardápio']]"
+assert s.count(submenu_old)==1, 'Submenu do catálogo não encontrado ou alterado'
+s=s.replace(submenu_old,submenu_new,1)
+editor_old="<MenuStudio client={supabase} storeId={selected} products={products} onRefresh={loadDetails}/>"
+editor_new="<MenuStudio client={supabase} storeId={selected} products={products} onRefresh={loadDetails} onImport={()=>setTab('Importar cardápio')}/>"
+assert s.count(editor_old)==1, 'Editor do cardápio não encontrado para ligação ao importador'
+s=s.replace(editor_old,editor_new,1)
+
 p.write_text(s,encoding='utf-8')

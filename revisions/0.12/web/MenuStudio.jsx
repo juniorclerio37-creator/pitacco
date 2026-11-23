@@ -5,7 +5,7 @@ import {CategoryIcon,CATEGORY_ICON_GROUPS,CATEGORY_ICON_KEYS,inferCategoryIcon} 
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const empty=()=>({name:'',description:'',category:'',price:'',cost:'',menu_active:true,image_url:''});
 const field={display:'grid',gap:5,marginBottom:13};
-export default function MenuStudio({client,storeId,products=[],onRefresh}){
+export default function MenuStudio({client,storeId,products=[],onRefresh,onImport}){
  const [draft,setDraft]=useState(empty),[editing,setEditing]=useState(null),[groups,setGroups]=useState([]),[photo,setPhoto]=useState(null),[previewUrl,setPreviewUrl]=useState(''),[filter,setFilter]=useState(''),[selectedCategory,setSelectedCategory]=useState('Todas'),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[section,setSection]=useState('Produtos'),[showEditor,setShowEditor]=useState(false);
  const [categoryIcons,setCategoryIcons]=useState({}),[configuringCategory,setConfiguringCategory]=useState(null),[iconBusy,setIconBusy]=useState(false);
  const categories=useMemo(()=>['Todas',...new Set(products.map(p=>p.category).filter(Boolean))],[products]);
@@ -57,7 +57,7 @@ export default function MenuStudio({client,storeId,products=[],onRefresh}){
  async function toggle(p){setBusy(true);const {error}=await client.from('products').update({menu_active:!p.menu_active}).eq('id',p.id).eq('store_id',storeId);setBusy(false);setNotice(error?.message||'Disponibilidade atualizada.');if(!error)onRefresh?.()}
 
  return <section className="menu-studio">
- <div className="page-intro"><div><span className="eyebrow">MEU CARDÁPIO</span><h3>Editor de cardápio</h3><p>Gerencie produtos e veja as alterações no cardápio do cliente enquanto edita.</p></div><button type="button" className="secondary" onClick={()=>setNotice('Importação direta do iFood aguardando conexão oficial autorizada para esta loja. Nenhum catálogo foi importado.')}>Importar do iFood</button></div>
+ <div className="page-intro"><div><span className="eyebrow">MEU CARDÁPIO</span><h3>Editor de cardápio</h3><p>Gerencie produtos e veja as alterações no cardápio do cliente enquanto edita.</p></div><button type="button" className="secondary" onClick={onImport}>Importar cardápio</button></div>
  <div className="quick-actions" style={{marginBottom:16}}>{['Produtos','Complementos','Banners','Estoque','Insumos'].map(t=><button type="button" key={t} className={section===t?'':'secondary'} onClick={()=>setSection(t)}>{t}</button>)}</div>
  {notice&&!showEditor&&<p className="notice" role="status">{notice}</p>}
  {section!=='Produtos'&&<div className="panel"><h3>{section}</h3><p>{section==='Complementos'?'Abra um produto para cadastrar e editar seus complementos.':'A gestão completa desta seção ainda depende do módulo de catálogo e de sua persistência.'}</p><button type="button" onClick={()=>setSection('Produtos')}>Ver produtos</button></div>}
