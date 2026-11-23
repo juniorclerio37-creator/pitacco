@@ -1062,6 +1062,25 @@ body:not([data-menu-skin="principal"]) #v2OrderSummary{display:none!important}
 #routeQuoteStatus[data-state="error"]{
  background:#fff0f0;border-color:#f2b2b6;color:#9c1f35
 }
+
+/* Per-category icons: shared visual tokens across all cardápio skins. */
+.pitacco-category-icon{display:inline-flex!important;align-items:center;justify-content:center;flex:none;line-height:1;width:1.15em;height:1.15em;vertical-align:middle}
+.pitacco-category-icon svg{display:block;width:1.08em;height:1.08em;overflow:visible}
+.pitacco-combo-icons{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;font-size:.80em;letter-spacing:-.09em}
+.pitacco-combo-icons>span{display:inline-flex;align-items:center;justify-content:center;width:1.04em;height:1.19em}
+.pitacco-combo-icons svg{font-size:.95em}
+.pitacco-fire-motion{transform-origin:32px 58px}
+.pitacco-flame-animated .pitacco-fire-motion{animation:pitacco-flame-dance 1.45s ease-in-out infinite}
+@keyframes pitacco-flame-dance{0%,100%{transform:rotate(-2deg) scale(.96,1)}30%{transform:rotate(3deg) scale(1,1.045)}66%{transform:rotate(-3deg) scale(.98,1.025)}}
+@media(prefers-reduced-motion:reduce){.pitacco-flame-animated .pitacco-fire-motion{animation:none!important}}
+#categories .chip{display:inline-flex;align-items:center;gap:6px}
+#categories .chip .pitacco-category-icon{font-size:1.25rem}
+.v2-category-tile>.pitacco-category-icon{font-size:1.95rem!important}
+body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .v2-category-tile>.pitacco-category-icon,
+body[data-menu-template="pitacco-v2"][data-menu-skin=editorial] .v2-category-tile>.pitacco-category-icon{display:inline-flex!important;font-size:1.17rem!important}
+body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] .v2-category-tile>.pitacco-category-icon{font-size:1.45rem!important}
+#v2HighlightsIcon{display:inline-flex;vertical-align:middle;font-size:1.25em}
+.v2-nav-icon .pitacco-category-icon{font-size:1em}
 </style></head><body>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
@@ -1099,7 +1118,7 @@ body:not([data-menu-skin="principal"]) #v2OrderSummary{display:none!important}
   </div></div>
  </div>
  <nav id="v2HomeCategories" class="v2-home-categories" aria-label="Categorias do cardápio"></nav>
- <div class="v2-top-products-title"><h2>🔥 Destaques da loja</h2><button type="button" id="v2AllProductsButton">Ver todos ›</button></div>
+ <div class="v2-top-products-title"><h2><span id="v2HighlightsIcon" aria-hidden="true">🔥</span> Destaques da loja</h2><button type="button" id="v2AllProductsButton">Ver todos ›</button></div>
  <div id="v2TopProducts" aria-label="Dois produtos em destaque"></div>
 </section>
 
@@ -1539,22 +1558,104 @@ async function v2LoadTopSellers(){
  }
  v2Feature();
 }
-function v2CategoryIcon(name){
+// All models use the same persisted category keys; no platform pizza emoji.
+const pitaccoCategoryIconKeys=new Set(["flame","star","discount","crown","trophy","tag","megaphone","acai","ice-cream-cone","ice-cream-cup","dessert","combo-burger","combo-pizza","combo-acai","combo-ice-cream","combo-meal","combo-mixed","pizza-slice","pizza-whole","pizza-sweet","meal-box","plate","meal","buffet","pf","healthy","homemade","burger","snack","sandwich","hot-dog","soda","juice","energy","beer","water","drink","fries","appetizer","rings","board","plus","cheese","sauce","spice","calendar","more","pizza"]);
+const pitaccoCategoryEmojis={
+ star:'⭐',discount:'💯',crown:'👑',trophy:'🏆',tag:'🏷️',megaphone:'📣',
+ acai:'🥣','ice-cream-cone':'🍦','ice-cream-cup':'🍨',dessert:'🍧',
+ 'pizza-whole':'🍕','pizza-sweet':'🍫','meal-box':'🍱',plate:'🍽️',meal:'🍛',
+ buffet:'🍲',pf:'🥘',healthy:'🥗',homemade:'🍲',burger:'🍔',snack:'🥪',
+ sandwich:'🥪','hot-dog':'🌭',soda:'🥤',juice:'🧃',energy:'⚡',beer:'🍺',
+ water:'💧',drink:'🥛',fries:'🍟',appetizer:'🥟',rings:'🧅',board:'🧀',
+ plus:'➕',cheese:'🧀',sauce:'🥫',spice:'🧂',calendar:'🗓️',more:'⋯'
+};
+const pitaccoComboParts={
+ 'combo-burger':['🍔','🥤'],'combo-pizza':['pizza','🥤'],'combo-acai':['🥣','🥤'],
+ 'combo-ice-cream':['🍦','🍨'],'combo-meal':['🍱','🥤'],'combo-mixed':['🎁','⭐']
+};
+const pitaccoSvgNS='http://www.w3.org/2000/svg';
+function pitaccoSvgNode(tag,attrs={}){
+ const node=document.createElementNS(pitaccoSvgNS,tag);
+ for(const [key,val] of Object.entries(attrs))node.setAttribute(key,String(val));
+ return node;
+}
+function pitaccoPizzaSlice(){
+ const svg=pitaccoSvgNode('svg',{viewBox:'0 0 64 64','aria-hidden':'true',focusable:'false'});
+ svg.append(
+  pitaccoSvgNode('path',{d:'M7 14 Q32 1 57 14 L32 58 Z',fill:'#FFCE56',stroke:'#B8611D','stroke-width':'2.2','stroke-linejoin':'round'}),
+  pitaccoSvgNode('path',{d:'M7 14 Q32 0 57 14 L53 23 Q32 12 11 23 Z',fill:'#D58B46',stroke:'#A86128','stroke-width':'1.8','stroke-linejoin':'round'}),
+  pitaccoSvgNode('path',{d:'M14 25 Q32 17 50 25 L32 52 Z',fill:'#F6DE74'})
+ );
+ for(const [cx,cy,r] of [[23,29,5.2],[40,30,4.8],[31,43,4.5]])
+  svg.append(pitaccoSvgNode('circle',{cx,cy,r,fill:'#D73F27',stroke:'#B72F23','stroke-width':'1'}));
+ svg.append(pitaccoSvgNode('path',{d:'M30 24 q4 -4 7 0 m-15 13 q2 -3 5 0',fill:'none',stroke:'#51A046','stroke-width':'2.3','stroke-linecap':'round'}));
+ return svg;
+}
+function pitaccoFire(){
+ const svg=pitaccoSvgNode('svg',{viewBox:'0 0 64 64','aria-hidden':'true',focusable:'false'});
+ const g=pitaccoSvgNode('g',{class:'pitacco-fire-motion'});
+ for(const [d,fill] of [
+  ['M33 3 C41 15 38 19 42 27 C45 23 48 17 47 13 C61 25 61 38 56 49 C50 61 38 63 30 61 C12 59 6 46 11 32 C14 24 20 22 21 15 C25 21 26 27 24 33 C30 27 28 17 33 3Z','#F4491B'],
+  ['M32 18 C39 29 35 33 43 34 C46 31 46 28 45 27 C53 40 47 54 38 58 C25 64 14 54 16 42 C18 35 25 34 26 29 C27 36 29 38 32 18Z','#FF9A0B'],
+  ['M31 34 C34 41 42 42 39 50 C37 56 27 59 23 53 C19 46 27 42 31 34Z','#FFF16A']
+ ])g.append(pitaccoSvgNode('path',{d,fill}));
+ svg.append(g);return svg;
+}
+function pitaccoDefaultCategoryIcon(name){
  const text=normal(name);
- if(/acai|aça/.test(text))return '🥣';
- if(/creme|sorvete/.test(text))return '🍨';
- if(/combo|promoc/.test(text))return '🏷️';
- if(/bebida|suco|refrigerante/.test(text))return '🥤';
- if(/lanche|sanduiche/.test(text))return '🍔';
- if(/sobremesa|doce/.test(text))return '🍮';
- return '🍽️';
+ if(/combo|kit|dupla|duplo/.test(text)){
+  if(/sorvete|gelat/.test(text))return 'combo-ice-cream';
+  if(/marmita|refeic|prato|almo|janta/.test(text))return 'combo-meal';
+  if(/pizza/.test(text))return 'combo-pizza';
+  if(/acai/.test(text))return 'combo-acai';
+  if(/hamburg|burger|lanche/.test(text))return 'combo-burger';
+  return 'combo-mixed';
+ }
+ if(/destaq|mais vendid/.test(text))return 'flame';
+ if(/novidade/.test(text))return 'star';
+ if(/promoc|oferta/.test(text))return 'discount';
+ if(/acai/.test(text))return 'acai';
+ if(/sorvete|gelat/.test(text))return 'ice-cream-cup';
+ if(/pizza/.test(text))return 'pizza-slice';
+ if(/marmita/.test(text))return 'meal-box';
+ if(/refeic|prato/.test(text))return 'plate';
+ if(/hamburg|burger/.test(text))return 'burger';
+ if(/sandui|lanche/.test(text))return 'sandwich';
+ if(/bebida|refrigerante/.test(text))return 'soda';
+ if(/suco/.test(text))return 'juice';
+ if(/agua/.test(text))return 'water';
+ if(/porc|batata frita/.test(text))return 'fries';
+ if(/complemento|adicional/.test(text))return 'plus';
+ if(/doce|sobremesa|creme/.test(text))return 'dessert';
+ return 'more';
+}
+function v2CategoryIcon(name){
+ const chosen=menu?.store?.category_icons?.[name];
+ return pitaccoCategoryIconKeys.has(chosen)?chosen:pitaccoDefaultCategoryIcon(name);
+}
+function pitaccoCategoryIconNode(key,animated=true){
+ const safe=pitaccoCategoryIconKeys.has(key)?key:'more';
+ const root=el('span',undefined,'pitacco-category-icon'+(safe==='flame'&&animated?' pitacco-flame-animated':''));
+ root.setAttribute('aria-hidden','true');
+ if(safe==='flame')root.append(pitaccoFire());
+ else if(safe==='pizza-slice')root.append(pitaccoPizzaSlice());
+ else if(pitaccoComboParts[safe]){
+  const container=el('span',undefined,'pitacco-combo-icons');
+  for(const part of pitaccoComboParts[safe]){
+   const node=el('span');
+   if(part==='pizza')node.append(pitaccoPizzaSlice());else node.textContent=part;
+   container.append(node);
+  }
+  root.append(container);
+ }else root.textContent=pitaccoCategoryEmojis[safe]||'🍽️';
+ return root;
 }
 function v2RenderHomeCategories(){
  const root=$('v2HomeCategories');root.replaceChildren();
  const keys=[...new Set(menu.products.map(categoryOf))];
- const create=(key,title,iconText)=>{
+ const create=(key,title,iconKey)=>{
   const b=button('', 'v2-category-tile');
-  b.append(el('span',iconText),el('strong',title));
+  b.append(pitaccoCategoryIconNode(iconKey),el('strong',title));
   b.setAttribute('aria-pressed',String(key===null));
   b.onclick=()=>{
    if(key===null){v2Go('inicio');$('v2TopProducts').scrollIntoView({behavior:'smooth',block:'start'});return;}
@@ -1563,8 +1664,12 @@ function v2RenderHomeCategories(){
   };
   root.append(b);
  };
- create(null,'Destaques','🥣');
+ create(null,'Destaques','flame');
  for(const key of keys)create(key,key,v2CategoryIcon(key));
+ const highlighted=$('v2HighlightsIcon');
+ if(highlighted)highlighted.replaceChildren(pitaccoCategoryIconNode('flame'));
+ const promoNav=document.querySelector('[data-v2-nav="promocoes"] .v2-nav-icon');
+ if(promoNav)promoNav.replaceChildren(pitaccoCategoryIconNode('flame'));
 }
 function v2RenderHomeLoyaltyProgress(){
  if(document.body.dataset.menuTemplate!=='pitacco-v2')return;
@@ -1779,7 +1884,8 @@ function renderCategories(){
  root.hidden=categories.length<2;
  root.replaceChildren();
  for(const key of [null,...categories]){
-  const tab=button(key??'Todos','chip');
+  const tab=button('','chip');
+  tab.append(pitaccoCategoryIconNode(key?v2CategoryIcon(key):'more'),document.createTextNode(key??'Todos'));
   tab.setAttribute('aria-pressed',String(category===key));
   tab.onclick=()=>{
    category=key;

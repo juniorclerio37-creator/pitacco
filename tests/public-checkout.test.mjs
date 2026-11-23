@@ -48,3 +48,17 @@ test('store opening hours block new orders in the browser and require server ver
  assert.match(html,/!storeOpening\?\.open/);
  assert.match(html,/Loja fechada/);
 });
+
+test('menu uses saved category icons and custom pizza SVG in every template',()=>{
+ assert.match(html,/menu\?\.store\?\.category_icons\?\.\[name\]/);
+ assert.match(html,/function pitaccoPizzaSlice\(\)/);
+ assert.match(html,/pitaccoSvgNode\('path',\{d:'M7 14 Q32 1 57 14 L32 58 Z'/);
+ assert.match(html,/combo-meal/);
+ assert.match(html,/combo-burger/);
+ assert.match(html,/combo-ice-cream/);
+ assert.match(html,/\['🍦','🍨'\]/);
+ assert.match(html,/create\(null,'Destaques','flame'\)/);
+ assert.match(html,/pitacco-flame-animated/);
+ assert.match(html,/@media\(prefers-reduced-motion:reduce\)/);
+ assert.match(html,/const tab=button\('','chip'\)/);
+});

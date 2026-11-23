@@ -1,4 +1,5 @@
-import React,{useEffect,useState} from 'react';
+import React,{useEffect,useMemo,useState} from 'react';
+import {CategoryIcon,CATEGORY_ICON_GROUPS,CATEGORY_ICON_KEYS,inferCategoryIcon} from './CategoryIcons.jsx';
 import ProductComplements from './ProductComplements.jsx';
 
 const empty={name:'',category:'',description:'',price:'',cost:'',menu_active:false,sealed_industrial_beverage:false};
@@ -7,6 +8,9 @@ export default function OwnerCatalog({client,storeId}){
  const [products,setProducts]=useState(null),[draft,setDraft]=useState(null),[filter,setFilter]=useState('');
  const [selected,setSelected]=useState(null),[busy,setBusy]=useState(false);
  const [notice,setNotice]=useState(''),[error,setError]=useState('');
+ const [categoryIcons,setCategoryIcons]=useState({}),[iconBusy,setIconBusy]=useState(false);
+ const categories=useMemo(()=>[...new Set((products||[]).map(p=>p.category?.trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR')),[products]);
+ const iconFor=c=>CATEGORY_ICON_KEYS.includes(categoryIcons[c])?categoryIcons[c]:inferCategoryIcon(c);
  async function rpc(name,args){
   const {data,error}=await client.rpc(name,{p_store_id:storeId,...args});
   if(error)throw error;
@@ -18,6 +22,27 @@ export default function OwnerCatalog({client,storeId}){
   return()=>{active=false;};
  },[client,storeId]);
 
+ useEffect(()=>{
+  let active=true;
+  client.rpc('pitacco_menu_category_icons_state',{p_store:storeId}).then(({data,error})=>{
+   if(!active)return;
+   if(error){setError('Não foi possível carregar os ícones: '+error.message);return;}
+   setCategoryIcons(data&&typeof data==='object'&&!Array.isArray(data)?data:{});
+  }).catch(err=>{if(active)setError('Não foi possível carregar os ícones: '+(err?.message||'falha de conexão'))});
+  return()=>{active=false};
+ },[client,storeId]);
+ async function saveCategoryIcon(category,icon){
+  if(iconBusy||!CATEGORY_ICON_KEYS.includes(icon))return;
+  setIconBusy(true);setError('');setNotice('');
+  try{
+   const {data,error}=await client.rpc('pitacco_menu_category_set_icon',{p_store:storeId,p_category:category,p_icon:icon});
+   if(error)throw error;
+   if(!data?.saved)throw Error('O servidor não confirmou a alteração.');
+   setCategoryIcons(old=>({...old,[category]:icon}));
+   setNotice('Ícone da categoria '+category+' atualizado no cardápio.');
+  }catch(err){setError('Não foi possível salvar o ícone: '+(err?.message||'falha de conexão'))}
+  finally{setIconBusy(false)}
+ }
  async function commit(operation,success){
   setBusy(true);setNotice('');setError('');
   try{await operation();setNotice(success);}
@@ -43,6 +68,24 @@ export default function OwnerCatalog({client,storeId}){
   {notice&&<p role="status">{notice}</p>}
   {!products&&!error&&<p role="status">Carregando catálogo…</p>}
   {products&&<>
+   <div className="panel" aria-label="Ícones das categorias">
+    <h3>Ícones de categorias do cardápio</h3>
+    <p>Toque na categoria para escolher seu ícone. Destaques usa o foguinho animado. A escolha vale somente para esta loja.</p>
+    {categories.map(category=><details key={category} className="pitacco-category-settings">
+     <summary><CategoryIcon icon={iconFor(category)} size={26}/>{category} — configurar ícone</summary>
+     {CATEGORY_ICON_GROUPS.map(group=><section key={group.name} aria-label={group.name}>
+      <h4>{group.name}</h4>
+      <div className="pitacco-icon-picker">
+       {group.icons.map(([key,label])=><button type="button" key={key} className="pitacco-icon-choice"
+        disabled={iconBusy} aria-pressed={iconFor(category)===key} aria-label={label}
+        onClick={()=>saveCategoryIcon(category,key)}>
+        <CategoryIcon icon={key} size={39}/><small>{label}</small>
+       </button>)}
+      </div>
+     </section>)}
+    </details>)}
+    {!categories.length&&<p>Cadastre um produto com categoria para escolher o ícone.</p>}
+   </div>
    <label>Buscar produto <input type="search" value={filter} onChange={event=>setFilter(event.target.value)}/></label>
    <button type="button" disabled={busy} onClick={()=>setDraft({...empty})}>Novo produto</button>
    <ul>{products.filter(product=>[product.name,product.category].some(value=>value?.toLowerCase().includes(filter.trim().toLowerCase()))).map(product=>
