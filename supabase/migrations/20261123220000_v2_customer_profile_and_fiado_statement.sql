@@ -90,7 +90,8 @@ declare sid uuid; verification pitacco_private.fiado_pin_verifications%rowtype;
  charges jsonb; payments jsonb; outstanding numeric; due_date timestamptz;
  instructions text;
 begin
- select m.store_id,m.pix_instructions into sid,instructions
+ select m.store_id,case when 'pix_manual'=any(m.payment_methods) then m.pix_instructions else null end
+  into sid,instructions
  from public.public_menu_settings m where m.slug=p_slug and m.enabled limit 1;
  if sid is null or p_token is null then return jsonb_build_object('error','Verificação necessária');end if;
  select * into verification from pitacco_private.fiado_pin_verifications
