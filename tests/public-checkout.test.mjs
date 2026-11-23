@@ -63,12 +63,14 @@ test('menu uses saved category icons and custom pizza SVG in every template',()=
  assert.match(html,/const tab=button\('','chip'\)/);
 });
 
-test('V2 principal mostra o banner completo e a recuperação silenciosa do carrinho',()=>{
- assert.match(html,/id="v2BrandBanner"/);
- assert.match(html,/id="v2BrandBannerImage"/);
- assert.match(html,/\.v2-brand-banner>img\{[\s\S]*?object-fit:contain/);
- assert.match(html,/showV2BrandBanner\(shop\.banner_url\)/);
- assert.match(html,/showV2BrandBanner\(visibleCover\)/);
+test('V2 principal integra banner ao cabeçalho e recupera carrinho sem aviso na home',()=>{
+ assert.match(html,/id="storeBanner"/);
+ assert.match(html,/\.hero>img#storeBanner\{\s*display:block;opacity:1;object-fit:cover/);
+ assert.match(html,/\.hero:has\(> #storeBanner:not\(\[hidden\]\)\)::after\{[\s\S]*?linear-gradient/);
+ assert.match(html,/#v2HeroImage\{\s*display:none!important/);
+ assert.doesNotMatch(html,/id="v2BrandBanner"/);
+ assert.doesNotMatch(html,/showV2BrandBanner/);
+ assert.match(html,/studioPreviewSetImage\('storeBanner',visibleCover\)/);
  assert.match(html,/cartRestoreWarning/);
  assert.match(html,/if\(cartRestoreWarning\)root\.append/);
  assert.doesNotMatch(html,/Sua sacola foi recuperada\. Confira os preços e calcule o frete novamente\./);
