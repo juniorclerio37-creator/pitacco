@@ -121,7 +121,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fideliza-visual
-          path: artifacts/fideliza-*.png
+          path: |
+            artifacts/fideliza-*.png
+            artifacts/menu-*.png
           if-no-files-found: ignore
 
       - name: Validar rotas e Service Worker

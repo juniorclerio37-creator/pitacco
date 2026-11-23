@@ -8,14 +8,19 @@ const themes={
  minimalista:{primary:'#247a5a',secondary:'#53756c',background:'#f1f5f1',paper:'#ffffff',foreground:'#22342c',hero:'#284c3c',highlight:'#e2f3e8'},
  colorido:{primary:'#bb368b',secondary:'#7742cf',background:'#fff4fb',paper:'#ffffff',foreground:'#37203a',hero:'#6b2f92',highlight:'#ffe0f4'}
 };
-const names={moderno:'Moderno',premium:'Premium',minimalista:'Minimalista',colorido:'Colorido'};
+const templates=[
+ {id:'pitacco-v2',name:'Principal',description:'Roxo e laranja, fotos em grade e destaque para benefícios.',theme:'colorido',primary:'#ff7a08',secondary:'#6f4b80',background:'#faf7fd',paper:'#ffffff',foreground:'#261033',hero:'#4b075e',highlight:'#f4e5fb',layout:'grade',font:'sistema',radius:20},
+ {id:'essencial',name:'Essencial',description:'Verde, espaços leves e produtos em uma lista compacta.',theme:'minimalista',primary:'#217c5a',secondary:'#53756c',background:'#f5f8f6',paper:'#ffffff',foreground:'#173a2d',hero:'#174c39',highlight:'#e5f2e9',layout:'lista',font:'sistema',radius:16},
+ {id:'editorial',name:'Editorial',description:'Tons quentes, fotos amplas e tipografia elegante.',theme:'moderno',primary:'#bc5435',secondary:'#806551',background:'#fbf7f0',paper:'#ffffff',foreground:'#38271f',hero:'#41271f',highlight:'#f8ebdd',layout:'destaques',font:'serifada',radius:8},
+ {id:'urbano',name:'Urbano',description:'Cabeçalho escuro, contraste marcante e catálogo em grade.',theme:'premium',primary:'#24364a',secondary:'#66778a',background:'#f4f6f8',paper:'#ffffff',foreground:'#172330',hero:'#172330',highlight:'#f3e7d3',layout:'grade',font:'sistema',radius:12}
+];
 const colors=[['primary','Principal'],['secondary','Secundária'],['background','Fundo'],['paper','Cartões'],['foreground','Textos'],['hero','Cabeçalho'],['highlight','Destaques']];
 const layouts=[['lista','Lista organizada'],['grade','Grade de produtos'],['destaques','Cartões grandes']];
 const fonts=[['sistema','Moderna'],['arredondada','Arredondada'],['serifada','Elegante']];
 const photoSizes=[['pequeno','Pequena'],['medio','Média'],['grande','Grande']];
 const field=(label,value,change,props={})=><label className="design-field">{label}<input value={value||''} onChange={event=>change(event.target.value)} {...props}/></label>;
 const cash=value=>Number(value||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const defaultDesign={theme:'moderno',...themes.moderno,layout:'lista',radius:20,font:'sistema',photo_size:'medio',
+const defaultDesign={template:'pitacco-v2',theme:'moderno',...themes.moderno,layout:'lista',radius:20,font:'sistema',photo_size:'medio',
  show_descriptions:true,slogan:'Cardápio digital',instagram:'',logo_path:'',cover_path:'',banners:[]};
 const stamp=value=>value?new Date(value).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
 const fontFace=font=>font==='serifada'?'Georgia,serif':font==='arredondada'?'Trebuchet MS,system-ui,sans-serif':'Inter,system-ui,sans-serif';
@@ -82,6 +87,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
   }return next});
  }
  function validate(d){
+  if(!templates.some(t=>t.id===d.template))throw Error('Escolha um template disponível.');
   if(!isHex(d.primary)||!isHex(d.foreground)||!isHex(d.paper))throw Error('Confira as cores selecionadas.');
   if(!Number.isInteger(Number(d.radius))||Number(d.radius)<0||Number(d.radius)>32)throw Error('Arredondamento inválido.');
   if(d.instagram&&!/^@[A-Za-z0-9._]{1,30}$/.test(d.instagram))throw Error('Informe o Instagram com @ e o nome de usuário.');
@@ -150,7 +156,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
   const now=Date.now();return (!b.starts_at||new Date(b.starts_at).getTime()<=now)
    &&(!b.ends_at||new Date(b.ends_at).getTime()>=now);
  })||[],[design?.banners]);
- const display=design&&<div className={'design-live-menu design-layout-'+design.layout}
+ const display=design&&<div className={'design-live-menu design-layout-'+design.layout+' design-template-'+design.template}
    style={{...moneyColors,'--studio-primary':design.primary,'--studio-secondary':design.secondary,
     '--studio-paper':design.paper,'--studio-highlight':design.highlight,
     '--studio-radius':design.radius+'px','--studio-on-brand':onBrand}}>
@@ -219,10 +225,13 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
   <div className="design-studio-grid">
    <div className="design-studio-controls">
     {mode==='editar'?<>
-     <section className="design-control-card"><h4>Modelos prontos</h4><p>Comece com um estilo e personalize as cores livremente.</p>
-      <div className="design-themes">{Object.keys(themes).map(key=><button type="button" key={key}
-       className={design.theme===key?'design-theme active':'design-theme'} onClick={()=>setDesign(d=>({...d,theme:key,...themes[key]}))} disabled={!manager||working}>
-       <span style={{background:themes[key].background}}><i style={{background:themes[key].hero}}/><i style={{background:themes[key].primary}}/></span><strong>{names[key]}</strong></button>)}</div>
+     <section className="design-control-card"><h4>Templates do cardápio</h4><p>Quatro visuais, as mesmas funcionalidades atuais. Escolha, salve o rascunho e publique quando estiver pronto.</p>
+      <div className="design-template-options" role="group" aria-label="Template do cardápio">{templates.map(model=><button type="button" key={model.id}
+       aria-pressed={design.template===model.id} className={'design-template-option'+(design.template===model.id?' active':'')}
+       onClick={()=>setDesign(d=>{const {id,name,description,...preset}=model;return {...d,...preset,template:id};})} disabled={!manager||working}>
+       <span className={'design-template-mini mini-'+model.id} style={{'--mini-hero':model.hero,'--mini-bg':model.background,'--mini-accent':model.primary}} aria-hidden="true"><i/><span/><div><b/><b/><b/><b/></div></span>
+       <strong>{model.name}</strong><small>{model.description}</small><span className="design-template-selected">{design.template===model.id?'Selecionado':'Escolher template'}</span></button>)}</div>
+      <p className="design-tip">Produtos, complementos, preços, pagamentos, Fiado, Fideliza+, favoritos e pedidos permanecem os mesmos em todos os templates. A troca altera apenas a apresentação.</p>
      </section>
      <section className="design-control-card"><h4>Paleta de cores</h4>
       <div className="design-color-grid">{colors.map(([key,label])=><label className="design-color" key={key}>{label}

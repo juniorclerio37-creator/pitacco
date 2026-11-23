@@ -853,7 +853,7 @@ try {
       await page.getByRole('button',{name:'Aparência do cardápio',exact:true}).click();
       const studio=page.getByRole('region',{name:'Estúdio de Cardápio Pitacco'});
       await studio.getByRole('heading',{name:'Estúdio de Cardápio'}).waitFor();
-      await studio.getByRole('button',{name:'Premium',exact:true}).click();
+      await studio.getByRole('button',{name:/Urbano Cabeçalho/}).click();
       await studio.getByLabel('Cor Principal').fill('#b43e24');
       await studio.getByLabel('Slogan').fill('O melhor da cidade');
       await studio.getByRole('button',{name:'Computador'}).click();
@@ -863,12 +863,14 @@ try {
       await studio.getByText('Rascunho salvo.',{exact:false}).waitFor();
       assert.equal(studioPublished,null,'Editing a draft must never change the public design');
       assert.equal(studioDraft.theme,'premium');
+      assert.equal(studioDraft.template,'urbano');
       assert.equal(studioDraft.primary,'#b43e24');
       await studio.getByRole('button',{name:/Prévia e publicação/}).click();
       page.once('dialog',dialog=>dialog.accept());
       await studio.getByRole('button',{name:'Publicar alterações para os clientes'}).click();
       await studio.getByText('Aparência publicada!',{exact:false}).waitFor();
       assert.equal(studioPublishedVersion,1);
+      assert.equal(studioPublished.template,'urbano');
       assert.equal(studioPublished.primary,'#b43e24');
       await page.getByRole('button',{name:'Identidade da loja',exact:true}).click();
       assert.equal(await page.getByRole('region',{name:'Estúdio de Cardápio Pitacco'}).count(),0);

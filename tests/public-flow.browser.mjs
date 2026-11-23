@@ -26,7 +26,7 @@ const orderId = '10000000-0000-0000-0000-000000000001';
 const token = '20000000-0000-0000-0000-000000000001';
 
 try {
-  for (const width of [375, 768, 1440]) {
+  for(const template of ['pitacco-v2','essencial','editorial','urbano']) for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const tracking = {
       375: { status: 'accepted', delivery_status: 'cancelada', fulfillment: 'delivery', label: 'Pedido cancelado' },
@@ -73,7 +73,7 @@ try {
       if (pathname.endsWith('/get_public_menu')) {
         assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
         return route.fulfill({ json: {
-          store: { name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true,
+          store: { appearance:{template}, name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true,
             delivery_fee: 0, route_pricing:{enabled:true,mode:'circle',max_radius_km:3},
             delivery_area:area, payment_methods: ['pix_manual'],
             opening_hours:{open:true,reason:'open',next_open_at:null} },
