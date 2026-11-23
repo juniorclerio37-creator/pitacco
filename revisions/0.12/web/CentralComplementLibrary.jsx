@@ -10,7 +10,7 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
  const [templates,setTemplates]=useState([]),[existing,setExisting]=useState([]),[existingOptions,setExistingOptions]=useState([]);
  const [selected,setSelected]=useState(null),[draft,setDraft]=useState(fresh),[files,setFiles]=useState({}),[fileUrls,setFileUrls]=useState({});
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
- const [editingProduct,setEditingProduct]=useState(null),[showExisting,setShowExisting]=useState(false);
+ const [editingProduct,setEditingProduct]=useState(null),[showExisting,setShowExisting]=useState(true);
  const productName=new Map(products.map(p=>[p.id,p.name]));
  const assignedIds=useMemo(()=>new Set(existing.filter(g=>g.library_template_id===draft.id&&g.enabled!==false).map(g=>g.product_id)),[existing,draft.id]);
  const totalAssigned=existing.filter(g=>g.library_template_id&&g.enabled!==false).length;
@@ -101,6 +101,25 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
    <span><strong>{totalAssigned}</strong> vínculos a produtos</span>
    <span><strong>{uniqueExisting.length}</strong> grupos já cadastrados em produtos</span></div>
   {loading&&<p role="status">Carregando complementos…</p>}
+  <div className="catalog-existing"><div className="catalog-line-title">
+   <div><h4>Complementos já cadastrados nos produtos</h4><p>Inclui os grupos importados anteriormente. Você pode editá-los aqui, sem precisar voltar à aba Produtos.</p></div>
+   <button type="button" className="secondary" onClick={()=>setShowExisting(p=>!p)}>{showExisting?'Ocultar grupos':'Ver grupos existentes ('+uniqueExisting.length+')'}</button>
+  </div>
+  {showExisting&&<div className="catalog-existing-list">
+   {uniqueExisting.map(g=><div key={g.id} className="catalog-existing-row">
+    <div><b>{g.name}</b><small>{productName.get(g.product_id)||'Produto indisponível'} · {existingOptions.filter(o=>o.group_id===g.id).length} opções</small></div>
+    <div className="catalog-actions"><button type="button" className="secondary" onClick={()=>{setEditingProduct(g.product_id);setShowExisting(false)}}>Editar aqui</button>
+     <button type="button" className="secondary" onClick={()=>sourceGroup(g)}>Usar como modelo</button></div>
+   </div>)}
+   {!uniqueExisting.length&&<p>Todos os grupos estão na biblioteca compartilhada.</p>}
+  </div>}
+  {editingProduct&&productForEditing&&<div className="catalog-embedded-editor">
+   <div className="catalog-line-title"><h4>Editando complementos de {productForEditing.name}</h4>
+    <button type="button" className="secondary" onClick={()=>{setEditingProduct(null);load()}}>Fechar edição</button></div>
+   <ProductComplements key={editingProduct} client={client} storeId={storeId} product={productForEditing}
+    onGroupsChange={()=>{}}/>
+  </div>}
+  </div>
   <div className="catalog-library-grid">
    <aside className="catalog-library-list" aria-label="Grupos compartilhados">
     <h4>Biblioteca da loja</h4>
@@ -139,24 +158,6 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
      <button type="button" className="secondary" onClick={()=>openTemplate(null)} disabled={busy}>Limpar edição</button></div>
    </div>
   </div>
-  <div className="catalog-existing"><div className="catalog-line-title">
-   <div><h4>Complementos já cadastrados nos produtos</h4><p>Inclui os grupos importados anteriormente. Você pode editá-los aqui, sem precisar voltar à aba Produtos.</p></div>
-   <button type="button" className="secondary" onClick={()=>setShowExisting(p=>!p)}>{showExisting?'Ocultar grupos':'Ver grupos existentes ('+uniqueExisting.length+')'}</button>
-  </div>
-  {showExisting&&<div className="catalog-existing-list">
-   {uniqueExisting.map(g=><div key={g.id} className="catalog-existing-row">
-    <div><b>{g.name}</b><small>{productName.get(g.product_id)||'Produto indisponível'} · {existingOptions.filter(o=>o.group_id===g.id).length} opções</small></div>
-    <div className="catalog-actions"><button type="button" className="secondary" onClick={()=>{setEditingProduct(g.product_id);setShowExisting(false)}}>Editar aqui</button>
-     <button type="button" className="secondary" onClick={()=>sourceGroup(g)}>Usar como modelo</button></div>
-   </div>)}
-   {!uniqueExisting.length&&<p>Todos os grupos estão na biblioteca compartilhada.</p>}
-  </div>}
-  {editingProduct&&productForEditing&&<div className="catalog-embedded-editor">
-   <div className="catalog-line-title"><h4>Editando complementos de {productForEditing.name}</h4>
-    <button type="button" className="secondary" onClick={()=>{setEditingProduct(null);load()}}>Fechar edição</button></div>
-   <ProductComplements key={editingProduct} client={client} storeId={storeId} product={productForEditing}
-    onGroupsChange={()=>{}}/>
-  </div>}
-  </div>
+
  </section>;
 }
