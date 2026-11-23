@@ -142,6 +142,20 @@ begin
  assert (select approved_at is not null from public.pitacco_fiado_charges where order_id=second_order);
  update public.orders set status='cancelled' where id=second_order;
  assert (select used=0 from public.pitacco_fiado_customers where id=c);
+ -- Recusa manual devolve integralmente o crédito reservado, sem gerar contas a receber.
+ created:=public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
+    payload,'pickup','',null);
+ second_order:=(created->>'order_id')::uuid;
+ assert created->>'fiado_approval'='pending';
+ assert public.pitacco_fiado_approve(store,second_order,false);
+ assert (select status='rejected' and receipt->>'fiado_approval'='rejected'
+   from public.orders where id=second_order),'A loja recusa o pedido sem autorizar o Fiado';
+ assert (select state='cancelled' from public.pitacco_fiado_charges where order_id=second_order);
+ assert (select used=0 from public.pitacco_fiado_customers where id=c),'Recusa libera reserva';
+ -- Um número sem autorização não cria pedido, ainda que enviado com pagamento Fiado.
+ created:=public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Pessoa sem fiado','21911119999','',
+    payload,'pickup','',null);
+ assert created ? 'error';
  -- O gerente não pode enxergar cadastro alheio pela mesma RPC.
  begin
   perform public.pitacco_fiado_overview('20000000-0000-0000-0000-000000000082');
