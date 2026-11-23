@@ -1035,6 +1035,9 @@ body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage=customer] #v2Pho
  body[data-menu-template="pitacco-v2"] #cartDialog .v2-checkout-panel h3{font-size:1.27rem}
 }
 
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage] #cartReview{display:none!important}
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage] #continueCheckout,
+body[data-menu-template="pitacco-v2"] #cartDialog[data-v2-stage] #backToCart{display:none!important}
 </style></head><body>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
@@ -1396,6 +1399,8 @@ function setMenuTemplate(shop){
  document.body.dataset.menuSkin=['essencial','editorial','urbano'].includes(preference)?preference:'principal';
  $('v2StoreNav').hidden=classic;
  $('v2ClassicLoyalty').hidden=true;
+ $('v2NameFields').hidden=!classic;
+ $('v2PhoneFields').hidden=false;
 }
 function v2SaveFavorite(id){
  if(v2Favorites.has(id))v2Favorites.delete(id);else v2Favorites.add(id);
@@ -1506,7 +1511,8 @@ function v2Go(page,initial=false){
  $('v2Home').hidden=page!=='inicio';
  $('v2LoyaltyPage').hidden=page!=='fideliza';
  $('v2AboutPage').hidden=page!=='sobre';
- const listing=page!=='fideliza'&&page!=='sobre';
+ $('v2FiadoPage').hidden=page!=='fiado';
+ const listing=!['fideliza','sobre','fiado'].includes(page);
  $('layout').hidden=!listing;
  $('pitaccoPromos').hidden=page!=='promocoes'||$('pitaccoPromos').childElementCount===0;
  for(const b of $('v2StoreNav').querySelectorAll('[data-v2-nav]')){
@@ -1518,6 +1524,7 @@ function v2Go(page,initial=false){
   $('v2CatalogTitle').textContent=names[page]||'Cardápio';
   renderCategories();renderProducts();if(page==='inicio')v2Feature();
  }
+ if(page==='fiado'){$('v2FiadoPhone').value=$('phone').value;$('v2FiadoNotice').textContent='';$('v2FiadoStatement').hidden=true;$('v2FiadoLogin').hidden=false;}
  if(page==='fideliza'){
   $('v2LoyaltyPhone').value=$('phone').value;
   v2RenderWallet();
@@ -1899,10 +1906,10 @@ function renderCart(){
  $('cartValue').textContent=money(subtotal);
  $('v2DockCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0)+' itens · ';
  const n=cart.reduce((sum,item)=>sum+item.quantity,0);$('v2HeaderCount').textContent=String(n);$('v2HeaderCount').hidden=n===0;
- $('continueCheckout').disabled=Boolean(cartRecoveryId)||(!storeOpening?.open&&!pendingRequest)||!cart.length||!$('fulfillment').value||!$('payment').value;
+ $('continueCheckout').disabled=Boolean(cartRecoveryId)||(!storeOpening?.open&&!pendingRequest)||!cart.length||(document.body.dataset.menuTemplate!=='pitacco-v2'&&(!$('fulfillment').value||!$('payment').value));
  $('cart').inert=Boolean(cartRecoveryId)||Boolean(pendingRequest);
  $('send').disabled=Boolean(cartRecoveryId)||(!storeOpening?.open&&!pendingRequest)||submitting||!cart.length||!$('fulfillment').value||!$('payment').value||
-   ($('fulfillment').value==='delivery'&&(!routeMode||!quoteValid));
+   ($('fulfillment').value==='delivery'&&(document.body.dataset.menuTemplate==='pitacco-v2'?routeMode&&!quoteValid:(!routeMode||!quoteValid)));
  }finally{
   persistCartDraft();
   renderingCart=false;
@@ -1918,7 +1925,10 @@ function cartStep(checkout){
  $('cartTitle').textContent=checkout?'Finalizar pedido':'Sua sacola';
  $('checkoutMessage').hidden=true;
  $('cartBody').scrollTop=0;
- if(checkout)$('customer').focus();
+ if(document.body.dataset.menuTemplate==='pitacco-v2'){
+  if(checkout)v2ShowCheckoutStage('identify');
+  else {delete $('cartDialog').dataset.v2Stage;$('v2CheckoutNext').hidden=true;$('v2CheckoutBack').hidden=true;}
+ }else if(checkout)$('customer').focus();
 }
 $('openCart').onclick=()=>{
  $('cartDialog').showModal();
@@ -2287,6 +2297,11 @@ function initOptions(){
   renderCart();loadSchedule();
  };
  $('fulfillment').dispatchEvent(new Event('change'));
+ if(document.body.dataset.menuTemplate==='pitacco-v2'){
+  $('payment').insertBefore(new Option('Selecione como pagar',''),$('payment').firstChild);
+  $('payment').value='';
+  v2RenderPaymentCards();
+ }
  renderCategories();renderProducts();void loadLoyalty();v2Feature();void v2LoadTopSellers();
  $('hero').hidden=false;$('layout').hidden=false;$('cartDock').hidden=false;
  v2Go('inicio',true);
@@ -2377,7 +2392,7 @@ $('checkout').onsubmit=async event=>{
    p_items:cart.map(({product_id,quantity,options})=>({product_id,quantity,options:[...options]})),
    p_fulfillment:fulfillment,
    p_payment:payment,
-   p_notes:$('notes').value
+   p_notes:$('notes').value+(payment==='dinheiro'&&$('v2CashChange').value.trim()&&document.body.dataset.menuTemplate==='pitacco-v2'?'\nTroco para: R$ '+$('v2CashChange').value.trim():'')
   };
   // O telefone identifica o cliente; a autorização do pedido é feita pela loja.
   if(loyaltyProgram||loyaltyPhone||$('loyaltyCoupon').value.trim()||$('loyaltyReward').value){
@@ -2441,7 +2456,7 @@ $('checkout').onsubmit=async event=>{
   $('cartTitle').textContent='Pedido confirmado';$('cartAction').textContent='Ver pedido';
   $('success').hidden=false;
   $('success').replaceChildren(
-   el('h2','Pedido recebido!'),
+   el('h2',document.body.dataset.menuTemplate==='pitacco-v2'?'✓ Pedido confirmado!':'Pedido recebido!'),
    el('p','Número do pedido: '+data.order_id),
    el('p','Total confirmado: '+money(data.total)),
    el('p',pendingRequest.p_payment==='fiado'
@@ -2452,6 +2467,11 @@ $('checkout').onsubmit=async event=>{
   );
   if(pendingRequest.p_scheduled_for)$('success').append(el('p','Agendado para '+scheduleFormat.format(new Date(pendingRequest.p_scheduled_for))+'.'));
   if(data.payment_instructions)$('success').append(el('p','Instruções de pagamento: '+data.payment_instructions));
+  if(document.body.dataset.menuTemplate==='pitacco-v2'){
+   const banner=el('div',undefined,'v2-review-group');
+   banner.append(el('h4','✓ Pedido realizado com sucesso'),el('p','Seu pedido foi recebido e poderá ser acompanhado em tempo real.'));
+   $('success').prepend(banner);
+  }
   if(data.tracking_token){
    const link=el('a','Acompanhar meu pedido');
    link.href='/acompanhar/?token='+encodeURIComponent(data.tracking_token);
