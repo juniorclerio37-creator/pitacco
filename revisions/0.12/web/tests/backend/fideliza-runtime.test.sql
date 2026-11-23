@@ -126,11 +126,14 @@ begin
  assert rr->>'linked'='true','Telefone localiza a mesma carteira';
  assert not has_function_privilege('authenticated','public.pitacco_loyalty_reset_key(uuid,uuid)','execute');
  -- A caderneta participa apenas depois da quitação integral e da entrega.
- fiado_customer:=public.pitacco_fiado_save_customer(s,'Cliente A','21999990001',500,true,7,'automatic',true);
- fiado_key:=public.pitacco_fiado_rotate_code(s,fiado_customer);perform public.pitacco_fiado_toggle(s,true);
+ fiado_customer:=public.pitacco_fiado_save_customer_identity(s,'Cliente A','21999990001',500,true,7,'automatic',true,'1992-04-17');
+ perform public.pitacco_fiado_toggle(s,true);
+ req:=gen_random_uuid();
+ fiado_key:=public.pitacco_fiado_verify_birthdate('loyalty-test','21999990001','1992-04-17',req)->>'token';
+ assert fiado_key is not null,'Telefone e nascimento válidos emitem autorização temporária';
  update public.public_checkouts set created_at=now()-interval '1 hour';
  points_before:=pitacco_private.loyalty_balance(s,c,'points');
- r:=public.pitacco_loyalty_checkout('loyalty-test',gen_random_uuid(),'Cliente A','21999990001','',
+ r:=public.pitacco_loyalty_checkout('loyalty-test',req,'Cliente A','21999990001','',
   '[{"product_id":"30000000-0000-0000-0000-000000000091","quantity":1}]','pickup','fiado','','','','',null,null,fiado_key);
  fiado_order:=(r->>'order_id')::uuid;assert fiado_order is not null;
  update public.orders set status='accepted',preparation_status='completed' where id=fiado_order;
