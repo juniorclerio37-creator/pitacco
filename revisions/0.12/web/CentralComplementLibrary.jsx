@@ -30,11 +30,11 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
   setLoading(true);setError('');
   try{
    const [t,g,o]=await Promise.all([
-    readPages('pitacco_complement_templates','*','name'),
-    readPages('product_option_groups','id,product_id,name,min_select,max_select,enabled,library_template_id','name'),
+    readPages('pitacco_complement_templates','*','sort_order'),
+    readPages('product_option_groups','id,product_id,name,min_select,max_select,enabled,library_template_id,sort_order','sort_order'),
     readPages('product_options','id,group_id,name,additional_price,available,image_url','sort_order')
    ]);
-   setTemplates(t);setExisting(g);setExistingOptions(o);
+   setTemplates([...t].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)||a.name.localeCompare(b.name,'pt-BR')));setExisting(g);setExistingOptions(o);
   }catch(e){setError('Falha ao carregar grupos: '+(e.message||String(e)));}
   finally{setLoading(false);}
  }
@@ -63,6 +63,31 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
    setError('Selecione JPG, PNG ou WebP de até 5 MB.');return;
   }
   setFiles(p=>({...p,[id]:file}));setFileUrls(p=>({...p,[id]:URL.createObjectURL(file)}));
+ }
+ async function moveTemplate(index,direction){
+  if(busy)return;
+  const target=index+direction;
+  if(target<0||target>=templates.length)return;
+  const next=[...templates];
+  [next[index],next[target]]=[next[target],next[index]];
+  setBusy(true);setError('');setNotice('');
+  try{
+   const {data,error}=await client.rpc('pitacco_catalog_reorder',{
+    p_store:storeId,p_kind:'templates',p_ids:next.map(t=>t.id),
+    p_parent:null,p_category:null,p_categories:null
+   });
+   if(error)throw error;
+   if(!data?.saved)throw Error('Ordem não confirmada');
+   setTemplates(next.map((t,i)=>({...t,sort_order:(i+1)*10})));
+   setNotice('Ordem dos grupos da biblioteca salva.');
+  }catch(e){setError('Não foi possível ordenar os grupos: '+(e.message||String(e)));}
+  finally{setBusy(false)}
+ }
+ function moveDraftOption(index,direction){
+  const target=index+direction;
+  if(target<0||target>=draft.options.length)return;
+  const next=[...draft.options];[next[index],next[target]]=[next[target],next[index]];
+  edit('options',next);
  }
  async function save(){
   if(busy)return;setBusy(true);setError('');setNotice('');
@@ -124,10 +149,15 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
    <aside className="catalog-library-list" aria-label="Grupos compartilhados">
     <h4>Biblioteca da loja</h4>
     <button className={!draft.id?'catalog-group-active':''} onClick={()=>openTemplate(null)} type="button">＋ Criar um grupo independente</button>
-    {templates.map(t=><button key={t.id} onClick={()=>openTemplate(t)} type="button"
-       className={draft.id===t.id?'catalog-group-active':''}>
+    {templates.map((t,index)=><div className="catalog-template-sort-row" key={t.id}>
+     <button onClick={()=>openTemplate(t)} type="button" className={draft.id===t.id?'catalog-group-active':''}>
       <b>{t.name}</b><small>{(t.options||[]).length} complemento(s) · {t.min_select} a {t.max_select} escolhas</small>
-     </button>)}
+     </button>
+     <button type="button" className="secondary catalog-sort-arrow" disabled={busy||index===0}
+      aria-label={'Subir grupo compartilhado '+t.name} onClick={()=>moveTemplate(index,-1)}>↑</button>
+     <button type="button" className="secondary catalog-sort-arrow" disabled={busy||index===templates.length-1}
+      aria-label={'Descer grupo compartilhado '+t.name} onClick={()=>moveTemplate(index,1)}>↓</button>
+    </div>)}
     {!templates.length&&!loading&&<p>Crie seu primeiro grupo para vinculá-lo a produtos.</p>}
    </aside>
    <div className="catalog-library-editor" key={draft.id||'new'}>
@@ -139,7 +169,14 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
     </div>
     <div className="catalog-line-title"><h4>Itens do grupo</h4>
      <button type="button" className="secondary" disabled={busy||draft.options.length>=100} onClick={()=>edit('options',[...draft.options,optionNew()])}>+ Adicionar complemento</button></div>
-    {draft.options.map(o=><div className="catalog-option-edit" key={o.id}>
+    {draft.options.map((o,index)=><div className="catalog-option-edit" key={o.id}>
+     <div className="catalog-sort-tools catalog-draft-sort">
+      <button type="button" className="secondary catalog-sort-arrow" disabled={busy||index===0}
+       aria-label={'Subir complemento '+(o.name||'sem nome')} onClick={()=>moveDraftOption(index,-1)}>↑</button>
+      <button type="button" className="secondary catalog-sort-arrow" disabled={busy||index===draft.options.length-1}
+       aria-label={'Descer complemento '+(o.name||'sem nome')} onClick={()=>moveDraftOption(index,1)}>↓</button>
+      <span>{index+1}º</span>
+     </div>
      <div className="catalog-option-photo">{fileUrls[o.id]?<img src={fileUrls[o.id]} alt="Nova foto selecionada"/>:o.image_url?<img src={o.image_url} alt={o.name}/>:<span>📷</span>}</div>
      <label>Nome<input value={o.name} maxLength={100} onChange={e=>editOption(o.id,'name',e.target.value)}/></label>
      <label>Valor adicional (R$)<input type="number" min="0" max="100000" step=".01" value={o.price} onChange={e=>editOption(o.id,'price',Number(e.target.value))}/></label>
