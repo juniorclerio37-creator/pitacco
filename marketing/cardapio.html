@@ -1082,22 +1082,27 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=editorial] .v2-category-til
 body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] .v2-category-tile>.pitacco-category-icon{font-size:1.45rem!important}
 #v2HighlightsIcon{display:inline-flex;vertical-align:middle;font-size:1.25em}
 .v2-nav-icon .pitacco-category-icon{font-size:1em}
-/* V2 principal: apresentar toda a arte publicitária em uma faixa própria,
-   evitando texto cortado e a imagem fantasma atrás do nome da loja. */
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .hero>img#storeBanner{display:none!important}
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .v2-brand-banner:not([hidden]){
- display:block;width:min(1120px,calc(100% - 26px));margin:16px auto 8px;
- padding:0;border-radius:18px;overflow:hidden;background:#fff;
- box-shadow:0 8px 25px #42104e17;line-height:0
+/* V2 principal: a capa integra o cabeçalho, sem faixa extra.
+   A arte permanece nítida e recebe um degradê leve SOMENTE para dar
+   contraste às informações da loja, nunca opacidade no próprio arquivo. */
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .hero>img#storeBanner{
+ display:block;opacity:1;object-fit:cover;object-position:center 48%
 }
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .v2-brand-banner>img{
- display:block;width:100%;height:auto;max-height:none;object-fit:contain;object-position:center
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .hero:has(> #storeBanner:not([hidden]))::after{
+ background:linear-gradient(100deg,rgba(29,3,39,.55) 0%,rgba(29,3,39,.27) 58%,rgba(29,3,39,.10) 100%)
 }
-.v2-brand-banner[hidden],.v2-brand-banner>img[hidden]{display:none!important}
-body:not([data-menu-template="pitacco-v2"][data-menu-skin=principal]) .v2-brand-banner{display:none!important}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .hero:has(> #storeBanner:not([hidden])) :is(.hero h1,.hero p,.v2-delivery-text,.v2-hero-location){
+ text-shadow:0 1px 8px rgba(27,3,40,.62)
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .hero:has(> #storeBanner:not([hidden])) #v2HeroImage{
+ display:none!important
+}
 @media(max-width:600px){
- body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .v2-brand-banner:not([hidden]){
-  margin:12px auto 5px;border-radius:14px
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .hero{
+  min-height:240px;max-height:none
+ }
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .hero>img#storeBanner{
+  object-position:center 50%
  }
 }
 </style></head><body>
@@ -1113,9 +1118,6 @@ body:not([data-menu-template="pitacco-v2"][data-menu-skin=principal]) .v2-brand-
  <span id="v2HeroLocation" class="v2-hero-location" hidden></span></div>
  <img id="v2HeroImage" class="v2-hero-visual" alt="" hidden>
 </header>
-<section id="v2BrandBanner" class="shell v2-brand-banner" aria-label="Banner da loja" hidden>
- <img id="v2BrandBannerImage" alt="Banner promocional da loja" hidden>
-</section>
 <nav id="v2StoreNav" class="shell v2-store-nav" aria-label="Seções do cardápio">
  <button type="button" class="v2-nav-button" data-v2-nav="inicio" aria-current="page"><span class="v2-nav-icon" aria-hidden="true">⌂</span>Início</button>
  <button type="button" class="v2-nav-button" data-v2-nav="cardapio"><span class="v2-nav-icon" aria-hidden="true">🍽</span>Cardápio</button>
@@ -1889,18 +1891,6 @@ const categoryOf=product=>product.category?.trim()||'Outros';
 const normal=text=>text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 const button=(name,cls)=>{const node=el('button',name,cls);node.type='button';return node};
 const imageUrl=value=>typeof value==='string'&&/^https:\/\//i.test(value);
-function showV2BrandBanner(url){
- const holder=$('v2BrandBanner'),picture=$('v2BrandBannerImage');
- holder.hidden=true;picture.hidden=true;picture.removeAttribute('src');
- if(document.body.dataset.menuTemplate!=='pitacco-v2'||
-    document.body.dataset.menuSkin!=='principal'||
-    !(imageUrl(url)||studioPreviewImage(url)))return;
- picture.onload=()=>{
-  if(picture.src===url){picture.hidden=false;holder.hidden=false;}
- };
- picture.onerror=()=>{holder.hidden=true;picture.hidden=true;};
- picture.src=url;
-}
 let category=null, current=null, editing=null, quantity=1, groups=[], completed=false, feedbackTimer;
 function msg(text){
  const node=$($('cartDialog').open?'checkoutMessage':'msg');
@@ -2538,7 +2528,6 @@ function initOptions(){
   node.addEventListener('load',()=>{node.hidden=false;if(image==='storeLogo')$('storeInitial').hidden=true},{once:true});
   node.src=value;
  }
- showV2BrandBanner(shop.banner_url);
  for(const [value,label,allowed] of [['delivery','Entrega',shop.delivery_enabled],['pickup','Retirada',shop.pickup_enabled]]){
   if(!allowed)continue;
   $('fulfillment').add(new Option(label,value));
@@ -3127,7 +3116,6 @@ function studioPreviewApply(){
   const visibleCover=studioPreviewImage(studioPreviewFiles.cover)||
    studioAsset(d.cover_path)||menu.store.banner_url;
   studioPreviewSetImage('storeBanner',visibleCover);
-  showV2BrandBanner(visibleCover);
   const banners=$('pitaccoPromos');
   for(const card of banners.children){
    const index=card.dataset.bannerIndex;
