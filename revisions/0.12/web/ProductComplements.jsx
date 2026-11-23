@@ -1,4 +1,5 @@
 import React,{useEffect,useState} from 'react';
+import {uploadStoreImage,mediaUrl} from './StoreProfile.jsx';
 
 export default function ProductComplements({client,storeId,product,onClose,onGroupsChange}){
  const [groups,setGroups]=useState(null),[busy,setBusy]=useState(false);
@@ -37,10 +38,24 @@ export default function ProductComplements({client,storeId,product,onClose,onGro
   event.preventDefault();
   const form=event.currentTarget, fields=new FormData(form);
   commit(async()=>{
-   await rpc('pitacco_save_option',{
+   const savedId=await rpc('pitacco_save_option',{
     p_group_id:groupId,p_option_id:id,p_name:String(fields.get('name')).trim(),
     p_price:Number(fields.get('price')),p_available:fields.has('available')
    });
+   const image=fields.get('photo');
+   if(image instanceof File&&image.size>0){
+    const path=await uploadStoreImage(client,storeId,image,'products');
+    const {error:photoError}=await client.rpc('pitacco_set_option_photo',{
+     p_store:storeId,p_option:savedId,p_url:mediaUrl(client,path)
+    });
+    if(photoError)throw photoError;
+   }
+   if(fields.has('remove_photo')&&id){
+    const {error:photoError}=await client.rpc('pitacco_set_option_photo',{
+     p_store:storeId,p_option:id,p_url:''
+    });
+    if(photoError)throw photoError;
+   }
    const updated=await rpc('pitacco_list_complements',{p_product_id:product.id});
    setGroups(updated);
    onGroupsChange?.(updated);
@@ -61,6 +76,13 @@ export default function ProductComplements({client,storeId,product,onClose,onGro
    onSubmit={event=>saveOption(event,group.id,option?.id||null)}>
    <label>Nome do item <input name="name" required maxLength={100} defaultValue={option?.name}/></label>
    <label>Preço adicional (R$) <input name="price" type="number" required min={0} max={100000} step=".01" defaultValue={option?.price??0}/></label>
+   <label className="complement-photo-field">Foto do complemento (JPG, PNG ou WebP, até 5 MB)
+    <input name="photo" type="file" accept="image/png,image/jpeg,image/webp"/>
+   </label>
+   {option?.image_url&&<div className="catalog-option-saved-image">
+     <img src={option.image_url} alt={'Foto de '+option.name}/>
+     <label><input type="checkbox" name="remove_photo"/> Remover foto atual</label>
+    </div>}
    <label><input name="available" type="checkbox" defaultChecked={option?.available??true}/> Disponível</label>
    <button disabled={busy}>{option?'Salvar item':'Adicionar item'}</button>
   </form>;
