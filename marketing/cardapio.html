@@ -546,7 +546,7 @@ body:not([data-menu-template="pitacco-v2"]) .v2-hero-visual{display:none!importa
 body[data-menu-template="pitacco-v2"][data-v2-page=inicio] #v2StoreNav{display:none!important}
 body[data-menu-template="pitacco-v2"] .hero{min-height:260px;padding:23px 0 64px;background:hsl(var(--template-hue,290.37) calc(85.26% * var(--template-chroma,1)) 18.63%);border:0;overflow:hidden}
 body[data-menu-template="pitacco-v2"] .hero::after{background:linear-gradient(95deg,hsl(var(--template-hue,288.65) calc(88.10% * var(--template-chroma,1)) 16.47%) 0%,hsl(var(--template-hue,287.29) calc(80.95% * var(--template-chroma,1)) 20.59% / 0.9098) 68%,hsl(var(--template-hue,293.25) calc(78.43% * var(--template-chroma,1)) 20.00% / 0.6196) 100%)}
-body[data-menu-template="pitacco-v2"] .hero>img#storeBanner{opacity:.17}
+body[data-menu-template="pitacco-v2"] .hero>img#storeBanner{opacity:.44}
 body[data-menu-template="pitacco-v2"] .hero-content{min-height:105px;justify-content:flex-start;align-items:center;padding:0 74px}
 body[data-menu-template="pitacco-v2"] .hero h1{font-size:clamp(1.75rem,4vw,2.7rem);line-height:1.02;max-width:260px}
 body[data-menu-template="pitacco-v2"] .hero h1::after{content:"";display:block;width:78%;height:6px;border-radius:70%;background:hsl(var(--template-accent-hue,45.28) calc(100.00% * var(--template-chroma,1)) 57.65%);transform:rotate(-2deg)}
@@ -681,7 +681,8 @@ body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-s
 /* Essencial: white compact identity, pill categories, photographs on the left. */
 body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .hero{min-height:205px;padding:14px 0 24px;background:var(--paper,#fff);color:var(--ink,#173a2d);border-bottom:1px solid #e2eae5}
 body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .hero::after{background:none}
-body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] :is(#v2HeroImage,#storeBanner){display:none}
+body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] #v2HeroImage{display:none}
+body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .hero>img#storeBanner{display:block;opacity:.20;object-fit:cover}
 body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .hero-content{padding:45px 0 0;min-height:80px;gap:10px}
 body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .store-mark{width:45px;height:45px;border-radius:50%;background:#e7f2ec;color:var(--ink,#173a2d);font-size:1.6rem;flex-shrink:0}
 body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .store-mark #storeInitial{color:var(--ink,#173a2d)}
