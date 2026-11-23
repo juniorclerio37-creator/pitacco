@@ -149,19 +149,27 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
    <aside className="catalog-library-list" aria-label="Grupos compartilhados">
     <h4>Biblioteca da loja</h4>
     <button className={!draft.id?'catalog-group-active':''} onClick={()=>openTemplate(null)} type="button">＋ Criar um grupo independente</button>
-    {templates.map((t,index)=><div className="catalog-template-sort-row" key={t.id}>
+    {templates.map((t,index)=>{
+     const variants=templates.filter(group=>group.name===t.name);
+     const variantNumber=variants.findIndex(group=>group.id===t.id)+1;
+     const linkedProducts=existing.filter(group=>group.library_template_id===t.id&&group.enabled!==false).length;
+     return <div className="catalog-template-sort-row" key={t.id}>
      <button onClick={()=>openTemplate(t)} type="button" className={draft.id===t.id?'catalog-group-active':''}>
-      <b>{t.name}</b><small>{(t.options||[]).length} complemento(s) · {t.min_select} a {t.max_select} escolhas</small>
+      <b>{t.name}{variants.length>1?' · Variação '+variantNumber:''}</b>
+      <small>{(t.options||[]).length} complemento(s) · {t.min_select} a {t.max_select} escolhas · {linkedProducts} produto(s)</small>
+      <small>{(t.options||[]).slice(0,3).map(option=>option.name+(Number(option.price)>0?' ('+currency(option.price)+')':'')).join(' · ')}</small>
      </button>
      <button type="button" className="secondary catalog-sort-arrow" disabled={busy||index===0}
       aria-label={'Subir grupo compartilhado '+t.name} onClick={()=>moveTemplate(index,-1)}>↑</button>
      <button type="button" className="secondary catalog-sort-arrow" disabled={busy||index===templates.length-1}
       aria-label={'Descer grupo compartilhado '+t.name} onClick={()=>moveTemplate(index,1)}>↓</button>
-    </div>)}
+    </div>})}
     {!templates.length&&!loading&&<p>Crie seu primeiro grupo para vinculá-lo a produtos.</p>}
    </aside>
    <div className="catalog-library-editor" key={draft.id||'new'}>
     <h4>{draft.id?'Editar grupo compartilhado':'Novo grupo de complementos'}</h4>
+    {draft.id&&templates.filter(t=>t.name===draft.name).length>1&&
+      <p className="catalog-hint">Esta configuração é uma variação do grupo “{draft.name}”. As alterações serão aplicadas somente aos produtos marcados abaixo, sem modificar outras variações.</p>}
     <label>Nome do grupo<input value={draft.name} maxLength={100} onChange={e=>edit('name',e.target.value)} placeholder="Ex.: Frutas, Cremes, Coberturas"/></label>
     <div className="catalog-inline-fields">
      <label>Mínimo de escolhas<input type="number" min="0" max="100" value={draft.min} onChange={e=>edit('min',Number(e.target.value))}/></label>
