@@ -58,8 +58,8 @@ test("fiado uses merchant approval without PIN and validates credit on the serve
  assert.match(phoneOption,/c\.credit_limit>c\.used/);
  assert.match(phoneOption,/return jsonb_build_object\('eligible',coalesce\(allowed,false\)\)/);
  assert.match(shop,/pitacco_checkout_fiado/);
- assert.match(shop,/if\(data\?\.error\)\{\s*\/\/ Autorização negada/);
- assert.match(shop,/Autorização negada[\s\S]{0,190}pendingRequest=null/);
+ assert.match(shop,/if\(data\?\.error\)\{/);
+ assert.match(shop,/Recusa antes da criação[\s\S]{0,190}pendingRequest=null/);
  assert.doesNotMatch(shop,/fiadoCode|pendingRequest\.p_code|p_fiado_code/);
  assert.match(shop,/A loja autoriza o Fiado deste pedido/);
  assert.match(shop,/aguarda autorização da loja/);
