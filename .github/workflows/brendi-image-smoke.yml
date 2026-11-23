@@ -1,0 +1,36 @@
+name: Conferir fotos importadas no site público
+on:
+  push:
+    branches:
+      - brendi-import-acai-linho-20261123
+    paths:
+      - .github/workflows/brendi-image-smoke.yml
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar fotos e cardápio publicados
+        run: |
+          python - <<'PY'
+          import requests,json,hashlib
+          from pathlib import Path
+          from concurrent.futures import ThreadPoolExecutor
+          doc=json.loads(Path('imports/brendi-acai-do-linho.normalized.json').read_text())
+          images=sorted(set(x['image_url'] for x in doc['products']))
+          def check(url):
+            name=url.rsplit('/',1)[-1]
+            local=Path('marketing/assets/brendi-acai-do-linho')/name
+            assert local.is_file(),name
+            r=requests.get(url,timeout=22)
+            if r.status_code!=200 or not r.headers.get('content-type','').startswith('image/') or r.content!=local.read_bytes():
+              raise RuntimeError(f'{name}: http={r.status_code} type={r.headers.get("content-type")} size={len(r.content)} local={local.stat().st_size}')
+            return name
+          with ThreadPoolExecutor(max_workers=6) as pool:
+            ok=list(pool.map(check,images))
+          print('PUBLIC_IMAGES_VERIFIED',len(ok),'OF',len(images))
+          r=requests.get('https://pitacco.com.br/acai-do-linho-demo',timeout=22)
+          print('MENU_HTTP_STATUS',r.status_code,'CONTENT_TYPE',r.headers.get('content-type'))
+          assert r.status_code==200
+          PY
