@@ -166,6 +166,9 @@ for relative in ['package.json','package-lock.json','src-tauri/tauri.conf.json',
   value=value.replace('"0.12.0"', '"0.12.18"')
  p.write_text(value,encoding='utf-8')
 
+# Menu importador web: qualquer loja com permissão pode importar sem afetar o app Windows.
+subprocess.run([sys.executable,'revisions/0.12/mount_universal_menu_import.py'],check=True)
+
 # Show the new version number in the existing Windows status/diagnostics UI.
 ui=pathlib.Path('web/src.jsx')
 content=ui.read_text(encoding='utf-8')
