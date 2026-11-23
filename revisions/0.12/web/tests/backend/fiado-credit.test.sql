@@ -15,7 +15,7 @@ insert into public.public_menu_settings(store_id,slug,enabled,delivery_enabled,p
 insert into public.products(id,store_id,name,price,cost,menu_active)
  values ('30000000-0000-0000-0000-000000000081','20000000-0000-0000-0000-000000000081','Produto teste fiado',20,5,true);
 
--- Helper de regressão: simula cliente que informa a data, recebe um token
+-- Helper de regressão: simula cliente que informa o PIN, recebe um token
 -- interno e usa esse token somente para a requisição correspondente.
 create or replace function pg_temp.fiado_checkout_test(
  p_slug text,p_request uuid,p_customer text,p_phone text,p_address text,
@@ -24,7 +24,7 @@ create or replace function pg_temp.fiado_checkout_test(
 ) returns jsonb language plpgsql as $testcheckout$
 declare verified jsonb;
 begin
- verified:=public.pitacco_fiado_verify_birthdate(p_slug,p_phone,'1992-04-17',p_request);
+ verified:=public.pitacco_fiado_verify_pin(p_slug,p_phone,'438216',p_request);
  if coalesce((verified->>'verified')::boolean,false) is not true then
   return jsonb_build_object('error','Não foi possível validar o Fiado');end if;
  return public.pitacco_checkout_fiado(p_slug,p_request,p_customer,p_phone,p_address,
@@ -50,22 +50,30 @@ begin
    '{"payment":"fiado","payment_status":"fiado","fiado_customer_id":"segredo","debt":80}'::jsonb,20)
    ='{"state":"no_collect","method":"Sem cobrança na entrega","amount":null,"change_for":null,"change_due":null,"received_by_courier":false,"received_at":null}'::jsonb,
    'Entregador recebe somente instrução de não cobrar, sem situação financeira';
- c:=public.pitacco_fiado_save_customer_identity(store,'Cliente Fiado','21988887777',25,true,7,'automatic',true,'1992-04-17');
- assert (select birth_date_hash is not null from public.pitacco_fiado_customers where id=c),
-  'Lojista cadastra data como hash, não em texto simples';
+ c:=public.pitacco_fiado_save_customer_pin(store,'Cliente Fiado','21988887777',25,true,7,'automatic',true,'438216');
+ assert (select pin_hash is not null from public.pitacco_fiado_customers where id=c),
+  'Lojista cadastra PIN com hash bcrypt, sem texto simples';
+ assert (select pin_hash <> '438216' and pin_hash like '$2a$%' from public.pitacco_fiado_customers where id=c),
+  'PIN não fica em texto puro e usa bcrypt';
  assert not has_table_privilege('anon','public.pitacco_fiado_customers','select');
  assert not has_table_privilege('authenticated','public.pitacco_fiado_customers','select');
- assert not has_function_privilege('authenticated','public.pitacco_fiado_rotate_code(uuid,uuid)','execute'),
+ assert to_regprocedure('public.pitacco_fiado_verify_birthdate(text,text,text,uuid)') is null,
+   'RPC antiga de nascimento foi removida';
+ assert to_regprocedure('public.pitacco_fiado_save_customer_identity(uuid,text,text,numeric,boolean,integer,text,boolean,text)') is null,
+   'Cadastro com data de nascimento foi removido';
+ assert (select count(*)=0 from information_schema.columns
+  where table_schema='public' and table_name='pitacco_fiado_customers' and column_name like 'birth_date%');
+  assert not has_function_privilege('authenticated','public.pitacco_fiado_rotate_code(uuid,uuid)','execute'),
   'A loja não deve gerar códigos para clientes';
  assert not has_function_privilege('anon','public.pitacco_fiado_public_eligibility(text,text,text)','execute'),
   'A consulta pública antiga por código foi desativada';
  assert (public.pitacco_fiado_phone_eligibility('fiado-fixture','21988887777')->>'eligible')::boolean=false,
    'Opção Fiado só aparece quando loja e cliente estiverem ativos';
  perform public.pitacco_fiado_toggle(store,true);
- assert (public.pitacco_fiado_verify_birthdate('fiado-fixture','21988887777','1992-04-18',gen_random_uuid())->>'verified')::boolean=false,
-  'Aniversário errado não deve emitir autorização';
- assert (public.pitacco_fiado_verify_birthdate('fiado-fixture','21988887777','1992-04-17',gen_random_uuid())->>'verified')::boolean,
-  'Aniversário correto emite token de uso curto';
+ assert (public.pitacco_fiado_verify_pin('fiado-fixture','21988887777','438217',gen_random_uuid())->>'verified')::boolean=false,
+  'PIN incorreto não deve emitir autorização';
+ assert (public.pitacco_fiado_verify_pin('fiado-fixture','21988887777','438216',gen_random_uuid())->>'verified')::boolean,
+  'PIN correto emite token de uso curto';
  assert (public.pitacco_checkout_fiado('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
    '[{"product_id":"30000000-0000-0000-0000-000000000081","quantity":1,"options":[]}]'::jsonb,
    'pickup','',null) ? 'error'),'Sem token não é possível comprar';
@@ -184,16 +192,16 @@ begin
     payload,'pickup','',null);
  assert created ? 'error';
  -- Cinco tentativas inválidas bloqueiam temporariamente o cliente;
- -- após atualizar a data no painel, o gestor pode redefinir o bloqueio.
+ -- após atualizar o PIN no painel, o gestor pode redefinir o bloqueio.
  for i in 1..5 loop
-  assert (public.pitacco_fiado_verify_birthdate('fiado-fixture','21988887777','1992-04-18',gen_random_uuid())->>'verified')::boolean=false;
+  assert (public.pitacco_fiado_verify_pin('fiado-fixture','21988887777','438217',gen_random_uuid())->>'verified')::boolean=false;
  end loop;
- assert (select birth_date_locked_until>now() from public.pitacco_fiado_customers where id=c);
- assert (public.pitacco_fiado_verify_birthdate('fiado-fixture','21988887777','1992-04-17',gen_random_uuid())->>'verified')::boolean=false,
-  'Data correta durante bloqueio não permite crédito';
- perform public.pitacco_fiado_save_customer_identity(store,'Cliente Fiado','21988887777',25,true,7,'manual',true,'1992-04-17');
- assert (select birth_date_locked_until is null from public.pitacco_fiado_customers where id=c),
-  'Lojista redefine acesso mediante atualização da data';
+ assert (select pin_locked_until>now() from public.pitacco_fiado_customers where id=c);
+ assert (public.pitacco_fiado_verify_pin('fiado-fixture','21988887777','438216',gen_random_uuid())->>'verified')::boolean=false,
+  'PIN correto durante bloqueio não permite crédito';
+ perform public.pitacco_fiado_save_customer_pin(store,'Cliente Fiado','21988887777',25,true,7,'manual',true,'438216');
+ assert (select pin_locked_until is null from public.pitacco_fiado_customers where id=c),
+  'Lojista redefine acesso mediante atualização do PIN';
   -- O gerente não pode enxergar cadastro alheio pela mesma RPC.
  begin
   perform public.pitacco_fiado_overview('20000000-0000-0000-0000-000000000082');

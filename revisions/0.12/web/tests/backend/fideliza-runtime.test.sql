@@ -126,11 +126,11 @@ begin
  assert rr->>'linked'='true','Telefone localiza a mesma carteira';
  assert not has_function_privilege('authenticated','public.pitacco_loyalty_reset_key(uuid,uuid)','execute');
  -- A caderneta participa apenas depois da quitação integral e da entrega.
- fiado_customer:=public.pitacco_fiado_save_customer_identity(s,'Cliente A','21999990001',500,true,7,'automatic',true,'1992-04-17');
+ fiado_customer:=public.pitacco_fiado_save_customer_pin(s,'Cliente A','21999990001',500,true,7,'automatic',true,'438216');
  perform public.pitacco_fiado_toggle(s,true);
  req:=gen_random_uuid();
- fiado_key:=public.pitacco_fiado_verify_birthdate('loyalty-test','21999990001','1992-04-17',req)->>'token';
- assert fiado_key is not null,'Telefone e nascimento válidos emitem autorização temporária';
+ fiado_key:=public.pitacco_fiado_verify_pin('loyalty-test','21999990001','438216',req)->>'token';
+ assert fiado_key is not null,'Telefone e PIN válidos emitem autorização temporária';
  update public.public_checkouts set created_at=now()-interval '1 hour';
  points_before:=pitacco_private.loyalty_balance(s,c,'points');
  r:=public.pitacco_loyalty_checkout('loyalty-test',req,'Cliente A','21999990001','',

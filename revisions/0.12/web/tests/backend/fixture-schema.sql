@@ -56,9 +56,9 @@ create table pitacco_private.trial_identity_registry (
 );
 create function pitacco_private.valid_document(document text) returns boolean language sql immutable as
 $$ select length(document) in (11,14) $$;
-create schema extensions;
-create function extensions.hmac(document text, key text, algorithm text) returns bytea language sql immutable as
-$$ select convert_to(md5(document || key || algorithm), 'UTF8') $$;
+-- Exercitar a criptografia real nos testes PostgreSQL 17, sem simular HMAC/PIN.
+create schema if not exists extensions;
+create extension if not exists pgcrypto with schema extensions;
 create table public.store_payment_receipts (
  order_id uuid not null references public.orders(id), store_id uuid, amount numeric, recorded_at timestamptz
 );
