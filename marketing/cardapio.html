@@ -1359,38 +1359,110 @@ $('locateDelivery').onclick=async()=>{
  }catch(error){$('deliveryPointStatus').textContent=error.message;}
  finally{button.disabled=false;}
 };
-$('quoteDelivery').onclick=async()=>{
- const address=$('address').value.trim();
- if(!completeDeliveryAddress()){quoteNotice('Preencha rua, número, bairro, cidade e estado.','error');return;}
- if(address.length<12){$('routeQuoteStatus').textContent='Informe rua, número, bairro, cidade e estado.';return;}
- const needsPoint=menu.store.route_pricing?.mode!=='road';
- if(needsPoint&&!deliveryPoint){
-  $('routeQuoteStatus').textContent='Abra o mapa e marque o ponto exato da entrega antes de calcular o frete.';
-  $('showDeliveryMap').focus();return;
+
+let v2QuoteTimer=null,v2QuoteRefreshTimer=null,quoteGeneration=0;
+let v2QuotePending=null,v2QuotePendingKey='';
+function v2QuoteAddressReady(){
+ return addressInputs.every(id=>$(id).value.trim()&&$(id).checkValidity())&&$('address').value.trim().length>=12;
+}
+function v2QuoteCurrent(){
+ return deliveryQuote&&deliveryQuote.address===$('address').value.trim()&&
+  Date.parse(deliveryQuote.expiresAt)>Date.now()+3000&&
+  (!deliveryQuote.point||(deliveryPoint&&
+    deliveryQuote.point[0]===deliveryPoint[0]&&deliveryQuote.point[1]===deliveryPoint[1]));
+}
+function v2ScheduleDeliveryQuote(immediate=false){
+ if(!v2Only()||!menu)return;
+ clearTimeout(v2QuoteTimer);clearTimeout(v2QuoteRefreshTimer);
+ if($('fulfillment').value!=='delivery')return;
+ const deliveryActive=Boolean(menu.store.route_pricing?.enabled);
+ if(!deliveryActive){
+  deliveryQuote=null;
+  quoteNotice('Entrega indisponível: esta loja ainda não configurou a área e a taxa de entrega.','error');
+  renderCart();return;
  }
+ if(!v2QuoteAddressReady()){
+  deliveryQuote=null;
+  quoteNotice('Preencha o endereço completo. A taxa de entrega aparecerá automaticamente.','info');
+  renderCart();return;
+ }
+ if(v2QuoteCurrent())return;
+ quoteNotice('Verificando sua região e calculando a taxa de entrega…','loading');
+ v2QuoteTimer=setTimeout(()=>void requestDeliveryQuote(true),immediate?90:1350);
+}
+function v2AutoQuoteError(errorText){
+ if(/fora (do círculo|de todas as regiões|do polígono|da área)|fora da regi[aã]o|n[aã]o atendid|fora.*entrega|outside.*delivery|regi[aã]o.*n[aã]o atend/i.test(errorText)){
+  return 'Não atendemos essa região no momento. Escolha outro endereço ou a opção de retirada na loja.';
+ }
+ if(/localizar.*precis[aã]o|impreciso|marque.*mapa|localiza[cç][aã]o.*mapa/i.test(errorText)){
+  return 'Não foi possível localizar este endereço com precisão. Marque o ponto no mapa ou use sua localização atual.';
+ }
+ return errorText;
+}
+async function requestDeliveryQuote(auto=false){
+ const address=$('address').value.trim();
+ if(auto){
+  if(!v2Only()||$('fulfillment').value!=='delivery'||!v2QuoteAddressReady())return false;
+  if(v2QuoteCurrent())return true;
+ }else{
+  if(!completeDeliveryAddress()){quoteNotice('Preencha rua, número, bairro, cidade e estado.','error');return false;}
+  if(address.length<12){quoteNotice('Informe rua, número, bairro, cidade e estado.','error');return false;}
+ }
+ const needsPoint=menu.store.route_pricing?.mode!=='road';
+ if(needsPoint&&!deliveryPoint&&!auto){
+  quoteNotice('Abra o mapa e marque o ponto exato da entrega antes de calcular o frete.','error');
+  $('showDeliveryMap').focus();return false;
+ }
+ const quotePoint=needsPoint&&deliveryPoint?[...deliveryPoint]:null;
+ const key=address+'|'+(quotePoint?.join(',')||'auto');
+ if(v2QuotePending&&v2QuotePendingKey===key)return v2QuotePending;
+ const token=++quoteGeneration;
  const button=$('quoteDelivery');button.disabled=true;
- deliveryQuote=null;renderCart();quoteNotice('Calculando a entrega conforme a área da loja…','loading');
+ deliveryQuote=null;renderCart();
+ quoteNotice(auto?'Verificando cobertura e taxa de entrega…':'Calculando a entrega conforme a área da loja…','loading');
  const requestId=crypto.randomUUID();
- const quotePoint=needsPoint?[...deliveryPoint]:null;
- try{
-  const {data,error}=await client.functions.invoke('delivery-quote',{
-   body:{slug,address,request_id:requestId,
-    ...(quotePoint?{latitude:quotePoint[0],longitude:quotePoint[1]}:{})}
-  });
-  if(error)throw Error(await quoteFailureMessage(error));
-  if(!data?.quote_id||data.request_id!==requestId||!Number.isFinite(Number(data.fee)))throw Error(data?.error||'Não foi possível confirmar o frete.');
-  if($('address').value.trim()!==address||
-    (quotePoint&&(!deliveryPoint||deliveryPoint[0]!==quotePoint[0]||deliveryPoint[1]!==quotePoint[1])))
-   throw Error('O endereço ou o ponto mudou. Calcule o frete novamente.');
-  deliveryQuote={id:data.quote_id,requestId,fee:Number(data.fee),address,point:quotePoint,
-   expiresAt:data.expires_at};
-  const distanceType=data.distance_type==='road'?'Trajeto':'Linha reta';
-  quoteNotice(distanceType+': '+
-   (data.distance_m/1000).toFixed(1).replace('.',',')+' km · Entrega: '+
-   money(data.fee)+' · Válida por 5 minutos.','success');
- }catch(error){quoteNotice(await quoteFailureMessage(error),'error');}
- finally{button.disabled=false;renderCart();}
-};
+ const work=(async()=>{
+  try{
+   const {data,error}=await client.functions.invoke('delivery-quote',{
+    body:{slug,address,request_id:requestId,
+     ...(quotePoint?{latitude:quotePoint[0],longitude:quotePoint[1]}:{})}
+   });
+   if(error)throw Error(await quoteFailureMessage(error));
+   if(!data?.quote_id||data.request_id!==requestId||!Number.isFinite(Number(data.fee)))
+    throw Error(data?.error||'Não foi possível confirmar o frete.');
+   if(token!==quoteGeneration||$('address').value.trim()!==address||
+    (quotePoint&&(!deliveryPoint||deliveryPoint[0]!==quotePoint[0]||deliveryPoint[1]!==quotePoint[1])))return false;
+   deliveryQuote={id:data.quote_id,requestId,fee:Number(data.fee),address,
+    point:quotePoint,expiresAt:data.expires_at};
+   const distanceType=data.distance_type==='road'?'Trajeto':'Linha reta';
+   const distance=Number(data.distance_m);
+   const label=Number.isFinite(distance)?distanceType+': '+(distance/1000).toFixed(1).replace('.',',')+' km':'';
+   quoteNotice(auto?'Taxa de entrega: '+money(data.fee)+(label?' · '+label:'')+' · Válida por 5 minutos.':
+    label+' · Entrega: '+money(data.fee)+' · Válida por 5 minutos.','success');
+   if(auto){
+    const delay=Date.parse(deliveryQuote.expiresAt)-Date.now()-10000;
+    if(Number.isFinite(delay)&&delay>0)v2QuoteRefreshTimer=setTimeout(()=>{
+     if(v2Only()&&!pendingRequest&&!submitting&&$('fulfillment').value==='delivery'){
+      deliveryQuote=null;
+      v2ScheduleDeliveryQuote(true);
+     }
+    },delay);
+   }
+   return true;
+  }catch(error){
+   if(token!==quoteGeneration)return false;
+   const message=await quoteFailureMessage(error);
+   quoteNotice(auto?v2AutoQuoteError(message):message,'error');
+   return false;
+  }finally{
+   if(token===quoteGeneration){button.disabled=false;renderCart();}
+  }
+ })();
+ v2QuotePending=work;v2QuotePendingKey=key;
+ try{return await work;}finally{if(v2QuotePending===work){v2QuotePending=null;v2QuotePendingKey='';}}
+}
+$('quoteDelivery').onclick=()=>void requestDeliveryQuote(false);
+
 const scheduleFormat=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 
 const moneyFormat=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
