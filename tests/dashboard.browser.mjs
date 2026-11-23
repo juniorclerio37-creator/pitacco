@@ -895,8 +895,12 @@ try {
       assert.equal(studioPublished.primary,'#b43e24');
       assert.equal(studioDraft.theme,'premium');
       assert.equal(studioDraft.primary,'#b43e24');
-      assert.equal(await studio.getByRole('button',{name:'Salvar e publicar',exact:true}).isDisabled(),true,
-        'Se tudo já está publicado não deve criar nova versão');
+      assert.equal(await studio.getByRole('button',{name:'Salvar e publicar',exact:true}).isDisabled(),false,
+        'O botão continua acessível sem novas alterações');
+      await studio.getByRole('button',{name:'Salvar e publicar',exact:true}).click();
+      await studio.getByText('A aparência já está publicada. Nenhuma alteração nova para publicar.',{exact:true}).waitFor();
+      assert.equal(studioDraftVersion,1,'Sem mudanças não deve duplicar o rascunho');
+      assert.equal(studioPublishedVersion,1,'Sem mudanças não deve criar versão publicada adicional');
       await studio.getByRole('button',{name:/Prévia e publicação/}).click();
       assert.equal(await studio.getByRole('button',{name:'Salvar rascunho'}).count(),0);
       await page.getByRole('button',{name:'Identidade da loja',exact:true}).click();
