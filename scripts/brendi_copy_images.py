@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Downloads public item pictures for the user's authorized Brendi menu migration."""
-import json,requests,re
+import json,requests,re,time
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 source=Path('imports/brendi-acai-do-linho.normalized.json')
@@ -23,13 +23,26 @@ def download(url):
     filename=m.group(1)+'.webp'
     dest=target/filename
     if not dest.exists():
-        r=requests.get(url,headers=headers,timeout=25)
-        if r.status_code!=200 or not r.headers.get('content-type','').startswith('image/'):raise RuntimeError(f'Image {filename}: HTTP {r.status_code} {r.headers.get("content-type")}')
-        if len(r.content)<300 or len(r.content)>8_000_000:raise RuntimeError(f'Image {filename}: invalid byte size {len(r.content)}')
-        if not r.content.startswith(b'RIFF') or r.content[8:12]!=b'WEBP':raise RuntimeError(f'Image {filename}: not WebP')
-        dest.write_bytes(r.content)
+        last_error=None
+        for attempt in range(3):
+            try:
+                r=requests.get(url,headers=headers,timeout=(9,22))
+                if r.status_code!=200 or not r.headers.get('content-type','').startswith('image/'):
+                    raise RuntimeError(f'HTTP {r.status_code} {r.headers.get("content-type")}')
+                if len(r.content)<300 or len(r.content)>8_000_000:
+                    raise RuntimeError(f'Unexpected size: {len(r.content)}')
+                if not r.content.startswith(b'RIFF') or r.content[8:12]!=b'WEBP':
+                    raise RuntimeError('Response is not WebP')
+                dest.write_bytes(r.content)
+                last_error=None
+                break
+            except Exception as exc:
+                last_error=exc
+                print('RETRY_IMAGE',filename,attempt+1,type(exc).__name__,str(exc)[:120],flush=True)
+                time.sleep(1+attempt)
+        if last_error:raise RuntimeError(f'Image {filename} failed after 3 attempts: {last_error}')
     return (url,filename,dest.stat().st_size)
-with ThreadPoolExecutor(max_workers=5) as pool:
+with ThreadPoolExecutor(max_workers=2) as pool:
     results=list(pool.map(download,sources))
 lookup={url:filename for url,filename,_ in results}
 for item in items:
