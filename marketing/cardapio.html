@@ -182,21 +182,422 @@ body.store-closed .dock{display:none}
 .fiado-unavailable{margin:8px 0;padding:11px 13px;border:1px solid #efc19f;background:#fff6ee;color:#8c431a;border-radius:10px;font-size:.85rem;line-height:1.5}
 .fiado-unavailable[hidden]{display:none}
 
-#checkout.loyalty-only>:not(#loyaltyBox){display:none!important}#loyaltyBox{overflow-wrap:anywhere}#loyaltyBox input,#loyaltyBox select{max-width:100%;box-sizing:border-box}#loyaltyBox button{margin:5px 5px 5px 0}.loyalty-offer{padding:12px;border:1px solid #e8d6c9;border-radius:12px;margin:8px 0}#loyaltyBalance{font-weight:800}#loyaltyStatus{color:#9a3412}
+#checkout.loyalty-only>:not(.v2-checkout-panel--payment){display:none!important}
+#checkout.loyalty-only>.v2-checkout-panel--payment>:not(#loyaltyBox){display:none!important}#loyaltyBox{overflow-wrap:anywhere}#loyaltyBox input,#loyaltyBox select{max-width:100%;box-sizing:border-box}#loyaltyBox button{margin:5px 5px 5px 0}.loyalty-offer{padding:12px;border:1px solid #e8d6c9;border-radius:12px;margin:8px 0}#loyaltyBalance{font-weight:800}#loyaltyStatus{color:#9a3412}
+
+/* Pitacco Cardápio V2 — template principal. Outros templates podem coexistir por data-menu-template. */
+body[data-menu-template="pitacco-v2"]{
+ --v2-purple:#4b075e;--v2-deep:#280334;--v2-plum:#7210a2;
+ --v2-violet:#8c21c6;--v2-orange:#ff7a08;--v2-cream:#fff7ef;
+ --v2-paper:#ffffff;--v2-ink:#261033;--v2-line:#e9dff0;
+ background:#faf7fd;color:var(--v2-ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+}
+body[data-menu-template="pitacco-v2"] .hero{
+ min-height:185px;padding:28px 0 33px;background:linear-gradient(120deg,#280334,#520764 62%,#7e1797);border-bottom:5px solid #ffae1b
+}
+body[data-menu-template="pitacco-v2"] .hero::after{background:linear-gradient(95deg,#22012de8 4%,#34033ec6 52%,#2503318c)}
+body[data-menu-template="pitacco-v2"] .hero>img{opacity:.5;object-position:center 30%}
+body[data-menu-template="pitacco-v2"] .hero-content{min-height:106px;align-items:center}
+body[data-menu-template="pitacco-v2"] .hero h1{font-size:clamp(1.9rem,4vw,3rem);font-weight:860;letter-spacing:-.045em}
+body[data-menu-template="pitacco-v2"] .hero p{font-size:.93rem;margin:.35rem 0 0;color:#ebcfff}
+body[data-menu-template="pitacco-v2"] .store-mark{width:69px;height:69px;border:2px solid #edb444;border-radius:20px;background:#fff4d9;color:#4b075e;box-shadow:0 7px 24px #1d012756}
+body[data-menu-template="pitacco-v2"] .services span{border:1px solid #ffffff4f;background:#2604319c;color:#fff;font-weight:650}
+body[data-menu-template="pitacco-v2"] .services span:first-child{background:#286a31b8}
+body[data-menu-template="pitacco-v2"] .v2-store-nav{
+ display:flex;justify-content:center;gap:5px;align-items:center;margin:-12px auto 0;
+ position:relative;z-index:3;padding:7px;background:white;border:1px solid #eee0f3;
+ border-radius:21px;box-shadow:0 12px 28px #3603451a;max-width:810px;
+}
+body[data-menu-template="pitacco-v2"] .v2-nav-button{
+ appearance:none;display:flex;flex:1;align-items:center;justify-content:center;flex-direction:column;
+ gap:3px;min-width:0;border:0;background:transparent;color:#523858;
+ border-radius:15px;padding:10px 5px;font-size:.82rem;font-weight:760;line-height:1.1;
+}
+body[data-menu-template="pitacco-v2"] .v2-nav-button .v2-nav-icon{font-size:1.35rem;line-height:1.2}
+body[data-menu-template="pitacco-v2"] .v2-nav-button[aria-current=page]{
+ background:linear-gradient(160deg,#a32be6,#64109b);color:white;box-shadow:0 4px 12px #71109d2c;
+}
+body[data-menu-template="pitacco-v2"] .v2-nav-button:disabled{opacity:.5}
+body[data-menu-template="pitacco-v2"] .catalog{padding:19px 0 140px}
+body[data-menu-template="pitacco-v2"] .v2-home{
+ display:grid;grid-template-columns:1.65fr 1fr;gap:16px;align-items:stretch;margin:16px 0 23px;
+}
+body[data-menu-template="pitacco-v2"] .v2-feature{
+ position:relative;overflow:hidden;min-height:205px;border:0;text-align:left;display:flex;align-items:center;
+ color:white;border-radius:22px;padding:24px;background:linear-gradient(118deg,#4c075e,#8220b4);
+ box-shadow:0 10px 26px #640b802b;cursor:pointer;
+}
+body[data-menu-template="pitacco-v2"] .v2-feature::before{
+ content:"";position:absolute;width:260px;height:260px;border-radius:50%;background:#e954b32e;right:-80px;top:-60px;
+}
+body[data-menu-template="pitacco-v2"] .v2-feature-copy{position:relative;z-index:1;display:grid;gap:8px;width:60%}
+body[data-menu-template="pitacco-v2"] .v2-feature-copy>small{color:#ffe0b4;font-weight:740;font-size:.78rem}
+body[data-menu-template="pitacco-v2"] .v2-feature-copy strong{font-size:clamp(1.4rem,2.6vw,2rem);letter-spacing:-.045em;line-height:1.13}
+body[data-menu-template="pitacco-v2"] .v2-feature-copy em{font-style:normal;font-size:.89rem}
+body[data-menu-template="pitacco-v2"] .v2-feature-image{
+ position:absolute;width:39%;height:90%;object-fit:contain;right:2%;bottom:0;
+ filter:drop-shadow(0 16px 10px #20012670);
+}
+body[data-menu-template="pitacco-v2"] .v2-feature[disabled]{cursor:default}
+body[data-menu-template="pitacco-v2"] .v2-home-loyalty{
+ border:1px solid #e9d2f0;background:linear-gradient(130deg,#f9eaff,#f5e6ff);
+ border-radius:22px;text-align:left;padding:22px;display:flex;flex-direction:column;justify-content:space-between;gap:14px;
+ box-shadow:0 8px 20px #3c065514;color:#4d0b69;
+}
+body[data-menu-template="pitacco-v2"] .v2-home-loyalty strong{font-size:1.5rem;letter-spacing:-.03em}
+body[data-menu-template="pitacco-v2"] .v2-home-loyalty p{margin:6px 0;color:#5d3b6b;font-size:.89rem}
+body[data-menu-template="pitacco-v2"] .v2-home-loyalty button{
+ border:0;background:#730bad;color:white;border-radius:12px;padding:12px 13px;font-weight:750;cursor:pointer;
+}
+body[data-menu-template="pitacco-v2"] .catalog-tools{
+ background:#faf7fd;border:0;margin-bottom:17px;position:relative;padding:5px 0 0;
+}
+body[data-menu-template="pitacco-v2"] .catalog h2{font-weight:830;color:#310943}
+body[data-menu-template="pitacco-v2"] .toolbar{align-items:center}
+body[data-menu-template="pitacco-v2"] .search input{
+ border:1px solid #e1d2e9;border-radius:15px;background:white;box-shadow:0 3px 10px #3402460b;
+ min-height:46px;
+}
+body[data-menu-template="pitacco-v2"] .catalog-tools .nav{margin:15px 0 0;gap:9px;padding-bottom:11px}
+body[data-menu-template="pitacco-v2"] .chip{
+ border-radius:13px;background:white;color:#4e2660;padding:10px 17px;min-height:42px;
+ border:1px solid #e6daed;font-size:.85rem;box-shadow:0 3px 9px #27033708;
+}
+body[data-menu-template="pitacco-v2"] .chip[aria-pressed=true]{
+ background:linear-gradient(150deg,#8313b2,#57107f);border-color:#5e0e84;color:white;
+}
+body[data-menu-template="pitacco-v2"] .category-section{margin-bottom:30px}
+body[data-menu-template="pitacco-v2"] .category-section h3{font-size:1.3rem;color:#340744;font-weight:820}
+body[data-menu-template="pitacco-v2"] .category-grid,
+body.pitacco-designed[data-menu-template="pitacco-v2"] .category-grid,
+body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=lista] .category-grid,
+body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=grade] .category-grid,
+body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=destaques] .category-grid
+{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px}
+body[data-menu-template="pitacco-v2"] .product{
+ background:white;border:1px solid #ebdeef;border-radius:18px;overflow:hidden;box-shadow:0 5px 20px #4a07570d;
+}
+body[data-menu-template="pitacco-v2"] .product-open,
+body.pitacco-designed[data-menu-template="pitacco-v2"] .product-open,
+body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=lista] .product-open,
+body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=grade] .product-open,
+body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=destaques] .product-open
+{display:flex;flex-direction:column-reverse;gap:0;align-items:stretch;background:white;color:#280a37;border:0;border-radius:0;padding:0;height:100%;min-height:0}
+body[data-menu-template="pitacco-v2"] .product-text{padding:13px 14px 17px;display:block;width:100%}
+body[data-menu-template="pitacco-v2"] .product-name{font-size:1rem;font-weight:800;line-height:1.23;color:#2b1038}
+body[data-menu-template="pitacco-v2"] .product-description{font-size:.78rem;margin:5px 0 7px}
+body[data-menu-template="pitacco-v2"] .product-text>strong:not(.product-name){font-size:1.12rem;font-weight:860;color:#ed5e00}
+body[data-menu-template="pitacco-v2"] .product-visual,
+body.pitacco-designed[data-menu-template="pitacco-v2"] .product-visual,
+body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=lista] .product-visual,
+body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=grade] .product-visual,
+body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=destaques] .product-visual{
+ width:100%;height:177px;flex:none;border-radius:0;background:radial-gradient(circle at 50% 25%,#8e18a5,#430754);
+ color:#fff;font-size:2.3rem;
+}
+body[data-menu-template="pitacco-v2"] .product-visual img{width:100%;height:100%;border-radius:0;object-fit:cover}
+body[data-menu-template="pitacco-v2"] .product-plus{
+ right:11px;bottom:10px;width:35px;height:35px;line-height:1;border:2px solid #fff;
+ background:linear-gradient(140deg,#ff9a00,#ff6000);font-size:1.48rem;border-radius:12px;
+}
+body[data-menu-template="pitacco-v2"] .v2-favorite{
+ position:absolute;right:11px;top:11px;z-index:1;background:#fff;border:1px solid #ecdcf2;
+ color:#7b3395;width:36px;height:36px;border-radius:50%;font-size:1.28rem;display:grid;place-items:center;
+ box-shadow:0 3px 10px #18022740;
+}
+body[data-menu-template="pitacco-v2"] .v2-favorite[aria-pressed=true]{color:#ed466c;background:#fff1f4}
+body[data-menu-template="pitacco-v2"] .v2-feature .v2-favorite{position:static}
+body[data-menu-template="pitacco-v2"] .dock{z-index:5;width:min(600px,100% - 28px)}
+body[data-menu-template="pitacco-v2"] .dock button,
+body[data-menu-template="pitacco-v2"] .primary{
+ background:linear-gradient(110deg,#ff9706,#ff6100);color:#fff;border:0;
+ border-radius:13px;box-shadow:0 6px 15px #e96b1940;
+}
+body[data-menu-template="pitacco-v2"] .dock button{min-height:59px;font-size:1.03rem}
+body[data-menu-template="pitacco-v2"] .secondary{border:1px solid #dfccea;color:#6b197f;background:#fff}
+body[data-menu-template="pitacco-v2"] dialog{
+ border-radius:24px;background:#fdfbff;border:1px solid #eaddef;box-shadow:0 20px 65px #15001b60;
+}
+body[data-menu-template="pitacco-v2"] dialog::backdrop{background:#1e0128ba}
+body[data-menu-template="pitacco-v2"] .dialog-header{
+ background:linear-gradient(130deg,#350344,#790f92);color:#fff;border:0;padding:23px 24px;
+}
+body[data-menu-template="pitacco-v2"] .dialog-header h2{color:white;font-size:1.37rem;font-weight:820}
+body[data-menu-template="pitacco-v2"] .close{background:#ffffff1e;color:white;border:1px solid #ffffff54}
+body[data-menu-template="pitacco-v2"] .dialog-scroll{background:#fdfbff;padding:23px}
+body[data-menu-template="pitacco-v2"] .dialog-footer{border-color:#eadfed;background:#fff;padding-top:15px}
+body[data-menu-template="pitacco-v2"] .product-intro{border-radius:17px;overflow:hidden;background:#4d0865;margin:-1px 0 19px}
+body[data-menu-template="pitacco-v2"] .product-intro img{width:100%;max-height:305px;object-fit:cover;border-radius:0}
+body[data-menu-template="pitacco-v2"] .product-intro p{background:#fff;color:#513c5b;padding:13px}
+body[data-menu-template="pitacco-v2"] .options{background:white;border-color:#e9d9ec;border-radius:15px}
+body[data-menu-template="pitacco-v2"] .options legend{color:#4a0c61}
+body[data-menu-template="pitacco-v2"] .option:has(input:checked){background:#f9efff;border-color:#ad59c6}
+body[data-menu-template="pitacco-v2"] .option input{accent-color:#7a13ab}
+body[data-menu-template="pitacco-v2"] .cartline{
+ border:1px solid #ebdfef;border-radius:15px;padding:13px;margin:0 0 12px;background:white;
+ grid-template-columns:auto minmax(0,1fr) auto;gap:8px 12px;box-shadow:0 2px 9px #35044f0a;
+}
+body[data-menu-template="pitacco-v2"] .cartline .v2-cart-thumb{
+ width:68px;height:70px;object-fit:cover;border-radius:12px;background:radial-gradient(#8a32a8,#4a075e);grid-row:span 2;
+}
+body[data-menu-template="pitacco-v2"] .cartline>div:nth-child(2){grid-column:2/4}
+body[data-menu-template="pitacco-v2"] .cart-controls{grid-column:2/4}
+body[data-menu-template="pitacco-v2"] .total{background:white;border:1px solid #eaddee;border-radius:14px;padding:16px}
+body[data-menu-template="pitacco-v2"] .total>div:last-child{color:#4c0a6d}
+body[data-menu-template="pitacco-v2"] #checkout>h3{font-size:1.35rem;color:#45035b;margin:12px 0}
+body[data-menu-template="pitacco-v2"] #checkout>label{margin-top:16px;font-size:.89rem;color:#472a53}
+body[data-menu-template="pitacco-v2"] #checkout input,
+body[data-menu-template="pitacco-v2"] #checkout select,
+body[data-menu-template="pitacco-v2"] #checkout textarea{
+ background:white;border-radius:13px;border:1px solid #ded0e5;min-height:47px;box-shadow:0 2px 7px #2702330b;
+}
+body[data-menu-template="pitacco-v2"] #checkout input:focus,
+body[data-menu-template="pitacco-v2"] #checkout select:focus,
+body[data-menu-template="pitacco-v2"] #checkout textarea:focus{outline:2px solid #8720b2;outline-offset:1px}
+body[data-menu-template="pitacco-v2"] .v2-checkout-progress{
+ display:flex;align-items:center;justify-content:space-between;gap:5px;flex-wrap:wrap;
+ padding:13px;background:white;border:1px solid #eaddef;border-radius:15px;
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-progress span{font-size:.73rem;font-weight:780;color:#764b86}
+body[data-menu-template="pitacco-v2"] .v2-checkout-progress span[data-active=true]{color:#f27608}
+body[data-menu-template="pitacco-v2"] #loyaltyBox{
+ margin-top:18px;background:white;border:1px solid #e6d2ef;border-radius:18px;padding:18px;
+}
+body[data-menu-template="pitacco-v2"] #loyaltyBox h3{font-size:1.18rem;color:#570877}
+body[data-menu-template="pitacco-v2"] #loyaltyTerms{font-size:.82rem;color:#705a76;line-height:1.5}
+body[data-menu-template="pitacco-v2"] #loyaltyMember{border-radius:12px;background:#f6e6ff;padding:13px}
+body[data-menu-template="pitacco-v2"] #loyaltyBalance{color:#621090}
+body[data-menu-template="pitacco-v2"] #success{
+ border:1px solid #e4d1ea;border-radius:19px;background:#fff;text-align:center;padding:27px 19px;
+}
+body[data-menu-template="pitacco-v2"] #success h2{font-size:1.7rem;color:#4b0a67}
+body[data-menu-template="pitacco-v2"] #success a{color:#8121ae}
+body[data-menu-template="pitacco-v2"] .v2-section-page{padding:17px 0 33px}
+body[data-menu-template="pitacco-v2"] .v2-section-page[hidden]{display:none}
+body[data-menu-template="pitacco-v2"] .v2-page-hero{
+ background:linear-gradient(116deg,#3c0451 0%,#7913a3 80%,#8f33b5);
+ color:#fff;border-radius:24px 24px 0 0;padding:24px 24px 50px;position:relative;overflow:hidden;
+}
+body[data-menu-template="pitacco-v2"] .v2-page-hero::after{
+ content:"🎁";position:absolute;right:20px;top:1px;font-size:5.5rem;opacity:.68;transform:rotate(13deg)
+}
+body[data-menu-template="pitacco-v2"] .v2-page-hero h2{font-size:2rem;letter-spacing:-.04em;color:white;margin:0}
+body[data-menu-template="pitacco-v2"] .v2-page-hero p{font-size:.9rem;margin:7px 0;max-width:65%;color:#f9e8ff}
+body[data-menu-template="pitacco-v2"] .v2-page-body{
+ margin:-28px 0 0;position:relative;background:white;border-radius:22px;padding:20px;
+ border:1px solid #ead8f1;box-shadow:0 10px 27px #4d146015;
+}
+body[data-menu-template="pitacco-v2"] .v2-page-body>h3{margin:4px 0 14px;font-size:1.18rem;color:#400959}
+body[data-menu-template="pitacco-v2"] .v2-phone-connect{
+ background:#f8f0fc;border:1px solid #eedbf6;border-radius:15px;padding:15px;margin-bottom:17px;
+ display:grid;grid-template-columns:1fr auto;gap:11px;align-items:end;
+}
+body[data-menu-template="pitacco-v2"] .v2-phone-connect label{font-weight:740;font-size:.86rem}
+body[data-menu-template="pitacco-v2"] .v2-phone-connect small{grid-column:1/-1;color:#705179}
+body[data-menu-template="pitacco-v2"] .v2-phone-connect input{margin-top:6px}
+body[data-menu-template="pitacco-v2"] .v2-connection-note{color:#674778;font-size:.85rem;margin:0 0 15px}
+body[data-menu-template="pitacco-v2"] .v2-wallet-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+body[data-menu-template="pitacco-v2"] .v2-wallet-stat{
+ padding:15px 11px;border-radius:15px;background:#fff5e1;display:grid;gap:4px;text-align:center;min-width:0;
+}
+body[data-menu-template="pitacco-v2"] .v2-wallet-stat:nth-child(2){background:#f2e6ff}
+body[data-menu-template="pitacco-v2"] .v2-wallet-stat:nth-child(3){background:#e9f9ed}
+body[data-menu-template="pitacco-v2"] .v2-wallet-stat strong{font-size:1.54rem;font-weight:850;line-height:1.15}
+body[data-menu-template="pitacco-v2"] .v2-wallet-stat small{font-size:.74rem;color:#55445b}
+body[data-menu-template="pitacco-v2"] .v2-wallet-stat span{font-size:1.65rem}
+body[data-menu-template="pitacco-v2"] .v2-quick-title{margin:23px 0 11px;color:#41085a;font-size:1.08rem}
+body[data-menu-template="pitacco-v2"] .v2-benefit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+body[data-menu-template="pitacco-v2"] .v2-benefit{
+ display:flex;align-items:center;text-align:left;gap:11px;padding:15px 12px;
+ background:white;border:1px solid #e6d9ed;border-radius:14px;
+ color:#3c1054;box-shadow:0 3px 9px #2801390a;font-weight:740;cursor:pointer;
+}
+body[data-menu-template="pitacco-v2"] .v2-benefit>span:first-child{font-size:1.7rem}
+body[data-menu-template="pitacco-v2"] .v2-benefit>span:last-child{margin-left:auto;color:#9028b2}
+body[data-menu-template="pitacco-v2"] .v2-loyalty-detail{
+ margin-top:15px;background:#faf4fd;border:1px solid #e8d7f0;border-radius:16px;padding:17px;
+}
+body[data-menu-template="pitacco-v2"] .v2-loyalty-detail h3{margin:0 0 12px;color:#4e0b68}
+body[data-menu-template="pitacco-v2"] .v2-loyalty-detail article{
+ background:white;border:1px solid #e9def0;border-radius:12px;padding:13px;margin:10px 0;
+ display:flex;gap:9px;align-items:center;justify-content:space-between;
+}
+body[data-menu-template="pitacco-v2"] .v2-loyalty-detail article small{color:#765780}
+body[data-menu-template="pitacco-v2"] .v2-loyalty-detail article button{
+ border:0;background:linear-gradient(110deg,#fa9300,#ff6100);color:#fff;font-weight:750;border-radius:10px;padding:9px 12px
+}
+body[data-menu-template="pitacco-v2"] .v2-loyalty-detail article button:disabled{opacity:.5}
+body[data-menu-template="pitacco-v2"] .v2-about{
+ background:#fff;border-radius:20px;border:1px solid #e7ddec;padding:25px;box-shadow:0 6px 15px #3a07470d;
+}
+body[data-menu-template="pitacco-v2"] .v2-about h2{color:#48075d}
+body[data-menu-template="pitacco-v2"] .v2-about p{color:#705477}
+body[data-menu-template="pitacco-v2"] .v2-about .v2-about-chip{border-radius:12px;background:#f8ecff;padding:10px 13px;margin:9px 0}
+body[data-menu-template="pitacco-v2"] .v2-hidden{display:none!important}
+body[data-menu-template="pitacco-v2"] .product{position:relative}
+
+/* Etapas visuais do checkout do template principal sem ocultar campos exigidos */
+body[data-menu-template="pitacco-v2"] .v2-checkout-panel{
+ border-radius:17px;border:1px solid #e9dcec;background:#fff;padding:19px;margin:17px 0;
+ box-shadow:0 4px 15px #3004420b
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-panel>h3{
+ color:#45035c;font-size:1.18rem;letter-spacing:-.025em;margin:0 0 5px
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-panel>p:first-of-type{
+ color:#70557c;font-size:.84rem;margin:0 0 14px
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-panel label{
+ font-size:.86rem;color:#3e2051;margin:13px 0 5px;font-weight:750
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-panel #payment{
+ background:#faf4ff;border:1px solid #dcc6e8;font-weight:650
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-confirm{
+ background:linear-gradient(125deg,#fbf2ff,#fff);border:1px solid #e7daee;
+ border-radius:16px;padding:16px;margin-top:13px
+}
+body[data-menu-template="pitacco-v2"] .v2-checkout-confirm p:first-child{font-size:.84rem;color:#70577c}
+body[data-menu-template="pitacco-v2"] .v2-checkout-confirm .primary{width:100%;min-height:52px}
+body[data-menu-template="pitacco-v2"] #success::before{
+ content:"✓";display:grid;place-items:center;background:#e2f9e9;color:#23854a;
+ border-radius:50%;width:69px;height:69px;margin:0 auto 14px;font-size:2.15rem;font-weight:850;
+}
+@media(max-width:600px){
+ body[data-menu-template="pitacco-v2"] .v2-checkout-panel{margin:12px 0;padding:15px}
+ body[data-menu-template="pitacco-v2"] .v2-checkout-confirm{padding:14px}
+}
+
+body[data-menu-template="pitacco-v2"] .pitacco-promos{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+body[data-menu-template="pitacco-v2"] .pitacco-promo{border-color:#eedcf4;background:#f7ebff;color:#34114b}
+body[data-menu-template="pitacco-v2"] .pitacco-promo-link{color:#8215b0}
+body[data-menu-template="pitacco-v2"] .store-open-status{margin-top:13px;border-radius:12px}
+body[data-menu-template="pitacco-v2"] .pitacco-footer{color:#725779}
+@media(max-width:900px){
+ body[data-menu-template="pitacco-v2"] .category-grid,
+ body.pitacco-designed[data-menu-template="pitacco-v2"] .category-grid,
+ body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=lista] .category-grid,
+ body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=grade] .category-grid,
+ body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=destaques] .category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:600px){
+ body[data-menu-template="pitacco-v2"] .shell{width:calc(100% - 26px)}
+ body[data-menu-template="pitacco-v2"] .hero{padding:20px 0 24px;min-height:0}
+ body[data-menu-template="pitacco-v2"] .hero-content{min-height:0;gap:10px}
+ body[data-menu-template="pitacco-v2"] .hero h1{font-size:1.58rem}
+ body[data-menu-template="pitacco-v2"] .store-mark{width:52px;height:52px;border-radius:14px}
+ body[data-menu-template="pitacco-v2"] .services{gap:5px}
+ body[data-menu-template="pitacco-v2"] .services span{font-size:.7rem;padding:4px 7px}
+ body[data-menu-template="pitacco-v2"] .v2-store-nav{margin-top:-10px;padding:5px;gap:1px;border-radius:17px}
+ body[data-menu-template="pitacco-v2"] .v2-nav-button{font-size:.68rem;padding:9px 2px;border-radius:13px}
+ body[data-menu-template="pitacco-v2"] .v2-nav-button .v2-nav-icon{font-size:1.12rem}
+ body[data-menu-template="pitacco-v2"] .v2-home{grid-template-columns:1fr;gap:10px;margin:15px 0}
+ body[data-menu-template="pitacco-v2"] .v2-feature{min-height:165px;padding:18px;border-radius:18px}
+ body[data-menu-template="pitacco-v2"] .v2-feature-copy{width:62%}
+ body[data-menu-template="pitacco-v2"] .v2-feature-copy strong{font-size:1.42rem}
+ body[data-menu-template="pitacco-v2"] .v2-home-loyalty{padding:15px;border-radius:16px;gap:8px}
+ body[data-menu-template="pitacco-v2"] .v2-home-loyalty strong{font-size:1.14rem}
+ body[data-menu-template="pitacco-v2"] .v2-home-loyalty p{font-size:.79rem}
+ body[data-menu-template="pitacco-v2"] .catalog{padding-top:12px}
+ body[data-menu-template="pitacco-v2"] .catalog-tools{padding-top:9px}
+ body[data-menu-template="pitacco-v2"] .catalog-tools .toolbar h2{display:block;font-size:1.25rem}
+ body[data-menu-template="pitacco-v2"] .category-grid,
+ body.pitacco-designed[data-menu-template="pitacco-v2"] .category-grid,
+ body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=lista] .category-grid,
+ body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=grade] .category-grid,
+ body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=destaques] .category-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ body[data-menu-template="pitacco-v2"] .product-visual,
+ body.pitacco-designed[data-menu-template="pitacco-v2"] .product-visual,
+ body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=lista] .product-visual,
+ body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=grade] .product-visual,
+ body.pitacco-designed[data-menu-template="pitacco-v2"][data-design-layout=destaques] .product-visual{height:132px}
+ body[data-menu-template="pitacco-v2"] .product-text{padding:10px}
+ body[data-menu-template="pitacco-v2"] .product-name{font-size:.91rem}
+ body[data-menu-template="pitacco-v2"] .product-description{font-size:.7rem}
+ body[data-menu-template="pitacco-v2"] .product-plus{right:8px;bottom:8px;width:31px;height:31px}
+ body[data-menu-template="pitacco-v2"] .v2-favorite{width:31px;height:31px;right:7px;top:7px}
+ body[data-menu-template="pitacco-v2"] .dock{bottom:max(8px,env(safe-area-inset-bottom))}
+ body[data-menu-template="pitacco-v2"] dialog{border-radius:24px 24px 0 0;max-height:95dvh}
+ body[data-menu-template="pitacco-v2"] .dialog-shell{max-height:95dvh}
+ body[data-menu-template="pitacco-v2"] .dialog-header{padding:17px 16px}
+ body[data-menu-template="pitacco-v2"] .dialog-scroll{padding:16px}
+ body[data-menu-template="pitacco-v2"] .v2-page-hero{padding:23px 19px 49px;border-radius:20px 20px 0 0}
+ body[data-menu-template="pitacco-v2"] .v2-page-hero h2{font-size:1.65rem}
+ body[data-menu-template="pitacco-v2"] .v2-page-body{padding:15px}
+ body[data-menu-template="pitacco-v2"] .v2-wallet-grid{gap:7px}
+ body[data-menu-template="pitacco-v2"] .v2-wallet-stat{padding:12px 6px}
+ body[data-menu-template="pitacco-v2"] .v2-wallet-stat strong{font-size:1.25rem}
+ body[data-menu-template="pitacco-v2"] .v2-wallet-stat small{font-size:.69rem}
+ body[data-menu-template="pitacco-v2"] .v2-benefit-grid{gap:8px}
+ body[data-menu-template="pitacco-v2"] .v2-benefit{font-size:.82rem;gap:7px;padding:12px 9px}
+ body[data-menu-template="pitacco-v2"] .v2-benefit>span:first-child{font-size:1.37rem}
+ body[data-menu-template="pitacco-v2"] .v2-phone-connect{grid-template-columns:1fr}
+ body[data-menu-template="pitacco-v2"] .v2-phone-connect small{grid-column:1}
+ body[data-menu-template="pitacco-v2"] .v2-loyalty-detail article{align-items:flex-start;flex-wrap:wrap}
+ body[data-menu-template="pitacco-v2"] .pitacco-promos{grid-template-columns:1fr}
+}
 </style></head><body>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
  <div class="shell hero-content"><div class="identity"><div class="store-mark" aria-hidden="true"><span id="storeInitial"></span><img id="storeLogo" alt="" hidden></div>
  <div><h1 id="storeName"></h1><p id="storeSlogan">Cardápio digital</p></div></div><div id="storeServices" class="services"></div></div>
 </header>
+<nav id="v2StoreNav" class="shell v2-store-nav" aria-label="Seções do cardápio">
+ <button type="button" class="v2-nav-button" data-v2-nav="inicio" aria-current="page"><span class="v2-nav-icon" aria-hidden="true">⌂</span>Início</button>
+ <button type="button" class="v2-nav-button" data-v2-nav="cardapio"><span class="v2-nav-icon" aria-hidden="true">🍽</span>Cardápio</button>
+ <button type="button" class="v2-nav-button" data-v2-nav="promocoes"><span class="v2-nav-icon" aria-hidden="true">🔥</span>Promoções</button>
+ <button type="button" id="loyaltyOpen" class="v2-nav-button" aria-label="Meu Fideliza+" data-v2-nav="fideliza" hidden><span class="v2-nav-icon" aria-hidden="true">☆</span>Fideliza+</button>
+ <button type="button" class="v2-nav-button" data-v2-nav="sobre"><span class="v2-nav-icon" aria-hidden="true">ⓘ</span>Sobre</button>
+</nav>
+
 <section id="storeOpenStatus" class="shell store-open-status" role="status" aria-live="polite" hidden></section>
 <section id="pitaccoPromos" class="shell pitacco-promos" aria-label="Destaques da loja" hidden></section>
 <main class="shell catalog">
+
+<section id="v2Home" class="v2-home" aria-label="Destaques da loja" hidden>
+ <button type="button" id="v2Feature" class="v2-feature" hidden>
+  <span class="v2-feature-copy"><small>✨ Destaque da loja</small><strong id="v2FeatureTitle"></strong><em id="v2FeaturePrice"></em></span>
+  <img id="v2FeatureImage" class="v2-feature-image" alt="" hidden>
+ </button>
+ <div id="v2HomeLoyalty" class="v2-home-loyalty" hidden>
+  <div><strong>⭐ Fideliza+</strong><p>Faça pedidos, acumule pontos e aproveite benefícios desta loja.</p></div>
+  <button type="button" id="v2HomeLoyaltyGo">Ver meus benefícios →</button>
+ </div>
+</section>
+
+<section id="v2LoyaltyPage" class="v2-section-page" aria-label="Minha área Fideliza+" hidden>
+ <div class="v2-page-hero"><h2>⭐ Fideliza+</h2><p>Compre, acumule pontos e aproveite benefícios exclusivos desta loja.</p></div>
+ <div class="v2-page-body">
+  <div class="v2-phone-connect"><div><label for="v2LoyaltyPhone">Seus benefícios pelo celular com DDD</label><input id="v2LoyaltyPhone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="(21) 99999-9999"></div><small>Seu número do pedido identifica automaticamente a carteira. Não é necessária chave.</small></div>
+  <p id="v2ConnectionNote" class="v2-connection-note" role="status" aria-live="polite">Informe seu celular para consultar os pontos.</p>
+  <h3>Seus benefícios</h3>
+  <div class="v2-wallet-grid">
+   <div class="v2-wallet-stat"><span aria-hidden="true">⭐</span><strong id="v2PointsValue">0</strong><small>Pontos</small></div>
+   <div class="v2-wallet-stat"><span aria-hidden="true">🎁</span><strong id="v2OffersValue">0</strong><small>Ofertas</small></div>
+   <div class="v2-wallet-stat"><span aria-hidden="true">💰</span><strong id="v2CashbackValue">R$ 0,00</strong><small>Cashback</small></div>
+  </div>
+  <h3 class="v2-quick-title">Explore seus benefícios</h3>
+  <div id="v2BenefitGrid" class="v2-benefit-grid">
+   <button type="button" class="v2-benefit" data-v2-benefit="pontos"><span>⭐</span>Meus pontos <span>›</span></button>
+   <button type="button" class="v2-benefit" data-v2-benefit="cupons"><span>🎟</span>Meus cupons <span>›</span></button>
+   <button type="button" class="v2-benefit" data-v2-benefit="recompensas"><span>🎁</span>Recompensas <span>›</span></button>
+   <button type="button" class="v2-benefit" data-v2-benefit="cashback"><span>💰</span>Cashback <span>›</span></button>
+   <button type="button" class="v2-benefit" data-v2-benefit="indicacoes"><span>🫂</span>Indique e ganhe <span>›</span></button>
+   <button type="button" class="v2-benefit" data-v2-benefit="campanhas"><span>📣</span>Campanhas <span>›</span></button>
+   <button type="button" class="v2-benefit" data-v2-benefit="ajuda"><span>ⓘ</span>Como funciona? <span>›</span></button>
+  </div>
+  <section id="v2LoyaltyDetail" class="v2-loyalty-detail" aria-live="polite" hidden></section>
+ </div>
+</section>
+<section id="v2AboutPage" class="v2-section-page" aria-label="Sobre a loja" hidden>
+ <div class="v2-about"><h2 id="v2AboutTitle">Sobre a loja</h2><p id="v2AboutIntro">Informações da loja e serviços disponíveis.</p><div id="v2AboutServices"></div></div>
+</section>
+
  <p id="msg" class="msg" role="status">Carregando cardápio…</p>
  <section id="layout" aria-label="Produtos da loja" hidden>
-  <div class="catalog-tools"><div class="toolbar"><h2>Cardápio</h2><label class="search"><span class="visually-hidden">Buscar no cardápio</span>
+  <div class="catalog-tools"><div class="toolbar"><h2 id="v2CatalogTitle">Cardápio</h2><label class="search"><span class="visually-hidden">Buscar no cardápio</span>
    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
-   <input type="search" id="search" placeholder="Buscar no cardápio"></label><button type="button" id="loyaltyOpen" class="secondary" hidden>Meu Fideliza+</button></div>
+   <input type="search" id="search" placeholder="Buscar no cardápio"></label><button type="button" id="v2FavoritesNav" class="secondary" hidden>♡ Favoritos</button><button type="button" id="v2ClassicLoyalty" class="secondary" hidden>Meu Fideliza+</button></div>
   <nav class="nav" id="categories" aria-label="Categorias"></nav></div>
   <div class="products" id="products"></div>
  </section>
@@ -216,14 +617,16 @@ body.store-closed .dock{display:none}
  <div class="dialog-scroll" id="cartBody">
   <p id="checkoutMessage" class="msg" role="status" hidden></p>
   <div id="cartReview"><div id="cart"></div><div id="total" class="total"></div></div>
-  <form id="checkout" hidden><h3>Dados do pedido</h3><label for="customer">Seu nome</label><input id="customer" autocomplete="name" required minlength="2" maxlength="120"><label for="phone">Telefone com DDD</label><input id="phone" autocomplete="tel-national" required inputmode="tel" maxlength="30"><label for="fulfillment">Como deseja receber?</label><select id="fulfillment"></select><div id="scheduleBlock" hidden><label for="schedule">Quando deseja receber?</label><select id="schedule"><option value="">Assim que possível</option></select><small>Horários de Brasília. Para entrega, o horário é uma previsão.</small></div><div id="addressBlock"><label for="address">Endereço de entrega</label><textarea id="address" autocomplete="street-address" rows="2" maxlength="500"></textarea><fieldset id="deliveryPoint" hidden>
+  <form id="checkout" hidden><div class="v2-checkout-progress" aria-label="Etapas do pedido"><span>✓ Sacola</span><span data-active="true">2. Seus dados</span><span>3. Entrega</span><span>4. Pagamento</span></div><section class="v2-checkout-panel v2-checkout-panel--customer"><h3>👤 Seus dados</h3><p>Informe seus dados para continuar com o pedido.</p><label for="customer">Seu nome</label><input id="customer" autocomplete="name" required minlength="2" maxlength="120"><label for="phone">Telefone com DDD</label><input id="phone" autocomplete="tel-national" required inputmode="tel" maxlength="30"></section>
+<section class="v2-checkout-panel v2-checkout-panel--delivery"><h3>📍 Entrega ou retirada</h3><p>Escolha como deseja receber seu pedido.</p><label for="fulfillment">Como deseja receber?</label><select id="fulfillment"></select><div id="scheduleBlock" hidden><label for="schedule">Quando deseja receber?</label><select id="schedule"><option value="">Assim que possível</option></select><small>Horários de Brasília. Para entrega, o horário é uma previsão.</small></div><div id="addressBlock"><label for="address">Endereço de entrega</label><textarea id="address" autocomplete="street-address" rows="2" maxlength="500"></textarea><fieldset id="deliveryPoint" hidden>
  <legend>Localização da entrega</legend>
  <p>Marque o endereço no mapa ou use sua localização atual se estiver no local da entrega.</p>
  <button id="showDeliveryMap" type="button" class="secondary">Abrir mapa</button>
  <button id="locateDelivery" type="button" class="secondary">Usar minha localização</button>
  <div id="deliveryMap" aria-label="Mapa da área de entrega" hidden style="height:260px;margin:12px 0;z-index:0"></div>
  <p id="deliveryPointStatus" role="status"></p>
-</fieldset><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço, marque o destino no mapa e calcule o frete conforme a área da loja.</p></div></div><label for="payment">Forma de pagamento</label><select id="payment" required></select>
+</fieldset><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço, marque o destino no mapa e calcule o frete conforme a área da loja.</p></div></div></section><section class="v2-checkout-panel v2-checkout-panel--payment">
+<h3>💳 Forma de pagamento</h3><p>Escolha como deseja pagar seu pedido.</p><label for="payment">Forma de pagamento</label><select id="payment" required></select>
 <section id="loyaltyBox" class="fiado-access" aria-label="Fideliza+ do cliente" hidden>
  <h3>Fideliza+ · Benefícios desta loja</h3><p id="loyaltyTerms"></p><div id="loyaltyCampaigns"></div>
  <div id="loyaltyAnonymous"><p>Seu número de celular com DDD é seu acesso ao Fideliza+. Ao digitar o telefone do pedido, seus pontos e créditos aparecem automaticamente. Na primeira compra, o cadastro da carteira é automático.</p>
@@ -240,7 +643,9 @@ body.store-closed .dock{display:none}
  <label for="fiadoCode">Código particular para confirmar pagamento fiado</label>
  <input id="fiadoCode" type="password" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="off" placeholder="Código de 10 dígitos" aria-describedby="fiadoStatus">
  <p id="fiadoStatus" role="status" aria-live="polite">O pagamento fiado será confirmado com a autorização fornecida pela loja.</p>
-</div><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea><p><button class="primary" id="send" type="submit">Confirmar pedido</button></p></form>
+</div><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea></section>
+<section class="v2-checkout-confirm"><p>Confira seus dados, produtos, endereço e forma de pagamento antes de confirmar.</p>
+<p><button class="primary" id="send" type="submit">Confirmar pedido</button></p></section></form>
   <div id="success" hidden></div>
  </div>
  <footer class="dialog-footer" id="cartFooter"><button id="continueCheckout" type="button" class="primary">Continuar para entrega e pagamento</button><button id="backToCart" type="button" class="secondary" hidden>Voltar à sacola</button></footer>
@@ -334,6 +739,162 @@ $('quoteDelivery').onclick=async()=>{
 const scheduleFormat=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 
 const moneyFormat=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+
+// Template principal do cardápio, sem alterar o motor de pedidos. Cada futuro
+// modelo poderá ter outro id em appearance.template.
+let v2Page='inicio',v2Detail='',v2FavoritesOnly=false;
+const v2FavoritesKey='pitacco-favoritos:'+slug;
+let v2Favorites=new Set();
+try{const data=JSON.parse(localStorage.getItem(v2FavoritesKey)||'[]');if(Array.isArray(data))v2Favorites=new Set(data.filter(x=>typeof x==='string'));}catch{}
+function setMenuTemplate(shop){
+ const preference=String(shop.appearance?.template||shop.appearance?.template_id||'pitacco-v2').toLowerCase();
+ const classic=['classic','classico','legacy'].includes(preference);
+ document.body.dataset.menuTemplate=classic?'classic':'pitacco-v2';
+ $('v2StoreNav').hidden=classic;
+ $('v2ClassicLoyalty').hidden=true;
+}
+function v2SaveFavorite(id){
+ if(v2Favorites.has(id))v2Favorites.delete(id);else v2Favorites.add(id);
+ try{localStorage.setItem(v2FavoritesKey,JSON.stringify([...v2Favorites].slice(-100)))}catch{}
+ renderProducts();
+}
+function v2Feature(){
+ if(document.body.dataset.menuTemplate!=='pitacco-v2'||!menu)return;
+ const p=menu.products.find(x=>imageUrl(x.image_url))||menu.products[0];
+ $('v2Feature').hidden=!p;
+ if(p){
+  $('v2FeatureTitle').textContent=p.name;
+  $('v2FeaturePrice').textContent=money(p.price);
+  $('v2FeatureImage').hidden=!imageUrl(p.image_url);
+  if(imageUrl(p.image_url))$('v2FeatureImage').src=p.image_url;
+  $('v2Feature').onclick=()=>openProduct(p);
+ }
+ $('v2HomeLoyalty').hidden=!loyaltyProgram;
+}
+function v2Go(page,initial=false){
+ if(document.body.dataset.menuTemplate!=='pitacco-v2')return;
+ v2Page=page;v2FavoritesOnly=page==='favoritos';
+ $('v2Home').hidden=page!=='inicio';
+ $('v2LoyaltyPage').hidden=page!=='fideliza';
+ $('v2AboutPage').hidden=page!=='sobre';
+ const listing=page!=='fideliza'&&page!=='sobre';
+ $('layout').hidden=!listing;
+ $('pitaccoPromos').hidden=!['inicio','promocoes'].includes(page)||$('pitaccoPromos').childElementCount===0;
+ for(const b of $('v2StoreNav').querySelectorAll('[data-v2-nav]')){
+  if(b.dataset.v2Nav===page)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');
+ }
+ if(listing&&menu){
+  category=null;$('search').value='';
+  const names={inicio:'Cardápio',cardapio:'Escolha seu favorito',promocoes:'Ofertas e destaques',favoritos:'Meus favoritos'};
+  $('v2CatalogTitle').textContent=names[page]||'Cardápio';
+  renderCategories();renderProducts();
+ }
+ if(page==='fideliza'){
+  $('v2LoyaltyPhone').value=$('phone').value;
+  v2RenderWallet();
+  if(menu)void refreshLoyaltyWallet();
+ }
+ if(page==='sobre'&&menu){
+  $('v2AboutTitle').textContent=menu.store.name;
+  $('v2AboutIntro').textContent=menu.store.appearance?.slogan||'Conheça os serviços disponíveis nesta loja.';
+  const area=$('v2AboutServices');area.replaceChildren();
+  for(const item of $('storeServices').children)area.append(el('p',item.textContent,'v2-about-chip'));
+  area.append(el('p','Horários de atendimento e disponibilidade de pedidos definidos pela loja.','v2-about-chip'));
+ }
+ if(!initial)window.scrollTo({top:0,behavior:'smooth'});
+}
+for(const b of $('v2StoreNav').querySelectorAll('[data-v2-nav]')){
+ if(b.id!=='loyaltyOpen')b.onclick=()=>v2Go(b.dataset.v2Nav);
+}
+$('v2HomeLoyaltyGo').onclick=()=>v2Go('fideliza');
+$('v2FavoritesNav').onclick=()=>v2Go('favoritos');
+$('v2ClassicLoyalty').onclick=()=>{if(!$('loyaltyOpen').hidden)$('loyaltyOpen').click()};
+$('v2LoyaltyPhone').addEventListener('input',e=>{
+ $('phone').value=e.target.value;
+ $('phone').dispatchEvent(new Event('input',{bubbles:true}));
+});
+$('phone').addEventListener('input',()=>{
+ if(document.activeElement!==$('v2LoyaltyPhone'))$('v2LoyaltyPhone').value=$('phone').value;
+});
+function v2BenefitPurchase(type,value){
+ if(type==='coupon'){$('loyaltyCoupon').value=value;$('loyaltyReward').value='';}
+ else{$('loyaltyReward').value=value;$('loyaltyCoupon').value='';}
+ invalidateLoyalty();
+ if(!cart.length){v2Go('cardapio');return;}
+ $('cartDialog').showModal();cartStep(true);
+ $('loyaltyBox').scrollIntoView({block:'start'});
+ loyaltyNotice('Toque em Aplicar benefício para conferir o desconto.');
+}
+function v2RenderWallet(){
+ if(document.body.dataset.menuTemplate!=='pitacco-v2')return;
+ const wallet=loyaltyWallet,rule=wallet?.rules||loyaltyProgram?.rules||{};
+ $('v2PointsValue').textContent=String(wallet?.points||0);
+ $('v2CashbackValue').textContent=money((wallet?.cashback_cents||0)/100);
+ const offers=[...(loyaltyProgram?.campaigns||[]),...(wallet?.offers||[])];
+ $('v2OffersValue').textContent=String(offers.length);
+ const digits=loyaltyPhoneDigits($('phone').value);
+ $('v2ConnectionNote').textContent=digits.length!==10&&digits.length!==11?
+  'Digite seu celular com DDD para consultar seus benefícios.':
+  wallet?.linked?'Carteira localizada automaticamente para este celular nesta loja.':
+  'Este celular ainda não possui compras vinculadas. A primeira compra inicia os benefícios.';
+ for(const b of $('v2BenefitGrid').querySelectorAll('[data-v2-benefit]')){
+  const name=b.dataset.v2Benefit;
+  b.hidden=(name==='pontos'&&!rule.points_enabled&&!rule.orders_enabled)
+   ||(name==='cupons'&&!rule.coupons_enabled)
+   ||(name==='recompensas'&&!rule.points_enabled&&!rule.orders_enabled)
+   ||(name==='cashback'&&!rule.cashback_enabled)
+   ||(name==='indicacoes'&&!rule.referrals_enabled)
+   ||(name==='campanhas'&&!rule.campaigns_enabled);
+ }
+ if(v2Detail)v2ShowBenefit(v2Detail,false);
+}
+function v2ShowBenefit(mode,scroll=true){
+ v2Detail=mode;
+ const root=$('v2LoyaltyDetail');root.hidden=false;root.replaceChildren();
+ const wallet=loyaltyWallet,rule=wallet?.rules||loyaltyProgram?.rules||{};
+ const title={pontos:'Meus pontos',cupons:'Meus cupons',recompensas:'Resgatar recompensas',cashback:'Cashback',indicacoes:'Indique e ganhe',campanhas:'Campanhas',ajuda:'Como funciona?'};
+ root.append(el('h3',title[mode]||'Fideliza+'));
+ const line=(heading,detail,action,callback,disabled=false)=>{
+  const article=el('article'),content=el('div');
+  content.append(el('strong',heading));
+  if(detail)content.append(el('small',detail));
+  article.append(content);
+  if(action){const btn=button(action);btn.disabled=disabled;btn.onclick=callback;article.append(btn);}
+  root.append(article);
+ };
+ if(mode==='pontos'){
+  line((wallet?.points||0)+' pontos','Pontos entram depois que o pedido é pago e entregue.');
+  if(rule.orders_enabled)line((wallet?.orders||0)+' pedidos acumulados','Contador de pedidos elegíveis desta loja.');
+  line('Movimentações detalhadas','Por privacidade, o extrato completo não pode ser exibido apenas com um telefone digitado.');
+ }else if(mode==='recompensas'){
+  if(rule.points_enabled)line(money((rule.points_reward_cents||0)/100)+' de desconto','Precisa de '+(rule.min_points_to_redeem||0)+' pontos','Resgatar',()=>v2BenefitPurchase('reward','points'),(wallet?.points||0)<(rule.min_points_to_redeem||Infinity));
+  if(rule.orders_enabled)line(money((rule.orders_reward_cents||0)/100)+' de desconto','Precisa de '+(rule.orders_required||0)+' pedidos','Resgatar',()=>v2BenefitPurchase('reward','orders'),(wallet?.orders||0)<(rule.orders_required||Infinity));
+ }else if(mode==='cashback'){
+  line(money((wallet?.cashback_cents||0)/100)+' de créditos','Utilização sujeita às regras da loja','Usar agora',()=>v2BenefitPurchase('reward','cashback'),!(wallet?.cashback_cents>0));
+  line('Acumule em suas compras','Créditos são concedidos apenas depois do pedido pago e entregue.');
+ }else if(mode==='indicacoes'){
+  if(wallet?.referral_code)line('Seu código: '+wallet.referral_code,'Compartilhe com amigos que ainda não compraram aqui.','Copiar link',()=>{
+   const url=location.origin+'/'+slug+'?indicacao='+encodeURIComponent(wallet.referral_code);
+   if(navigator.clipboard?.writeText)navigator.clipboard.writeText(url).then(()=>root.append(el('p','Link copiado.'))).catch(()=>root.append(el('p',url)));
+   else root.append(el('p',url));
+  });
+  else line('Indique amigos','Informe seu celular no campo acima. As vantagens dependem das regras da loja.');
+ }else if(mode==='cupons'||mode==='campanhas'){
+  const all=[...(loyaltyProgram?.campaigns||[]),...(wallet?.offers||[])];
+  const offers=mode==='campanhas'?all.filter(o=>!o.personal):all;
+  if(!offers.length)line('Nenhuma oferta disponível','Os benefícios cadastrados pela loja aparecerão aqui.');
+  for(const c of offers)line(c.title||c.code,(c.discount_type==='percent'?c.discount_value+'%':money(c.discount_value))+' · Código '+c.code,'Usar',()=>v2BenefitPurchase('coupon',c.code));
+  if(mode==='cupons')line('Já tem um código?','Digite-o na etapa de benefícios do checkout.','Abrir sacola',()=>v2BenefitPurchase('coupon',''));
+ }else{
+  line('Compre e acumule','Seu telefone com DDD identifica os benefícios desta loja.');
+  line('Troque por vantagens','Use pontos, cupons, campanhas e cashback conforme a configuração.');
+  line('Quando são liberados?','Somente após pagamento e entrega ou retirada confirmados.');
+ }
+ if(scroll)root.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+for(const b of $('v2BenefitGrid').querySelectorAll('[data-v2-benefit]'))
+ b.onclick=()=>v2ShowBenefit(b.dataset.v2Benefit);
+
 const categoryOf=product=>product.category?.trim()||'Outros';
 const normal=text=>text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 const button=(name,cls)=>{const node=el('button',name,cls);node.type='button';return node};
@@ -371,7 +932,7 @@ function renderCategories(){
 }
 function renderProducts(){
  const query=normal($('search').value);
- const products=menu.products.filter(p=>(category===null||categoryOf(p)===category)&&normal([p.name,p.description,categoryOf(p)].join(' ')).includes(query));
+ const products=menu.products.filter(p=>(!v2FavoritesOnly||v2Favorites.has(p.id))&&(category===null||categoryOf(p)===category)&&normal([p.name,p.description,categoryOf(p)].join(' ')).includes(query));
  const root=$('products');root.replaceChildren();
  const sections=new Map();
  for(const product of products){
@@ -396,9 +957,18 @@ function renderProducts(){
   visual.append(el('span',product.name.trim().slice(0,1).toUpperCase()));
   addPhoto(visual,product.image_url);
   visual.append(el('span','+','product-plus'));
-  open.append(info,visual);open.onclick=()=>openProduct(product);card.append(open);sections.get(name).append(card);
+  open.append(info,visual);open.onclick=()=>openProduct(product);card.append(open);
+  if(document.body.dataset.menuTemplate==='pitacco-v2'){
+   const saved=v2Favorites.has(product.id);
+   const fav=button(saved?'♥':'♡','v2-favorite');
+   fav.setAttribute('aria-pressed',String(saved));
+   fav.setAttribute('aria-label',(saved?'Remover ':'Salvar ')+product.name+' nos favoritos');
+   fav.onclick=()=>v2SaveFavorite(product.id);
+   card.append(fav);
+  }
+  sections.get(name).append(card);
  }
- if(!products.length)root.append(el('p',menu.products.length?'Nenhum produto encontrado.':'Esta loja ainda não possui produtos disponíveis.','empty'));
+ if(!products.length)root.append(el('p',v2FavoritesOnly?'Você ainda não salvou favoritos neste aparelho.':menu.products.length?'Nenhum produto encontrado.':'Esta loja ainda não possui produtos disponíveis.','empty'));
 }
 function groupRule(group){
  if(group.min===group.max)return group.min===1?'Escolha 1 opção':'Escolha '+group.min+' opções';
@@ -528,6 +1098,14 @@ function renderCart(){
  if(!cart.length)root.append(el('p','Sua sacola está vazia.'));
  for(const item of cart){
   const line=el('div',undefined,'cartline'),info=el('div');
+  if(document.body.dataset.menuTemplate==='pitacco-v2'){
+   const matching=menu.products.find(p=>p.id===item.product_id);
+   if(imageUrl(matching?.image_url)){
+    const picture=el('img',undefined,'v2-cart-thumb');
+    picture.src=matching.image_url;picture.loading='lazy';picture.alt='';
+    line.append(picture);
+   }
+  }
   info.append(el('strong',item.name));
   if(item.labels.length)info.append(el('small',item.labels.join(' · ')));
   const qtyLabel=el('label','Qtd.');
@@ -816,6 +1394,7 @@ function renderLoyalty(){
  if(rules.cashback_enabled)terms.push(rules.cashback_percent+'% de cashback');
  if(rules.referrals_enabled)terms.push('Indique e ganhe '+money(rules.referral_reward_cents/100)+'; o novo participante ganha '+money(rules.referral_welcome_cents/100)+' após a primeira compra paga e entregue');
  $('loyaltyTerms').textContent=(terms.join(' · ')||'Cupons e ofertas desta loja')+'. Acúmulo sobre produtos após descontos, sem frete. Mínimo para acumular: '+money(rules.minimum_order_cents/100)+'. Um desconto por pedido. Cancelamentos revertem benefícios.';
+ v2RenderWallet();
  const offers=$('loyaltyCampaigns');offers.replaceChildren();
  for(const campaign of [...(loyaltyProgram?.campaigns||[]),...(loyaltyWallet?.offers||[])]){
   const row=el('div',undefined,'loyalty-offer');
@@ -849,6 +1428,8 @@ async function loadLoyalty(){
   const {data,error}=await client.rpc('pitacco_loyalty_program',{p_slug:slug});
   if(error)throw error;if(!data?.rules)return;
   loyaltyProgram=data;$('loyaltyBox').hidden=false;$('loyaltyOpen').hidden=false;
+  $('v2ClassicLoyalty').hidden=document.body.dataset.menuTemplate==='pitacco-v2';
+  v2Feature();
   renderLoyalty();void refreshLoyaltyWallet();
  }catch{
   $('loyaltyOpen').hidden=false;$('loyaltyBox').hidden=false;
@@ -864,6 +1445,7 @@ $('phone').addEventListener('input',()=>{
 setInterval(()=>{if(!document.hidden&&$('cartDialog').open)void refreshLoyaltyWallet()},20000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&$('cartDialog').open)void refreshLoyaltyWallet()});
 $('loyaltyOpen').onclick=()=>{
+ if(document.body.dataset.menuTemplate==='pitacco-v2'){v2Go('fideliza');return;}
  $('cartDialog').showModal();
  if(completed){$('checkout').hidden=false;$('checkout').classList.add('loyalty-only');$('cartTitle').textContent='Meu Fideliza+';}
  else cartStep(true);
@@ -891,8 +1473,11 @@ $('loyaltyReferral').value=new URLSearchParams(location.search).get('indicacao')
 
 function initOptions(){
  const shop=menu.store;
+ setMenuTemplate(shop);
  applyStudioDesign(shop);
  $('storeName').textContent=shop.name;
+ $('v2AboutTitle').textContent=shop.name;
+ $('v2FavoritesNav').hidden=document.body.dataset.menuTemplate!=='pitacco-v2';
  $('storeInitial').textContent=shop.name.trim().slice(0,1).toUpperCase();
  document.title='Cardápio | '+shop.name;
  if(/^#[0-9a-fA-F]{6}$/.test(shop.primary_color||'')){
@@ -929,8 +1514,9 @@ function initOptions(){
   renderCart();loadSchedule();
  };
  $('fulfillment').dispatchEvent(new Event('change'));
- renderCategories();renderProducts();void loadLoyalty();
+ renderCategories();renderProducts();void loadLoyalty();v2Feature();
  $('hero').hidden=false;$('layout').hidden=false;$('cartDock').hidden=false;
+ v2Go('inicio',true);
  showStoreOpening(shop.opening_hours);
  msg(!$('fulfillment').options.length?'Esta loja está sem modalidade de atendimento.':!$('payment').options.length?'Esta loja ainda está configurando o pagamento.':'');
 }

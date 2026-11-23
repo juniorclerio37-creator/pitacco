@@ -7,7 +7,43 @@
 #courierMapInfo:empty{display:none}
 .pitacco-courier-moto-pin{background:transparent!important;border:0!important;box-shadow:none!important;overflow:visible!important}
 .pitacco-courier-moto-pin svg{display:block;width:72px;height:70px;max-width:none;filter:drop-shadow(0 3px 4px #33415552)}
-@media(max-width:600px){#courierLiveMap{height:280px}} </style></head><body><header><div class="inner"><img id="logo" hidden alt="Logo da loja"><div><div id="storeName">Acompanhe seu pedido</div><div id="storeSubtitle">Informações do seu pedido</div></div></div></header><main><section class="card"><div class="eyebrow">ACOMPANHAMENTO DO PEDIDO</div><h1 id="number">Seu pedido</h1><p id="message" class="notice" role="status">Carregando informações…</p></section><div id="content" hidden><section class="card"><div class="eyebrow">STATUS ATUAL</div><div class="status" id="currentStatus"></div><ol class="steps" id="steps"></ol></section><section id="courierLocation" class="card" hidden aria-label="Localização do entregador"><h2>Seu pedido está a caminho</h2><p id="courierLocationStatus" class="note" role="status"></p><div id="courierMapFrame" hidden><div id="courierLiveMap" aria-label="Mapa com a localização aproximada do entregador"></div><p class="note">Posição aproximada, atualizada durante a entrega. O mapa não mostra outras entregas da rota.</p></div><a id="courierMap" target="_blank" rel="noopener noreferrer" hidden>Abrir localização aproximada no mapa</a><p id="courierMapInfo" class="note" role="status"></p></section><section id="deliveryPinCard" class="card delivery-pin-card" hidden><h2>Código de confirmação da entrega</h2><strong class="delivery-pin-value" id="deliveryPin"></strong><p class="note">Informe este código de seis dígitos ao entregador somente quando estiver recebendo seu pedido.</p></section><section class="card"><h2>Resumo do pedido</h2><div id="items"></div><div class="total"><span>Total</span><span id="total"></span></div><p id="scheduledFor" class="note" hidden></p><p id="fulfillment" class="note"></p></section><section class="card"><h2>Receba atualizações</h2><p class="note">Ative as notificações para receber avisos sobre este pedido.</p><button id="notify" hidden>Ativar notificações</button><p id="notifyInfo" class="note"></p></section><p class="note">As informações são atualizadas automaticamente. Guarde este link para acompanhar o andamento do pedido.</p></div></main><script type="module">
+@media(max-width:600px){#courierLiveMap{height:280px}}
+/* Acompanhamento — mesmo sistema visual do template principal Pitacco V2 */
+:root{--v2-deep:#3b0650;--v2-purple:#650b89;--v2-orange:#ff7c08}
+body{background:#faf7fd;color:#281136;font-family:Inter,system-ui,-apple-system,sans-serif}
+header{border:0;background:linear-gradient(115deg,#2d033d,#5b0a73 65%,#8c239f);
+ border-bottom:5px solid #ffad19;color:#fff;padding:24px 17px}
+header .inner{max-width:740px}
+#logo{border-radius:15px;border:2px solid #f2b73a;background:#fff}
+#storeName{font-size:clamp(1.4rem,3vw,1.85rem);color:#fff;font-weight:850;letter-spacing:-.03em}
+#storeSubtitle{color:#f7e3ff;font-size:.86rem}
+main{max-width:720px;padding:0 13px 45px;margin:17px auto}
+.card{border:1px solid #e9dced;border-radius:21px;box-shadow:0 6px 20px #4106530d;padding:22px}
+.card:first-child{border-top:5px solid #8520ae}
+h1{color:#42075d;font-size:1.55rem;letter-spacing:-.035em}
+h2{color:#3d0b55;font-size:1.15rem}
+.eyebrow{font-size:.72rem;font-weight:800;letter-spacing:.09em;color:#8220a2}
+.notice{background:#f6e8ff;color:#5a226d;font-size:.89rem;border:1px solid #ecd5f5;font-weight:580}
+.status{font-size:1.35rem;color:#f27508;font-weight:850}
+.steps li{border-left:3px solid #e6d9ec;color:#796484;padding:5px 0 24px 29px}
+.steps li:before{background:#e4d6e9;border:2px solid white;left:-10px;width:16px;height:16px}
+.steps li.done{border-color:#8325b0;color:#4e2d5c}
+.steps li.done:before{background:#7c1ba3}
+.steps li.active{color:#410756}
+.steps li.active:before{background:#ff8a0a;box-shadow:0 0 0 4px #fff0df}
+#deliveryPinCard{border-color:#f1d9b9;background:#fff9f2}
+.delivery-pin-value{color:#7e12aa}
+.item{border-color:#eee2f0}
+.total{color:#52106e}
+button{background:linear-gradient(110deg,#ff9505,#ff6300);box-shadow:0 5px 13px #ef6c1f36;font-size:1rem}
+#courierMap{color:#75169d}
+#courierLiveMap{border-color:#ebdbea;border-radius:17px}
+.delivery-arrived-msg{background:#eaf9ed;border-color:#cdecd5}
+@media(max-width:600px){
+ header{padding:18px 13px}header .inner{gap:10px}#logo{width:48px;height:48px}
+ main{margin:12px auto;padding:0 12px 30px}.card{border-radius:18px;padding:18px}
+}
+ </style></head><body><header><div class="inner"><img id="logo" hidden alt="Logo da loja"><div><div id="storeName">Acompanhe seu pedido</div><div id="storeSubtitle">Informações do seu pedido</div></div></div></header><main><section class="card"><div class="eyebrow">ACOMPANHAMENTO DO PEDIDO</div><h1 id="number">Seu pedido</h1><p id="message" class="notice" role="status">Carregando informações…</p></section><div id="content" hidden><section class="card"><div class="eyebrow">STATUS ATUAL</div><div class="status" id="currentStatus"></div><ol class="steps" id="steps"></ol></section><section id="courierLocation" class="card" hidden aria-label="Localização do entregador"><h2>Seu pedido está a caminho</h2><p id="courierLocationStatus" class="note" role="status"></p><div id="courierMapFrame" hidden><div id="courierLiveMap" aria-label="Mapa com a localização aproximada do entregador"></div><p class="note">Posição aproximada, atualizada durante a entrega. O mapa não mostra outras entregas da rota.</p></div><a id="courierMap" target="_blank" rel="noopener noreferrer" hidden>Abrir localização aproximada no mapa</a><p id="courierMapInfo" class="note" role="status"></p></section><section id="deliveryPinCard" class="card delivery-pin-card" hidden><h2>Código de confirmação da entrega</h2><strong class="delivery-pin-value" id="deliveryPin"></strong><p class="note">Informe este código de seis dígitos ao entregador somente quando estiver recebendo seu pedido.</p></section><section class="card"><h2>Resumo do pedido</h2><div id="items"></div><div class="total"><span>Total</span><span id="total"></span></div><p id="scheduledFor" class="note" hidden></p><p id="fulfillment" class="note"></p></section><section class="card"><h2>Receba atualizações</h2><p class="note">Ative as notificações para receber avisos sobre este pedido.</p><button id="notify" hidden>Ativar notificações</button><p id="notifyInfo" class="note"></p></section><p class="note">As informações são atualizadas automaticamente. Guarde este link para acompanhar o andamento do pedido.</p></div></main><script type="module">
 import{createClient}from'https://esm.sh/@supabase/supabase-js@2';
 const client=createClient('https://mdevzehqcpcgxspwbiyz.supabase.co','sb_publishable_JLIp1y5II26GrztrKDNIyQ_ryETrCuj');
 const $=id=>document.getElementById(id),token=new URLSearchParams(location.search).get('token')||'',money=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(n)||0);
