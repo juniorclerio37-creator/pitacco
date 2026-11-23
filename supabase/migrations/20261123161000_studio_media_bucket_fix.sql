@@ -67,7 +67,7 @@ begin
   if jsonb_typeof(p_design->key)<>'string' then raise exception 'Imagem inválida';end if;
   photo:=p_design->>key;
   if photo<>'' and (length(photo)>300 or left(photo,length('stores/'||p_store||'/'))<>'stores/'||p_store||'/'
-    or photo !~ '[.](jpg|png|webp)) then
+    or photo !~ '[.](jpg|png|webp)$') then
    raise exception 'Imagem fora do armazenamento da loja';
   end if;
  end loop;
@@ -82,7 +82,7 @@ begin
     or jsonb_typeof(item->'image_path')<>'string' then raise exception 'Banner incompleto ou inválido'; end if;
   photo:=item->>'image_path';
   if photo<>'' and (length(photo)>300 or left(photo,length('stores/'||p_store||'/'))<>'stores/'||p_store||'/'
-   or photo !~ '\.(jpg|png|webp)$') then raise exception 'Imagem de banner de outra loja';end if;
+   or photo !~ '[.](jpg|png|webp)$') then raise exception 'Imagem de banner de outra loja';end if;
   if jsonb_typeof(item->'product_id') not in ('null','string') then raise exception 'Produto do banner inválido'; end if;
   if coalesce(item->>'product_id','')<>'' then
    if (item->>'product_id') !~ '^[0-9a-fA-F-]{36}$' then raise exception 'Produto do banner inválido';end if;
@@ -100,58 +100,7 @@ begin
   end if;
  end loop;
 end $function$
-) then
-   raise exception 'Imagem fora do armazenamento da loja';
-  end if;
- end loop;
- if jsonb_typeof(p_design->'banners')<>'array' or jsonb_array_length(p_design->'banners')>6 then
-  raise exception 'Limite de seis banners por loja';
- end if;
- for item in select value from jsonb_array_elements(p_design->'banners') loop
-  if jsonb_typeof(item)<>'object' or not (item ?& array['title','subtitle','image_path','starts_at','ends_at','product_id'])
-    or item-array['title','subtitle','image_path','starts_at','ends_at','product_id']<>'{}'::jsonb
-    or jsonb_typeof(item->'title')<>'string' or length(trim(item->>'title')) not between 2 and 90
-    or jsonb_typeof(item->'subtitle')<>'string' or length(item->>'subtitle')>160
-    or jsonb_typeof(item->'image_path')<>'string' then raise exception 'Banner incompleto ou inválido'; end if;
-  photo:=item->>'image_path';
-  if photo<>'' and (length(photo)>300 or left(photo,length('stores/'||p_store||'/'))<>'stores/'||p_store||'/'
-   or photo !~ '[.](jpg|png|webp)) then raise exception 'Imagem de banner de outra loja';end if;
-  if jsonb_typeof(item->'product_id') not in ('null','string') then raise exception 'Produto do banner inválido'; end if;
-  if coalesce(item->>'product_id','')<>'' then
-   if (item->>'product_id') !~ '^[0-9a-fA-F-]{36}$' then raise exception 'Produto do banner inválido';end if;
-   if not exists(select 1 from public.products where id=(item->>'product_id')::uuid and store_id=p_store) then
-    raise exception 'Produto do banner não pertence à loja';end if;
-  end if;
-  if jsonb_typeof(item->'starts_at') not in ('null','string') or jsonb_typeof(item->'ends_at') not in ('null','string')
-   then raise exception 'Data do banner inválida'; end if;
-  begin
-   start_at:=nullif(item->>'starts_at','')::timestamptz;
-   end_at:=nullif(item->>'ends_at','')::timestamptz;
-  exception when others then raise exception 'Data do banner inválida';end;
-  if start_at is not null and end_at is not null and end_at<=start_at then
-   raise exception 'A data final deve ser posterior à inicial';
-  end if;
- end loop;
-end $function$
-) then raise exception 'Imagem de banner de outra loja';end if;
-  if jsonb_typeof(item->'product_id') not in ('null','string') then raise exception 'Produto do banner inválido'; end if;
-  if coalesce(item->>'product_id','')<>'' then
-   if (item->>'product_id') !~ '^[0-9a-fA-F-]{36}$' then raise exception 'Produto do banner inválido';end if;
-   if not exists(select 1 from public.products where id=(item->>'product_id')::uuid and store_id=p_store) then
-    raise exception 'Produto do banner não pertence à loja';end if;
-  end if;
-  if jsonb_typeof(item->'starts_at') not in ('null','string') or jsonb_typeof(item->'ends_at') not in ('null','string')
-   then raise exception 'Data do banner inválida'; end if;
-  begin
-   start_at:=nullif(item->>'starts_at','')::timestamptz;
-   end_at:=nullif(item->>'ends_at','')::timestamptz;
-  exception when others then raise exception 'Data do banner inválida';end;
-  if start_at is not null and end_at is not null and end_at<=start_at then
-   raise exception 'A data final deve ser posterior à inicial';
-  end if;
- end loop;
-end $function$
-
+;
 
 -- Keep definition protected: call only through authorized manager RPC.
 revoke all on function pitacco_private.validate_storefront_design(uuid,jsonb) from public,anon,authenticated;
