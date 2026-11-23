@@ -1,0 +1,35 @@
+name: Inspecionar cardápio Brendi para migração
+on:
+  push:
+    branches:
+      - brendi-import-acai-linho-20261123
+    paths:
+      - .github/workflows/brendi-import-probe.yml
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Inspecionar HTML público sem credenciais
+        shell: bash
+        run: |
+          python - <<'PY'
+          import requests,re,json,html
+          from bs4 import BeautifulSoup
+          url='https://menu.brendi.com.br/acai-do-linho/'
+          try:
+            r=requests.get(url,headers={'User-Agent':'Mozilla/5.0 (compatible; MenuMigration/1.0)'},timeout=25,allow_redirects=True)
+            print('STATUS',r.status_code,'FINAL_URL',r.url,'SIZE',len(r.content),'HEADERS',dict(r.headers))
+            print('HTML_START',repr(r.text[:3000]))
+            soup=BeautifulSoup(r.text,'html.parser')
+            print('PAGE_TITLE',soup.title.text if soup.title else 'N/A')
+            print('JS_SCRIPTS',json.dumps([{'src':s.get('src'),'id':s.get('id'),'type':s.get('type'),'length':len(s.text or '')} for s in soup.find_all('script')][:30],ensure_ascii=False))
+            print('TEXT',repr(soup.get_text(' ',strip=True)[:14000]))
+            for marker in ['__NEXT_DATA__','__NUXT__','window.__','application/ld+json','products','categorias']:
+              print('MARKER',marker,marker in r.text)
+            for script in soup.find_all('script'):
+              if script.get('id')=='__NEXT_DATA__' or (script.get('type')=='application/json' and len(script.text)>100):
+                print('JSON_SCRIPT',script.get('id'),repr(script.text[:13000]))
+          except Exception as e:
+            print('PROBE_ERROR',type(e).__name__,str(e))
+          PY
