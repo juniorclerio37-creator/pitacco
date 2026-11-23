@@ -1628,8 +1628,11 @@ function applyMenuStartupData(prepared){
 async function warmMenuStartupImages(){
  const shop=menu.store;
  const featured=v2TopSellerIds.map(id=>menu.products.find(p=>p.id===id)).filter(Boolean);
- const urls=[shop.logo_url||studioAsset(shop.profile_logo_path),shop.banner_url,
-  ...[...featured,...menu.products].slice(0,2).map(p=>p.image_url)].filter(imageUrl);
+ const urls=[
+  studioAsset(shop.appearance?.logo_path)||shop.logo_url||studioAsset(shop.profile_logo_path),
+  studioAsset(shop.appearance?.cover_path)||shop.banner_url,
+  ...[...featured,...menu.products].slice(0,2).map(p=>p.image_url)
+ ].filter(imageUrl);
  await Promise.all([...new Set(urls)].map(url=>new Promise(resolve=>{
   const image=new Image();let finished=false;
   const complete=()=>{if(finished)return;finished=true;clearTimeout(timer);resolve()};
@@ -1637,6 +1640,19 @@ async function warmMenuStartupImages(){
   image.onload=complete;image.onerror=complete;image.src=url;
   if(image.complete)complete();
  })));
+}
+async function waitForMenuIdentityPaint(){
+ const images=['storeLogo','storeBanner'].map($).filter(node=>node?.src);
+ await Promise.all(images.map(node=>new Promise(resolve=>{
+  let finished=false;
+  const complete=()=>{if(finished)return;finished=true;clearTimeout(timer);resolve()};
+  const timer=setTimeout(complete,800);
+  if(node.complete){complete();return;}
+  node.addEventListener('load',complete,{once:true});
+  node.addEventListener('error',complete,{once:true});
+ })));
+ // Entregar o primeiro quadro somente depois de aplicar a visibilidade da capa/logo.
+ await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
 }
 async function v2LoadTopSellers(){
  if(!menu||document.body.dataset.menuTemplate!=='pitacco-v2')return;
@@ -3235,6 +3251,7 @@ async function startPublicMenu(){
   applyMenuStartupData(prepared);
   await warmMenuStartupImages();
   initOptions();
+  await waitForMenuIdentityPaint();
   if(studioPreviewActive){
    studioPreviewReady=true;studioPreviewReport('pitacco-studio-preview-ready');studioPreviewApply();
   }
