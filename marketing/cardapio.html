@@ -839,6 +839,214 @@ body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-s
 .cart-draft-notice{border:1px solid #d9e6dc;background:#f0f8f2;color:#28533b;border-radius:12px;padding:13px 16px;margin:16px 0;font-size:.84rem}.cart-draft-notice p{margin:0 0 7px}.cart-draft-notice a{color:inherit;font-weight:750}.cart-draft-notice button{font-size:.8rem}
 @media(max-width:400px){.address-grid{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}.address-grid input,.address-grid select{min-width:0;width:100%}.address-fields legend{font-size:1rem}}
 
+
+/* V2 aprovado: todas as regras abaixo são isoladas ao template pitacco-v2. */
+body:not([data-menu-template="pitacco-v2"]) .v2-payment-cards,
+body:not([data-menu-template="pitacco-v2"]) .v2-change-block,
+body:not([data-menu-template="pitacco-v2"]) .v2-address-title{display:none!important}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #productDialog{background:#faf6ff;border:1px solid #ead4f2}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog{width:min(540px,100% - 18px);max-height:96dvh;border-radius:24px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .dialog-shell{max-height:96dvh}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .dialog-header,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #productDialog .dialog-header{
+ background:linear-gradient(125deg,#31013f,#55076b 70%,#620c7d);color:white;border:0;
+ padding:19px 20px;border-bottom:3px solid #ab24c4
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .dialog-header h2,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #productDialog .dialog-header h2{font-size:1.34rem;font-weight:850;color:#fff;letter-spacing:-.03em}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .dialog-scroll{background:#fdf9ff;padding:16px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .dialog-footer{background:#fff9ff;border-top:1px solid #ead9f0;gap:7px;padding:13px 16px max(18px,env(safe-area-inset-bottom))}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .dialog-footer .primary{
+ background:linear-gradient(125deg,#ff9b05,#fb6400);color:white;border:0;border-radius:16px;min-height:52px;font-size:1.04rem;font-weight:850;box-shadow:0 5px 13px #e9721a31
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .dialog-footer .secondary{border-radius:14px;background:#fff;color:#710a92}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .v2-checkout-panel{
+ border:none;box-shadow:none;background:transparent;padding:7px 0 15px;margin:0
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .v2-checkout-panel h3{
+ color:#260431;font-size:1.48rem;font-weight:850;margin:11px 0 4px;letter-spacing:-.04em
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .v2-checkout-panel p{color:#55465c}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .v2-checkout-panel label{font-size:.9rem;color:#3d2147;font-weight:780;margin-top:14px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .v2-checkout-panel input,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .v2-checkout-panel select,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .v2-checkout-panel textarea{
+ min-height:49px;background:#fff;border:1px solid #ded0e5;border-radius:14px;padding:11px 13px;box-shadow:0 2px 6px #30064409
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .v2-checkout-panel input:focus,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .v2-checkout-panel textarea:focus,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .v2-checkout-panel select:focus{outline:2px solid #8d1ab5;outline-offset:1px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-progress{
+ display:flex;align-items:stretch;justify-content:space-between;gap:5px;padding:7px 0 20px;
+ background:transparent;border:0;border-radius:0;position:relative
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-progress span{
+ display:flex;flex:1;flex-direction:column;align-items:center;gap:6px;line-height:1.15;
+ font-size:1.1rem;color:#fff;background:#b9b3c1;border-radius:50%;width:38px;height:38px;
+ max-width:38px;justify-content:center;position:relative;font-weight:820;margin:0 auto
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-progress span:before{
+ content:"";height:2px;background:#d9ccdF;position:absolute;left:calc(-100% - 20px);top:18px;width:calc(100% + 17px)
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-progress span:first-child:before{display:none}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-progress span[data-status=done]{
+ background:#760c99
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-progress span[data-status=active]{
+ background:#ff8708;box-shadow:0 0 0 4px #fff2e5
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-progress span small{
+ position:absolute;top:43px;white-space:nowrap;font-size:.68rem;font-weight:760;color:#3e2548
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-identity-art{
+ display:flex;justify-content:center;align-items:center;gap:15px;min-height:140px;
+ background:radial-gradient(ellipse at 50% 45%,#f6dfff,#faf5ff 60%);border-radius:28px;
+ font-size:2.7rem;color:#8016b6;margin:7px 0 22px
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-identity-art span{
+ width:75px;height:100px;display:grid;place-items:center;border-radius:14px;background:#c84fe5;color:white;transform:rotate(-5deg);box-shadow:0 9px 16px #5b068a2a
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-privacy-note{
+ background:#faf0ff;border:1px solid #e7caf4;padding:12px;border-radius:13px;color:#652783;font-size:.82rem;margin:14px 0
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-address-book{padding:3px 0 12px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-address-book h3{font-size:1.24rem;margin-bottom:4px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-address-list{display:grid;gap:9px;margin:13px 0 11px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-saved-address{
+ display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;border-radius:16px;
+ border:1px solid #dfd3e4;background:#fff;padding:14px 12px;color:#361044;cursor:pointer;width:100%;text-align:left
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-saved-address[data-selected=true]{
+ border:2px solid #a020be;background:#f9e9ff;padding:13px 11px
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-saved-address .v2-address-icon{font-size:1.6rem;color:#8517a4}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-saved-address strong{display:block;color:#320941;font-weight:850}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-saved-address small{display:block;color:#705e79;font-size:.76rem}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-saved-address .v2-address-radio{
+ width:18px;height:18px;border:2px solid #8e7397;border-radius:50%;display:grid;place-items:center
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-saved-address[data-selected=true] .v2-address-radio{
+ background:#890fae;border-color:#890fae;color:#fff
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-add-address{
+ display:block;width:100%;padding:13px;border:2px dashed #b99ac4;border-radius:15px;
+ background:#fff;color:#850eae;font-weight:790
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #v2AddressEditor{padding:10px 0 0}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-address-title{display:grid;grid-template-columns:1fr auto;align-items:end;gap:8px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-address-title label{margin:0}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-address-title select{width:180px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .address-fields{padding:0;border:0;margin:10px 0 16px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .address-fields legend{font-weight:860;color:#55076c}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-native-label,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #payment{
+ position:absolute!important;width:1px!important;height:1px!important;padding:0!important;
+ margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-cards{display:grid;gap:11px;margin:16px 0}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice{
+ display:flex;align-items:center;gap:12px;min-height:83px;padding:12px;border-radius:17px;border:1px solid #ddd4e0;
+ background:#fff;color:#1c1024;width:100%;text-align:left;box-shadow:0 3px 9px #29053d0a
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-selected=true]{
+ border:2px solid #981bb5;background:#faebff;padding:11px
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice:disabled{background:#eeedf1;color:#77737e;opacity:1}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-icon{
+ font-size:1.63rem;width:59px;height:57px;display:grid;place-items:center;background:#f3e3ff;color:#7f12b5;border-radius:14px;flex:none
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=pix_manual] .v2-payment-icon,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=pix] .v2-payment-icon{background:#e8faf5;color:#03a888}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=dinheiro] .v2-payment-icon{background:#eaf9e9;color:#16833a}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice strong{display:block;font-size:1.03rem;color:#25102f;font-weight:860}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice small{display:block;font-size:.78rem;line-height:1.32;color:#716479}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice .v2-radio-mark{margin-left:auto;color:#7e118d;font-size:1.55rem}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice:disabled strong,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice:disabled .v2-radio-mark{color:#88838e}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #fiadoAuth{background:#f8ebff;border:1px solid #d7b8e9;border-radius:16px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #fiadoUnavailable{background:#f0eff2;border:1px solid #ded9e0;color:#605767}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-change-block{padding:11px 13px;background:#fff6e8;border:1px solid #f2dfb9;border-radius:15px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #loyaltyBox{margin-top:18px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-confirm{
+ background:transparent;border:none;padding:0;margin:6px 0 15px
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-confirm h3{font-size:1.5rem;color:#330740}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-review-summary{display:grid;gap:14px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-review-group{
+ background:white;padding:15px;border:1px solid #e7dbed;border-radius:16px
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-review-group h4{color:#710b91;margin:0 0 10px;font-size:.92rem}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-review-line{display:flex;justify-content:space-between;gap:8px;padding:5px 0}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-review-line strong{color:#45045c;white-space:nowrap}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-review-total{background:#f8e7ff;color:#49035e;padding:11px;border-radius:12px;font-size:1.03rem;font-weight:850}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-confirm .primary{background:linear-gradient(130deg,#a518cc,#670989);border:0;border-radius:17px;min-height:55px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-fiado-hero::after{content:"▣"}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-login-card{padding:12px 0}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-login-card label{display:block;color:#502c65;font-weight:800;margin:13px 0 5px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-login-card input{border:1px solid #ddcee7;border-radius:13px;min-height:49px;background:white}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-login-card button{width:100%;margin:16px 0}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-finance-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:5px 0 24px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-finance-metrics div{
+ display:grid;gap:4px;background:#faf0ff;border:1px solid #e7d4f0;border-radius:15px;padding:16px 11px
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-finance-metrics small{font-size:.78rem;color:#4e3e56}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-finance-metrics strong{font-size:1.3rem;color:#640a81}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-finance-list{display:grid;gap:8px;margin:13px 0 23px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-finance-entry{display:flex;justify-content:space-between;align-items:center;gap:8px;background:white;border:1px solid #e7d8ed;border-radius:13px;padding:12px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-finance-entry small{display:block;color:#65546e}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-finance-entry strong{color:#5c096f}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-finance-entry em{font-style:normal;font-size:.74rem;background:#fff0c7;color:#785019;padding:5px 8px;border-radius:99px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-finance-entry em[data-paid=true]{background:#e4f8e9;color:#287343}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-message{color:#654b73;line-height:1.5;font-size:.86rem}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #v2FiadoPay{width:100%;background:linear-gradient(120deg,#ff9b0b,#ff6403);border-radius:16px;min-height:52px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=identify] .v2-checkout-panel--delivery,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=identify] .v2-checkout-panel--payment,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=identify] .v2-checkout-confirm,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=customer] .v2-checkout-panel--delivery,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=customer] .v2-checkout-panel--payment,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=customer] .v2-checkout-confirm,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=address] .v2-checkout-panel--customer,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=address] .v2-checkout-panel--payment,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=address] .v2-checkout-confirm,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=payment] .v2-checkout-panel--customer,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=payment] .v2-checkout-panel--delivery,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=payment] .v2-checkout-confirm,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=review] .v2-checkout-panel{display:none!important}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=review] .v2-checkout-confirm{display:block}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=payment] #notes{margin-bottom:13px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=payment] #loyaltyBox{margin-top:11px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=identify] #v2NameFields,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=customer] #v2PhoneFields{display:none!important}
+@media(max-width:600px){
+ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog,
+ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #productDialog{
+  width:100%;height:100dvh;max-height:100dvh;margin:0;border-radius:0;border:0
+ }
+ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .dialog-shell,
+ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #productDialog .dialog-shell{height:100dvh;max-height:100dvh}
+ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .dialog-header{min-height:82px;padding:21px 18px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .dialog-scroll{padding:14px 18px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-progress{padding-bottom:29px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-progress span{width:34px;height:34px;font-size:1rem}
+ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-progress span small{font-size:.65rem;top:41px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-progress span:before{top:16px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-identity-art{min-height:125px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .v2-checkout-panel h3{font-size:1.27rem}
+}
+
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage] #cartReview{display:none!important}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage] #continueCheckout,
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage] #backToCart{display:none!important}
+body:not([data-menu-skin="principal"]) #v2FiadoPage,
+body:not([data-menu-skin="principal"]) [data-v2-nav="fiado"],
+body:not([data-menu-skin="principal"]) .v2-identity-art,
+body:not([data-menu-skin="principal"]) #v2PhoneFields>h3,
+body:not([data-menu-skin="principal"]) #v2PhoneFields>p,
+body:not([data-menu-skin="principal"]) #v2NameFields>h3,
+body:not([data-menu-skin="principal"]) #v2NameFields>p,
+body:not([data-menu-skin="principal"]) .v2-checkout-confirm>h3,
+body:not([data-menu-skin="principal"]) #v2OrderSummary{display:none!important}
 </style></head><body>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
@@ -858,6 +1066,7 @@ body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-s
  <button type="button" class="v2-nav-button" data-v2-nav="promocoes"><span class="v2-nav-icon" aria-hidden="true">🔥</span>Promoções</button>
  <button type="button" id="loyaltyOpen" class="v2-nav-button" aria-label="Meu Fideliza+" data-v2-nav="fideliza" hidden><span class="v2-nav-icon" aria-hidden="true">☆</span>Fideliza+</button>
  <button type="button" class="v2-nav-button" data-v2-nav="sobre"><span class="v2-nav-icon" aria-hidden="true">ⓘ</span>Sobre</button>
+ <button type="button" class="v2-nav-button" data-v2-nav="fiado"><span class="v2-nav-icon" aria-hidden="true">▣</span>Fiado</button>
 </nav>
 
 <section id="storeOpenStatus" class="shell store-open-status" role="status" aria-live="polite" hidden></section>
@@ -906,6 +1115,25 @@ body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-s
 <section id="v2AboutPage" class="v2-section-page" aria-label="Sobre a loja" hidden>
  <div class="v2-about"><h2 id="v2AboutTitle">Sobre a loja</h2><p id="v2AboutIntro">Informações da loja e serviços disponíveis.</p><div id="v2AboutServices"></div></div>
 </section>
+<section id="v2FiadoPage" class="v2-section-page" aria-label="Meu Fiado" hidden>
+ <div class="v2-page-hero v2-fiado-hero"><h2>▣ Meu Fiado</h2><p>Acompanhe seus pedidos fiados e pagamentos.</p></div>
+ <div class="v2-page-body">
+  <div id="v2FiadoLogin" class="v2-login-card">
+   <h3>Consultar meus pagamentos</h3>
+   <p>Confirme seu telefone e o PIN cadastrado com a loja para proteger suas informações financeiras.</p>
+   <label for="v2FiadoPhone">Celular com DDD</label><input type="tel" id="v2FiadoPhone" inputmode="tel" autocomplete="tel-national" placeholder="(21) 99999-9999">
+   <label for="v2FiadoPin">PIN pessoal (6 dígitos)</label><input type="password" id="v2FiadoPin" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="off" placeholder="••••••">
+   <button type="button" id="v2FiadoCheck" class="primary">Consultar Meu Fiado</button>
+  </div>
+  <p id="v2FiadoNotice" class="v2-message" role="status" aria-live="polite"></p>
+  <section id="v2FiadoStatement" hidden aria-label="Compras e pagamentos fiados">
+   <div class="v2-finance-metrics"><div><small>Total em aberto</small><strong id="v2FiadoOpenTotal">R$ 0,00</strong></div><div><small>Próximo vencimento</small><strong id="v2FiadoDue">—</strong></div></div>
+   <h3>▤ Compras no Fiado</h3><div id="v2FiadoCharges" class="v2-finance-list"></div>
+   <h3>▣ Pagamentos realizados</h3><div id="v2FiadoPayments" class="v2-finance-list"></div>
+   <button type="button" id="v2FiadoPay" class="primary">Como pagar agora →</button><div id="v2FiadoPayInstructions" class="v2-message" hidden></div>
+  </section>
+ </div>
+</section>
 
  <p id="msg" class="msg" role="status">Carregando cardápio…</p>
  <section id="layout" aria-label="Produtos da loja" hidden>
@@ -931,9 +1159,28 @@ body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-s
  <div class="dialog-scroll" id="cartBody">
   <p id="checkoutMessage" class="msg" role="status" hidden></p>
   <div id="cartReview"><div id="cart"></div><div id="total" class="total"></div></div>
-  <form id="checkout" hidden><div class="v2-checkout-progress" aria-label="Etapas do pedido"><span>✓ Sacola</span><span data-active="true">2. Seus dados</span><span>3. Entrega</span><span>4. Pagamento</span></div><section class="v2-checkout-panel v2-checkout-panel--customer"><h3>👤 Seus dados</h3><p>Informe seus dados para continuar com o pedido.</p><label for="customer">Seu nome</label><input id="customer" autocomplete="name" required minlength="2" maxlength="120"><label for="phone">Telefone com DDD</label><input id="phone" autocomplete="tel-national" required inputmode="tel" maxlength="30"></section>
-<section class="v2-checkout-panel v2-checkout-panel--delivery"><h3>📍 Entrega ou retirada</h3><p>Escolha como deseja receber seu pedido.</p><label for="fulfillment">Como deseja receber?</label><select id="fulfillment"></select><div id="scheduleBlock" hidden><label for="schedule">Quando deseja receber?</label><select id="schedule"><option value="">Assim que possível</option></select><small>Horários de Brasília. Para entrega, o horário é uma previsão.</small></div><div id="addressBlock"><fieldset id="addressFields" class="address-fields"><legend>Endereço de entrega</legend><p>Preencha o endereço e confira o ponto no mapa. Use o GPS apenas se estiver no local da entrega.</p>
-<div class="address-grid"><label>Rua ou avenida<input id="addressStreet" autocomplete="address-line1" maxlength="100" placeholder="Ex.: Rua Guaraná" required></label><label>Número<input id="addressNumber" autocomplete="off" maxlength="20" placeholder="Ex.: 5 ou s/n" required></label><label>Bairro<input id="addressNeighborhood" autocomplete="address-level3" maxlength="60" required></label><label>Cidade<input id="addressCity" autocomplete="address-level2" maxlength="60" required></label><label>Estado<select id="addressState" autocomplete="address-level1" required><option value="">Selecione</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></label><label>CEP (opcional)<input id="addressPostal" autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000"></label><label class="address-wide">Complemento e referência (opcional)<input id="addressExtra" autocomplete="address-line2" maxlength="100" placeholder="Casa, bloco, apartamento ou ponto de referência"></label></div><label for="address">Confira o endereço completo</label><textarea id="address" rows="2" maxlength="500" readonly aria-describedby="addressSummaryHelp"></textarea><small id="addressSummaryHelp">O frete será validado para o ponto confirmado no mapa.</small></fieldset><fieldset id="deliveryPoint" hidden>
+  <form id="checkout" hidden><div class="v2-checkout-progress" aria-label="Etapas do pedido"><span data-v2-progress="cart">✓<small>Carrinho</small></span><span data-v2-progress="customer">2<small>Seus dados</small></span><span data-v2-progress="payment">3<small>Pagamento</small></span><span data-v2-progress="review">4<small>Confirmação</small></span></div>
+<section class="v2-checkout-panel v2-checkout-panel--customer">
+ <div id="v2PhoneFields"><div class="v2-identity-art" aria-hidden="true">🍧 <span>▣</span> 📍</div>
+  <h3>Identifique-se para continuar</h3><p>Informe seu número de telefone para acessar sua conta e fazer o pedido.</p>
+  <label for="phone">Seu telefone (com DDD)</label><input id="phone" autocomplete="tel-national" required inputmode="tel" maxlength="30" placeholder="(XX) 9 9999-9999">
+  <p class="v2-privacy-note">♢ Seus dados ficam protegidos neste aparelho e não são compartilhados entre lojas.</p>
+ </div>
+ <div id="v2NameFields" hidden><h3>◉ Seus dados</h3><p>Confirme as informações para continuar com o pedido.</p>
+  <label for="customer">Nome completo</label><input id="customer" autocomplete="name" required minlength="2" maxlength="120" placeholder="Seu nome">
+  <p id="v2ProfileStatus" class="v2-privacy-note" role="status">Seu nome e endereços podem ser reutilizados neste aparelho em compras futuras.</p>
+ </div>
+</section>
+<section class="v2-checkout-panel v2-checkout-panel--delivery"><h3>📍 Entrega ou retirada</h3><p>Escolha como deseja receber seu pedido.</p><label for="fulfillment">Como deseja receber?</label><select id="fulfillment"></select><div id="scheduleBlock" hidden><label for="schedule">Quando deseja receber?</label><select id="schedule"><option value="">Assim que possível</option></select><small>Horários de Brasília. Para entrega, o horário é uma previsão.</small></div><div id="addressBlock">
+ <div id="v2AddressBook" class="v2-address-book" hidden>
+  <h3>⌖ Endereço de entrega</h3><p>Escolha um dos seus endereços salvos ou adicione um novo.</p>
+  <div id="v2AddressList" class="v2-address-list"></div>
+  <button type="button" id="v2AddAddress" class="v2-add-address">＋ Adicionar novo endereço</button>
+ </div>
+ <div id="v2AddressEditor"><div class="v2-address-title"><label for="v2AddressLabel">Salvar endereço como</label>
+  <select id="v2AddressLabel"><option value="Casa">⌂ Casa</option><option value="Trabalho">▤ Trabalho</option><option value="Outro">♡ Outro</option></select></div>
+ <fieldset id="addressFields" class="address-fields"><legend>Endereço de entrega</legend><p>Preencha o endereço e confira o ponto no mapa. Use o GPS apenas se estiver no local da entrega.</p>
+<div class="address-grid"><label>Rua ou avenida<input id="addressStreet" autocomplete="address-line1" maxlength="100" placeholder="Ex.: Rua Guaraná" required></label><label>Número<input id="addressNumber" autocomplete="off" maxlength="20" placeholder="Ex.: 5 ou s/n" required></label><label>Bairro<input id="addressNeighborhood" autocomplete="address-level3" maxlength="60" required></label><label>Cidade<input id="addressCity" autocomplete="address-level2" maxlength="60" required></label><label>Estado<select id="addressState" autocomplete="address-level1" required><option value="">Selecione</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></label><label>CEP (opcional)<input id="addressPostal" autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000"></label><label class="address-wide">Complemento e referência (opcional)<input id="addressExtra" autocomplete="address-line2" maxlength="100" placeholder="Casa, bloco, apartamento ou ponto de referência"></label></div><label for="address">Confira o endereço completo</label><textarea id="address" rows="2" maxlength="500" readonly aria-describedby="addressSummaryHelp"></textarea><small id="addressSummaryHelp">O frete será validado para o ponto confirmado no mapa.</small></fieldset></div><fieldset id="deliveryPoint" hidden>
  <legend>Localização da entrega</legend>
  <p>Marque o endereço no mapa ou use sua localização atual se estiver no local da entrega.</p>
  <button id="showDeliveryMap" type="button" class="secondary">Abrir mapa</button>
@@ -941,7 +1188,9 @@ body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-s
  <div id="deliveryMap" aria-label="Mapa da área de entrega" hidden style="height:260px;margin:12px 0;z-index:0"></div>
  <p id="deliveryPointStatus" role="status"></p>
 </fieldset><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço, marque o destino no mapa e calcule o frete conforme a área da loja.</p></div></div></section><section class="v2-checkout-panel v2-checkout-panel--payment">
-<h3>💳 Forma de pagamento</h3><p>Escolha como deseja pagar seu pedido.</p><label for="payment">Forma de pagamento</label><select id="payment" required></select>
+<h3>▣ Forma de pagamento</h3><p>Escolha como deseja pagar o seu pedido.</p><label for="payment" class="v2-payment-native-label">Forma de pagamento</label><select id="payment" required></select>
+ <div id="v2PaymentCards" class="v2-payment-cards" role="radiogroup" aria-label="Formas de pagamento configuradas pela loja"></div>
+ <div id="v2ChangeBlock" class="v2-change-block" hidden><label for="v2CashChange">Precisa de troco para quanto?</label><input id="v2CashChange" inputmode="decimal" placeholder="R$ 0,00"></div>
 <section id="loyaltyBox" class="fiado-access" aria-label="Fideliza+ do cliente" hidden>
  <h3>Fideliza+ · Benefícios desta loja</h3><p id="loyaltyTerms"></p><div id="loyaltyCampaigns"></div>
  <div id="loyaltyAnonymous"><p>Seu número de celular com DDD é seu acesso ao Fideliza+. Ao digitar o telefone do pedido, seus pontos e créditos aparecem automaticamente. Na primeira compra, o cadastro da carteira é automático.</p>
@@ -960,11 +1209,14 @@ body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-s
  <p id="fiadoPinHelp" role="status">Digite o PIN definido com a loja para seu telefone autorizado. Não é necessário SMS nem data de nascimento.</p>
  <p>A autorização do Fiado será automática apenas se a loja tiver liberado essa opção para você. Caso contrário, seu pedido aguardará aprovação da loja antes do preparo.</p>
 </div><label for="notes">Observações</label><textarea id="notes" maxlength="1000" rows="2"></textarea></section>
-<section class="v2-checkout-confirm"><p>Confira seus dados, produtos, endereço e forma de pagamento antes de confirmar.</p>
-<p><button class="primary" id="send" type="submit">Confirmar pedido</button></p></section></form>
+<section class="v2-checkout-confirm"><h3>▤ Revisão do pedido</h3><p>Confira seus itens e endereço antes de finalizar.</p>
+<div id="v2OrderSummary" class="v2-review-summary"></div>
+<p><button class="primary" id="send" type="submit">Finalizar pedido →</button></p></section></form>
   <div id="success" hidden></div>
  </div>
- <footer class="dialog-footer" id="cartFooter"><button id="continueCheckout" type="button" class="primary">Continuar para entrega e pagamento</button><button id="backToCart" type="button" class="secondary" hidden>Voltar à sacola</button></footer>
+ <footer class="dialog-footer" id="cartFooter"><button id="continueCheckout" type="button" class="primary">Continuar para entrega e pagamento</button><button id="backToCart" type="button" class="secondary" hidden>Voltar à sacola</button>
+<button id="v2CheckoutBack" class="secondary" type="button" hidden>← Voltar</button>
+<button id="v2CheckoutNext" class="primary" type="button" hidden>Continuar →</button></footer>
 </div></dialog>
 <script type="module">
 import{createClient}from'https://esm.sh/@supabase/supabase-js@2';
@@ -1156,6 +1408,13 @@ function setMenuTemplate(shop){
  document.body.dataset.menuSkin=['essencial','editorial','urbano'].includes(preference)?preference:'principal';
  $('v2StoreNav').hidden=classic;
  $('v2ClassicLoyalty').hidden=true;
+ $('v2NameFields').hidden=!classic&&document.body.dataset.menuSkin==='principal';
+ $('v2PhoneFields').hidden=false;
+ $('send').textContent=!classic&&document.body.dataset.menuSkin==='principal'?'Finalizar pedido →':'Confirmar pedido';
+ if(classic||document.body.dataset.menuSkin!=='principal'){
+  const customer=$('v2NameFields').parentElement;
+  customer.insertBefore($('v2NameFields'),$('v2PhoneFields'));
+ }
 }
 function v2SaveFavorite(id){
  if(v2Favorites.has(id))v2Favorites.delete(id);else v2Favorites.add(id);
@@ -1266,7 +1525,8 @@ function v2Go(page,initial=false){
  $('v2Home').hidden=page!=='inicio';
  $('v2LoyaltyPage').hidden=page!=='fideliza';
  $('v2AboutPage').hidden=page!=='sobre';
- const listing=page!=='fideliza'&&page!=='sobre';
+ $('v2FiadoPage').hidden=page!=='fiado';
+ const listing=!['fideliza','sobre','fiado'].includes(page);
  $('layout').hidden=!listing;
  $('pitaccoPromos').hidden=page!=='promocoes'||$('pitaccoPromos').childElementCount===0;
  for(const b of $('v2StoreNav').querySelectorAll('[data-v2-nav]')){
@@ -1278,6 +1538,7 @@ function v2Go(page,initial=false){
   $('v2CatalogTitle').textContent=names[page]||'Cardápio';
   renderCategories();renderProducts();if(page==='inicio')v2Feature();
  }
+ if(page==='fiado'){$('v2FiadoPhone').value=$('phone').value;$('v2FiadoNotice').textContent='';$('v2FiadoStatement').hidden=true;$('v2FiadoLogin').hidden=false;}
  if(page==='fideliza'){
   $('v2LoyaltyPhone').value=$('phone').value;
   v2RenderWallet();
@@ -1659,10 +1920,10 @@ function renderCart(){
  $('cartValue').textContent=money(subtotal);
  $('v2DockCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0)+' itens · ';
  const n=cart.reduce((sum,item)=>sum+item.quantity,0);$('v2HeaderCount').textContent=String(n);$('v2HeaderCount').hidden=n===0;
- $('continueCheckout').disabled=Boolean(cartRecoveryId)||(!storeOpening?.open&&!pendingRequest)||!cart.length||!$('fulfillment').value||!$('payment').value;
+ $('continueCheckout').disabled=Boolean(cartRecoveryId)||(!storeOpening?.open&&!pendingRequest)||!cart.length||(!v2Only()&&(!$('fulfillment').value||!$('payment').value));
  $('cart').inert=Boolean(cartRecoveryId)||Boolean(pendingRequest);
  $('send').disabled=Boolean(cartRecoveryId)||(!storeOpening?.open&&!pendingRequest)||submitting||!cart.length||!$('fulfillment').value||!$('payment').value||
-   ($('fulfillment').value==='delivery'&&(!routeMode||!quoteValid));
+   ($('fulfillment').value==='delivery'&&(v2Only()?routeMode&&!quoteValid:(!routeMode||!quoteValid)));
  }finally{
   persistCartDraft();
   renderingCart=false;
@@ -1678,7 +1939,10 @@ function cartStep(checkout){
  $('cartTitle').textContent=checkout?'Finalizar pedido':'Sua sacola';
  $('checkoutMessage').hidden=true;
  $('cartBody').scrollTop=0;
- if(checkout)$('customer').focus();
+ if(v2Only()){
+  if(checkout)v2ShowCheckoutStage('identify');
+  else {delete $('cartDialog').dataset.v2Stage;$('v2CheckoutNext').hidden=true;$('v2CheckoutBack').hidden=true;}
+ }else if(checkout)$('customer').focus();
 }
 $('openCart').onclick=()=>{
  $('cartDialog').showModal();
@@ -2047,6 +2311,11 @@ function initOptions(){
   renderCart();loadSchedule();
  };
  $('fulfillment').dispatchEvent(new Event('change'));
+ if(v2Only()){
+  $('payment').insertBefore(new Option('Selecione como pagar',''),$('payment').firstChild);
+  $('payment').value='';
+  v2RenderPaymentCards();
+ }
  renderCategories();renderProducts();void loadLoyalty();v2Feature();void v2LoadTopSellers();
  $('hero').hidden=false;$('layout').hidden=false;$('cartDock').hidden=false;
  v2Go('inicio',true);
@@ -2137,7 +2406,7 @@ $('checkout').onsubmit=async event=>{
    p_items:cart.map(({product_id,quantity,options})=>({product_id,quantity,options:[...options]})),
    p_fulfillment:fulfillment,
    p_payment:payment,
-   p_notes:$('notes').value
+   p_notes:$('notes').value+(payment==='dinheiro'&&$('v2CashChange').value.trim()&&v2Only()?'\nTroco para: R$ '+$('v2CashChange').value.trim():'')
   };
   // O telefone identifica o cliente; a autorização do pedido é feita pela loja.
   if(loyaltyProgram||loyaltyPhone||$('loyaltyCoupon').value.trim()||$('loyaltyReward').value){
@@ -2201,7 +2470,7 @@ $('checkout').onsubmit=async event=>{
   $('cartTitle').textContent='Pedido confirmado';$('cartAction').textContent='Ver pedido';
   $('success').hidden=false;
   $('success').replaceChildren(
-   el('h2','Pedido recebido!'),
+   el('h2',v2Only()?'✓ Pedido confirmado!':'Pedido recebido!'),
    el('p','Número do pedido: '+data.order_id),
    el('p','Total confirmado: '+money(data.total)),
    el('p',pendingRequest.p_payment==='fiado'
@@ -2212,6 +2481,11 @@ $('checkout').onsubmit=async event=>{
   );
   if(pendingRequest.p_scheduled_for)$('success').append(el('p','Agendado para '+scheduleFormat.format(new Date(pendingRequest.p_scheduled_for))+'.'));
   if(data.payment_instructions)$('success').append(el('p','Instruções de pagamento: '+data.payment_instructions));
+  if(v2Only()){
+   const banner=el('div',undefined,'v2-review-group');
+   banner.append(el('h4','✓ Pedido realizado com sucesso'),el('p','Seu pedido foi recebido e poderá ser acompanhado em tempo real.'));
+   $('success').prepend(banner);
+  }
   if(data.tracking_token){
    const link=el('a','Acompanhar meu pedido');
    link.href='/acompanhar/?token='+encodeURIComponent(data.tracking_token);
@@ -2235,6 +2509,316 @@ $('checkout').onsubmit=async event=>{
   $('closeCart').disabled=false;
   $('checkout').removeAttribute('aria-busy');
  }
+};
+
+
+// V2 checkout: same order engine, prices, loyalty, Fiado, delivery and payment
+// options as the existing site; these controls are ONLY presentation.
+const v2Stages=['identify','customer','address','payment','review'];
+let v2CurrentStage='identify',v2Profile={addresses:[],name:''},v2ProfilePhone='',v2SelectedAddress='',v2AddressEditing=true;
+let v2FiadoPixInstructions=null,v2ProfileBusy=false;
+const v2Only=()=>document.body.dataset.menuTemplate==='pitacco-v2'&&document.body.dataset.menuSkin==='principal';
+function v2DeviceCredential(){
+ try{
+  const key='pitacco-v2-customer-device:'+slug;
+  let value=localStorage.getItem(key);
+  if(!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value||'')){
+   value=crypto.randomUUID();localStorage.setItem(key,value);
+  }
+  return value;
+ }catch{return null;}
+}
+function v2ShowCheckoutStage(stage){
+ if(!v2Only())return;
+ if(!v2Stages.includes(stage))stage='identify';
+ v2CurrentStage=stage;
+ $('cartDialog').dataset.v2Stage=stage;
+ $('v2PhoneFields').hidden=stage!=='identify';
+ $('v2NameFields').hidden=stage!=='customer';
+ $('v2CheckoutNext').hidden=stage==='review';
+ $('v2CheckoutBack').hidden=false;
+ $('continueCheckout').hidden=true;
+ $('backToCart').hidden=true;
+ const title={identify:'Identificação',customer:'Seus dados',address:'Endereço de entrega',payment:'Forma de pagamento',review:'Revisão do pedido'};
+ $('cartTitle').textContent=title[stage]||'Finalizar pedido';
+ const progress=stage==='identify'||stage==='customer'||stage==='address'?'customer':stage;
+ const progressOrder=['cart','customer','payment','review'],current=progressOrder.indexOf(progress);
+ for(const node of $('checkout').querySelectorAll('[data-v2-progress]')){
+  const i=progressOrder.indexOf(node.dataset.v2Progress);
+  node.dataset.status=i<current?'done':i===current?'active':'future';
+  if(node.firstChild?.nodeType===Node.TEXT_NODE)node.firstChild.nodeValue=i<current?'✓':String(i+1);
+ }
+ const next={identify:'Continuar →',customer:'Continuar →',address:'Continuar →',payment:'Continuar para confirmação →'};
+ $('v2CheckoutNext').textContent=next[stage]||'Continuar →';
+ if(stage==='payment')v2RenderPaymentCards();
+ if(stage==='address')v2RenderSavedAddresses();
+ if(stage==='review')v2BuildReview();
+ $('cartBody').scrollTop=0;
+ const focus={identify:'phone',customer:'customer',address:'fulfillment'};
+ if(focus[stage])$(focus[stage]).focus({preventScroll:true});
+}
+async function v2LoadProfile(){
+ const phone=loyaltyPhoneDigits($('phone').value);
+ if(v2ProfilePhone===phone)return;
+ v2ProfilePhone=phone;v2Profile={name:'',addresses:[]};v2SelectedAddress='';v2AddressEditing=true;
+ const device=v2DeviceCredential();
+ if(!device){
+  $('v2ProfileStatus').textContent='Este navegador não permitiu salvar o cadastro. O pedido continua disponível.';
+  return;
+ }
+ const {data,error}=await client.rpc('pitacco_v2_customer_profile',{
+  p_slug:slug,p_phone:phone,p_device:device,p_action:'load'
+ });
+ if(phone!==loyaltyPhoneDigits($('phone').value))return;
+ if(error){
+  $('v2ProfileStatus').textContent='Não foi possível consultar os dados salvos. Você pode informar os dados novamente.';
+  return;
+ }
+ if(data?.found&&typeof data.name==='string'){
+  v2Profile={name:data.name,addresses:Array.isArray(data.addresses)?data.addresses:[]};
+  $('customer').value=data.name;
+  $('v2ProfileStatus').textContent='✓ Seus dados estão salvos e vinculados ao telefone neste aparelho.';
+  const preferred=v2Profile.addresses.find(a=>a.is_default)||v2Profile.addresses[0];
+  if(preferred)v2SelectSavedAddress(preferred,false);
+ }else{
+  $('customer').value='';
+  $('v2ProfileStatus').textContent='Seu nome e endereços poderão ser reutilizados neste aparelho após o cadastro.';
+ }
+}
+async function v2SaveProfile(){
+ if(!v2Only()||v2ProfileBusy)return;
+ const name=$('customer').value.trim(),phone=loyaltyPhoneDigits($('phone').value),device=v2DeviceCredential();
+ if(!device||name.length<2||!/^[0-9]{10,11}$/.test(phone))return;
+ v2ProfileBusy=true;
+ try{
+  const {data,error}=await client.rpc('pitacco_v2_customer_profile',{
+   p_slug:slug,p_phone:phone,p_device:device,p_action:'save',
+   p_name:name,p_addresses:v2Profile.addresses
+  });
+  if(error||data?.error)throw Error(error?.message||data?.error||'Falha ao salvar');
+  if(Array.isArray(data?.addresses))v2Profile.addresses=data.addresses;
+  v2Profile.name=name;v2ProfilePhone=phone;
+  $('v2ProfileStatus').textContent='✓ Dados salvos para suas próximas compras neste aparelho.';
+ }catch{
+  $('v2ProfileStatus').textContent='Não foi possível salvar os dados; você ainda pode concluir o pedido.';
+ }finally{v2ProfileBusy=false;}
+}
+const v2AddressFields={street:'addressStreet',number:'addressNumber',neighborhood:'addressNeighborhood',city:'addressCity',state:'addressState',postal:'addressPostal',extra:'addressExtra'};
+function v2CurrentAddress(){
+ const address={id:crypto.randomUUID(),label:$('v2AddressLabel').value||'Casa',is_default:true};
+ for(const [field,id] of Object.entries(v2AddressFields))address[field]=$(id).value.trim();
+ return address;
+}
+function v2FillAddress(data){
+ for(const [field,id] of Object.entries(v2AddressFields))$(id).value=String(data[field]||'');
+ $('v2AddressLabel').value=['Casa','Trabalho','Outro'].includes(data.label)?data.label:'Outro';
+ composeDeliveryAddress();
+}
+function v2SelectSavedAddress(address,render=true){
+ v2SelectedAddress=address.id;v2AddressEditing=false;
+ v2FillAddress(address);
+ $('v2AddressEditor').hidden=true;
+ if(render)v2RenderSavedAddresses();
+}
+function v2RenderSavedAddresses(){
+ if(!v2Only())return;
+ $('v2AddressBook').hidden=$('fulfillment').value!=='delivery';
+ const root=$('v2AddressList');root.replaceChildren();
+ for(const saved of v2Profile.addresses){
+  const b=button('','v2-saved-address');
+  b.dataset.selected=String(v2SelectedAddress===saved.id&&!v2AddressEditing);
+  b.setAttribute('aria-pressed',b.dataset.selected);
+  const icon=el('span',saved.label==='Trabalho'?'▤':saved.label==='Outro'?'♡':'⌂','v2-address-icon');
+  const content=el('span');content.append(el('strong',saved.label||'Endereço'));
+  content.append(el('small',[saved.street,saved.number].filter(Boolean).join(', ')));
+  content.append(el('small',[saved.neighborhood,saved.city,saved.state].filter(Boolean).join(' · ')));
+  const selected=el('span',b.dataset.selected==='true'?'✓':'','v2-address-radio');
+  b.append(icon,content,selected);b.onclick=()=>v2SelectSavedAddress(saved);root.append(b);
+ }
+ $('v2AddressEditor').hidden=!v2AddressEditing&&v2Profile.addresses.length>0;
+}
+$('v2AddAddress').onclick=()=>{
+ if(v2Profile.addresses.length>=8){msg('Máximo de oito endereços salvos por cliente.');return;}
+ v2SelectedAddress='';v2AddressEditing=true;
+ for(const id of Object.values(v2AddressFields))$(id).value='';
+ $('v2AddressLabel').value='Casa';composeDeliveryAddress();v2RenderSavedAddresses();
+ $('v2AddressEditor').scrollIntoView({block:'nearest',behavior:'smooth'});
+};
+function v2SaveCurrentAddress(){
+ if($('fulfillment').value!=='delivery'||!v2AddressEditing)return;
+ const address=v2CurrentAddress();
+ v2Profile.addresses=v2Profile.addresses.map(a=>({...a,is_default:false})).concat(address).slice(-8);
+ v2SelectedAddress=address.id;v2AddressEditing=false;
+ v2RenderSavedAddresses();
+}
+function v2PaymentMetadata(method,label){
+ const entries={
+  pix_manual:['❖','Pix manual','Pague pela chave Pix cadastrada pela loja; a confirmação será feita pelo estabelecimento.'],
+  pix:['❖','Pix','Pagamento via Pix.'],
+  pix_online:['❖','Pix online','Pagamento instantâneo.'],
+  dinheiro:['💵','Dinheiro','Pagar na entrega.'],
+  cartao_entrega:['▤','Cartão na entrega','Débito ou crédito na entrega.'],
+  cartao:['▤','Cartão','Crédito ou débito.'],
+  cartao_online:['▤','Cartão online','Pagamento pelo cartão.'],
+  credito:['▤','Crédito','Pagamento com cartão de crédito.'],
+  debito:['▤','Débito','Pagamento com cartão de débito.'],
+  fiado:['▣','Fiado','Pagar depois, conforme acordo com a loja.']
+ };
+ return entries[method]||['▣',label,'Forma de pagamento disponibilizada pela loja.'];
+}
+function v2RenderPaymentCards(){
+ if(!v2Only())return;
+ const list=$('v2PaymentCards');list.replaceChildren();
+ for(const option of $('payment').options){
+  if(!option.value)continue;
+  const [symbol,title,description]=v2PaymentMetadata(option.value,option.textContent);
+  const b=button('','v2-payment-choice');
+  b.dataset.kind=option.value;b.dataset.selected=String($('payment').value===option.value);
+  b.disabled=option.disabled;b.setAttribute('role','radio');b.setAttribute('aria-checked',b.dataset.selected);
+  const icon=el('span',symbol,'v2-payment-icon');
+  const content=el('span');content.append(el('strong',title));
+  content.append(el('small',option.disabled&&option.value==='fiado'?
+   'Fiado indisponível para este pedido. Escolha outra forma de pagamento ou fale com a loja.':description));
+  b.append(icon,content,el('span',option.disabled?'⊘':b.dataset.selected==='true'?'◉':'◯','v2-radio-mark'));
+  b.onclick=()=>{
+   if(option.disabled)return;
+   $('payment').value=option.value;
+   $('payment').dispatchEvent(new Event('change',{bubbles:true}));
+   v2RenderPaymentCards();renderCart();
+  };
+  list.append(b);
+ }
+ $('v2ChangeBlock').hidden=$('payment').value!=='dinheiro';
+}
+$('payment').addEventListener('change',()=>{if(v2Only())v2RenderPaymentCards();});
+new MutationObserver(()=>{if(v2Only())v2RenderPaymentCards();}).observe($('payment'),{childList:true,subtree:true,attributes:true,attributeFilter:['disabled']});
+function v2BuildReview(){
+ const root=$('v2OrderSummary');root.replaceChildren();
+ const group=(name)=>{const d=el('section',undefined,'v2-review-group');d.append(el('h4',name));root.append(d);return d;};
+ const items=group('🛒 Itens do pedido');
+ for(const item of cart){
+  const line=el('div',undefined,'v2-review-line');
+  line.append(el('span',item.quantity+'× '+item.name),el('strong',money(item.unit*item.quantity)));
+  items.append(line);
+ }
+ const destination=group('⌖ Entrega e cliente');
+ destination.append(el('p',$('customer').value.trim()+' · '+loyaltyPhoneDigits($('phone').value)));
+ destination.append(el('p',$('fulfillment').value==='delivery'?$('address').value.trim():'Retirada na loja'));
+ const payment=group('▣ Forma de pagamento');
+ payment.append(el('p',$('payment').selectedOptions[0]?.textContent||'Selecione o pagamento'));
+ const total=group('▤ Resumo financeiro');
+ for(const line of $('total').children){const copy=line.cloneNode(true);total.append(copy);}
+ const totalValue=Number(cart.reduce((x,item)=>x+item.quantity*item.unit,0))+
+  ($('fulfillment').value==='delivery'&&deliveryQuote?Number(deliveryQuote.fee):0)-loyaltyDiscount();
+ total.append(el('p','Total estimado: '+money(totalValue),'v2-review-total'));
+}
+async function v2AdvanceCheckout(){
+ if(!v2Only()||submitting||pendingRequest||cartRecoveryId)return;
+ const next=$('v2CheckoutNext'),stage=v2CurrentStage;
+ next.disabled=true;
+ try{
+  if(stage==='identify'){
+   const phone=loyaltyPhoneDigits($('phone').value);
+   if(!/^[0-9]{10,11}$/.test(phone)){msg('Informe um telefone válido com DDD.');$('phone').focus();return;}
+   await v2LoadProfile();v2ShowCheckoutStage('customer');
+  }else if(stage==='customer'){
+   if(!$('customer').checkValidity()){$('customer').reportValidity();return;}
+   await v2SaveProfile();
+   v2ShowCheckoutStage('address');
+  }else if(stage==='address'){
+   if(!$('fulfillment').value){msg('Escolha entrega ou retirada.');return;}
+   if($('fulfillment').value==='delivery'){
+    if(!completeDeliveryAddress()){msg('Confira o endereço de entrega.');return;}
+    const requiresPoint=Boolean(menu.store.delivery_area)&&menu.store.route_pricing?.mode!=='road';
+    if(requiresPoint&&!deliveryPoint){msg('Marque a localização no mapa para verificar a entrega.');return;}
+    if(menu.store.route_pricing?.enabled){
+     if(!deliveryQuote||deliveryQuote.address!==$('address').value.trim()||Date.parse(deliveryQuote.expiresAt)<=Date.now()){
+      msg('Calcule a taxa de entrega conforme a área da loja antes de continuar.');return;
+     }
+    }
+    v2SaveCurrentAddress();await v2SaveProfile();
+   }
+   v2ShowCheckoutStage('payment');
+  }else if(stage==='payment'){
+   const opt=$('payment').selectedOptions[0];
+   if(!opt?.value||opt.disabled){msg('Selecione uma das formas de pagamento disponíveis.');return;}
+   if(opt.value==='fiado'&&!/^[0-9]{6}$/.test($('fiadoPin').value)){
+    msg('Digite seu PIN pessoal de seis dígitos para usar Fiado.');$('fiadoPin').focus();return;
+   }
+   if(opt.value==='dinheiro'){
+    const input=$('v2CashChange').value.trim().replace(',','.');
+    if(input&&!/^[0-9]{1,7}(?:\.[0-9]{1,2})?$/.test(input)){msg('Informe um valor de troco válido.');return;}
+    if(input&&Number(input)<Number(cart.reduce((a,x)=>a+x.unit*x.quantity,0))){
+     msg('O valor informado para troco precisa cobrir pelo menos os produtos.');return;
+    }
+   }
+   v2ShowCheckoutStage('review');
+  }
+  msg('');
+ }catch(e){msg(e.message||'Não foi possível concluir esta etapa.');}
+ finally{next.disabled=false;}
+}
+$('v2CheckoutNext').onclick=()=>void v2AdvanceCheckout();
+$('v2CheckoutBack').onclick=()=>{
+ if(submitting||pendingRequest)return;
+ const i=v2Stages.indexOf(v2CurrentStage);
+ if(i<=0)cartStep(false);
+ else v2ShowCheckoutStage(v2Stages[i-1]);
+};
+$('fulfillment').addEventListener('change',()=>{if(v2Only())v2RenderSavedAddresses();});
+const v2DateFormat=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+function v2RenderFiadoStatement(data){
+ $('v2FiadoLogin').hidden=true;$('v2FiadoStatement').hidden=false;
+ $('v2FiadoNotice').textContent='Extrato confirmado. Valores de limite e crédito disponível são exclusivos da loja.';
+ $('v2FiadoOpenTotal').textContent=money(Number(data.outstanding||0));
+ $('v2FiadoDue').textContent=data.next_due?v2DateFormat.format(new Date(data.next_due)):'—';
+ const charges=$('v2FiadoCharges');charges.replaceChildren();
+ for(const c of data.charges||[]){
+  if(c.state==='cancelled'||c.state==='rejected')continue;
+  const row=el('div',undefined,'v2-finance-entry'),left=el('div');
+  left.append(el('strong',c.description||'Pedido'),el('small',c.date?v2DateFormat.format(new Date(c.date)):''));
+  const right=el('div');
+  right.append(el('strong',money(Number(c.amount||0))));
+  const paid=Number(c.outstanding||0)<=0;
+  const pill=el('em',paid?'✓ Pago':'Em aberto');pill.dataset.paid=String(paid);
+  right.append(pill);row.append(left,right);charges.append(row);
+ }
+ if(!charges.childElementCount)charges.append(el('p','Nenhuma compra Fiado registrada.'));
+ const payments=$('v2FiadoPayments');payments.replaceChildren();
+ for(const p of data.payments||[]){
+  const row=el('div',undefined,'v2-finance-entry'),left=el('div');
+  left.append(el('strong','Pagamento registrado'),el('small',p.date?v2DateFormat.format(new Date(p.date)):''));
+  row.append(left,el('strong',money(Number(p.amount||0))));payments.append(row);
+ }
+ if(!payments.childElementCount)payments.append(el('p','Nenhum pagamento registrado.'));
+ v2FiadoPixInstructions=typeof data.pix_instructions==='string'?data.pix_instructions:null;
+ $('v2FiadoPay').textContent=v2FiadoPixInstructions?'Como pagar agora →':'Consultar pagamento com a loja →';
+ $('v2FiadoPayInstructions').hidden=true;
+}
+$('v2FiadoCheck').onclick=async()=>{
+ const button=$('v2FiadoCheck'),phone=loyaltyPhoneDigits($('v2FiadoPhone').value),pin=$('v2FiadoPin').value;
+ if(!/^[0-9]{10,11}$/.test(phone)||!/^[0-9]{6}$/.test(pin)){
+  $('v2FiadoNotice').textContent='Informe telefone com DDD e PIN pessoal de seis dígitos.';return;
+ }
+ button.disabled=true;$('v2FiadoNotice').textContent='Conferindo dados...';
+ try{
+  const {data:verified,error:vErr}=await client.rpc('pitacco_fiado_verify_pin',{
+   p_slug:slug,p_phone:phone,p_pin:pin,p_request:crypto.randomUUID()
+  });
+  $('v2FiadoPin').value='';
+  if(vErr||!verified?.verified||!verified?.token)throw Error('Não foi possível validar seus dados. Verifique com a loja.');
+  const {data,error}=await client.rpc('pitacco_v2_fiado_statement',{p_slug:slug,p_token:verified.token});
+  if(error||data?.error)throw Error(error?.message||data?.error||'Não foi possível carregar o extrato.');
+  v2RenderFiadoStatement(data);
+ }catch(e){$('v2FiadoNotice').textContent=e.message||'Não foi possível consultar o Fiado.';}
+ finally{button.disabled=false;}
+};
+$('v2FiadoPay').onclick=()=>{
+ const info=$('v2FiadoPayInstructions');info.hidden=false;
+ info.textContent=v2FiadoPixInstructions?
+  'Pix manual da loja: '+v2FiadoPixInstructions+'. A baixa do pagamento depende da confirmação da loja.':
+  'Consulte a loja para acertar seus pagamentos Fiado. Nenhuma cobrança é registrada automaticamente neste botão.';
+ info.scrollIntoView({behavior:'smooth',block:'nearest'});
 };
 
 if(!/^[a-z0-9][a-z0-9-]{2,59}$/.test(slug)){msg('Informe o endereço do cardápio: /nome-da-loja')}else{client.rpc('get_public_menu',{p_slug:slug}).then(({data,error})=>{if(error)throw error;menu=data;restoreCartDraft();initOptions();if(cartRecoveryId)void checkPendingCart()}).catch(err=>msg('Cardápio indisponível: '+err.message))}
