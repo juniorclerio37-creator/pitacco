@@ -94,3 +94,16 @@ test('primeira exibição estável: Fideliza+ e destaques antes do cardápio vis
  assert.doesNotMatch(html,/renderCategories\(\);renderProducts\(\);void loadLoyalty\(\)/);
  assert.match(html,/cartRestoreWarning/);
 });
+
+test('piloto fotográfico da loja teste não altera outros templates e evita cortes',()=>{
+ assert.match(html,/if\(slug==='acai-do-linho-demo'\)document\.body\.dataset\.menuPhotoPilot='brendi-linho'/);
+ assert.match(html,/body\[data-menu-photo-pilot="brendi-linho"\]\[data-menu-template="pitacco-v2"\]\[data-menu-skin="principal"\]/);
+ assert.match(html,/\.category-grid \.product-visual\{\s*width:100%;height:clamp\(176px,21vw,270px\)/);
+ assert.match(html,/height:auto;aspect-ratio:1 \/ 1/);
+ assert.match(html,/object-fit:contain;object-position:center;box-sizing:border-box/);
+ assert.match(html,/img\[data-photo-fit="cover"\]\{\s*object-fit:cover;padding:0/);
+ assert.match(html,/\.product-intro>img\{\s*display:block;width:100%;height:min\(72vw,350px\)/);
+ assert.match(html,/const ratio=photo\.naturalWidth\/Math\.max\(1,photo\.naturalHeight\)/);
+ assert.match(html,/setProductPhotoFit\(img\);img\.src=product\.image_url/);
+ assert.match(html,/setProductPhotoFit\(photo\);\s*photo\.src=url/);
+});
