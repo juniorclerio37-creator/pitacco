@@ -31,3 +31,15 @@ returns uuid[] language sql stable security definer set search_path='' as $$
 $$;
 revoke all on function public.pitacco_public_top_sellers(text) from public,anon,authenticated;
 grant execute on function public.pitacco_public_top_sellers(text) to anon,authenticated;
+
+-- Apenas bairro e cidade da loja publicada, para o cabeçalho.
+create or replace function public.pitacco_public_store_region(p_slug text)
+returns text language sql stable security definer set search_path='' as $$
+ select nullif(concat_ws(' – ',nullif(btrim(s.neighborhood),''),
+                             nullif(btrim(s.city),'')),'')
+ from public.public_menu_settings m
+ join public.stores s on s.id=m.store_id
+ where m.slug=p_slug and m.enabled limit 1;
+$$;
+revoke all on function public.pitacco_public_store_region(text) from public,anon,authenticated;
+grant execute on function public.pitacco_public_store_region(text) to anon,authenticated;
