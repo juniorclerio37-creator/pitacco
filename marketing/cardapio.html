@@ -1082,6 +1082,24 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=editorial] .v2-category-til
 body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] .v2-category-tile>.pitacco-category-icon{font-size:1.45rem!important}
 #v2HighlightsIcon{display:inline-flex;vertical-align:middle;font-size:1.25em}
 .v2-nav-icon .pitacco-category-icon{font-size:1em}
+/* V2 principal: apresentar toda a arte publicitária em uma faixa própria,
+   evitando texto cortado e a imagem fantasma atrás do nome da loja. */
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .hero>img#storeBanner{display:none!important}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .v2-brand-banner:not([hidden]){
+ display:block;width:min(1120px,calc(100% - 26px));margin:16px auto 8px;
+ padding:0;border-radius:18px;overflow:hidden;background:#fff;
+ box-shadow:0 8px 25px #42104e17;line-height:0
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .v2-brand-banner>img{
+ display:block;width:100%;height:auto;max-height:none;object-fit:contain;object-position:center
+}
+.v2-brand-banner[hidden],.v2-brand-banner>img[hidden]{display:none!important}
+body:not([data-menu-template="pitacco-v2"][data-menu-skin=principal]) .v2-brand-banner{display:none!important}
+@media(max-width:600px){
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .v2-brand-banner:not([hidden]){
+  margin:12px auto 5px;border-radius:14px
+ }
+}
 </style></head><body>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
@@ -1095,6 +1113,9 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] .v2-category-tile>.
  <span id="v2HeroLocation" class="v2-hero-location" hidden></span></div>
  <img id="v2HeroImage" class="v2-hero-visual" alt="" hidden>
 </header>
+<section id="v2BrandBanner" class="shell v2-brand-banner" aria-label="Banner da loja" hidden>
+ <img id="v2BrandBannerImage" alt="Banner promocional da loja" hidden>
+</section>
 <nav id="v2StoreNav" class="shell v2-store-nav" aria-label="Seções do cardápio">
  <button type="button" class="v2-nav-button" data-v2-nav="inicio" aria-current="page"><span class="v2-nav-icon" aria-hidden="true">⌂</span>Início</button>
  <button type="button" class="v2-nav-button" data-v2-nav="cardapio"><span class="v2-nav-icon" aria-hidden="true">🍽</span>Cardápio</button>
@@ -1279,7 +1300,7 @@ let deliveryPoint=null,deliveryMap,deliveryQuote=null;
 // Persist product choices only. Prices, names and option rules always come from
 // the current catalog; payment, identity, PIN and freight authorization never do.
 const cartStorageKey='pitacco-cart:'+slug;
-let cartRecoveryId=null,cartStoragePaused=false,cartStorageWarned=false;
+let cartRecoveryId=null,cartStoragePaused=false,cartStorageWarned=false,cartRestoreWarning='';
 function reconcileCartDraft(items,products){
  const restored=[];let changed=false;
  if(!Array.isArray(items))return {items:[],changed:true};
@@ -1311,11 +1332,14 @@ function persistCartDraft(){
  }catch{if(!cartStorageWarned){cartStorageWarned=true;cartDraftNotice('Este navegador não permitiu salvar a sacola. Mantenha esta aba aberta para continuar.');}}
 }
 function restoreCartDraft(){
+ cartRestoreWarning='';
  const draft=readCartDraft();if(!draft)return;
  const restored=reconcileCartDraft(draft.items,menu.products);cart=restored.items;
  cartRecoveryId=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(draft.pending_request||'')?draft.pending_request:null;
- if(cart.length)cartDraftNotice(restored.changed?'Sacola recuperada. Alguns itens indisponíveis foram removidos; confira os preços atuais.':'Sua sacola foi recuperada. Confira os preços e calcule o frete novamente.');
- else if(restored.changed)cartDraftNotice('Os itens salvos não estão mais disponíveis. Escolha novamente no cardápio.');
+ // Recuperar silenciosamente; avisos sobre itens removidos aparecem só na sacola.
+ if(restored.changed)cartRestoreWarning=cart.length
+  ?'Alguns itens salvos não estão mais disponíveis. Confira sua sacola.'
+  :'Os itens salvos não estão mais disponíveis. Escolha novamente no cardápio.';
  $('checkPendingCart').hidden=!cartRecoveryId;
 }
 function clearPendingCart(){pendingRequest=null;cartRecoveryId=null;persistCartDraft();}
@@ -1865,6 +1889,18 @@ const categoryOf=product=>product.category?.trim()||'Outros';
 const normal=text=>text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 const button=(name,cls)=>{const node=el('button',name,cls);node.type='button';return node};
 const imageUrl=value=>typeof value==='string'&&/^https:\/\//i.test(value);
+function showV2BrandBanner(url){
+ const holder=$('v2BrandBanner'),picture=$('v2BrandBannerImage');
+ holder.hidden=true;picture.hidden=true;picture.removeAttribute('src');
+ if(document.body.dataset.menuTemplate!=='pitacco-v2'||
+    document.body.dataset.menuSkin!=='principal'||
+    !(imageUrl(url)||studioPreviewImage(url)))return;
+ picture.onload=()=>{
+  if(picture.src===url){picture.hidden=false;holder.hidden=false;}
+ };
+ picture.onerror=()=>{holder.hidden=true;picture.hidden=true;};
+ picture.src=url;
+}
 let category=null, current=null, editing=null, quantity=1, groups=[], completed=false, feedbackTimer;
 function msg(text){
  const node=$($('cartDialog').open?'checkoutMessage':'msg');
@@ -2062,6 +2098,7 @@ function renderCart(){
  renderingCart=true;
  try{
  const root=$('cart');root.replaceChildren();
+ if(cartRestoreWarning)root.append(el('p',cartRestoreWarning,'msg'));
  if(!cart.length)root.append(el('p','Sua sacola está vazia.'));
  for(const item of cart){
   const line=el('div',undefined,'cartline'),info=el('div');
@@ -2501,6 +2538,7 @@ function initOptions(){
   node.addEventListener('load',()=>{node.hidden=false;if(image==='storeLogo')$('storeInitial').hidden=true},{once:true});
   node.src=value;
  }
+ showV2BrandBanner(shop.banner_url);
  for(const [value,label,allowed] of [['delivery','Entrega',shop.delivery_enabled],['pickup','Retirada',shop.pickup_enabled]]){
   if(!allowed)continue;
   $('fulfillment').add(new Option(label,value));
@@ -3086,8 +3124,10 @@ function studioPreviewApply(){
    studioAsset(d.logo_path)||menu.store.logo_url||studioAsset(menu.store.profile_logo_path);
   studioPreviewSetImage('storeLogo',logo);
   $('storeInitial').hidden=Boolean(logo);
-  studioPreviewSetImage('storeBanner',studioPreviewImage(studioPreviewFiles.cover)||
-   studioAsset(d.cover_path)||menu.store.banner_url);
+  const visibleCover=studioPreviewImage(studioPreviewFiles.cover)||
+   studioAsset(d.cover_path)||menu.store.banner_url;
+  studioPreviewSetImage('storeBanner',visibleCover);
+  showV2BrandBanner(visibleCover);
   const banners=$('pitaccoPromos');
   for(const card of banners.children){
    const index=card.dataset.bannerIndex;
