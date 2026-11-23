@@ -219,21 +219,31 @@ try {
           draft_version:studioDraftVersion,published_version:studioPublishedVersion,
           history:studioHistory,published_at:studioPublishedVersion?new Date().toISOString():null}});
       }
-      if(pathname==='/rest/v1/rpc/pitacco_storefront_save_draft'){
+      if(pathname==='/rest/v1/rpc/pitacco_storefront_save_publish'){
         if(studioNetworkFailOnce){studioNetworkFailOnce=false;return route.abort('failed');}
         const input=route.request().postDataJSON();
         assert.equal(input.p_store,store.id);
-        assert.equal(input.p_expected_version,studioDraftVersion);
+        assert.equal(input.p_expected_draft,studioDraftVersion);
+        assert.equal(input.p_expected_published,studioPublishedVersion);
+        studioDraft=structuredClone(input.p_design);
+        studioPublished=structuredClone(input.p_design);
+        studioDraftVersion++;
+        studioPublishedVersion++;
+        const date=new Date().toISOString();
+        studioHistory.unshift({id:null,version:studioPublishedVersion,created_at:date});
+        return route.fulfill({headers,json:{
+          saved:true,published:true,draft_version:studioDraftVersion,
+          published_version:studioPublishedVersion,published_at:date
+        }});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_storefront_save_draft'){
+        assert.fail('O Estúdio não deve mais salvar rascunho separadamente');
         studioDraft=input.p_design;
         studioDraftVersion++;
         return route.fulfill({headers,json:{saved:true,draft_version:studioDraftVersion}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_storefront_publish'){
-        const input=route.request().postDataJSON();
-        assert.equal(input.p_store,store.id);
-        assert.equal(input.p_expected_draft,studioDraftVersion);
-        assert.equal(input.p_expected_published,studioPublishedVersion);
-        studioPublished=structuredClone(studioDraft);
+        assert.fail('O Estúdio não deve mais publicar em uma segunda chamada');
         studioPublishedVersion++;
         studioHistory.unshift({id:null,version:studioPublishedVersion,created_at:new Date().toISOString()});
         return route.fulfill({headers,json:{published:true,published_version:studioPublishedVersion}});
@@ -868,22 +878,27 @@ try {
       assert.match(await liveFrame.getAttribute('src'),/\/cardapio\/\?loja=loja-teste&pitacco_studio_preview=/);
       assert.equal(await studio.getByLabel('Slogan').inputValue(),'O melhor da cidade');
       assert.equal(await studio.locator('.design-live-menu').count(),0,'A prévia genérica foi removida');
-      await studio.getByRole('button',{name:'Salvar rascunho'}).click();
-      await studio.getByRole('alert').filter({hasText:'Falha de conexão ao salvar as alterações'}).waitFor();
-      assert.equal(await studio.getByLabel('Slogan').inputValue(),'O melhor da cidade','Falha de rede não perde alterações do lojista');
-      await studio.getByRole('button',{name:'Salvar rascunho'}).click();
-      await studio.getByText('Rascunho salvo.',{exact:false}).waitFor();
-      assert.equal(studioPublished,null,'Editing a draft must never change the public design');
-      assert.equal(studioDraft.theme,'premium');
-      assert.equal(studioDraft.template,'urbano');
-      assert.equal(studioDraft.primary,'#b43e24');
-      await studio.getByRole('button',{name:/Prévia e publicação/}).click();
+      assert.equal(await studio.getByRole('button',{name:'Salvar rascunho'}).count(),0,'Botão antigo não deve aparecer');
+      assert.equal(await studio.getByRole('button',{name:'Publicar alterações para os clientes'}).count(),0,'Não existe segunda publicação');
       page.once('dialog',dialog=>dialog.accept());
-      await studio.getByRole('button',{name:'Publicar alterações para os clientes'}).click();
-      await studio.getByText('Aparência publicada!',{exact:false}).waitFor();
+      await studio.getByRole('button',{name:'Salvar e publicar',exact:true}).click();
+      await studio.getByRole('alert').filter({hasText:'Falha de conexão ao salvar e publicar'}).waitFor();
+      assert.equal(await studio.getByLabel('Slogan').inputValue(),'O melhor da cidade','Erro não perde a edição');
+      assert.equal(studioPublished,null,'Falha de conexão antes do commit não deve alterar o publicado');
+      assert.equal(studioDraftVersion,0,'Falha não registra rascunho no servidor');
+      page.once('dialog',dialog=>dialog.accept());
+      await studio.getByRole('button',{name:'Salvar e publicar',exact:true}).click();
+      await studio.getByText('Alterações salvas e publicadas!',{exact:false}).waitFor();
+      assert.equal(studioDraftVersion,1);
       assert.equal(studioPublishedVersion,1);
       assert.equal(studioPublished.template,'urbano');
       assert.equal(studioPublished.primary,'#b43e24');
+      assert.equal(studioDraft.theme,'premium');
+      assert.equal(studioDraft.primary,'#b43e24');
+      assert.equal(await studio.getByRole('button',{name:'Salvar e publicar',exact:true}).isDisabled(),true,
+        'Se tudo já está publicado não deve criar nova versão');
+      await studio.getByRole('button',{name:/Prévia e publicação/}).click();
+      assert.equal(await studio.getByRole('button',{name:'Salvar rascunho'}).count(),0);
       await page.getByRole('button',{name:'Identidade da loja',exact:true}).click();
       assert.equal(await page.getByRole('region',{name:'Estúdio de Cardápio Pitacco'}).count(),0);
       await page.getByRole('button',{name:'Horário de funcionamento',exact:true}).click();
