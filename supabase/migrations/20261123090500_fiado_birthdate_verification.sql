@@ -148,30 +148,95 @@ end $$;
 
 -- Consulta pública mostra apenas se o modo está disponível, nunca a data.
 -- Se a loja não registrou a data, o Fiado permanece desabilitado.
-do $patch_status$
-declare f regprocedure; definition text; old_text text;
+create or replace function public.pitacco_fiado_checkout_status(
+ p_slug text, p_phone text, p_order_total numeric
+) returns jsonb language plpgsql stable security definer set search_path=''
+as $fiado$
+declare
+ sid uuid;
+ account public.pitacco_fiado_customers%rowtype;
+ v_phone text:=regexp_replace(coalesce(p_phone,''),'[^0-9]','','g');
+ v_blocked boolean:=false;
 begin
- f:='public.pitacco_fiado_checkout_status(text,text,numeric)'::regprocedure;
- definition:=pg_get_functiondef(f);
- old_text:='v_blocked:='||chr(10)||'   (';
- if strpos(definition,old_text)=0 then
-  raise exception 'Status Fiado difere da versão esperada';
+ if v_phone !~ '^[0-9]{10,11}$' then
+  return jsonb_build_object('visible',false,'enabled',false);
  end if;
- execute replace(definition,old_text,'v_blocked:='||chr(10)||'   account.birth_date_hash is null or (');
-end $patch_status$;
+ select m.store_id into sid
+ from public.public_menu_settings m
+ join public.pitacco_fiado_settings f on f.store_id=m.store_id
+ where m.slug=p_slug and m.enabled and f.enabled limit 1;
+ if sid is null then
+  return jsonb_build_object('visible',false,'enabled',false);
+ end if;
+ select * into account from public.pitacco_fiado_customers c
+ where c.store_id=sid and c.phone=v_phone and c.enabled limit 1;
+ if not found then
+  return jsonb_build_object('visible',false,'enabled',false);
+ end if;
+ v_blocked:=
+   account.birth_date_hash is null or (
+     account.block_overdue and exists (
+      select 1 from public.pitacco_fiado_charges d
+      where d.customer_id=account.id and d.store_id=sid
+        and d.state='open' and d.amount>d.paid and d.due_at<now()
+     )
+   )
+   or coalesce(p_order_total,0)<=0
+   or p_order_total>10000
+   or p_order_total>greatest(0,account.credit_limit-account.used);
 
--- Impedir checagem pública de telefones sem nascimento cadastrado.
-do $patch_phone$
-declare definition text; old_text text;
+ return jsonb_build_object(
+  'visible',true,
+  'enabled',not v_blocked,
+  'message',case when v_blocked then
+   'Fiado indisponível para este pedido. Escolha outra forma de pagamento ou fale com a loja.'
+   else null end
+ );
+end $fiado$;
+
+create or replace function public.pitacco_fiado_phone_eligibility(
+  p_slug text, p_phone text
+) returns jsonb
+language plpgsql stable security definer set search_path = ''
+as $fiado$
+declare
+  sid uuid;
+  v_phone text := regexp_replace(coalesce(p_phone,''),'[^0-9]','','g');
+  allowed boolean := false;
 begin
- definition:=pg_get_functiondef('public.pitacco_fiado_phone_eligibility(text,text)'::regprocedure);
- old_text:='and c.enabled'||chr(10)||'      and c.credit_limit>c.used';
- if strpos(definition,old_text)=0 then
-  raise exception 'Elegibilidade Fiado difere da versão esperada';
- end if;
- execute replace(definition,old_text,
-  'and c.enabled'||chr(10)||'      and c.birth_date_hash is not null'||chr(10)||'      and c.credit_limit>c.used');
-end $patch_phone$;
+  if v_phone !~ '^[0-9]{10,11}$' then
+    return jsonb_build_object('eligible',false);
+  end if;
+
+  select m.store_id into sid
+  from public.public_menu_settings m
+  join public.pitacco_fiado_settings f
+    on f.store_id=m.store_id and f.enabled
+  where m.slug=p_slug and m.enabled
+  limit 1;
+
+  if sid is null then
+    return jsonb_build_object('eligible',false);
+  end if;
+
+  select exists(
+    select 1 from public.pitacco_fiado_customers c
+    where c.store_id=sid and c.phone=v_phone
+      and c.enabled
+      and c.birth_date_hash is not null
+      and c.credit_limit>c.used
+      and not (
+        c.block_overdue and exists (
+          select 1 from public.pitacco_fiado_charges d
+          where d.store_id=sid and d.customer_id=c.id
+            and d.state='open' and d.amount>d.paid and d.due_at<now()
+        )
+      )
+  ) into allowed;
+
+  return jsonb_build_object('eligible',coalesce(allowed,false));
+end
+$fiado$;
 
 -- O argumento legada p_code passa a transportar SOMENTE o token temporário.
 -- Não é código do cliente: o usuário vê e digita apenas telefone e nascimento.
