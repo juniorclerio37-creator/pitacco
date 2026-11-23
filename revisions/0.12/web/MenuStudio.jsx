@@ -1,13 +1,38 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import ProductComplements from './ProductComplements.jsx';
 import {uploadStoreImage,mediaUrl} from './StoreProfile.jsx';
+import {CategoryIcon,CATEGORY_ICON_GROUPS,CATEGORY_ICON_KEYS,inferCategoryIcon} from './CategoryIcons.jsx';
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const empty=()=>({name:'',description:'',category:'',price:'',cost:'',menu_active:true,image_url:''});
 const field={display:'grid',gap:5,marginBottom:13};
 export default function MenuStudio({client,storeId,products=[],onRefresh}){
  const [draft,setDraft]=useState(empty),[editing,setEditing]=useState(null),[groups,setGroups]=useState([]),[photo,setPhoto]=useState(null),[previewUrl,setPreviewUrl]=useState(''),[filter,setFilter]=useState(''),[selectedCategory,setSelectedCategory]=useState('Todas'),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[section,setSection]=useState('Produtos'),[showEditor,setShowEditor]=useState(false);
+ const [categoryIcons,setCategoryIcons]=useState({}),[configuringCategory,setConfiguringCategory]=useState(null),[iconBusy,setIconBusy]=useState(false);
  const categories=useMemo(()=>['Todas',...new Set(products.map(p=>p.category).filter(Boolean))],[products]);
  const filtered=products.filter(p=>(selectedCategory==='Todas'||p.category===selectedCategory)&&String(p.name||'').toLowerCase().includes(filter.toLowerCase()));
+ useEffect(()=>{
+  let active=true;
+  setConfiguringCategory(null);
+  client.rpc('pitacco_menu_category_icons_state',{p_store:storeId}).then(({data,error})=>{
+   if(!active)return;
+   if(error){setNotice('Não foi possível carregar os ícones. '+error.message);return;}
+   setCategoryIcons(data&&typeof data==='object'&&!Array.isArray(data)?data:{});
+  }).catch(err=>{if(active)setNotice('Não foi possível carregar os ícones: '+(err?.message||'falha de conexão'));});
+  return()=>{active=false};
+ },[client,storeId]);
+ const iconFor=name=>categoryIcons[name]&&CATEGORY_ICON_KEYS.includes(categoryIcons[name])?categoryIcons[name]:inferCategoryIcon(name);
+ async function chooseCategoryIcon(category,key){
+  if(iconBusy||!CATEGORY_ICON_KEYS.includes(key))return;
+  setIconBusy(true);setNotice('');
+  try{
+   const {data,error}=await client.rpc('pitacco_menu_category_set_icon',{p_store:storeId,p_category:category,p_icon:key});
+   if(error)throw error;
+   if(!data?.saved)throw Error('O servidor não confirmou o ícone.');
+   setCategoryIcons(previous=>({...previous,[category]:key}));
+   setNotice('Ícone de '+category+' atualizado no cardápio.');
+  }catch(err){setNotice('Não foi possível salvar o ícone: '+(err?.message||'falha de conexão'))}
+  finally{setIconBusy(false)}
+ }
  useEffect(()=>{if(!photo){setPreviewUrl('');return}const url=URL.createObjectURL(photo);setPreviewUrl(url);return()=>URL.revokeObjectURL(url)},[photo]);
  const change=(k,v)=>setDraft(p=>({...p,[k]:v}));
  const begin=product=>{
@@ -37,7 +62,28 @@ export default function MenuStudio({client,storeId,products=[],onRefresh}){
  {notice&&!showEditor&&<p className="notice" role="status">{notice}</p>}
  {section!=='Produtos'&&<div className="panel"><h3>{section}</h3><p>{section==='Complementos'?'Abra um produto para cadastrar e editar seus complementos.':'A gestão completa desta seção ainda depende do módulo de catálogo e de sua persistência.'}</p><button type="button" onClick={()=>setSection('Produtos')}>Ver produtos</button></div>}
  {section==='Produtos'&&<><div className="menu-studio-list">
- <div className="panel"><h3>Categorias</h3>{categories.map(c=><button key={c} type="button" className={selectedCategory===c?'active':'secondary'} style={{display:'block',width:'100%',marginBottom:8}} onClick={()=>setSelectedCategory(c)}>{c}</button>)}</div>
+ <div className="panel"><h3>Categorias</h3><p className="hint">Cada categoria pode ter seu próprio ícone. Os Destaques usam o foguinho animado 🔥.</p>
+ {categories.map(c=><div key={c} style={{display:'flex',gap:6,alignItems:'center',marginBottom:7}}>
+  <button type="button" className={selectedCategory===c?'active':'secondary'} style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:7,textAlign:'left'}} onClick={()=>setSelectedCategory(c)}>
+   <CategoryIcon icon={c==='Todas'?'more':iconFor(c)} size={22}/>{c}
+  </button>
+  {c!=='Todas'&&<button type="button" className="secondary" aria-label={'Configurar ícone da categoria '+c}
+    title={'Configurar ícone de '+c} onClick={()=>setConfiguringCategory(prev=>prev===c?null:c)}>⚙</button>}
+ </div>)}
+ {configuringCategory&&categories.includes(configuringCategory)&&<div className="pitacco-category-settings">
+  <h4>Ícone da categoria: {configuringCategory}</h4>
+  <p>Escolha a imagem que aparecerá no cardápio dos clientes. A mudança é exclusiva desta loja.</p>
+  {CATEGORY_ICON_GROUPS.map(group=><section key={group.name} aria-label={group.name}>
+   <h4>{group.name}</h4><div className="pitacco-icon-picker">
+    {group.icons.map(([key,label])=><button key={key} type="button" className="pitacco-icon-choice"
+      aria-label={label} aria-pressed={iconFor(configuringCategory)===key} disabled={iconBusy}
+      onClick={()=>chooseCategoryIcon(configuringCategory,key)}>
+     <CategoryIcon icon={key} size={39}/><small>{label}</small>
+    </button>)}
+   </div>
+  </section>)}
+ </div>}
+ </div>
  <div className="panel"><div className="line"><h3>Produtos</h3><button onClick={()=>begin(null)}>+ Novo produto</button></div><input aria-label="Buscar produto" placeholder="Buscar produtos..." value={filter} onChange={e=>setFilter(e.target.value)}/>{filtered.map(p=><div className="line" key={p.id}><div><b>{p.name}</b><div><small>{p.category||'Sem categoria'} · {brl(p.price)}</small></div></div><div className="quick-actions"><button type="button" className="secondary" onClick={()=>begin(p)}>Editar</button><button type="button" className="secondary" disabled={busy} onClick={()=>toggle(p)}>{p.menu_active===false?'Ativar':'Desativar'}</button></div></div>)}{!filtered.length&&<p>Nenhum produto nesta categoria.</p>}</div>
  </div>
  {showEditor&&<div style={{position:'fixed',inset:0,zIndex:90,background:'rgba(0,0,0,.5)',display:'flex',justifyContent:'flex-end'}}>
