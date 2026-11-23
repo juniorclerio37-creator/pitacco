@@ -25,6 +25,7 @@ try{
    if(!url.pathname.startsWith('/fixture/'))return route.abort();
    const p=route.request().postDataJSON();
    if(name==='get_public_menu')return route.fulfill({json:{store:{appearance:{template,...templatePalettes[template]},name:'Loja Fideliza',delivery_enabled:false,pickup_enabled:true,payment_methods:['pix_manual'],opening_hours:{open:true,reason:'open'}},products:[{id:'p1',name:'Açaí',category:'Açaí',price:50,image_url:'https://fixtures.pitacco.test/acai.svg',option_groups:[]},{id:'p2',name:'Creme de cupuaçu',category:'Açaí',price:50,option_groups:[]},{id:'p3',name:'Combo da casa',category:'Açaí',price:50,option_groups:[]}]}});
+   if(name==='pitacco_public_store_region')return route.fulfill({json:'Localidade de teste com nome comprido · Nova Iguaçu'});
    if(name==='pitacco_public_store_open')return route.fulfill({json:{open:true,reason:'open'}});
    if(name==='pitacco_public_schedule_slots')return route.fulfill({json:[]});
    if(name==='pitacco_loyalty_program')return route.fulfill({json:{rules,campaigns:[{id:'campaign',title:'Oferta da semana',code:'SEMANA5',discount_type:'fixed',discount_value:5,minimum_order_cents:0}]}});
@@ -55,6 +56,7 @@ try{
   await page.waitForFunction(()=>[...document.images].filter(i=>i.src.includes('fixtures.pitacco.test')).every(i=>i.complete&&i.naturalWidth>0),null,{timeout:10000});
   assert.equal(await page.locator('.product').first().evaluate(card=>{const photo=card.querySelector('.product-visual').getBoundingClientRect(),image=card.querySelector('.product-visual img').getBoundingClientRect();return image.bottom<=photo.bottom+1&&image.height<=photo.height+1;}),true,'Foto real limitada à área visual sem cobrir texto');
   if(['pitacco-v2','urbano'].includes(template))assert.equal(await page.locator('#v2HeroImage').evaluate(img=>img.getBoundingClientRect().left>document.getElementById('v2HeaderBack').getBoundingClientRect().right),true,'Foto decorativa à direita sem sobrepor o controle de voltar');
+  if(template==='urbano')assert.equal(await page.evaluate(()=>{const photo=document.getElementById('v2HeroImage').getBoundingClientRect();return ['v2DeliveryText','v2HeroLocation'].every(id=>document.getElementById(id).getBoundingClientRect().right<photo.left);}),true,'Prazo e localização legíveis ao lado da foto decorativa');
   assert.equal(await page.locator('body').getAttribute('data-menu-skin'),template==='pitacco-v2'?'principal':template);
   await mkdir('artifacts',{recursive:true});
   await page.screenshot({path:`artifacts/menu-${template}-${width}.png`,fullPage:true});
