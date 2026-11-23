@@ -228,13 +228,13 @@ try {
     const principal=template==='pitacco-v2';
     const fiadoChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
     if(principal){
-      assert.equal(await page.locator('#cartDialog').getAttribute('data-v2-stage'),'identify');
+      await page.locator('#cartDialog[data-v2-stage="identify"]').waitFor();
       await page.locator('#phone').fill('21999999999');
       await page.locator('#v2CheckoutNext').click();
-      assert.equal(await page.locator('#cartDialog').getAttribute('data-v2-stage'),'customer');
+      await page.locator('#cartDialog[data-v2-stage="customer"]').waitFor();
       await page.locator('#customer').fill('Cliente Teste');
       await page.locator('#v2CheckoutNext').click();
-      assert.equal(await page.locator('#cartDialog').getAttribute('data-v2-stage'),'address');
+      await page.locator('#cartDialog[data-v2-stage="address"]').waitFor();
     }else{
       await page.locator('#customer').fill('Cliente Teste');
       await page.locator('#phone').fill('21999999999');
@@ -294,7 +294,7 @@ try {
     if(scheduled)await page.getByLabel('Quando deseja receber?').selectOption(scheduled);
     if(principal){
       await page.locator('#v2CheckoutNext').click();
-      assert.equal(await page.locator('#cartDialog').getAttribute('data-v2-stage'),'payment');
+      await page.locator('#cartDialog[data-v2-stage="payment"]').waitFor();
       const pixCard=page.locator('#v2PaymentCards [data-kind="pix_manual"]');
       assert.equal(await pixCard.isVisible(),true,'Pix manual cadastrado aparece em card');
       assert.equal(await page.locator('#v2PaymentCards [data-kind="dinheiro"]').count(),0,'Método não cadastrado não aparece');
@@ -309,7 +309,7 @@ try {
       await pixCard.click();
       assert.equal(await page.locator('#payment').inputValue(),'pix_manual');
       await page.locator('#v2CheckoutNext').click();
-      assert.equal(await page.locator('#cartDialog').getAttribute('data-v2-stage'),'review');
+      await page.locator('#cartDialog[data-v2-stage="review"]').waitFor();
       assert.match(await page.locator('#v2OrderSummary').innerText(),/Pix manual/);
     }
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
