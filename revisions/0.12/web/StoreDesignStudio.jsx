@@ -53,7 +53,12 @@ function equalDesign(a,b){
  return JSON.stringify(normalize(a))===JSON.stringify(normalize(b));
 }
 
-function BannerImage({url,...props}){return url?<img src={url} alt="" {...props}/>:null;}
+function BannerImage({url,...props}){
+ const [broken,setBroken]=useState(false);
+ useEffect(()=>setBroken(false),[url]);
+ if(!url||broken)return <span className="design-media-empty">{broken?'Imagem indisponível. Selecione uma nova para substituir.':'Nenhuma imagem selecionada'}</span>;
+ return <img src={url} alt="" onError={()=>setBroken(true)} {...props}/>;
+}
 
 export default function StoreDesignStudio({client,store,manager,products=[]}){
  const [saved,setSaved]=useState(null),[design,setDesign]=useState(null),[version,setVersion]=useState(0);
@@ -64,10 +69,11 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
  const [working,setWorking]=useState(false),[loading,setLoading]=useState(true),[notice,setNotice]=useState(''),[error,setError]=useState('');
  const [loadAttempt,setLoadAttempt]=useState(0);
  const [catalog,setCatalog]=useState(products.slice(0,8));
+ const [legacyMedia,setLegacyMedia]=useState({logo:'',cover:''});
  const dirty=design&&saved?JSON.stringify(design)!==JSON.stringify(saved)||Object.keys(files).length>0:false;
  const needsPublishing=Boolean(design&&(!publishedDesign||dirty||!equalDesign(publishedDesign,design)));
  const photo=path=>path?mediaUrl(client,path):'';
- const imageFor=(key,path)=>fileUrls[key]||photo(path);
+ const imageFor=(key,path)=>fileUrls[key]||photo(path)||legacyMedia[key]||'';
  const moneyColors={background:design?.background||'#fff',color:design?.foreground||'#222',fontFamily:fontFace(design?.font)};
  const onBrand=design?.primary&&isHex(design.primary)&&contrast(design.primary)>.179?'#221d1b':'#ffffff';
 
@@ -80,6 +86,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
    setSaved(next);setDesign(structuredClone(next));setVersion(data.draft_version);
    setPublishedVersion(data.published_version);setPublishedDesign(data.published||null);setHistory(data.history||[]);
    setPublishedAt(data.published_at);
+    setLegacyMedia({logo:data.legacy_logo_url||'',cover:data.legacy_banner_url||''});
   }).catch(e=>{if(alive)setError(studioError(e,'carregar o estúdio'))})
    .finally(()=>{if(alive)setLoading(false)});
   client.from('products').select('id,name,price,category,description,image_url').eq('store_id',store.id)
@@ -114,12 +121,15 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
   if(!isHex(d.primary)||!isHex(d.foreground)||!isHex(d.paper))throw Error('Confira as cores selecionadas.');
   if(!Number.isInteger(Number(d.radius))||Number(d.radius)<0||Number(d.radius)>32)throw Error('Arredondamento inválido.');
   if(d.instagram&&!/^@[A-Za-z0-9._]{1,30}$/.test(d.instagram))throw Error('Informe o Instagram com @ e o nome de usuário.');
-  if(d.banners.some(b=>!b.title?.trim()||b.title.trim().length<2))throw Error('Todo banner precisa de um título.');
+  if(d.banners.some((b,i)=>{
+    const title=String(b.title||'').trim();
+    return title.length===1||(!title&&!b.image_path&&!files['banner-'+i]);
+   }))throw Error('Todo banner precisa de uma imagem ou um título com pelo menos 2 caracteres.');
   return true;
  }
  async function saveAndPublish(){
-  if(!manager||!design||working||!needsPublishing)return;
-  if(!window.confirm('Salvar e publicar esta aparência para os clientes da loja?'))return;
+  if(!manager||!design||working)return;
+  // Publicação direta no clique, sem confirmação redundante.
   setWorking(true);setError('');setNotice('');
   let next=null,phase='validar a aparência';
   try{
@@ -224,8 +234,10 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
      <section className="design-control-card"><h4>Imagens e informações</h4>
       <label className="design-field">Logotipo (até 5 MB)<input disabled={!manager||working} type="file" accept="image/jpeg,image/png,image/webp"
        onChange={e=>pickFile('logo',e.target.files?.[0])}/></label>
+      <div className="design-media-preview"><BannerImage url={imageFor('logo',design.logo_path)} style={{width:116,height:116,objectFit:'contain',borderRadius:12}}/><small>{files.logo?'Novo logotipo selecionado — publicar para aplicar.':'Logotipo atual da loja, preservado até ser substituído.'}</small></div>
       <label className="design-field">Imagem de capa (até 5 MB)<input disabled={!manager||working} type="file" accept="image/jpeg,image/png,image/webp"
        onChange={e=>pickFile('cover',e.target.files?.[0])}/></label>
+      <div className="design-media-preview"><BannerImage url={imageFor('cover',design.cover_path)} style={{width:'100%',maxHeight:160,objectFit:'cover',borderRadius:12}}/><small>{files.cover?'Nova capa selecionada — publicar para aplicar.':'Capa atual da loja, preservada até ser substituída.'}</small></div>
       {field('Slogan',design.slogan,value=>update('slogan',value),{maxLength:100,disabled:!manager||working})}
       {field('Instagram (@usuario)',design.instagram,value=>update('instagram',value),{maxLength:31,disabled:!manager||working})}
      </section>
@@ -244,14 +256,15 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
      <section className="design-control-card"><div className="design-section-head"><h4>Banners promocionais</h4>
        <button type="button" className="secondary" disabled={!manager||working||design.banners.length>=6}
         onClick={()=>update('banners',[...design.banners,{title:'',subtitle:'',image_path:'',starts_at:null,ends_at:null,product_id:null}])}>+ Adicionar banner</button></div>
-      <p>Até seis banners, com datas opcionais de início e término.</p>
+      <p>Até seis banners, com datas opcionais. Se enviar uma imagem, o título é opcional.</p>
       {design.banners.map((b,index)=><div className="design-banner-form" key={index}>
        <div className="design-section-head"><strong>Banner {index+1}</strong><button type="button" disabled={!manager||working}
         className="secondary" onClick={()=>removeBanner(index)}>Excluir</button></div>
-       {field('Título',b.title,value=>setBanner(index,'title',value),{maxLength:90,required:true,disabled:!manager||working})}
+       {field('Título (opcional com imagem)',b.title,value=>setBanner(index,'title',value),{maxLength:90,disabled:!manager||working})}
        {field('Texto de apoio',b.subtitle,value=>setBanner(index,'subtitle',value),{maxLength:160,disabled:!manager||working})}
        <label className="design-field">Imagem do banner<input type="file" accept="image/jpeg,image/png,image/webp"
         disabled={!manager||working} onChange={e=>pickFile('banner-'+index,e.target.files?.[0])}/></label>
+       <div className="design-media-preview"><BannerImage url={imageFor('banner-'+index,b.image_path)} style={{width:'100%',maxHeight:150,objectFit:'cover',borderRadius:12}}/><small>{files['banner-'+index]?'Imagem selecionada — publicar para aplicar.':'Prévia do banner.'}</small></div>
        <label className="design-field">Produto em destaque<select value={b.product_id||''} disabled={!manager||working} onChange={e=>setBanner(index,'product_id',e.target.value||null)}>
         <option value="">Sem produto vinculado</option>{catalog.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
        <div className="design-dates">
@@ -278,7 +291,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
      </section>
     </>}
     <div className="design-studio-actions">
-     <button type="button" disabled={!manager||working||!needsPublishing} onClick={saveAndPublish}>{working?'Salvando e publicando…':'Salvar e publicar'}</button>
+     <button type="button" disabled={!manager||working||!design} onClick={saveAndPublish}>{working?'Salvando e publicando…':'Salvar e publicar'}</button>
      <button type="button" className="secondary" onClick={()=>setMode(mode==='editar'?'publicar':'editar')}>
       {mode==='editar'?'Ver prévia':'Voltar à aparência'}</button>
     </div>
