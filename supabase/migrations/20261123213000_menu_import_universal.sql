@@ -141,7 +141,7 @@ begin
    insert into public.products(store_id,name,category,description,price,cost,menu_active,image_url,
       sealed_industrial_beverage)
     values(p_store,v_name,v_cat,coalesce(v_item->>'description',''),(v_item->>'price')::numeric,0,
-       coalesce((v_item->>'active')::boolean,true),nullif(v_item->>'image_url',''),false)
+       coalesce((v_item->>'active')::boolean,true),coalesce(v_item->>'image_url',''),false)
     returning id into v_product;
    v_added:=v_added+1;
    for v_group in select value from jsonb_array_elements(coalesce(v_item->'groups','[]'::jsonb)) loop
