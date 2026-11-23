@@ -40,16 +40,16 @@ test("fiado uses merchant approval with PIN set by the store and validates credi
  assert.match(approval,/pitacco_fiado_checkout_status/);
  assert.match(approval,/p_code text default null/);
  assert.match(pinMigration,/pin_hash text/);
- assert.match(pinMigration,/extensions\\.crypt\\(p_pin/);
- assert.match(pinMigration,/extensions\\.gen_salt\\('bf',11\\)/);
+ assert.match(pinMigration,/extensions\.crypt\(p_pin/);
+ assert.match(pinMigration,/extensions\.gen_salt\('bf',11\)/);
  assert.match(pinMigration,/pitacco_fiado_verify_pin/);
  assert.match(pinMigration,/pitacco_fiado_save_customer_pin/);
  assert.match(pinMigration,/pin_locked_until/);
  assert.match(pinMigration,/interval '30 minutes'/);
- assert.match(pinMigration,/pitacco_private\\.fiado_pin_verifications/);
- assert.match(pinMigration,/confirmation\\.used_at is not null/);
- assert.match(pinMigration,/confirmation\\.expires_at<now\\(\\)/);
- assert.match(pinMigration,/drop function public\\.pitacco_fiado_verify_birthdate/);
+ assert.match(pinMigration,/pitacco_private\.fiado_pin_verifications/);
+ assert.match(pinMigration,/confirmation\.used_at is not null/);
+ assert.match(pinMigration,/confirmation\.expires_at<now\(\)/);
+ assert.match(pinMigration,/drop function public\.pitacco_fiado_verify_birthdate/);
  assert.match(pinMigration,/drop column if exists birth_date_hash/);
 
 
