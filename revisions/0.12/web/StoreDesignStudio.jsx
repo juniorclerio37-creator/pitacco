@@ -68,7 +68,7 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
  const [files,setFiles]=useState({}),[fileUrls,setFileUrls]=useState({});
  const [working,setWorking]=useState(false),[loading,setLoading]=useState(true),[notice,setNotice]=useState(''),[error,setError]=useState('');
  const [loadAttempt,setLoadAttempt]=useState(0);
- const [catalog,setCatalog]=useState(products.slice(0,8));
+ const [catalog,setCatalog]=useState(focus==='banners'?products.filter(p=>p.menu_active!==false).slice(0,500):products.slice(0,8));
  const [legacyMedia,setLegacyMedia]=useState({logo:'',cover:''});
  const dirty=design&&saved?JSON.stringify(design)!==JSON.stringify(saved)||Object.keys(files).length>0:false;
  const needsPublishing=Boolean(design&&(!publishedDesign||dirty||!equalDesign(publishedDesign,design)));
@@ -90,9 +90,9 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
   }).catch(e=>{if(alive)setError(studioError(e,'carregar o estúdio'))})
    .finally(()=>{if(alive)setLoading(false)});
   client.from('products').select('id,name,price,category,description,image_url').eq('store_id',store.id)
-   .eq('menu_active',true).limit(8).then(({data})=>{if(alive&&data)setCatalog(data)}).catch(()=>{});
+   .eq('menu_active',true).limit(focus==='banners'?500:8).then(({data})=>{if(alive&&data)setCatalog(data)}).catch(()=>{});
   return()=>{alive=false};
- },[client,store.id,loadAttempt]);
+ },[client,store.id,loadAttempt,focus]);
  useEffect(()=>()=>Object.values(fileUrls).forEach(url=>URL.revokeObjectURL(url)),[fileUrls]);
  const update=(key,value)=>setDesign(d=>({...d,[key]:value}));
  const setBanner=(index,key,value)=>setDesign(d=>({...d,banners:d.banners.map((b,i)=>i===index?{...b,[key]:value}:b)}));
