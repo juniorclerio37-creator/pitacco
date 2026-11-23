@@ -7,6 +7,7 @@ const manager=file("supabase/migrations/20261122224100_fiado_manager_api.sql");
 const ledger=file("supabase/migrations/20261122224200_fiado_credit_engine.sql");
 const checkout=file("supabase/migrations/20261122224300_fiado_public_checkout.sql");
 const phoneOption=file("supabase/migrations/20261123022000_fiado_phone_payment_eligibility.sql");
+const privateStatus=file("supabase/migrations/20261123025500_fiado_private_credit_status.sql");
 const courier=file("supabase/migrations/20261122224400_fiado_courier_privacy.sql");
 const pos=file("supabase/migrations/20261122224500_fiado_balcao.sql");
 const shop=file("marketing/cardapio.html");
@@ -43,7 +44,11 @@ test("public checkout never accepts fiado from telephone alone and uses original
  assert.match(checkout,/pitacco_checkout_scheduled_order/);
  assert.match(checkout,/checkout_public_order/);
  assert.match(checkout,/p_payment<>'fiado'/);
- assert.match(shop,/pitacco_fiado_phone_eligibility/);
+ assert.match(shop,/pitacco_fiado_checkout_status/);
+ assert.match(privateStatus,/p_order_total>greatest\(0,account\.credit_limit-account\.used\)/);
+ assert.match(privateStatus,/jsonb_build_object\(\s*'visible',true/);
+ assert.doesNotMatch(privateStatus,/jsonb_build_object\('eligible',true,'available'/);
+ assert.match(shop,/fiadoUnavailable/);
  assert.match(phoneOption,/c\.credential_hash is not null/);
  assert.match(phoneOption,/c\.credit_limit>c\.used/);
  assert.match(phoneOption,/return jsonb_build_object\('eligible',coalesce\(allowed,false\)\)/);
@@ -55,9 +60,12 @@ test("public checkout never accepts fiado from telephone alone and uses original
  assert.doesNotMatch(shop,/Tenho fiado autorizado pela loja/);
  assert.doesNotMatch(shop,/fiadoToggle|fiadoCheck/);
  assert.match(shop,/new Option\('Fiado — pagar depois','fiado'\)/);
+ assert.match(shop,/option\.disabled=data\.enabled!==true/);
+ assert.match(shop,/option\.disabled&&\$\('payment'\)\.value==='fiado'/);
  assert.match(shop,/fiadoEligiblePhone===fiadoPhoneDigits/);
  assert.match(shop,/if\(method==='fiado'\)continue/);
  assert.match(shop,/fiadoAuth'\)\.hidden=!isFiado/);
+ assert.doesNotMatch(shop,/Seu limite de fiado|Saldo disponível em Fiado|Limite disponível para o fiado/i);
  assert.match(shop,/Não foi possível/); // Other normal error handler preserved
 });
 test("fiado never appears on courier financial display; pickup reminders and code flow preserved",()=>{

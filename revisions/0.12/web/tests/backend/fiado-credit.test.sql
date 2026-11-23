@@ -45,6 +45,18 @@ begin
  assert (public.pitacco_fiado_public_eligibility('fiado-fixture','21988887777',secret)->>'eligible')::boolean;
  assert (public.pitacco_fiado_phone_eligibility('fiado-fixture','21988887777')->>'eligible')::boolean,
    'Telefone autorizado recebe Fiado automaticamente';
+ assert public.pitacco_fiado_checkout_status('fiado-fixture','21988887777',20) @> '{"visible":true,"enabled":true}'::jsonb,
+   'Compra abaixo do saldo interno habilita o Fiado sem expor números';
+ assert public.pitacco_fiado_checkout_status('fiado-fixture','21988887777',26) @> '{"visible":true,"enabled":false}'::jsonb,
+   'Compra acima do saldo interno mantém opção visível e desabilitada';
+ assert not (public.pitacco_fiado_checkout_status('fiado-fixture','21988887777',20) ? 'available')
+   and not (public.pitacco_fiado_checkout_status('fiado-fixture','21988887777',20) ? 'credit_limit')
+   and not (public.pitacco_fiado_checkout_status('fiado-fixture','21988887777',20) ? 'used'),
+   'RPC pública não envia limite, saldo ou valor consumido';
+ assert not (public.pitacco_fiado_public_eligibility('fiado-fixture','21988887777',secret) ? 'available'),
+   'RPC legada não devolve mais limite disponível';
+ assert public.pitacco_fiado_checkout_status('fiado-fixture','21911112222',20) @> '{"visible":false,"enabled":false}'::jsonb,
+   'Não autorizado não vê a opção';
  assert (public.pitacco_fiado_phone_eligibility('fiado-fixture','21911112222')->>'eligible')::boolean=false,
    'Telefone não cadastrado não vê Fiado';
  assert not public.pitacco_fiado_phone_eligibility('fiado-fixture','21988887777') ? 'phone',
@@ -55,7 +67,9 @@ begin
  assert v_order_id is not null;
  assert (select used=20 from public.pitacco_fiado_customers where id=c), 'Crédito reservado na criação';
  assert (public.pitacco_fiado_phone_eligibility('fiado-fixture','21988887777')->>'eligible')::boolean,
-   'Saldo de crédito positivo continua elegível para novos pedidos (checkout verifica valor total)';
+   'A elegibilidade por telefone continua positiva se ainda existe algum crédito';
+ assert public.pitacco_fiado_checkout_status('fiado-fixture','21988887777',20) @> '{"visible":true,"enabled":false}'::jsonb,
+   'Pedido acima do restante apresenta opção desabilitada';
  assert (select state='reserved' from public.pitacco_fiado_charges where order_id=v_order_id);
  -- Reenviar mesma requisição quando saldo disponível é menor que o pedido não duplica dívida.
  replay:=public.pitacco_checkout_fiado('fiado-fixture',request,'Cliente Fiado','21988887777','',

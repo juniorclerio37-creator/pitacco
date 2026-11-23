@@ -85,10 +85,15 @@ try {
           }] },{id:'agua',name:'Água',category:'Bebidas',price:5,option_groups:[]}]
         } });
       }
-      if(pathname.endsWith('/pitacco_fiado_phone_eligibility')){
+      if(pathname.endsWith('/pitacco_fiado_checkout_status')){
         const args=route.request().postDataJSON();
         assert.equal(args.p_slug,'loja-teste');
-        return route.fulfill({json:{eligible:width===375&&args.p_phone==='21999999999'}});
+        assert.ok(Number(args.p_order_total)>=0,'Backend recebe valor do carrinho (apenas para UI)');
+        if(width===375&&args.p_phone==='21999999999')
+          return route.fulfill({json:{visible:true,enabled:Number(args.p_order_total)<=80}});
+        if(width===375&&args.p_phone==='21999999998')
+          return route.fulfill({json:{visible:true,enabled:false,message:'Fiado indisponível para este pedido.'}});
+        return route.fulfill({json:{visible:false,enabled:false}});
       }
       if(pathname.endsWith('/pitacco_public_store_open')){
         assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
@@ -175,7 +180,7 @@ try {
     await product.getByRole('button',{name:'Fechar produto',exact:true}).click();
     await firstLine.getByText(/Morango · Granola/).waitFor();
     await page.getByRole('button',{name:'Continuar para entrega e pagamento'}).click();
-    const fiadoChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_phone_eligibility'));
+    const fiadoChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
     for (const [id, value] of [['customer', 'Cliente Teste'], ['phone', '21999999999'], ['address', 'Rua Teste 123']]) {
       await page.locator('#' + id).fill(value);
     }
@@ -189,20 +194,30 @@ try {
       assert.equal(await page.locator('#fiadoCode').getAttribute('required'),'');
       await page.locator('#payment').selectOption('pix_manual');
       assert.equal(await page.locator('#fiadoAuth').isVisible(),false);
-      const hideFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_phone_eligibility'));
+      const disableFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
       await page.locator('#phone').fill('21999999998');
+      await disableFiado;
+      await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
+      assert.equal(await page.locator('#payment option[value="fiado"]').isDisabled(),true,'Autorizado, mas sem crédito para este pedido');
+      assert.match(await page.locator('#fiadoUnavailable').innerText(),/Fiado indisponível para este pedido/);
+      assert.doesNotMatch(await page.locator('#fiadoUnavailable').innerText(),/R\$|saldo disponível|limite de crédito/i);
+      const hideFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
+      await page.locator('#phone').fill('21999999997');
       await hideFiado;
-      assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Telefone sem autorização nunca vê Fiado');
-      const showFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_phone_eligibility'));
+      assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Telefone não autorizado não vê Fiado');
+      const showFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
       await page.locator('#phone').fill('21999999999');
       await showFiado;
       await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
+      assert.equal(await page.locator('#payment option[value="fiado"]').isDisabled(),false);
     }else{
       assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Fiado oculto para telefone não autorizado');
     }
     await page.getByRole('button',{name:'Usar minha localização'}).click();
     await page.getByText('Ponto marcado. Confira o endereço e calcule o frete.').waitFor();
+    const pricingChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status'));
     await page.getByRole('button',{name:'Calcular taxa de entrega'}).click();
+    await pricingChecked;
     await page.getByText(/Linha reta: 1,1 km · Entrega: R\$.*5,00/).waitFor();
     assert.match(await page.locator('#total').innerText(),/74,00/);
     if(scheduled)await page.getByLabel('Quando deseja receber?').selectOption(scheduled);
