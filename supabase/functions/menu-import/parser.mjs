@@ -192,7 +192,13 @@ export function parsePublicMenu(body,origin,contentType='text/html'){
   else if(!unique.get(key).image_url&&p.image_url)unique.get(key).image_url=p.image_url;
  }
  const result=[...unique.values()].slice(0,300);
- if(!result.length)warnings.push('Não foi possível identificar produtos estruturados nesta página. Experimente exportar o cardápio como CSV ou JSON.');
+ if(!result.length){
+  const renderedByJs=/<script[^>]+(?:\.chunk\.js|\/js\/)|<div[^>]+id=["'](?:app|root)["']|doesn.t work properly without JavaScript/i.test(body);
+  if(renderedByJs)
+   warnings.push('Esta página carrega o cardápio por JavaScript, mas não disponibilizou produtos na resposta pública. Confira se os itens aparecem ao abrir o link como cliente; caso não apareçam, importe a exportação CSV, JSON ou ZIP da loja.');
+  else
+   warnings.push('O endereço abriu, mas nenhum produto com nome e preço foi disponibilizado publicamente. Confira o link ou envie uma exportação CSV, JSON ou ZIP.');
+ }
  const withoutPhotos=result.filter(p=>!p.image_url).length;
  if(withoutPhotos)warnings.push(withoutPhotos+' produto(s) sem foto acessível na página.');
  const withGroups=result.filter(p=>p.groups.length).length;

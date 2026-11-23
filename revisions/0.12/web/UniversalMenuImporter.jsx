@@ -113,6 +113,7 @@ export default function UniversalMenuImporter({client,storeId,onCompleted}){
  const [zipImages,setZipImages]=useState(new Map()),[mode,setMode]=useState('add'),[replaceConfirm,setReplaceConfirm]=useState(false);
  const [allowMissing,setAllowMissing]=useState(false),[selected,setSelected]=useState(0),[limit,setLimit]=useState(24);
  const [phase,setPhase]=useState(''),[notice,setNotice]=useState(''),[error,setError]=useState(''),[history,setHistory]=useState([]);
+ const [sourceInfo,setSourceInfo]=useState(null);
  const counts=useMemo(()=>stats(items),[items]);
  const canReplace=mode!=='replace'||replaceConfirm;
  const eligible=items.length>0&&canReplace&&!phase;
@@ -121,16 +122,20 @@ export default function UniversalMenuImporter({client,storeId,onCompleted}){
    .select('id,mode,origin,created_at,summary').eq('store_id',storeId).order('created_at',{ascending:false}).limit(8);
   if(!err)setHistory(data||[]);
  }
- useEffect(()=>{setItems([]);setWarnings([]);setOrigin('');setSelected(0);setHistory([]);loadHistory();},[storeId]);
+ useEffect(()=>{setItems([]);setWarnings([]);setOrigin('');setSourceInfo(null);setSelected(0);setHistory([]);loadHistory();},[storeId]);
  async function runScan(event){
   event.preventDefault();setError('');setNotice('');setPhase('Analisando link público…');
   try{
    const {data,error:err}=await client.functions.invoke('menu-import',{body:{action:'scan',store_id:storeId,url:link.trim()}});
    if(err)throw Error(await responseError(err));
-   if(!Array.isArray(data?.products)||!data.products.length)throw Error(data?.warnings?.join(' ')||'Nenhum produto encontrado neste link.');
-   setItems(review(data.products));setZipImages(new Map());setOrigin(data.url||link.trim());
-   setWarnings(data.warnings||[]);setSelected(0);setLimit(24);setAllowMissing(false);setReplaceConfirm(false);
-   setNotice('Análise concluída. Revise os produtos antes de importar. Nenhum cadastro foi alterado.');
+   if(!Array.isArray(data?.products))throw Error('A resposta do cardápio está incompleta. Tente novamente.');
+   const hasProducts=data.products.length>0;
+   setItems(hasProducts?review(data.products):[]);setZipImages(new Map());setOrigin(data.url||link.trim());
+   setWarnings(data.warnings||[]);setSourceInfo({name:data.sourceTitle||'',categories:data.counts?.categories??null,status:data.sourceStatus||''});
+   setSelected(0);setLimit(24);setAllowMissing(false);setReplaceConfirm(false);
+   setNotice(hasProducts
+    ?'Análise concluída. Revise os produtos antes de importar. Nenhum cadastro foi alterado.'
+    :'');
   }catch(e){setError(e.message||'Não foi possível analisar este endereço.');}
   finally{setPhase('');}
  }
@@ -140,7 +145,7 @@ export default function UniversalMenuImporter({client,storeId,onCompleted}){
   try{
    const result=await readCatalogFile(file);
    setItems(result.products);setZipImages(result.attachments);setOrigin(file.name);
-   setWarnings([]);setSelected(0);setLimit(24);setAllowMissing(false);setReplaceConfirm(false);
+   setWarnings([]);setSourceInfo(null);setSelected(0);setLimit(24);setAllowMissing(false);setReplaceConfirm(false);
    setNotice('Arquivo analisado. Revise produtos, fotos e complementos antes de importar.');
   }catch(e){setError(e.message||'Não foi possível ler o arquivo.');}
   finally{event.target.value='';setPhase('');}
@@ -252,6 +257,13 @@ export default function UniversalMenuImporter({client,storeId,onCompleted}){
   {phase&&<p role="status" className="mi-status">{phase}</p>}
   {error&&<p role="alert" className="mi-error">{error}</p>}
   {notice&&<p role="status" className="mi-success">{notice}</p>}
+  {items.length===0&&warnings.length>0&&<section className="mi-warning" role="status" aria-label="Diagnóstico do link do cardápio">
+   <strong>Este endereço não disponibilizou produtos para importação.</strong>
+   {sourceInfo?.categories!=null&&<p>{sourceInfo.name?sourceInfo.name+': ':''}{sourceInfo.categories} categoria(s) identificada(s), mas nenhum item com nome e preço acessível publicamente.</p>}
+   {warnings.map((warning,i)=><p key={i}>{warning}</p>)}
+   {origin.startsWith('https://')&&<a href={origin} target="_blank" rel="noopener noreferrer">Abrir o cardápio original como cliente</a>}
+   <p>Para continuar, use o arquivo CSV, JSON ou ZIP acima. Não é necessário excluir os produtos já cadastrados.</p>
+  </section>}
   {items.length>0&&<>
    <div className="mi-stats">
     <span><strong>{counts.products}</strong> produtos</span>
