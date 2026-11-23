@@ -1,0 +1,1088 @@
+{
+  "origin": "Pitacco Loja de Testes",
+  "captured_at": "2026-11-23",
+  "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+  "products": [
+    {
+      "groups": [
+        {
+          "group": {
+            "id": "4217e510-d9c5-47ca-883d-99a513bf602c",
+            "name": "Escolha o sabor do açaí",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 1,
+            "min_select": 1,
+            "product_id": "bb92b47a-be75-4fe9-9842-e92aca21eec1",
+            "sort_order": 1
+          },
+          "options": [
+            {
+              "id": "b42209b8-ad9f-4cb9-82f2-4fedc97629e0",
+              "name": "Açaí tradicional",
+              "group_id": "4217e510-d9c5-47ca-883d-99a513bf602c",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 0
+            },
+            {
+              "id": "fd663dc2-fd8d-4d41-a705-7c6bb7bccfc1",
+              "name": "Açaí com banana",
+              "group_id": "4217e510-d9c5-47ca-883d-99a513bf602c",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 0
+            },
+            {
+              "id": "d1987b78-8684-4b8c-916d-93cde6f7d38f",
+              "name": "Açaí com morango",
+              "group_id": "4217e510-d9c5-47ca-883d-99a513bf602c",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 2
+            }
+          ]
+        },
+        {
+          "group": {
+            "id": "1834801f-1422-4e81-96b2-dbb2bee88ba0",
+            "name": "Escolha sua calda",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 2,
+            "min_select": 0,
+            "product_id": "bb92b47a-be75-4fe9-9842-e92aca21eec1",
+            "sort_order": 2
+          },
+          "options": [
+            {
+              "id": "b31ce2da-177b-41f4-a2c4-e3b6d3bb2525",
+              "name": "Leite condensado",
+              "group_id": "1834801f-1422-4e81-96b2-dbb2bee88ba0",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 0
+            },
+            {
+              "id": "2125d3af-2c76-4f26-ab27-4c2aebf32af5",
+              "name": "Chocolate",
+              "group_id": "1834801f-1422-4e81-96b2-dbb2bee88ba0",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 1.5
+            },
+            {
+              "id": "7c90934a-e3f0-49fb-a859-43f41243d5ec",
+              "name": "Morango",
+              "group_id": "1834801f-1422-4e81-96b2-dbb2bee88ba0",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 1.5
+            },
+            {
+              "id": "bf1c76b2-d6ed-4b04-968e-609f803acad4",
+              "name": "Nutella",
+              "group_id": "1834801f-1422-4e81-96b2-dbb2bee88ba0",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 4,
+              "additional_price": 4
+            }
+          ]
+        },
+        {
+          "group": {
+            "id": "44857861-b42d-40d6-82c5-31690234ed5e",
+            "name": "Complementos extras",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 4,
+            "min_select": 0,
+            "product_id": "bb92b47a-be75-4fe9-9842-e92aca21eec1",
+            "sort_order": 3
+          },
+          "options": [
+            {
+              "id": "7be71202-82bd-4bdf-a286-f532ac9a4621",
+              "name": "Leite em pó",
+              "group_id": "44857861-b42d-40d6-82c5-31690234ed5e",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 2
+            },
+            {
+              "id": "7b455af2-b971-41a8-8a7d-89b0be4619ae",
+              "name": "Granola",
+              "group_id": "44857861-b42d-40d6-82c5-31690234ed5e",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 1.5
+            },
+            {
+              "id": "092ad51e-9af3-43ed-a04a-ac852935070e",
+              "name": "Paçoca",
+              "group_id": "44857861-b42d-40d6-82c5-31690234ed5e",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 2
+            },
+            {
+              "id": "da974198-67f6-4e26-836d-c170845b5847",
+              "name": "Banana",
+              "group_id": "44857861-b42d-40d6-82c5-31690234ed5e",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 4,
+              "additional_price": 1.5
+            },
+            {
+              "id": "a5962b36-58c4-4611-b159-6372632aa04a",
+              "name": "Morango",
+              "group_id": "44857861-b42d-40d6-82c5-31690234ed5e",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 5,
+              "additional_price": 3
+            },
+            {
+              "id": "e69ab7e5-3f82-4fc9-9fdf-ff6aa7a88671",
+              "name": "Disqueti",
+              "group_id": "44857861-b42d-40d6-82c5-31690234ed5e",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 6,
+              "additional_price": 2.5
+            }
+          ]
+        }
+      ],
+      "product": {
+        "id": "bb92b47a-be75-4fe9-9842-e92aca21eec1",
+        "cost": 10,
+        "name": "Açaí Maracujá com Creme 500 ml",
+        "price": 25.9,
+        "category": "Especiais",
+        "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+        "image_url": "",
+        "created_at": "2026-11-11T16:17:57.950125+00:00",
+        "description": "Produto fictício para testes • maracujá e creme de avelã",
+        "menu_active": true,
+        "sealed_industrial_beverage": false
+      }
+    },
+    {
+      "groups": [
+        {
+          "group": {
+            "id": "116e05c9-2c67-4b6d-a6fc-79a34ae3a99e",
+            "name": "Escolha o sabor do açaí",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 1,
+            "min_select": 1,
+            "product_id": "0bcaf406-c77d-45d3-b018-cb3f40ad9132",
+            "sort_order": 1
+          },
+          "options": [
+            {
+              "id": "24be160a-e526-415c-828b-100d94143c61",
+              "name": "Açaí tradicional",
+              "group_id": "116e05c9-2c67-4b6d-a6fc-79a34ae3a99e",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 0
+            },
+            {
+              "id": "9e382f25-b8fa-41de-8442-ca1817ad0399",
+              "name": "Açaí com banana",
+              "group_id": "116e05c9-2c67-4b6d-a6fc-79a34ae3a99e",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 0
+            },
+            {
+              "id": "72d225f1-b3dd-42fa-85dd-ffb6fc7f44b8",
+              "name": "Açaí com morango",
+              "group_id": "116e05c9-2c67-4b6d-a6fc-79a34ae3a99e",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 2
+            }
+          ]
+        },
+        {
+          "group": {
+            "id": "5a86c4c1-7278-476c-9ea8-281d825a9b40",
+            "name": "Escolha sua calda",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 2,
+            "min_select": 0,
+            "product_id": "0bcaf406-c77d-45d3-b018-cb3f40ad9132",
+            "sort_order": 2
+          },
+          "options": [
+            {
+              "id": "24e448ae-2187-4131-89f9-8be38df6d6c3",
+              "name": "Leite condensado",
+              "group_id": "5a86c4c1-7278-476c-9ea8-281d825a9b40",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 0
+            },
+            {
+              "id": "a333d960-fb60-4391-bd2c-ca9e6f1e54fc",
+              "name": "Chocolate",
+              "group_id": "5a86c4c1-7278-476c-9ea8-281d825a9b40",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 1.5
+            },
+            {
+              "id": "a2329eee-8b3e-4440-a327-f67724f02d47",
+              "name": "Morango",
+              "group_id": "5a86c4c1-7278-476c-9ea8-281d825a9b40",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 1.5
+            },
+            {
+              "id": "43492a04-48df-4b44-829b-e2a9917abbc3",
+              "name": "Nutella",
+              "group_id": "5a86c4c1-7278-476c-9ea8-281d825a9b40",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 4,
+              "additional_price": 4
+            }
+          ]
+        },
+        {
+          "group": {
+            "id": "78c0244b-174d-4e43-9c0b-d4b172b4c0ef",
+            "name": "Complementos extras",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 4,
+            "min_select": 0,
+            "product_id": "0bcaf406-c77d-45d3-b018-cb3f40ad9132",
+            "sort_order": 3
+          },
+          "options": [
+            {
+              "id": "444103e9-8d81-45da-ae25-9d27f7c788a4",
+              "name": "Leite em pó",
+              "group_id": "78c0244b-174d-4e43-9c0b-d4b172b4c0ef",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 2
+            },
+            {
+              "id": "ecaea7a4-0507-44e9-9807-75d0bc19f8e8",
+              "name": "Granola",
+              "group_id": "78c0244b-174d-4e43-9c0b-d4b172b4c0ef",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 1.5
+            },
+            {
+              "id": "cf3a2dbd-1cc7-4397-8e62-a1172cbb5693",
+              "name": "Paçoca",
+              "group_id": "78c0244b-174d-4e43-9c0b-d4b172b4c0ef",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 2
+            },
+            {
+              "id": "9f141d09-86c8-4d41-9f10-d0dccc683153",
+              "name": "Banana",
+              "group_id": "78c0244b-174d-4e43-9c0b-d4b172b4c0ef",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 4,
+              "additional_price": 1.5
+            },
+            {
+              "id": "043d78f1-2775-4dfb-87b2-9ce8ed3bab32",
+              "name": "Morango",
+              "group_id": "78c0244b-174d-4e43-9c0b-d4b172b4c0ef",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 5,
+              "additional_price": 3
+            },
+            {
+              "id": "7bf5cadf-7497-4114-8205-69951fa48f5b",
+              "name": "Disqueti",
+              "group_id": "78c0244b-174d-4e43-9c0b-d4b172b4c0ef",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 6,
+              "additional_price": 2.5
+            }
+          ]
+        }
+      ],
+      "product": {
+        "id": "0bcaf406-c77d-45d3-b018-cb3f40ad9132",
+        "cost": 10,
+        "name": "Açaí Morango com Creme 500 ml",
+        "price": 25.9,
+        "category": "Especiais",
+        "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+        "image_url": "",
+        "created_at": "2026-11-11T16:17:57.950125+00:00",
+        "description": "Produto fictício para testes • morango e creme de avelã",
+        "menu_active": true,
+        "sealed_industrial_beverage": false
+      }
+    },
+    {
+      "groups": [
+        {
+          "group": {
+            "id": "0b341367-dadf-4367-9dd1-b2961a78d7b8",
+            "name": "Escolha o sabor do açaí",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 1,
+            "min_select": 1,
+            "product_id": "76423793-fe50-4d66-a708-ad946065cfcc",
+            "sort_order": 1
+          },
+          "options": [
+            {
+              "id": "ebdd2cfa-2833-4d8b-ac23-ac27586f3e80",
+              "name": "Açaí tradicional",
+              "group_id": "0b341367-dadf-4367-9dd1-b2961a78d7b8",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 0
+            },
+            {
+              "id": "290d57c5-ed8d-4303-9c62-a45ab2b1b060",
+              "name": "Açaí com banana",
+              "group_id": "0b341367-dadf-4367-9dd1-b2961a78d7b8",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 0
+            },
+            {
+              "id": "0870716a-b839-4415-b40d-dc28ac901dec",
+              "name": "Açaí com morango",
+              "group_id": "0b341367-dadf-4367-9dd1-b2961a78d7b8",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 2
+            }
+          ]
+        },
+        {
+          "group": {
+            "id": "f52e4b99-0c9d-48b5-91ec-bc6c55162e06",
+            "name": "Escolha sua calda",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 2,
+            "min_select": 0,
+            "product_id": "76423793-fe50-4d66-a708-ad946065cfcc",
+            "sort_order": 2
+          },
+          "options": [
+            {
+              "id": "daa9a44a-f72a-463c-af0f-ac81df90fe8c",
+              "name": "Leite condensado",
+              "group_id": "f52e4b99-0c9d-48b5-91ec-bc6c55162e06",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 0
+            },
+            {
+              "id": "218b8f93-d7e2-4454-938c-8899ba869c4c",
+              "name": "Chocolate",
+              "group_id": "f52e4b99-0c9d-48b5-91ec-bc6c55162e06",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 1.5
+            },
+            {
+              "id": "3fb3fa11-467f-4dc1-ada3-76bd021c0c2a",
+              "name": "Morango",
+              "group_id": "f52e4b99-0c9d-48b5-91ec-bc6c55162e06",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 1.5
+            },
+            {
+              "id": "2820ff27-d920-4ea3-919f-00f6a869ba54",
+              "name": "Nutella",
+              "group_id": "f52e4b99-0c9d-48b5-91ec-bc6c55162e06",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 4,
+              "additional_price": 4
+            }
+          ]
+        },
+        {
+          "group": {
+            "id": "1c8041dc-0b2b-4149-ad8c-198a45316ac7",
+            "name": "Complementos extras",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 4,
+            "min_select": 0,
+            "product_id": "76423793-fe50-4d66-a708-ad946065cfcc",
+            "sort_order": 3
+          },
+          "options": [
+            {
+              "id": "1e393380-28b7-4519-8116-e7c7bd0a83f8",
+              "name": "Leite em pó",
+              "group_id": "1c8041dc-0b2b-4149-ad8c-198a45316ac7",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 2
+            },
+            {
+              "id": "6ecb4ab7-0d5b-400b-8262-14acd3cd6f15",
+              "name": "Granola",
+              "group_id": "1c8041dc-0b2b-4149-ad8c-198a45316ac7",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 1.5
+            },
+            {
+              "id": "e915590f-aca5-4840-897e-06acb05e6318",
+              "name": "Paçoca",
+              "group_id": "1c8041dc-0b2b-4149-ad8c-198a45316ac7",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 2
+            },
+            {
+              "id": "0c49b056-af99-4d10-a8ea-cefa9085d808",
+              "name": "Banana",
+              "group_id": "1c8041dc-0b2b-4149-ad8c-198a45316ac7",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 4,
+              "additional_price": 1.5
+            },
+            {
+              "id": "dabc1370-dba9-46fa-8279-71762afce134",
+              "name": "Morango",
+              "group_id": "1c8041dc-0b2b-4149-ad8c-198a45316ac7",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 5,
+              "additional_price": 3
+            },
+            {
+              "id": "1645aee4-410b-4cba-8267-06fbeb2e4f5e",
+              "name": "Disqueti",
+              "group_id": "1c8041dc-0b2b-4149-ad8c-198a45316ac7",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 6,
+              "additional_price": 2.5
+            }
+          ]
+        }
+      ],
+      "product": {
+        "id": "76423793-fe50-4d66-a708-ad946065cfcc",
+        "cost": 12,
+        "name": "Açaí Supremo 700 ml",
+        "price": 29.9,
+        "category": "Açaís",
+        "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+        "image_url": "",
+        "created_at": "2026-11-11T16:17:57.950125+00:00",
+        "description": "Produto fictício para testes • açaí com leite em pó, granola e banana",
+        "menu_active": true,
+        "sealed_industrial_beverage": false
+      }
+    },
+    {
+      "groups": [
+        {
+          "group": {
+            "id": "2d28047a-288a-465b-ab1f-9ffe7909b05d",
+            "name": "Escolha o sabor do açaí",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 1,
+            "min_select": 1,
+            "product_id": "e3447f5b-96a1-4dd6-8468-ebbc8e50d2c9",
+            "sort_order": 1
+          },
+          "options": [
+            {
+              "id": "ccf7f35c-dab4-40b2-b092-e6985a51dbe4",
+              "name": "Teste",
+              "group_id": "2d28047a-288a-465b-ab1f-9ffe7909b05d",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 0,
+              "additional_price": 0
+            },
+            {
+              "id": "83e43406-6acc-4ef0-bff4-290d76abfc1b",
+              "name": "Açaí tradicional",
+              "group_id": "2d28047a-288a-465b-ab1f-9ffe7909b05d",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 0
+            },
+            {
+              "id": "0fccb69b-4312-4333-8a48-75fd72956d90",
+              "name": "Açaí com banana",
+              "group_id": "2d28047a-288a-465b-ab1f-9ffe7909b05d",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 0
+            },
+            {
+              "id": "25ef4135-1c1d-427f-adaa-aa47aef694b4",
+              "name": "Açaí com morango",
+              "group_id": "2d28047a-288a-465b-ab1f-9ffe7909b05d",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 2
+            }
+          ]
+        },
+        {
+          "group": {
+            "id": "af59f146-00e7-4351-b22f-d07013fd2327",
+            "name": "Escolha sua calda",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 2,
+            "min_select": 0,
+            "product_id": "e3447f5b-96a1-4dd6-8468-ebbc8e50d2c9",
+            "sort_order": 2
+          },
+          "options": [
+            {
+              "id": "eb50e792-b3ed-4527-adbb-2aba68aa515a",
+              "name": "Leite condensado",
+              "group_id": "af59f146-00e7-4351-b22f-d07013fd2327",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 0
+            },
+            {
+              "id": "cf9aecc4-1a74-4104-a765-2683d27845af",
+              "name": "Chocolate",
+              "group_id": "af59f146-00e7-4351-b22f-d07013fd2327",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 1.5
+            },
+            {
+              "id": "ff157e2d-0666-4cd9-b1a3-54f8fe9e01ec",
+              "name": "Morango",
+              "group_id": "af59f146-00e7-4351-b22f-d07013fd2327",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 1.5
+            },
+            {
+              "id": "32a7071b-f289-4c32-9b93-bd5e5c99337b",
+              "name": "Nutella",
+              "group_id": "af59f146-00e7-4351-b22f-d07013fd2327",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 4,
+              "additional_price": 4
+            }
+          ]
+        },
+        {
+          "group": {
+            "id": "5eb899c5-b43e-4000-aa73-e1b40ec8ca92",
+            "name": "Complementos extras",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 4,
+            "min_select": 0,
+            "product_id": "e3447f5b-96a1-4dd6-8468-ebbc8e50d2c9",
+            "sort_order": 3
+          },
+          "options": [
+            {
+              "id": "7cc92859-ba2e-42a4-82d5-7e035ae43f06",
+              "name": "Leite em pó",
+              "group_id": "5eb899c5-b43e-4000-aa73-e1b40ec8ca92",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 2
+            },
+            {
+              "id": "a90614d9-cca2-4130-a75e-eff6b9bea219",
+              "name": "Granola",
+              "group_id": "5eb899c5-b43e-4000-aa73-e1b40ec8ca92",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 1.5
+            },
+            {
+              "id": "692bbcf3-68e0-4444-a526-199192ad7071",
+              "name": "Paçoca",
+              "group_id": "5eb899c5-b43e-4000-aa73-e1b40ec8ca92",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 2
+            },
+            {
+              "id": "54709ff2-ad05-4389-ae8f-75c2223d0dce",
+              "name": "Banana",
+              "group_id": "5eb899c5-b43e-4000-aa73-e1b40ec8ca92",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 4,
+              "additional_price": 1.5
+            },
+            {
+              "id": "918a2294-4c7d-4281-b07f-7fdf23fc8f08",
+              "name": "Morango",
+              "group_id": "5eb899c5-b43e-4000-aa73-e1b40ec8ca92",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 5,
+              "additional_price": 3
+            },
+            {
+              "id": "4d4d9121-280e-437f-8d43-60ae20fb6f52",
+              "name": "Disqueti",
+              "group_id": "5eb899c5-b43e-4000-aa73-e1b40ec8ca92",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 6,
+              "additional_price": 2.5
+            }
+          ]
+        }
+      ],
+      "product": {
+        "id": "e3447f5b-96a1-4dd6-8468-ebbc8e50d2c9",
+        "cost": 6,
+        "name": "Açaí Tradicional 300 ml",
+        "price": 14.9,
+        "category": "Açaís",
+        "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+        "image_url": "",
+        "created_at": "2026-11-11T16:17:57.950125+00:00",
+        "description": "Produto fictício para testes • açaí 300 ml",
+        "menu_active": true,
+        "sealed_industrial_beverage": false
+      }
+    },
+    {
+      "groups": [
+        {
+          "group": {
+            "id": "2bb7cd40-9281-41fb-b10f-7d8c404b9c5c",
+            "name": "Escolha o sabor do açaí",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 1,
+            "min_select": 1,
+            "product_id": "bc11bcda-8f0d-4982-bd1b-52923500495f",
+            "sort_order": 1
+          },
+          "options": [
+            {
+              "id": "7735b58a-6224-4297-8d4d-5b2102fbe9a7",
+              "name": "Açaí tradicional",
+              "group_id": "2bb7cd40-9281-41fb-b10f-7d8c404b9c5c",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 0
+            },
+            {
+              "id": "4f0b6300-78ec-43ba-b7ed-a72bc879a5b6",
+              "name": "Açaí com banana",
+              "group_id": "2bb7cd40-9281-41fb-b10f-7d8c404b9c5c",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 0
+            },
+            {
+              "id": "a3806983-e78e-4f1a-9b1c-ec797a0a1505",
+              "name": "Açaí com morango",
+              "group_id": "2bb7cd40-9281-41fb-b10f-7d8c404b9c5c",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 2
+            }
+          ]
+        },
+        {
+          "group": {
+            "id": "4c59dd9f-1d73-43cf-b840-a04e6527c214",
+            "name": "Escolha sua calda",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 2,
+            "min_select": 0,
+            "product_id": "bc11bcda-8f0d-4982-bd1b-52923500495f",
+            "sort_order": 2
+          },
+          "options": [
+            {
+              "id": "de6aaf08-ac48-4158-975a-f73aa2d664f3",
+              "name": "Leite condensado",
+              "group_id": "4c59dd9f-1d73-43cf-b840-a04e6527c214",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 0
+            },
+            {
+              "id": "72241aad-0ea8-4bcd-be79-739c0c7070bf",
+              "name": "Chocolate",
+              "group_id": "4c59dd9f-1d73-43cf-b840-a04e6527c214",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 1.5
+            },
+            {
+              "id": "35bad8ec-58a6-43e1-a1e6-a0d2ec632abb",
+              "name": "Morango",
+              "group_id": "4c59dd9f-1d73-43cf-b840-a04e6527c214",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 1.5
+            },
+            {
+              "id": "b27116bc-6dc8-457f-8d03-2217aedb7ccf",
+              "name": "Nutella",
+              "group_id": "4c59dd9f-1d73-43cf-b840-a04e6527c214",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 4,
+              "additional_price": 4
+            }
+          ]
+        },
+        {
+          "group": {
+            "id": "e9ff2707-4cd0-4638-bc67-7d944613ec22",
+            "name": "Complementos extras",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 4,
+            "min_select": 0,
+            "product_id": "bc11bcda-8f0d-4982-bd1b-52923500495f",
+            "sort_order": 3
+          },
+          "options": [
+            {
+              "id": "d00bd0f0-cbac-4909-ac8e-8e10d2daad1f",
+              "name": "Leite em pó",
+              "group_id": "e9ff2707-4cd0-4638-bc67-7d944613ec22",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 2
+            },
+            {
+              "id": "ded7cd06-f318-4b10-b78a-933901362360",
+              "name": "Granola",
+              "group_id": "e9ff2707-4cd0-4638-bc67-7d944613ec22",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 1.5
+            },
+            {
+              "id": "25b235ef-21fe-49aa-8c06-a87c08fea6eb",
+              "name": "Paçoca",
+              "group_id": "e9ff2707-4cd0-4638-bc67-7d944613ec22",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 2
+            },
+            {
+              "id": "66f4d47c-4f42-43e2-a2d1-8f52a7e6c85d",
+              "name": "Banana",
+              "group_id": "e9ff2707-4cd0-4638-bc67-7d944613ec22",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 4,
+              "additional_price": 1.5
+            },
+            {
+              "id": "6fce3fd0-3f14-4b86-9bac-cdb5ffcc3843",
+              "name": "Morango",
+              "group_id": "e9ff2707-4cd0-4638-bc67-7d944613ec22",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 5,
+              "additional_price": 3
+            },
+            {
+              "id": "977f6440-21ec-474c-b15b-928acd6500ec",
+              "name": "Disqueti",
+              "group_id": "e9ff2707-4cd0-4638-bc67-7d944613ec22",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 6,
+              "additional_price": 2.5
+            }
+          ]
+        }
+      ],
+      "product": {
+        "id": "bc11bcda-8f0d-4982-bd1b-52923500495f",
+        "cost": 8,
+        "name": "Açaí Tradicional 500 ml",
+        "price": 19.9,
+        "category": "Açaís",
+        "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+        "image_url": "",
+        "created_at": "2026-11-11T16:17:57.950125+00:00",
+        "description": "Produto fictício para testes • açaí 500 ml",
+        "menu_active": true,
+        "sealed_industrial_beverage": false
+      }
+    },
+    {
+      "groups": [],
+      "product": {
+        "id": "7bdcc181-c67f-45df-b0e5-a4dd2e0e15a5",
+        "cost": 1.5,
+        "name": "Água Mineral 500 ml",
+        "price": 4,
+        "category": "Bebidas",
+        "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+        "image_url": "",
+        "created_at": "2026-11-11T16:17:57.950125+00:00",
+        "description": "Produto fictício para testes",
+        "menu_active": true,
+        "sealed_industrial_beverage": false
+      }
+    },
+    {
+      "groups": [
+        {
+          "group": {
+            "id": "f6ce1ffa-dbc6-44fc-bfde-1ba4bf28bcd9",
+            "name": "Escolha o sabor do açaí",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 1,
+            "min_select": 1,
+            "product_id": "bba761af-f4e7-49ba-abd3-ecf06772a0b6",
+            "sort_order": 1
+          },
+          "options": [
+            {
+              "id": "d34d26bb-fdae-4ce7-909f-fa70b1c7ba90",
+              "name": "Açaí tradicional",
+              "group_id": "f6ce1ffa-dbc6-44fc-bfde-1ba4bf28bcd9",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 0
+            },
+            {
+              "id": "5bd3b0d7-3506-44dc-b701-56121b543d69",
+              "name": "Açaí com banana",
+              "group_id": "f6ce1ffa-dbc6-44fc-bfde-1ba4bf28bcd9",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 0
+            },
+            {
+              "id": "3e24d5c7-f762-4131-88d4-75fb2bfbfcfb",
+              "name": "Açaí com morango",
+              "group_id": "f6ce1ffa-dbc6-44fc-bfde-1ba4bf28bcd9",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 2
+            }
+          ]
+        },
+        {
+          "group": {
+            "id": "78911364-d82b-4265-96ca-4bad67bb871a",
+            "name": "Escolha sua calda",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 2,
+            "min_select": 0,
+            "product_id": "bba761af-f4e7-49ba-abd3-ecf06772a0b6",
+            "sort_order": 2
+          },
+          "options": [
+            {
+              "id": "02cdba05-d8f0-409c-a354-01d13a48eb4d",
+              "name": "Leite condensado",
+              "group_id": "78911364-d82b-4265-96ca-4bad67bb871a",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 0
+            },
+            {
+              "id": "4537126c-384e-45b4-85ed-b84da851ccf2",
+              "name": "Chocolate",
+              "group_id": "78911364-d82b-4265-96ca-4bad67bb871a",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 1.5
+            },
+            {
+              "id": "d3b5ca67-7bcf-402b-bd00-34a14d2d8df2",
+              "name": "Morango",
+              "group_id": "78911364-d82b-4265-96ca-4bad67bb871a",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 1.5
+            },
+            {
+              "id": "d5258846-21f6-4b52-9243-0610a0f05f36",
+              "name": "Nutella",
+              "group_id": "78911364-d82b-4265-96ca-4bad67bb871a",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 4,
+              "additional_price": 4
+            }
+          ]
+        },
+        {
+          "group": {
+            "id": "b2b465d0-e3b4-4181-ac72-b2c3746aea72",
+            "name": "Complementos extras",
+            "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+            "created_at": "2026-11-11T16:55:56.489958+00:00",
+            "max_select": 4,
+            "min_select": 0,
+            "product_id": "bba761af-f4e7-49ba-abd3-ecf06772a0b6",
+            "sort_order": 3
+          },
+          "options": [
+            {
+              "id": "5b3525b1-64cd-4b2d-b5fa-8bb2921ac401",
+              "name": "Leite em pó",
+              "group_id": "b2b465d0-e3b4-4181-ac72-b2c3746aea72",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 1,
+              "additional_price": 2
+            },
+            {
+              "id": "270fd241-338c-4a3a-bd82-4f5890e65762",
+              "name": "Granola",
+              "group_id": "b2b465d0-e3b4-4181-ac72-b2c3746aea72",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 2,
+              "additional_price": 1.5
+            },
+            {
+              "id": "098ea101-4ae1-43ac-9111-b6f09841bf00",
+              "name": "Paçoca",
+              "group_id": "b2b465d0-e3b4-4181-ac72-b2c3746aea72",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 3,
+              "additional_price": 2
+            },
+            {
+              "id": "f6d06c3f-b82e-4ad3-b705-717f0741fe44",
+              "name": "Banana",
+              "group_id": "b2b465d0-e3b4-4181-ac72-b2c3746aea72",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 4,
+              "additional_price": 1.5
+            },
+            {
+              "id": "19c5b99f-a34e-4364-9467-f9f55d99bef8",
+              "name": "Morango",
+              "group_id": "b2b465d0-e3b4-4181-ac72-b2c3746aea72",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 5,
+              "additional_price": 3
+            },
+            {
+              "id": "5abb8e98-70ac-4ae3-b542-7e7292b960e0",
+              "name": "Disqueti",
+              "group_id": "b2b465d0-e3b4-4181-ac72-b2c3746aea72",
+              "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+              "available": true,
+              "sort_order": 6,
+              "additional_price": 2.5
+            }
+          ]
+        }
+      ],
+      "product": {
+        "id": "bba761af-f4e7-49ba-abd3-ecf06772a0b6",
+        "cost": 11,
+        "name": "Combo Duplo 300 ml",
+        "price": 27.9,
+        "category": "Combos",
+        "store_id": "1481c0c6-5b87-4737-9d1a-96ae5c1615d9",
+        "image_url": "",
+        "created_at": "2026-11-11T16:17:57.950125+00:00",
+        "description": "Produto fictício para testes • dois copos de 300 ml",
+        "menu_active": true,
+        "sealed_industrial_beverage": false
+      }
+    }
+  ]
+}
