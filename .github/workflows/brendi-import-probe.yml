@@ -5,44 +5,23 @@ on:
       - brendi-import-acai-linho-20261123
     paths:
       - .github/workflows/brendi-import-probe.yml
+      - scripts/brendi_snapshot_extract.py
+permissions:
+  contents: write
 jobs:
   inspect:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 8
     steps:
-      - name: Inspecionar HTML público sem credenciais
-        shell: bash
+      - uses: actions/checkout@v4
+      - name: Ler e normalizar catálogo público
+        run: python scripts/brendi_snapshot_extract.py
+      - name: Salvar snapshot na branch de inspeção
         run: |
-          python - <<'PY'
-          import requests,re,json,html
-          from html.parser import HTMLParser
-          class Inspector(HTMLParser):
-            def __init__(self):super().__init__();self.scripts=[];self.in_script=False;self.parts=[];self.title=[];self.in_title=False
-            def handle_starttag(self,tag,attrs):
-              d=dict(attrs)
-              if tag=='script':self.in_script=True;self.scripts.append({'src':d.get('src'),'id':d.get('id'),'type':d.get('type'),'text':''})
-              if tag=='title':self.in_title=True
-            def handle_endtag(self,tag):
-              if tag=='script':self.in_script=False
-              if tag=='title':self.in_title=False
-            def handle_data(self,data):
-              if self.in_script and self.scripts:self.scripts[-1]['text']+=data
-              elif self.in_title:self.title.append(data)
-              elif data.strip():self.parts.append(data.strip())
-          url='https://menu.brendi.com.br/acai-do-linho/'
-          try:
-            r=requests.get(url,headers={'User-Agent':'Mozilla/5.0 (compatible; MenuMigration/1.0)'},timeout=25,allow_redirects=True)
-            print('STATUS',r.status_code,'FINAL_URL',r.url,'SIZE',len(r.content),'HEADERS',dict(r.headers))
-            print('HTML_START',repr(r.text[:3000]))
-            soup=Inspector();soup.feed(r.text)
-            print('PAGE_TITLE',' '.join(soup.title))
-            print('JS_SCRIPTS',json.dumps([{k:v for k,v in s.items() if k!='text'} | {'length':len(s['text'])} for s in soup.scripts][:30],ensure_ascii=False))
-            print('TEXT',repr(' '.join(soup.parts)[:14000]))
-            for marker in ['__NEXT_DATA__','__NUXT__','window.__','application/ld+json','products','categorias']:
-              print('MARKER',marker,marker in r.text)
-            for script in soup.scripts:
-              if script['id']=='__NEXT_DATA__' or (script['type']=='application/json' and len(script['text'])>100):
-                print('JSON_SCRIPT',script['id'],repr(script['text'][:13000]))
-          except Exception as e:
-            print('PROBE_ERROR',type(e).__name__,str(e))
-          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add imports/brendi-acai-do-linho.snapshot.json
+          if ! git diff --cached --quiet; then
+            git commit -m "data(import): snapshot do catálogo público Brendi"
+            git push
+          fi
