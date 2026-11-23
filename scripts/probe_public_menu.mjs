@@ -44,7 +44,8 @@ try{
  console.log('TITLE',await page.title());
  console.log('BODY_TEXT',(await page.locator('body').innerText().catch(()=>'' )).slice(0,6500));
  console.log('BUTTON_TEXTS',(await page.locator('button').allTextContents().catch(()=>[])).slice(0,50));
- console.log('PAGE_HTML_MARKERS',JSON.stringify({length:(await page.content()).length,hasPrice:(await page.content()).includes('R
+ console.log('PAGE_HTML_MARKERS',JSON.stringify({length:(await page.content()).length,hasCategory:(await page.content()).includes('Categorias')}));
+ await page.mouse.wheel(0,2200);await page.waitForTimeout(4500);console.log('BODY_AFTER_SCROLL',(await page.locator('body').innerText().catch(()=>'' )).slice(0,5500));
  console.log('LS_KEYS',await page.evaluate(()=>Object.keys(localStorage)).catch(()=>[]));
  console.log('SCRIPTS',(await page.locator('script[src]').evaluateAll(nodes=>nodes.map(x=>x.src))).slice(0,50));
  const scripts=await page.locator('script[src]').evaluateAll(nodes=>nodes.map(x=>x.src));
