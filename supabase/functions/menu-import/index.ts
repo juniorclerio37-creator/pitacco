@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.112.3";
 import {parsePublicMenu} from "./parser.mjs";
+import {ifoodMerchantFromUrl} from "./source-link.mjs";
 
 const origins=new Set(["https://app.pitacco.com.br","https://admin.pitacco.com.br","https://pitacco.com.br","http://localhost:5173","http://localhost:4179","http://127.0.0.1:5173"]);
 const maxHtml=2_000_000,maxPhoto=5_000_000;
@@ -113,12 +114,6 @@ function isUuid(x:unknown){return typeof x==="string"&&/^[0-9a-f]{8}(?:-[0-9a-f]
 // a ficha pública usada pelo próprio cardápio, sem rotas administrativas.
 // Links de vitrines do iFood não são credenciais de acesso ao catálogo.
 // A API oficial requer um vínculo OAuth concedido pelo gestor da MESMA loja.
-function ifoodMerchantFromUrl(link:URL):string|null{
- const domain=link.hostname.toLowerCase();
- if(domain!=="www.ifood.com.br"&&domain!=="ifood.com.br")return null;
- const match=link.pathname.match(/^\/delivery\/[^/]+\/[^/]+\/([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})(?:\/|$)/i);
- return match?match[1].toLowerCase():null;
-}
 async function checkIfoodSource(source:URL,merchantId:string,storeId:string,supa:ReturnType<typeof createClient>){
  const [connections,linkStatus]=await Promise.all([
   supa.rpc("pitacco_ifood_connections",{p_store:storeId}),
