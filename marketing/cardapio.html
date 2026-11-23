@@ -894,7 +894,7 @@ function renderCategories(){
 }
 function renderProducts(){
  const query=normal($('search').value);
- const products=menu.products.filter(p=>(category===null||categoryOf(p)===category)&&normal([p.name,p.description,categoryOf(p)].join(' ')).includes(query));
+ const products=menu.products.filter(p=>(!v2FavoritesOnly||v2Favorites.has(p.id))&&(category===null||categoryOf(p)===category)&&normal([p.name,p.description,categoryOf(p)].join(' ')).includes(query));
  const root=$('products');root.replaceChildren();
  const sections=new Map();
  for(const product of products){
@@ -919,9 +919,18 @@ function renderProducts(){
   visual.append(el('span',product.name.trim().slice(0,1).toUpperCase()));
   addPhoto(visual,product.image_url);
   visual.append(el('span','+','product-plus'));
-  open.append(info,visual);open.onclick=()=>openProduct(product);card.append(open);sections.get(name).append(card);
+  open.append(info,visual);open.onclick=()=>openProduct(product);card.append(open);
+  if(document.body.dataset.menuTemplate==='pitacco-v2'){
+   const saved=v2Favorites.has(product.id);
+   const fav=button(saved?'♥':'♡','v2-favorite');
+   fav.setAttribute('aria-pressed',String(saved));
+   fav.setAttribute('aria-label',(saved?'Remover ':'Salvar ')+product.name+' nos favoritos');
+   fav.onclick=()=>v2SaveFavorite(product.id);
+   card.append(fav);
+  }
+  sections.get(name).append(card);
  }
- if(!products.length)root.append(el('p',menu.products.length?'Nenhum produto encontrado.':'Esta loja ainda não possui produtos disponíveis.','empty'));
+ if(!products.length)root.append(el('p',v2FavoritesOnly?'Você ainda não salvou favoritos neste aparelho.':menu.products.length?'Nenhum produto encontrado.':'Esta loja ainda não possui produtos disponíveis.','empty'));
 }
 function groupRule(group){
  if(group.min===group.max)return group.min===1?'Escolha 1 opção':'Escolha '+group.min+' opções';
@@ -1051,6 +1060,14 @@ function renderCart(){
  if(!cart.length)root.append(el('p','Sua sacola está vazia.'));
  for(const item of cart){
   const line=el('div',undefined,'cartline'),info=el('div');
+  if(document.body.dataset.menuTemplate==='pitacco-v2'){
+   const matching=menu.products.find(p=>p.id===item.product_id);
+   if(imageUrl(matching?.image_url)){
+    const picture=el('img',undefined,'v2-cart-thumb');
+    picture.src=matching.image_url;picture.loading='lazy';picture.alt='';
+    line.append(picture);
+   }
+  }
   info.append(el('strong',item.name));
   if(item.labels.length)info.append(el('small',item.labels.join(' · ')));
   const qtyLabel=el('label','Qtd.');
