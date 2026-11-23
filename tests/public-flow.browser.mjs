@@ -85,6 +85,11 @@ try {
           }] },{id:'agua',name:'Água',category:'Bebidas',price:5,option_groups:[]}]
         } });
       }
+      if(pathname.endsWith('/pitacco_fiado_phone_eligibility')){
+        const args=route.request().postDataJSON();
+        assert.equal(args.p_slug,'loja-teste');
+        return route.fulfill({json:{eligible:width===375&&args.p_phone==='21999999999'}});
+      }
       if(pathname.endsWith('/pitacco_public_store_open')){
         assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
         return route.fulfill({json:{open:true,reason:'open',next_open_at:null,timezone:'America/Sao_Paulo'}});
@@ -170,8 +175,30 @@ try {
     await product.getByRole('button',{name:'Fechar produto',exact:true}).click();
     await firstLine.getByText(/Morango · Granola/).waitFor();
     await page.getByRole('button',{name:'Continuar para entrega e pagamento'}).click();
+    const fiadoChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_phone_eligibility'));
     for (const [id, value] of [['customer', 'Cliente Teste'], ['phone', '21999999999'], ['address', 'Rua Teste 123']]) {
       await page.locator('#' + id).fill(value);
+    }
+    await fiadoChecked;
+    assert.equal(await page.getByRole('button',{name:'Tenho fiado autorizado pela loja'}).count(),0);
+    assert.equal(await page.locator('#fiadoAuth').isVisible(),false);
+    if(width===375){
+      await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
+      await page.locator('#payment').selectOption('fiado');
+      assert.equal(await page.locator('#fiadoAuth').isVisible(),true,'Código só ao escolher Fiado');
+      assert.equal(await page.locator('#fiadoCode').getAttribute('required'),'');
+      await page.locator('#payment').selectOption('pix_manual');
+      assert.equal(await page.locator('#fiadoAuth').isVisible(),false);
+      const hideFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_phone_eligibility'));
+      await page.locator('#phone').fill('21999999998');
+      await hideFiado;
+      assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Telefone sem autorização nunca vê Fiado');
+      const showFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_phone_eligibility'));
+      await page.locator('#phone').fill('21999999999');
+      await showFiado;
+      await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
+    }else{
+      assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Fiado oculto para telefone não autorizado');
     }
     await page.getByRole('button',{name:'Usar minha localização'}).click();
     await page.getByText('Ponto marcado. Confira o endereço e calcule o frete.').waitFor();

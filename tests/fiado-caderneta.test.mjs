@@ -6,6 +6,7 @@ const schema=file("supabase/migrations/20261122224000_fiado_schema.sql");
 const manager=file("supabase/migrations/20261122224100_fiado_manager_api.sql");
 const ledger=file("supabase/migrations/20261122224200_fiado_credit_engine.sql");
 const checkout=file("supabase/migrations/20261122224300_fiado_public_checkout.sql");
+const phoneOption=file("supabase/migrations/20261123022000_fiado_phone_payment_eligibility.sql");
 const courier=file("supabase/migrations/20261122224400_fiado_courier_privacy.sql");
 const pos=file("supabase/migrations/20261122224500_fiado_balcao.sql");
 const shop=file("marketing/cardapio.html");
@@ -42,12 +43,21 @@ test("public checkout never accepts fiado from telephone alone and uses original
  assert.match(checkout,/pitacco_checkout_scheduled_order/);
  assert.match(checkout,/checkout_public_order/);
  assert.match(checkout,/p_payment<>'fiado'/);
- assert.match(shop,/pitacco_fiado_public_eligibility/);
+ assert.match(shop,/pitacco_fiado_phone_eligibility/);
+ assert.match(phoneOption,/c\.credential_hash is not null/);
+ assert.match(phoneOption,/c\.credit_limit>c\.used/);
+ assert.match(phoneOption,/return jsonb_build_object\('eligible',coalesce\(allowed,false\)\)/);
  assert.match(shop,/pitacco_checkout_fiado/);
  assert.match(shop,/if\(data\?\.error\)\{\s*\/\/ Autorização negada/);
  assert.match(shop,/Autorização negada[\s\S]{0,190}pendingRequest=null/);
  assert.ok(shop.includes("pendingRequest.p_code=$('fiadoCode').value.trim()"));
- assert.match(shop,/fiadoCheckedPhone/);
+ assert.match(shop,/fiadoEligiblePhone/);
+ assert.doesNotMatch(shop,/Tenho fiado autorizado pela loja/);
+ assert.doesNotMatch(shop,/fiadoToggle|fiadoCheck/);
+ assert.match(shop,/new Option\('Fiado — pagar depois','fiado'\)/);
+ assert.match(shop,/fiadoEligiblePhone===fiadoPhoneDigits/);
+ assert.match(shop,/if\(method==='fiado'\)continue/);
+ assert.match(shop,/fiadoAuth'\)\.hidden=!isFiado/);
  assert.match(shop,/Não foi possível/); // Other normal error handler preserved
 });
 test("fiado never appears on courier financial display; pickup reminders and code flow preserved",()=>{
