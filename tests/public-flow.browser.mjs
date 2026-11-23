@@ -244,7 +244,9 @@ try {
     await product.getByRole('radio',{name:/Leite em pó/}).check();
     await add.click();
     await page.reload();
-    await page.locator('#cartDraftNotice').filter({hasText:'Sua sacola foi recuperada'}).waitFor();
+    await page.waitForFunction(()=>document.querySelector('#v2DockCount')?.textContent?.includes('3 itens'));
+    assert.equal(await page.locator('#cartDraftNotice').isVisible(),false,
+      'A sacola deve ser recuperada silenciosamente, sem aviso verde na home');
     await page.locator('#openCart').click();
     assert.equal(await page.locator('#cart .cartline').count(),2);
     assert.equal(await page.locator('#cart input').first().inputValue(),'2');
