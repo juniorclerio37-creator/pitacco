@@ -861,7 +861,11 @@ try {
       await studio.getByLabel('Slogan').fill('O melhor da cidade');
       await studio.getByRole('button',{name:'Computador'}).click();
       await studio.getByRole('button',{name:'Produto',exact:true}).click();
-      await studio.getByText('O melhor da cidade',{exact:true}).waitFor();
+      const liveFrame=studio.locator('iframe[title="Prévia fiel do cardápio digital"]');
+      await liveFrame.waitFor({state:'attached'});
+      assert.match(await liveFrame.getAttribute('src'),/\/cardapio\/\?loja=loja-teste&pitacco_studio_preview=/);
+      assert.equal(await studio.getByLabel('Slogan').inputValue(),'O melhor da cidade');
+      assert.equal(await studio.locator('.design-live-menu').count(),0,'A prévia genérica foi removida');
       await studio.getByRole('button',{name:'Salvar rascunho'}).click();
       await studio.getByText('Rascunho salvo.',{exact:false}).waitFor();
       assert.equal(studioPublished,null,'Editing a draft must never change the public design');
