@@ -663,11 +663,18 @@ body[data-menu-skin=essencial]{--template-hue:155;--template-accent-hue:155;--te
 body[data-menu-skin=editorial]{--template-hue:24;--template-accent-hue:18;--template-chroma:.55}
 body[data-menu-skin=urbano]{--template-hue:215;--template-accent-hue:35;--template-chroma:.28}
 body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]){background:var(--surface,#f5f7f6);color:var(--ink,#24352b)}
-body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) :is(.primary,.product-plus,.v2-top-add,#cartDock>button,.chip[aria-pressed=true],.v2-nav-button[aria-current=page]){background:var(--brand,#217c5a);color:var(--on-brand,#fff)}
-body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) :is(.v2-top-price,.product-text>strong:not(.product-name)){color:var(--brand,#217c5a)}
+body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) .primary{background:var(--brand,#217c5a);color:var(--on-brand,#fff)}
+body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) .product-plus{background:var(--brand,#217c5a);color:var(--on-brand,#fff)}
+body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) .v2-top-add{background:var(--brand,#217c5a);color:var(--on-brand,#fff)}
+body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) #cartDock>button{background:var(--brand,#217c5a);color:var(--on-brand,#fff)}
+body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) .chip[aria-pressed=true]{background:var(--brand,#217c5a);color:var(--on-brand,#fff)}
+body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) .v2-nav-button[aria-current=page]{background:var(--brand,#217c5a);color:var(--on-brand,#fff)}
+body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) .v2-top-price{color:var(--brand,#217c5a)}
+body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) .product-text>strong:not(.product-name){color:var(--brand,#217c5a)}
 body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) :is(.product-open,.dialog-footer,.total,.options){background:var(--paper,#fff)}
 body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) :is(.v2-category-tile,.v2-top-product,.v2-top-product-details){min-width:0}
 body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) :is(.v2-top-name,.product-name){overflow-wrap:anywhere}
+body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial],[data-menu-skin=urbano]) :is(.product-visual,.v2-top-photo)>img{position:absolute;inset:0;width:100%;height:100%;min-width:0;min-height:0;object-fit:cover}
 /* Essencial: white compact identity, pill categories, photographs on the left. */
 body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .hero{min-height:205px;padding:14px 0 24px;background:var(--paper,#fff);color:var(--ink,#173a2d);border-bottom:1px solid #e2eae5}
 body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .hero::after{background:none}
@@ -709,7 +716,7 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .v2-top-heart{wi
 body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .v2-top-badge{font-size:.57rem;padding:4px 6px;top:auto;bottom:7px;left:7px;max-width:calc(100% - 14px)}
 body.pitacco-designed[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .category-grid{grid-template-columns:1fr;gap:10px}
 body.pitacco-designed[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .product-open{flex-direction:row;align-items:stretch;border-radius:11px;min-height:130px;box-shadow:none}
-body.pitacco-designed[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .product-visual{width:100px;height:135px;flex-shrink:0;order:0}
+body.pitacco-designed[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .product-visual{width:100px;height:135px;flex-shrink:0;order:-1}
 body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .product-text{padding:14px;min-width:0}
 body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] #cartDock>button{border-radius:11px;box-shadow:0 4px 12px #173a2d16}
 /* Editorial: photographic cover, ivory identity plaque and magazine-like rows. */
@@ -766,7 +773,7 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] .store-mark{width:3
 body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] .hero h1{font-family:'Arial Narrow',Impact,system-ui,sans-serif;font-size:1.7rem;font-weight:900;text-transform:uppercase;letter-spacing:-.04em;max-width:280px}
 body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] .hero h1::after{height:3px;border-radius:0;background:#ffcb32;transform:none;margin-top:6px;width:45px}
 body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] .hero p{font-size:.73rem}
-body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #v2HeroImage{width:35%;right:-7px;bottom:0;max-height:46%;object-fit:contain}
+body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #v2HeroImage{width:35%;inset:auto -7px 0 auto;height:auto;max-height:46%;object-fit:contain}
 body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] .v2-header-control{border-radius:7px;background:#ffffff14}
 body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] .v2-hero-location{max-width:75%;font-size:.74rem}
 body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #v2HomeLoyalty{border:2px solid #172330;outline:0;border-radius:8px;background:var(--paper,#fff);padding:15px;box-shadow:none;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
@@ -803,6 +810,11 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] .product-descriptio
 body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] .product-plus{background:#ffcb32;color:#172330;border-radius:50%}
 body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #cartDock>button{border-radius:8px;background:#172330;color:#fff;box-shadow:none}
 body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] .v2-dock-icon{color:#ffcb32}
+
+body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial]) .v2-loyalty-top{display:grid;grid-template-columns:25px minmax(0,1fr) auto;align-items:center;gap:8px}
+body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial]) .v2-loyalty-top>div{min-width:0}
+body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial]) .v2-loyalty-top p{font-size:.65rem;max-width:none;line-height:1.4}
+body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-skin=editorial]) #v2HomeLoyaltyGo{max-width:78px;white-space:normal;margin-left:0;font-size:.68rem;text-align:right}
 @media(min-width:900px){
  body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] #v2TopProducts,body.pitacco-designed[data-menu-template="pitacco-v2"][data-menu-skin=essencial] .category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
  body[data-menu-template="pitacco-v2"][data-menu-skin=editorial] #v2TopProducts,body.pitacco-designed[data-menu-template="pitacco-v2"][data-menu-skin=editorial] .category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
