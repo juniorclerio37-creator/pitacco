@@ -57,6 +57,7 @@ function BannerImage({url,...props}){return url?<img src={url} alt="" {...props}
 
 export default function StoreDesignStudio({client,store,manager,products=[]}){
  const [saved,setSaved]=useState(null),[design,setDesign]=useState(null),[version,setVersion]=useState(0);
+ const [publishedDesign,setPublishedDesign]=useState(null);
  const [publishedVersion,setPublishedVersion]=useState(0),[history,setHistory]=useState([]),[publishedAt,setPublishedAt]=useState(null);
  const [mode,setMode]=useState('editar'),[viewport,setViewport]=useState('celular'),[previewStep,setPreviewStep]=useState('inicial');
  const [files,setFiles]=useState({}),[fileUrls,setFileUrls]=useState({});
@@ -64,6 +65,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
  const [loadAttempt,setLoadAttempt]=useState(0);
  const [catalog,setCatalog]=useState(products.slice(0,8));
  const dirty=design&&saved?JSON.stringify(design)!==JSON.stringify(saved)||Object.keys(files).length>0:false;
+ const needsPublishing=Boolean(design&&(!publishedDesign||dirty||!equalDesign(publishedDesign,design)));
  const photo=path=>path?mediaUrl(client,path):'';
  const imageFor=(key,path)=>fileUrls[key]||photo(path);
  const moneyColors={background:design?.background||'#fff',color:design?.foreground||'#222',fontFamily:fontFace(design?.font)};
@@ -76,7 +78,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
    if(!alive)return;
    const next={...defaultDesign,...data.draft,banners:data.draft?.banners||[]};
    setSaved(next);setDesign(structuredClone(next));setVersion(data.draft_version);
-   setPublishedVersion(data.published_version);setHistory(data.history||[]);
+   setPublishedVersion(data.published_version);setPublishedDesign(data.published||null);setHistory(data.history||[]);
    setPublishedAt(data.published_at);
   }).catch(e=>{if(alive)setError(studioError(e,'carregar o estúdio'))})
    .finally(()=>{if(alive)setLoading(false)});
@@ -115,15 +117,16 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
   if(d.banners.some(b=>!b.title?.trim()||b.title.trim().length<2))throw Error('Todo banner precisa de um título.');
   return true;
  }
- async function saveDraft(){
-  if(!manager||!design) return false;
+ async function saveAndPublish(){
+  if(!manager||!design||working||!needsPublishing)return;
+  if(!window.confirm('Salvar e publicar esta aparência para os clientes da loja?'))return;
   setWorking(true);setError('');setNotice('');
-  let phase='salvar as alterações',next;
+  let next=null,phase='validar a aparência';
   try{
    next=structuredClone(design);
    validate(next);
    for(const [key,file] of Object.entries(files)){
-    phase='enviar imagem para o armazenamento da loja';
+    phase='enviar imagem da loja';
     const path=await uploadStoreImage(client,store.id,file,'stores');
     if(key==='logo')next.logo_path=path;
     else if(key==='cover')next.cover_path=path;
@@ -132,58 +135,46 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
      if(next.banners[index])next.banners[index].image_path=path;
     }
    }
-   phase='salvar as alterações';
-   const {data,error}=await client.rpc('pitacco_storefront_save_draft',{p_store:store.id,p_design:next,p_expected_version:version});
+   phase='salvar e publicar';
+   // O RPC valida, registra a revisão e publica o visual NA MESMA transação.
+   const {data,error}=await client.rpc('pitacco_storefront_save_publish',{
+    p_store:store.id,p_design:next,
+    p_expected_draft:version,p_expected_published:publishedVersion
+   });
    if(error)throw error;
-   if(!data?.saved)throw Error('O servidor não confirmou o rascunho.');
-   setSaved(next);setDesign(structuredClone(next));setVersion(data.draft_version);
+   if(!data?.saved||!data?.published)throw Error('O servidor não confirmou que as alterações foram publicadas.');
+   const now=data.published_at||new Date().toISOString();
+   setSaved(next);setDesign(structuredClone(next));setPublishedDesign(structuredClone(next));
+   setVersion(data.draft_version);setPublishedVersion(data.published_version);
+   setPublishedAt(now);
+   setHistory(items=>[{id:null,version:data.published_version,created_at:now},...items].slice(0,20));
    setFiles({});setFileUrls({});
-   setNotice('Rascunho salvo. O cardápio público ainda não foi alterado.');
-   return true;
+   setNotice('Alterações salvas e publicadas! O cardápio está atualizado para os clientes.');
   }catch(e){
-   if(next&&phase==='salvar as alterações'&&isNetworkError(e)){
+   // Conexão interrompida após o commit? Confere o resultado antes de
+   // afirmar que a operação falhou ou repeti-la.
+   if(next&&phase==='salvar e publicar'&&isNetworkError(e)){
     try{
-     const state=await loadStudioState(client,store.id);
-     if(state.draft_version>version&&equalDesign(state.draft,next)){
-      setSaved(next);setDesign(structuredClone(next));setVersion(state.draft_version);
+     const current=await loadStudioState(client,store.id);
+     if(current.published_version>publishedVersion&&
+      current.draft_version>version&&equalDesign(current.published,next)){
+      const date=current.published_at||new Date().toISOString();
+      setSaved(next);setDesign(structuredClone(next));setPublishedDesign(structuredClone(next));
+      setVersion(current.draft_version);setPublishedVersion(current.published_version);
+      setPublishedAt(date);setHistory(current.history||[]);
       setFiles({});setFileUrls({});
-      setNotice('Rascunho salvo e confirmado após a reconexão.');
-      return true;
+      setNotice('Alterações salvas e publicadas! Publicação confirmada após reconectar.');
+      return;
      }
     }catch{}
    }
-   setError(studioError(e,phase));return false;
-  }finally{setWorking(false)}
- }
- async function publish(){
-  if(!manager||!design)return;
-  if(dirty){setError('Salve o rascunho antes de publicar.');setMode('editar');return}
-  if(!window.confirm('Publicar a nova aparência para todos os clientes desta loja?'))return;
-  setWorking(true);setError('');setNotice('');
-  try{
-   const {data,error}=await client.rpc('pitacco_storefront_publish',{
-    p_store:store.id,p_expected_draft:version,p_expected_published:publishedVersion});
-   if(error)throw error;
-   if(!data?.published)throw Error('O servidor não confirmou a publicação.');
-   setPublishedVersion(data.published_version);setPublishedAt(new Date().toISOString());
-   setHistory(items=>[{id:null,version:data.published_version,created_at:new Date().toISOString()},...items].slice(0,20));
-   setNotice('Aparência publicada! O cardápio poderá levar alguns instantes para atualizar no navegador do cliente.');
-  }catch(e){
-   if(isNetworkError(e)){
-    try{
-     const state=await loadStudioState(client,store.id);
-     if(state.published_version>publishedVersion&&equalDesign(state.published,design)){
-      setPublishedVersion(state.published_version);setPublishedAt(state.published_at);setHistory(state.history||[]);
-      setNotice('A publicação foi confirmada após a reconexão.');return;
-     }
-    }catch{}
-   }
-   setError(studioError(e,'publicar a aparência'));
+   setError(studioError(e,phase)+
+     (phase==='salvar e publicar'?' Nenhum sucesso será indicado até o servidor confirmar.':''));
   }finally{setWorking(false)}
  }
  async function restore(revision){
-  if(dirty){setError('Há alterações não salvas. Salve ou descarte antes de restaurar.');return}
-  if(!window.confirm('Restaurar a versão '+revision+' como rascunho? A página pública não mudará até você publicar.'))return;
+  if(dirty){setError('Há alterações ainda não publicadas. Publique ou descarte antes de restaurar.');return}
+  if(!window.confirm('Restaurar a versão '+revision+' para edição? A página pública só mudará ao tocar em Salvar e publicar.'))return;
   setWorking(true);setError('');setNotice('');
   try{
    const {data,error}=await client.rpc('pitacco_storefront_restore_draft',{
@@ -194,7 +185,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
    if(state.error)throw state.error;
    const next={...defaultDesign,...state.data.draft};
    setDesign(structuredClone(next));setSaved(next);setVersion(state.data.draft_version);
-   setMode('editar');setNotice('Versão '+revision+' restaurada como rascunho. Revise e publique quando desejar.');
+   setMode('editar');setNotice('Versão '+revision+' recuperada para edição. Toque em Salvar e publicar quando estiver pronto.');
   }catch(e){setError(studioError(e,'restaurar a versão'))}
   finally{setWorking(false)}
  }
@@ -203,7 +194,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
  return <section className="design-studio" aria-label="Estúdio de Cardápio Pitacco">
   <div className="design-studio-heading"><div><span className="eyebrow">ADMINISTRAR LOJA · APARÊNCIA</span>
    <h3>Estúdio de Cardápio</h3><p>Personalize a identidade da sua loja. As alterações só chegam aos clientes depois de publicadas.</p></div>
-   <div className="design-studio-status"><span>{dirty?'● Alterações não salvas':'✓ Rascunho atualizado'}</span>
+   <div className="design-studio-status"><span>{needsPublishing?'● Alterações pendentes de publicação':'✓ Aparência publicada'}</span>
     <small>{publishedVersion?'Versão '+publishedVersion+' publicada em '+stamp(publishedAt):'Nenhuma versão visual personalizada publicada'}</small></div>
   </div>
   <nav className="design-studio-nav" aria-label="Etapas do Estúdio de Cardápio">
@@ -215,7 +206,7 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
   <div className="design-studio-grid">
    <div className="design-studio-controls">
     {mode==='editar'?<>
-     <section className="design-control-card"><h4>Templates do cardápio</h4><p>Quatro visuais, as mesmas funcionalidades atuais. Escolha, salve o rascunho e publique quando estiver pronto.</p>
+     <section className="design-control-card"><h4>Templates do cardápio</h4><p>Quatro visuais, as mesmas funcionalidades atuais. Escolha, visualize e toque em Salvar e publicar quando estiver pronto.</p>
       <div className="design-template-options" role="group" aria-label="Template do cardápio">{templates.map(model=><button type="button" key={model.id}
        aria-pressed={design.template===model.id} className={'design-template-option'+(design.template===model.id?' active':'')}
        onClick={()=>setDesign(d=>{const {id,name,description,...preset}=model;return {...d,...preset,template:id};})} disabled={!manager||working}>
@@ -274,11 +265,11 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
     </>:<>
      <section className="design-control-card"><h4>Conferir e publicar</h4>
       <p>Confira a página inicial, o produto e o checkout exatamente com os componentes do cardápio público. O rascunho aparece apenas nesta prévia.</p>
-      <p>{dirty?'Existem alterações não salvas. Volte à aparência e salve o rascunho.':'Rascunho salvo e pronto para publicação.'}</p>
-      <button type="button" disabled={!manager||working||dirty} onClick={publish}>Publicar alterações para os clientes</button>
+      <p>{needsPublishing?'Há alterações prontas para salvar e publicar diretamente.':'A versão apresentada já está publicada para os clientes.'}</p>
+      <p className="design-tip">Use o botão Salvar e publicar abaixo. Não é necessário salvar rascunho primeiro.</p>
       <p className="design-tip">O cardápio e o checkout continuam usando as regras de preço, complementos, entrega e pagamento já existentes.</p>
      </section>
-     <section className="design-control-card"><h4>Histórico e restauração</h4><p>Restaurar uma versão cria um rascunho, sem alterar o cardápio público até você publicar.</p>
+     <section className="design-control-card"><h4>Histórico e restauração</h4><p>Restaurar uma versão recupera a aparência para edição. Os clientes só verão a mudança após Salvar e publicar.</p>
       {history.map(item=><div key={item.version} className="design-history-row">
        <span>Versão {item.version} <small>· {stamp(item.created_at)}</small></span>
        <button type="button" className="secondary" disabled={!manager||working||dirty} onClick={()=>restore(item.version)}>Restaurar</button>
@@ -287,9 +278,9 @@ export default function StoreDesignStudio({client,store,manager,products=[]}){
      </section>
     </>}
     <div className="design-studio-actions">
-     <button type="button" disabled={!manager||working||!dirty} onClick={saveDraft}>{working?'Aguarde…':'Salvar rascunho'}</button>
+     <button type="button" disabled={!manager||working||!needsPublishing} onClick={saveAndPublish}>{working?'Salvando e publicando…':'Salvar e publicar'}</button>
      <button type="button" className="secondary" onClick={()=>setMode(mode==='editar'?'publicar':'editar')}>
-      {mode==='editar'?'Ver prévia e publicar':'Voltar à aparência'}</button>
+      {mode==='editar'?'Ver prévia':'Voltar à aparência'}</button>
     </div>
    </div>
    <aside className="design-studio-preview" aria-label="Prévia do cardápio em tempo real">
