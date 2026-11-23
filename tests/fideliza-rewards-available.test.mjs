@@ -16,6 +16,7 @@ test('only benefits unlocked for this customer are offered',()=>{
 });
 test('referral is automatic, scoped to store and never a checkout field',()=>{
  assert.doesNotMatch(html,/id="loyaltyReferral"/);
+ assert.doesNotMatch(html,/if\(referralCode\|\|loyaltyProgram/,'An old link cannot force disabled Fideliza checkout');
  assert.match(html,/pitacco-referral:'\+slug/);
  assert.match(html,/pendingRequest\.p_key=referralCode/);
  assert.match(html,/referralCode='';try\{localStorage.removeItem\(referralStorageKey\)/);

@@ -2140,7 +2140,7 @@ $('checkout').onsubmit=async event=>{
    p_notes:$('notes').value
   };
   // O telefone identifica o cliente; a autorização do pedido é feita pela loja.
-  if(referralCode||loyaltyProgram||loyaltyPhone||$('loyaltyCoupon').value.trim()||$('loyaltyReward').value){
+  if(loyaltyProgram||loyaltyPhone||$('loyaltyCoupon').value.trim()||$('loyaltyReward').value){
    pendingRequest.p_key=referralCode;pendingRequest.p_coupon=$('loyaltyCoupon').value.trim().toUpperCase();pendingRequest.p_reward=$('loyaltyReward').value;
   }
   if(routeMode)pendingRequest.p_quote=deliveryQuote.id;
