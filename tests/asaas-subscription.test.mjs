@@ -63,3 +63,30 @@ test('distinguishes a retryable database failure from an unrelated subscription'
   assert.deepEqual(await response.json(),{outcome});
  }
 });
+
+test('commercial confirmation is gated and never falls through to the legacy subscription recorder',async()=>{
+ const commercial={...verified,subscription:null,customer:'cus_test',value:17.49,externalReference:'pitacco:commercial:12345678-1234-1234-1234-123456789abc'};
+ let calls=0;
+ const off=createAsaasWebhook({...config,fetcher:()=>{calls++;return Response.json(commercial)}});
+ const disabled=await off(request());assert.equal(disabled.status,503);assert.equal(calls,1);
+ const on=createAsaasWebhook({...config,commercialEnabled:true,fetcher:(url,options)=>{
+  if(url.hostname==='api-sandbox.asaas.com')return Response.json(commercial);
+  assert.equal(url.pathname,'/rest/v1/rpc/pitacco_reconcile_commercial_asaas_charge');
+  assert.equal(JSON.parse(options.body).p_amount_cents,1749);
+  return Response.json('received');
+ }});
+ assert.deepEqual(await (await on(request())).json(),{outcome:'received'});
+});
+test('commercial reversal uses the current provider status rather than notification data',async()=>{
+ const commercial={...verified,customer:'cus_test',value:17.49,status:'REFUNDED',externalReference:'pitacco:commercial:12345678-1234-1234-1234-123456789abc'};
+ const on=createAsaasWebhook({...config,commercialEnabled:true,fetcher:(url,options)=>{
+  if(url.hostname==='api-sandbox.asaas.com')return Response.json(commercial);
+  assert.equal(JSON.parse(options.body).p_status,'REFUNDED');return Response.json('review_required');
+ }});
+ assert.deepEqual(await (await on(request({...event,event:'PAYMENT_REFUNDED'}))).json(),{outcome:'review_required'});
+});
+test('commercial callback without a durable invoice link is retryable',async()=>{
+ const commercial={...verified,customer:'cus_test',externalReference:'pitacco:commercial:12345678-1234-1234-1234-123456789abc'};
+ const on=createAsaasWebhook({...config,commercialEnabled:true,fetcher:url=>Response.json(url.hostname==='api-sandbox.asaas.com'?commercial:'unlinked')});
+ const result=await on(request());assert.equal(result.status,503);assert.deepEqual(await result.json(),{outcome:'commercial_link_unavailable'});
+});
