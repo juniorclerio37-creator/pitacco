@@ -181,3 +181,5 @@ export function approvedReceipt(job,width=80,opts={}){
  add();
  return lines.join('\n');
 }
+
+export {clean,amount,cash,first,platformName,deliveryAddress,isPaid,collectionAtDelivery};
