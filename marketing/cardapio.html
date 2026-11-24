@@ -2322,7 +2322,7 @@ $('productDialog').addEventListener('close',()=>{
  editing=null;
  $('cartDialog').showModal();
  const editButtons=[...$('cart').querySelectorAll('.cart-controls button')];
- (editButtons.find(button=>button.textContent==='Editar complementos')||$('closeCart')).focus();
+ (editButtons.find(button=>['Editar complementos','Editar montagem'].includes(button.textContent))||$('closeCart')).focus();
 });
 function cartFeedback(text){
  clearTimeout(feedbackTimer);
@@ -2399,8 +2399,8 @@ function renderCart(){
   remove.onclick=()=>{cart=cart.filter(c=>c!==item);renderCart()};
   const controls=el('div',undefined,'cart-controls');
   const product=menu.products.find(product=>product.id===item.product_id);
-  if(product?.option_groups?.some(group=>group.max>0)){
-   const edit=button('Editar complementos','secondary');
+  if(product?.pizza_config||product?.option_groups?.some(group=>group.max>0)){
+   const edit=button(product.pizza_config?'Editar montagem':'Editar complementos','secondary');
    edit.onclick=()=>{
     if(pendingRequest||cartRecoveryId||completed)return;
     $('checkoutMessage').hidden=true;
