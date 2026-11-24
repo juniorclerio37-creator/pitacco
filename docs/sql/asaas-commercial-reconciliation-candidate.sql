@@ -9,6 +9,8 @@ create table pitacco_private.commercial_asaas_charges (
  status text not null default 'pending' check (status in ('pending','confirmed','received','review_required')),
  provider_status text,
  verified_at timestamptz,
+ confirmed_at timestamptz,
+ received_at timestamptz,
  created_at timestamptz not null default now(),
  unique(environment,payment_id)
 );
@@ -69,7 +71,9 @@ begin
  elsif p_status in ('PENDING','OVERDUE') and link.status in ('confirmed','received') then next_status:='review_required';
  else next_status:=link.status;
  end if;
- update pitacco_private.commercial_asaas_charges set status=next_status,provider_status=p_status,verified_at=now() where invoice_id=i.id;
+ update pitacco_private.commercial_asaas_charges set status=next_status,provider_status=p_status,verified_at=now(),
+ confirmed_at=case when next_status in ('confirmed','received') then coalesce(confirmed_at,now()) else confirmed_at end,
+ received_at=case when next_status='received' then coalesce(received_at,now()) else received_at end where invoice_id=i.id;
  return next_status;
 end $$;
 revoke all on function pitacco_private.reconcile_commercial_asaas_charge(text,text,text,text,bigint,text) from public,anon,authenticated;
