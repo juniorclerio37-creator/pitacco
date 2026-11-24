@@ -15,6 +15,9 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  useEffect(()=>{setSection(initialSection==='Categorias'?'Produtos':initialSection);setShowEditor(false);if(initialSection==='Categorias')requestAnimationFrame(()=>document.getElementById('catalog-category-navigation')?.scrollIntoView({block:'nearest'}))},[initialSection,navigationKey]);
  const [categoryIcons,setCategoryIcons]=useState({}),[configuringCategory,setConfiguringCategory]=useState(null),[iconBusy,setIconBusy]=useState(false);
  const [categoryRanks,setCategoryRanks]=useState({});
+ const [newGroups,setNewGroups]=useState([]);
+ const changeGroup=(id,patch)=>setNewGroups(old=>old.map(g=>g.id===id?{...g,...patch}:g));
+ const changeOption=(g,id,patch)=>changeGroup(g.id,{options:g.options.map(o=>o.id===id?{...o,...patch}:o)});
  const categoryName=value=>String(value||'').trim()||'Outros';
  const allCategories=useMemo(()=>[...new Set(products.map(p=>categoryName(p.category)))].sort((a,b)=>a.localeCompare(b,'pt-BR')),[products]);
  const orderedCategories=useMemo(()=>[...allCategories].sort((a,b)=>{
@@ -97,13 +100,17 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  const change=(k,v)=>setDraft(p=>({...p,[k]:v}));
  const begin=product=>{
   setEditing(product?.id||null);setDraft(product?{...empty(),...product}:empty());
-  setGroups([]);setPhoto(null);setShowEditor(true);setNotice('');
+  setGroups([]);setNewGroups([]);setPhoto(null);setShowEditor(true);setNotice('');
  };
  async function save(e){
-  e.preventDefault();setBusy(true);setNotice('');
+  e.preventDefault();if(busy)return;setBusy(true);setNotice('');
   try{
    const price=Number(draft.price),cost=Number(draft.cost||0);
    if(!draft.name.trim()||!Number.isFinite(price)||price<0||!Number.isFinite(cost)||cost<0)throw Error('Confira nome, preço e custo.');
+   for(const g of newGroups){
+    if(g.name.trim().length<2||!Number.isInteger(Number(g.min))||!Number.isInteger(Number(g.max))||Number(g.min)<0||Number(g.max)<1||Number(g.max)>100||Number(g.min)>Number(g.max)||g.options.filter(o=>o.available).length<Number(g.min))throw Error('Confira o nome e os limites dos grupos.');
+    for(const o of g.options)if(!o.name.trim()||!Number.isFinite(Number(o.price))||Number(o.price)<0||Number(o.price)>100000)throw Error('Confira nome e preço dos complementos.');
+   }
    const row={store_id:storeId,name:draft.name.trim(),price,cost,description:draft.description,category:draft.category,menu_active:draft.menu_active};
    if(photo)row.image_url=mediaUrl(client,await uploadStoreImage(client,storeId,photo,'products'));
    const query=editing?client.from('products').update(row).eq('id',editing).eq('store_id',storeId):client.from('products').insert(row);
@@ -111,7 +118,15 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
    if(error)throw error;
    setEditing(data.id);
    if(row.image_url)setDraft(previous=>({...previous,image_url:row.image_url}));
-   setPhoto(null);setNotice('Produto salvo.');onRefresh?.();
+   setPhoto(null);
+   for(const g of newGroups){
+    const options=[];
+    for(const o of g.options){let image=o.image_url||'';if(o.photo)image=mediaUrl(client,await uploadStoreImage(client,storeId,o.photo,'products'));options.push({id:o.id,name:o.name.trim(),price:Number(o.price),available:o.available,image_url:image});}
+    const {data:saved,error:groupError}=await client.rpc('pitacco_complement_template_save',{p_store:storeId,p_template:null,p_name:g.name.trim(),p_min:Number(g.min),p_max:Number(g.max),p_options:options,p_product_ids:[data.id]});
+    if(groupError)throw groupError;if(!saved?.saved)throw Error('O servidor não confirmou o grupo.');
+    setNewGroups(old=>old.filter(x=>x.id!==g.id));
+   }
+   setNotice('Produto e complementos salvos.');onRefresh?.();
   }catch(err){setNotice(err.message||String(err))}finally{setBusy(false)}
  }
  async function toggle(p){setBusy(true);const {error}=await client.from('products').update({menu_active:!p.menu_active}).eq('id',p.id).eq('store_id',storeId);setBusy(false);setNotice(error?.message||'Disponibilidade atualizada.');if(!error)onRefresh?.()}
@@ -190,7 +205,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  <div className="line"><h3>{editing?'Editar produto':'Novo produto'}</h3><button type="button" className="secondary" onClick={()=>setShowEditor(false)}>Fechar</button></div>
  {notice&&<p className="notice" role="status">{notice}</p>}
  <div className="menu-studio-editor">
- <div><form onSubmit={save} aria-label="Dados do produto">
+ <div><form id="pitacco-product-editor" onSubmit={save} aria-label="Dados do produto">
  <label style={field}>Foto do produto (JPG, PNG, WebP)<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f&&f.size>5*1024*1024){setNotice('Imagem maior que 5 MB.');return}setPhoto(f||null)}}/></label>
  <label style={field}>Nome<input required maxLength={180} value={draft.name} onChange={e=>change('name',e.target.value)}/></label>
  <label style={field}>Descrição<textarea maxLength={1200} rows={3} value={draft.description} onChange={e=>change('description',e.target.value)}/></label>
@@ -200,10 +215,28 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  <label style={field}>Custo interno (R$)<input type="number" min="0" step="0.01" value={draft.cost} onChange={e=>change('cost',e.target.value)}/></label>
  <div className="quick-actions"><button type="button" className="secondary" onClick={()=>setShowEditor(false)}>Cancelar</button><button disabled={busy} type="submit">Salvar produto</button></div>
  </form>
- {editing?<ProductComplements key={editing} client={client} storeId={storeId} product={{id:editing,name:draft.name}}
-  onGroupsChange={setGroups}/>:<p className="hint">Salve o produto para cadastrar os complementos.</p>}
+ <section className="panel" aria-label="Novos grupos de complementos">
+ <h3>Grupos e complementos</h3><p className="hint">Cadastre os grupos agora. Ao salvar o produto, eles serão adicionados à biblioteca de complementos da loja.</p>
+ <button type="button" disabled={busy} onClick={()=>setNewGroups(old=>[...old,{id:crypto.randomUUID(),name:'',min:0,max:1,options:[]}])}>+ Criar grupo de complementos</button>
+ {newGroups.map(g=><fieldset key={g.id} disabled={busy}>
+ <label>Nome do grupo<input maxLength={100} value={g.name} onChange={e=>changeGroup(g.id,{name:e.target.value})}/></label>
+ <label>Mínimo<input type="number" min={0} max={100} value={g.min} onChange={e=>changeGroup(g.id,{min:e.target.value})}/></label>
+ <label>Máximo<input type="number" min={1} max={100} value={g.max} onChange={e=>changeGroup(g.id,{max:e.target.value})}/></label>
+ {g.options.map(o=><div className="catalog-option-edit" key={o.id}>
+ <label>Nome do complemento<input maxLength={100} value={o.name} onChange={e=>changeOption(g,o.id,{name:e.target.value})}/></label>
+ <label>Valor adicional (R$)<input type="number" min={0} max={100000} step=".01" value={o.price} onChange={e=>changeOption(g,o.id,{price:e.target.value})}/></label>
+ <label>Foto<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f&&(!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>5*1024*1024)){setNotice('Selecione JPG, PNG ou WebP de até 5 MB.');return}changeOption(g,o.id,{photo:f||null})}}/></label>
+ <label><input type="checkbox" checked={o.available} onChange={e=>changeOption(g,o.id,{available:e.target.checked})}/>Disponível</label>
+ <button type="button" className="secondary" onClick={()=>changeGroup(g.id,{options:g.options.filter(x=>x.id!==o.id)})}>Retirar complemento</button>
+ </div>)}
+ <button type="button" disabled={g.options.length>=100} onClick={()=>changeGroup(g.id,{options:[...g.options,{id:crypto.randomUUID(),name:'',price:0,available:true}]})}>+ Adicionar complemento</button>
+ <button type="button" className="secondary" onClick={()=>setNewGroups(old=>old.filter(x=>x.id!==g.id))}>Retirar grupo</button>
+ </fieldset>)}
+ {newGroups.length>0&&<button type="submit" form="pitacco-product-editor" disabled={busy}>Salvar produto e complementos</button>}
+ </section>
+ {editing&&<ProductComplements key={editing+":"+newGroups.length} client={client} storeId={storeId} product={{id:editing,name:draft.name}} onGroupsChange={setGroups}/>}
  </div>
- <aside className="panel" style={{position:'sticky',top:0}}><span className="eyebrow">PRÉVIA AUTOMÁTICA · CLIENTE FINAL</span><div style={{border:'1px solid #ddd',borderRadius:18,overflow:'hidden',background:'white',color:'#222',marginTop:12}}>{(previewUrl||draft.image_url)?<img src={previewUrl||draft.image_url} alt="Foto selecionada" style={{width:'100%',height:230,objectFit:'contain',background:'#faf4fa'}}/>:<div style={{height:150,background:'#f0f1f3',display:'grid',placeItems:'center'}}>Foto do produto</div>}<div style={{padding:14}}><small>{draft.category||'Categoria'}</small><h3>{draft.name||'Nome do produto'}</h3><p>{draft.description||'Descrição do produto'}</p><h3>{brl(draft.price)}</h3>{groups.map((g,i)=><div key={i} style={{borderTop:'1px solid #eee',paddingTop:10,marginTop:10}}><b>{g.name}</b><small style={{display:'block'}}>Escolha {g.min} a {g.max} · {g.min>0?'Obrigatório':'Opcional'}</small>{g.options.filter(o=>o.available).map((o,j)=><p key={j} style={{margin:'7px 0'}}>◯ {o.name} · {brl(o.price)}</p>)}</div>)}<button type="button" disabled style={{width:'100%',marginTop:12}}>Adicionar ao pedido</button></div></div><p className="hint">Prévia ilustrativa em tempo real, sem publicação automática.</p></aside>
+ <aside className="panel" style={{position:'sticky',top:0}}><span className="eyebrow">PRÉVIA AUTOMÁTICA · CLIENTE FINAL</span><div style={{border:'1px solid #ddd',borderRadius:18,overflow:'hidden',background:'white',color:'#222',marginTop:12}}>{(previewUrl||draft.image_url)?<img src={previewUrl||draft.image_url} alt="Foto selecionada" style={{width:'100%',height:230,objectFit:'contain',background:'#faf4fa'}}/>:<div style={{height:150,background:'#f0f1f3',display:'grid',placeItems:'center'}}>Foto do produto</div>}<div style={{padding:14}}><small>{draft.category||'Categoria'}</small><h3>{draft.name||'Nome do produto'}</h3><p>{draft.description||'Descrição do produto'}</p><h3>{brl(draft.price)}</h3>{[...groups,...newGroups].map((g,i)=><div key={i} style={{borderTop:'1px solid #eee',paddingTop:10,marginTop:10}}><b>{g.name}</b><small style={{display:'block'}}>Escolha {g.min} a {g.max} · {g.min>0?'Obrigatório':'Opcional'}</small>{g.options.filter(o=>o.available).map((o,j)=><p key={j} style={{margin:'7px 0'}}>◯ {o.name} · {brl(o.price)}</p>)}</div>)}<button type="button" disabled style={{width:'100%',marginTop:12}}>Adicionar ao pedido</button></div></div><p className="hint">Prévia ilustrativa em tempo real, sem publicação automática.</p></aside>
  </div></div></div>}
  </>}
  </section>;
