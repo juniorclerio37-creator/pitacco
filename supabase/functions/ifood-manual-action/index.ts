@@ -208,7 +208,8 @@ Deno.serve(async (request: Request):Promise<Response> => {
     const reasons=await fetchReasons(lookup.external_order_id,token);
     if(action==="reasons")return reply(request,200,{reasons});
     const reason=params.reason as string;
-    if(!reasons.some(item=>item.code===reason))
+    const selectedReason=reasons.find(item=>item.code===reason);
+    if(!selectedReason)
       return reply(request,409,{error:"Motivo não autorizado pelo iFood para este pedido."});
     const claim=requestInfo(await requestRpc("pitacco_ifood_manual_cancel_request",{
       p_order:orderId,p_actor:actor,p_reason:reason,
@@ -220,14 +221,19 @@ Deno.serve(async (request: Request):Promise<Response> => {
     const provider=await fetch(root+"/order/v1.0/orders/"+claim.external_order_id+"/requestCancellation",{
       method:"POST",
       headers:{authorization:"Bearer "+token,"content-type":"application/json"},
-      body:JSON.stringify({reason}),
+      body:JSON.stringify({cancellationCode:reason,reason:selectedReason.description}),
       signal:AbortSignal.timeout(8000),
       redirect:"error",
     });
     if(provider.status!==202){
-      await markFailure("cancel",orderId,"cancel-"+provider.status);
+      const detail=await provider.json().catch(()=>null);
+      const candidates=[detail?.message,detail?.error?.message,detail?.error?.details,detail?.errors?.[0]?.message].filter(v=>typeof v==="string");
+      const raw=candidates.join(" ").toLowerCase();
+      const category=/time|prazo|expired|expir/.test(raw)?"deadline":/cancelcode|cancellationcode|reason|motivo|field|required|invalid|mandatory/.test(raw)?"validation":/status|state|estado/.test(raw)?"order-state":"unknown";
+      console.warn("ifood cancellation rejected", {status:provider.status,category,fields:detail&&typeof detail==="object"?Object.keys(detail).slice(0,12):[]});
+      await markFailure("cancel",orderId,"cancel-"+provider.status+"-"+category);
       return reply(request,provider.status===400||provider.status===404||provider.status===409?409:503,{
-        error:"O iFood recusou a solicitação. Confira o motivo e o estado atual do pedido.",
+        error:category==="deadline"?"O iFood informa que o prazo para cancelamento terminou.":category==="validation"?"O iFood rejeitou os dados do cancelamento (HTTP "+provider.status+").":category==="order-state"?"O iFood não permite cancelar no estado atual do pedido.":"O iFood recusou o cancelamento (HTTP "+provider.status+"). Confira o estado do pedido.",
       });
     }
     return reply(request,202,{status:"requested",message:"Aguardando evento CANCELLED ou CANCELLATION_REQUEST_FAILED."});
