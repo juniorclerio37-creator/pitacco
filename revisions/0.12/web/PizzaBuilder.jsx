@@ -1,5 +1,5 @@
 import React,{useState,useId} from 'react';
-import {quotePizza} from './pizzaPricing.mjs';
+import {quotePizzaSelection} from './pizzaPricing.mjs';
 const brl=c=>(c/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 export default function PizzaBuilder({config,onConfirm,confirmLabel='Adicionar ao pedido',confirmBusy=false}){
  const [sizeId,setSize]=useState(''),[selected,setSelected]=useState([]),[extras,setExtras]=useState([]);
@@ -8,7 +8,7 @@ export default function PizzaBuilder({config,onConfirm,confirmLabel='Adicionar a
  const flavors=config.flavors.filter(f=>f.available!==false&&Number.isSafeInteger(f.prices?.[sizeId]));
  const options=config.extras.filter(e=>e.available!==false&&Number.isSafeInteger(e.prices?.[sizeId]));
  let quote=null;
- try{if(size)quote=quotePizza({size,flavors,selection:selected,rule:config.rule,extras:extras.map(id=>options.find(e=>e.id===id)?.prices[sizeId])});}catch{}
+ try{if(size)quote=quotePizzaSelection(config,{sizeId,flavorIds:selected,extraIds:extras});}catch{}
  const toggleFlavor=id=>setSelected(old=>old.includes(id)?old.filter(x=>x!==id):old.length<size.maxFlavors?[...old,id]:old);
  const toggleExtra=e=>setExtras(old=>old.includes(e.id)?old.filter(id=>id!==e.id):[...old.filter(id=>e.kind==='Adicional'||options.find(x=>x.id===id)?.kind!==e.kind),e.id]);
  return <section style={{display:'grid',gap:16}}>
