@@ -60,3 +60,27 @@ begin
 end $$;
 revoke all on function pitacco_private.guard_manual_asaas_conflict() from public,anon,authenticated,service_role;
 create trigger commercial_manual_asaas_conflict before insert on pitacco_private.commercial_manual_payments for each row execute function pitacco_private.guard_manual_asaas_conflict();
+
+create function pitacco_private.finalize_commercial_asaas_issue(
+ p_invoice uuid,p_environment text,p_payment_id text,p_customer_id text,p_amount_cents bigint
+) returns text language plpgsql security definer set search_path='' as $$
+declare a pitacco_private.commercial_asaas_issue_intents%rowtype; result text;
+begin
+ perform 1 from pitacco_private.commercial_invoices where id=p_invoice for update;
+ select * into a from pitacco_private.commercial_asaas_issue_intents where invoice_id=p_invoice for update;
+ if not found or (a.environment,a.customer_id,a.amount_cents) is distinct from (p_environment,p_customer_id,p_amount_cents) then return 'invalid_reservation';end if;
+ result:=pitacco_private.link_commercial_asaas_charge(p_invoice,p_environment,p_payment_id,p_customer_id,p_amount_cents);
+ update pitacco_private.commercial_asaas_issue_intents set state=case when result in ('linked','already_linked') then 'linked' else 'review_required' end where invoice_id=p_invoice;
+ return result;
+end $$;
+revoke all on function pitacco_private.finalize_commercial_asaas_issue(uuid,text,text,text,bigint) from public,anon,authenticated;
+grant execute on function pitacco_private.finalize_commercial_asaas_issue(uuid,text,text,text,bigint) to service_role;
+-- The wrapper may call finalize, but service_role must not bypass the reservation.
+revoke execute on function pitacco_private.link_commercial_asaas_charge(uuid,text,text,text,bigint) from service_role;
+
+-- Finalize only an existing durable reservation; no arbitrary provider link can be adopted.
+create or replace function public.pitacco_link_commercial_asaas_charge(
+ p_invoice uuid,p_environment text,p_payment_id text,p_customer_id text,p_amount_cents bigint
+) returns text language sql security invoker set search_path='' as $$
+ select pitacco_private.finalize_commercial_asaas_issue(p_invoice,p_environment,p_payment_id,p_customer_id,p_amount_cents)
+$$;
