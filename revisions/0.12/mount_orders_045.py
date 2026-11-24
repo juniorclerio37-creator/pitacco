@@ -10,11 +10,12 @@ policy_hook=""" const [dispatchPolicy,setDispatchPolicy]=useState('manual');
  useEffect(()=>{
   let active=true;
   if(!storeId)return;
-  client.from('stores').select('dispatch_mode').eq('id',storeId).single()
+  function refreshDispatch(){client.from('stores').select('dispatch_mode').eq('id',storeId).single()
    .then(({data,error})=>{
     if(active&&!error)setDispatchPolicy(data?.dispatch_mode||'manual');
-   }).catch(()=>{});
-  return ()=>{active=false;};
+   }).catch(()=>{});}
+  refreshDispatch();const timer=setInterval(refreshDispatch,5000);
+  return ()=>{active=false;clearInterval(timer);};
  },[client,storeId]);
 """
 s=s.replace(policy_anchor,policy_hook+policy_anchor,1)
