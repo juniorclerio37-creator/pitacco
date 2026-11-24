@@ -14,17 +14,17 @@ change("function App(){","""function App(){
  const [navigationRoute,setNavigationRoute]=useState(()=>nativeAvailable()?'Pedidos':readMerchantTab());
  const [navigationKey,bumpNavigationKey]=useState(0);\n const [incidentCount,setIncidentCount]=useState(0);
  const [menuCollapsed,setMenuCollapsed]=useState(()=>{try{return localStorage.getItem('pitacco-menu-collapsed')==='1'}catch{return false}});
- const route=resolveMenuRoute(navigationRoute),tab=route.tab;
+ const route=resolveMenuRoute(navigationRoute),tab=route.section==='occurrences'?'Ocorrências':route.tab;
  const setTab=React.useCallback(next=>{setNavigationRoute(next);bumpNavigationKey(n=>n+1)},[]);
  function toggleMenu(){setMenuCollapsed(old=>{try{localStorage.setItem('pitacco-menu-collapsed',old?'0':'1')}catch{}return !old})}
 """)
 change("if(tab==='Painel')location.searchParams.delete('aba');","if(navigationRoute==='Painel')location.searchParams.delete('aba');")
 change("else if(merchantTabs.has(tab))location.searchParams.set('aba',tab);","else if(merchantTabs.has(navigationRoute))location.searchParams.set('aba',navigationRoute);")
-change("},[tab]);\nuseEffect(()=>{if(featureSettings&&!allowed(tab))setTab('Painel')},[tab,featureSettings]);","},[navigationRoute]);\nuseEffect(()=>{if(featureSettings&&(!allowed(tab)||(route.feature&&featureSettings[route.feature]===false)))setTab('Painel')},[tab,navigationRoute,featureSettings]);")
+change("},[tab]);\nuseEffect(()=>{if(featureSettings&&!allowed(tab))setTab('Painel')},[tab,featureSettings]);","},[navigationRoute]);\nuseEffect(()=>{if(featureSettings&&(!allowed(route.tab)||(route.feature&&featureSettings[route.feature]===false)))setTab('Painel')},[tab,navigationRoute,featureSettings]);")
 # Preserve the original header, session, theme, logout and background subscription.
 start=s.index('<nav aria-label="Menu principal">')
 end=s.index('</nav>',start)+len('</nav>')
-s=s[:start]+"""<MerchantNavigation routeId={navigationRoute} onNavigate={target=>{setTab(target);setMessage('');setMobileMenuOpen(false)}} allowed={allowed} manager={manager} active={active} admin={admin} driver={isDriver} featureSettings={featureSettings} stores={stores} selected={selected} onStoreChange={setSelected} userId={session.user.id} theme={theme} onThemeChange={setTheme} email={profile?.email||session.user.email} role={profile?.role} version={nativeAvailable()?'Pitacco Windows v0.12.30':''} native={nativeAvailable()} onLogout={()=>supabase.auth.signOut()} incidentCount={incidentCount} extra={fallbackMenuItems(nav,secondaryTabs,landing)} collapsed={menuCollapsed} onCollapse={toggleMenu}/>"""+s[end:]
+s=s[:start]+"""<MerchantNavigation routeId={navigationRoute} onNavigate={target=>{setTab(target);setMessage('');setMobileMenuOpen(false)}} allowed={allowed} manager={manager} active={active} admin={admin} driver={isDriver} featureSettings={featureSettings} stores={stores} selected={selected} onStoreChange={setSelected} userId={session.user.id} theme={theme} onThemeChange={setTheme} email={profile?.email||session.user.email} role={profile?.role} version={nativeAvailable()?'Pitacco Windows v0.12.31':''} native={nativeAvailable()} onLogout={()=>supabase.auth.signOut()} incidentCount={incidentCount} extra={fallbackMenuItems(nav,secondaryTabs,landing)} collapsed={menuCollapsed} onCollapse={toggleMenu}/>"""+s[end:]
 # Add the collapse state to the merchant shell without depending on earlier layout class additions.
 import re
 shell=list(re.finditer(r'<div className=\{([^{}\n]*pitacco-mobile-workspace[^{}\n]*)\}>',s))
@@ -34,7 +34,7 @@ s=s[:m.start()]+ '<div className={'+m.group(1)+'+(menuCollapsed?" mn-sidebar-col
 change('<header className="pitacco-mobile-top">','<header className={"pitacco-mobile-top"+(isDriver?" mn-driver-top":" mn-redundant-top")}>')
 change('</main>',"""</main>{!nativeAvailable()&&<MerchantMobileBar routeId={navigationRoute} onNavigate={target=>{setTab(target);setMessage('');setMobileMenuOpen(false)}} onMore={()=>setMobileMenuOpen(open=>!open)} menuOpen={mobileMenuOpen} allowed={allowed} manager={manager} active={active} admin={admin} driver={isDriver} featureSettings={featureSettings}/>}""")
 # Mount the incident center before the workspace content, not below all deliveries.
-change("{active&&<StorefrontShare", """{active&&!isDriver&&manager&&allowed('Entregas')&&<IncidentCenter key={selected} client={supabase} storeId={selected} visible={route.section==='occurrences'} showShortcut={tab==='Entregas'} onCount={setIncidentCount} onOpen={()=>{setTab(route.section==='occurrences'?'Entregas':'Ocorrências');window.scrollTo(0,0)}} orders={orders} deliveries={deliveries}/>}\n{active&&<StorefrontShare""")
+change("{active&&<StorefrontShare", """{active&&!isDriver&&manager&&allowed('Entregas')&&<IncidentCenter key={selected} client={supabase} storeId={selected} visible={route.section==='occurrences'} showShortcut={tab==='Entregas'||tab==='Ocorrências'} onCount={setIncidentCount} onOpen={()=>{setTab(route.section==='occurrences'?'Entregas':'Ocorrências');window.scrollTo(0,0);document.querySelector('.app>main')?.scrollTo(0,0)}} orders={orders} deliveries={deliveries}/>}\n{active&&<StorefrontShare""")
 # Existing views are not remounted unnecessarily; direct section props only change when selected.
 change('<MenuStudio client={supabase} storeId={selected}',"<MenuStudio initialSection={route.section||'Produtos'} navigationKey={navigationKey} client={supabase} storeId={selected}")
 change('<FinancialReport key={selected} client={supabase} store={active}/>','<FinancialReport key={selected} client={supabase} store={active} initialView={route.section||\'report\'} navigationKey={navigationKey}/>')
