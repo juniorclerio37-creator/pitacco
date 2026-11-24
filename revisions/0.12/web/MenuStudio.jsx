@@ -2,6 +2,7 @@ import React,{useEffect,useMemo,useState} from 'react';
 import PizzaEditor,{emptyPizza} from './PizzaEditor.jsx';
 import PizzaBuilder from './PizzaBuilder.jsx';
 import PizzaRecipeEditor from './PizzaRecipeEditor.jsx';
+import PizzaComboEditor from './PizzaComboEditor.jsx';
 import {normalizePizzaConfig} from './normalizePizzaConfig.mjs';
 import ProductComplements from './ProductComplements.jsx';
 import CentralComplementLibrary from './CentralComplementLibrary.jsx';
@@ -147,10 +148,11 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  return <section className="menu-studio">
  <div className="page-intro"><div><span className="eyebrow">MEU CARDÁPIO</span><h3>Editor de cardápio</h3><p>Gerencie produtos e veja as alterações no cardápio do cliente enquanto edita.</p></div><button type="button" className="secondary" onClick={onImport}>Importar cardápio</button></div>
  <div className="catalog-studio-tabs" role="tablist" aria-label="Gestão do cardápio">
- {['Produtos','Complementos','Banners','Estoque','Insumos'].map(t=><button role="tab" aria-selected={section===t}
+ {(manager?['Produtos','Complementos','Combos','Banners','Estoque','Insumos']:['Produtos','Complementos','Banners','Estoque','Insumos']).map(t=><button role="tab" aria-selected={section===t}
   type="button" key={t} className={section===t?'active':'secondary'} onClick={()=>{setSection(t);setShowEditor(false);setNotice('')}}>{t}</button>)}
  </div>
  {notice&&!showEditor&&<p className="notice" role="status">{notice}</p>}
+ {section==='Combos'&&manager&&<PizzaComboEditor key={storeId} client={client} storeId={storeId}/>}
  {section==='Complementos'&&<CentralComplementLibrary client={client} storeId={storeId} products={products} onChanged={onRefresh}/>}
  {section==='Banners'&&(store?<StoreDesignStudio key={storeId+'-banners'} client={client} store={store} manager={manager}
   products={products} focus="banners"/>:<p role="alert">Não foi possível identificar a loja para abrir os banners.</p>)}
