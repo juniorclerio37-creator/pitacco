@@ -275,3 +275,32 @@ do $all_channels$ begin
  begin perform public.pitacco_store_commercial_block_status('20000000-0000-0000-0000-000000000003');raise exception 'Unauthorized block lookup';exception when insufficient_privilege then null;end;
 end $all_channels$;
 reset role;
+
+-- Boundary conditions use exact timestamps in Brasília, including the instant of expiry.
+do $notice_test$ begin
+ assert pitacco_private.commercial_notice_stage('2026-11-25 02:59:59+00','2026-11-26 02:59+00','2026-11-28 02:59+00')='none';
+ assert pitacco_private.commercial_notice_stage('2026-11-25 03:00:00+00','2026-11-26 02:59+00','2026-11-28 02:59+00')='due_today';
+ assert pitacco_private.commercial_notice_stage('2026-11-26 02:59+00','2026-11-26 02:59+00','2026-11-28 02:59+00')='due_today';
+ assert pitacco_private.commercial_notice_stage('2026-11-26 02:59:01+00','2026-11-26 02:59+00','2026-11-28 02:59+00')='grace';
+ assert pitacco_private.commercial_notice_stage('2026-11-28 02:59+00','2026-11-26 02:59+00','2026-11-28 02:59+00')='grace';
+ assert pitacco_private.commercial_notice_stage('2026-11-28 02:59:01+00','2026-11-26 02:59+00','2026-11-28 02:59+00')='overdue';
+end $notice_test$;
+-- Exercise real server responses for a single unpaid fixture in each stage.
+update pitacco_private.commercial_invoices i set due_at=((now() at time zone 'America/Sao_Paulo')::date+time '23:59:59.999999') at time zone 'America/Sao_Paulo',grace_until=(((now() at time zone 'America/Sao_Paulo')::date+time '23:59:59.999999') at time zone 'America/Sao_Paulo')+interval '48 hours'
+where i.period_end='2026-10-01' and i.contract_id in (select id from pitacco_private.commercial_contracts where store_id='20000000-0000-0000-0000-000000000003');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+do $notice_test$ declare r jsonb;begin
+ r:=public.pitacco_store_commercial_block_status('20000000-0000-0000-0000-000000000003');
+ assert r->>'notice_stage'='due_today' and r->>'orders_blocked'='false' and r->>'payment_required'='1';
+end $notice_test$;
+reset role;
+update pitacco_private.commercial_invoices i set due_at=now()-interval '1 hour',grace_until=now()+interval '47 hours'
+where i.period_end='2026-10-01' and i.contract_id in (select id from pitacco_private.commercial_contracts where store_id='20000000-0000-0000-0000-000000000003');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+do $notice_test$ declare r jsonb;begin
+ r:=public.pitacco_store_commercial_block_status('20000000-0000-0000-0000-000000000003');
+ assert r->>'notice_stage'='grace' and r->>'orders_blocked'='false' and r->>'payment_required'='1';
+end $notice_test$;
+reset role;
