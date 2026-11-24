@@ -1309,7 +1309,7 @@ body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data
 </fieldset><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço, marque o destino no mapa e calcule o frete conforme a área da loja.</p></div></div></section><section class="v2-checkout-panel v2-checkout-panel--payment">
 <h3>▣ Forma de pagamento</h3><p>Escolha como deseja pagar o seu pedido.</p><label for="payment" class="v2-payment-native-label">Forma de pagamento</label><select id="payment" required></select>
  <div id="v2PaymentCards" class="v2-payment-cards" role="radiogroup" aria-label="Formas de pagamento configuradas pela loja"></div>
- <div id="v2ChangeBlock" class="v2-change-block" hidden><label for="v2CashChange">Precisa de troco para quanto?</label><input id="v2CashChange" inputmode="decimal" placeholder="R$ 0,00"></div>
+ <div id="v2ChangeBlock" class="v2-change-block" hidden><label for="v2CashChange">Vai pagar com quanto? (para calcular o troco)</label><input id="v2CashChange" inputmode="decimal" autocomplete="off" placeholder="Ex.: 50,00"><small>Informe quanto entregará ao motoboy. O troco considera produtos, descontos e taxa de entrega.</small></div>
 <section id="loyaltyBox" class="fiado-access" aria-label="Fideliza+ do cliente" hidden>
  <h3>Fideliza+ · Benefícios desta loja</h3><p id="loyaltyTerms"></p><div id="loyaltyCampaigns"></div>
  <div id="loyaltyAnonymous"><p>Seu número de celular com DDD é seu acesso ao Fideliza+. Ao digitar o telefone do pedido, seus pontos e créditos aparecem automaticamente. Na primeira compra, o cadastro da carteira é automático.</p>
@@ -3113,6 +3113,15 @@ function v2RenderPaymentCards(){
 }
 $('payment').addEventListener('change',()=>{if(v2Only())v2RenderPaymentCards();});
 new MutationObserver(()=>{if(v2Only())v2RenderPaymentCards();}).observe($('payment'),{childList:true,subtree:true,attributes:true,attributeFilter:['disabled']});
+function v2TotalToPay(){
+ const subtotal=cart.reduce((sum,item)=>sum+Number(item.unit||0)*Number(item.quantity||0),0);
+ const fee=$('fulfillment').value==='delivery'?Number(deliveryQuote?.fee||0):0;
+ return Math.round((subtotal+fee-loyaltyDiscount()+Number.EPSILON)*100)/100;
+}
+function v2CashChangeValue(){
+ const raw=$('v2CashChange').value.trim().replace(',','.');
+ return raw?Number(raw):null;
+}
 function v2BuildReview(){
  const root=$('v2OrderSummary');root.replaceChildren();
  const group=(name)=>{const d=el('section',undefined,'v2-review-group');d.append(el('h4',name));root.append(d);return d;};
@@ -3129,9 +3138,12 @@ function v2BuildReview(){
  payment.append(el('p',$('payment').selectedOptions[0]?.textContent||'Selecione o pagamento'));
  const total=group('▤ Resumo financeiro');
  for(const line of $('total').children){const copy=line.cloneNode(true);total.append(copy);}
- const totalValue=Number(cart.reduce((x,item)=>x+item.quantity*item.unit,0))+
-  ($('fulfillment').value==='delivery'&&deliveryQuote?Number(deliveryQuote.fee):0)-loyaltyDiscount();
+ const totalValue=v2TotalToPay();
  total.append(el('p','Total estimado: '+money(totalValue),'v2-review-total'));
+ if($('payment').value==='dinheiro'&&v2CashChangeValue()!=null){
+  total.append(el('p','Cliente pagará com: '+money(v2CashChangeValue()),'v2-review-cash'));
+  total.append(el('p','Troco a devolver: '+money(Math.max(0,v2CashChangeValue()-totalValue)),'v2-review-cash'));
+ }
 }
 async function v2AdvanceCheckout(){
  if(!v2Only()||submitting||pendingRequest||cartRecoveryId)return;
@@ -3172,8 +3184,8 @@ async function v2AdvanceCheckout(){
    if(opt.value==='dinheiro'){
     const input=$('v2CashChange').value.trim().replace(',','.');
     if(input&&!/^[0-9]{1,7}(?:\.[0-9]{1,2})?$/.test(input)){msg('Informe um valor de troco válido.');return;}
-    if(input&&Number(input)<Number(cart.reduce((a,x)=>a+x.unit*x.quantity,0))){
-     msg('O valor informado para troco precisa cobrir pelo menos os produtos.');return;
+    if(input&&Math.round(Number(input)*100)<Math.round(v2TotalToPay()*100)){
+     msg('O valor informado para troco precisa cobrir o total do pedido, incluindo entrega e descontos.');return;
     }
    }
    v2ShowCheckoutStage('review');

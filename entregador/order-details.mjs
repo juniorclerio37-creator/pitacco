@@ -140,9 +140,13 @@ function buildDetails(details, delivery, routeFor, paymentInfo) {
   payment.append(line('Situação',p.state==='paid'
     ?(p.received_by_courier?'Recebido pelo entregador':'Pago')
     :p.state==='collect'?'Cobrar na entrega':'Sem confirmação disponível'));
+  const formatReais=value=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(value));
   if(p.state==='collect'&&p.amount!=null){
-    payment.append(line('Cobrar do cliente',new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(p.amount))));
-    if(p.change_for!=null)payment.append(line('Troco para',new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(p.change_for))));
+    payment.append(line('Cobrar do cliente',formatReais(p.amount)));
+  }
+  if((p.state==='collect'||p.state==='paid')&&p.change_for!=null){
+    payment.append(line('Cliente pagará com',formatReais(p.change_for)));
+    if(p.change_due!=null)payment.append(line('Troco a devolver',formatReais(p.change_due)));
   }
   root.append(payment);
   return root;
