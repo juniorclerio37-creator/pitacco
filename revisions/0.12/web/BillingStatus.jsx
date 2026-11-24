@@ -35,7 +35,7 @@ export default function BillingStatus({client,storeId}){
   {error&&<p role="alert">{error}</p>}
   {result&&<>
    <div className="line"><b>Situação</b><span>{labels[result.status]||result.status}</span></div>
-   {result.plan_code&&<div className="line"><b>Plano atual</b><span>{{saas:'Pitacco (contrato atual)',pitacco:'Pitacco',free:'Grátis',complete:'Completo'}[result.plan_code]||result.plan_code}</span></div>}
+   {result.plan_code&&<div className="line"><b>Plano atual</b><span>{{saas:'Pitacco (contrato atual)',pitacco:'Pitacco',free:'Completo Flex',complete:'Completo Fixo'}[result.plan_code]||result.plan_code}</span></div>}
    {(result.registered_monthly_amount??result.amount)!=null&&<div className="line"><b>Valor informado pela cobrança</b><span>{money.format(Number(result.registered_monthly_amount??result.amount))}</span></div>}
    {result.due_date&&<div className="line"><b>Vencimento cadastrado</b><span>{result.due_date.split('-').reverse().join('/')}</span></div>}
    {result.status==='trial'&&result.trial_ends_at&&<div className="line"><b>Dias restantes de teste</b><span>{Math.max(0,Math.ceil((new Date(result.trial_ends_at)-Date.now())/86400000))}</span></div>}
