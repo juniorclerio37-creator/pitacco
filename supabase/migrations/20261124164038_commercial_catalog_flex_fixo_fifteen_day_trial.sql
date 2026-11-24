@@ -14,8 +14,10 @@ begin
  select pg_get_functiondef('public.pitacco_register_store(text,text)'::regprocedure) into d;
  if position('current_date+7)' in d)=0 or position('now()+interval ''7 days''' in d)=0 then raise exception 'Cadastro divergente';end if;
  execute replace(replace(d,'current_date+7)','current_date+15)'),'now()+interval ''7 days''','now()+interval ''15 days''');
+ if to_regprocedure('public.pitacco_register_store(text)') is not null then
  select pg_get_functiondef('public.pitacco_register_store(text)'::regprocedure) into d;
  if position('current_date+7)' in d)=0 then raise exception 'Cadastro legado divergente';end if;
  execute replace(d,'current_date+7)','current_date+15)');
+ end if;
 end $policy$;
 alter table public.pitacco_signup_trials alter column ends_at set default (now()+interval '15 days');
