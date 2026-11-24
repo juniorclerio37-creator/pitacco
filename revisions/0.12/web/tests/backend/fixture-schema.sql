@@ -104,3 +104,7 @@ create function public.pitacco_courier_test_access(p_courier uuid,p_store uuid) 
  select exists(select 1 from pitacco_private.courier_test_store_access g join public.couriers c on c.id=g.courier_id
  where g.courier_id=p_courier and g.store_id=p_store and c.active and c.fleet_type='propria');
 $$;
+
+-- Contact fields are present in the live store/courier schema.
+alter table public.stores add column if not exists phone text;
+alter table public.couriers add column if not exists phone text;

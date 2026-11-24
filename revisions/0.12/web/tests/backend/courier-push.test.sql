@@ -1,9 +1,9 @@
 begin;
 update pitacco_private.courier_push_settings set enabled=true;
-create table auth.sessions(id uuid primary key,user_id uuid,created_at timestamptz);
+create table if not exists auth.sessions(id uuid primary key,user_id uuid,created_at timestamptz);
 create or replace function auth.jwt() returns jsonb language sql stable as $$select jsonb_build_object('session_id',current_setting('test.push.session',true))$$;
-create table public.pitacco_courier_auth_state(user_id uuid,store_id uuid,must_change_password boolean,credentials_issued_at timestamptz);
-create function public.pitacco_courier_session_ready() returns boolean language sql stable as $$
+create table if not exists public.pitacco_courier_auth_state(user_id uuid,store_id uuid,must_change_password boolean,credentials_issued_at timestamptz);
+create or replace function public.pitacco_courier_session_ready() returns boolean language sql stable as $$
 select exists(select 1 from public.pitacco_courier_auth_state where user_id=auth.uid() and not must_change_password)
 $$;
 insert into auth.users(id,email) values('f0000000-0000-4000-8000-000000000001','push@example.invalid');

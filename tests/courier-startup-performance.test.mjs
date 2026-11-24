@@ -35,7 +35,7 @@ test('login and dispatch panel require both server checks, in parallel, without 
 
 test('the first dispatch refresh reads authorized records concurrently and preserves financial data',()=>{
  const panel=read('entregador/painel.html');
- assert.match(panel,/\[authorized,list,badges,originsResult,gpsResult,paymentsResult\]=await Promise\.all/);
+ assert.match(panel,/\[authorized,list,badges,originsResult,gpsResult,paymentsResult,incidentResult,incidentContactResult\]=await Promise\.all/);
  assert.match(panel,/sb\.rpc\("pitacco_driver_payment_cards"\)/);
  assert.match(panel,/driver\.myAllowedStores\(\)/);
  assert.match(panel,/driver\.myDeliveries\(\[courier\.id\]\)/);

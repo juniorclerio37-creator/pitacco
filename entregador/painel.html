@@ -884,7 +884,8 @@ async function api(action,payload={}){
 function element(tag,cls,txt){
  const el=document.createElement(tag);if(cls)el.className=cls;if(txt!==undefined)el.textContent=txt;return el;
 }
-const incidentRows=new Map();
+const incidentRows=new Map(),incidentContacts=new Map();
+function incidentWhatsApp(i){const c=incidentContacts.get(i.id);if(!c?.phone)return element('small','','WhatsApp da loja não cadastrado ou indisponível.');const platform={ifood:'iFood','99food':'99Food',keeta:'Keeta',proprio:'Loja'}[c.source]||'Loja';const kind=incidentKinds.find(x=>x[0]===i.kind)?.[1]||'Ocorrência';const a=element('a','btn incident-whatsapp','Falar com a loja pelo WhatsApp');a.href='https://wa.me/'+c.phone+'?text='+encodeURIComponent('Olá! Estou com uma ocorrência no pedido #'+c.order_number+' — '+platform+'. '+kind+'.');return a;}
 const incidentKinds=[['customer_missing','Não localizei o cliente'],['wrong_address','Endereço incorreto'],['payment','Problema com pagamento'],['customer_refused','Cliente recusou o pedido'],['code','Problema com código'],['vehicle','Problema com veículo'],['system_error','Pedido travado / erro do sistema'],['other','Outra ocorrência']];
 async function reportIncident(d,kind){
  if(busy||!window.confirm('Avisar a loja? O pedido continuará em andamento.'))return;
@@ -1328,7 +1329,7 @@ function card(d){
  }
  if(['atribuida','aceita','retirada'].includes(d.status)){
   const live=incidentRows.get(d.id)||[];
-  for(const i of live){const kind=incidentKinds.find(x=>x[0]===i.kind)?.[1]||'Ocorrência';stageExtras.append(element('p','compact-arrival-notice',kind+' · '+(i.state==='acknowledged'?'Loja está verificando':'Aguardando loja')));stageExtras.append(createAction(i.kind==='customer_missing'?'Cliente localizado':'Ocorrência resolvida','secondary',()=>resolveIncident(i)));}
+  for(const i of live){const kind=incidentKinds.find(x=>x[0]===i.kind)?.[1]||'Ocorrência';stageExtras.append(element('p','compact-arrival-notice',kind+' · '+(i.state==='acknowledged'?'Loja está verificando':'Aguardando loja')));stageExtras.append(incidentWhatsApp(i));stageExtras.append(createAction(i.kind==='customer_missing'?'Cliente localizado':'Ocorrência resolvida','secondary',()=>resolveIncident(i)));}
   if(d.arrived_at&&!live.some(i=>i.kind==='customer_missing'))stageExtras.append(createAction('Não localizei o cliente','secondary',()=>reportIncident(d,'customer_missing')));
   const incidentMenu=element('details','courier-secondary-tools');incidentMenu.append(element('summary','','Informar outra ocorrência'));
   for(const [kind,label] of incidentKinds.slice(1))if(!live.some(i=>i.kind===kind))incidentMenu.append(createAction(label,'secondary',()=>reportIncident(d,kind)));
@@ -1461,7 +1462,7 @@ async function refreshSnapshot(){
  if(records.length!==1){await driver.signOut().catch(()=>{});location.replace("./acesso.html");return;}
  courier=records[0];
  // Independent, RLS-protected reads run concurrently to shorten launch time.
- const [authorized,list,badges,originsResult,gpsResult,paymentsResult,incidentResult]=await Promise.all([
+ const [authorized,list,badges,originsResult,gpsResult,paymentsResult,incidentResult,incidentContactResult]=await Promise.all([
   driver.myAllowedStores(),
   driver.myDeliveries([courier.id]),
   sb.rpc("pitacco_driver_card_badges"),
@@ -1469,8 +1470,10 @@ async function refreshSnapshot(){
   sb.from('courier_positions').select('latitude,longitude,accuracy_m,observed_at')
    .eq('courier_id',courier.id).maybeSingle(),
   sb.rpc("pitacco_driver_payment_cards"),
-  Promise.resolve(sb.from("pitacco_delivery_incidents").select("id,delivery_id,kind,state").eq("courier_id",courier.id).in("state",["open","acknowledged"])).catch(()=>({error:true}))
+  Promise.resolve(sb.from("pitacco_delivery_incidents").select("id,delivery_id,kind,state").eq("courier_id",courier.id).in("state",["open","acknowledged"])).catch(()=>({error:true})),
+  Promise.resolve(sb.rpc("pitacco_incident_whatsapp_contacts")).catch(()=>({error:true}))
  ]);
+ incidentContacts.clear();if(!incidentContactResult?.error)for(const c of incidentContactResult?.data||[])incidentContacts.set(c.incident_id,c);
  if(!incidentResult?.error){incidentRows.clear();for(const row of incidentResult?.data||[]){const group=incidentRows.get(row.delivery_id)||[];group.push(row);incidentRows.set(row.delivery_id,group);}}
  permittedStores=new Map(authorized.map(row=>[row.store_id,row.store_name]));
  if(!permittedStores.size)permittedStores.set(courier.store_id,storeName);

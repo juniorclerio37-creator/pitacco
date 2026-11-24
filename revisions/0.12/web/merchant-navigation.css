@@ -116,3 +116,5 @@
 .incident-alert p{margin:3px 0;font-size:13px}
 .incident-alert>div{flex:1;min-width:190px}
 .incident-alert button{background:#b91c1c;color:white}
+
+.incident-whatsapp{display:inline-flex!important;align-items:center;justify-content:center;gap:7px;background:#128c4a!important;color:white!important;border-radius:8px;padding:9px 12px;text-decoration:none!important;font-weight:600}.incident-contact-settings{display:flex;flex-wrap:wrap;align-items:end;gap:8px}.incident-contact-settings label{display:grid;gap:5px}.incident-contact-settings small{flex-basis:100%}
