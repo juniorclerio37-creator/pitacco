@@ -18,6 +18,10 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  const [categoryRanks,setCategoryRanks]=useState({});
  const [newGroups,setNewGroups]=useState([]);
  const [pizzaPreview,setPizzaPreview]=useState(false),[pizzaDraft,setPizzaDraft]=useState(emptyPizza);
+ const [pizzaDraftId,setPizzaDraftId]=useState(null),[pizzaDrafts,setPizzaDrafts]=useState([]);
+ async function loadPizzaDrafts(){const {data,error}=await client.from('pitacco_pizza_drafts').select('id,name,config').eq('store_id',storeId).order('updated_at',{ascending:false});if(error){setNotice(error.message);return;}setPizzaDrafts(data||[]);}
+ useEffect(()=>{if(pizzaPreview)loadPizzaDrafts();},[pizzaPreview,storeId]);
+ async function savePizzaDraft(){if(busy)return;setBusy(true);try{if(!draft.name.trim())throw Error('Informe o nome da pizza.');const row={store_id:storeId,name:draft.name.trim(),config:pizzaDraft,updated_at:new Date().toISOString()};const query=pizzaDraftId?client.from('pitacco_pizza_drafts').update(row).eq('id',pizzaDraftId).eq('store_id',storeId):client.from('pitacco_pizza_drafts').insert(row);const {data,error}=await query.select('id').single();if(error)throw error;setPizzaDraftId(data.id);setNotice('Rascunho de pizza salvo. Venda ainda indisponível.');await loadPizzaDrafts();}catch(e){setNotice(e.message||String(e));}finally{setBusy(false);}}
  const changeGroup=(id,patch)=>setNewGroups(old=>old.map(g=>g.id===id?{...g,...patch}:g));
  const changeOption=(g,id,patch)=>changeGroup(g.id,{options:g.options.map(o=>o.id===id?{...o,...patch}:o)});
  const categoryName=value=>String(value||'').trim()||'Outros';
@@ -102,7 +106,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  const change=(k,v)=>setDraft(p=>({...p,[k]:v}));
  const begin=product=>{
   setEditing(product?.id||null);setDraft(product?{...empty(),...product}:empty());
-  setGroups([]);setNewGroups([]);setPizzaPreview(false);setPizzaDraft(emptyPizza());setPhoto(null);setShowEditor(true);setNotice('');
+  setGroups([]);setNewGroups([]);setPizzaPreview(false);setPizzaDraft(emptyPizza());setPizzaDraftId(null);setPhoto(null);setShowEditor(true);setNotice('');
  };
  async function save(e){
   e.preventDefault();if(busy||pizzaPreview)return;setBusy(true);setNotice('');
@@ -209,7 +213,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  <div className="menu-studio-editor">
  <div><form id="pitacco-product-editor" onSubmit={save} aria-label="Dados do produto">
  <label style={field}>Tipo de produto<select value={pizzaPreview?"pizza":"traditional"} onChange={e=>setPizzaPreview(e.target.value==="pizza")}><option value="traditional">Produto tradicional</option><option value="pizza">Pizza — prévia em desenvolvimento</option></select></label>
- {pizzaPreview&&<><p role="status">Prévia do módulo Pizza. O cadastro e a venda ainda não estão habilitados; as configurações desta prévia não serão salvas.</p><PizzaEditor value={pizzaDraft} onChange={setPizzaDraft} disabled={busy}/></>}
+ {pizzaPreview&&<><p role="status">Configure e salve o rascunho da pizza. A venda ainda não está habilitada.</p><label style={field}>Rascunhos salvos<select disabled={busy} value={pizzaDraftId||''} onChange={e=>{const p=pizzaDrafts.find(x=>x.id===e.target.value);setPizzaDraftId(p?.id||null);setPizzaDraft(p?.config||emptyPizza());change('name',p?.name||'');}}><option value=''>Novo rascunho</option>{pizzaDrafts.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><PizzaEditor value={pizzaDraft} onChange={setPizzaDraft} disabled={busy}/><button type='button' disabled={busy} onClick={savePizzaDraft}>Salvar rascunho da pizza</button></>}
  <label style={field}>Foto do produto (JPG, PNG, WebP)<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f&&f.size>5*1024*1024){setNotice('Imagem maior que 5 MB.');return}setPhoto(f||null)}}/></label>
  <label style={field}>Nome<input required maxLength={180} value={draft.name} onChange={e=>change('name',e.target.value)}/></label>
  <label style={field}>Descrição<textarea maxLength={1200} rows={3} value={draft.description} onChange={e=>change('description',e.target.value)}/></label>
