@@ -1,4 +1,5 @@
 import {clean,amount,cash,first,platformName,deliveryAddress,isPaid,collectionAtDelivery} from './approvedReceipt.mjs';
+import {receiptQrMatrix} from './receiptMenuQr.mjs';
 export const receiptFontSize=value=>['small','medium','large'].includes(value)?value:'medium';
 export function receiptPayment(r){
  const raw=first(r.payment_method,typeof r.payment==='string'?r.payment:r.payment?.method,r.payment_type);
@@ -93,6 +94,17 @@ export function renderReceiptCanvas(job,width=80,opts={},makeCanvas=()=>document
  else if(pay.state==='paid'){lines('Forma de pagamento: '+pay.method,{bold:true});banner(pay.online?'PAGO ONLINE':'PEDIDO PAGO',base+5,false);lines('NÃO COBRAR NA ENTREGA',{bold:true,align:'center'})}
  else if(pay.state==='collect'){lines('Forma de pagamento: '+pay.method,{bold:true});banner('COBRAR NA ENTREGA',base+4,false);pair('Valor a cobrar:',cash(pay.due/100),true);if(pay.method==='Dinheiro'){if(pay.given!==null){pair('Cliente entregará:',cash(pay.given/100));banner('TROCO: '+cash(pay.change/100),base+5,false)}else lines(pay.invalidChange?'Conferir valor informado para troco.':'Troco não solicitado.',{bold:true})}}
  else{lines('Forma de pagamento: '+pay.method);banner('PAGAMENTO A CONFERIR',base+3,false)}
+ if(opts.menuQr===true&&opts.menuUrl){
+  let matrix=null;try{matrix=receiptQrMatrix(opts.menuUrl)}catch{}
+  if(matrix){
+   rule();lines('PEÇA PELO NOSSO CARDÁPIO',{bold:true,align:'center',size:base+2});
+   lines('Aponte a câmera e faça seu próximo pedido.',{align:'center'});
+   // Integer printer dots, minimum 4 quiet modules, 6 dots per module (about 34 mm).
+   const module=6,quiet=4,side=(matrix.length+quiet*2)*module,left=Math.floor((w-side)/2),top=y+5;
+   ops.push(c=>{c.fillStyle='#fff';c.fillRect(left,top,side,side);c.fillStyle='#000';matrix.forEach((row,yy)=>row.forEach((dark,xx)=>{if(dark)c.fillRect(left+(xx+quiet)*module,top+(yy+quiet)*module,module,module)}))});
+   y=top+side+5;lines(opts.menuUrl,{align:'center'});
+  }
+ }
  rule();lines('Cupom não fiscal',{align:'center'});lines('Impresso por Pitacco',{bold:true,align:'center'});
  if(y+pad>16000)throw Error('Comanda muito longa para impressão gráfica; confira os itens.');
  canvas.height=Math.ceil(y+pad);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,canvas.height);for(const op of ops)op(ctx);return canvas;

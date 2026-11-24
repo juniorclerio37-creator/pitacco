@@ -5,10 +5,16 @@ def replace(path,old,new):
  assert s.count(old)==1, f'Unexpected print anchor: {path}: {old[:80]}'
  p.write_text(s.replace(old,new,1),encoding='utf-8')
 p=Path('web/printBridge.mjs');s=p.read_text(encoding='utf-8')
-p.write_text("import {rasterReceipt} from './receiptArtwork.mjs';\nimport {readPrintPreferences} from './printPreferences.mjs';\n"+s,encoding='utf-8')
-replace('web/printBridge.mjs','ingestJobs({jobs,device,call,ack})','ingestJobs({jobs,device,call,ack,storeName})')
-replace('web/Operations.jsx',"ingestJobs({jobs:remote||[],device,call:invoke,ack:args=>rpc('ack_print_job',args)})","ingestJobs({jobs:remote||[],device,call:invoke,ack:args=>rpc('ack_print_job',args),storeName})")
-replace('web/printBridge.mjs','receipt:receiptText(job)',"receipt:typeof document!=='undefined'&&job.receipt?rasterReceipt(job,job.width,{...readPrintPreferences(job.store_id),storeName}):receiptText(job)")
+p.write_text("import {rasterReceipt} from './receiptArtwork.mjs';\nimport {readPrintPreferences} from './printPreferences.mjs';\nimport {loadReceiptMenuUrl} from './receiptMenuQr.mjs';\n"+s,encoding='utf-8')
+replace('web/printBridge.mjs','ingestJobs({jobs,device,call,ack})','ingestJobs({jobs,device,call,ack,storeName,client})')
+replace('web/Operations.jsx',"ingestJobs({jobs:remote||[],device,call:invoke,ack:args=>rpc('ack_print_job',args)})","ingestJobs({jobs:remote||[],device,call:invoke,ack:args=>rpc('ack_print_job',args),storeName,client})")
+replace('web/Operations.jsx','<WindowsReceiptPreview key={storeId} storeId={storeId}','<WindowsReceiptPreview key={storeId} client={client} storeId={storeId}')
+replace('web/printBridge.mjs',' for(const job of jobs){',""" const menuUrls=new Map();
+ for(const job of jobs){
+  const preferences=readPrintPreferences(job.store_id);
+  if(preferences.menuQr===true&&!menuUrls.has(job.store_id))menuUrls.set(job.store_id,await loadReceiptMenuUrl(client,job.store_id));
+  const menuUrl=preferences.menuQr===true?menuUrls.get(job.store_id):'';""")
+replace('web/printBridge.mjs','receipt:receiptText(job)',"receipt:typeof document!=='undefined'&&job.receipt?rasterReceipt(job,job.width,{...preferences,storeName,menuUrl}):receiptText(job)")
 replace('web/src-tauri/src/queue.rs','j.receipt.len()>65536','(j.receipt.len()>65536 && (!j.receipt.starts_with("PITACCO_RASTER_V1:") || j.receipt.len()>2_000_000))')
 p=Path('web/src-tauri/src/printer.rs')
 s=p.read_text(encoding='utf-8')
