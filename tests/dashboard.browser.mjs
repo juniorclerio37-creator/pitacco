@@ -35,6 +35,11 @@ try {
       logistics_provider:'loja',status:'pendente',courier_id:null};
     const flowCourier={id:'50000000-0000-0000-0000-000000000050',name:'Motoboy de teste',fleet_type:'propria',available:true};
     let adminMode=false,moduleEnabled=true,ownerMigrationApplied=false,readOnlyChecks=0,failFeatureCheck=false;
+    let commercialCatalog={terms_version:'fixture',plans:[
+      {code:'free',name:'Grátis para sempre',monthly_cents:0,commission_basis_points:500,billing_cycle:'weekly',trial_days:0,available:true,description:'Módulos essenciais'},
+      {code:'complete',name:'Completo',monthly_cents:5990,commission_basis_points:0,billing_cycle:'monthly',trial_days:30,available:true,description:'Pedidos ilimitados'}
+    ]};
+    const commercialHistory=[{revision:'fixture',plans:commercialCatalog.plans,created_at:new Date().toISOString(),changed_by:null}];
     const catalog=[];
     const productId='70000000-0000-0000-0000-000000000001';
     const merchantProduct={id:'70000000-0000-0000-0000-000000000002',store_id:store.id,
@@ -336,6 +341,22 @@ try {
         }
         return route.fulfill({headers,json:s===store.id});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_owner_plan_catalog'){
+        assert.equal(origin,realApi);assert.equal(adminMode,true);
+        return route.fulfill({headers,json:commercialCatalog});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_owner_plan_catalog_history'){
+        assert.equal(origin,realApi);assert.equal(adminMode,true);
+        return route.fulfill({headers,json:commercialHistory});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_owner_publish_plan_catalog'){
+        assert.equal(origin,realApi);assert.equal(adminMode,true);
+        const {p_expected,p_plans}=route.request().postDataJSON();
+        assert.equal(p_expected,commercialCatalog.terms_version);
+        commercialCatalog={terms_version:'fixture-'+commercialHistory.length,plans:p_plans.map(p=>({...p,monthly_cents:Number(p.monthly_cents),commission_basis_points:Number(p.commission_basis_points),trial_days:Number(p.trial_days)}))};
+        commercialHistory.unshift({revision:commercialCatalog.terms_version,plans:commercialCatalog.plans,created_at:new Date().toISOString(),changed_by:user.id});
+        return route.fulfill({headers,json:commercialCatalog});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_owner_commercial_plans'){
         assert.equal(origin,realApi);
         assert.equal(adminMode,true);
@@ -481,7 +502,7 @@ try {
       }
       if(pathname==='/rest/v1/rpc/pitacco_merchant_plan_options'){
         assert.equal(route.request().postDataJSON().p_store,store.id);
-        return route.fulfill({headers,json:{plans:[{code:'free',name:'Grátis para sempre',monthly_cents:0,commission_basis_points:500,billing_cycle:'weekly'},{code:'complete',name:'Completo',monthly_cents:5990,commission_basis_points:0,billing_cycle:'monthly'}],requests:[],terms_version:'fixture'}});
+        return route.fulfill({headers,json:{...commercialCatalog,requests:[]}});
       }
       if (['/rest/v1/rpc/pitacco_store_subscription_status','/rest/v1/rpc/pitacco_merchant_subscription_details'].includes(pathname)) {
         assert.equal(route.request().postDataJSON().p_store,store.id);
@@ -1053,7 +1074,7 @@ try {
       await page.getByRole('region',{name:'Configuração do estabelecimento'}).waitFor();
     }
     if(width===1440){
-      await adminNavigate('Central de Aplicativos');
+      await adminNavigate('Aplicativos e versões');
       await page.getByRole('heading',{name:'Nova versão',exact:true}).waitFor();
       await page.getByText('Nenhuma versão cadastrada.').waitFor();
       assert.equal(await page.getByLabel('Instalador',{exact:true}).getAttribute('accept'),'.exe,.msi');
@@ -1064,15 +1085,20 @@ try {
     await dark.click();
     assert.equal(await page.locator('.super-admin.pitacco-theme-dark').count(),1);
     await page.getByRole('button',{name:'Ativar modo claro'}).click();
-    await adminNavigate('Plano Pitacco');
-    const plan=page.getByRole('region',{name:'Assinatura por faturamento'});
-    const tiers=plan.getByRole('table',{name:'Faixas da assinatura'});
-    await tiers.getByRole('cell',{name:/39,90/}).waitFor();
-    await tiers.getByRole('cell',{name:/59,90/}).waitFor();
-    await plan.getByLabel('Loja',{exact:true}).selectOption(store.id);
-    await plan.getByRole('button',{name:'Calcular faixa',exact:true}).click();
-    await plan.getByRole('status').getByText(/iFood/).waitFor();
-    await adminNavigate('Financeiro do Pitacco');
+    await adminNavigate('Configuração dos planos');
+    const plan=page.getByRole('region',{name:'Catálogo comercial'});
+    await plan.getByRole('heading',{name:'Grátis para sempre',exact:true}).waitFor();
+    await plan.getByRole('heading',{name:'Completo',exact:true}).waitFor();
+    const complete=plan.locator('article').filter({has:plan.getByRole('heading',{name:'Completo',exact:true})});
+    await complete.getByLabel('Nome',{exact:true}).fill('Completo revisado');
+    await complete.getByLabel('Mensalidade em centavos',{exact:true}).fill('6990');
+    await complete.getByLabel('Descrição',{exact:true}).fill('Oferta atualizada pelo administrador');
+    page.once('dialog',dialog=>dialog.accept());
+    await plan.getByRole('button',{name:'Salvar e publicar',exact:true}).click();
+    await plan.getByRole('status').getByText('Ofertas publicadas no catálogo.').waitFor();
+    assert.equal(commercialCatalog.plans.find(p=>p.code==='complete').monthly_cents,6990);
+    await plan.getByText('fixture-1',{exact:false}).first().waitFor();
+    await adminNavigate('Financeiro');
     const finance=page.getByRole('region',{name:'Financeiro do Pitacco'});
     const daily=finance.getByRole('table',{name:'Valores por dia'});
     await daily.getByRole('cell',{name:/90,00/}).waitFor();
@@ -1087,7 +1113,7 @@ try {
       await finance.getByRole('button',{name:'Baixar CSV'}).click();
       assert.match((await download).suggestedFilename(),/^pitacco-financeiro-.*\.csv$/);
     }
-    await adminNavigate('Homologação');
+    await adminNavigate('Integrações e homologação');
     const food99=page.getByRole('region',{name:'Homologação 99Food',exact:true});
     await food99.getByRole('link',{name:'Abrir Portal de Desenvolvedores da 99Food'}).waitFor();
     await food99.getByLabel('Loja Pitacco para o teste',{exact:true}).selectOption(store.id);
@@ -1157,7 +1183,7 @@ try {
     await adminSchedule.getByRole('group',{name:'Segunda-feira',exact:true}).getByRole('checkbox').check();
     await adminSchedule.getByRole('button',{name:'Salvar horários',exact:true}).click();
     await adminSchedule.getByText('Horários de agendamento salvos.').waitFor();
-    await adminNavigate('Módulos do lojista');
+    await adminNavigate('Módulos e funcionalidades');
     const modules=page.getByRole('region',{name:'Módulos do painel do lojista'});
     await modules.getByLabel('Aplicar a').selectOption(store.id);
     await modules.getByLabel('Estoque',{exact:true}).selectOption('disabled');
@@ -1173,6 +1199,12 @@ try {
     assert.equal(await navigation.getByRole('button',{name:'Estoque e insumos',exact:true}).count(),0);
     assert.equal(await navigation.getByRole('button',{name:'Insumos e fichas técnicas',exact:true}).count(),0);
     assert.equal(await page.getByRole('button',{name:'Homologação',exact:true}).count(),0);
+    if(width<=800)await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
+    await merchantNavigate('Configurações','Assinatura');
+    const revisedPlans=page.getByRole('region',{name:'Alteração de plano'});
+    await revisedPlans.getByRole('heading',{name:'Completo revisado',exact:true}).waitFor();
+    await revisedPlans.getByText('Oferta atualizada pelo administrador',{exact:true}).waitFor();
+    await revisedPlans.getByText(/69,90/).waitFor();
     if(width===1440){
       await merchantNavigate('Cardápio','Produtos');
       await page.waitForURL(url=>url.searchParams.get('aba')==='Produtos');
