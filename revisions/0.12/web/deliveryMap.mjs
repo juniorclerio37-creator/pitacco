@@ -90,7 +90,7 @@ function leaflet() {
   return leafletPromise;
 }
 
-export async function mountDeliveryMap(container, { center, radius, onSelect, mode='circle', polygon=[], polygons=[] }) {
+export async function mountDeliveryMap(container, { center, radius, onSelect, mode='circle', polygon=[], polygons=[], showCoverage=true }) {
   const L = await leaflet();
   if (!container.isConnected) return;
   const map = L.map(container, { scrollWheelZoom: false }).setView(center || [-14.24, -51.93], center ? 14 : 4);
@@ -102,7 +102,7 @@ export async function mountDeliveryMap(container, { center, radius, onSelect, mo
   let shape, marker;
   function setArea(point, meters, focus = false) {
     shape?.remove();
-    if (!point) return;
+    if (!showCoverage || !point) return;
     // Show exactly the geographical boundary the merchant saved.
     if (mode==='polygons') {
       // Customer sees every active region, exactly as configured by merchant.
@@ -125,9 +125,13 @@ export async function mountDeliveryMap(container, { center, radius, onSelect, mo
   }
   function setPoint(point) {
     marker?.remove();
-    marker = L.circleMarker(point, { ...style, radius: 7, fillOpacity: 0.85 }).addTo(map);
+    if(!showCoverage){
+      const icon=L.divIcon({className:'pitacco-delivery-address-pin',html:'<svg width="34" height="44" viewBox="0 0 34 44" xmlns="http://www.w3.org/2000/svg"><path d="M17 42C11 29 1 23 1 16a16 16 0 1 1 32 0c0 7-10 13-16 26Z" fill="#72228b" stroke="white" stroke-width="2"/><circle cx="17" cy="16" r="6" fill="white"/></svg>',iconSize:[34,44],iconAnchor:[17,42]});
+      marker=L.marker(point,{icon,draggable:true,title:'Local da entrega'}).addTo(map);
+      marker.on('dragend',()=>{const next=marker.getLatLng();onSelect([Number(next.lat.toFixed(6)),Number(next.lng.toFixed(6))])});
+    }else marker = L.circleMarker(point, { ...style, radius: 7, fillOpacity: 0.85 }).addTo(map);
   }
-  setArea(center, radius, true);
+  if(showCoverage)setArea(center, radius, true);
   map.on('click', ({ latlng }) => {
     const point = [Number(latlng.lat.toFixed(6)), Number(latlng.wrap().lng.toFixed(6))];
     onSelect(point);

@@ -8,7 +8,8 @@ const [menuPage, trackingPage] = await Promise.all(
 const deliveryMapScript = await readFile(new URL('../revisions/0.12/web/deliveryMap.mjs',import.meta.url),'utf8');
 assert.match(deliveryMapScript,/export async function mountCustomerTrackingMap/);
 const mapFixture = `
- export async function mountDeliveryMap(container,{onSelect}) {
+ export async function mountDeliveryMap(container,{onSelect,showCoverage}) {
+  container.dataset.showCoverage=String(showCoverage);
   return {setArea(){},setPoint(){},clearPoint(){},showPoint(point){onSelect(point)},resize(){},remove(){}};
  }
  export function currentLocation(){
@@ -323,6 +324,11 @@ try {
     }
     const pricingChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
     assert.equal(await page.locator('#quoteDelivery').isVisible(),false,'Nenhum template mostra botão manual de frete');
+    assert.equal(await page.locator('#deliveryMapPanel').isVisible(),false,'Mapa opcional começa recolhido');
+    await page.locator('#showDeliveryMap').click();
+    await page.locator('#deliveryMap[data-show-coverage=false]').waitFor();
+    await page.locator('#showDeliveryMap').click();
+    assert.equal(await page.locator('#deliveryMapPanel').isVisible(),false);
     await page.locator('#routeQuoteStatus').filter({hasText:'A loja precisa revisar'}).waitFor();
     assert.equal(await page.locator('#routeQuoteStatus').getAttribute('role'),'alert');
     await page.getByRole('button',{name:'Usar minha localização'}).click();

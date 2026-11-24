@@ -107,3 +107,14 @@ test('piloto fotográfico da loja teste não altera outros templates e evita cor
  assert.match(html,/setProductPhotoFit\(img\);img\.src=product\.image_url/);
  assert.match(html,/setProductPhotoFit\(photo\);\s*photo\.src=url/);
 });
+
+test('address interface has optional map, automatic freight and shared CEP lookup',()=>{
+ assert.match(html,/showCoverage:false/);
+ assert.match(html,/id="deliveryMapPanel" hidden/);
+ assert.match(html,/id="confirmDeliveryMap"/);
+ assert.match(html,/https:\/\/viacep\.com\.br\/ws\//);
+ assert.match(html,/Entrega disponível! Taxa de entrega:/);
+ assert.match(html,/Ainda não entregamos neste endereço/);
+ assert.match(html,/Editar endereço/);
+ assert.match(html,/pitacco_v2_customer_profile/);
+});

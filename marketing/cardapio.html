@@ -1160,6 +1160,45 @@ body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data
 @keyframes menu-startup-spin{to{transform:rotate(360deg)}}
 @keyframes menu-startup-shimmer{to{background-position:-200% 0}}
 @media(prefers-reduced-motion:reduce){.menu-startup__indicator,.menu-startup__skeleton{animation:none}}
+
+/* Shared customer address experience, using each storefront's existing brand. */
+#addressBlock [hidden]{display:none!important}
+#addressBlock{margin-top:18px}
+#addressBlock .address-sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#addressBlock .v2-address-book h3,#addressBlock .address-editor-heading h3{font-size:1.2rem;margin:0 0 5px}
+#addressBlock .v2-address-book p,#addressBlock .address-editor-heading p{font-size:.86rem;color:var(--muted);margin:0 0 12px}
+#addressBlock .address-action{display:grid;grid-template-columns:24px minmax(0,1fr) 14px;align-items:center;gap:10px;background:#fff;color:var(--brand);border:1px solid color-mix(in srgb,var(--brand) 24%,#ddd);border-radius:14px;text-align:left;width:100%;padding:13px;margin:0 0 14px}
+#addressBlock .address-action strong,#addressBlock .address-action small{display:block}
+#addressBlock .address-action small{color:#6d6470;font-size:.77rem;margin-top:3px;font-weight:400}
+#addressBlock .address-action>span:first-child{font-size:1.5rem}
+#addressBlock .v2-address-list{display:grid;gap:9px;margin:10px 0}
+#addressBlock .saved-address-row{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:stretch}
+#addressBlock .v2-saved-address{display:grid;grid-template-columns:24px minmax(0,1fr) 20px;align-items:center;gap:9px;border:1px solid color-mix(in srgb,var(--brand) 20%,#ddd);border-radius:14px;background:#fff;color:#332839;padding:12px;text-align:left;width:100%}
+#addressBlock .v2-saved-address[data-selected=true]{border:2px solid var(--brand);background:color-mix(in srgb,var(--brand) 5%,white);padding:11px}
+#addressBlock .v2-saved-address strong,#addressBlock .v2-saved-address small{display:block;overflow-wrap:anywhere}
+#addressBlock .v2-address-icon,#addressBlock .v2-address-radio{color:var(--brand)}
+#addressBlock .saved-address-quote{color:#187642;font-weight:700;margin-top:4px}
+#addressBlock .saved-address-edit{font-size:.78rem;background:transparent;color:var(--brand);border:0;padding:4px 8px}
+#addressBlock .v2-add-address{width:100%;background:#fff;color:var(--brand);border:1px dashed var(--brand);border-radius:12px;padding:12px;font-weight:700;margin-bottom:12px}
+#addressBlock .address-editor-heading{margin:12px 0}
+#addressBlock .address-cep>div{display:flex;gap:8px;align-items:stretch}
+#addressBlock .address-cep input{flex:1;min-width:0;margin:0}
+#addressBlock .address-cep button{width:auto;min-width:72px;font-size:.85rem}
+#addressBlock .address-cep small{display:block;font-size:.78rem;color:var(--muted);margin:5px 0}
+#addressBlock .v2-address-title{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(100px,1fr);align-items:center;gap:8px;margin:12px 0}
+#addressBlock .v2-address-title select{width:100%;min-width:0}
+#addressBlock .address-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+#addressBlock .address-grid label:first-child,#addressBlock .address-grid label:last-child{grid-column:1/-1}
+#addressBlock #deliveryPoint{border:0;padding:0;margin:10px 0}
+#addressBlock .address-map-toggle{width:100%;border:0;background:transparent;color:var(--brand);font-weight:750;text-align:center}
+#addressBlock #deliveryPointStatus{font-size:.8rem;line-height:1.4;margin:4px 0;color:var(--muted)}
+#addressBlock #deliveryMapPanel{border:1px solid #e0dce5;border-radius:14px;padding:12px;background:#fff}
+#addressBlock #deliveryMapPanel h4{margin:0 0 5px}
+#addressBlock #deliveryMapPanel p{font-size:.82rem;margin:0 0 8px}
+#addressBlock #deliveryMap{border-radius:10px}
+#addressBlock #confirmDeliveryMap{width:100%;margin:0}
+#addressBlock #routeQuoteStatus{font-weight:650;padding:13px;border-radius:13px}
+
 </style></head><body>
 <section id="menuStartup" class="menu-startup" role="status" aria-label="Carregando o cardápio">
  <div class="menu-startup__content"><span class="menu-startup__indicator" aria-hidden="true"></span>
@@ -1292,21 +1331,14 @@ body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data
 </section>
 <section class="v2-checkout-panel v2-checkout-panel--delivery"><h3>📍 Entrega ou retirada</h3><p>Escolha como deseja receber seu pedido.</p><label for="fulfillment">Como deseja receber?</label><select id="fulfillment"></select><div id="scheduleBlock" hidden><label for="schedule">Quando deseja receber?</label><select id="schedule"><option value="">Assim que possível</option></select><small>Horários de Brasília. Para entrega, o horário é uma previsão.</small></div><div id="addressBlock">
  <div id="v2AddressBook" class="v2-address-book" hidden>
-  <h3>⌖ Endereço de entrega</h3><p>Escolha um dos seus endereços salvos ou adicione um novo.</p>
+  <h3>Onde vamos entregar?</h3><p id="savedAddressHint">Escolha um endereço salvo ou cadastre um novo.</p><div class="checkout-address-actions"><button id="locateDelivery" type="button" class="address-action"><span aria-hidden="true">◎</span><span><strong>Usar minha localização</strong><small>Use quando estiver no endereço de entrega</small></span><span aria-hidden="true">›</span></button></div><h4 id="savedAddressesTitle" hidden>Meus endereços</h4>
   <div id="v2AddressList" class="v2-address-list"></div>
   <button type="button" id="v2AddAddress" class="v2-add-address">＋ Adicionar novo endereço</button>
  </div>
- <div id="v2AddressEditor"><div class="v2-address-title"><label for="v2AddressLabel">Salvar endereço como</label>
+ <div id="v2AddressEditor"><div class="address-editor-heading"><h3>Novo endereço</h3><p>Informe o endereço. A taxa aparece automaticamente.</p></div><div class="address-cep"><label for="addressPostal">Buscar pelo CEP (opcional)</label><div><input id="addressPostal" autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000"><button id="lookupAddressCep" type="button" class="secondary">Buscar</button></div><small id="addressCepStatus" role="status"></small></div><div class="v2-address-title"><label for="v2AddressLabel">Salvar endereço como</label>
   <select id="v2AddressLabel"><option value="Casa">⌂ Casa</option><option value="Trabalho">▤ Trabalho</option><option value="Outro">♡ Outro</option></select></div>
- <fieldset id="addressFields" class="address-fields"><legend>Endereço de entrega</legend><p>Preencha o endereço e confira o ponto no mapa. Use o GPS apenas se estiver no local da entrega.</p>
-<div class="address-grid"><label>Rua ou avenida<input id="addressStreet" autocomplete="address-line1" maxlength="100" placeholder="Ex.: Rua Guaraná" required></label><label>Número<input id="addressNumber" autocomplete="off" maxlength="20" placeholder="Ex.: 5 ou s/n" required></label><label>Bairro<input id="addressNeighborhood" autocomplete="address-level3" maxlength="60" required></label><label>Cidade<input id="addressCity" autocomplete="address-level2" maxlength="60" required></label><label>Estado<select id="addressState" autocomplete="address-level1" required><option value="">Selecione</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></label><label>CEP (opcional)<input id="addressPostal" autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000"></label><label class="address-wide">Complemento e referência (opcional)<input id="addressExtra" autocomplete="address-line2" maxlength="100" placeholder="Casa, bloco, apartamento ou ponto de referência"></label></div><label for="address">Confira o endereço completo</label><textarea id="address" rows="2" maxlength="500" readonly aria-describedby="addressSummaryHelp"></textarea><small id="addressSummaryHelp">O frete será validado para o ponto confirmado no mapa.</small></fieldset></div><fieldset id="deliveryPoint" hidden>
- <legend>Localização da entrega</legend>
- <p>Marque o endereço no mapa ou use sua localização atual se estiver no local da entrega.</p>
- <button id="showDeliveryMap" type="button" class="secondary">Abrir mapa</button>
- <button id="locateDelivery" type="button" class="secondary">Usar minha localização</button>
- <div id="deliveryMap" aria-label="Mapa da área de entrega" hidden style="height:260px;margin:12px 0;z-index:0"></div>
- <p id="deliveryPointStatus" role="status"></p>
-</fieldset><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço, marque o destino no mapa e calcule o frete conforme a área da loja.</p></div></div></section><section class="v2-checkout-panel v2-checkout-panel--payment">
+ <fieldset id="addressFields" class="address-fields"><legend class="address-sr-only">Dados do endereço</legend>
+<div class="address-grid"><label>Rua ou avenida<input id="addressStreet" autocomplete="address-line1" maxlength="100" placeholder="Ex.: Rua Guaraná" required></label><label>Número<input id="addressNumber" autocomplete="off" maxlength="20" placeholder="Ex.: 5 ou s/n" required></label><label>Bairro<input id="addressNeighborhood" autocomplete="address-level3" maxlength="60" required></label><label>Cidade<input id="addressCity" autocomplete="address-level2" maxlength="60" required></label><label>Estado<select id="addressState" autocomplete="address-level1" required><option value="">Selecione</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></label><label class="address-wide">Complemento e referência (opcional)<input id="addressExtra" autocomplete="address-line2" maxlength="100" placeholder="Casa, bloco, apartamento ou ponto de referência"></label></div></fieldset></div><textarea id="address" rows="2" maxlength="500" readonly hidden aria-label="Endereço completo"></textarea><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço. A taxa de entrega aparecerá automaticamente.</p></div><fieldset id="deliveryPoint" hidden><legend class="address-sr-only">Ajustar localização</legend><button id="showDeliveryMap" type="button" class="address-map-toggle" aria-expanded="false" aria-controls="deliveryMapPanel">⌖ Ajustar localização no mapa</button><p id="deliveryPointStatus" role="status"></p><div id="deliveryMapPanel" hidden><h4>Confirme o local da entrega</h4><p>Toque na entrada do imóvel ou arraste o marcador até o ponto correto.</p><div id="deliveryMap" aria-label="Mapa para confirmar o endereço" hidden style="height:260px;margin:12px 0;z-index:0"></div><button id="confirmDeliveryMap" type="button" class="primary" disabled>Confirmar localização</button></div></fieldset></div></section><section class="v2-checkout-panel v2-checkout-panel--payment">
 <h3>▣ Forma de pagamento</h3><p>Escolha como deseja pagar o seu pedido.</p><label for="payment" class="v2-payment-native-label">Forma de pagamento</label><select id="payment" required></select>
  <div id="v2PaymentCards" class="v2-payment-cards" role="radiogroup" aria-label="Formas de pagamento configuradas pela loja"></div>
  <div id="v2ChangeBlock" class="v2-change-block" hidden><label for="v2CashChange">Vai pagar com quanto? (para calcular o troco)</label><input id="v2CashChange" inputmode="decimal" autocomplete="off" placeholder="Ex.: 50,00"><small>Informe quanto entregará ao motoboy. O troco considera produtos, descontos e taxa de entrega.</small></div>
@@ -1448,14 +1480,35 @@ function composeDeliveryAddress(event){
  const values=addressInputs.map(id=>$(id).value.trim()).filter(Boolean);
  const extra=$('addressExtra').value.trim(),postal=$('addressPostal').value.replace(/\D/g,'');
  $('address').value=[...values,postal?'CEP '+postal:'',extra].filter(Boolean).join(', ');
- $('address').dispatchEvent(new CustomEvent('input',{detail:{keepPoint:['addressExtra','addressPostal'].includes(event?.target?.id)}}));
+ $('address').dispatchEvent(new CustomEvent('input',{detail:{keepPoint:['addressExtra'].includes(event?.target?.id)}}));
 }
 for(const id of [...addressInputs,'addressExtra','addressPostal'])$(id).addEventListener('input',composeDeliveryAddress);
+let cepSearchVersion=0,cepTimer;
+async function lookupDeliveryCep(){
+ const cep=$('addressPostal').value.replace(/\D/g,'');
+ const status=$('addressCepStatus'),button=$('lookupAddressCep');
+ if(cep.length!==8){status.textContent='Informe os oito dígitos do CEP.';return;}
+ const version=++cepSearchVersion,original=addressInputs.map(id=>$(id).value).join('|');
+ button.disabled=true;status.textContent='Buscando endereço…';
+ try{
+  const result=await fetch('https://viacep.com.br/ws/'+cep+'/json/',{signal:AbortSignal.timeout(6000)});
+  if(!result.ok)throw Error('CEP indisponível');
+  const data=await result.json();
+  if(version!==cepSearchVersion||$('addressPostal').value.replace(/\D/g,'')!==cep||addressInputs.map(id=>$(id).value).join('|')!==original)return;
+  if(data.erro)throw Error('CEP não encontrado');
+  for(const [id,value] of [['addressStreet',data.logradouro],['addressNeighborhood',data.bairro],['addressCity',data.localidade],['addressState',data.uf]])if(typeof value==='string'&&value.trim())$(id).value=value.trim();
+  composeDeliveryAddress();status.textContent='Endereço localizado. Confira os dados e informe o número.';
+ }catch{if(version===cepSearchVersion)status.textContent='Não foi possível localizar o CEP. Preencha o endereço manualmente.'}
+ finally{if(version===cepSearchVersion)button.disabled=false;}
+}
+$('lookupAddressCep').onclick=()=>void lookupDeliveryCep();
+$('addressPostal').addEventListener('input',()=>{cepSearchVersion++;$('lookupAddressCep').disabled=false;clearTimeout(cepTimer);if($('addressPostal').value.replace(/\D/g,'').length===8)cepTimer=setTimeout(()=>void lookupDeliveryCep(),350)});
+
 function completeDeliveryAddress(){
  for(const id of addressInputs){if(!$(id).checkValidity()){$(id).reportValidity();$(id).focus();return false;}}
  return true;
 }
-function quoteNotice(text,state='info'){$('routeQuoteStatus').textContent=text;$('routeQuoteStatus').dataset.state=state;$('routeQuoteStatus').setAttribute('role',state==='error'?'alert':'status');}
+function quoteNotice(text,state='info'){$('routeQuoteStatus').textContent=text;$('routeQuoteStatus').dataset.state=state;$('routeQuoteStatus').setAttribute('role',state==='error'?'alert':'status');v2UpdateSelectedAddressQuote();}
 async function quoteFailureMessage(error){
  let detail='';
  try{const body=await error?.context?.clone().json();if(typeof body?.error==='string')detail=body.error;else if(typeof body?.message==='string')detail=body.message;}catch{}
@@ -1476,6 +1529,7 @@ function selectDeliveryPoint(point){
 $('address').addEventListener('input',event=>{
  deliveryQuote=null;
  const keepPoint=Boolean(event.detail?.keepPoint);
+ if(!keepPoint){$('addressCepStatus').textContent='';}
  if(deliveryPoint&&!keepPoint){
   deliveryPoint=null;deliveryMap?.clearPoint();
   $('deliveryPointStatus').textContent='Confirme novamente a localização do endereço.';
@@ -1484,21 +1538,35 @@ $('address').addEventListener('input',event=>{
  v2ScheduleDeliveryQuote();
  if(menu)renderCart();
 });
+let pendingMapPoint=null;
+function closeDeliveryMap(){
+ $('deliveryMapPanel').hidden=true;$('showDeliveryMap').setAttribute('aria-expanded','false');
+ $('showDeliveryMap').textContent='⌖ Ajustar localização no mapa';pendingMapPoint=null;
+}
 $('showDeliveryMap').onclick=async()=>{
- const button=$('showDeliveryMap'),container=$('deliveryMap');
- const {latitude,longitude,radius_m,coverage_type,polygon,polygons}=menu.store.delivery_area;
- container.hidden=false;button.disabled=true;
+ const button=$('showDeliveryMap'),container=$('deliveryMap'),panel=$('deliveryMapPanel');
+ if(!panel.hidden){closeDeliveryMap();return;}
+ const area=menu?.store?.delivery_area;
+ if(!area)return;
+ panel.hidden=false;container.hidden=false;button.disabled=true;button.setAttribute('aria-expanded','true');
+ button.textContent='⌖ Recolher mapa';pendingMapPoint=deliveryPoint?[...deliveryPoint]:null;
+ $('confirmDeliveryMap').disabled=!pendingMapPoint;
  try{
-  const {mountDeliveryMap}=await import('/assets/delivery-map.mjs');
-  deliveryMap=await mountDeliveryMap(container,{
-   center:[latitude,longitude],radius:radius_m,mode:coverage_type,
-   polygon:Array.isArray(polygon)?polygon:[],
-   polygons:Array.isArray(polygons)?polygons:[],onSelect:selectDeliveryPoint,
-  });
-  if(deliveryPoint)deliveryMap.showPoint(deliveryPoint);
-  button.hidden=true;
- }catch(error){container.hidden=true;$('deliveryPointStatus').textContent=error.message;}
+  if(!deliveryMap){
+   const {mountDeliveryMap}=await import('/assets/delivery-map.mjs');
+   deliveryMap=await mountDeliveryMap(container,{
+    center:[area.latitude,area.longitude],showCoverage:false,
+    onSelect:point=>{pendingMapPoint=point;deliveryMap?.setPoint(point);$('confirmDeliveryMap').disabled=false;}
+   });
+  }
+  if(pendingMapPoint)deliveryMap?.showPoint(pendingMapPoint);else deliveryMap?.clearPoint();
+  deliveryMap?.resize();
+ }catch(error){closeDeliveryMap();$('deliveryPointStatus').textContent=error.message;}
  finally{button.disabled=false;}
+};
+$('confirmDeliveryMap').onclick=()=>{
+ if(!pendingMapPoint)return;
+ selectDeliveryPoint(pendingMapPoint);closeDeliveryMap();
 };
 $('locateDelivery').onclick=async()=>{
  const button=$('locateDelivery');button.disabled=true;
@@ -1506,7 +1574,8 @@ $('locateDelivery').onclick=async()=>{
  try{
   const {currentLocation}=await import('/assets/delivery-map.mjs');
   selectDeliveryPoint(await currentLocation());
-  deliveryMap?.showPoint(deliveryPoint);
+  deliveryMap?.showPoint(deliveryPoint);closeDeliveryMap();
+  if(!v2QuoteAddressReady())$('deliveryPointStatus').textContent='Localização encontrada. Complete rua, número, bairro e cidade para confirmar a entrega.';
  }catch(error){$('deliveryPointStatus').textContent=error.message;}
  finally{button.disabled=false;}
 };
@@ -1543,10 +1612,10 @@ function v2ScheduleDeliveryQuote(immediate=false){
 }
 function v2AutoQuoteError(errorText){
  if(/fora (do círculo|de todas as regiões|do polígono|da área)|fora da regi[aã]o|n[aã]o atendid|fora.*entrega|outside.*delivery|regi[aã]o.*n[aã]o atend/i.test(errorText)){
-  return 'Não atendemos essa região no momento. Escolha outro endereço ou a opção de retirada na loja.';
+  return 'Ainda não entregamos neste endereço. Não atendemos essa região no momento.';
  }
  if(/localizar.*precis[aã]o|impreciso|marque.*mapa|localiza[cç][aã]o.*mapa/i.test(errorText)){
-  return 'Não foi possível localizar este endereço com precisão. Marque o ponto no mapa ou use sua localização atual.';
+  return 'Confirme o local da entrega em Ajustar localização no mapa ou use sua localização atual.';
  }
  return errorText;
 }
@@ -1588,8 +1657,8 @@ async function requestDeliveryQuote(auto=false){
    const distanceType=data.distance_type==='road'?'Trajeto':'Linha reta';
    const distance=Number(data.distance_m);
    const label=Number.isFinite(distance)?distanceType+': '+(distance/1000).toFixed(1).replace('.',',')+' km':'';
-   quoteNotice(auto?'Taxa de entrega: '+money(data.fee)+(label?' · '+label:'')+' · Válida por 5 minutos.':
-    label+' · Entrega: '+money(data.fee)+' · Válida por 5 minutos.','success');
+   quoteNotice('Entrega disponível! Taxa de entrega: '+money(data.fee),'success');
+   v2UpdateSelectedAddressQuote();
    if(auto){
     const delay=Date.parse(deliveryQuote.expiresAt)-Date.now()-10000;
     if(Number.isFinite(delay)&&delay>0)v2QuoteRefreshTimer=setTimeout(()=>{
@@ -2355,7 +2424,7 @@ function cartStep(checkout){
  if(v2Only()){
   if(checkout)v2ShowCheckoutStage('identify');
   else {delete $('cartDialog').dataset.v2Stage;$('v2CheckoutNext').hidden=true;$('v2CheckoutBack').hidden=true;}
- }else if(checkout)$('customer').focus();
+ }else if(checkout){v2RenderSavedAddresses();$('customer').focus();}
 }
 $('openCart').onclick=()=>{
  $('cartDialog').showModal();
@@ -2725,7 +2794,9 @@ function initOptions(){
   $('deliveryPoint').hidden=$('addressBlock').hidden||!shop.delivery_area||
     (shop.route_pricing?.mode==='road');
   $('routeQuoteControls').hidden=$('addressBlock').hidden;
-  if(!$('deliveryPoint').hidden)deliveryMap?.resize();
+  $('locateDelivery').hidden=$('deliveryPoint').hidden;
+  if(!$('deliveryPoint').hidden&&!$('deliveryMapPanel').hidden)deliveryMap?.resize();
+  if($('deliveryPoint').hidden)closeDeliveryMap();
   quoteGeneration++;v2ScheduleDeliveryQuote(true);
   renderCart();loadSchedule();
  };
@@ -2759,7 +2830,7 @@ async function loadSchedule(){
 }
 
 function lockCheckout(locked){
- for(const id of ['products','cart','customer','phone','address','addressFields','deliveryPoint','fulfillment','payment','notes','schedule','fiadoPin','loyaltyBox'])$(id).inert=locked;
+ for(const id of ['products','cart','customer','phone','address','addressFields','deliveryPoint','addressBlock','fulfillment','payment','notes','schedule','fiadoPin','loyaltyBox'])$(id).inert=locked;
  $('backToCart').disabled=locked;
 }
 
@@ -2834,6 +2905,10 @@ $('checkout').onsubmit=async event=>{
    pendingRequest.p_key=referralCode;pendingRequest.p_coupon=$('loyaltyCoupon').value.trim().toUpperCase();pendingRequest.p_reward=$('loyaltyReward').value;
   }
   if(routeMode)pendingRequest.p_quote=deliveryQuote.id;
+  if(!v2Only()){
+   if(fulfillment==='delivery')v2SaveCurrentAddress();
+   void v2SaveProfile();
+  }
   // The quoted checkout recovers the customer's exact pin on the server
   // from the quote. Do NOT send p_latitude/p_longitude: that RPC does not
   // accept these arguments and could reject a valid delivery at checkout.
@@ -2960,7 +3035,7 @@ function v2ShowCheckoutStage(stage){
  $('v2CheckoutBack').hidden=false;
  $('continueCheckout').hidden=true;
  $('backToCart').hidden=true;
- const title={identify:'Identificação',customer:'Seus dados',address:'Endereço de entrega',payment:'Forma de pagamento',review:'Revisão do pedido'};
+ const title={identify:'Identificação',customer:'Seus dados',address:'Onde vamos entregar?',payment:'Forma de pagamento',review:'Revisão do pedido'};
  $('cartTitle').textContent=title[stage]||'Finalizar pedido';
  const progress=stage==='identify'||stage==='customer'||stage==='address'?'customer':stage;
  const progressOrder=['cart','customer','payment','review'],current=progressOrder.indexOf(progress);
@@ -2969,10 +3044,10 @@ function v2ShowCheckoutStage(stage){
   node.dataset.status=i<current?'done':i===current?'active':'future';
   if(node.firstChild?.nodeType===Node.TEXT_NODE)node.firstChild.nodeValue=i<current?'✓':String(i+1);
  }
- const next={identify:'Continuar →',customer:'Continuar →',address:'Continuar →',payment:'Continuar para confirmação →'};
+ const next={identify:'Continuar →',customer:'Continuar →',address:'Confirmar endereço →',payment:'Continuar para confirmação →'};
  $('v2CheckoutNext').textContent=next[stage]||'Continuar →';
  if(stage==='payment')v2RenderPaymentCards();
- if(stage==='address')v2RenderSavedAddresses();
+ if(stage==='address'){v2RenderSavedAddresses();v2ScheduleDeliveryQuote(true);}
  if(stage==='review')v2BuildReview();
  $('cartBody').scrollTop=0;
  const focus={identify:'phone',customer:'customer',address:'fulfillment'};
@@ -2981,6 +3056,7 @@ function v2ShowCheckoutStage(stage){
 async function v2LoadProfile(){
  const phone=loyaltyPhoneDigits($('phone').value);
  if(v2ProfilePhone===phone)return;
+ const legacy=!v2Only(),originalName=$('customer').value,originalAddress=$('address').value;
  v2ProfilePhone=phone;v2Profile={name:'',addresses:[]};v2SelectedAddress='';v2AddressEditing=true;
  const device=v2DeviceCredential();
  if(!device){
@@ -2997,17 +3073,18 @@ async function v2LoadProfile(){
  }
  if(data?.found&&typeof data.name==='string'){
   v2Profile={name:data.name,addresses:Array.isArray(data.addresses)?data.addresses:[]};
-  $('customer').value=data.name;
+  if(!legacy||$('customer').value===originalName&&!originalName.trim())$('customer').value=data.name;
   $('v2ProfileStatus').textContent='✓ Seus dados estão salvos e vinculados ao telefone neste aparelho.';
   const preferred=v2Profile.addresses.find(a=>a.is_default)||v2Profile.addresses[0];
-  if(preferred)v2SelectSavedAddress(preferred,false);
+  if(preferred&&(!legacy||$('address').value===originalAddress&&!originalAddress.trim()))v2SelectSavedAddress(preferred,false);
  }else{
-  $('customer').value='';
+  if(!legacy)$('customer').value='';
   $('v2ProfileStatus').textContent='Seu nome e endereços poderão ser reutilizados neste aparelho após o cadastro.';
  }
+ if(legacy)v2RenderSavedAddresses();
 }
 async function v2SaveProfile(){
- if(!v2Only()||v2ProfileBusy)return;
+ if(v2ProfileBusy)return;
  const name=$('customer').value.trim(),phone=loyaltyPhoneDigits($('phone').value),device=v2DeviceCredential();
  if(!device||name.length<2||!/^[0-9]{10,11}$/.test(phone))return;
  v2ProfileBusy=true;
@@ -3026,7 +3103,7 @@ async function v2SaveProfile(){
 }
 const v2AddressFields={street:'addressStreet',number:'addressNumber',neighborhood:'addressNeighborhood',city:'addressCity',state:'addressState',postal:'addressPostal',extra:'addressExtra'};
 function v2CurrentAddress(){
- const address={id:crypto.randomUUID(),label:$('v2AddressLabel').value||'Casa',is_default:true};
+ const address={id:v2SelectedAddress||crypto.randomUUID(),label:$('v2AddressLabel').value||'Casa',is_default:true};
  for(const [field,id] of Object.entries(v2AddressFields))address[field]=$(id).value.trim();
  return address;
 }
@@ -3042,9 +3119,11 @@ function v2SelectSavedAddress(address,render=true){
  if(render)v2RenderSavedAddresses();
 }
 function v2RenderSavedAddresses(){
- if(!v2Only())return;
  $('v2AddressBook').hidden=$('fulfillment').value!=='delivery';
  const root=$('v2AddressList');root.replaceChildren();
+ $('savedAddressesTitle').hidden=!v2Profile.addresses.length;
+ $('savedAddressHint').hidden=!v2Profile.addresses.length;
+ $('v2AddressEditor').querySelector('.address-editor-heading h3').textContent=v2AddressEditing&&v2SelectedAddress?'Editar endereço':'Novo endereço';
  for(const saved of v2Profile.addresses){
   const b=button('','v2-saved-address');
   b.dataset.selected=String(v2SelectedAddress===saved.id&&!v2AddressEditing);
@@ -3054,9 +3133,16 @@ function v2RenderSavedAddresses(){
   content.append(el('small',[saved.street,saved.number].filter(Boolean).join(', ')));
   content.append(el('small',[saved.neighborhood,saved.city,saved.state].filter(Boolean).join(' · ')));
   const selected=el('span',b.dataset.selected==='true'?'✓':'','v2-address-radio');
-  b.append(icon,content,selected);b.onclick=()=>v2SelectSavedAddress(saved);root.append(b);
+  const status=el('small','','saved-address-quote');content.append(status);
+  b.append(icon,content,selected);b.onclick=()=>v2SelectSavedAddress(saved);
+  const row=el('div',undefined,'saved-address-row');const edit=button('Editar','saved-address-edit');edit.setAttribute('aria-label','Editar endereço '+(saved.label||'salvo'));edit.onclick=()=>{v2SelectedAddress=saved.id;v2AddressEditing=true;v2FillAddress(saved);v2RenderSavedAddresses();$('addressStreet').focus()};row.append(b,edit);root.append(row);
  }
  $('v2AddressEditor').hidden=!v2AddressEditing&&v2Profile.addresses.length>0;
+ v2UpdateSelectedAddressQuote();
+}
+function v2UpdateSelectedAddressQuote(){
+ const row=$('v2AddressList')?.querySelector('.v2-saved-address[data-selected=true] .saved-address-quote');if(!row)return;
+ row.textContent=v2QuoteCurrent()?'Entrega disponível · '+money(deliveryQuote.fee):$('routeQuoteStatus').dataset.state==='loading'?'Verificando entrega…':'';
 }
 $('v2AddAddress').onclick=()=>{
  if(v2Profile.addresses.length>=8){msg('Máximo de oito endereços salvos por cliente.');return;}
@@ -3068,7 +3154,7 @@ $('v2AddAddress').onclick=()=>{
 function v2SaveCurrentAddress(){
  if($('fulfillment').value!=='delivery'||!v2AddressEditing)return;
  const address=v2CurrentAddress();
- v2Profile.addresses=v2Profile.addresses.map(a=>({...a,is_default:false})).concat(address).slice(-8);
+ v2Profile.addresses=v2Profile.addresses.filter(a=>a.id!==address.id).map(a=>({...a,is_default:false})).concat(address).slice(-8);
  v2SelectedAddress=address.id;v2AddressEditing=false;
  v2RenderSavedAddresses();
 }
@@ -3201,7 +3287,9 @@ $('v2CheckoutBack').onclick=()=>{
  if(i<=0)cartStep(false);
  else v2ShowCheckoutStage(v2Stages[i-1]);
 };
-$('fulfillment').addEventListener('change',()=>{if(v2Only())v2RenderSavedAddresses();});
+$('fulfillment').addEventListener('change',()=>{v2RenderSavedAddresses();});
+// The same device-bound profile is used by every template. Do not replace fields a customer is already typing.
+$('phone').addEventListener('blur',()=>{if(!v2Only()&&/^[0-9]{10,11}$/.test(loyaltyPhoneDigits($('phone').value)))void v2LoadProfile();});
 const v2DateFormat=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
 function v2RenderFiadoStatement(data){
  $('v2FiadoLogin').hidden=true;$('v2FiadoStatement').hidden=false;
