@@ -1654,10 +1654,7 @@ async function requestDeliveryQuote(auto=false){
     (quotePoint&&(!deliveryPoint||deliveryPoint[0]!==quotePoint[0]||deliveryPoint[1]!==quotePoint[1])))return false;
    deliveryQuote={id:data.quote_id,requestId,fee:Number(data.fee),address,
     point:quotePoint,expiresAt:data.expires_at};
-   const distanceType=data.distance_type==='road'?'Trajeto':'Linha reta';
-   const distance=Number(data.distance_m);
-   const label=Number.isFinite(distance)?distanceType+': '+(distance/1000).toFixed(1).replace('.',',')+' km':'';
-   quoteNotice('Entrega disponível! Taxa de entrega: '+money(data.fee),'success');
+    quoteNotice('Entrega disponível! Taxa de entrega: '+money(data.fee),'success');
    v2UpdateSelectedAddressQuote();
    if(auto){
     const delay=Date.parse(deliveryQuote.expiresAt)-Date.now()-10000;
@@ -3056,8 +3053,15 @@ function v2ShowCheckoutStage(stage){
 async function v2LoadProfile(){
  const phone=loyaltyPhoneDigits($('phone').value);
  if(v2ProfilePhone===phone)return;
- const legacy=!v2Only(),originalName=$('customer').value,originalAddress=$('address').value;
+ const legacy=!v2Only();
+ // Never display a previous phone's saved addresses while the next profile loads.
+ if(v2ProfilePhone&&v2ProfilePhone!==phone){
+  if(v2Profile.name&&$('customer').value===v2Profile.name)$('customer').value='';
+  if(v2SelectedAddress){for(const id of Object.values(v2AddressFields))$(id).value='';composeDeliveryAddress();}
+ }
+ const originalName=$('customer').value,originalAddress=$('address').value;
  v2ProfilePhone=phone;v2Profile={name:'',addresses:[]};v2SelectedAddress='';v2AddressEditing=true;
+ if(legacy)v2RenderSavedAddresses();
  const device=v2DeviceCredential();
  if(!device){
   $('v2ProfileStatus').textContent='Este navegador não permitiu salvar o cadastro. O pedido continua disponível.';
@@ -3094,6 +3098,7 @@ async function v2SaveProfile(){
    p_name:name,p_addresses:v2Profile.addresses
   });
   if(error||data?.error)throw Error(error?.message||data?.error||'Falha ao salvar');
+  if(phone!==loyaltyPhoneDigits($('phone').value))return;
   if(Array.isArray(data?.addresses))v2Profile.addresses=data.addresses;
   v2Profile.name=name;v2ProfilePhone=phone;
   $('v2ProfileStatus').textContent='✓ Dados salvos para suas próximas compras neste aparelho.';

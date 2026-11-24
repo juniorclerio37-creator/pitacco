@@ -129,5 +129,5 @@ test('merchant can add, rename, reorder and price regions independently',()=>{
  assert.match(map,/polygonRegions\.forEach/);
  assert.match(map,/onSelectRegion\?\.\(region\.id\)/);
  assert.match(map,/mode==='polygons'/);
- assert.match(checkout,/polygons:Array\.isArray\(polygons\)\?polygons:\[\]/);
+  assert.match(checkout,/showCoverage:false/);
 });
