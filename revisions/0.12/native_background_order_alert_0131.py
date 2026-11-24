@@ -1,5 +1,30 @@
 """Move Windows new-order monitoring to native Tauri process, independent of WebView."""
 from pathlib import Path
+import os, base64, hashlib, subprocess, tempfile, wave, math, struct
+# Original supplied recording, losslessly checked after transport; compressed Opus for source control.
+if os.getenv("PITACCO_WEB_ONLY")!="1":
+ source=base64.b64decode(Path("revisions/0.12/approved-incident-voice.opus.b64").read_text().strip(),validate=True)
+ assert hashlib.sha256(source).hexdigest()=="4b75c73b7c917cf87b2c0d26ca4058722d9a3a26f336ccf615cb25a3487cb34a"
+ with tempfile.TemporaryDirectory() as tmp:
+  opus=Path(tmp)/"voice.opus";opus.write_bytes(source)
+  pcm=Path(tmp)/"voice.wav"
+  subprocess.run(["ffmpeg","-v","error","-y","-i",str(opus),"-ar","24000","-ac","1","-c:a","pcm_s16le",str(pcm)],check=True)
+  with wave.open(str(pcm),"rb") as w:
+   assert w.getnchannels()==1 and w.getsampwidth()==2 and w.getframerate()==24000
+   frames=w.readframes(w.getnframes())
+  rate=24000; samples=[]
+  for i in range(int(rate*1.05)):
+   t=i/rate;v=0
+   for start,hz in [(0,740),(.28,988),(.56,740)]:
+    x=t-start
+    if 0<=x<.25:v+=.58*math.sin(2*math.pi*hz*x)*min(1,x/.014)*math.exp(-8*x)
+   samples.append(int(max(-1,min(1,v))*32767))
+  voice=struct.unpack("<"+"h"*(len(frames)//2),frames)
+  peak=max(abs(x) for x in voice);assert peak>500
+  gain=min(2.5,30000/peak)
+  samples.extend(int(max(-30000,min(30000,x*gain))) for x in voice)
+  with wave.open("web/src-tauri/src/incident-alert.wav","wb") as w:
+   w.setparams((1,2,rate,0,"NONE","not compressed"));w.writeframes(struct.pack("<"+"h"*len(samples),*samples))
 p=Path("web/src-tauri/src/main.rs")
 s=p.read_text(encoding="utf-8")
 anchor="notify_new_order,play_order_alert,play_order_bell,play_order_alert_combo"
@@ -58,6 +83,8 @@ fn start_background_order_watch(
   let mut initialized=false;
   let mut seen:HashSet<String>=HashSet::new();
   let mut warned=false;
+  let mut incident_seen:HashSet<String>=HashSet::new();
+  let mut incident_last:Option<std::time::Instant>=None;
   while !stop.load(Ordering::SeqCst){
    let cfg=match audio.lock(){Ok(z)=>PitaccoBackgroundAudio{
     token:z.token.clone(),api_key:z.api_key.clone(),
@@ -97,6 +124,32 @@ fn start_background_order_watch(
        }
        initialized=true;
        seen.extend(current);
+      }
+     }
+    }
+   }
+   // Separate authenticated feed leaves the old order watcher contract unchanged.
+   if !stop.load(Ordering::SeqCst){
+    let incident_url="https://mdevzehqcpcgxspwbiyz.supabase.co/rest/v1/rpc/pitacco_windows_incident_poll";
+    if let Ok(r)=client.post(incident_url).header("apikey",&cfg.api_key).header("cache-control","no-store")
+     .json(&serde_json::json!({"p_token":cfg.token})).send(){
+     if r.status().is_success(){
+      if let Ok(rows)=r.json::<Vec<serde_json::Value>>(){
+       let current:HashSet<String>=rows.iter().filter_map(|x|x.get("id").and_then(|id|id.as_str()).map(str::to_owned)).collect();
+       if current.is_empty(){incident_last=None;}
+       else if current.iter().any(|id|!incident_seen.contains(id))||incident_last.map(|t|t.elapsed().as_secs()>=30).unwrap_or(true){
+        incident_last=Some(std::time::Instant::now());
+        #[cfg(windows)]{
+         static INCIDENT_AUDIO:&[u8]=include_bytes!("incident-alert.wav");
+         #[link(name="winmm")]
+         extern "system" {fn PlaySoundA(sound:*const u8,module:*mut std::ffi::c_void,flags:u32)->i32;}
+         // SND_NOSTOP prevents an incident interrupting an order chime. Retry on next poll.
+         let played=unsafe{PlaySoundA(INCIDENT_AUDIO.as_ptr(),std::ptr::null_mut(),0x0004|0x0002|0x0010|0x0001)};
+         if played==0{incident_last=None;}
+        }
+        let _=notify_new_order(app.clone(),"Atenção! Ocorrência na entrega. Abra a Central de Ocorrências.".into());
+       }
+       incident_seen=current;
       }
      }
     }

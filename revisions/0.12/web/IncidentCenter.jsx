@@ -1,4 +1,5 @@
 import React,{useEffect,useRef,useState} from 'react';
+import {nativeAvailable} from './printBridge.mjs';
 import {AlertTriangle,BellRing,Check,Phone,MessageCircle} from 'lucide-react';
 const labels={customer_missing:'Cliente não localizado',wrong_address:'Endereço incorreto',payment:'Problema com pagamento',customer_refused:'Cliente recusou o pedido',code:'Problema com código',vehicle:'Problema com veículo',system_error:'Pedido travado',other:'Outra ocorrência'};
 export default function IncidentCenter({client,storeId,visible,onCount,onOpen,orders=[],deliveries=[]}){
@@ -18,6 +19,7 @@ export default function IncidentCenter({client,storeId,visible,onCount,onOpen,or
  useEffect(()=>{onCount(pending.length)},[pending.length,onCount]);
  useEffect(()=>{
   if(!urgent){activeId.current=null;return;}
+  if(nativeAvailable())return; // native monitor plays the approved voice, even when minimized.
   if(activeId.current===urgent.id)return;activeId.current=urgent.id;
   // Distinct three-note sound, independent of the new-order audio. The supplied voice asset can replace it.
   try{const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;const ctx=new Ctx();soundRef.current=ctx;void ctx.resume().then(()=>{for(const [idx,hz] of [740,988,740].entries()){const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.value=hz;osc.connect(gain);gain.connect(ctx.destination);const t=ctx.currentTime+idx*.26;gain.gain.setValueAtTime(.001,t);gain.gain.exponentialRampToValueAtTime(.28,t+.025);gain.gain.exponentialRampToValueAtTime(.001,t+.21);osc.start(t);osc.stop(t+.22);if(idx===2)osc.onended=()=>void ctx.close().catch(()=>{});}}).catch(()=>{});}catch{}
