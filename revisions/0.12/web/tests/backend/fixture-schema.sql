@@ -86,3 +86,21 @@ create table public.pitacco_store_sound_settings (
 );
 alter table public.pitacco_store_sound_settings enable row level security;
 revoke all on public.pitacco_store_sound_settings from public,anon,authenticated;
+
+-- Production courier authentication is installed outside the historical baseline.
+-- Represent its required session/credential state in isolated integration tests.
+create table if not exists auth.sessions(id uuid primary key,user_id uuid not null,created_at timestamptz not null default now());
+create table if not exists public.pitacco_courier_auth_state(user_id uuid not null,store_id uuid not null,must_change_password boolean not null default false,credentials_issued_at timestamptz not null default now());
+create function public.pitacco_courier_session_ready() returns boolean language sql stable security definer set search_path='' as $$
+ select exists(select 1 from public.pitacco_courier_auth_state state
+ join public.couriers c on c.user_id=state.user_id and c.store_id=state.store_id
+ join public.profiles p on p.id=c.user_id join auth.sessions session on session.user_id=c.user_id
+ where state.user_id=auth.uid() and c.active and p.role='entregador'
+ and not state.must_change_password and session.id::text=auth.jwt()->>'session_id'
+ and session.created_at>=state.credentials_issued_at);
+$$;
+create table if not exists pitacco_private.courier_test_store_access(courier_id uuid not null,store_id uuid not null);
+create function public.pitacco_courier_test_access(p_courier uuid,p_store uuid) returns boolean language sql stable security definer set search_path='' as $$
+ select exists(select 1 from pitacco_private.courier_test_store_access g join public.couriers c on c.id=g.courier_id
+ where g.courier_id=p_courier and g.store_id=p_store and c.active and c.fleet_type='propria');
+$$;
