@@ -25,7 +25,12 @@ change("},[tab]);\nuseEffect(()=>{if(featureSettings&&!allowed(tab))setTab('Pain
 start=s.index('<nav aria-label="Menu principal">')
 end=s.index('</nav>',start)+len('</nav>')
 s=s[:start]+"""<MerchantNavigation routeId={navigationRoute} onNavigate={target=>{setTab(target);setMessage('');setMobileMenuOpen(false)}} allowed={allowed} manager={manager} active={active} admin={admin} driver={isDriver} featureSettings={featureSettings} stores={stores} selected={selected} onStoreChange={setSelected} userId={session.user.id} extra={fallbackMenuItems(nav,secondaryTabs,landing)} collapsed={menuCollapsed} onCollapse={toggleMenu}/>"""+s[end:]
-change('return <div className={"app pitacco-theme-"+theme+(nativeAvailable()?"":" pitacco-mobile-workspace")}', 'return <div className={"app pitacco-theme-"+theme+(nativeAvailable()?"":" pitacco-mobile-workspace")+(menuCollapsed?" mn-sidebar-collapsed":"")}')
+# Add the collapse state to the merchant shell without depending on earlier layout class additions.
+import re
+shell=list(re.finditer(r'<div className=\{([^{}\n]*pitacco-mobile-workspace[^{}\n]*)\}>',s))
+assert len(shell)==1, 'Merchant shell class not found'
+m=shell[0]
+s=s[:m.start()]+ '<div className={'+m.group(1)+'+(menuCollapsed?" mn-sidebar-collapsed":"")}>'+s[m.end():]
 change('</main>',"""</main>{!nativeAvailable()&&<MerchantMobileBar routeId={navigationRoute} onNavigate={target=>{setTab(target);setMessage('');setMobileMenuOpen(false)}} onMore={()=>setMobileMenuOpen(open=>!open)} allowed={allowed} manager={manager} active={active} admin={admin} driver={isDriver} featureSettings={featureSettings}/>}""")
 # Existing views are not remounted unnecessarily; direct section props only change when selected.
 change('<MenuStudio client={supabase} storeId={selected}',"<MenuStudio initialSection={route.section||'Produtos'} navigationKey={navigationKey} client={supabase} storeId={selected}")
