@@ -32,7 +32,7 @@ export function MerchantNavigation({routeId,onNavigate,allowed,manager,active,ad
  {actualGroups.map(g=>{const visible=g.items.filter(r=>usable(r)&&(!query||searchMenu(r,query)||searchMenu({label:g.name,id:g.name,tab:g.name},query)));if(!visible.length)return null;
   const Icon=icons[g.icon]||Settings,expanded=!!query||open.includes(g.name);
   return <div key={g.name} className="mn-group"><button type="button" className={'mn-group-button'+(expanded?' mn-expanded':'')} title={g.name} aria-expanded={expanded&&!collapsed} onClick={()=>{if(collapsed){onCollapse();setOpen(old=>old.includes(g.name)?old:[...old,g.name])}else toggle(g.name)}}><Icon size={19}/><span>{g.name}</span>{expanded?<ChevronDown size={15}/>:<ChevronRight size={15}/>}</button>{expanded&&!collapsed&&<div className="mn-submenu">{visible.map(r=>render(r))}</div>}</div>})}
- {query&&!all.some(r=>usable(r)&&searchMenu(r,query))&&!searchMenu(overview,query)&&<small className="mn-empty">Nenhuma função encontrada.</small>}
+ {query&&!actualGroups.some(g=>g.items.some(r=>usable(r)&&(searchMenu(r,query)||searchMenu({label:g.name,id:g.name,tab:g.name},query))))&&!searchMenu(overview,query)&&<small className="mn-empty">Nenhuma função encontrada.</small>}
  <div className="mn-support">{usable(support)&&(!query||searchMenu(support,query))&&render(support,Headphones,true)}</div>
  </nav>;
 }

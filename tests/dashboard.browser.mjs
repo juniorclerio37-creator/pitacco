@@ -639,12 +639,31 @@ try {
     await page.getByRole('heading',{name:'Visão Geral',exact:true}).waitFor();
 
     const navigation = page.getByRole('navigation', { name:'Menu principal' });
+    async function merchantNavigate(group,name){
+      if(width<=800&&!await navigation.isVisible())await page.getByRole('button',{name:'Abrir menu'}).click();
+      if(group){
+        const toggle=navigation.getByRole('button',{name:group,exact:true});
+        await toggle.waitFor();
+        if(await toggle.getAttribute('aria-expanded')==='false')await toggle.click();
+      }
+      await navigation.getByRole('button',{name,exact:true}).click();
+    }
+
     if (width <= 800) {
       assert.equal(await navigation.isVisible(), false);
       await page.getByRole('button', { name:'Abrir menu' }).click();
       await navigation.waitFor({ state:'visible' });
     }
     if(width===1440){
+      const search=navigation.getByRole('searchbox',{name:'Buscar funcionalidades'});
+      await search.fill('fiado');
+      await navigation.getByRole('button',{name:'Fiado / Caderneta',exact:true}).waitFor();
+      await navigation.getByRole('button',{name:'Fixar favorito: Fiado / Caderneta',exact:true}).click();
+      await search.fill('');
+      await navigation.getByRole('button',{name:'Remover favorito: Fiado / Caderneta',exact:true}).first().waitFor();
+      await navigation.getByRole('button',{name:'Remover favorito: Fiado / Caderneta',exact:true}).first().click();
+      await navigation.getByRole('button',{name:'Recolher menu',exact:true}).click();
+      await navigation.getByRole('button',{name:'Expandir menu',exact:true}).click();
       const prompt=page.getByRole('region',{name:'Preparar o Pitacco para operar'});
       await prompt.getByRole('button',{name:'Iniciar configuração'}).click();
       const wizard=page.getByRole('region',{name:'Assistente de configuração inicial'});
@@ -663,7 +682,7 @@ try {
       await page.getByRole('heading',{name:'Produtos',exact:true}).waitFor();
       await navigation.getByRole('button',{name:'Visão Geral',exact:true}).click();
       await page.getByRole('heading',{name:'Visão Geral',exact:true}).waitFor();
-      await navigation.getByRole('button',{name:'Aplicativos e Downloads',exact:true}).click();
+      await merchantNavigate('Configurações','Aplicativos e downloads');
       await page.getByText('Versão para Windows disponível para instalação',{exact:false}).waitFor();
       await page.getByRole('button',{name:'Baixar Pitacco Windows'}).waitFor();
       assert.equal(await page.getByRole('link',{name:'Abrir Pitacco Entregador'}).getAttribute('href'),'https://entregador.pitacco.com.br/');
@@ -686,7 +705,7 @@ try {
     if (width <= 800) assert.equal(await navigation.isVisible(), false);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
-    await navigation.getByRole('button', { name:'Estoque', exact:true }).click();
+    await merchantNavigate('Cardápio','Insumos e fichas técnicas');
     const inventory = page.getByRole('region', { name:'Controle de estoque' });
     await inventory.getByLabel('Nome').fill('Polpa de açaí');
     await inventory.getByLabel('Estoque mínimo').fill('100');
@@ -701,7 +720,7 @@ try {
     await inventory.getByRole('button', { name:'Insumos', exact:true }).click();
     await inventory.getByText(/250 g/).waitFor();
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
-    await navigation.getByRole('button', { name:'Pedidos', exact:true }).click();
+    await merchantNavigate('Operação','Pedidos');
     if(width===375){
       await page.getByRole('button',{name:'Agendados (0)',exact:true}).waitFor();
       await page.getByRole('region',{name:'Central de pedidos',exact:true})
@@ -792,7 +811,7 @@ try {
       await releasedCard.getByRole('button',{name:'Aceitar',exact:true}).waitFor();
     }
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
-    await navigation.getByRole('button', { name:'Relatórios', exact:true }).click();
+    await merchantNavigate('Financeiro','Visão financeira');
     const financial = page.getByRole('region', {name:'Relatório financeiro'});
     await financial.getByRole('button', {name:'Gerar relatório'}).click();
     await financial.getByText('Vendas registradas', {exact:true}).waitFor();
@@ -848,7 +867,7 @@ try {
     await payouts.getByText('Repasse importado.').waitFor();
     await payouts.getByText('Divergente',{exact:true}).waitFor();
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
-    await navigation.getByRole('button', { name:'Administrar Loja', exact:true }).click();
+    await merchantNavigate('Configurações','Dados da loja');
     const menuLink=page.getByRole('link',{name:'https://pitacco.com.br/loja-teste',exact:true});
     await menuLink.waitFor();
     assert.equal(await menuLink.getAttribute('href'),'https://pitacco.com.br/loja-teste');
@@ -856,16 +875,16 @@ try {
       assert.equal(await page.getByRole('region',{name:'Central de ajuda'}).count(),0);
       assert.equal(await page.getByRole('region',{name:'Chamados de suporte'}).count(),0);
       assert.equal(await page.getByRole('heading',{name:'Localização de saída'}).count(),0);
-      await page.getByRole('button',{name:'Área de entrega',exact:true}).click();
+      await merchantNavigate('Entregas','Área de entrega');
       await page.getByRole('slider',{name:/Raio de atendimento/}).press('ArrowLeft');
       await page.getByLabel('Até 1 km (R$)').fill('4.50');
       await page.getByRole('button',{name:'Salvar e ativar círculo de entrega'}).click();
       await page.getByText(/Taxas do círculo por quilômetro salvas/).waitFor();
-      await page.getByRole('button',{name:'Pagamentos',exact:true}).click();
+      await merchantNavigate('Integrações','Meios de pagamento');
       await page.getByRole('checkbox',{name:'InfinitePay'}).check();
       await page.getByRole('button',{name:'Salvar preferências de integração'}).click();
       await page.getByText('Preferências de integração salvas.').waitFor();
-      await page.getByRole('button',{name:'Aparência do cardápio',exact:true}).click();
+      await merchantNavigate('Cardápio','Aparência do cardápio');
       const studio=page.getByRole('region',{name:'Estúdio de Cardápio Pitacco'});
       await studio.getByRole('heading',{name:'Estúdio de Cardápio'}).waitFor();
       await studio.getByRole('button',{name:/Urbano Blocos/}).click();
@@ -935,7 +954,7 @@ try {
       assert.equal(await page.getByRole('heading',{name:'Teste de impressão física'}).count(),0);
       assert.equal(await page.getByRole('heading',{name:'Impressoras por setor'}).count(),0);
       assert.equal(await page.getByTitle('Pré-visualização HTML da comanda').count(),0);
-      await navigation.getByRole('button',{name:'Motoboys',exact:true}).click();
+      await merchantNavigate('Entregas','Cadastro de motoboys');
       await page.locator('.courier-overview-grid').getByRole('button',{name:'Abrir acerto'}).waitFor();
       await page.getByRole('navigation',{name:'Seções de motoboys'})
         .getByRole('button',{name:'Entregas',exact:true}).click();
@@ -960,15 +979,14 @@ try {
       await support.getByText('Chamado criado.',{exact:false}).waitFor();
     }
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
-    await navigation.getByRole('button', { name:'Alertas', exact:true }).click();
+    await merchantNavigate('Operação','Alertas');
     const alerts=page.getByRole('region',{name:'Central de alertas'});
     await alerts.getByText('Preparo acima do prazo',{exact:true}).waitFor();
     await alerts.getByRole('button',{name:'Atualizar alertas'}).click();
     await alerts.getByRole('button',{name:'Abrir pedidos'}).click();
     await page.locator('.pitacco-pedidos').first().waitFor({state:'visible'});
     if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
-    await navigation.getByRole('button', { name:'Financeiro', exact:true }).click();
-    await page.getByRole('group',{name:'Seções financeiras'}).getByRole('button',{name:'Assinatura',exact:true}).click();
+    await merchantNavigate('Configurações','Assinatura');
     const billing=page.getByRole('region',{name:'Situação da assinatura'});
     await billing.getByText('Vencida',{exact:true}).waitFor();
     await billing.getByRole('alert').filter({hasText:'Novos pedidos bloqueados'}).waitFor();
@@ -1128,10 +1146,14 @@ try {
     await page.getByRole('region',{name:'Indicadores da loja'}).waitFor();
     if(width<=800)await page.getByRole('button',{name:'Abrir menu'}).click();
     await navigation.getByRole('button',{name:'Clientes',exact:true}).waitFor();
-    assert.equal(await navigation.getByRole('button',{name:'Estoque',exact:true}).count(),0);
+    await navigation.getByRole('button',{name:'Cardápio',exact:true}).waitFor();
+    const catalogGroup=navigation.getByRole('button',{name:'Cardápio',exact:true});
+    if(await catalogGroup.getAttribute('aria-expanded')==='false')await catalogGroup.click();
+    assert.equal(await navigation.getByRole('button',{name:'Estoque e insumos',exact:true}).count(),0);
+    assert.equal(await navigation.getByRole('button',{name:'Insumos e fichas técnicas',exact:true}).count(),0);
     assert.equal(await page.getByRole('button',{name:'Homologação',exact:true}).count(),0);
     if(width===1440){
-      await navigation.getByRole('button',{name:'Meu Cardápio',exact:true}).click();
+      await merchantNavigate('Cardápio','Produtos');
       await page.waitForURL(url=>url.searchParams.get('aba')==='Produtos');
       await page.reload();
       await page.getByRole('heading',{name:'Editor de cardápio',exact:true}).waitFor();
@@ -1148,7 +1170,7 @@ try {
       await banana.getByRole('button',{name:'Salvar item',exact:true}).click();
       await complements.getByText('Complemento salvo.',{exact:true}).waitFor();
       await page.getByRole('button',{name:'Fechar',exact:true}).click();
-      await navigation.getByRole('button',{name:'Pedidos',exact:true}).click();
+      await merchantNavigate('Operação','Pedidos');
       await page.getByRole('combobox',{name:'Selecionar loja'}).selectOption(readOnlyStore.id);
       await page.getByRole('alert').filter({hasText:'Não foi possível verificar o acesso à loja.'}).waitFor();
       await page.getByRole('button',{name:'Tentar novamente',exact:true}).click();
@@ -1162,7 +1184,7 @@ try {
       failFeatureCheck=false;
       await page.getByRole('button',{name:'Tentar novamente',exact:true}).click();
       await page.getByRole('heading',{name:'Editor de cardápio',exact:true}).waitFor();
-      await navigation.getByRole('button',{name:'Pedidos',exact:true}).click();
+      await merchantNavigate('Operação','Pedidos');
       const liveOrders=page.getByRole('region',{name:'Central de pedidos',exact:true});
       await liveOrders.locator('.connection-bar').filter({hasText:'Conectado · sincronização ativa'}).waitFor();
       await page.getByRole('button',{name:'Ativar som de pedidos',exact:true}).click();
