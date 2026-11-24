@@ -639,6 +639,15 @@ try {
     await page.getByRole('heading',{name:'Visão Geral',exact:true}).waitFor();
 
     const navigation = page.getByRole('navigation', { name:'Menu principal' });
+    if(width===1440){
+      await navigation.getByRole('button',{name:'Operação',exact:true}).waitFor();
+      for(const category of ['Operação','Clientes','Configurações']){
+        const group=navigation.getByRole('button',{name:category,exact:true});
+        assert.equal(await group.getAttribute('aria-expanded'),'false');
+      }
+      assert.equal(await navigation.getByRole('button',{name:'Pedidos',exact:true}).count(),0);
+    }
+
     async function merchantNavigate(group,name){
       if(width<=800&&!await navigation.isVisible())await page.getByRole('button',{name:'Abrir menu'}).click();
       if(group){

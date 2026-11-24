@@ -55,3 +55,7 @@
  .merchant-nav .mn-star{opacity:1}
  .merchant-nav .mn-collapse{display:none}
 }
+
+/* Keep the current section visible without opening its group automatically. */
+.merchant-nav .mn-group-button.mn-current-group{color:#d75d17;font-weight:700}
+.pitacco-theme-dark .merchant-nav .mn-group-button.mn-current-group{color:#ffc498}

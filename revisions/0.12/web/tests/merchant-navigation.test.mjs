@@ -25,3 +25,12 @@ test('final application keeps real components and stable route URLs',()=>{
  assert.match(app,/initialTab=\{route.section/);
  assert.match(app,/<Operations navigationSection=\{route.section\} navigationKey=\{navigationKey\} key=\{selected\}/);
 });
+
+test('all menu groups start closed, only manual expansion or search opens them',()=>{
+ const source=readFileSync(new URL('../MerchantNavigation.jsx',import.meta.url),'utf8');
+ assert.match(source,/\[open,setOpen\]=useState\(\[\]\)/);
+ assert.match(source,/setFavorites\(read\(key\+':favorites',\[\]\)\);setOpen\(\[\]\)/);
+ assert.doesNotMatch(source,/key\+':open'/);
+ assert.doesNotMatch(source,/\},\[routeId,key\]\)/);
+ assert.match(source,/expanded=!!query\|\|open\.includes\(g\.name\)/);
+});
