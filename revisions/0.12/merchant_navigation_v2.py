@@ -45,7 +45,6 @@ p.write_text(s,encoding='utf-8')
 p=Path('web/Operations.jsx')
 s=p.read_text(encoding='utf-8')
 change("storeLogoPath=''})","storeLogoPath='',navigationSection='',navigationKey})")
-change(" const [settingsTab,setSettingsTab]=useState('Impressoras')"," const [settingsTab,setSettingsTab]=useState('Impressoras')")
 # Do not remount Operations or reset orders, print jobs, subscriptions or sound on navigation.
 needle=" const [orderBadges,setOrderBadges]"
 assert s.count(needle)==1

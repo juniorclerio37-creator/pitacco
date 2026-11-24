@@ -8,6 +8,9 @@ const write=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value))}ca
 export function MerchantNavigation({routeId,onNavigate,allowed,manager,active,admin,driver,featureSettings,stores,selected,onStoreChange,userId,extra=[],collapsed,onCollapse}){
  const key='pitacco-navigation:'+String(userId||'local')+':'+String(selected||'none');
  const [query,setQuery]=useState(''),[open,setOpen]=useState(['Operação','Clientes']),[favorites,setFavorites]=useState([]);
+ const [smallScreen,setSmallScreen]=useState(()=>typeof window!=='undefined'&&window.matchMedia('(max-width:800px)').matches);
+ useEffect(()=>{const media=window.matchMedia('(max-width:800px)');const update=()=>setSmallScreen(media.matches);media.addEventListener('change',update);return()=>media.removeEventListener('change',update)},[]);
+ collapsed=collapsed&&!smallScreen;
  const current=resolveMenuRoute(routeId);
  const context={allowed,manager,active,admin,driver,featureSettings};
  const usable=r=>menuAllowed(r,context);

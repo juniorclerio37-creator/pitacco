@@ -1,6 +1,6 @@
 import MarketplaceReconciliation from './MarketplaceReconciliation.jsx';
 import OrderProfitReport from './OrderProfitReport.jsx';
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 
 const dateFormat = new Intl.DateTimeFormat('sv-SE', {timeZone:'America/Sao_Paulo'});
 const money = new Intl.NumberFormat('pt-BR', {style:'currency',currency:'BRL'});
