@@ -14,12 +14,14 @@ create table pitacco_private.commercial_asaas_charges (
 );
 alter table pitacco_private.commercial_asaas_charges enable row level security;
 revoke all on pitacco_private.commercial_asaas_charges from public,anon,authenticated;
-grant select,insert,update on pitacco_private.commercial_asaas_charges to service_role;
+-- No direct table access for the API role. Only the narrowly scoped functions below.
+revoke all on pitacco_private.commercial_asaas_charges from service_role;
+grant usage on schema pitacco_private to service_role;
 
 -- All callers hold the invoice lock before changing either payment path.
-create function public.pitacco_link_commercial_asaas_charge(
+create function pitacco_private.link_commercial_asaas_charge(
  p_invoice uuid,p_environment text,p_payment_id text,p_customer_id text,p_amount_cents bigint
-) returns text language plpgsql security invoker set search_path='' as $$
+) returns text language plpgsql security definer set search_path='' as $$
 declare i pitacco_private.commercial_invoices%rowtype; b pitacco_private.commercial_closings%rowtype;
  existing pitacco_private.commercial_asaas_charges%rowtype;
 begin
@@ -39,14 +41,14 @@ begin
  values(i.id,p_environment,p_payment_id,p_customer_id,p_amount_cents);
  return 'linked';
 end $$;
-revoke all on function public.pitacco_link_commercial_asaas_charge(uuid,text,text,text,bigint) from public,anon,authenticated;
-grant execute on function public.pitacco_link_commercial_asaas_charge(uuid,text,text,text,bigint) to service_role;
+revoke all on function pitacco_private.link_commercial_asaas_charge(uuid,text,text,text,bigint) from public,anon,authenticated;
+grant execute on function pitacco_private.link_commercial_asaas_charge(uuid,text,text,text,bigint) to service_role;
 
 -- Called exclusively after querying Asaas directly using server credentials.
 -- Review is sticky: an administrator must reconcile reversals, discrepancies and duplicate payments.
-create function public.pitacco_reconcile_commercial_asaas_charge(
+create function pitacco_private.reconcile_commercial_asaas_charge(
  p_environment text,p_payment_id text,p_customer_id text,p_reference text,p_amount_cents bigint,p_status text
-) returns text language plpgsql security invoker set search_path='' as $$
+) returns text language plpgsql security definer set search_path='' as $$
 declare link pitacco_private.commercial_asaas_charges%rowtype; i pitacco_private.commercial_invoices%rowtype;
  b pitacco_private.commercial_closings%rowtype; next_status text;
 begin
@@ -70,8 +72,8 @@ begin
  update pitacco_private.commercial_asaas_charges set status=next_status,provider_status=p_status,verified_at=now() where invoice_id=i.id;
  return next_status;
 end $$;
-revoke all on function public.pitacco_reconcile_commercial_asaas_charge(text,text,text,text,bigint,text) from public,anon,authenticated;
-grant execute on function public.pitacco_reconcile_commercial_asaas_charge(text,text,text,text,bigint,text) to service_role;
+revoke all on function pitacco_private.reconcile_commercial_asaas_charge(text,text,text,text,bigint,text) from public,anon,authenticated;
+grant execute on function pitacco_private.reconcile_commercial_asaas_charge(text,text,text,text,bigint,text) to service_role;
 
 -- Read-side candidate: the next migration must switch all five existing commercial
 -- readers/writers to this shared settlement state and add a tested manual/provider
@@ -87,4 +89,20 @@ from pitacco_private.commercial_invoices i
 left join pitacco_private.commercial_manual_payments m on m.invoice_id=i.id
 left join pitacco_private.commercial_asaas_charges a on a.invoice_id=i.id;
 revoke all on pitacco_private.commercial_settlement_candidate from public,anon,authenticated;
-grant select on pitacco_private.commercial_settlement_candidate to service_role;
+revoke all on pitacco_private.commercial_settlement_candidate from service_role;
+
+-- Narrow API wrappers, invoker-only, with no access from a merchant or anonymous session.
+create function public.pitacco_link_commercial_asaas_charge(
+ p_invoice uuid,p_environment text,p_payment_id text,p_customer_id text,p_amount_cents bigint
+) returns text language sql security invoker set search_path='' as $$
+ select pitacco_private.link_commercial_asaas_charge(p_invoice,p_environment,p_payment_id,p_customer_id,p_amount_cents)
+$$;
+revoke all on function public.pitacco_link_commercial_asaas_charge(uuid,text,text,text,bigint) from public,anon,authenticated;
+grant execute on function public.pitacco_link_commercial_asaas_charge(uuid,text,text,text,bigint) to service_role;
+create function public.pitacco_reconcile_commercial_asaas_charge(
+ p_environment text,p_payment_id text,p_customer_id text,p_reference text,p_amount_cents bigint,p_status text
+) returns text language sql security invoker set search_path='' as $$
+ select pitacco_private.reconcile_commercial_asaas_charge(p_environment,p_payment_id,p_customer_id,p_reference,p_amount_cents,p_status)
+$$;
+revoke all on function public.pitacco_reconcile_commercial_asaas_charge(text,text,text,text,bigint,text) from public,anon,authenticated;
+grant execute on function public.pitacco_reconcile_commercial_asaas_charge(text,text,text,text,bigint,text) to service_role;
