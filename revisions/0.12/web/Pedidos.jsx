@@ -76,10 +76,12 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  const currentDelivery=deliveriesByOrder.get(current?.id);
  const currentLocalizer=validLocalizer(badgeByOrder.get(current?.id));
  const canDecide=current?.source==='proprio'&&current.status==='pending';
+ const canCancelOwn=current?.source==='proprio'&&['analysis','scheduled','preparing','ready','delivery'].includes(stage(current))&&['pending','accepted'].includes(current.status);
+ const canCancelIfood=current?.source==='ifood'&&['pending','accepted'].includes(current.status)&&['analysis','preparing','ready','delivery'].includes(stage(current));
  const waitingIfood=current?.source==='ifood'&&current.status==='pending';
  const ifoodRequestPending=waitingIfood&&current.receipt?.ifood_manual_accept==='requested';
  const ifoodExpired=waitingIfood&&ifoodAcceptExpired(current);
- const ifoodCancelPending=waitingIfood&&current.receipt?.ifood_manual_cancel==='requested';
+ const ifoodCancelPending=canCancelIfood&&current.receipt?.ifood_manual_cancel==='requested';
  async function openIfoodReject(order){
   setSelected(order.id);
   setDecision({id:order.id,status:'ifood',reason:'',reasons:[],loading:true,error:''});
@@ -93,7 +95,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
     {...previous,error:error.message||'Não foi possível consultar motivos no iFood.',loading:false}:previous);
   }
  }
- const decisionApplies=canDecide&&decision?.id===current.id&&decision.status!=='ifood';
+ const decisionApplies=(canDecide||canCancelOwn)&&decision?.id===current.id&&decision.status!=='ifood';
  const total=orders.filter(o=>!['cancelled','rejected'].includes(stage(o))).reduce((sum,o)=>sum+Number(o.gross||0),0); 
  // Agrupamento visual por etapa; a classificação continua sendo calculada a
  // partir dos estados confirmados do pedido e da coleta, não por drag-and-drop.
@@ -188,7 +190,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
    courierName={couriers.find(courier=>courier.id===currentDelivery?.courier_id)?.name}
    onClose={closeDetails} actionError={actionError}
    decisionOpen={decision?.id===current.id} actions={<>
-{(currentDelivery||current.receipt?.logistics!=='retirada')&&<button className="secondary" onClick={()=>onDetail(current)}>Entrega e entregador</button>}
+{['99food','keeta'].includes(current.source)&&!terminal.has(stage(current))&&<p className="order-detail-note">Para cancelar, use o painel oficial da plataforma. O Pitacco não possui cancelamento integrado confirmado para esta origem.</p>}{(currentDelivery||current.receipt?.logistics!=='retirada')&&<button className="secondary" onClick={()=>onDetail(current)}>Entrega e entregador</button>}
 {current.status==='accepted'&&<button className="secondary" disabled={busy} onClick={()=>onReprint(current.id)}>🖨️ {manualPrint?'Imprimir no navegador':'Reimprimir'}</button>}
 {stage(current)==='preparing'&&current.status==='accepted'&&<button className="primary" disabled={busy} onClick={()=>onReady(current.id)}>{popupLayout?'Marcar pronto':'Marcar pedido pronto'}</button>}
 {stage(current)==='ready'&&current.source==='proprio'&&current.receipt?.logistics==='retirada'&&<button className="primary" disabled={busy||!onPickup} onClick={()=>onPickup?.(current.id)}>Confirmar retirada</button>}
@@ -197,18 +199,16 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
 {canDecide&&<>
  {stage(current)!=='scheduled'&&<button className="primary" disabled={busy} onClick={()=>onAccept(current.id)}>Aceitar e iniciar preparo</button>}
  <button type="button" className="secondary" disabled={busy} onClick={()=>setDecision({id:current.id,status:'rejected',reason:''})}>Recusar pedido</button>
- <button type="button" className="secondary" disabled={busy} onClick={()=>setDecision({id:current.id,status:'cancelled',reason:''})}>Cancelar pedido</button>
- </>}{waitingIfood&&!ifoodRequestPending&&!ifoodCancelPending&&acceptMode!=='automatic'&&<>
+ </>}{canCancelOwn&&<button type="button" className="secondary" disabled={busy} onClick={()=>setDecision({id:current.id,status:'cancelled',reason:''})}>Cancelar pedido</button>}{waitingIfood&&!ifoodRequestPending&&!ifoodCancelPending&&acceptMode!=='automatic'&&<>
  { !ifoodExpired&&<button className="primary" disabled={busy||!onAcceptIfood} onClick={()=>onAcceptIfood?.(current.id)}>Aceitar pedido no iFood</button>}
- <button type="button" className="secondary" disabled={busy||!onRejectIfood||!onGetIfoodReasons} onClick={()=>void openIfoodReject(current)}>Recusar pedido no iFood</button>
- </>}
+ </>}{canCancelIfood&&!ifoodRequestPending&&!ifoodCancelPending&&<button type="button" className="secondary" disabled={busy||!onRejectIfood||!onGetIfoodReasons} onClick={()=>void openIfoodReject(current)}>Cancelar pedido no iFood</button>}
   </>}>
 {stage(current)==='ready'&&currentDelivery?.courier_id&&<p role="status" className="order-detail-note">Entregador atribuído · aguardando saída</p>}
 {stage(current)==='ready'&&currentDelivery?.logistics_provider==='marketplace'&&<p role="status" className="order-detail-note">Aguardando retirada pelo parceiro</p>}
 {stage(current)==='delivery'&&<p role="status" className="order-detail-note">A conclusão exige chegada e comprovação registradas pelo entregador; pedidos de marketplaces aguardam a confirmação oficial.</p>}
 {canAssign(current,currentDelivery)&&isAutomaticDispatch(dispatchMode)&&<p role="status" className="order-detail-note">Atribuição automática ativa · você pode selecionar manualmente</p>}
 {canDecide&&stage(current)==='scheduled'&&<p className="order-detail-note">Aceite liberado às {scheduledTime.format(new Date(current.scheduled_release_at))}.</p>}
-{waitingIfood&&<div role="status" className="order-detail-meta">
+{(waitingIfood||ifoodCancelPending||current.receipt?.ifood_manual_cancel==='failed')&&<div role="status" className="order-detail-meta">
  {ifoodCancelPending?<p>Cancelamento solicitado ao iFood. Aguardando confirmação oficial.</p>:
  ifoodRequestPending?<p>Aguardando confirmação oficial do iFood. Não aceite novamente.</p>:
  acceptMode==='automatic'?<p>Aceite automático ativo. Aguardando o iFood.</p>:
@@ -219,22 +219,23 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  e.preventDefault();if(!decision.reason)return;
  const completed=await onRejectIfood(current.id,decision.reason);if(completed)setDecision(null);
  }}>
- <h4>Recusar pedido no iFood</h4>
+ <h4>Cancelar pedido no iFood</h4>
  <p>O pedido só será marcado como cancelado quando o iFood confirmar o cancelamento.</p>
  {decision.loading?<p>Consultando motivos disponíveis no iFood…</p>:
  decision.error?<p role="alert">{decision.error}</p>:
- <label>Motivo da recusa
+ <label>Motivo do cancelamento
  <select required value={decision.reason} onChange={event=>setDecision({...decision,reason:event.target.value})}>
  <option value="">Selecione o motivo</option>
  {decision.reasons.map(reason=><option key={reason.code} value={reason.code}>{reason.description}</option>)}
  </select>
  </label>}
- <button className="primary" disabled={busy||decision.loading||!decision.reason||Boolean(decision.error)}>Confirmar recusa no iFood</button>
+ <button className="primary" disabled={busy||decision.loading||!decision.reason||Boolean(decision.error)}>Solicitar cancelamento no iFood</button>
  <button type="button" className="secondary" disabled={busy} onClick={()=>setDecision(null)}>Voltar</button>
  </form>}{decisionApplies&&<form className="order-detail-decision" tabIndex={-1} onSubmit={async event=>{
  event.preventDefault();
- await onDecision(current.id,decision.status,decision.reason);
+ const ok=await onDecision(current.id,decision.status,decision.reason);if(ok)setDecision(null);
  }}>
+ {decision.status==='cancelled'&&<p>O pedido será cancelado e a entrega própria encerrada. Confira os pagamentos e eventuais estornos separadamente. Alimentos preparados não retornam ao estoque.</p>}
  <label>Motivo {decision.status==='rejected'?'da recusa':'do cancelamento'}
  <input required minLength={3} maxLength={240} value={decision.reason} onChange={event=>setDecision({...decision,reason:event.target.value})}/>
  </label>

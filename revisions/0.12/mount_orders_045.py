@@ -51,7 +51,7 @@ mount=""" {manager&&view==='Pedidos'&&<Pedidos client={client} storeId={storeId}
   return true;
  }catch(e){setError(e.message||String(e));return false;}
  finally{setBusy(false);}
-}} onDecision={(id,status,reason)=>act(async()=>{await rpc('pitacco_decide_pending_order',{p_order:id,p_status:status,p_reason:reason});setOrders(rows=>rows.map(order=>order.id===id?{...order,status}:order))})} onReady={id=>act(()=>rpc('set_order_preparation',{p_order:id,p_status:'ready'}))} onPickup={id=>act(()=>rpc('set_order_preparation',{p_order:id,p_status:'completed'}))} onConclude={id=>act(()=>rpc('pitacco_manager_confirm_verified_delivery',{p_order:id}))} onDetail={o=>{setDispatchOnly(false);setDetail(o)}} onAssign={o=>{setDispatchOnly(true);setDetail(o)}} onReprint={id=>act(()=>reprint(id))}/>}
+}} onDecision={async(id,status,reason)=>{setBusy(true);setError('');try{if(status==='cancelled')await rpc('pitacco_cancel_active_order',{p_order:id,p_reason:reason});else await rpc('pitacco_decide_pending_order',{p_order:id,p_status:status,p_reason:reason});setOrders(rows=>rows.map(order=>order.id===id?{...order,status}:order));return true}catch(e){setError(e.message||String(e));return false}finally{setBusy(false)}}} onReady={id=>act(()=>rpc('set_order_preparation',{p_order:id,p_status:'ready'}))} onPickup={id=>act(()=>rpc('set_order_preparation',{p_order:id,p_status:'completed'}))} onConclude={id=>act(()=>rpc('pitacco_manager_confirm_verified_delivery',{p_order:id}))} onDetail={o=>{setDispatchOnly(false);setDetail(o)}} onAssign={o=>{setDispatchOnly(true);setDetail(o)}} onReprint={id=>act(()=>reprint(id))}/>}
 """
 s=s.replace(needle,mount+needle,1)
 # Keep the existing operations board available under the kitchen/expedition view.
