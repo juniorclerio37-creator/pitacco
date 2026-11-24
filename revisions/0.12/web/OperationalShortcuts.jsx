@@ -22,8 +22,8 @@ export default function OperationalShortcuts({client,storeId,native,collapsed,on
  {canCreate&&<button type="button" className="mn-new-order" title="Novo Pedido" onClick={()=>{if(collapsed)onExpand();onNewOrder()}}><Plus size={20}/><span>Novo Pedido</span></button>}
  {!collapsed&&<>
  <small className="mn-op-heading">Controle operacional</small>
- {canAccept&&toggle(CheckCircle,'Aceite automático',all,!data||!enabled.length,()=>change(async()=>{const {error}=await client.from('acceptance_settings').upsert(enabled.map(r=>({store_id:storeId,source:r.source,enabled:true,mode:all?'manual':'automatic'})),{onConflict:'store_id,source'});if(error)throw error}),mixed?'Parcial · origens habilitadas':data&&!enabled.length?'Configure as origens':null)}
- {canDispatch&&toggle(Bike,'Alocação automática',autoDispatch,!data?.store,()=>change(async()=>{const {data:latest,error:readError}=await client.from('stores').select('dispatch_mode,max_orders_per_trip').eq('id',storeId).single();if(readError)throw readError;const {error}=await client.rpc('set_dispatch_policy',{s:storeId,dispatch:['automatico','misto'].includes(latest.dispatch_mode)?'manual':'automatico',max_orders:latest.max_orders_per_trip||1});if(error)throw error}),dispatch==='misto'?'Modo misto':null)}
+ {canAccept&&toggle(CheckCircle,'Aceite automático',all,!data,()=>change(async()=>{const {error}=await client.rpc('pitacco_set_global_acceptance_mode',{p_store:storeId,p_automatic:!all});if(error)throw error}),mixed?'Parcial · origens habilitadas':null)}
+ {canDispatch&&toggle(Bike,'Alocação automática',autoDispatch,!data?.store,()=>change(async()=>{const {error}=await client.rpc('pitacco_set_auto_dispatch',{p_store:storeId,p_enabled:!autoDispatch});if(error)throw error}),dispatch==='misto'?'Modo misto':null)}
  {native&&toggle(Printer,'Impressão automática',data?.print===true,typeof data?.print!=='boolean',()=>change(async()=>{const {error}=await client.rpc('pitacco_set_auto_print',{p_store:storeId,p_enabled:!data.print});if(error)throw error}),data?.print==null?'Configuração indisponível':null)}
  {error&&<small role="alert" className="mn-op-error">{error}</small>}
  </>}
