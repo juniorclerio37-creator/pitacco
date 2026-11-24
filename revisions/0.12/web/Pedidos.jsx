@@ -65,6 +65,25 @@ function DeliveryBadge({order,delivery}){
 export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers=[],badges=[],stage,onAccept,onAcceptIfood,onGetIfoodReasons,onRejectIfood,onDecision,onReady,onPickup,onConclude,onDetail,onAssign,onReprint,busy=false,actionError,merchantLayout=false,popupLayout=false,manualPrint=false,acceptMode='manual',dispatchMode='manual'}){
  const [filter,setFilter]=useState('all'),[search,setSearch]=useState(''),[selected,setSelected]=useState(null),[decision,setDecision]=useState(null);
  const [layout,setLayout]=useState('columns');
+ const [clock,setClock]=useState(Date.now);
+ const hasTimedIfood=orders.some(o=>o.source==='ifood'&&o.status==='pending'&&!o.receipt?.provider_scheduled_for);
+ useEffect(()=>{
+  if(!hasTimedIfood)return;
+  setClock(Date.now());
+  const timer=setInterval(()=>setClock(Date.now()),1000);
+  return()=>clearInterval(timer);
+ },[hasTimedIfood]);
+ function acceptRemaining(o){
+  if(o.receipt?.provider_scheduled_for||o.scheduled_for)return null;
+  const created=Date.parse(o.created_at);
+  if(!Number.isFinite(created))return null;
+  return Math.max(0,Math.min(480,Math.ceil((created+480000-clock)/1000)));
+ }
+ function acceptDeadline(o){
+  const seconds=acceptRemaining(o);
+  if(seconds===null)return null;
+  return seconds===0?'Prazo de aceite encerrado':`Prazo de aceite: ${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;
+ }
  const badgeByOrder=useMemo(()=>new Map(badges.map(b=>[b.order_id,b])),[badges]);
  const number=o=>publicOrderNumber(o,badgeByOrder.get(o?.id));
  const counts=useMemo(()=>Object.fromEntries(stages.map(([id])=>[id,orders.filter(o=>stage(o)===id).length])),[orders,stage]);
@@ -155,6 +174,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
      <button type="button" className="primary" disabled={busy||o.status!=='pending'||acceptMode==='automatic'||!onAcceptIfood||ifoodAcceptExpired(o)||o.receipt?.ifood_manual_accept==='requested'||o.receipt?.ifood_manual_cancel==='requested'} onClick={()=>onAcceptIfood?.(o.id)}>Aceitar</button>
      <button type="button" className="secondary" disabled={busy||o.status!=='pending'||!onRejectIfood||!onGetIfoodReasons||o.receipt?.ifood_manual_accept==='requested'||o.receipt?.ifood_manual_cancel==='requested'} onClick={()=>void openIfoodReject(o)}>Recusar</button>
      {o.status==='pending'&&acceptMode==='automatic'&&<span role="status">Aceite automático ativo · aguardando iFood</span>}
+     {acceptRemaining(o)!==null&&<span role="status" className={acceptRemaining(o)<=120?'notice error':''}>{acceptDeadline(o)}</span>}
      {o.receipt?.ifood_manual_accept==='requested'&&<span role="status">Aguardando confirmação do iFood</span>}
      {o.receipt?.ifood_manual_cancel==='requested'&&<span role="status">Cancelamento solicitado ao iFood</span>}
     </div>}
@@ -170,6 +190,10 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
      {stage(o)==='ready'&&delivery?.logistics_provider==='marketplace'&&<span role="status">Aguardando coleta pelo parceiro</span>}
      {stage(o)==='delivery'&&o.source==='proprio'&&delivery?.logistics_provider==='loja'&&!popupLayout&&<button type="button" className="primary pedidos-step-button" disabled={busy||!onConclude} onClick={()=>onConclude?.(o.id)}>Concluir entrega</button>}
      {stage(o)==='delivery'&&<button type="button" className="secondary pedidos-step-button" disabled={busy} onClick={()=>onDetail(o)}>Acompanhar entrega</button>}
+     {o.source==='ifood'&&delivery?.logistics_provider==='loja'&&
+      (o.receipt?.ifood_status==='DISPATCHED'?<span role="status">Despacho confirmado pelo iFood</span>:
+       delivery.status==='retirada'?<span role="status">Saída registrada · aguardando DISPATCHED do iFood. Confira a sincronização no app do entregador.</span>:
+       stage(o)==='ready'&&delivery.courier_id?<span role="status">O entregador deve coletar e tocar em Sair para entrega para despachar no iFood.</span>:null)}
      {popupLayout&&canConcludeOnWindows(o,delivery,stage(o))&&<button
        type="button" className="secondary pedidos-complete-button"
        disabled={busy||!canExecuteConclusion(o,delivery,stage(o))||
@@ -208,6 +232,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
   </>}>
 {stage(current)==='ready'&&currentDelivery?.courier_id&&<p role="status" className="order-detail-note">Entregador atribuído · aguardando saída</p>}
 {stage(current)==='ready'&&currentDelivery?.logistics_provider==='marketplace'&&<p role="status" className="order-detail-note">Aguardando retirada pelo parceiro</p>}
+{current.source==='ifood'&&currentDelivery?.logistics_provider==='loja'&&current.status==='accepted'&&current.receipt?.ifood_status!=='DISPATCHED'&&['ready','delivery'].includes(stage(current))&&<p role="status" className="order-detail-note">O despacho só é confirmado quando o iFood enviar DISPATCHED. No aplicativo do entregador, registre a coleta e toque em Sair para entrega. Se a saída já foi registrada, confira Sincronizar despacho com iFood.</p>}
 {stage(current)==='delivery'&&<p role="status" className="order-detail-note">A conclusão exige chegada e comprovação registradas pelo entregador; pedidos de marketplaces aguardam a confirmação oficial.</p>}
 {canAssign(current,currentDelivery)&&isAutomaticDispatch(dispatchMode)&&<p role="status" className="order-detail-note">Atribuição automática ativa · você pode selecionar manualmente</p>}
 {canDecide&&stage(current)==='scheduled'&&<p className="order-detail-note">Aceite liberado às {scheduledTime.format(new Date(current.scheduled_release_at))}.</p>}
