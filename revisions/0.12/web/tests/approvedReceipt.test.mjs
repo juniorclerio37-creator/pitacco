@@ -68,3 +68,8 @@ test('print PAGO ONLINE only for verified online payments',()=>{
  assert.match(online,/PAGO ONLINE/);
  assert.match(online,/NAO COBRAR NA ENTREGA/);
 });
+
+test('pizza receipt identifies size, portions, dough and crust and total on both paper sizes',()=>{
+ const job={receipt:{source:'proprio',items:[{name:'Pizza',quantity:2,unit_total:59.95,modifiers:[{group:'Tamanho',name:'Grande',price:5.05},{group:'Sabor',name:'Calabresa',numerator:1,denominator:2,price:0},{group:'Sabor',name:'Frango',numerator:1,denominator:2,price:0},{group:'Borda',name:'Catupiry',price:5},{group:'Massa',name:'Fina',price:0}]}],total:119.90,payment:'Pix'}};
+ for(const width of [58,80]){const s=approvedReceipt(job,width);assert.match(s,/Tamanho: Grande/);assert.match(s,/Sabor 1\/2: Calabresa/);assert.match(s,/Sabor 1\/2: Frango/);assert.match(s,/Borda: Catupiry/);assert.match(s,/Massa: Fina/);assert.match(s,/2 x Pizza.*119,90/);assert.ok(s.split('\n').every(line=>line.length<=(width===58?30:44)));}
+});
