@@ -1,9 +1,9 @@
 // Only an owner-authorized request may supply verified billing identity.
 // Never log or persist the submitted CPF/CNPJ in Pitacco's integration tables.
 export function validDocument(value){
- const d=String(value||'').replace(/[.\-/\s]/g,'');
- if(!/^\d{11}$|^\d{14}$/.test(d)||/^(\d)\1+$/.test(d))return null;
- const n=[...d].map(Number);
+ const d=String(value||'').replace(/[.\-/\s]/g,'').toUpperCase();
+ if(!/^(?:\d{11}|[A-Z0-9]{12}\d{2})$/.test(d)||/^(\d)\1+$/.test(d))return null;
+ const n=[...d].map(c=>c.charCodeAt(0)-48);
  if(n.length===11){
   for(const size of [9,10]){
    const sum=n.slice(0,size).reduce((a,v,i)=>a+v*(size+1-i),0);
