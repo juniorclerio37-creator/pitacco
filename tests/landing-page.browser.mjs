@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {chromium} from '../web/node_modules/playwright/index.mjs';
-const html=await readFile(new URL('../marketing/index.html',import.meta.url),'utf8');
+const html=await readFile(new URL('../web/dist/index.html',import.meta.url),'utf8');
 const browser=await chromium.launch({headless:true});
 try{
  for(const width of [320,390,510,640,768,900,1024,1440]){
@@ -9,7 +9,10 @@ try{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.setContent(html,{waitUntil:'domcontentloaded'});
   assert.equal(await page.locator('.demo-choice').count(),6);
+  assert.equal(await page.locator('.partner-logo').count(),10);
+  assert.equal(await page.locator('.partner-logo img[src^="https:"]').count(),0,'production logos must not fetch external URLs');
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
+  if(overflow){const offenders=await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>innerWidth+1}).slice(0,12).map(e=>({tag:e.tagName,class:String(e.className),right:e.getBoundingClientRect().right,text:e.textContent.slice(0,65)})));console.error('Overflow elements',width,offenders)}
   assert.equal(overflow,false,'page horizontal overflow at '+width);
   const headerOverflow=await page.locator('.nav').evaluate(el=>el.scrollWidth>el.clientWidth+1);
   assert.equal(headerOverflow,false,'header overflow at '+width);

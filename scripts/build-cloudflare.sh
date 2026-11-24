@@ -26,6 +26,7 @@ cd ..
 mkdir -p "$dist_dir"/app "$dist_dir"/cadastro "$dist_dir"/privacidade "$dist_dir"/termos "$dist_dir"/sistema "$dist_dir"/configuracao "$dist_dir"/produtos "$dist_dir"/complementos "$dist_dir"/cardapio "$dist_dir"/pedidos "$dist_dir"/aceite "$dist_dir"/acompanhar "$dist_dir"/identidade
 cp "$dist_dir"/index.html "$dist_dir"/app/index.html
 cp marketing/index.html "$dist_dir"/index.html
+python3 scripts/embed-partner-logos.py "$dist_dir"/index.html
 cp marketing/cadastro.html "$dist_dir"/cadastro/index.html
 cp marketing/privacidade.html "$dist_dir"/privacidade/index.html
 cp marketing/termos.html "$dist_dir"/termos/index.html
