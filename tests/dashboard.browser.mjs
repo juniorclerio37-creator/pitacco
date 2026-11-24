@@ -479,11 +479,15 @@ try {
         }
         return route.fulfill({headers,json:[]});
       }
-      if (pathname === '/rest/v1/rpc/pitacco_store_subscription_status') {
+      if(pathname==='/rest/v1/rpc/pitacco_merchant_plan_options'){
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:{plans:[{code:'free',name:'Grátis para sempre',monthly_cents:0,commission_basis_points:500,billing_cycle:'weekly'},{code:'complete',name:'Completo',monthly_cents:5990,commission_basis_points:0,billing_cycle:'monthly'}],requests:[],terms_version:'fixture'}});
+      }
+      if (['/rest/v1/rpc/pitacco_store_subscription_status','/rest/v1/rpc/pitacco_merchant_subscription_details'].includes(pathname)) {
         assert.equal(route.request().postDataJSON().p_store,store.id);
         return route.fulfill({headers,json:{
           status:'overdue',trial_ends_at:new Date(Date.now()-3600000).toISOString(),
-          orders_blocked:true,regularization_url:'https://billing.example.invalid/'
+          orders_blocked:true,regularization_url:'https://billing.example.invalid/',plan_code:'complete',registered_monthly_amount:59.90,payments:[]
         }});
       }
       if (pathname === '/rest/v1/rpc/pitacco_operational_alerts') {
