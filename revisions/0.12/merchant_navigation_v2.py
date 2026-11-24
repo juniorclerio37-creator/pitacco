@@ -24,7 +24,7 @@ change("},[tab]);\nuseEffect(()=>{if(featureSettings&&!allowed(tab))setTab('Pain
 # Preserve the original header, session, theme, logout and background subscription.
 start=s.index('<nav aria-label="Menu principal">')
 end=s.index('</nav>',start)+len('</nav>')
-s=s[:start]+"""<MerchantNavigation routeId={navigationRoute} onNavigate={target=>{setTab(target);setMessage('');setMobileMenuOpen(false)}} allowed={allowed} manager={manager} active={active} admin={admin} driver={isDriver} featureSettings={featureSettings} stores={stores} selected={selected} onStoreChange={setSelected} userId={session.user.id} theme={theme} onThemeChange={setTheme} email={profile?.email||session.user.email} role={profile?.role} version={nativeAvailable()?'Pitacco Windows v0.12.31':''} native={nativeAvailable()} onLogout={()=>supabase.auth.signOut()} incidentCount={incidentCount} extra={fallbackMenuItems(nav,secondaryTabs,landing)} collapsed={menuCollapsed} onCollapse={toggleMenu}/>"""+s[end:]
+s=s[:start]+"""<MerchantNavigation client={supabase} routeId={navigationRoute} onNavigate={target=>{setTab(target);setMessage('');setMobileMenuOpen(false)}} allowed={allowed} manager={manager} active={active} admin={admin} driver={isDriver} featureSettings={featureSettings} stores={stores} selected={selected} onStoreChange={setSelected} userId={session.user.id} theme={theme} onThemeChange={setTheme} email={profile?.email||session.user.email} role={profile?.role} version={nativeAvailable()?'Pitacco Windows v0.12.32':''} native={nativeAvailable()} onLogout={()=>supabase.auth.signOut()} incidentCount={incidentCount} extra={fallbackMenuItems(nav,secondaryTabs,landing)} collapsed={menuCollapsed} onCollapse={toggleMenu}/>"""+s[end:]
 # Add the collapse state to the merchant shell without depending on earlier layout class additions.
 import re
 shell=list(re.finditer(r'<div className=\{([^{}\n]*pitacco-mobile-workspace[^{}\n]*)\}>',s))
@@ -58,4 +58,11 @@ needle=" const [orderBadges,setOrderBadges]"
 assert s.count(needle)==1
 s=s.replace(needle," useEffect(()=>{if(view==='Configurações'&&['Impressoras','Aceite de pedidos','Alertas e aplicativo'].includes(navigationSection))setSettingsTab(navigationSection)},[view,navigationSection,navigationKey]);\n"+needle,1)
 change('<Fideliza client={client} storeId={storeId} manager={manager}/>','<Fideliza client={client} storeId={storeId} manager={manager} initialSection={navigationSection||\'Visão geral\'} navigationKey={navigationKey}/>')
+p.write_text(s,encoding='utf-8')
+
+# Dedicated catalog-backed sale screen; the existing manual form remains available in Kitchen.
+p=Path('web/Operations.jsx')
+s=p.read_text(encoding='utf-8')
+s="import MerchantNewOrder from './MerchantNewOrder.jsx';\n"+s
+change("{manager&&view==='Cozinha e expedição'&&<>","{manager&&view==='Cozinha e expedição'&&navigationSection==='new-order'&&<MerchantNewOrder key={storeId} client={client} storeId={storeId} onNavigate={onNavigate}/>}\n {manager&&view==='Cozinha e expedição'&&navigationSection!=='new-order'&&<>")
 p.write_text(s,encoding='utf-8')
