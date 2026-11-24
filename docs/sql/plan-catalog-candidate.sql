@@ -561,18 +561,17 @@ returns boolean language sql stable security definer set search_path='' as $gate
  and not exists(select 1 from pitacco_private.subscription_admin_controls a where a.store_id=p_store and a.courtesy_until>now())
 $gate$;
 revoke all on function pitacco_private.commercial_orders_blocked(uuid) from public,anon,authenticated;
-create or replace function pitacco_private.enforce_commercial_own_order()
+create or replace function pitacco_private.enforce_commercial_order()
 returns trigger language plpgsql security definer set search_path='' as $gate$
 begin
- if new.source='proprio' and new.status<>'historical'
- and coalesce(new.receipt->>'is_test','false')='false' and coalesce(new.receipt->>'test','false')='false'
+ if new.status is distinct from 'historical'
  and pitacco_private.commercial_orders_blocked(new.store_id) then
-  raise exception 'Novos pedidos próprios temporariamente indisponíveis. Regularize a assinatura.' using errcode='P0001';
+  raise exception 'Estabelecimento bloqueado por inadimplência. Regularize as cobranças na área de assinaturas do Pitacco.' using errcode='P0001';
  end if;
  return new;
 end $gate$;
-revoke all on function pitacco_private.enforce_commercial_own_order() from public,anon,authenticated;
-create trigger pitacco_commercial_own_order_guard before insert on public.orders for each row execute function pitacco_private.enforce_commercial_own_order();
+revoke all on function pitacco_private.enforce_commercial_order() from public,anon,authenticated;
+create trigger pitacco_commercial_order_guard before insert on public.orders for each row execute function pitacco_private.enforce_commercial_order();
 create or replace function public.pitacco_owner_commercial_billing_control()
 returns jsonb language plpgsql stable security definer set search_path='' as $gate$
 begin
@@ -683,4 +682,14 @@ begin
  where p_store is null or b.store_id=p_store order by i.due_at desc,i.id offset p_page*25 limit 26) x;
  return jsonb_build_object('rows',j-25,'has_more',jsonb_array_length(j)>25);
 end $invoice$;
+
+-- Minimal status for authorized employees; no contract/payment details disclosed.
+create or replace function public.pitacco_store_commercial_block_status(p_store uuid)
+returns jsonb language plpgsql stable security definer set search_path='' as $block_status$
+begin
+ if auth.uid() is null or not (public.pitacco_is_platform_owner() or public.can_access_store(p_store)) then raise exception 'Sem permissão' using errcode='42501';end if;
+ return jsonb_build_object('orders_blocked',pitacco_private.commercial_orders_blocked(p_store));
+end $block_status$;
+revoke all on function public.pitacco_store_commercial_block_status(uuid) from public,anon,authenticated;
+grant execute on function public.pitacco_store_commercial_block_status(uuid) to authenticated;
 notify pgrst,'reload schema';

@@ -244,3 +244,34 @@ do $claim_test$ declare c uuid; begin
  assert exists(select 1 from jsonb_array_elements(public.pitacco_commercial_invoices('20000000-0000-0000-0000-000000000003')->'rows') x where x->>'claim_status'='approved' and x->>'status'='paid');
 end $claim_test$;
 reset role;
+
+-- Restore one unpaid monthly fixture to exercise the server guard across channels.
+delete from pitacco_private.commercial_manual_payments where invoice_id in (
+ select i.id from pitacco_private.commercial_invoices i join pitacco_private.commercial_closings b using(contract_id,kind,period_end)
+ where b.store_id='20000000-0000-0000-0000-000000000003' and i.period_end='2026-10-01');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+select public.pitacco_owner_set_commercial_billing_control(true,'Regularize na área de assinaturas');
+reset role;
+do $all_channels$ declare channel_name text; begin
+ assert pitacco_private.commercial_orders_blocked('20000000-0000-0000-0000-000000000003');
+ foreach channel_name in array array['proprio','ifood','99food','keeta'] loop
+  begin
+   insert into public.orders(id,store_id,channel,gross,status,source,preparation_status,receipt)
+   values(gen_random_uuid(),'20000000-0000-0000-0000-000000000003','Teste bloqueio',10,'pending',channel_name,'ready','{"is_test":true}');
+   raise exception 'Order accepted despite block: %',channel_name using errcode='22023';
+  exception when raise_exception then
+   assert sqlerrm like 'Estabelecimento bloqueado por inadimplência%';
+  end;
+ end loop;
+end $all_channels$;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+do $all_channels$ begin
+ assert public.pitacco_store_commercial_block_status('20000000-0000-0000-0000-000000000003')->>'orders_blocked'='true';
+end $all_channels$;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000003',true);
+do $all_channels$ begin
+ begin perform public.pitacco_store_commercial_block_status('20000000-0000-0000-0000-000000000003');raise exception 'Unauthorized block lookup';exception when insufficient_privilege then null;end;
+end $all_channels$;
+reset role;
