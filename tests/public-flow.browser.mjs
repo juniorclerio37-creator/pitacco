@@ -87,7 +87,7 @@ try {
             options: [{ id: 'morango', name: 'Morango', price: 2 }, { id: 'leite', name: 'Leite em pó', price: 3 }]
           }, {
             id:'extras',name:'Extras',min:0,max:2,options:[{id:'granola',name:'Granola',price:1},{id:'banana',name:'Banana',price:0},{id:'mel',name:'Mel',price:0}]
-          }] },{id:'agua',name:'Água',category:'Bebidas',price:5,option_groups:[]}]
+          }] },{id:'agua',name:'Água',category:'Bebidas',price:5,option_groups:[]},{id:'pizza',name:'Pizza Teste',category:'Pizzas',price:49.90,option_groups:[],pizza_config:{rule:'avg',sizes:[{id:'g',name:'Grande',diameter:35,slices:8,maxFlavors:2}],flavors:[{id:'a',name:'Calabresa',prices:{g:4990}},{id:'b',name:'Frango',prices:{g:5999}}],extras:[{id:'e',kind:'Borda',name:'Catupiry',prices:{g:500}}]}}]
         } });
       }
       if(pathname.endsWith('/pitacco_v2_customer_profile')){
@@ -159,6 +159,27 @@ try {
     await page.goto(origin + (width===375?'/cardapio/?loja=loja-teste':'/loja-teste?utm_source=qr&loja=outro'));
     const productCard=page.getByRole('button',{name:'Personalizar Açaí',exact:true});
     await productCard.waitFor();
+    // Pizza uses the same dialog, cart persistence and option payload in every template.
+    const pizzaCard=page.getByRole('button',{name:'Personalizar Pizza Teste',exact:true});
+    await pizzaCard.click();
+    const pizza=page.getByRole('dialog',{name:'Pizza Teste'});
+    await pizza.locator('select').selectOption('g');
+    await pizza.getByRole('checkbox',{name:/Calabresa/}).check();
+    await pizza.getByRole('checkbox',{name:/Frango/}).check();
+    await pizza.getByRole('radio',{name:/Catupiry/}).check();
+    assert.match(await pizza.locator('#productTotal').innerText(),/59,95/);
+    await pizza.getByRole('button',{name:/Adicionar à sacola/}).click();
+    await page.reload();
+    await productCard.waitFor();
+    await page.locator('#openCart').click();
+    const pizzaCart=page.getByRole('dialog',{name:'Sua sacola'});
+    assert.match(await pizzaCart.innerText(),/59,95/);
+    await pizzaCart.getByRole('button',{name:'Editar montagem'}).click();
+    await pizza.getByRole('radio',{name:/Sem complemento/}).check();
+    assert.match(await pizza.locator('#productTotal').innerText(),/54,95/);
+    await pizza.getByRole('button',{name:'Salvar alterações'}).click();
+    await pizzaCart.getByRole('button',{name:'Remover Pizza Teste'}).click();
+    await page.locator('#closeCart').click();
     if(template==='classic'){
       // Classic has different navigation from V2. Test its real checkout path
       // without asserting V2-only hero, favourites and product cards.
@@ -206,7 +227,7 @@ try {
     if(template==='editorial')assert.ok(placement.photoLeft>placement.detailsLeft,'Editorial apresenta a foto à direita');
     if(template==='urbano'){assert.equal(placement.caption,'rgb(23, 35, 48)','Urbano tem legenda escura contrastante');assert.equal(placement.priceColor,'rgb(255, 255, 255)','Preço urbano legível');assert.equal(placement.addColor,'rgb(255, 203, 50)','Controle urbano amarelo');}
     if(template==='essencial'){const order=await productCard.evaluate(card=>({photo:card.querySelector('.product-visual').getBoundingClientRect().left,text:card.querySelector('.product-text').getBoundingClientRect().left}));assert.ok(order.photo<order.text,'Fotos do catálogo Essencial à esquerda');}
-    assert.equal(await page.locator('#layout #products .product').count(),2,'Todos os itens aparecem no catálogo abaixo dos destaques');
+    assert.equal(await page.locator('#layout #products .product').count(),3,'Todos os itens aparecem no catálogo abaixo dos destaques');
     await page.getByRole('heading',{name:'Todo o cardápio',exact:true}).waitFor();
     await page.locator('#v2HeaderAbout').click();
     await page.locator('#v2AboutPage').waitFor();
