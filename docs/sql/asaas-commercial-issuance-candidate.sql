@@ -1,5 +1,7 @@
 -- Candidate only; apply after asaas-commercial-reconciliation-candidate.sql.
 -- Explicit enrollment: no customer data is sent to Asaas until a store has a verified customer mapping.
+alter table pitacco_private.commercial_billing_control add column asaas_enabled boolean not null default false;
+
 create table pitacco_private.commercial_asaas_customers(
  store_id uuid not null references public.stores(id),
  environment text not null check(environment in ('production','sandbox')),
@@ -26,6 +28,7 @@ returns jsonb language plpgsql security definer set search_path='' as $$
 declare i pitacco_private.commercial_invoices%rowtype; b pitacco_private.commercial_closings%rowtype;
  m pitacco_private.commercial_asaas_customers%rowtype; a pitacco_private.commercial_asaas_issue_intents%rowtype;
 begin
+ if p_environment is distinct from 'production' or not exists(select 1 from pitacco_private.commercial_billing_control where singleton and asaas_enabled) then return jsonb_build_object('outcome','unavailable');end if;
  select * into i from pitacco_private.commercial_invoices where id=p_invoice for update;
  if not found then return jsonb_build_object('outcome','unavailable');end if;
  select * into b from pitacco_private.commercial_closings where contract_id=i.contract_id and kind=i.kind and period_end=i.period_end for share;
