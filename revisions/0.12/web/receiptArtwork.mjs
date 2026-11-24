@@ -91,13 +91,13 @@ export function renderReceiptCanvas(job,width=80,opts={},makeCanvas=()=>document
   const total=item.total??item.total_price??item.price_total??(item.unit_total!=null?amount(item.unit_total)*qty:null);
   pair(qty+'x '+first(item.name,item.title,'Produto'),total==null?'':cash(total),true);
   const options=[...(Array.isArray(item.options)?item.options:[]),...(Array.isArray(item.complements)?item.complements:[]),...(Array.isArray(item.additions)?item.additions:[]),...(Array.isArray(item.modifiers)?item.modifiers:[])];
-  function modifier(v,depth=0){if(depth>5)return;const mod=typeof v==='string'?{name:v}:v;if(!mod||typeof mod!=='object')return;const name=first(mod.name,mod.title,mod.label,mod.option?.name),price=mod.total??mod.total_price??mod.price;const x=pad+Math.min(depth+1,3)*10;
-   const pizza=options.some(o=>o?.group==='Sabor'&&Number.isInteger(o.denominator));
+  function modifier(v,depth=0,context=options){if(depth>5)return;const mod=typeof v==='string'?{name:v}:v;if(!mod||typeof mod!=='object')return;const name=first(mod.name,mod.title,mod.label,mod.option?.name),price=mod.total??mod.total_price??mod.price;const x=pad+Math.min(depth+1,3)*10;
+   const pizza=context.some(o=>o?.group==='Sabor'&&Number.isInteger(o.denominator));
    const fraction=pizza&&mod.group==='Sabor'&&Number.isInteger(mod.numerator)&&Number.isInteger(mod.denominator)&&mod.numerator>0&&mod.denominator>=mod.numerator;
    const pizzaPart=pizza&&['Tamanho','Borda','Massa','Adicional'].includes(mod.group);
    const label=fraction?'Sabor '+mod.numerator+'/'+mod.denominator+': '+name:pizzaPart?mod.group+': '+name:(amount(mod.quantity??mod.qty??1)||1)+'x '+name;
    if(name)pair('– '+label,price==null||amount(price)===0||fraction||pizzaPart?'':cash(price),false,base,x);
-   for(const child of Array.isArray(mod.options)?mod.options:[])modifier(child,depth+1);
+   for(const child of Array.isArray(mod.options)?mod.options:[])modifier(child,depth+1,mod.options);
   }
   if(opts.complements!==false)options.forEach(v=>modifier(v));
   if(opts.notes!==false&&item.notes)lines('Obs.: '+clean(item.notes),{bold:true});
