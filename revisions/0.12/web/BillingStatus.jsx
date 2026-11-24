@@ -1,5 +1,5 @@
 import {MerchantPlanChange} from './PlanChange.jsx';
-import CommercialAmounts,{CommercialClosings} from './CommercialAmounts.jsx';
+import CommercialAmounts,{CommercialClosings,CommercialInvoices} from './CommercialAmounts.jsx';
 import React,{useEffect,useState} from 'react';
 
 const labels={trial:'Período de teste',active:'Ativa · pagamento confirmado',overdue:'Vencida',legacy:'Cadastro anterior à cobrança',courtesy:'Cortesia',suspended:'Suspensa'};
@@ -55,6 +55,7 @@ export default function BillingStatus({client,storeId}){
   <button type="button" className="secondary" disabled={busy} onClick={refresh}>Atualizar situação</button>
   <CommercialAmounts client={client} storeId={storeId}/>
   <CommercialClosings client={client} storeId={storeId}/>
+  <CommercialInvoices client={client} storeId={storeId}/>
   <MerchantPlanChange key={storeId} client={client} storeId={storeId}/>
  </section>;
 }

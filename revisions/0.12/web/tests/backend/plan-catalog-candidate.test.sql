@@ -174,3 +174,31 @@ do $anniversary_test$ declare r jsonb; begin
  assert exists(select 1 from pitacco_private.commercial_closings where store_id='20000000-0000-0000-0000-000000000003' and kind='monthly' and period_end='2026-10-01' and amount_cents=5990);
  assert exists(select 1 from pitacco_private.commercial_closings where store_id='20000000-0000-0000-0000-000000000003' and kind='monthly' and period_end='2026-11-01' and amount_cents=5990);
 end $anniversary_test$;
+
+-- Test issuance and manual settlement on an isolated, rolled-back monthly fixture.
+do $invoice_test$ declare a integer; b integer; begin
+ perform pitacco_private.run_commercial_billing();
+ select count(*) into a from pitacco_private.commercial_invoices;
+ perform pitacco_private.run_commercial_billing();
+ select count(*) into b from pitacco_private.commercial_invoices;
+ assert a=b and a>=2;
+ assert not exists(select 1 from pitacco_private.commercial_invoices where amount_cents<=0);
+end $invoice_test$;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+do $invoice_test$ declare r jsonb; i uuid; begin
+ r:=public.pitacco_commercial_invoices('20000000-0000-0000-0000-000000000003');
+ i:=(r#>>'{rows,0,id}')::uuid;
+ assert i is not null and r#>>'{rows,0,amount_cents}'='5990';
+ begin perform public.pitacco_owner_confirm_commercial_payment(i,1,'fixture-wrong','Conferência teste');raise exception 'Wrong amount accepted';exception when invalid_parameter_value then null;end;
+ perform public.pitacco_owner_confirm_commercial_payment(i,5990,'fixture-paid-001','Conferência teste isolado');
+ perform public.pitacco_owner_confirm_commercial_payment(i,5990,'fixture-paid-001','Conferência teste isolado');
+ r:=public.pitacco_commercial_invoices('20000000-0000-0000-0000-000000000003');
+ assert r#>>'{rows,0,status}'='paid';
+end $invoice_test$;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+do $invoice_test$ begin
+ begin perform public.pitacco_commercial_invoices('20000000-0000-0000-0000-000000000003');raise exception 'Other store invoice';exception when insufficient_privilege then null;end;
+ begin perform public.pitacco_owner_confirm_commercial_payment(null,5990,'fixture-unauthorized','Conferência teste');raise exception 'Unauthorized settlement';exception when insufficient_privilege then null;end;
+end $invoice_test$;
+reset role;

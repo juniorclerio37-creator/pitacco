@@ -452,4 +452,91 @@ begin
 end $closing_read$;
 revoke all on function public.pitacco_owner_refresh_commercial_closings(),public.pitacco_commercial_closings(uuid,integer) from public,anon,authenticated;
 grant execute on function public.pitacco_owner_refresh_commercial_closings(),public.pitacco_commercial_closings(uuid,integer) to authenticated;
+
+-- A payable invoice is a frozen record. Recalculated statements never rewrite it.
+create table pitacco_private.commercial_invoices(
+ id uuid primary key default gen_random_uuid(),contract_id uuid not null,kind text not null,period_end date not null,
+ amount_cents bigint not null check(amount_cents>0),due_at timestamptz not null,grace_until timestamptz not null,
+ created_at timestamptz not null default now(),
+ unique(contract_id,kind,period_end),
+ foreign key(contract_id,kind,period_end) references pitacco_private.commercial_closings(contract_id,kind,period_end)
+);
+create table pitacco_private.commercial_manual_payments(
+ invoice_id uuid primary key references pitacco_private.commercial_invoices(id),
+ amount_cents bigint not null check(amount_cents>0),
+ reference text not null unique check(length(reference) between 5 and 160),
+ verified_by uuid not null, verified_at timestamptz not null default now(),
+ note text not null check(length(note) between 5 and 500)
+);
+alter table pitacco_private.commercial_invoices enable row level security;
+alter table pitacco_private.commercial_manual_payments enable row level security;
+revoke all on pitacco_private.commercial_invoices,pitacco_private.commercial_manual_payments from public,anon,authenticated;
+create or replace function pitacco_private.issue_commercial_invoices()
+returns integer language plpgsql security definer set search_path='' as $invoice$
+declare n integer;
+begin
+ insert into pitacco_private.commercial_invoices(contract_id,kind,period_end,amount_cents,due_at,grace_until)
+ select contract_id,kind,period_end,amount_cents,due_at,grace_until from pitacco_private.commercial_closings
+ where state='calculated' and amount_cents>0 and period_end<=(now() at time zone 'America/Sao_Paulo')::date
+ on conflict(contract_id,kind,period_end) do nothing;
+ get diagnostics n=row_count;
+ return n;
+end $invoice$;
+revoke all on function pitacco_private.issue_commercial_invoices() from public,anon,authenticated;
+create or replace function pitacco_private.run_commercial_billing()
+returns integer language plpgsql security definer set search_path='' as $invoice$
+begin
+ if not pg_try_advisory_xact_lock(hashtextextended('pitacco-commercial-closing-v1',0)) then return 0;end if;
+ perform pitacco_private.refresh_commercial_closings();
+ return pitacco_private.issue_commercial_invoices();
+end $invoice$;
+revoke all on function pitacco_private.run_commercial_billing() from public,anon,authenticated;
+create or replace function public.pitacco_owner_refresh_commercial_closings()
+returns integer language plpgsql security definer set search_path='' as $invoice$
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ return pitacco_private.run_commercial_billing();
+end $invoice$;
+create or replace function pitacco_private.commercial_invoice_status(p_amount bigint,p_calculated bigint,p_state text,p_paid boolean,p_due timestamptz,p_grace timestamptz)
+returns text language sql stable set search_path='' as $invoice$
+ select case when p_state is distinct from 'calculated' or p_amount is distinct from p_calculated then 'review_required'
+ when p_paid then 'paid' when now()>p_grace then 'overdue' when now()>p_due then 'grace' else 'open' end
+$invoice$;
+revoke all on function pitacco_private.commercial_invoice_status(bigint,bigint,text,boolean,timestamptz,timestamptz) from public,anon,authenticated;
+create or replace function public.pitacco_commercial_invoices(p_store uuid,p_page integer default 0)
+returns jsonb language plpgsql stable security definer set search_path='' as $invoice$
+declare j jsonb;
+begin
+ if auth.uid() is null or not (public.pitacco_is_platform_owner() or (p_store is not null and public.is_store_manager(p_store))) then raise exception 'Sem permissão' using errcode='42501';end if;
+ if p_page is null or p_page not between 0 and 100000 then raise exception 'Página inválida' using errcode='22023';end if;
+ select coalesce(jsonb_agg(to_jsonb(x) order by x.due_at desc,x.id),'[]'::jsonb) into j from (
+ select i.id,b.store_id,s.name as store_name,i.kind,b.period_start,i.period_end,i.amount_cents,i.due_at,i.grace_until,
+ pitacco_private.commercial_invoice_status(i.amount_cents,b.amount_cents,b.state,p.invoice_id is not null,i.due_at,i.grace_until) as status,
+ p.verified_at as paid_at
+ from pitacco_private.commercial_invoices i join pitacco_private.commercial_closings b using(contract_id,kind,period_end)
+ join public.stores s on s.id=b.store_id left join pitacco_private.commercial_manual_payments p on p.invoice_id=i.id
+ where p_store is null or b.store_id=p_store order by i.due_at desc,i.id offset p_page*25 limit 26) x;
+ return jsonb_build_object('rows',j-25,'has_more',jsonb_array_length(j)>25);
+end $invoice$;
+create or replace function public.pitacco_owner_confirm_commercial_payment(p_invoice uuid,p_amount_cents bigint,p_reference text,p_note text)
+returns void language plpgsql security definer set search_path='' as $invoice$
+declare i pitacco_private.commercial_invoices%rowtype; b pitacco_private.commercial_closings%rowtype; existing pitacco_private.commercial_manual_payments%rowtype;
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ if length(btrim(coalesce(p_reference,''))) not between 5 and 160 or length(btrim(coalesce(p_note,''))) not between 5 and 500 then raise exception 'Informe referência e justificativa da conferência' using errcode='22023';end if;
+ select * into i from pitacco_private.commercial_invoices where id=p_invoice for update;
+ if not found or p_amount_cents is distinct from i.amount_cents then raise exception 'Valor ou cobrança inválidos' using errcode='22023';end if;
+ select * into existing from pitacco_private.commercial_manual_payments where invoice_id=i.id;
+ if found then
+  if existing.reference=btrim(p_reference) and existing.amount_cents=p_amount_cents then return;end if;
+  raise exception 'Cobrança já liquidada' using errcode='22023';
+ end if;
+ select * into b from pitacco_private.commercial_closings where contract_id=i.contract_id and kind=i.kind and period_end=i.period_end for share;
+ if b.state is distinct from 'calculated' or b.amount_cents is distinct from i.amount_cents then raise exception 'Concilie a divergência antes de confirmar' using errcode='22023';end if;
+ insert into pitacco_private.commercial_manual_payments(invoice_id,amount_cents,reference,verified_by,note)
+ values(i.id,p_amount_cents,btrim(p_reference),auth.uid(),btrim(p_note));
+ insert into pitacco_private.subscription_admin_audit(store_id,actor_id,action,details) values(b.store_id,auth.uid(),'commercial_payment_manually_verified',jsonb_build_object('invoice_id',i.id,'amount_cents',p_amount_cents,'reference',btrim(p_reference),'reason',btrim(p_note)));
+end $invoice$;
+revoke all on function public.pitacco_commercial_invoices(uuid,integer),public.pitacco_owner_confirm_commercial_payment(uuid,bigint,text,text) from public,anon,authenticated;
+grant execute on function public.pitacco_commercial_invoices(uuid,integer),public.pitacco_owner_confirm_commercial_payment(uuid,bigint,text,text) to authenticated;
 notify pgrst,'reload schema';

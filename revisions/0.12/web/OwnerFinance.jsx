@@ -1,6 +1,6 @@
 
 import React,{useEffect,useState} from 'react';
-import CommercialAmounts,{CommercialClosings} from './CommercialAmounts.jsx';
+import CommercialAmounts,{CommercialClosings,CommercialInvoices} from './CommercialAmounts.jsx';
 
 const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const saoPaulo=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'});
@@ -63,6 +63,7 @@ export default function OwnerFinance({client,stores}){
   </form>
   {range.store&&<CommercialAmounts client={client} storeId={range.store}/>}
   <CommercialClosings client={client} storeId={range.store||null} owner/>
+  <CommercialInvoices client={client} storeId={range.store||null} owner/>
   {busy&&<p role="status">Consultando…</p>}
   {error&&<p role="alert">Não foi possível consultar o relatório. Confira o período e tente novamente.</p>}
   {report&&<>

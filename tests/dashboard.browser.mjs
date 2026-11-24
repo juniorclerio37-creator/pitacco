@@ -357,6 +357,8 @@ try {
         commercialHistory.unshift({revision:commercialCatalog.terms_version,plans:commercialCatalog.plans,created_at:new Date().toISOString(),changed_by:user.id});
         return route.fulfill({headers,json:commercialCatalog});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_commercial_amount_preview')return route.fulfill({headers,json:{status:'unassigned',message:'Nenhum contrato comercial vigente no novo catálogo.'}});
+      if(['/rest/v1/rpc/pitacco_commercial_closings','/rest/v1/rpc/pitacco_commercial_invoices'].includes(pathname))return route.fulfill({headers,json:{rows:[],has_more:false}});
       if(pathname==='/rest/v1/rpc/pitacco_owner_commercial_plans'){
         assert.equal(origin,realApi);
         assert.equal(adminMode,true);
@@ -1091,9 +1093,9 @@ try {
     await plan.getByRole('heading',{name:'Grátis para sempre',exact:true}).waitFor();
     await plan.getByRole('heading',{name:'Completo',exact:true}).waitFor();
     const complete=plan.locator('article').filter({has:page.getByRole('heading',{name:'Completo',exact:true})});
-    await complete.getByLabel('Nome',{exact:true}).fill('Completo revisado');
     await complete.getByLabel('Mensalidade em centavos',{exact:true}).fill('6990');
     await complete.getByLabel('Descrição',{exact:true}).fill('Oferta atualizada pelo administrador');
+    await complete.getByLabel('Nome',{exact:true}).fill('Completo revisado');
     page.once('dialog',dialog=>dialog.accept());
     await plan.getByRole('button',{name:'Salvar e publicar',exact:true}).click();
     await plan.getByRole('status').getByText('Ofertas publicadas no catálogo.').waitFor();
