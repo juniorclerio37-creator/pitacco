@@ -72,6 +72,14 @@ a.btn{text-decoration:none}
 .earn-footnote{font-size:11px;color:#7d8490;line-height:1.6;margin:14px 0 0}
 .earn-error{font-size:12px;color:#ae301d;line-height:1.5;margin:10px 0}
 @media(max-width:720px){.earn-content{grid-template-columns:1fr}.earnings{padding:16px;margin:19px 0}.earn-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(148px,1fr);grid-template-columns:none;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}.earn-tab{scroll-snap-align:start;padding:15px 12px}.earn-tab strong{font-size:20px}.earn-top h2{font-size:21px}}
+</style><style>
+.courier-update-hint{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0;padding:11px 13px;border:1px solid #f3d6a7;background:#fff6e8;border-radius:12px;color:#86531b;font-size:12px;font-weight:650}
+.courier-update-hint[hidden],.courier-update-action[hidden]{display:none}
+.courier-update-hint button{border:0;border-radius:9px;background:#f97316;color:white;padding:9px;font:inherit;cursor:pointer;white-space:nowrap}
+.courier-update-action{width:100%;margin:10px 0 5px;min-height:44px;font-weight:800}
+#courierUpdateStatus[data-kind="available"]{color:#a14b11;font-weight:800}
+#courierUpdateStatus[data-kind="success"]{color:#17603d;font-weight:700}
+#courierUpdateStatus[data-kind="error"]{color:#af2436}
 </style><link rel="stylesheet" href="./painel.css"><link rel="stylesheet" href="./pedido-detalhe.css"></head>
 <body>
 <header class="bar">
@@ -89,6 +97,7 @@ a.btn{text-decoration:none}
 </div>
 <main class="app-shell">
 <section class="app-view" data-view="pedidos" id="viewPedidos">
+ <div id="courierUpdateHint" class="courier-update-hint" role="status" hidden><span id="courierUpdateHintText">Atualização disponível</span><button type="button" id="openUpdateSettings">Ver nos ajustes</button></div>
   <div class="dashboard-legacy-fields" aria-hidden="true">
     <span id="greeting">Minhas entregas</span>
     <button type="button" id="miniEarnings" tabindex="-1"><b id="miniToday">R$ 0,00</b><span id="miniTodayCount">0 entregas</span></button>
@@ -219,6 +228,15 @@ a.btn{text-decoration:none}
   </div>
   <p class="note-inline">Quando não houver coordenadas verificadas, o aplicativo abre o endereço informado pela loja.</p>
  </section>
+ <section class="panel-white pref-panel" id="appUpdatePanel" aria-label="Atualizações do aplicativo">
+  <span class="eyebrow">ATUALIZAÇÕES DO APLICATIVO</span>
+  <h2>Versão do Pitacco Entregador</h2>
+  <p id="courierInstalledVersion" class="note-inline">Consultando a versão instalada…</p>
+  <p id="courierUpdateStatus" class="note-inline" role="status" aria-live="polite">Vamos avisar quando houver nova versão.</p>
+  <button type="button" class="settings-row" id="checkCourierUpdate"><span>Verificar atualizações</span><span class="setting-arrow">↻</span></button>
+  <button type="button" class="btn primary courier-update-action" id="installCourierUpdate" hidden>Baixar e instalar atualização</button>
+  <p class="note-inline">O Android pedirá sua confirmação para instalar. Não é necessário desinstalar o app nem sair da conta.</p>
+ </section>
  <section class="panel-white pref-panel courier-tech-internal" aria-hidden="true" inert hidden>
   <span class="eyebrow">LOCALIZAÇÃO PARA ENTREGAS</span>
   <p id="courierGpsStatus" role="status" aria-live="polite">Ative seu plantão para compartilhar sua posição com a loja.</p>
@@ -270,6 +288,7 @@ a.btn{text-decoration:none}
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2.57.0";
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "./config.mjs";
 import {createDriverAuth} from "./supabase-client.mjs";
+import {discoverCourierReleaseWithFallback,compareCourierVersions} from "./app-update.mjs";
 import {createOrderDetailsController} from "./order-details.mjs";
 import {buildNavigationUrl,buildBatchNavigationUrl} from "./navigation.mjs";
 import {suggestedBatchRoutes} from "./route-sequence.mjs";
