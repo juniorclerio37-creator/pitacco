@@ -111,7 +111,7 @@ export function approvedReceipt(job,width=80,opts={}){
   if(!item||typeof item!=='object')continue;
   const qty=amount(item.quantity??item.qty??1)||1;
   const name=first(item.name,item.title,'Produto');
-  const total=item.total??item.total_price??item.price_total;
+  const total=item.total??item.total_price??item.price_total??(item.unit_total!=null?amount(item.unit_total)*qty:null);
   if(total!=null)pair(qty+' x '+name,cash(total));
   else add(qty+' x '+name);
   const options=[
@@ -125,9 +125,12 @@ export function approvedReceipt(job,width=80,opts={}){
    if(!mod||typeof mod!=='object')continue;
    const modName=first(mod.name,mod.title,mod.label,mod.option?.name);
    if(modName){
-    const description='  '+(amount(mod.quantity??mod.qty??1)||1)+'x '+modName;
+    const fraction=mod.group==='Sabor'&&Number.isInteger(mod.numerator)&&Number.isInteger(mod.denominator)&&mod.numerator>0&&mod.denominator>=mod.numerator;
+    const pizzaSize=mod.group==='Tamanho'&&(Array.isArray(item.modifiers)&&item.modifiers.some(x=>x?.group==='Sabor'&&Number.isInteger(x.denominator)));
+    const pizzaExtra=['Borda','Massa','Adicional'].includes(mod.group)&&(Array.isArray(item.modifiers)&&item.modifiers.some(x=>x?.group==='Sabor'&&Number.isInteger(x.denominator)));
+    const description=fraction?'Sabor '+mod.numerator+'/'+mod.denominator+': '+modName:pizzaSize||pizzaExtra?mod.group+': '+modName:'  '+(amount(mod.quantity??mod.qty??1)||1)+'x '+modName;
     const price=mod.total??mod.total_price??mod.price;
-    if(price!=null)pair(description,cash(price));
+    if(price!=null&&!fraction&&!pizzaSize&&!pizzaExtra)pair(description,cash(price));
     else add(description);
    }
    for(const nested of Array.isArray(mod.options)?mod.options:[]){
