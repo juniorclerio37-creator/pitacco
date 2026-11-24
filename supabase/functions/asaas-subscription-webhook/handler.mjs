@@ -3,6 +3,7 @@ const environments = {
   production: 'https://api.asaas.com'
 };
 const confirmationEvents = new Set(['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED']);
+const incidentEvents = new Set(['PAYMENT_REFUNDED','PAYMENT_PARTIALLY_REFUNDED','PAYMENT_REFUND_IN_PROGRESS','PAYMENT_CHARGEBACK_REQUESTED','PAYMENT_CHARGEBACK_DISPUTE','PAYMENT_AWAITING_CHARGEBACK_REVERSAL','PAYMENT_DELETED']);
 const confirmedStatuses = new Set(['CONFIRMED', 'RECEIVED']);
 const paymentId = /^pay_[A-Za-z0-9_-]{1,100}$/;
 const subscriptionId = /^sub_[A-Za-z0-9_-]{1,100}$/;
@@ -65,7 +66,8 @@ export function createAsaasWebhook({ environment, token, apiKey, supabaseUrl, se
     } catch (error) {
       return error instanceof RangeError ? reply(413, 'payload_too_large') : reply(400, 'invalid_json');
     }
-    if (!confirmationEvents.has(message?.event)) return reply(200, 'ignored_event');
+    const incident=incidentEvents.has(message?.event);
+    if (!confirmationEvents.has(message?.event) && !incident) return reply(200, 'ignored_event');
     const id = message?.payment?.id;
     if (typeof id !== 'string' || !paymentId.test(id)) return reply(400, 'invalid_payment');
 
@@ -78,6 +80,16 @@ export function createAsaasWebhook({ environment, token, apiKey, supabaseUrl, se
       if (!verification.ok) return reply(503, 'provider_verification_unavailable');
       const payment = await verification.json();
       const ref=typeof payment.externalReference==='string'&&payment.externalReference.match(/^pitacco:invoice:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+      if(incident){
+        if(!ref||environment!=='production')return reply(200,'ignored_event');
+        if(payment.id!==id||typeof payment.customer!=='string'||!/^cus_[A-Za-z0-9_-]{1,100}$/.test(payment.customer)||typeof payment.status!=='string'||payment.status.length>80)return reply(503,'incident_verification_unavailable');
+        const headers={'content-type':'application/json',apikey:serviceKey};
+        if(serviceKey.startsWith('eyJ'))headers.authorization='Bearer '+serviceKey;
+        const sync=await fetcher(new URL('/rest/v1/rpc/pitacco_asaas_record_commercial_incident',supabaseUrl),{method:'POST',headers,body:JSON.stringify({p_invoice:ref[1],p_payment:id,p_customer:payment.customer,p_event:message.event,p_status:payment.status}),signal});
+        if(!sync.ok)return reply(503,'incident_sync_unavailable');
+        const outcome=await sync.json();
+        return outcome==='review_required'?reply(200,'incident_recorded'):reply(503,'commercial_reconciliation_required');
+      }
       if(ref){
         if(environment!=='production'||payment.id!==id||!confirmedStatuses.has(payment.status)||typeof payment.customer!=='string'||!/^cus_[A-Za-z0-9_-]{1,100}$/.test(payment.customer)||typeof payment.value!=='number'||!Number.isSafeInteger(Math.round(payment.value*100))||payment.value<=0||Math.abs(payment.value*100-Math.round(payment.value*100))>0.000001)return reply(200,'payment_not_eligible');
         const headers={'content-type':'application/json',apikey:serviceKey};
