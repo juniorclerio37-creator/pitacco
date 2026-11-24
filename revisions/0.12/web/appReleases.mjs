@@ -41,7 +41,9 @@ export async function downloadRelease(client, release) {
 }
 
 
-const WINDOWS_PUBLIC_RELEASES = 'https://api.github.com/repos/juniorclerio37-creator/pitacco/releases?per_page=20';
+// A mesma ação de download existente sempre seleciona o instalador Windows
+// oficial mais recente por data de publicação, mesmo com muitas versões Android.
+const WINDOWS_PUBLIC_RELEASES = 'https://api.github.com/repos/juniorclerio37-creator/pitacco/releases?per_page=100';
 const WINDOWS_ASSET = 'Pitacco-Windows-Setup.exe';
 
 // Secondary distribution via a public GitHub release when no Super Admin
