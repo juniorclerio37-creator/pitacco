@@ -1,0 +1,57 @@
+
+/* Approved merchant navigation: one flat, warm-white sidebar with expandable groups. */
+#pitacco-store-navigation .merchant-nav{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1;overflow-y:auto;padding:4px 8px 12px;color:#383838;background:transparent}
+.merchant-nav button{font-family:inherit;min-height:34px}
+.merchant-nav .mn-top,.merchant-nav .mn-store,.merchant-nav .mn-search,.merchant-nav .mn-item{display:flex;align-items:center;gap:9px}
+.merchant-nav .mn-top{justify-content:space-between;padding:0 6px;color:#777;font-size:12px}
+.merchant-nav .mn-collapse,.merchant-nav .mn-star{width:32px;min-width:32px;padding:4px;border:0;background:transparent;color:#888;box-shadow:none;justify-content:center}
+.merchant-nav .mn-store{background:#f5f5f5;border-radius:10px;padding:10px;min-width:0;margin:4px 0 8px}
+.merchant-nav .mn-store>svg:first-child{color:#ed7028;flex:none}
+.merchant-nav .mn-store>div{flex:1;min-width:0}
+.merchant-nav .mn-store span{font-size:10px;color:#777;display:block}
+.merchant-nav .mn-store select{width:100%;min-width:0;border:0;background:transparent;padding:3px 0;font-size:13px;font-weight:700;color:inherit}
+.merchant-nav .mn-search{border:1px solid #e5e5e5;border-radius:8px;padding:3px 9px;margin-bottom:8px;color:#888}
+.merchant-nav .mn-search input{border:0;background:transparent;min-width:0;width:100%;padding:6px 0;outline:0;color:inherit;font-size:12px}
+.merchant-nav .mn-group-button,.merchant-nav .mn-link{display:flex;align-items:center;justify-content:flex-start;text-align:left;gap:10px;width:100%;border:0;border-radius:7px;color:inherit;background:transparent;box-shadow:none;padding:8px 10px;font-size:13px;font-weight:600;line-height:1.25}
+.merchant-nav .mn-group-button>span,.merchant-nav .mn-link>span:not(.mn-dot){flex:1;min-width:0}
+.merchant-nav .mn-group-button svg,.merchant-nav .mn-link svg{flex:none;color:#737373}
+.merchant-nav .mn-group-button.mn-expanded,.merchant-nav .mn-group-button.mn-expanded svg{color:#d75d17}
+.merchant-nav .mn-submenu{margin:2px 0 4px 15px;padding-left:10px;border-left:1px solid #ededed}
+.merchant-nav .mn-submenu .mn-link{font-weight:400;font-size:12.5px;min-width:0;padding:7px 5px}
+.merchant-nav .mn-item{border-radius:7px;gap:0}
+.merchant-nav .mn-active{background:#fff0e5;color:#d75d17}
+.merchant-nav .mn-active .mn-link,.merchant-nav .mn-active .mn-link svg{color:#d75d17;font-weight:700}
+.merchant-nav .mn-dot{width:6px;height:6px;border:1px solid #bcbcbc;border-radius:50%;flex:none}
+.merchant-nav .mn-active .mn-dot{background:#ed7028;border-color:#ed7028}
+.merchant-nav .mn-star{opacity:0}
+.merchant-nav .mn-item:hover .mn-star,.merchant-nav .mn-star:focus-visible,.merchant-nav .mn-star.is-favorite{opacity:1}
+.merchant-nav .mn-star.is-favorite{color:#ed7028}
+.merchant-nav .mn-star.is-favorite svg{fill:#ed7028}
+.merchant-nav .mn-favorites{border-bottom:1px solid #eee;padding-bottom:6px}
+.merchant-nav .mn-favorites small,.merchant-nav .mn-empty{font-size:11px;color:#888;padding:6px}
+.merchant-nav .mn-support{margin-top:auto;border-top:1px solid #eee;padding-top:5px}
+.merchant-nav button:focus-visible{outline:2px solid #ed7028;outline-offset:-2px}
+.pitacco-theme-dark #pitacco-store-navigation .merchant-nav{color:#e6e1dd}
+.pitacco-theme-dark .merchant-nav .mn-store{background:#302b29}
+.pitacco-theme-dark .merchant-nav .mn-active{background:#513225;color:#ffc498}
+.pitacco-theme-dark .merchant-nav .mn-active .mn-link,.pitacco-theme-dark .merchant-nav .mn-group-button.mn-expanded{color:#ffc498}
+.pitacco-theme-dark .merchant-nav .mn-submenu,.pitacco-theme-dark .merchant-nav .mn-search,.pitacco-theme-dark .merchant-nav .mn-support{border-color:#46403b}
+.mn-mobile-bar{display:none}
+@media(min-width:801px){
+ .app.mn-sidebar-collapsed{grid-template-columns:72px minmax(0,1fr)!important}
+ .app.mn-sidebar-collapsed>#pitacco-store-navigation{width:72px!important;min-width:72px!important;padding:6px!important}
+ .app.mn-sidebar-collapsed>#pitacco-store-navigation>.brand img{max-width:55px;height:auto}
+ .app.mn-sidebar-collapsed>#pitacco-store-navigation>.brand span,.app.mn-sidebar-collapsed>#pitacco-store-navigation>.account,.app.mn-sidebar-collapsed>#pitacco-store-navigation>.theme-switch{display:none}
+ .merchant-nav.mn-collapsed .mn-store,.merchant-nav.mn-collapsed .mn-search,.merchant-nav.mn-collapsed .mn-top>span,.merchant-nav.mn-collapsed .mn-link>span,.merchant-nav.mn-collapsed .mn-group-button>span,.merchant-nav.mn-collapsed .mn-group-button>svg:last-child,.merchant-nav.mn-collapsed .mn-star,.merchant-nav.mn-collapsed .mn-favorites{display:none}
+ .merchant-nav.mn-collapsed .mn-link,.merchant-nav.mn-collapsed .mn-group-button{justify-content:center;padding:9px 0}
+}
+@media(max-width:800px){
+ .app.pitacco-mobile-workspace>main{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+ .app.pitacco-mobile-workspace .mn-mobile-bar{position:fixed;display:flex;bottom:0;left:0;right:0;z-index:119;background:#fff;border-top:1px solid #e6e6e6;padding:5px 4px calc(5px + env(safe-area-inset-bottom));gap:2px;justify-content:space-around}
+ .mn-mobile-bar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#666;background:transparent;border:0;padding:7px 2px;box-shadow:none;font-size:11px}
+ .mn-mobile-bar button[aria-current=page]{color:#e5702b;font-weight:700}
+ .pitacco-theme-dark .mn-mobile-bar{background:#25211f!important;border-color:#423630}
+ .pitacco-theme-dark .mn-mobile-bar button{color:#ccc}
+ .merchant-nav .mn-star{opacity:1}
+ .merchant-nav .mn-collapse{display:none}
+}

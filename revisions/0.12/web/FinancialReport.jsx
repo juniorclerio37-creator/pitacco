@@ -23,9 +23,10 @@ function csvValue(value) {
   return '"' + safe.replaceAll('"','""') + '"';
 }
 
-export default function FinancialReport({client,store}) {
+export default function FinancialReport({client,store,initialView='report',navigationKey}) {
   const today = dateFormat.format(new Date());
-  const [view,setView]=useState('report');
+  const [view,setView]=useState(initialView);
+  useEffect(()=>setView(initialView),[initialView,navigationKey]);
   const [start,setStart] = useState(today.slice(0,8)+'01');
   const [end,setEnd] = useState(today);
   const [report,setReport] = useState(null);

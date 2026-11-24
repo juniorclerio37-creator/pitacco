@@ -49,8 +49,9 @@ test('Windows navigation makes printing independently clickable and identifies i
  const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
  const config=JSON.parse(readFileSync(new URL('../src-tauri/tauri.conf.json',import.meta.url),'utf8'));
  assert.ok(source.includes('Pitacco Windows v'+config.version));
- assert.match(source,/aria-label="Configurar impressão e visualizar nota"/);
- assert.match(source,/onClick=\{\(\)=>\{setTab\('Configurações'\)/);
+ const nav=readFileSync(new URL('../MerchantNavigation.jsx',import.meta.url),'utf8');
+ assert.match(nav,/Configurar impressão e visualizar nota/);
+ assert.match(source,/onNavigate=\{target=>\{setTab\(target\)/);
  assert.match(source,/tab==='Aplicativos e Downloads'&&<AppDownloads/);
  assert.match(source,/Pagamento de motoboys/);
  assert.match(source,/hiddenOnError=\{false\}/);

@@ -7,8 +7,9 @@ import CourierRates from './CourierRates.jsx';
 const cash=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const tabs=['Entregadores','Entregas','Pagamentos','Regras de Cobrança','Acerto Rápido','Relatórios','Histórico','Desempenho'];
 const metricIcons=[Bike,CircleDollarSign,Wallet,Gauge,Route,ClipboardList];
-export default function CourierWorkspace({client,store,onRefresh,onNavigate}){
- const [tab,setTab]=useState('Entregadores'),[couriers,setCouriers]=useState([]),[deliveries,setDeliveries]=useState([]),[payments,setPayments]=useState([]),[allowances,setAllowances]=useState([]),[query,setQuery]=useState(''),[error,setError]=useState(''),[teamRefresh,setTeamRefresh]=useState(0);
+export default function CourierWorkspace({client,store,onRefresh,onNavigate,initialTab='Entregadores',navigationKey}){
+ const [tab,setTab]=useState(initialTab),[couriers,setCouriers]=useState([]),[deliveries,setDeliveries]=useState([]),[payments,setPayments]=useState([]),[allowances,setAllowances]=useState([]),[query,setQuery]=useState(''),[error,setError]=useState(''),[teamRefresh,setTeamRefresh]=useState(0);
+ useEffect(()=>{setTab(initialTab)},[initialTab,navigationKey]);
  useEffect(()=>{let alive=true;async function refresh(){try{const [a,b,c,d]=await Promise.all([client.rpc('pitacco_store_couriers',{p_store:store.id}),client.from('deliveries').select('*').eq('store_id',store.id).order('created_at',{ascending:false}).limit(500),client.from('pitacco_courier_payouts').select('*').eq('store_id',store.id),client.from('pitacco_courier_daily_allowances').select('courier_id,amount,work_date').eq('store_id',store.id)]);for(const r of [a,b,c,d])if(r.error)throw r.error;if(alive){setCouriers(a.data||[]);setDeliveries(b.data||[]);setPayments(c.data||[]);setAllowances(d.data||[]);setError('')}}catch(e){if(alive)setError(e.message)}}refresh();const timer=setInterval(refresh,15000);return()=>{alive=false;clearInterval(timer)}},[client,store.id,teamRefresh]);
  const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
  const completed=deliveries.filter(d=>d.status==='entregue'),todayDone=completed.filter(d=>d.updated_at&&new Date(d.updated_at).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'})===today);

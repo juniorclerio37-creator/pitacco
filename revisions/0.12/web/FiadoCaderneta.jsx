@@ -6,11 +6,12 @@ const fmt=n=>brl.format(Number(n||0));
 const day=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
 const initial={name:'',phone:'',limit:'100',enabled:true,due_days:7,approval_mode:'manual',block_overdue:true,pin:'',pin_confirm:''};
 
-export default function FiadoCaderneta({client,storeId,onNavigate}){
+export default function FiadoCaderneta({client,storeId,onNavigate,initialTab='clientes',navigationKey}){
  const [overview,setOverview]=useState(null),[products,setProducts]=useState([]);
  const [groups,setGroups]=useState([]),[options,setOptions]=useState([]);
  const [selected,setSelected]=useState(''),[form,setForm]=useState(initial);
- const [tab,setTab]=useState('clientes'),[items,setItems]=useState({});
+ const [tab,setTab]=useState(initialTab),[items,setItems]=useState({});
+ useEffect(()=>setTab(initialTab),[initialTab,navigationKey]);
  const [choices,setChoices]=useState({}),[note,setNote]=useState('');
  const [paymentAmount,setPaymentAmount]=useState(''),[paymentMethod,setPaymentMethod]=useState('pix');
  const [paymentNote,setPaymentNote]=useState(''),[paymentRequestKey,setPaymentRequestKey]=useState(null),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true);

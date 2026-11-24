@@ -9,7 +9,7 @@ const tabs={
  Painel:null,Produtos:'cardapio','Importar cardápio':'cardapio',Entregadores:'motoboys',
  'Relatório de motoboys':'motoboys','Pagamento de motoboys':'motoboys',
  Lançamentos:'financeiro',Despesas:'financeiro','Fiado / Caderneta':'financeiro','Entrega externa':'integracoes',
- WhatsApp:'integracoes'
+ 'Mapa de entregadores':'motoboys',WhatsApp:'integracoes'
 };
 export function featureForTab(name){
  return tabs[name]||Object.keys(featureLabels).find(key=>featureLabels[key]===name);

@@ -5,7 +5,7 @@ const money=cents=>(Number(cents||0)/100).toLocaleString('pt-BR',{style:'currenc
 const defaults={points_enabled:false,points_per_real:1,min_points_to_redeem:100,points_reward_cents:1000,orders_enabled:false,orders_required:10,orders_reward_cents:1000,coupons_enabled:true,campaigns_enabled:false,cashback_enabled:false,cashback_percent:0,cashback_max_redeem_percent:50,referrals_enabled:false,referral_reward_cents:0,referral_welcome_cents:0,minimum_order_cents:0};
 
 const dateValue=value=>value?new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo'}).format(new Date(value)):'';
-export default function Fideliza({client,storeId,manager}){
+export default function Fideliza({client,storeId,manager,initialSection='Visão geral',navigationKey}){
  const [section,setSection]=useState('Visão geral'),[program,setProgram]=useState(defaults),[coupons,setCoupons]=useState([]),[customers,setCustomers]=useState([]);
  const [ready,setReady]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[editing,setEditing]=useState(null);
  const version=useRef(0),dialogRef=useRef(null),openerRef=useRef(null);
@@ -88,6 +88,11 @@ export default function Fideliza({client,storeId,manager}){
  function openDrawer(name,opener,draft=savedProgram){
   openerRef.current=opener;setProgram({...defaults,...draft});setEditing(null);setOfferDirty(false);setError('');setMessage('');setSection(name);
  }
+ const navigationApplied=React.useRef('');
+ useEffect(()=>{if(!ready||!manager||initialSection==='Visão geral'){if(initialSection==='Visão geral')navigationApplied.current='';return}
+  const key=storeId+'|'+initialSection+'|'+navigationKey;if(navigationApplied.current===key)return;
+  if(['Clientes e pontos','Cupons','Campanhas','Cashback','Indique e ganhe','Clientes e carteiras'].includes(initialSection)){navigationApplied.current=key;openDrawer(initialSection,null)}
+ },[ready,manager,storeId,initialSection,navigationKey]);
  function closeDrawer(force=false,values=savedProgram){
   if(loading&&!force)return;
   const changed=Object.keys(defaults).some(key=>String(program[key])!==String(savedProgram[key]));

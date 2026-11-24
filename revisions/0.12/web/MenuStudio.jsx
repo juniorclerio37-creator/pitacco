@@ -10,8 +10,9 @@ import {CategoryIcon,CATEGORY_ICON_GROUPS,CATEGORY_ICON_KEYS,inferCategoryIcon} 
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const empty=()=>({name:'',description:'',category:'',price:'',cost:'',menu_active:true,image_url:''});
 const field={display:'grid',gap:5,marginBottom:13};
-export default function MenuStudio({client,storeId,products=[],store=null,manager=true,onRefresh,onImport}){
- const [draft,setDraft]=useState(empty),[editing,setEditing]=useState(null),[groups,setGroups]=useState([]),[photo,setPhoto]=useState(null),[previewUrl,setPreviewUrl]=useState(''),[filter,setFilter]=useState(''),[selectedCategory,setSelectedCategory]=useState('Todas'),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[section,setSection]=useState('Produtos'),[showEditor,setShowEditor]=useState(false);
+export default function MenuStudio({client,storeId,products=[],store=null,manager=true,onRefresh,onImport,initialSection='Produtos',navigationKey}){
+ const [draft,setDraft]=useState(empty),[editing,setEditing]=useState(null),[groups,setGroups]=useState([]),[photo,setPhoto]=useState(null),[previewUrl,setPreviewUrl]=useState(''),[filter,setFilter]=useState(''),[selectedCategory,setSelectedCategory]=useState('Todas'),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[section,setSection]=useState(initialSection==='Categorias'?'Produtos':initialSection),[showEditor,setShowEditor]=useState(false);
+ useEffect(()=>{setSection(initialSection==='Categorias'?'Produtos':initialSection);setShowEditor(false);if(initialSection==='Categorias')requestAnimationFrame(()=>document.getElementById('catalog-category-navigation')?.scrollIntoView({block:'nearest'}))},[initialSection,navigationKey]);
  const [categoryIcons,setCategoryIcons]=useState({}),[configuringCategory,setConfiguringCategory]=useState(null),[iconBusy,setIconBusy]=useState(false);
  const [categoryRanks,setCategoryRanks]=useState({});
  const categoryName=value=>String(value||'').trim()||'Outros';
@@ -135,7 +136,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
   <Inventory client={client} storeId={storeId} manager={manager} products={products} initialView="Insumos"/>
  </div>}
  {section==='Produtos'&&<><div className="menu-studio-list">
- <div className="panel"><h3>Categorias</h3><p className="hint">Organize as categorias pelas setas: a mesma ordem será usada no cardápio dos clientes. Para mudar o ícone, toque na engrenagem.</p>
+ <div className="panel" id="catalog-category-navigation"><h3>Categorias</h3><p className="hint">Organize as categorias pelas setas: a mesma ordem será usada no cardápio dos clientes. Para mudar o ícone, toque na engrenagem.</p>
  {categories.map(c=><div key={c} style={{display:'flex',gap:6,alignItems:'center',marginBottom:7}}>
   <button type="button" className={selectedCategory===c?'active':'secondary'} style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:7,textAlign:'left'}} onClick={()=>setSelectedCategory(c)}>
    <CategoryIcon icon={c==='Todas'?'more':iconFor(c)} size={22}/>{c}
