@@ -41,3 +41,5 @@ test('mobile merchant menu opens only from the bottom More button and remains ac
  assert.match(source,/aria-controls="pitacco-store-navigation" aria-expanded=\{menuOpen\}/);
  assert.match(css,/\.pitacco-mobile-top\.mn-redundant-top\{display:none!important\}/);
 });
+
+test('incident center is a visible delivery shortcut and precedes the other workspaces',()=>{const route=resolveMenuRoute('Ocorrências');assert.equal(route.label,'Central de Ocorrências');assert.equal(route.tab,'Entregas');assert.equal(route.section,'occurrences');const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');assert.ok(source.indexOf('<IncidentCenter')<source.indexOf('<StorefrontShare'));assert.match(source,/showShortcut=\{tab==='Entregas'\}/);});

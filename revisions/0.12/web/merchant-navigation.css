@@ -118,3 +118,5 @@
 .incident-alert button{background:#b91c1c;color:white}
 
 .incident-whatsapp{display:inline-flex!important;align-items:center;justify-content:center;gap:7px;background:#128c4a!important;color:white!important;border-radius:8px;padding:9px 12px;text-decoration:none!important;font-weight:600}.incident-contact-settings{display:flex;flex-wrap:wrap;align-items:end;gap:8px}.incident-contact-settings label{display:grid;gap:5px}.incident-contact-settings small{flex-basis:100%}
+
+.incident-access{display:flex!important;align-items:center;gap:10px;text-align:left;width:100%;margin:0 0 12px;padding:12px!important;border:1px solid #edb37f!important;border-radius:12px!important;background:#fff1e4!important;color:#9c4311!important;min-height:58px}.incident-access>span{display:grid;gap:3px;flex:1;min-width:0}.incident-access small{font-size:12px;font-weight:400}.incident-access>b{background:#d9651a;color:white;border-radius:12px;padding:4px 9px}.pitacco-theme-dark .incident-access{background:#3b281c!important;color:#ffcfab!important;border-color:#93592d!important}
