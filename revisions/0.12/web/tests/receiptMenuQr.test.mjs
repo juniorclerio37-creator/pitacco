@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {receiptQrMatrix,receiptMenuUrl,loadReceiptMenuUrl} from '../receiptMenuQr.mjs';
+import {receiptQrMatrix,receiptMenuUrl,loadReceiptMenuUrl,receiptMenuMessage,DEFAULT_MENU_MESSAGE} from '../receiptMenuQr.mjs';
 test('QR matches independent Model 2 version 5 M mask 0 reference',()=>{
  const m=receiptQrMatrix('https://pitacco.com.br/loja-teste');
  assert.equal(m.length,37);assert.ok(m.every(row=>row.length===37));
@@ -17,3 +17,5 @@ test('only the authenticated store published menu, no QR if unavailable',async()
  assert.equal(await loadReceiptMenuUrl(c,'store-a'),'https://pitacco.com.br/loja-teste');
  assert.equal(await loadReceiptMenuUrl({rpc:async()=>{throw Error('offline')}},'store-a'),'');
 });
+
+test('custom incentive is optional, bounded and strips control characters',()=>{assert.equal(receiptMenuMessage('  '),DEFAULT_MENU_MESSAGE);assert.equal(receiptMenuMessage('Peça direto!\nObrigado.'),'Peça direto! Obrigado.');assert.equal(receiptMenuMessage('a'.repeat(180)).length,160)});

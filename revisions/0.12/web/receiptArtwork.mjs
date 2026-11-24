@@ -1,5 +1,5 @@
 import {clean,amount,cash,first,platformName,deliveryAddress,isPaid,collectionAtDelivery} from './approvedReceipt.mjs';
-import {receiptQrMatrix} from './receiptMenuQr.mjs';
+import {receiptQrMatrix,receiptMenuMessage} from './receiptMenuQr.mjs';
 export const receiptFontSize=value=>['small','medium','large'].includes(value)?value:'medium';
 export function receiptPayment(r){
  const raw=first(r.payment_method,typeof r.payment==='string'?r.payment:r.payment?.method,r.payment_type);
@@ -98,7 +98,7 @@ export function renderReceiptCanvas(job,width=80,opts={},makeCanvas=()=>document
   let matrix=null;try{matrix=receiptQrMatrix(opts.menuUrl)}catch{}
   if(matrix){
    rule();lines('PEÇA PELO NOSSO CARDÁPIO',{bold:true,align:'center',size:base+2});
-   lines('Aponte a câmera e faça seu próximo pedido.',{align:'center'});
+   lines(receiptMenuMessage(opts.menuMessage),{align:'center'});
    // Integer printer dots, minimum 4 quiet modules, 6 dots per module (about 34 mm).
    const module=6,quiet=4,side=(matrix.length+quiet*2)*module,left=Math.floor((w-side)/2),top=y+5;
    ops.push(c=>{c.fillStyle='#fff';c.fillRect(left,top,side,side);c.fillStyle='#000';matrix.forEach((row,yy)=>row.forEach((dark,xx)=>{if(dark)c.fillRect(left+(xx+quiet)*module,top+(yy+quiet)*module,module,module)}))});

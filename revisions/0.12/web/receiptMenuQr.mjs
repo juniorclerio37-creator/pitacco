@@ -41,3 +41,6 @@ export function receiptQrMatrix(url){
  if(p!==words.length*8+7)throw Error('Falha ao montar QR Code');
  return m;
 }
+
+export const DEFAULT_MENU_MESSAGE='Aponte a câmera e faça seu próximo pedido.';
+export function receiptMenuMessage(value){return (typeof value==='string'?value.replace(/[\x00-\x1f\x7f]/g,' ').replace(/\s+/g,' ').trim().slice(0,160):'')||DEFAULT_MENU_MESSAGE;}
