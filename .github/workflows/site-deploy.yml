@@ -9,6 +9,12 @@ on:
       - 'revisions/0.12/*.py'
       - 'scripts/build-cloudflare.sh'
       - 'marketing/**'
+      # Publicar o site do entregador quando a UI de Ajustes, downloads ou alertas mudar.
+      # Mudanças exclusivamente nativas em android-app não disparam deploy desnecessário.
+      - 'entregador/*.html'
+      - 'entregador/*.mjs'
+      - 'entregador/*.css'
+      - 'entregador/*.svg'
       - 'cloudflare/storefront.mjs'
       - 'wrangler.jsonc'
       - '.github/workflows/site-deploy.yml'
