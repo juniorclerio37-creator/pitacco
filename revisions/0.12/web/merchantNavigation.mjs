@@ -12,7 +12,7 @@ export const groups=[
  {name:'Configurações',icon:'settings',items:[item('Minha Loja','Dados da loja'),item('Horário de funcionamento','Horários de funcionamento','Horário de funcionamento','',true),item('Configurações','Impressão','Configurações','Impressoras',true),item('Alertas e sons','Alertas e sons','Configurações','Alertas e aplicativo',true),item('Aceite de pedidos','Aceite de pedidos','Configurações','Aceite de pedidos',true),item('Equipe','Usuários e permissões','Equipe','',true),item('Assinaturas','Assinatura'),item('Aplicativos e Downloads','Aplicativos e downloads'),item('Primeiros passos','Primeiros passos'),item('Atualizações','Atualizações')]}
 ];
 export const support=item('Ajuda e suporte','Ajuda e suporte');
-export const routes=[overview,...groups.flatMap(g=>g.items),support];
+export const routes=[overview,item('Novo Pedido','Novo Pedido','Cozinha e expedição','new-order',true),...groups.flatMap(g=>g.items),support];
 const lookup=new Map(routes.map(r=>[r.id,r]));
 export const menuRouteIds=routes.map(r=>r.id);
 export function resolveMenuRoute(id){return lookup.get(id)||{id,tab:id,label:id,section:'',manager:false,feature:''}}

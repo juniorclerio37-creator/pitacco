@@ -2,10 +2,11 @@ import React,{useEffect,useState} from 'react';
 import {LayoutDashboard,ShoppingBag,Utensils,Bike,Users,Gift,Wallet,Plug,Settings,Headphones,ChevronDown,ChevronRight,ChevronsUpDown,PanelLeftClose,PanelLeftOpen,Search,Star,Store,Menu,LogOut,UserCircle,Sun,Moon} from 'lucide-react';
 import {groups,overview,support,resolveMenuRoute,menuAllowed,searchMenu} from './merchantNavigation.mjs';
 import './merchant-navigation.css';
+import OperationalShortcuts from './OperationalShortcuts.jsx';
 const icons={operation:ShoppingBag,menu:Utensils,delivery:Bike,customers:Users,loyalty:Gift,finance:Wallet,integrations:Plug,settings:Settings};
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch{return fallback}};
 const write=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value))}catch{}};
-export function MerchantNavigation({routeId,onNavigate,allowed,manager,active,admin,driver,featureSettings,stores,selected,onStoreChange,userId,extra=[],collapsed,onCollapse,theme='light',onThemeChange,email,role,version,onLogout,incidentCount=0,native=false}){
+export function MerchantNavigation({routeId,onNavigate,allowed,manager,active,admin,driver,featureSettings,stores,selected,onStoreChange,userId,extra=[],collapsed,onCollapse,theme='light',onThemeChange,email,role,version,onLogout,incidentCount=0,native=false,client}){
  const key='pitacco-navigation:'+String(userId||'local')+':'+String(selected||'none');
  const [query,setQuery]=useState(''),[open,setOpen]=useState([]),[favorites,setFavorites]=useState([]),[accountOpen,setAccountOpen]=useState(false);
  const [smallScreen,setSmallScreen]=useState(()=>typeof window!=='undefined'&&window.matchMedia('(max-width:800px)').matches);
@@ -25,6 +26,7 @@ export function MerchantNavigation({routeId,onNavigate,allowed,manager,active,ad
  return <nav aria-label="Menu principal" className={'merchant-nav mn-compact'+(collapsed?' mn-collapsed':'')}>
  <div className="mn-top"><span className="mn-logo"><img src="/pitacco-brand-013.svg" alt="Pitacco"/></span><button type="button" className="mn-collapse" aria-label={collapsed?'Expandir menu':'Recolher menu'} onClick={onCollapse}>{collapsed?<PanelLeftOpen size={19}/>:<PanelLeftClose size={19}/>}</button></div>
  <div className="mn-store"><Store size={22}/><div><span>Estabelecimento</span><select aria-label="Trocar estabelecimento" value={selected||''} onChange={e=>onStoreChange(e.target.value)}>{!selected&&<option value="">{stores.length?(native?"Selecione a loja deste computador":"Selecione a loja"):"Nenhuma loja vinculada"}</option>}{stores.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></div><ChevronsUpDown size={15}/></div>
+ {active&&manager&&client&&<OperationalShortcuts key={selected} client={client} storeId={selected} native={native} collapsed={collapsed} onExpand={onCollapse} canCreate={usable(resolveMenuRoute('Novo Pedido'))} canAccept={allowed('Configurações')} canDispatch={allowed('Entregas')} onNewOrder={()=>go('Novo Pedido')}/>}
  <label className="mn-search"><Search size={17}/><input type="search" aria-label="Buscar funcionalidades" placeholder="Buscar funcionalidades" value={query} onChange={e=>{setQuery(e.target.value);if(collapsed)onCollapse()}}/></label>
  {usable(overview)&&(!query||searchMenu(overview,query))&&render(overview,LayoutDashboard,true)}
  {!query&&favorites.some(id=>all.some(r=>r.id===id&&usable(r)))&&<div className="mn-favorites"><small>Favoritos</small>{favorites.map(id=>all.find(r=>r.id===id)).filter(r=>r&&usable(r)).map(r=>render(r,Star))}</div>}

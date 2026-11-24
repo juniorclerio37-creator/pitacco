@@ -24,7 +24,7 @@ change("},[tab]);\nuseEffect(()=>{if(featureSettings&&!allowed(tab))setTab('Pain
 # Preserve the original header, session, theme, logout and background subscription.
 start=s.index('<nav aria-label="Menu principal">')
 end=s.index('</nav>',start)+len('</nav>')
-s=s[:start]+"""<MerchantNavigation routeId={navigationRoute} onNavigate={target=>{setTab(target);setMessage('');setMobileMenuOpen(false)}} allowed={allowed} manager={manager} active={active} admin={admin} driver={isDriver} featureSettings={featureSettings} stores={stores} selected={selected} onStoreChange={setSelected} userId={session.user.id} theme={theme} onThemeChange={setTheme} email={profile?.email||session.user.email} role={profile?.role} version={nativeAvailable()?'Pitacco Windows v0.12.31':''} native={nativeAvailable()} onLogout={()=>supabase.auth.signOut()} incidentCount={incidentCount} extra={fallbackMenuItems(nav,secondaryTabs,landing)} collapsed={menuCollapsed} onCollapse={toggleMenu}/>"""+s[end:]
+s=s[:start]+"""<MerchantNavigation client={supabase} routeId={navigationRoute} onNavigate={target=>{setTab(target);setMessage('');setMobileMenuOpen(false)}} allowed={allowed} manager={manager} active={active} admin={admin} driver={isDriver} featureSettings={featureSettings} stores={stores} selected={selected} onStoreChange={setSelected} userId={session.user.id} theme={theme} onThemeChange={setTheme} email={profile?.email||session.user.email} role={profile?.role} version={nativeAvailable()?'Pitacco Windows v0.12.31':''} native={nativeAvailable()} onLogout={()=>supabase.auth.signOut()} incidentCount={incidentCount} extra={fallbackMenuItems(nav,secondaryTabs,landing)} collapsed={menuCollapsed} onCollapse={toggleMenu}/>"""+s[end:]
 # Add the collapse state to the merchant shell without depending on earlier layout class additions.
 import re
 shell=list(re.finditer(r'<div className=\{([^{}\n]*pitacco-mobile-workspace[^{}\n]*)\}>',s))
@@ -58,4 +58,12 @@ needle=" const [orderBadges,setOrderBadges]"
 assert s.count(needle)==1
 s=s.replace(needle," useEffect(()=>{if(view==='Configurações'&&['Impressoras','Aceite de pedidos','Alertas e aplicativo'].includes(navigationSection))setSettingsTab(navigationSection)},[view,navigationSection,navigationKey]);\n"+needle,1)
 change('<Fideliza client={client} storeId={storeId} manager={manager}/>','<Fideliza client={client} storeId={storeId} manager={manager} initialSection={navigationSection||\'Visão geral\'} navigationKey={navigationKey}/>')
+p.write_text(s,encoding='utf-8')
+
+# Open the existing sale form from the global shortcut and retain the background subscriber.
+p=Path('web/Operations.jsx')
+s=p.read_text(encoding='utf-8')
+needle=" const [orderBadges,setOrderBadges]"
+assert s.count(needle)==1
+s=s.replace(needle," useEffect(()=>{if(view==='Cozinha e expedição'&&navigationSection==='new-order'){const form=document.getElementById('new-order');if(form){form.open=true;form.scrollIntoView({block:'nearest'});form.querySelector('input')?.focus()}}},[view,navigationSection,navigationKey]);\n"+needle,1)
 p.write_text(s,encoding='utf-8')

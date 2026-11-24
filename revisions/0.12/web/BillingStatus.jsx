@@ -1,6 +1,6 @@
 import React,{useEffect,useState} from 'react';
 
-const labels={trial:'Período de teste',active:'Ativa · pagamento confirmado',overdue:'Vencida',legacy:'Cadastro anterior à cobrança'};
+const labels={trial:'Período de teste',active:'Ativa · pagamento confirmado',overdue:'Vencida',legacy:'Cadastro anterior à cobrança',courtesy:'Cortesia',suspended:'Suspensa'};
 const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const date=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'medium',timeStyle:'short'});
 
@@ -33,7 +33,10 @@ export default function BillingStatus({client,storeId}){
   {busy&&!result&&<p role="status">Consultando assinatura…</p>}
   {error&&<p role="alert">{error}</p>}
   {result&&<>
-   <div className="line"><b>Situação</b><span>{labels[result.status]}</span></div>
+   <div className="line"><b>Situação</b><span>{labels[result.status]||result.status}</span></div>
+   {result.plan&&<div className="line"><b>Plano atual</b><span>{result.plan}</span></div>}
+   {result.amount!=null&&<div className="line"><b>Valor informado pela cobrança</b><span>{money.format(Number(result.amount))}</span></div>}
+   {result.status==='trial'&&result.trial_ends_at&&<div className="line"><b>Dias restantes de teste</b><span>{Math.max(0,Math.ceil((new Date(result.trial_ends_at)-Date.now())/86400000))}</span></div>}
    {deadline&&<div className="line"><b>{result.paid_until?'Cobertura paga até':'Fim do teste'}</b><span>{date.format(new Date(deadline))}</span></div>}
    {result.orders_blocked&&<p role="alert">Novos pedidos bloqueados. Os pedidos em andamento continuam disponíveis.</p>}
    {result.status==='overdue'&&result.regularization_url&&<a href={result.regularization_url} rel="noreferrer">Regularizar assinatura</a>}
