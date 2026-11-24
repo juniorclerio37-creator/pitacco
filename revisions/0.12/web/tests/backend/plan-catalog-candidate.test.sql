@@ -220,3 +220,27 @@ do $gate_test$ begin
  begin perform public.pitacco_owner_set_commercial_billing_control(true,'Canal de regularização de teste');raise exception 'Unauthorized enforcement';exception when insufficient_privilege then null;end;
 end $gate_test$;
 reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+select public.pitacco_owner_set_commercial_pix('12345678000199','Favorecido de teste');
+reset role;
+insert into public.store_members values('20000000-0000-0000-0000-000000000003','10000000-0000-0000-0000-000000000002','gestor');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+do $claim_test$ declare i uuid;c uuid; begin
+ select (x->>'id')::uuid into i from jsonb_array_elements(public.pitacco_commercial_invoices('20000000-0000-0000-0000-000000000003')->'rows') x where x->>'status'<>'paid' limit 1;
+ assert i is not null;
+ c:=public.pitacco_submit_commercial_payment(i,'fixture-pix-002','application/pdf','JVBERi0xLjQ=');
+ assert c is not null;
+ assert exists(select 1 from jsonb_array_elements(public.pitacco_commercial_invoices('20000000-0000-0000-0000-000000000003')->'rows') x where x->>'claim_status'='pending' and x->>'status'<>'paid');
+ begin perform public.pitacco_owner_commercial_payment_proof(c);raise exception 'Unauthorized proof';exception when insufficient_privilege then null;end;
+end $claim_test$;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+do $claim_test$ declare c uuid; begin
+ select (x->>'claim_id')::uuid into c from jsonb_array_elements(public.pitacco_commercial_invoices('20000000-0000-0000-0000-000000000003')->'rows') x where x->>'claim_status'='pending';
+ assert public.pitacco_owner_commercial_payment_proof(c)->>'mime'='application/pdf';
+ perform public.pitacco_owner_review_commercial_payment(c,true,'Recebimento conferido no teste');
+ assert exists(select 1 from jsonb_array_elements(public.pitacco_commercial_invoices('20000000-0000-0000-0000-000000000003')->'rows') x where x->>'claim_status'='approved' and x->>'status'='paid');
+end $claim_test$;
+reset role;

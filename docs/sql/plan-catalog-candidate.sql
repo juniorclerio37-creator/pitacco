@@ -594,4 +594,93 @@ begin
 end $gate$;
 revoke all on function public.pitacco_owner_commercial_billing_control(),public.pitacco_owner_set_commercial_billing_control(boolean,text),public.pitacco_merchant_commercial_billing_state(uuid) from public,anon,authenticated;
 grant execute on function public.pitacco_owner_commercial_billing_control(),public.pitacco_owner_set_commercial_billing_control(boolean,text),public.pitacco_merchant_commercial_billing_state(uuid) to authenticated;
+
+-- Native regularization screen: PIX is configured by the platform owner.
+-- A submitted document is evidence, never a payment confirmation.
+alter table pitacco_private.commercial_billing_control
+ add column pix_cnpj text check(pix_cnpj is null or pix_cnpj ~ '^[0-9]{14}$'),
+ add column pix_recipient text check(pix_recipient is null or length(pix_recipient) between 2 and 120);
+create table pitacco_private.commercial_payment_claims(
+ id uuid primary key default gen_random_uuid(),invoice_id uuid not null references pitacco_private.commercial_invoices(id),
+ submitted_by uuid not null,reference text not null check(length(reference) between 5 and 160),
+ mime text not null check(mime in ('application/pdf','image/jpeg','image/png')),
+ proof bytea not null check(octet_length(proof) between 8 and 2097152),
+ status text not null default 'pending' check(status in ('pending','approved','rejected')),
+ created_at timestamptz not null default now(),reviewed_at timestamptz,reviewed_by uuid,review_note text
+);
+create unique index commercial_one_pending_claim on pitacco_private.commercial_payment_claims(invoice_id) where status='pending';
+alter table pitacco_private.commercial_payment_claims enable row level security;
+revoke all on pitacco_private.commercial_payment_claims from public,anon,authenticated;
+create or replace function public.pitacco_owner_set_commercial_pix(p_cnpj text,p_recipient text)
+returns void language plpgsql security definer set search_path='' as $pix$
+declare k text:=regexp_replace(coalesce(p_cnpj,''),'[^0-9]','','g');
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ if k !~ '^[0-9]{14}$' or length(btrim(coalesce(p_recipient,''))) not between 2 and 120 then raise exception 'Informe a chave CNPJ e o favorecido' using errcode='22023';end if;
+ update pitacco_private.commercial_billing_control set pix_cnpj=k,pix_recipient=btrim(p_recipient),updated_at=now(),updated_by=auth.uid() where singleton;
+end $pix$;
+create or replace function public.pitacco_merchant_commercial_billing_state(p_store uuid)
+returns jsonb language plpgsql stable security definer set search_path='' as $pix$
+begin
+ if auth.uid() is null or not (public.pitacco_is_platform_owner() or public.is_store_manager(p_store)) then raise exception 'Sem permissão' using errcode='42501';end if;
+ return (select jsonb_build_object('own_orders_blocked',pitacco_private.commercial_orders_blocked(p_store),'payment_instructions',payment_instructions,'pix_cnpj',pix_cnpj,'pix_recipient',pix_recipient) from pitacco_private.commercial_billing_control where singleton);
+end $pix$;
+create or replace function public.pitacco_submit_commercial_payment(p_invoice uuid,p_reference text,p_mime text,p_proof text)
+returns uuid language plpgsql security definer set search_path='' as $claim$
+declare i pitacco_private.commercial_invoices%rowtype;b pitacco_private.commercial_closings%rowtype;data bytea;result uuid;
+begin
+ if auth.uid() is null then raise exception 'Sem permissão' using errcode='42501';end if;
+ select * into i from pitacco_private.commercial_invoices where id=p_invoice for update;
+ select * into b from pitacco_private.commercial_closings where contract_id=i.contract_id and kind=i.kind and period_end=i.period_end;
+ if b.store_id is null or not public.is_store_manager(b.store_id) then raise exception 'Sem permissão' using errcode='42501';end if;
+ if not exists(select 1 from pitacco_private.commercial_billing_control where pix_cnpj is not null and pix_recipient is not null) then raise exception 'Pix ainda não configurado' using errcode='22023';end if;
+ if b.state<>'calculated' or i.amount_cents is distinct from b.amount_cents or exists(select 1 from pitacco_private.commercial_manual_payments where invoice_id=i.id) then raise exception 'Cobrança indisponível para pagamento' using errcode='22023';end if;
+ if length(btrim(coalesce(p_reference,''))) not between 5 and 160 or p_mime is null or p_mime not in ('application/pdf','image/jpeg','image/png') or length(coalesce(p_proof,'')) not between 12 and 2796204 then raise exception 'Comprovante inválido ou maior que 2 MB' using errcode='22023';end if;
+ data:=decode(p_proof,'base64');
+ if octet_length(data) not between 8 and 2097152 or
+ (p_mime='application/pdf' and substring(data from 1 for 5)<>decode('255044462d','hex')) or
+ (p_mime='image/jpeg' and substring(data from 1 for 3)<>decode('ffd8ff','hex')) or
+ (p_mime='image/png' and substring(data from 1 for 8)<>decode('89504e470d0a1a0a','hex')) then raise exception 'Formato do comprovante inválido' using errcode='22023';end if;
+ insert into pitacco_private.commercial_payment_claims(invoice_id,submitted_by,reference,mime,proof)
+ values(i.id,auth.uid(),btrim(p_reference),p_mime,data) returning id into result;
+ return result;
+end $claim$;
+create or replace function public.pitacco_owner_commercial_payment_proof(p_claim uuid)
+returns jsonb language plpgsql stable security definer set search_path='' as $claim$
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ return (select jsonb_build_object('mime',mime,'base64',encode(proof,'base64')) from pitacco_private.commercial_payment_claims where id=p_claim);
+end $claim$;
+create or replace function public.pitacco_owner_review_commercial_payment(p_claim uuid,p_approve boolean,p_note text)
+returns void language plpgsql security definer set search_path='' as $claim$
+declare c pitacco_private.commercial_payment_claims%rowtype;i pitacco_private.commercial_invoices%rowtype;
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ if p_approve is null or length(btrim(coalesce(p_note,''))) not between 5 and 500 then raise exception 'Informe a justificativa' using errcode='22023';end if;
+ select * into c from pitacco_private.commercial_payment_claims where id=p_claim;
+ if not found then raise exception 'Comprovante indisponível' using errcode='22023';end if;
+ select * into i from pitacco_private.commercial_invoices where id=c.invoice_id for update;
+ select * into c from pitacco_private.commercial_payment_claims where id=p_claim for update;
+ if c.status<>'pending' then raise exception 'Comprovante já analisado' using errcode='22023';end if;
+ if p_approve then perform public.pitacco_owner_confirm_commercial_payment(i.id,i.amount_cents,c.reference,p_note);end if;
+ update pitacco_private.commercial_payment_claims set status=case when p_approve then 'approved' else 'rejected' end,reviewed_at=now(),reviewed_by=auth.uid(),review_note=btrim(p_note) where id=c.id;
+end $claim$;
+revoke all on function public.pitacco_owner_set_commercial_pix(text,text),public.pitacco_submit_commercial_payment(uuid,text,text,text),public.pitacco_owner_commercial_payment_proof(uuid),public.pitacco_owner_review_commercial_payment(uuid,boolean,text) from public,anon,authenticated;
+grant execute on function public.pitacco_owner_set_commercial_pix(text,text),public.pitacco_submit_commercial_payment(uuid,text,text,text),public.pitacco_owner_commercial_payment_proof(uuid),public.pitacco_owner_review_commercial_payment(uuid,boolean,text) to authenticated;
+create or replace function public.pitacco_commercial_invoices(p_store uuid,p_page integer default 0)
+returns jsonb language plpgsql stable security definer set search_path='' as $invoice$
+declare j jsonb;
+begin
+ if auth.uid() is null or not (public.pitacco_is_platform_owner() or (p_store is not null and public.is_store_manager(p_store))) then raise exception 'Sem permissão' using errcode='42501';end if;
+ if p_page is null or p_page not between 0 and 100000 then raise exception 'Página inválida' using errcode='22023';end if;
+ select coalesce(jsonb_agg(to_jsonb(x) order by x.due_at desc,x.id),'[]'::jsonb) into j from (
+ select i.id,b.store_id,s.name as store_name,i.kind,b.period_start,i.period_end,i.amount_cents,i.due_at,i.grace_until,
+ pitacco_private.commercial_invoice_status(i.amount_cents,b.amount_cents,b.state,p.invoice_id is not null,i.due_at,i.grace_until) as status,
+ p.verified_at as paid_at,claim.id as claim_id,claim.status as claim_status,claim.review_note,case when public.pitacco_is_platform_owner() then claim.reference else null end as claim_reference
+ from pitacco_private.commercial_invoices i join pitacco_private.commercial_closings b using(contract_id,kind,period_end)
+ join public.stores s on s.id=b.store_id left join pitacco_private.commercial_manual_payments p on p.invoice_id=i.id
+ left join lateral (select id,status,review_note,reference from pitacco_private.commercial_payment_claims where invoice_id=i.id order by created_at desc,id desc limit 1) claim on true
+ where p_store is null or b.store_id=p_store order by i.due_at desc,i.id offset p_page*25 limit 26) x;
+ return jsonb_build_object('rows',j-25,'has_more',jsonb_array_length(j)>25);
+end $invoice$;
 notify pgrst,'reload schema';
