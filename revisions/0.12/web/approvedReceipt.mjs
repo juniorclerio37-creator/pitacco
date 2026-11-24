@@ -137,7 +137,11 @@ export function approvedReceipt(job,width=80,opts={}){
     const child=typeof nested==='string'?{name:nested}:nested;
     if(child&&typeof child==='object'){
      const childName=first(child.name,child.title,child.label);
-     if(childName)add('    '+(amount(child.quantity??child.qty??1)||1)+'x '+childName);
+     if(childName){
+      const fraction=mod.group==='Combo'&&child.group==='Sabor'&&Number.isInteger(child.numerator)&&Number.isInteger(child.denominator)&&child.numerator>0&&child.denominator>=child.numerator;
+      const label=fraction?'Sabor '+child.numerator+'/'+child.denominator+': '+childName:mod.group==='Combo'&&['Tamanho','Borda','Massa','Adicional'].includes(child.group)?child.group+': '+childName:(amount(child.quantity??child.qty??1)||1)+'x '+childName;
+      add('    '+label);
+     }
     }
    }
   }
