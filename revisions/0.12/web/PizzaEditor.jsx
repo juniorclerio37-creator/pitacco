@@ -2,8 +2,10 @@ import React,{useState,useRef} from 'react';
 const field={display:'grid',gap:6,minWidth:0};
 const input={width:'100%',minWidth:0,boxSizing:'border-box'};
 export const emptyPizza=()=>({rule:'max',sizes:[],flavors:[],extras:[]});
-export default function PizzaEditor({value,onChange,disabled=false,onUpload}){
- const [uploading,setUploading]=useState(null),[photoError,setPhotoError]=useState('');
+export default function PizzaEditor({value,onChange,disabled=false,onUpload,flavorLibrary=[],onSaveFlavor}){
+ const [uploading,setUploading]=useState(null),[photoError,setPhotoError]=useState(''),[libraryChoice,setLibraryChoice]=useState(''),[libraryBusy,setLibraryBusy]=useState(false);
+ async function saveFlavor(f){if(!onSaveFlavor||libraryBusy)return;setLibraryBusy(true);setPhotoError('');try{const saved=await onSaveFlavor(f);onChange({...latest.current,flavors:latest.current.flavors.map(x=>x.id===f.id?{...x,library_id:saved.id}:x)});}catch(e){setPhotoError(e.message||'Falha ao salvar sabor');}finally{setLibraryBusy(false);}}
+ function importFlavor(){const f=flavorLibrary.find(x=>x.id===libraryChoice);if(!f||value.flavors.some(x=>x.library_id===f.id))return;const {id,name,description,ingredients,image_url,category,available}=f;patch('flavors',[...value.flavors,{id:crypto.randomUUID(),library_id:id,name,description,ingredients,image_url,category,available,prices:{}}]);setLibraryChoice('');}
  const latest=useRef(value);latest.current=value;
  async function uploadFlavor(id,file){if(!file||!onUpload)return;if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>5*1024*1024){setPhotoError('Selecione JPG, PNG ou WebP de até 5 MB.');return;}setUploading(id);setPhotoError('');try{const image_url=await onUpload(file);onChange({...latest.current,flavors:latest.current.flavors.map(f=>f.id===id?{...f,image_url}:f)});}catch(e){setPhotoError(e.message||'Falha ao enviar foto.');}finally{setUploading(null);}}
 
@@ -24,7 +26,7 @@ export default function PizzaEditor({value,onChange,disabled=false,onUpload}){
  {value.rule==='fixed'&&label('Preço fixo (R$)',money(s.fixedPrice,v=>update('sizes',s.id,{fixedPrice:v})))}
  <button type="button" className="secondary" onClick={()=>remove('sizes',s.id)}>Retirar tamanho</button></div>)}
  <button type="button" onClick={()=>add('sizes',{name:'',diameter:35,slices:8,maxFlavors:2,fixedPrice:''})}>+ Tamanho</button>
- <h3>Sabores</h3>
+ <h3>Sabores</h3>{onSaveFlavor&&<div style={card}><b>Biblioteca de sabores da loja</b><small>Reutilize nome, foto e ingredientes. Defina os preços por tamanho nesta pizza. Alterações na biblioteca não modificam pizzas já publicadas automaticamente.</small><select value={libraryChoice} onChange={e=>setLibraryChoice(e.target.value)}><option value=''>Selecione um sabor cadastrado</option>{flavorLibrary.filter(f=>!value.flavors.some(x=>x.library_id===f.id)).map(f=><option key={f.id} value={f.id}>{f.name} · {f.category}</option>)}</select><button type='button' disabled={!libraryChoice} onClick={importFlavor}>Adicionar sabor da biblioteca</button></div>}
  {value.flavors.map(f=><div key={f.id} style={card}>
  {label('Nome',<input style={input} value={f.name} onChange={e=>update('flavors',f.id,{name:e.target.value})}/>)}
  {label('Descrição',<textarea style={input} value={f.description} onChange={e=>update('flavors',f.id,{description:e.target.value})}/>)}
@@ -36,7 +38,7 @@ export default function PizzaEditor({value,onChange,disabled=false,onUpload}){
  {label('Categoria',<select value={f.category} onChange={e=>update('flavors',f.id,{category:e.target.value})}>{['Tradicional','Especial','Premium','Doce'].map(c=><option key={c}>{c}</option>)}</select>)}
  <label><input type="checkbox" checked={f.available} onChange={e=>update('flavors',f.id,{available:e.target.checked})}/> Disponível</label>
  {value.sizes.map(s=><React.Fragment key={s.id}>{label('Preço — '+(s.name||'Tamanho')+' (R$)',money(f.prices[s.id],v=>update('flavors',f.id,{prices:{...f.prices,[s.id]:v}})))}</React.Fragment>)}
- <button type="button" className="secondary" onClick={()=>remove('flavors',f.id)}>Retirar sabor</button></div>)}
+ {onSaveFlavor&&<button type='button' className='secondary' disabled={libraryBusy||Boolean(uploading)||!f.name.trim()} onClick={()=>saveFlavor(f)}>{f.library_id?'Atualizar sabor na biblioteca':'Salvar sabor na biblioteca'}</button>}<button type="button" className="secondary" onClick={()=>remove('flavors',f.id)}>Retirar sabor</button></div>)}
  <button type="button" onClick={()=>add('flavors',{name:'',description:'',ingredients:'',image_url:'',category:'Tradicional',available:true,prices:{}})}>+ Sabor</button>
  <h3>Bordas, massas e adicionais</h3>
  {value.extras.map(x=><div key={x.id} style={card}>
