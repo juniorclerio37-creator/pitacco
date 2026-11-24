@@ -63,3 +63,5 @@
 .fiado-balcao .panel>p{font-size:13px;color:#697991}
 @media(max-width:1000px){.fiado-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.fiado-columns{grid-template-columns:1fr}}
 @media(max-width:530px){.fiado-page .panel{padding:12px}.fiado-metrics{gap:6px}.fiado-metrics article{padding:11px}.fiado-tabs button{font-size:11px;padding:8px 10px}.fiado-code-once code{font-size:18px}}
+
+.fiado-manual-status{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:14px;margin:12px 0;border:1px solid var(--border,#ddd);border-radius:12px}.fiado-manual-status>div{flex:1;min-width:180px}.fiado-manual-status p{font-size:13px;margin:5px 0}.fiado-manual-status.is-blocked{border-color:#c94a48}.fiado-manual-status.is-blocked strong{color:#c94a48}.fiado-manual-status .fiado-block-button{background:#b42318;color:#fff;border:1px solid #b42318}.fiado-manual-status .fiado-unblock-button{background:#19734d;color:#fff;border:1px solid #19734d}

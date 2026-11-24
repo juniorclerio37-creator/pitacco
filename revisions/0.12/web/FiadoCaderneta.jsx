@@ -19,6 +19,7 @@ export default function FiadoCaderneta({client,storeId,onNavigate,initialTab='cl
  const [reload,setReload]=useState(0),[requestKey,setRequestKey]=useState(null);
  const customers=overview?.customers||[],charges=overview?.charges||[],payments=overview?.payments||[];
  const customer=customers.find(x=>x.id===selected)||null;
+ useEffect(()=>{if(customer)setForm({name:customer.name,phone:customer.phone,limit:String(customer.limit),enabled:customer.enabled,due_days:customer.due_days,approval_mode:customer.approval_mode,block_overdue:customer.block_overdue,pin:'',pin_confirm:''})},[storeId,customer?.id]);
 
  const customerCharges=charges.filter(x=>x.customer_id===selected);
  const reserved=customerCharges.filter(x=>x.state==='reserved').reduce((a,x)=>a+Number(x.amount)-Number(x.paid),0);
@@ -81,11 +82,23 @@ export default function FiadoCaderneta({client,storeId,onNavigate,initialTab='cl
   if(form.pin&&!/^[0-9]{6}$/.test(form.pin))throw Error('O PIN deve ter exatamente seis dígitos numéricos.');
   const id=await rpc('pitacco_fiado_save_customer_pin',{
    p_store:storeId,p_name:form.name,p_phone:form.phone,p_limit:Number(form.limit),
-   p_enabled:form.enabled,p_due_days:Number(form.due_days),
+   p_enabled:customer?customer.enabled:form.enabled,p_due_days:Number(form.due_days),
    p_mode:form.approval_mode,p_block_overdue:form.block_overdue,
    p_pin:form.pin||null});
   setSelected(id);setForm(previous=>({...previous,pin:'',pin_confirm:''}));reloadData('Cliente salvo. A loja autoriza cada compra, ou pode liberar aprovação automática para este cliente.');
  })}
+ function changeCustomerAuthorization(target){
+  if(!target||busy||loading)return;
+  const enabled=!target.enabled;
+  if(!window.confirm(enabled?'Liberar novas compras fiadas para '+target.name+'? Os limites e bloqueios por atraso continuam valendo.':'Bloquear novas compras fiadas de '+target.name+'? As dívidas e pedidos existentes serão preservados.'))return;
+  void run(async()=>{
+   const result=await rpc('pitacco_fiado_set_customer_enabled',{p_store:storeId,p_customer:target.id,p_enabled:enabled});
+   if(result!==enabled)throw Error('Não foi possível confirmar a alteração de autorização.');
+   setOverview(previous=>previous?{...previous,customers:previous.customers.map(c=>c.id===target.id?{...c,enabled}:c)}:previous);
+   setForm(previous=>({...previous,enabled}));
+   reloadData(enabled?'Fiado liberado para este cliente. As demais regras continuam valendo.':'Fiado bloqueado manualmente. Dívidas e recebimentos permanecem disponíveis.');
+  });
+ }
  function toggle(e){void run(async()=>{
   const enabled=e.target.checked;
   await rpc('pitacco_fiado_toggle',{p_store:storeId,p_enabled:enabled});
@@ -113,7 +126,7 @@ export default function FiadoCaderneta({client,storeId,onNavigate,initialTab='cl
   setRequestKey(null);
   setChoices(old=>({...old,[id]:checked}));
  }
- function createCounter(e){e.preventDefault();if(!selected||!cart.length)return;
+ function createCounter(e){e.preventDefault();if(!selected||!customer?.enabled||!overview?.enabled||!cart.length)return;
   void run(async()=>{
    // Uma chave é mantida se a confirmação de rede falhar; o backend é idempotente.
    const key=requestKey||crypto.randomUUID();
@@ -131,7 +144,7 @@ export default function FiadoCaderneta({client,storeId,onNavigate,initialTab='cl
    <div><h2>Fiado / Caderneta Digital</h2><p>A loja autoriza pedidos sem chave. Escolha aprovação manual ou automática individualmente para cada cliente.</p></div>
    <label className="fiado-switch">
     <input type="checkbox" checked={!!overview?.enabled} onChange={toggle} disabled={busy||loading}/>
-    <span>{overview?.enabled?'Fiado ativo na loja':'Habilitar fiado nesta loja'}</span>
+    <span>{overview?.enabled?'Fiado ativo na loja':'Fiado bloqueado na loja — ativar'}</span>
    </label>
   </header>
   {error&&<p role="alert" className="fiado-alert">{error}</p>}
@@ -155,12 +168,16 @@ export default function FiadoCaderneta({client,storeId,onNavigate,initialTab='cl
     {customers.map(c=><button type="button" className={'fiado-customer'+(selected===c.id?' selected':'')}
       key={c.id} onClick={()=>selectCustomer(c.id)}>
       <strong>{c.name}</strong><span>{c.phone}</span>
-      <span>{c.enabled?'Autorizado':'Suspenso'} · {c.pin_set?'PIN cadastrado':'PIN pendente'} · Em uso {fmt(c.used)} · Disponível {fmt(c.available)}</span>
+      <span>{c.enabled?'Autorizado':'Bloqueado manualmente'} · {c.pin_set?'PIN cadastrado':'PIN pendente'} · Em uso {fmt(c.used)} · Disponível {fmt(c.available)}</span>
       {c.overdue&&<em>Pagamento vencido</em>}
      </button>)}
    </section>
    <section className="panel">
     <h3>{selected?'Configurações do cliente':'Cadastrar cliente'}</h3>
+    {customer&&<div className={'fiado-manual-status '+(customer.enabled?'is-enabled':'is-blocked')}>
+      <div><strong>{customer.enabled?'Fiado autorizado':'Fiado bloqueado manualmente'}</strong><p>{customer.enabled?'O gestor pode suspender novas compras a qualquer momento.':'Novas compras fiadas estão bloqueadas até a loja liberar novamente.'} Dívidas, histórico e recebimentos são preservados.</p></div>
+      <button type="button" disabled={busy||loading} className={customer.enabled?'fiado-block-button':'fiado-unblock-button'} onClick={()=>changeCustomerAuthorization(customer)}>{customer.enabled?'Bloquear fiado':'Desbloquear fiado'}</button>
+    </div>}
     <form className="fiado-form" onSubmit={saveCustomer}>
      <label>Nome<input required minLength={2} value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label>
      <label>Telefone com DDD<input required inputMode="tel" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}/></label>
@@ -175,7 +192,7 @@ export default function FiadoCaderneta({client,storeId,onNavigate,initialTab='cl
      <label>Prazo de pagamento (dias)<input required type="number" min="1" max="365" value={form.due_days} onChange={e=>setForm({...form,due_days:e.target.value})}/></label>
      <label>Aprovação<select value={form.approval_mode} onChange={e=>setForm({...form,approval_mode:e.target.value})}>
       <option value="manual">Manual — a loja autoriza cada pedido</option><option value="automatic">Automática — somente este cliente</option></select></label>
-     <label className="fiado-check"><input type="checkbox" checked={form.enabled} onChange={e=>setForm({...form,enabled:e.target.checked})}/>Permitir novas compras</label>
+     {!customer&&<label className="fiado-check"><input type="checkbox" checked={form.enabled} onChange={e=>setForm({...form,enabled:e.target.checked})}/>Permitir novas compras</label>}
      <label className="fiado-check"><input type="checkbox" checked={form.block_overdue} onChange={e=>setForm({...form,block_overdue:e.target.checked})}/>Bloquear fiado quando houver dívida vencida</label>
      <button disabled={busy}>Salvar cadastro e regras</button>
     </form>
