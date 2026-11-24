@@ -24,6 +24,9 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  const [pizzaPreview,setPizzaPreview]=useState(false),[pizzaDraft,setPizzaDraft]=useState(emptyPizza);
  const [pizzaDraftId,setPizzaDraftId]=useState(null),[pizzaDrafts,setPizzaDrafts]=useState([]),[pizzaPublications,setPizzaPublications]=useState([]);
  const [flavorLibrary,setFlavorLibrary]=useState([]);
+ const [comboPublications,setComboPublications]=useState([]),[comboTarget,setComboTarget]=useState(null);
+ async function refreshCombos(){if(!manager||!storeId)return;const r=await client.rpc('pitacco_combo_publication_status',{p_store:storeId});if(!r.error)setComboPublications(Array.isArray(r.data)?r.data:[]);}
+ useEffect(()=>{setComboPublications([]);setComboTarget(null);refreshCombos();},[storeId,manager]);
  useEffect(()=>{let live=true;setFlavorLibrary([]);if(manager&&storeId)client.from('pitacco_pizza_flavor_library').select('*').eq('store_id',storeId).order('name').then(r=>{if(live&&!r.error)setFlavorLibrary(r.data||[])});return()=>{live=false}},[client,storeId,manager]);
  async function saveLibraryFlavor(f){const row={store_id:storeId,name:f.name.trim(),description:f.description||'',ingredients:f.ingredients||'',image_url:f.image_url||'',category:f.category,available:f.available!==false,updated_at:new Date().toISOString()};const q=f.library_id?client.from('pitacco_pizza_flavor_library').update(row).eq('store_id',storeId).eq('id',f.library_id):client.from('pitacco_pizza_flavor_library').insert(row);const {data,error}=await q.select('*').single();if(error)throw Error(error.code==='23505'?'Este sabor já existe na biblioteca. Selecione-o na lista.':error.message);setFlavorLibrary(old=>[...old.filter(x=>x.id!==data.id),data].sort((a,b)=>a.name.localeCompare(b.name,'pt-BR')));return data;}
  async function loadPizzaDrafts(){if(!manager||!storeId)return;const [drafts,publications]=await Promise.all([client.from('pitacco_pizza_drafts').select('id,name,config').eq('store_id',storeId).order('updated_at',{ascending:false}),client.rpc('pitacco_pizza_publication_status',{p_store:storeId})]);if(drafts.error||publications.error){if(pizzaPreview)setNotice((drafts.error||publications.error).message);return;}setPizzaDrafts(drafts.data||[]);setPizzaPublications(Array.isArray(publications.data)?publications.data:[]);}
@@ -113,6 +116,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  useEffect(()=>{if(!photo){setPreviewUrl('');return}const url=URL.createObjectURL(photo);setPreviewUrl(url);return()=>URL.revokeObjectURL(url)},[photo]);
  const change=(k,v)=>setDraft(p=>({...p,[k]:v}));
  const begin=product=>{
+  const combo=comboPublications.find(x=>x.product_id===product?.id);if(combo){setComboTarget(combo.draft_id);setSection('Combos');setShowEditor(false);return;}
   setEditing(product?.id||null);setDraft(product?{...empty(),...product}:empty());
   setGroups([]);setNewGroups([]);const pub=pizzaPublications.find(x=>x.product_id===product?.id),saved=pizzaDrafts.find(x=>x.id===pub?.draft_id);setPizzaPreview(Boolean(pub));setPizzaDraft(saved?.config||emptyPizza());setPizzaDraftId(saved?.id||null);if(saved)setDraft({...empty(),...product,...saved.config?.metadata,name:saved.name});setPhoto(null);setShowEditor(true);setNotice('');
  };
@@ -149,10 +153,10 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  <div className="page-intro"><div><span className="eyebrow">MEU CARDÁPIO</span><h3>Editor de cardápio</h3><p>Gerencie produtos e veja as alterações no cardápio do cliente enquanto edita.</p></div><button type="button" className="secondary" onClick={onImport}>Importar cardápio</button></div>
  <div className="catalog-studio-tabs" role="tablist" aria-label="Gestão do cardápio">
  {(manager?['Produtos','Complementos','Combos','Banners','Estoque','Insumos']:['Produtos','Complementos','Banners','Estoque','Insumos']).map(t=><button role="tab" aria-selected={section===t}
-  type="button" key={t} className={section===t?'active':'secondary'} onClick={()=>{setSection(t);setShowEditor(false);setNotice('')}}>{t}</button>)}
+  type="button" key={t} className={section===t?'active':'secondary'} onClick={()=>{setSection(t);setComboTarget(null);setShowEditor(false);setNotice('')}}>{t}</button>)}
  </div>
  {notice&&!showEditor&&<p className="notice" role="status">{notice}</p>}
- {section==='Combos'&&manager&&<PizzaComboEditor key={storeId} client={client} storeId={storeId}/>}
+ {section==='Combos'&&manager&&<PizzaComboEditor key={storeId+':'+(comboTarget||'new')} client={client} storeId={storeId} initialDraftId={comboTarget} onChanged={()=>{refreshCombos();onRefresh?.()}}/>}
  {section==='Complementos'&&<CentralComplementLibrary client={client} storeId={storeId} products={products} onChanged={onRefresh}/>}
  {section==='Banners'&&(store?<StoreDesignStudio key={storeId+'-banners'} client={client} store={store} manager={manager}
   products={products} focus="banners"/>:<p role="alert">Não foi possível identificar a loja para abrir os banners.</p>)}
@@ -210,7 +214,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
    <button type="button" className="secondary catalog-sort-arrow" disabled={busy||orderedProducts.filter(x=>categoryName(x.category)===categoryName(p.category)).at(-1)?.id===p.id}
     title="Descer produto" aria-label={'Mover produto '+p.name+' para baixo'} onClick={()=>moveProduct(p,1)}>↓</button>
    <button type="button" className="secondary" aria-label="Editar" onClick={()=>begin(p)}>✎ Editar</button>
-   <button type="button" className="secondary" disabled={busy} onClick={()=>toggle(p)}>{p.menu_active===false?'Ativar':'Desativar'}</button>
+   <button type="button" className="secondary" disabled={busy} onClick={()=>comboPublications.some(x=>x.product_id===p.id)?begin(p):toggle(p)}>{comboPublications.some(x=>x.product_id===p.id)?'Gerenciar combo':p.menu_active===false?'Ativar':'Desativar'}</button>
   </div>
  </article>)}
  </div>{!filtered.length&&<p>Nenhum produto nesta categoria.</p>}</div>
