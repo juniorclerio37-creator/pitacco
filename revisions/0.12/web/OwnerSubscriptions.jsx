@@ -45,12 +45,12 @@ export default function OwnerSubscriptions({client}){
    {!busy&&!error&&visible.length===0&&<p>Nenhuma assinatura encontrada.</p>}
    <div style={{overflowX:'auto'}}><table><thead><tr><th>Loja</th><th>Situação</th><th>Valor</th><th>Cobertura / teste</th><th>Detalhes</th></tr></thead>
    <tbody>{visible.map(r=><tr key={r.id}><td>{r.name}</td><td>{statuses[r.status]||r.status}</td>
-    <td>{money.format(Number(r.monthly_amount||59.90))}</td><td>{date(r.paid_until||r.trial_ends_at)}</td>
+    <td>{money.format(Number(r.monthly_amount??59.90))}</td><td>{date(r.paid_until||r.trial_ends_at)}</td>
     <td><button type="button" className="secondary" onClick={()=>setSelected(r.id)}>Ver ficha</button></td></tr>)}</tbody></table></div>
   </div>
   {current&&<section className="panel" aria-label={'Assinatura de '+current.name}>
    <div className="line"><h3>{current.name}</h3><button type="button" className="secondary" onClick={()=>setSelected(null)}>Fechar</button></div>
-   <dl>{[['Situação',statuses[current.status]||current.status],['Plano',current.plan],['Mensalidade',money.format(Number(current.monthly_amount||59.90))],['Cadastro',date(current.created_at)],['Fim do teste',date(current.trial_ends_at)],['Cobertura paga até',date(current.paid_until)],['Vencimento cadastrado',current.due_date?date(current.due_date):'—'],['Vencimento administrativo',current.admin_due_date?date(current.admin_due_date):'—'],['Cortesia até',date(current.courtesy_until)],['Telefone',current.phone||'—'],['Pedidos registrados',current.orders_count],['Último pedido',date(current.last_order_at)]].map(([label,value])=><div className="line" key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+   <dl>{[['Situação',statuses[current.status]||current.status],['Plano',current.plan],['Mensalidade',money.format(Number(current.monthly_amount??59.90))],['Cadastro',date(current.created_at)],['Fim do teste',date(current.trial_ends_at)],['Cobertura paga até',date(current.paid_until)],['Vencimento cadastrado',current.due_date?date(current.due_date):'—'],['Vencimento administrativo',current.admin_due_date?date(current.admin_due_date):'—'],['Cortesia até',date(current.courtesy_until)],['Telefone',current.phone||'—'],['Pedidos registrados',current.orders_count],['Último pedido',date(current.last_order_at)]].map(([label,value])=><div className="line" key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
    <h4>Pagamentos confirmados no Pitacco</h4>
    {!current.payments?.length?<p>Nenhum pagamento confirmado registrado.</p>:<div style={{overflowX:'auto'}}><table><thead><tr><th>Data</th><th>Provedor</th><th>Valor</th><th>Cobertura até</th><th>Referência</th></tr></thead><tbody>{current.payments.map(p=><tr key={p.provider+':'+p.payment_id}><td>{date(p.confirmed_at)}</td><td>{p.provider}</td><td>{money.format(Number(p.amount))}</td><td>{date(p.paid_until)}</td><td>{p.payment_id}</td></tr>)}</tbody></table></div>}
    <h4>Ações administrativas</h4>

@@ -1,5 +1,6 @@
 
 import React,{useEffect,useState} from 'react';
+import OwnerCommercialFinance from './OwnerCommercialFinance.jsx';
 
 const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const saoPaulo=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'});
@@ -48,6 +49,8 @@ export default function OwnerFinance({client,stores}){
  const max=report?Math.max(0,...report.days.map(row=>Number(row[metric]))):0;
  const metricLabel=metric==='gross'?'Valor bruto dos pedidos concluídos':'Assinaturas confirmadas no Asaas';
  return <section className="panel owner-finance-report" aria-label="Financeiro do Pitacco" aria-busy={busy}>
+  <OwnerCommercialFinance client={client} stores={stores}/>
+  <h3>Relatório histórico de pedidos e assinaturas anteriores</h3>
   <form className="admin-finance-filters" onSubmit={submit}>
    <div className="field"><label htmlFor="finance-period">Período</label><select id="finance-period" name="preset" value={preset} onChange={event=>setPreset(event.target.value)}>
     <option value="today">Hoje</option><option value="week">7 dias</option><option value="last30">30 dias</option>
