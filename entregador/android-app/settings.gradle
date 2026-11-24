@@ -1,4 +1,21 @@
-pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+// Google Cloud Maven Central mirror prevents release lint from hitting
+// Maven Central 429 rate limits on shared GitHub Actions runners.
+// Keep Maven Central as a fallback for newly published dependencies.
+pluginManagement {
+    repositories {
+        google()
+        maven { url 'https://maven-central.storage-download.googleapis.com/maven2/' }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        maven { url 'https://maven-central.storage-download.googleapis.com/maven2/' }
+        mavenCentral()
+    }
+}
 rootProject.name = 'PitaccoEntregador'
 include ':app'
