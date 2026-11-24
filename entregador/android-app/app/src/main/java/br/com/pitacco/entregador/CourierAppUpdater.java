@@ -188,6 +188,7 @@ public final class CourierAppUpdater {
             install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             install.setClipData(ClipData.newUri(activity.getContentResolver(),"Pitacco update",apk));
             activity.startActivity(install);
+            readyForInstall=null;
             reply(callback,"update:installer");
         }catch(Exception e){
             reply(callback,"update:error:Não foi possível abrir a instalação do Android");
