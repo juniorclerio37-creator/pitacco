@@ -77,6 +77,17 @@ export function createAsaasWebhook({ environment, token, apiKey, supabaseUrl, se
       });
       if (!verification.ok) return reply(503, 'provider_verification_unavailable');
       const payment = await verification.json();
+      const ref=typeof payment.externalReference==='string'&&payment.externalReference.match(/^pitacco:invoice:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+      if(ref){
+        if(environment!=='production'||payment.id!==id||!confirmedStatuses.has(payment.status)||typeof payment.customer!=='string'||!/^cus_[A-Za-z0-9_-]{1,100}$/.test(payment.customer)||typeof payment.value!=='number'||!Number.isSafeInteger(Math.round(payment.value*100))||payment.value<=0||Math.abs(payment.value*100-Math.round(payment.value*100))>0.000001)return reply(200,'payment_not_eligible');
+        const headers={'content-type':'application/json',apikey:serviceKey};
+        if(serviceKey.startsWith('eyJ'))headers.authorization='Bearer '+serviceKey;
+        const sync=await fetcher(new URL('/rest/v1/rpc/pitacco_asaas_settle_commercial_invoice',supabaseUrl),{method:'POST',headers,body:JSON.stringify({p_payment_id:id,p_customer_id:payment.customer,p_invoice:ref[1],p_amount_cents:Math.round(payment.value*100)}),signal});
+        if(!sync.ok)return reply(503,'commercial_sync_unavailable');
+        const outcome=await sync.json();
+        if(outcome==='processed'||outcome==='duplicate')return reply(200,outcome);
+        return reply(503,'commercial_reconciliation_required');
+      }
       if (payment.id !== id || !confirmedStatuses.has(payment.status) ||
           typeof payment.subscription !== 'string' || !subscriptionId.test(payment.subscription) ||
           typeof payment.value !== 'number' || payment.value !== 59.90) {
