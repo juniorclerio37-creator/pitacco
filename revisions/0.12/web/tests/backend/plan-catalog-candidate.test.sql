@@ -46,3 +46,16 @@ do $catalog$ declare c jsonb; rid uuid; begin
  assert rid is not null;
 end $catalog$;
 reset role;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+set local role authenticated;
+do $growth$ declare g jsonb; begin
+ g:=public.pitacco_owner_growth(3);
+ assert jsonb_array_length(g->'months')=3;
+ assert (g#>>'{months,2,new_stores}')::int>=1;
+ begin perform public.pitacco_owner_growth(13);raise exception 'Invalid period accepted';exception when invalid_parameter_value then null;end;
+end $growth$;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+do $growth$ begin
+ begin perform public.pitacco_owner_growth(3);raise exception 'Unauthorized growth';exception when insufficient_privilege then null;end;
+end $growth$;
+reset role;

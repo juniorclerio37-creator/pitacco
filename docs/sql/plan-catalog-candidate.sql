@@ -116,4 +116,18 @@ begin
  join pitacco_private.plan_catalog_versions h on h.revision=c.terms_version
  order by c.created_at desc limit 200) r),'[]'::jsonb);
 end $catalog$;
+create or replace function public.pitacco_owner_growth(p_months integer default 6)
+returns jsonb language plpgsql stable security definer set search_path='' as $growth$
+declare result jsonb; current_month timestamp:=date_trunc('month',now() at time zone 'America/Sao_Paulo');
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ if p_months is null or p_months not between 1 and 12 then raise exception 'Período inválido' using errcode='22023';end if;
+ with months as (select generate_series(current_month-make_interval(months=>p_months-1),current_month,interval '1 month') as month_start),
+ stores as (select date_trunc('month',s.created_at at time zone 'America/Sao_Paulo') as month_start,count(*) as total from public.stores s where s.created_at>=(current_month-make_interval(months=>p_months-1)) at time zone 'America/Sao_Paulo' and s.created_at<=now() group by 1),
+ orders as (select date_trunc('month',o.created_at at time zone 'America/Sao_Paulo') as month_start,count(*) as total,count(*) filter(where o.status='cancelled') as cancelled from public.orders o where o.created_at>=(current_month-make_interval(months=>p_months-1)) at time zone 'America/Sao_Paulo' and o.created_at<=now() and o.status<>'historical' and coalesce(o.receipt->>'is_test','false')='false' and coalesce(o.receipt->>'test','false')='false' and coalesce(o.receipt->>'ifood_test','false')='false' group by 1)
+ select jsonb_build_object('months',jsonb_agg(jsonb_build_object('month',m.month_start::date,'new_stores',coalesce(s.total,0),'orders',coalesce(o.total,0),'cancelled',coalesce(o.cancelled,0)) order by m.month_start)) into result from months m left join stores s using(month_start) left join orders o using(month_start);
+ return result;
+end $growth$;
+revoke all on function public.pitacco_owner_growth(integer) from public,anon,authenticated;
+grant execute on function public.pitacco_owner_growth(integer) to authenticated;
 notify pgrst,'reload schema';

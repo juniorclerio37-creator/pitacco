@@ -5,6 +5,7 @@ import {LayoutDashboard, Store, Package, CreditCard, ClipboardCheck, LogOut, Set
 import {connectionConfig} from './config.mjs';
 import OwnerSubscriptions from './OwnerSubscriptions.jsx';
 import OwnerDashboard from './OwnerDashboard.jsx';
+import OwnerGrowth from './OwnerGrowth.jsx';
 import Homologation from './Homologation.jsx';
 import Owner99Food from './Owner99Food.jsx';
 import OwnerIfood from './OwnerIfood.jsx';
@@ -33,13 +34,15 @@ const config=preview?connectionConfig(import.meta.env):{
 const client=(preview||location.hostname===adminHost)&&config.url&&config.key?createClient(config.url,config.key):null;
 const storefrontOrigin=preview?(import.meta.env.VITE_PITACCO_HOMOLOG_SITE_ORIGIN||''):'https://pitacco.com.br';
 const groups=[
- ['Visão estratégica',[['Painel geral',LayoutDashboard,'Super Dashboard']]],
+ ['Visão estratégica',[['Painel geral',LayoutDashboard,'Super Dashboard'],['Indicadores e crescimento',Activity],['Central de operações',ClipboardCheck]]],
  ['Gestão comercial',[['Estabelecimentos',Store],['Assinaturas',CreditCard,'Planos e assinaturas'],['Plano Pitacco',Package,'Configuração dos planos'],['Financeiro do Pitacco',Wallet,'Financeiro']]],
  ['Gestão operacional',[['Pedidos',ShoppingBag,'Pedidos globais'],['Entregadores',Bike],['Módulos do lojista',Package,'Módulos e funcionalidades'],['Homologação',Plug,'Integrações e homologação']]],
  ['Tecnologia e suporte',[['Central de Aplicativos',Monitor,'Aplicativos e versões'],['Central de Diagnósticos',Activity,'Monitoramento do sistema'],['Suporte e incidentes',CircleHelp,'Central de suporte'],['Comunicados aos entregadores',Megaphone,'Central de comunicados'],['Pitacco Intelligence',Sparkles,'Inteligência artificial'],['Auditoria',ShieldCheck,'Segurança e auditoria']]]
 ];
 const descriptions={
  'Painel geral':'Visão geral de toda a operação do Pitacco',
+ 'Indicadores e crescimento':'Evolução mensal de lojas e pedidos registrados',
+ 'Central de operações':'Acompanhe pedidos e entregadores em uma única área',
  Estabelecimentos:'Gerencie todas as lojas da plataforma',
  Assinaturas:'Acompanhe assinaturas, testes e cobranças',
  'Plano Pitacco':'Configure as condições comerciais da plataforma',
@@ -184,6 +187,8 @@ function AdminApp(){
    </header>
    {error&&<p role="alert">{error}</p>}
    {page==='Painel geral'&&<OwnerDashboard client={client} onStore={openStore}/>}
+   {page==='Indicadores e crescimento'&&<OwnerGrowth client={client}/>}
+   {page==='Central de operações'&&<section aria-label="Central de operações"><OwnerDashboard client={client} onStore={openStore}/><div className="admin-operation-grid"><OwnerOperations client={client} stores={stores} kind="orders"/><OwnerOperations client={client} stores={stores} kind="couriers"/></div></section>}
    {operations[page]&&<OwnerOperations key={page} client={client} stores={stores} kind={operations[page]}/>}
    {page==='Comunicados aos entregadores'&&<OwnerCourierCampaigns client={client} stores={stores}/>}
    {page==='Financeiro do Pitacco'&&<OwnerFinance client={client} stores={stores}/>}
