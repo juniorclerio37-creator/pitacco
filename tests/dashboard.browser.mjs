@@ -929,9 +929,13 @@ try {
       await page.getByRole('button',{name:'Salvar e ativar círculo de entrega'}).click();
       await page.getByText(/Taxas do círculo por quilômetro salvas/).waitFor();
       await merchantNavigate('Integrações','Meios de pagamento');
-      await page.getByRole('checkbox',{name:'InfinitePay'}).check();
-      await page.getByRole('button',{name:'Salvar preferências de integração'}).click();
-      await page.getByText('Preferências de integração salvas.').waitFor();
+      const online=page.getByRole('region',{name:'Integrações de pagamento'});
+      await online.getByRole('button',{name:/InfinitePay/}).click();
+      const providerDialog=page.getByRole('dialog');
+      await providerDialog.getByRole('checkbox',{name:'Solicitar recebimento online'}).check();
+      await providerDialog.getByRole('button',{name:'Salvar preferências de integração'}).click();
+      await providerDialog.getByText('Preferências de integração salvas.',{exact:false}).waitFor();
+      await providerDialog.getByRole('button',{name:'Fechar janela'}).click();
       await merchantNavigate('Cardápio','Aparência do cardápio');
       const studio=page.getByRole('region',{name:'Estúdio de Cardápio Pitacco'});
       await studio.getByRole('heading',{name:'Estúdio de Cardápio'}).waitFor();
