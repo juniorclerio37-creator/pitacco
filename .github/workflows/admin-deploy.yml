@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'revisions/0.12/web/AdminApp.jsx'
+      - 'revisions/0.12/web/OwnerSubscriptions.jsx'
+      - 'revisions/0.12/web/PlanChange.jsx'
       - 'revisions/0.12/web/OwnerCourierCampaigns.jsx'
       - 'revisions/0.12/web/owner-courier-campaigns.css'
       - 'revisions/0.12/web/OwnerIncidentNotifier.jsx'
