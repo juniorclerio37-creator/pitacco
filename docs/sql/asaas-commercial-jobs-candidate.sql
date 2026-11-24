@@ -54,3 +54,27 @@ returns jsonb language sql stable security invoker set search_path='' as $$
 $$;
 revoke all on function public.pitacco_commercial_asaas_reconciliation_jobs() from public,anon,authenticated;
 grant execute on function public.pitacco_commercial_asaas_reconciliation_jobs() to service_role;
+
+-- Owner-only overview: do not expose payer identifiers or fiscal documents.
+create function public.pitacco_owner_asaas_commercial_status(p_store uuid default null)
+returns jsonb language plpgsql stable security definer set search_path='' as $$
+declare r jsonb; auto_type text;
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ select auto_billing_type into auto_type from pitacco_private.commercial_asaas_customers where store_id=p_store and environment='production';
+ select coalesce(jsonb_agg(to_jsonb(x) order by x.due_at,x.invoice_id),'[]'::jsonb) into r from (
+ select i.id as invoice_id,b.store_id,s.name as store_name,i.kind,i.due_at,i.amount_cents,
+ a.status as payment_status,a.provider_status,a.confirmed_at,t.state as issue_state
+ from pitacco_private.commercial_invoices i
+ join pitacco_private.commercial_closings b using(contract_id,kind,period_end)
+ join public.stores s on s.id=b.store_id
+ left join pitacco_private.commercial_asaas_charges a on a.invoice_id=i.id and a.environment='production'
+ left join pitacco_private.commercial_asaas_issue_intents t on t.invoice_id=i.id and t.environment='production'
+ where (p_store is null or b.store_id=p_store)
+ and (a.status='review_required' or (t.state in ('reserved','review_required') and a.invoice_id is null))
+ order by i.due_at,i.id limit 100
+ ) x;
+ return jsonb_build_object('enabled',exists(select 1 from pitacco_private.commercial_billing_control where singleton and asaas_enabled),'auto_billing_type',auto_type,'review_rows',r);
+end $$;
+revoke all on function public.pitacco_owner_asaas_commercial_status(uuid) from public,anon;
+grant execute on function public.pitacco_owner_asaas_commercial_status(uuid) to authenticated;
