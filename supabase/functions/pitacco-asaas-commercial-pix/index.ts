@@ -23,6 +23,8 @@ Deno.serve(async req=>{
   const raw=await req.text();if(raw.length>4096)return reply(413,{error:"Requisição inválida"});
   const input=JSON.parse(raw),invoice=input.invoice_id,document=String(input.document||"").replace(/\D/g,""),enroll=input.action==="register_customer";
   if(!(enroll?uuid.test(input.store_id):uuid.test(invoice))||document.length>14)return reply(400,{error:"Dados inválidos"});
+  const method=input.method==="CREDIT_CARD"?"CREDIT_CARD":"PIX";
+  if(!enroll&&input.method!=null&&!["PIX","CREDIT_CARD"].includes(input.method))return reply(400,{error:"Forma de pagamento indisponível"});
   const ctx=enroll?await rpc("pitacco_asaas_prepare_store_customer",{p_actor:actor,p_store:input.store_id,p_document:document}):await rpc("pitacco_asaas_prepare_customer",{p_actor:actor,p_invoice:invoice,p_document:document});
   let customer=ctx.customer_id;
   if(!customer){
@@ -46,9 +48,9 @@ Deno.serve(async req=>{
    const hits=(list.data||[]).filter((x:any)=>x.externalReference===ref&&!x.deleted);
    if(list.hasMore||hits.length>1)return reply(409,{error:"Cobrança exige conciliação"});
    item=hits[0];
-   if(!item&&charge.allow_create)item=await asaas("/payments","POST",{customer,billingType:"UNDEFINED",value:charge.amount_cents/100,dueDate:charge.due_date,description:charge.kind==="monthly"?"Pitacco — mensalidade":"Pitacco — comissão semanal",externalReference:ref});
+   if(!item&&charge.allow_create)item=await asaas("/payments","POST",{customer,billingType:method,value:charge.amount_cents/100,dueDate:charge.due_date,description:charge.kind==="monthly"?"Pitacco — mensalidade":"Pitacco — comissão semanal",externalReference:ref});
   }
-  if(!item||item.deleted||item.externalReference!==ref||item.customer!==customer||Math.round(item.value*100)!==charge.amount_cents||!["PIX","CREDIT_CARD","UNDEFINED","BOLETO"].includes(item.billingType)||!/^pay_[A-Za-z0-9_-]{1,100}$/.test(item.id))return reply(409,{error:"Cobrança exige conciliação"});
+  if(!item||item.deleted||item.externalReference!==ref||item.customer!==customer||Math.round(item.value*100)!==charge.amount_cents||!["PIX","CREDIT_CARD"].includes(item.billingType)||!/^pay_[A-Za-z0-9_-]{1,100}$/.test(item.id))return reply(409,{error:"Cobrança exige conciliação"});
   await rpc("pitacco_asaas_bind_charge",{p_invoice:invoice,p_customer:customer,p_payment:item.id});
   if(["RECEIVED","CONFIRMED"].includes(item.status)){const outcome=await rpc("pitacco_asaas_settle_commercial_invoice",{p_payment_id:item.id,p_customer_id:customer,p_invoice:invoice,p_amount_cents:charge.amount_cents});return reply(200,{status:outcome});}
   if(!["PENDING","OVERDUE"].includes(item.status))return reply(409,{error:"Situação da cobrança exige conciliação"});
