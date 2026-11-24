@@ -413,7 +413,7 @@ test("ganhos de entregas concluídas usam regra individual e valor único para l
 test('site público é uma página de instalação e app mantém login interno',()=>{
  const page=read('acesso.html');
  assert.match(page,/id="publicInstaller"/);
- assert.match(page,/id="downloadAndroid"[^>]*Pitacco-Entregador-2\.0\.16[.]apk/);
+ assert.match(page,/id="downloadAndroid"[^>]*Pitacco-Entregador-2\.0\.15[.]apk/);
  assert.match(page,/html:not\([.]pitacco-native\) #nativeAccessPanel\{display:none/);
  assert.match(page,/html[.]pitacco-native #publicInstaller\{display:none/);
  assert.match(page,/window[.]PitaccoPush/);
