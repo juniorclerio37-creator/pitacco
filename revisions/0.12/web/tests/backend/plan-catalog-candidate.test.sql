@@ -77,3 +77,22 @@ do $extended$ begin
  begin perform public.pitacco_owner_campaign_active('20000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001',true);raise exception 'Unauthorized campaign';exception when insufficient_privilege then null;end;
 end $extended$;
 reset role;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+do $role_test$ begin
+ begin perform public.pitacco_owner_set_store_member_role('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','lojista');raise exception 'Last manager removed';exception when invalid_parameter_value then null;end;
+ begin perform public.pitacco_owner_set_store_member_role('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','admin');raise exception 'Admin escalation';exception when invalid_parameter_value then null;end;
+end $role_test$;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+do $role_test$ begin
+ begin perform public.pitacco_owner_set_store_member_role('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','gestor');raise exception 'Unauthorized role change';exception when insufficient_privilege then null;end;
+end $role_test$;
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+do $amount$ declare r jsonb; begin
+ r:=public.pitacco_owner_subscription_details();
+ assert exists(select 1 from jsonb_array_elements(r) p where p->>'id'='20000000-0000-0000-0000-000000000001' and p->>'plan' is not null and p->'monthly_amount'='null'::jsonb);
+ assert public.pitacco_subscription_overview() ? 'active_without_registered_amount';
+end $amount$;
+reset role;
