@@ -843,7 +843,7 @@ async function confirmCourierCollection(d){
   if(data?.state!=="paid"||data?.received_by_courier!==true)
    throw Error("O servidor não confirmou o recebimento.");
   paymentCards.set(d.id,data);
-  try{await refresh(true);}catch{message("Pagamento registrado no Pitacco. Atualize a lista quando houver conexão.");}
+  try{await refresh(true);}catch{message("Pagamento registrado no Pitacco. Atualize a lista quando houver conexão.","warning");}
   return data;
  }catch(err){
   message(String(err?.message||"Pagamento não registrado. Tente novamente."));
@@ -1464,7 +1464,7 @@ async function refreshSnapshot(){
  const {data:labels,error:labelsError}=badges;
  if(labelsError){
   orderCardBadges=new Map();
-  message("Números públicos e localizadores indisponíveis no momento. Atualize os pedidos para tentar novamente.");
+  message("Números públicos e localizadores indisponíveis no momento. Atualize os pedidos para tentar novamente.","warning");
  }else{
   orderCardBadges=new Map((Array.isArray(labels)?labels:[]).map(item=>[item.delivery_id,item]));
  }
