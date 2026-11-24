@@ -1205,6 +1205,12 @@ try {
     await revisedPlans.getByRole('heading',{name:'Completo revisado',exact:true}).waitFor();
     await revisedPlans.getByText('Oferta atualizada pelo administrador',{exact:true}).waitFor();
     await revisedPlans.getByText(/69,90/).waitFor();
+    // Simulate another admin session publishing while the merchant screen remains mounted.
+    commercialCatalog={...commercialCatalog,terms_version:'fixture-live',plans:commercialCatalog.plans.map(p=>p.code==='complete'?{...p,name:'Completo atualizado ao vivo',monthly_cents:7490}:p)};
+    await revisedPlans.getByRole('heading',{name:'Completo atualizado ao vivo',exact:true}).waitFor({timeout:20000});
+    await revisedPlans.getByText(/74,90/).waitFor();
+    assert.equal(await revisedPlans.getByRole('heading',{name:'Completo revisado',exact:true}).count(),0);
+    console.log('PASS merchant catalog refresh without navigation',width);
     if(width===1440){
       await merchantNavigate('Cardápio','Produtos');
       await page.waitForURL(url=>url.searchParams.get('aba')==='Produtos');

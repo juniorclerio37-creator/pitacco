@@ -6,25 +6,31 @@ const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const date=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'medium',timeStyle:'short'});
 
 function useBilling(client,name,args){
- const [result,setResult]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(true),[revision,setRevision]=useState(0);
+ const [snapshot,setSnapshot]=useState(null),[revision,setRevision]=useState(0);
  const storeId=args?.p_store;
  useEffect(()=>{
-  let live=true;
+  let live=true,running=false,queued=false;
+  const controller=new AbortController();
+  const update=next=>{if(live)setSnapshot(old=>({client,name,storeId,result:old?.client===client&&old?.name===name&&old?.storeId===storeId?old.result:null,error:'',busy:false,...next}))};
   async function load(){
-   setBusy(true);
-   setError('');
+   if(!live)return;
+   if(running){queued=true;return}
+   running=true;update({busy:true});
    try{
-    const response=await client.rpc(name,storeId?{p_store:storeId}:undefined);
-    if(!live)return;
+    const response=await client.rpc(name,storeId?{p_store:storeId}:undefined).abortSignal(controller.signal);
     if(response.error)throw response.error;
-    setResult(response.data);
-   }catch(failure){if(live)setError(failure.message||'Não foi possível consultar a assinatura.');}
-   finally{if(live)setBusy(false);}
+    update({result:response.data});
+   }catch(failure){update({result:null,error:failure.message||'Não foi possível consultar a assinatura.'});}
+   finally{running=false;if(queued){queued=false;void load()}}
   }
-  load();
-  return()=>{live=false;};
+  void load();
+  const visible=()=>{if(document.visibilityState==='visible')void load()};
+  const timer=setInterval(visible,10000);
+  document.addEventListener('visibilitychange',visible);window.addEventListener('focus',visible);
+  return()=>{live=false;controller.abort();clearInterval(timer);document.removeEventListener('visibilitychange',visible);window.removeEventListener('focus',visible)};
  },[client,name,storeId,revision]);
- return {result,error,busy,refresh:()=>setRevision(value=>value+1)};
+ const current=snapshot?.client===client&&snapshot?.name===name&&snapshot?.storeId===storeId?snapshot:{result:null,error:'',busy:true};
+ return {...current,refresh:()=>setRevision(value=>value+1)};
 }
 
 export default function BillingStatus({client,storeId}){
