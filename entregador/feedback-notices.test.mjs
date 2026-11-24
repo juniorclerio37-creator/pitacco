@@ -30,9 +30,9 @@ test('erros verdadeiros permanecem, avisos normais têm severidade adequada',()=
  assert.match(courier,/message\(String\(error\?\.message\|\|"Não foi possível confirmar a coleta"\)\)/);
 });
 test('o botão Android existente oferece APK oficial 2.0.15 mesmo sem RPC',()=>{
- assert.match(access,/id="downloadAndroid" href="https:\/\/github\.com\/juniorclerio37-creator\/pitacco\/releases\/download\/pitacco-entregador-v2\.0\.15-a8d62ddcf87a\/Pitacco-Entregador-2\.0\.15\.apk"/);
- assert.match(access,/download="Pitacco-Entregador-2\.0\.15\.apk"/);
- assert.match(access,/Versão oficial 2\.0\.15/);
+ assert.match(access,/id="downloadAndroid" href="https:\/\/github\.com\/juniorclerio37-creator\/pitacco\/releases\/download\/pitacco-entregador-v2\.0\.16-be032d7a357c\/Pitacco-Entregador-2\.0\.16\.apk"/);
+ assert.match(access,/download="Pitacco-Entregador-2\.0\.16\.apk"/);
+ assert.match(access,/Versão oficial 2\.0\.16/);
  assert.match(access,/pitacco_public_courier_apk/);
 });
 test('botão Windows existente procura o último instalador oficial sem filtro de ordenação antiga',()=>{

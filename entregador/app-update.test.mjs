@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {latestOfficialCourierRelease,discoverCourierReleaseWithFallback,
+import {latestOfficialCourierRelease,discoverCourierRelease,discoverCourierReleaseWithFallback,
  compareCourierVersions,verifiedCourierApk} from './app-update.mjs';
 
 const prefix='https://github.com/juniorclerio37-creator/pitacco/releases/download/';
@@ -57,4 +57,16 @@ test('interface oferece atualização na área de Ajustes e mantém confirmacão
  assert.match(manifest,/REQUEST_INSTALL_PACKAGES/);
  assert.match(manifest,/FileProvider/);
  assert.match(manifest,/courier_update_paths/);
+});
+
+test('continua encontrando o APK após 100 lançamentos Windows',async()=>{
+ let page=0;
+ const windows=Array.from({length:100},(_,i)=>({tag_name:'pitacco-windows-'+String(i).padStart(12,'0'),draft:false,prerelease:false,published_at:'2026-11-24T02:00:00Z',assets:[]}));
+ const item=await discoverCourierRelease(async url=>{
+  ++page;
+  assert.ok(url.includes('releases?per_page=100'));
+  return {ok:true,json:async()=>page===1?windows:[latest]};
+ });
+ assert.equal(page,2);
+ assert.equal(item.version,'2.0.16');
 });
