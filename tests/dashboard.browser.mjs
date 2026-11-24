@@ -35,6 +35,7 @@ try {
       logistics_provider:'loja',status:'pendente',courier_id:null};
     const flowCourier={id:'50000000-0000-0000-0000-000000000050',name:'Motoboy de teste',fleet_type:'propria',available:true};
     let adminMode=false,moduleEnabled=true,ownerMigrationApplied=false,readOnlyChecks=0,failFeatureCheck=false;
+    let commercialNotice={orders_blocked:false,notice_stage:'none',payment_required:0,awaiting_review:0};
     let commercialCatalog={terms_version:'fixture',plans:[
       {code:'free',name:'Grátis para sempre',monthly_cents:0,commission_basis_points:500,billing_cycle:'weekly',trial_days:0,available:true,description:'Módulos essenciais'},
       {code:'complete',name:'Completo',monthly_cents:5990,commission_basis_points:0,billing_cycle:'monthly',trial_days:30,available:true,description:'Pedidos ilimitados'}
@@ -357,7 +358,7 @@ try {
         commercialHistory.unshift({revision:commercialCatalog.terms_version,plans:commercialCatalog.plans,created_at:new Date().toISOString(),changed_by:user.id});
         return route.fulfill({headers,json:commercialCatalog});
       }
-      if(pathname==='/rest/v1/rpc/pitacco_store_commercial_block_status')return route.fulfill({headers,json:{orders_blocked:false,notice_stage:'none',payment_required:0,awaiting_review:0}});
+      if(pathname==='/rest/v1/rpc/pitacco_store_commercial_block_status')return route.fulfill({headers,json:commercialNotice});
       if(pathname==='/rest/v1/rpc/pitacco_merchant_commercial_billing_state')return route.fulfill({headers,json:{own_orders_blocked:false,payment_instructions:null}});
       if(pathname==='/rest/v1/rpc/pitacco_commercial_amount_preview')return route.fulfill({headers,json:{status:'unassigned',message:'Nenhum contrato comercial vigente no novo catálogo.'}});
       if(['/rest/v1/rpc/pitacco_commercial_closings','/rest/v1/rpc/pitacco_commercial_invoices'].includes(pathname))return route.fulfill({headers,json:{rows:[],has_more:false}});
@@ -1038,6 +1039,30 @@ try {
     await billing.getByRole('alert').filter({hasText:'Novos pedidos bloqueados'}).waitFor();
     assert.equal(await billing.getByRole('link',{name:'Regularizar assinatura'}).getAttribute('href'),'https://billing.example.invalid/');
     assert.equal(await page.getByRole('button',{name:'Homologação',exact:true}).count(),0);
+    // Exercise the mounted global banner, including transitions without reloading the page.
+    const updateCommercialNotice=async next=>{
+      commercialNotice={orders_blocked:false,payment_required:1,awaiting_review:0,due_at:'2026-11-26T02:59:00Z',grace_until:'2026-11-28T02:59:00Z',...next};
+      await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+    };
+    await updateCommercialNotice({notice_stage:'due_today'});
+    const dueBanner=page.getByRole('alert',{name:'Sua cobrança vence hoje',exact:true});
+    await dueBanner.waitFor({timeout:20000});
+    await dueBanner.getByRole('button',{name:'Pagar agora',exact:true}).click();
+    await billing.waitFor();
+    await updateCommercialNotice({notice_stage:'grace'});
+    const graceBanner=page.getByRole('alert',{name:'Pagamento pendente — prazo de tolerância',exact:true});
+    await graceBanner.waitFor({timeout:20000});
+    await graceBanner.getByText(/Prazo final:/).waitFor();
+    await updateCommercialNotice({notice_stage:'blocked',orders_blocked:true});
+    const blockedBanner=page.getByRole('alert',{name:'Estabelecimento bloqueado por inadimplência',exact:true});
+    await blockedBanner.waitFor({timeout:20000});
+    await blockedBanner.getByRole('button',{name:'Regularizar agora',exact:true}).click();
+    await billing.waitFor();
+    await updateCommercialNotice({notice_stage:'blocked',orders_blocked:true,awaiting_review:1,payment_required:0});
+    await blockedBanner.getByRole('button',{name:'Acompanhar pagamento',exact:true}).waitFor({timeout:20000});
+    await blockedBanner.getByText(/não efetue um novo pagamento/).waitFor();
+    await updateCommercialNotice({notice_stage:'none',orders_blocked:false,payment_required:0});
+    await blockedBanner.waitFor({state:'hidden',timeout:20000});
     await page.goto(adminPortal);
     async function adminLogin(password='senha-de-teste'){
       await page.getByLabel('Usuário',{exact:true}).fill(fixtureUsername);
