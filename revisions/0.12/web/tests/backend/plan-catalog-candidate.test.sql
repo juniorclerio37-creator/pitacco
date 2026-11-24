@@ -7,18 +7,23 @@ select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001'
 do $$ declare c jsonb; v jsonb; begin
  c:=public.pitacco_owner_plan_catalog();
  assert c#>>'{plans,1,monthly_cents}'='5990';
- v:=public.pitacco_owner_publish_plan_catalog(c->>'terms_version',jsonb_set(jsonb_set(c->'plans','{1,monthly_cents}','6990'),'{1,name}','"Completo Plus"'));
+ v:=public.pitacco_owner_publish_plan_catalog(c->>'terms_version',jsonb_set(jsonb_set(jsonb_set(jsonb_set(c->'plans','{1,monthly_cents}','6990'),'{1,name}','"Completo Plus"'),'{1,description}','"Oferta revisada"'),'{0,available}','false'));
  assert v#>>'{plans,1,monthly_cents}'='6990';
+ assert jsonb_array_length(public.pitacco_owner_plan_catalog_history())=2;
  begin perform public.pitacco_owner_publish_plan_catalog(c->>'terms_version',c->'plans');raise exception 'Stale revision accepted';exception when serialization_failure then null;end;
 end $$;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
 do $$ declare c jsonb; rid uuid; begin
  c:=public.pitacco_merchant_plan_options('20000000-0000-0000-0000-000000000001');
  assert c#>>'{plans,1,monthly_cents}'='6990' and c#>>'{plans,1,name}'='Completo Plus';
+ assert c#>>'{plans,1,description}'='Oferta revisada' and c#>>'{plans,0,available}'='false';
+ begin perform public.pitacco_owner_plan_catalog_history();raise exception 'Unauthorized history';exception when insufficient_privilege then null;end;
+ begin perform public.pitacco_request_plan_change('20000000-0000-0000-0000-000000000001','free',c->>'terms_version');raise exception 'Disabled offer accepted';exception when invalid_parameter_value then null;end;
  begin perform public.pitacco_owner_plan_catalog();raise exception 'Unauthorized read';exception when insufficient_privilege then null;end;
  begin perform public.pitacco_owner_publish_plan_catalog(c->>'terms_version',c->'plans');raise exception 'Unauthorized write';exception when insufficient_privilege then null;end;
  begin perform public.pitacco_request_plan_change('20000000-0000-0000-0000-000000000001','complete','2026-11-24-v1');raise exception 'Stale terms accepted';exception when invalid_parameter_value then null;end;
  rid:=public.pitacco_request_plan_change('20000000-0000-0000-0000-000000000001','complete',c->>'terms_version');assert rid is not null;
+ c:=public.pitacco_merchant_plan_options('20000000-0000-0000-0000-000000000001');assert c#>>'{requests,0,plan_name}'='Completo Plus';
 end $$;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000003',true);
 do $$ begin

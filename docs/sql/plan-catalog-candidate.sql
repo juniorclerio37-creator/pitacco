@@ -6,7 +6,7 @@ create table pitacco_private.plan_catalog_versions(
 alter table pitacco_private.plan_catalog_versions enable row level security;
 revoke all on pitacco_private.plan_catalog_versions from public,anon,authenticated;
 insert into pitacco_private.plan_catalog_versions(revision,plans) values('2026-11-24-v1',
- '[{"code":"free","name":"Grátis para sempre","monthly_cents":0,"commission_basis_points":500,"billing_cycle":"weekly","trial_days":0},{"code":"complete","name":"Completo","monthly_cents":5990,"commission_basis_points":0,"billing_cycle":"monthly","trial_days":30}]');
+ '[{"code":"free","name":"Grátis para sempre","monthly_cents":0,"commission_basis_points":500,"billing_cycle":"weekly","trial_days":0,"available":true,"description":"Módulos essenciais. Comissão sobre produtos e complementos dos pedidos próprios, excluídos frete, descontos e cancelamentos."},{"code":"complete","name":"Completo","monthly_cents":5990,"commission_basis_points":0,"billing_cycle":"monthly","trial_days":30,"available":true,"description":"Pedidos ilimitados e acesso aos módulos do plano."}]');
 create table public.pitacco_plan_catalog_signal(
  singleton boolean primary key default true check(singleton),
  revision text not null references pitacco_private.plan_catalog_versions(revision)
@@ -30,7 +30,7 @@ begin
 end $$;
 create or replace function public.pitacco_owner_publish_plan_catalog(p_expected text,p_plans jsonb)
 returns jsonb language plpgsql security definer set search_path='' as $$
-declare old_revision text; new_revision text; plan jsonb; checked jsonb:='[]'::jsonb; code text; amount integer; commission integer; trial integer; title text;
+declare old_revision text; new_revision text; plan jsonb; checked jsonb:='[]'::jsonb; code text; amount integer; commission integer; trial integer; title text; description text; available boolean;
 begin
  if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
  if jsonb_typeof(p_plans) is distinct from 'array' then raise exception 'Catálogo inválido' using errcode='22023';end if;
@@ -41,10 +41,13 @@ begin
    or coalesce(plan->>'monthly_cents','') !~ '^[0-9]{1,8}$'
    or coalesce(plan->>'commission_basis_points','') !~ '^[0-9]{1,5}$'
    or coalesce(plan->>'trial_days','') !~ '^[0-9]{1,3}$' then raise exception 'Condições inválidas' using errcode='22023';end if;
+  description:=btrim(coalesce(plan->>'description',''));
+  if char_length(description)>1000 or (plan ? 'available' and jsonb_typeof(plan->'available') is distinct from 'boolean') then raise exception 'Descrição ou disponibilidade inválida' using errcode='22023';end if;
+  available:=coalesce((plan->>'available')::boolean,true);
   amount:=(plan->>'monthly_cents')::integer; commission:=(plan->>'commission_basis_points')::integer; trial:=(plan->>'trial_days')::integer;
   if commission>10000 or trial>365 then raise exception 'Limites inválidos' using errcode='22023';end if;
   if exists(select 1 from jsonb_array_elements(checked) p where p->>'code'=code) then raise exception 'Plano duplicado' using errcode='22023';end if;
-  checked:=checked||jsonb_build_array(jsonb_build_object('code',code,'name',title,'monthly_cents',amount,'commission_basis_points',commission,'trial_days',trial,'billing_cycle',case when code='free' then 'weekly' else 'monthly' end));
+  checked:=checked||jsonb_build_array(jsonb_build_object('code',code,'name',title,'monthly_cents',amount,'commission_basis_points',commission,'trial_days',trial,'description',description,'available',available,'billing_cycle',case when code='free' then 'weekly' else 'monthly' end));
  end loop;
  select revision into old_revision from public.pitacco_plan_catalog_signal where singleton for update;
  if old_revision is distinct from p_expected then raise exception 'Catálogo atualizado por outra sessão. Recarregue.' using errcode='40001';end if;
@@ -60,7 +63,9 @@ begin
  if auth.uid() is null or not public.is_store_manager(p_store) then raise exception 'Sem permissão' using errcode='42501';end if;
  select jsonb_build_object('terms_version',v.revision,'activation_mode','review','plans',v.plans,
  'requests',coalesce((select jsonb_agg(to_jsonb(r) order by r.created_at desc) from
- (select id,requested_plan,status,created_at,updated_at,decision_note from pitacco_private.plan_change_requests where store_id=p_store order by created_at desc limit 20) r),'[]'::jsonb)) into result
+ (select c.id,c.requested_plan,c.status,c.created_at,c.updated_at,c.decision_note,c.terms_version,
+ (select p->>'name' from jsonb_array_elements(h.plans) p where p->>'code'=c.requested_plan) as plan_name
+ from pitacco_private.plan_change_requests c join pitacco_private.plan_catalog_versions h on h.revision=c.terms_version where c.store_id=p_store order by c.created_at desc limit 20) r),'[]'::jsonb)) into result
  from public.pitacco_plan_catalog_signal s join pitacco_private.plan_catalog_versions v on v.revision=s.revision where s.singleton;
  return result;
 end $$;
@@ -71,12 +76,12 @@ begin
  if auth.uid() is null or not public.is_store_manager(p_store) then raise exception 'Sem permissão' using errcode='42501';end if;
  perform 1 from public.pitacco_plan_catalog_signal where singleton and revision=p_terms for share;
  if not found then raise exception 'Os termos foram atualizados. Revise o plano novamente.' using errcode='22023';end if;
- if not exists(select 1 from pitacco_private.plan_catalog_versions v cross join lateral jsonb_array_elements(v.plans) p where v.revision=p_terms and p->>'code'=p_plan) then raise exception 'Plano indisponível' using errcode='22023';end if;
+ if not exists(select 1 from pitacco_private.plan_catalog_versions v cross join lateral jsonb_array_elements(v.plans) p where v.revision=p_terms and p->>'code'=p_plan and coalesce((p->>'available')::boolean,true)) then raise exception 'Plano indisponível' using errcode='22023';end if;
  perform 1 from public.stores where id=p_store for update;
  if not found then raise exception 'Loja não encontrada';end if;
  select * into existing from pitacco_private.plan_change_requests where store_id=p_store and status in ('pending','in_review');
  if found then
-  if existing.requested_plan=p_plan then return existing.id;end if;
+  if existing.requested_plan=p_plan and existing.terms_version=p_terms then return existing.id;end if;
   raise exception 'Cancele a solicitação anterior antes de escolher outro plano';
  end if;
  insert into pitacco_private.plan_change_requests(store_id,requested_by,requested_plan,terms_version) values(p_store,auth.uid(),p_plan,p_terms) returning id into new_id;
@@ -84,6 +89,15 @@ begin
  return new_id;
 end $$;
 
+create or replace function public.pitacco_owner_plan_catalog_history()
+returns jsonb language plpgsql stable security definer set search_path='' as $
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ return coalesce((select jsonb_agg(to_jsonb(h) order by h.created_at desc) from
+ (select revision,plans,changed_by,created_at from pitacco_private.plan_catalog_versions order by created_at desc,revision desc limit 30) h),'[]'::jsonb);
+end $;
+revoke all on function public.pitacco_owner_plan_catalog_history() from public,anon,authenticated;
+grant execute on function public.pitacco_owner_plan_catalog_history() to authenticated;
 revoke all on function public.pitacco_owner_plan_catalog(),public.pitacco_owner_publish_plan_catalog(text,jsonb) from public,anon,authenticated;
 grant execute on function public.pitacco_owner_plan_catalog(),public.pitacco_owner_publish_plan_catalog(text,jsonb) to authenticated;
 notify pgrst,'reload schema';
