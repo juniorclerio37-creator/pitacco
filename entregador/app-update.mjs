@@ -45,11 +45,20 @@ export function latestOfficialCourierRelease(releases) {
  return eligible[0]||null;
 }
 export async function discoverCourierRelease(request=fetch) {
- const response=await request(API,{headers:{Accept:'application/vnd.github+json'},cache:'no-store'});
- if(!response?.ok)throw Error('Não foi possível consultar as atualizações oficiais.');
- const latest=latestOfficialCourierRelease(await response.json());
- if(!latest)throw Error('Nenhuma versão oficial verificada disponível.');
- return latest;
+ // Windows publica lançamentos com frequência; o APK estável pode sair da
+ // primeira página do GitHub. Percorrer páginas sem aceitar binários não oficiais.
+ for(let page=1;page<=5;page++){
+  const response=await request(API+(page>1?'&page='+page:''),{
+   headers:{Accept:'application/vnd.github+json'},cache:'no-store'
+  });
+  if(!response?.ok)throw Error('Não foi possível consultar as atualizações oficiais.');
+  const releases=await response.json();
+  if(!Array.isArray(releases))throw Error('O catálogo de versões retornou dados inválidos.');
+  const latest=latestOfficialCourierRelease(releases);
+  if(latest)return latest;
+  if(releases.length<100)break;
+ }
+ throw Error('Nenhuma versão oficial verificada disponível.');
 }
 
 export async function discoverCourierReleaseWithFallback(request=fetch,rpc=null) {
