@@ -539,4 +539,59 @@ begin
 end $invoice$;
 revoke all on function public.pitacco_commercial_invoices(uuid,integer),public.pitacco_owner_confirm_commercial_payment(uuid,bigint,text,text) from public,anon,authenticated;
 grant execute on function public.pitacco_commercial_invoices(uuid,integer),public.pitacco_owner_confirm_commercial_payment(uuid,bigint,text,text) to authenticated;
+
+-- Explicit rollout gate: no new commercial block before a real regularization channel is available.
+create table pitacco_private.commercial_billing_control(
+ singleton boolean primary key default true check(singleton),
+ enforce_own_orders boolean not null default false,
+ payment_instructions text check(length(payment_instructions) between 10 and 1000),
+ updated_at timestamptz not null default now(),updated_by uuid,
+ check(not enforce_own_orders or payment_instructions is not null)
+);
+insert into pitacco_private.commercial_billing_control(singleton) values(true);
+alter table pitacco_private.commercial_billing_control enable row level security;
+revoke all on pitacco_private.commercial_billing_control from public,anon,authenticated;
+create or replace function pitacco_private.commercial_orders_blocked(p_store uuid)
+returns boolean language sql stable security definer set search_path='' as $gate$
+ select exists(select 1 from pitacco_private.commercial_billing_control where singleton and enforce_own_orders)
+ and exists(select 1 from pitacco_private.commercial_invoices i
+ join pitacco_private.commercial_closings b using(contract_id,kind,period_end)
+ left join pitacco_private.commercial_manual_payments p on p.invoice_id=i.id
+ where b.store_id=p_store and pitacco_private.commercial_invoice_status(i.amount_cents,b.amount_cents,b.state,p.invoice_id is not null,i.due_at,i.grace_until)='overdue')
+ and not exists(select 1 from pitacco_private.subscription_admin_controls a where a.store_id=p_store and a.courtesy_until>now())
+$gate$;
+revoke all on function pitacco_private.commercial_orders_blocked(uuid) from public,anon,authenticated;
+create or replace function pitacco_private.enforce_commercial_own_order()
+returns trigger language plpgsql security definer set search_path='' as $gate$
+begin
+ if new.source='proprio' and new.status<>'historical'
+ and coalesce(new.receipt->>'is_test','false')='false' and coalesce(new.receipt->>'test','false')='false'
+ and pitacco_private.commercial_orders_blocked(new.store_id) then
+  raise exception 'Novos pedidos próprios temporariamente indisponíveis. Regularize a assinatura.' using errcode='P0001';
+ end if;
+ return new;
+end $gate$;
+revoke all on function pitacco_private.enforce_commercial_own_order() from public,anon,authenticated;
+create trigger pitacco_commercial_own_order_guard before insert on public.orders for each row execute function pitacco_private.enforce_commercial_own_order();
+create or replace function public.pitacco_owner_commercial_billing_control()
+returns jsonb language plpgsql stable security definer set search_path='' as $gate$
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ return (select to_jsonb(c)-'singleton' from pitacco_private.commercial_billing_control c where singleton);
+end $gate$;
+create or replace function public.pitacco_owner_set_commercial_billing_control(p_enforce boolean,p_instructions text)
+returns void language plpgsql security definer set search_path='' as $gate$
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ if p_enforce is null or length(btrim(coalesce(p_instructions,'')))>1000 or (p_enforce and length(btrim(coalesce(p_instructions,'')))<10) then raise exception 'Informe um canal de regularização válido antes de ativar' using errcode='22023';end if;
+ update pitacco_private.commercial_billing_control set enforce_own_orders=p_enforce,payment_instructions=case when length(btrim(coalesce(p_instructions,'')))>=10 then btrim(p_instructions) else null end,updated_at=now(),updated_by=auth.uid() where singleton;
+end $gate$;
+create or replace function public.pitacco_merchant_commercial_billing_state(p_store uuid)
+returns jsonb language plpgsql stable security definer set search_path='' as $gate$
+begin
+ if auth.uid() is null or not (public.pitacco_is_platform_owner() or public.is_store_manager(p_store)) then raise exception 'Sem permissão' using errcode='42501';end if;
+ return (select jsonb_build_object('own_orders_blocked',pitacco_private.commercial_orders_blocked(p_store),'payment_instructions',payment_instructions) from pitacco_private.commercial_billing_control where singleton);
+end $gate$;
+revoke all on function public.pitacco_owner_commercial_billing_control(),public.pitacco_owner_set_commercial_billing_control(boolean,text),public.pitacco_merchant_commercial_billing_state(uuid) from public,anon,authenticated;
+grant execute on function public.pitacco_owner_commercial_billing_control(),public.pitacco_owner_set_commercial_billing_control(boolean,text),public.pitacco_merchant_commercial_billing_state(uuid) to authenticated;
 notify pgrst,'reload schema';

@@ -202,3 +202,21 @@ do $invoice_test$ begin
  begin perform public.pitacco_owner_confirm_commercial_payment(null,5990,'fixture-unauthorized','Conferência teste');raise exception 'Unauthorized settlement';exception when insufficient_privilege then null;end;
 end $invoice_test$;
 reset role;
+
+do $gate_test$ begin
+ assert not pitacco_private.commercial_orders_blocked('20000000-0000-0000-0000-000000000003');
+end $gate_test$;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+do $gate_test$ begin
+ begin perform public.pitacco_owner_set_commercial_billing_control(true,'');raise exception 'Enforcement without payment instructions';exception when invalid_parameter_value then null;end;
+ perform public.pitacco_owner_set_commercial_billing_control(true,'Canal de regularização de teste');
+ assert public.pitacco_merchant_commercial_billing_state('20000000-0000-0000-0000-000000000003')->>'own_orders_blocked'='true';
+ perform public.pitacco_owner_set_commercial_billing_control(false,'Canal de regularização de teste');
+ assert public.pitacco_merchant_commercial_billing_state('20000000-0000-0000-0000-000000000003')->>'own_orders_blocked'='false';
+end $gate_test$;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+do $gate_test$ begin
+ begin perform public.pitacco_owner_set_commercial_billing_control(true,'Canal de regularização de teste');raise exception 'Unauthorized enforcement';exception when insufficient_privilege then null;end;
+end $gate_test$;
+reset role;

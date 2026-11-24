@@ -357,6 +357,7 @@ try {
         commercialHistory.unshift({revision:commercialCatalog.terms_version,plans:commercialCatalog.plans,created_at:new Date().toISOString(),changed_by:user.id});
         return route.fulfill({headers,json:commercialCatalog});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_merchant_commercial_billing_state')return route.fulfill({headers,json:{own_orders_blocked:false,payment_instructions:null}});
       if(pathname==='/rest/v1/rpc/pitacco_commercial_amount_preview')return route.fulfill({headers,json:{status:'unassigned',message:'Nenhum contrato comercial vigente no novo catálogo.'}});
       if(['/rest/v1/rpc/pitacco_commercial_closings','/rest/v1/rpc/pitacco_commercial_invoices'].includes(pathname))return route.fulfill({headers,json:{rows:[],has_more:false}});
       if(pathname==='/rest/v1/rpc/pitacco_owner_commercial_plans'){

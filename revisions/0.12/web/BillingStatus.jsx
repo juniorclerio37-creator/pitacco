@@ -36,6 +36,7 @@ function useBilling(client,name,args){
 
 export default function BillingStatus({client,storeId}){
  const {result,error,busy,refresh}=useBilling(client,'pitacco_merchant_subscription_details',{p_store:storeId});
+ const commercial=useBilling(client,'pitacco_merchant_commercial_billing_state',{p_store:storeId});
  const deadline=result?.paid_until||result?.trial_ends_at;
  return <section aria-label="Situação da assinatura" aria-busy={busy}>
   {busy&&!result&&<p role="status">Consultando assinatura…</p>}
@@ -53,6 +54,8 @@ export default function BillingStatus({client,storeId}){
    {result.payments?.length?<div style={{overflowX:'auto'}}><table><thead><tr><th>Pagamento</th><th>Provedor</th><th>Valor</th><th>Cobertura até</th></tr></thead><tbody>{result.payments.map((p,i)=><tr key={i}><td>{date.format(new Date(p.confirmed_at))}</td><td>{p.provider}</td><td>{money.format(Number(p.amount))}</td><td>{date.format(new Date(p.paid_until))}</td></tr>)}</tbody></table></div>:<p>Nenhum pagamento confirmado registrado.</p>}
   </>}
   <button type="button" className="secondary" disabled={busy} onClick={refresh}>Atualizar situação</button>
+  {commercial.result?.own_orders_blocked&&<p role="alert">Novos pedidos próprios bloqueados por cobrança vencida após a tolerância. Os pedidos em andamento permanecem disponíveis.</p>}
+  {commercial.result?.payment_instructions&&<p style={{whiteSpace:'pre-wrap'}}>Regularização: {commercial.result.payment_instructions}</p>}
   <CommercialAmounts client={client} storeId={storeId}/>
   <CommercialClosings client={client} storeId={storeId}/>
   <CommercialInvoices client={client} storeId={storeId}/>
