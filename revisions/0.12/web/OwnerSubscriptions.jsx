@@ -1,3 +1,4 @@
+import {OwnerPlanRequests} from './PlanChange.jsx';
 import React,{useEffect,useMemo,useState} from 'react';
 const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const dates=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short'});
@@ -24,6 +25,7 @@ export default function OwnerSubscriptions({client}){
  const current=rows.find(r=>r.id===selected);
  const count=status=>rows.filter(r=>r.status===status).length;
  return <section aria-label="Gestão de assinaturas">
+  <OwnerPlanRequests client={client}/>
   <div className="panel">
    <h3>Assinaturas dos estabelecimentos</h3>
    <p>Consulta administrativa. Os dados de pagamentos são somente confirmações registradas no Pitacco.</p>
