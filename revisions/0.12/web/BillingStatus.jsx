@@ -27,19 +27,22 @@ function useBilling(client,name,args){
 }
 
 export default function BillingStatus({client,storeId}){
- const {result,error,busy,refresh}=useBilling(client,'pitacco_store_subscription_status',{p_store:storeId});
+ const {result,error,busy,refresh}=useBilling(client,'pitacco_merchant_subscription_details',{p_store:storeId});
  const deadline=result?.paid_until||result?.trial_ends_at;
  return <section aria-label="Situação da assinatura" aria-busy={busy}>
   {busy&&!result&&<p role="status">Consultando assinatura…</p>}
   {error&&<p role="alert">{error}</p>}
   {result&&<>
    <div className="line"><b>Situação</b><span>{labels[result.status]||result.status}</span></div>
-   {result.plan&&<div className="line"><b>Plano atual</b><span>{result.plan}</span></div>}
-   {result.amount!=null&&<div className="line"><b>Valor informado pela cobrança</b><span>{money.format(Number(result.amount))}</span></div>}
+   {result.plan_code&&<div className="line"><b>Plano atual</b><span>{{saas:'Pitacco (contrato atual)',pitacco:'Pitacco',free:'Grátis',complete:'Completo'}[result.plan_code]||result.plan_code}</span></div>}
+   {(result.registered_monthly_amount??result.amount)!=null&&<div className="line"><b>Valor informado pela cobrança</b><span>{money.format(Number(result.registered_monthly_amount??result.amount))}</span></div>}
+   {result.due_date&&<div className="line"><b>Vencimento cadastrado</b><span>{result.due_date.split('-').reverse().join('/')}</span></div>}
    {result.status==='trial'&&result.trial_ends_at&&<div className="line"><b>Dias restantes de teste</b><span>{Math.max(0,Math.ceil((new Date(result.trial_ends_at)-Date.now())/86400000))}</span></div>}
    {deadline&&<div className="line"><b>{result.paid_until?'Cobertura paga até':'Fim do teste'}</b><span>{date.format(new Date(deadline))}</span></div>}
    {result.orders_blocked&&<p role="alert">Novos pedidos bloqueados. Os pedidos em andamento continuam disponíveis.</p>}
    {result.status==='overdue'&&result.regularization_url&&<a href={result.regularization_url} rel="noreferrer">Regularizar assinatura</a>}
+   <h4>Histórico de pagamentos confirmados</h4>
+   {result.payments?.length?<div style={{overflowX:'auto'}}><table><thead><tr><th>Pagamento</th><th>Provedor</th><th>Valor</th><th>Cobertura até</th></tr></thead><tbody>{result.payments.map((p,i)=><tr key={i}><td>{date.format(new Date(p.confirmed_at))}</td><td>{p.provider}</td><td>{money.format(Number(p.amount))}</td><td>{date.format(new Date(p.paid_until))}</td></tr>)}</tbody></table></div>:<p>Nenhum pagamento confirmado registrado.</p>}
   </>}
   <button type="button" className="secondary" disabled={busy} onClick={refresh}>Atualizar situação</button>
  </section>;
