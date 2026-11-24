@@ -1,0 +1,40 @@
+import React,{useEffect,useRef,useState} from 'react';
+import {mountFleetMap} from './deliveryMap.mjs';
+import OwnerFeatures from './OwnerFeatures.jsx';
+const fmt=new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Sao_Paulo'});
+const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+function StoreSelect({stores,value,onChange,all=false}){return <label>Estabelecimento<select value={value} onChange={e=>onChange(e.target.value)}><option value="">{all?'Todos os estabelecimentos':'Selecione uma loja'}</option>{stores.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>}
+function useOwnerData(client,rpc,store,page=0,interval=0,enabled=true){
+ const [state,setState]=useState(null),[revision,refresh]=useState(0);
+ useEffect(()=>{if(!enabled)return;let live=true,running=false;const abort=new AbortController();
+ async function load(){if(running||!live)return;running=true;try{const args=rpc==='pitacco_owner_general_settings'?{}:rpc==='pitacco_owner_live_positions'?{p_store:store||null}:{p_store:store||null,p_page:page};const {data,error}=await client.rpc(rpc,args).abortSignal(abort.signal);if(error||!data)throw error||Error('Resposta indisponível');if(live)setState({store,page,revision,data,error:''})}catch(e){if(live)setState({store,page,revision,data:null,error:e.message||'Consulta indisponível'})}finally{running=false}}
+ void load();const t=interval?setInterval(()=>{if(document.visibilityState==='visible')void load()},interval):null;return()=>{live=false;abort.abort();if(t)clearInterval(t)}
+ },[client,rpc,store,page,interval,enabled,revision]);
+ const current=enabled&&state?.store===store&&state?.page===page&&state?.revision===revision?state:null;
+ return {data:current?.data,error:current?.error,busy:enabled&&!current,refresh:()=>refresh(n=>n+1)};
+}
+function Pager({page,setPage,more,busy}){return <div className="line"><button className="secondary" disabled={busy||page===0} onClick={()=>setPage(n=>n-1)}>Anterior</button><span>Página {page+1}</span><button className="secondary" disabled={busy||!more} onClick={()=>setPage(n=>n+1)}>Próxima</button></div>}
+function Status({state}){return <>{state.busy&&<p role="status">Consultando…</p>}{state.error&&<p role="alert">{state.error} <button className="secondary" onClick={state.refresh}>Tentar novamente</button></p>}</>}
+export function OwnerAccess({client,stores}){
+ const [store,setStore]=useState(''),[page,setPage]=useState(0);
+ const state=useOwnerData(client,'pitacco_owner_store_members',store,page,0,!!store);
+ return <section className="panel" aria-label="Usuários e permissões"><StoreSelect stores={stores} value={store} onChange={s=>{setStore(s);setPage(0)}}/><p>Vínculos efetivos registrados na loja. O acesso ao Super Admin continua exclusivo do proprietário. Esta consulta não concede novos privilégios.</p><Status state={state}/>{state.data&&<><div className="owner-dashboard-table"><table><thead><tr><th>Usuário</th><th>Função</th></tr></thead><tbody>{state.data.rows.map(r=><tr key={r.user_id}><td>{r.email||r.user_id}</td><td>{r.role||'Não informado'}</td></tr>)}</tbody></table></div>{!state.data.rows.length&&<p>Nenhum vínculo encontrado.</p>}<Pager page={page} setPage={setPage} more={state.data.has_more} busy={state.busy}/></>}</section>
+}
+export function OwnerCampaigns({client,stores}){
+ const [store,setStore]=useState(''),[page,setPage]=useState(0),[saving,setSaving]=useState(false),[notice,setNotice]=useState(''),[failure,setFailure]=useState('');
+ const state=useOwnerData(client,'pitacco_owner_campaign_rows',store,page,0,!!store);
+ async function toggle(row){if(saving||!window.confirm((row.active?'Desativar':'Ativar')+' '+row.code+'?'))return;setSaving(true);setNotice('');setFailure('');try{const {error}=await client.rpc('pitacco_owner_campaign_active',{p_store:store,p_coupon:row.id,p_active:!row.active});if(error)throw error;setNotice('Alteração registrada.');state.refresh()}catch(e){setFailure(e.message||'Falha ao salvar.')}finally{setSaving(false)}}
+ return <section className="panel" aria-label="Cupons e campanhas"><StoreSelect stores={stores} value={store} onChange={s=>{setStore(s);setPage(0);setNotice('');setFailure('')}}/><p>Gerenciamento dos cupons e campanhas gerais da loja. Benefícios individuais e resgates já realizados são preservados.</p><Status state={state}/>{notice&&<p role="status">{notice}</p>}{failure&&<p role="alert">{failure}</p>}{state.data&&<><div className="owner-dashboard-table"><table><thead><tr><th>Código</th><th>Tipo</th><th>Desconto</th><th>Usos</th><th>Vigência</th><th>Configuração</th><th>Ação</th></tr></thead><tbody>{state.data.rows.map(r=><tr key={r.id}><td>{r.code}</td><td>{r.kind==='campaign'?'Campanha':'Cupom'}</td><td>{r.discount_type==='percent'?r.discount_value+'%':money.format(Number(r.discount_value))}</td><td>{r.uses} / {r.max_uses??'Sem limite'}</td><td>{r.starts_at?fmt.format(new Date(r.starts_at)):'Sem início definido'} — {r.expires_at?fmt.format(new Date(r.expires_at)):'Sem término definido'}</td><td>{r.active?'Ativado':'Desativado'}</td><td><button type="button" className="secondary" disabled={saving} onClick={()=>toggle(r)}>{r.active?'Desativar':'Ativar'}</button></td></tr>)}</tbody></table></div>{!state.data.rows.length&&<p>Nenhuma campanha encontrada.</p>}<Pager page={page} setPage={setPage} more={state.data.has_more} busy={saving||state.busy}/></>}</section>
+}
+export function OwnerFleet({client,stores}){
+ const [store,setStore]=useState(''),[mapError,setMapError]=useState(''),[ready,setReady]=useState(false),[selected,setSelected]=useState('');
+ const state=useOwnerData(client,'pitacco_owner_live_positions',store,0,10000);
+ const container=useRef(null),map=useRef(null);
+ useEffect(()=>{let live=true;mountFleetMap(container.current).then(m=>{if(!live){m.remove();return}map.current=m;setReady(true)}).catch(e=>{if(live)setMapError(e.message)});return()=>{live=false;map.current?.remove();map.current=null}},[]);
+ useEffect(()=>{if(!ready)return;const rows=state.data?.rows||[];map.current?.update({store:stores.find(s=>s.id===store),couriers:rows.map(r=>({id:r.id,name:r.name,signal:'online',position:r})),selectedCourier:selected});},[ready,state.data,stores,store,selected]);
+ return <section className="panel" aria-label="Mapa de operações"><StoreSelect stores={stores} value={store} all onChange={s=>{setStore(s);setSelected('')}}/><p>Somente entregadores ativos e disponíveis com GPS recebido nos últimos dois minutos. Atualização periódica; nenhuma localização fora da operação é exibida.</p><Status state={state}/>{mapError&&<p role="alert">{mapError}</p>}<div ref={container} className="admin-fleet-map" aria-label="Mapa de entregadores"/>{state.data&&<><p>{state.data.rows.length} entregadores com posição recente{state.data.truncated?' · limite de exibição atingido; filtre por loja':''}</p><div className="owner-dashboard-table"><table><thead><tr><th>Entregador</th><th>Loja</th><th>Último GPS</th><th>Mapa</th></tr></thead><tbody>{state.data.rows.map(r=><tr key={r.id}><td>{r.name}</td><td>{r.store_name}</td><td>{fmt.format(new Date(r.observed_at))}</td><td><button type="button" className="secondary" disabled={!ready} onClick={()=>setSelected(r.id)}>Localizar</button></td></tr>)}</tbody></table></div></>}</section>
+}
+export function OwnerSettings({client}){
+ const state=useOwnerData(client,'pitacco_owner_general_settings','');
+ return <section className="panel" aria-label="Configurações gerais"><h3>Configuração de cobrança atual</h3><Status state={state}/>{state.data&&<dl><div className="line"><dt>Bloqueio automático por inadimplência</dt><dd>{state.data.enforce_new_orders?'Ativado':'Desativado'}</dd></div><div className="line"><dt>Portal de regularização</dt><dd>{state.data.regularization_configured?'Configurado':'Não configurado'}</dd></div></dl>}<p>As regras de cobrança serão integradas separadamente; esta tela não confirma pagamentos nem altera contratos.</p><h3>Padrões de módulos</h3><OwnerFeatures client={client} stores={[]}/></section>
+}

@@ -6,6 +6,7 @@ import {connectionConfig} from './config.mjs';
 import OwnerSubscriptions from './OwnerSubscriptions.jsx';
 import OwnerDashboard from './OwnerDashboard.jsx';
 import OwnerGrowth from './OwnerGrowth.jsx';
+import {OwnerAccess,OwnerCampaigns,OwnerFleet,OwnerSettings} from './OwnerExtended.jsx';
 import Homologation from './Homologation.jsx';
 import Owner99Food from './Owner99Food.jsx';
 import OwnerIfood from './OwnerIfood.jsx';
@@ -35,15 +36,19 @@ const client=(preview||location.hostname===adminHost)&&config.url&&config.key?cr
 const storefrontOrigin=preview?(import.meta.env.VITE_PITACCO_HOMOLOG_SITE_ORIGIN||''):'https://pitacco.com.br';
 const groups=[
  ['Visão estratégica',[['Painel geral',LayoutDashboard,'Super Dashboard'],['Indicadores e crescimento',Activity],['Central de operações',ClipboardCheck]]],
- ['Gestão comercial',[['Estabelecimentos',Store],['Assinaturas',CreditCard,'Planos e assinaturas'],['Plano Pitacco',Package,'Configuração dos planos'],['Financeiro do Pitacco',Wallet,'Financeiro']]],
- ['Gestão operacional',[['Pedidos',ShoppingBag,'Pedidos globais'],['Entregadores',Bike],['Módulos do lojista',Package,'Módulos e funcionalidades'],['Homologação',Plug,'Integrações e homologação']]],
- ['Tecnologia e suporte',[['Central de Aplicativos',Monitor,'Aplicativos e versões'],['Central de Diagnósticos',Activity,'Monitoramento do sistema'],['Suporte e incidentes',CircleHelp,'Central de suporte'],['Comunicados aos entregadores',Megaphone,'Central de comunicados'],['Pitacco Intelligence',Sparkles,'Inteligência artificial'],['Auditoria',ShieldCheck,'Segurança e auditoria']]]
+ ['Gestão comercial',[['Estabelecimentos',Store],['Usuários e permissões',ShieldCheck],['Assinaturas',CreditCard,'Planos e assinaturas'],['Plano Pitacco',Package,'Configuração dos planos'],['Financeiro do Pitacco',Wallet,'Financeiro'],['Cupons e campanhas',Megaphone]]],
+ ['Gestão operacional',[['Pedidos',ShoppingBag,'Pedidos globais'],['Entregadores',Bike],['Mapa de operações',Bike],['Módulos do lojista',Package,'Módulos e funcionalidades'],['Homologação',Plug,'Integrações e homologação']]],
+ ['Tecnologia e suporte',[['Central de Aplicativos',Monitor,'Aplicativos e versões'],['Central de Diagnósticos',Activity,'Monitoramento do sistema'],['Suporte e incidentes',CircleHelp,'Central de suporte'],['Comunicados aos entregadores',Megaphone,'Central de comunicados'],['Pitacco Intelligence',Sparkles,'Inteligência artificial'],['Auditoria',ShieldCheck,'Segurança e auditoria'],['Configurações gerais',Settings]]]
 ];
 const descriptions={
  'Painel geral':'Visão geral de toda a operação do Pitacco',
  'Indicadores e crescimento':'Evolução mensal de lojas e pedidos registrados',
  'Central de operações':'Acompanhe pedidos e entregadores em uma única área',
  Estabelecimentos:'Gerencie todas as lojas da plataforma',
+ 'Usuários e permissões':'Consulte vínculos e permissões dos usuários por loja',
+ 'Cupons e campanhas':'Acompanhe e gerencie campanhas de cada estabelecimento',
+ 'Mapa de operações':'Localização operacional atual de entregadores disponíveis',
+ 'Configurações gerais':'Configurações globais e situação da cobrança',
  Assinaturas:'Acompanhe assinaturas, testes e cobranças',
  'Plano Pitacco':'Configure as condições comerciais da plataforma',
  'Financeiro do Pitacco':'Receitas, comissões e conciliação da plataforma',
@@ -193,6 +198,10 @@ function AdminApp(){
    {page==='Comunicados aos entregadores'&&<OwnerCourierCampaigns client={client} stores={stores}/>}
    {page==='Financeiro do Pitacco'&&<OwnerFinance client={client} stores={stores}/>}
    {page==='Plano Pitacco'&&<OwnerPlans client={client} stores={stores}/>}
+   {page==='Usuários e permissões'&&<OwnerAccess client={client} stores={stores}/>}
+   {page==='Cupons e campanhas'&&<OwnerCampaigns client={client} stores={stores}/>}
+   {page==='Mapa de operações'&&<OwnerFleet client={client} stores={stores}/>}
+   {page==='Configurações gerais'&&<OwnerSettings client={client}/>}
    {page==='Assinaturas'&&<OwnerSubscriptions client={client}/>}
    {page==='Módulos do lojista'&&<OwnerFeatures client={client} stores={stores}/>}
    {page==='Central de Aplicativos'&&<OwnerAppReleases client={client}/>}

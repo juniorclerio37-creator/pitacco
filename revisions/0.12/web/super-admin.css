@@ -60,3 +60,5 @@
 @media print{.super-admin>.pitacco-workspace--admin{padding:0}.super-admin .admin-top{display:none!important}}
 
 .super-admin .admin-operation-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:16px}.super-admin .admin-growth-bars{display:flex;gap:8px;overflow-x:auto;min-height:200px;align-items:end;padding:12px 0}.super-admin .admin-growth-bars>div{display:grid;grid-template-rows:20px 130px 28px;align-items:end;text-align:center;min-width:55px;flex:1}.super-admin .admin-growth-bars>div>span{background:var(--accent);border-radius:5px 5px 0 0;width:70%;min-height:2px;justify-self:center}.super-admin .admin-growth-bars small{font-size:11px;color:var(--muted)}
+
+.super-admin .admin-fleet-map{height:440px;min-height:260px;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:12px 0;z-index:0}@media(max-width:800px){.super-admin .admin-fleet-map{height:330px}}

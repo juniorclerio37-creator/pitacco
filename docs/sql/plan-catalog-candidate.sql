@@ -130,4 +130,57 @@ begin
 end $growth$;
 revoke all on function public.pitacco_owner_growth(integer) from public,anon,authenticated;
 grant execute on function public.pitacco_owner_growth(integer) to authenticated;
+create or replace function public.pitacco_owner_store_members(p_store uuid,p_page integer default 0)
+returns jsonb language plpgsql stable security definer set search_path='' as $members$
+declare j jsonb;
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ if p_store is null or p_page is null or p_page not between 0 and 100000 then raise exception 'Filtro inválido' using errcode='22023';end if;
+ select coalesce(jsonb_agg(to_jsonb(x) order by x.user_id),'[]'::jsonb) into j from
+ (select m.user_id,u.email,to_jsonb(m)->>'role' as role from public.store_members m join auth.users u on u.id=m.user_id where m.store_id=p_store order by m.user_id offset p_page*25 limit 26) x;
+ return jsonb_build_object('rows',j-25,'has_more',jsonb_array_length(j)>25);
+end $members$;
+create or replace function public.pitacco_owner_campaign_rows(p_store uuid,p_page integer default 0)
+returns jsonb language plpgsql stable security definer set search_path='' as $campaign$
+declare j jsonb;
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ if p_store is null or p_page is null or p_page not between 0 and 100000 then raise exception 'Filtro inválido' using errcode='22023';end if;
+ select coalesce(jsonb_agg(to_jsonb(x) order by x.created_at desc,x.id),'[]'::jsonb) into j from
+ (select id,code,kind,discount_type,discount_value,uses,max_uses,starts_at,expires_at,active,created_at from public.loyalty_coupons where store_id=p_store and kind in ('coupon','campaign') and target_customer_id is null order by created_at desc,id offset p_page*25 limit 26) x;
+ return jsonb_build_object('rows',j-25,'has_more',jsonb_array_length(j)>25);
+end $campaign$;
+create or replace function public.pitacco_owner_campaign_active(p_store uuid,p_coupon uuid,p_active boolean)
+returns void language plpgsql security definer set search_path='' as $campaign$
+declare before_active boolean;
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ if p_active is null then raise exception 'Situação inválida' using errcode='22023';end if;
+ select active into before_active from public.loyalty_coupons where id=p_coupon and store_id=p_store and kind in ('coupon','campaign') and target_customer_id is null for update;
+ if not found then raise exception 'Campanha indisponível' using errcode='22023';end if;
+ if before_active=p_active then return;end if;
+ update public.loyalty_coupons set active=p_active where id=p_coupon and store_id=p_store;
+ insert into pitacco_private.subscription_admin_audit(store_id,actor_id,action,details) values(p_store,auth.uid(),'campaign_availability',jsonb_build_object('coupon_id',p_coupon,'before',before_active,'after',p_active));
+end $campaign$;
+create or replace function public.pitacco_owner_live_positions(p_store uuid default null)
+returns jsonb language plpgsql stable security definer set search_path='' as $fleet$
+declare j jsonb;
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ select coalesce(jsonb_agg(to_jsonb(x) order by x.observed_at desc,x.id),'[]'::jsonb) into j from
+ (select c.id,c.name,coalesce(s.name,'Frota compartilhada') as store_name,p.latitude,p.longitude,p.observed_at,p.accuracy_m
+ from public.couriers c join public.courier_positions p on p.courier_id=c.id left join public.stores s on s.id=c.store_id
+ where c.active and c.available and p.observed_at>=now()-interval '2 minutes' and p.observed_at<=now()
+ and p.latitude between -90 and 90 and p.longitude between -180 and 180 and (p_store is null or c.store_id=p_store or public.pitacco_courier_test_access(c.id,p_store))
+ order by p.observed_at desc,c.id limit 501) x;
+ return jsonb_build_object('rows',j-500,'truncated',jsonb_array_length(j)>500);
+end $fleet$;
+create or replace function public.pitacco_owner_general_settings()
+returns jsonb language plpgsql stable security definer set search_path='' as $settings$
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ return (select jsonb_build_object('enforce_new_orders',enforce_new_orders,'regularization_configured',regularization_url is not null) from pitacco_private.subscription_control where singleton);
+end $settings$;
+revoke all on function public.pitacco_owner_store_members(uuid,integer),public.pitacco_owner_campaign_rows(uuid,integer),public.pitacco_owner_campaign_active(uuid,uuid,boolean),public.pitacco_owner_live_positions(uuid),public.pitacco_owner_general_settings() from public,anon,authenticated;
+grant execute on function public.pitacco_owner_store_members(uuid,integer),public.pitacco_owner_campaign_rows(uuid,integer),public.pitacco_owner_campaign_active(uuid,uuid,boolean),public.pitacco_owner_live_positions(uuid),public.pitacco_owner_general_settings() to authenticated;
 notify pgrst,'reload schema';

@@ -59,3 +59,21 @@ do $growth$ begin
  begin perform public.pitacco_owner_growth(3);raise exception 'Unauthorized growth';exception when insufficient_privilege then null;end;
 end $growth$;
 reset role;
+insert into public.loyalty_coupons(id,store_id,code,discount_type,discount_value) values('40000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','ADMINTEST','percent',10);
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+do $extended$ declare r jsonb; begin
+ r:=public.pitacco_owner_store_members('20000000-0000-0000-0000-000000000001');assert jsonb_array_length(r->'rows')=1;
+ r:=public.pitacco_owner_campaign_rows('20000000-0000-0000-0000-000000000001');assert r#>>'{rows,0,code}'='ADMINTEST';
+ perform public.pitacco_owner_campaign_active('20000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001',false);
+ assert public.pitacco_owner_campaign_rows('20000000-0000-0000-0000-000000000001')#>>'{rows,0,active}'='false';
+ assert jsonb_typeof(public.pitacco_owner_live_positions()->'rows')='array';
+ assert public.pitacco_owner_general_settings() ? 'enforce_new_orders';
+end $extended$;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+do $extended$ begin
+ begin perform public.pitacco_owner_live_positions();raise exception 'Unauthorized fleet';exception when insufficient_privilege then null;end;
+ begin perform public.pitacco_owner_store_members('20000000-0000-0000-0000-000000000001');raise exception 'Unauthorized members';exception when insufficient_privilege then null;end;
+ begin perform public.pitacco_owner_campaign_active('20000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001',true);raise exception 'Unauthorized campaign';exception when insufficient_privilege then null;end;
+end $extended$;
+reset role;
