@@ -1,4 +1,5 @@
 import {MerchantPlanChange} from './PlanChange.jsx';
+import CommercialAmounts,{CommercialClosings,CommercialInvoices} from './CommercialAmounts.jsx';
 import React,{useEffect,useState} from 'react';
 
 const labels={trial:'Período de teste',active:'Ativa · pagamento confirmado',overdue:'Vencida',legacy:'Cadastro anterior à cobrança',courtesy:'Cortesia',suspended:'Suspensa'};
@@ -6,29 +7,36 @@ const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const date=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'medium',timeStyle:'short'});
 
 function useBilling(client,name,args){
- const [result,setResult]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(true),[revision,setRevision]=useState(0);
+ const [snapshot,setSnapshot]=useState(null),[revision,setRevision]=useState(0);
  const storeId=args?.p_store;
  useEffect(()=>{
-  let live=true;
+  let live=true,running=false,queued=false;
+  const controller=new AbortController();
+  const update=next=>{if(live)setSnapshot(old=>({client,name,storeId,result:old?.client===client&&old?.name===name&&old?.storeId===storeId?old.result:null,error:'',busy:false,...next}))};
   async function load(){
-   setBusy(true);
-   setError('');
+   if(!live)return;
+   if(running){queued=true;return}
+   running=true;update({busy:true});
    try{
-    const response=await client.rpc(name,storeId?{p_store:storeId}:undefined);
-    if(!live)return;
+    const response=await client.rpc(name,storeId?{p_store:storeId}:undefined).abortSignal(controller.signal);
     if(response.error)throw response.error;
-    setResult(response.data);
-   }catch(failure){if(live)setError(failure.message||'Não foi possível consultar a assinatura.');}
-   finally{if(live)setBusy(false);}
+    update({result:response.data});
+   }catch(failure){update({result:null,error:failure.message||'Não foi possível consultar a assinatura.'});}
+   finally{running=false;if(queued){queued=false;void load()}}
   }
-  load();
-  return()=>{live=false;};
+  void load();
+  const visible=()=>{if(document.visibilityState==='visible')void load()};
+  const timer=setInterval(visible,10000);
+  document.addEventListener('visibilitychange',visible);window.addEventListener('focus',visible);
+  return()=>{live=false;controller.abort();clearInterval(timer);document.removeEventListener('visibilitychange',visible);window.removeEventListener('focus',visible)};
  },[client,name,storeId,revision]);
- return {result,error,busy,refresh:()=>setRevision(value=>value+1)};
+ const current=snapshot?.client===client&&snapshot?.name===name&&snapshot?.storeId===storeId?snapshot:{result:null,error:'',busy:true};
+ return {...current,refresh:()=>setRevision(value=>value+1)};
 }
 
 export default function BillingStatus({client,storeId}){
  const {result,error,busy,refresh}=useBilling(client,'pitacco_merchant_subscription_details',{p_store:storeId});
+ const commercial=useBilling(client,'pitacco_merchant_commercial_billing_state',{p_store:storeId});
  const deadline=result?.paid_until||result?.trial_ends_at;
  return <section aria-label="Situação da assinatura" aria-busy={busy}>
   {busy&&!result&&<p role="status">Consultando assinatura…</p>}
@@ -46,6 +54,11 @@ export default function BillingStatus({client,storeId}){
    {result.payments?.length?<div style={{overflowX:'auto'}}><table><thead><tr><th>Pagamento</th><th>Provedor</th><th>Valor</th><th>Cobertura até</th></tr></thead><tbody>{result.payments.map((p,i)=><tr key={i}><td>{date.format(new Date(p.confirmed_at))}</td><td>{p.provider}</td><td>{money.format(Number(p.amount))}</td><td>{date.format(new Date(p.paid_until))}</td></tr>)}</tbody></table></div>:<p>Nenhum pagamento confirmado registrado.</p>}
   </>}
   <button type="button" className="secondary" disabled={busy} onClick={refresh}>Atualizar situação</button>
+  {commercial.result?.own_orders_blocked&&<p role="alert">Estabelecimento bloqueado por inadimplência. O recebimento de novos pedidos de todas as origens está suspenso. Regularize suas cobranças para voltar a operar. Os pedidos em andamento permanecem disponíveis.</p>}
+  {commercial.result?.payment_instructions&&<p style={{whiteSpace:'pre-wrap'}}>Regularização: {commercial.result.payment_instructions}</p>}
+  <CommercialAmounts client={client} storeId={storeId}/>
+  <CommercialClosings client={client} storeId={storeId}/>
+  <CommercialInvoices client={client} storeId={storeId}/>
   <MerchantPlanChange key={storeId} client={client} storeId={storeId}/>
  </section>;
 }

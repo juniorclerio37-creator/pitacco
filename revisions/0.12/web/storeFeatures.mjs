@@ -19,21 +19,25 @@ export function useStoreFeatures(client,store,user){
  const [attempt,setAttempt]=useState(0);
  useEffect(()=>{
   if(!client||!store||!user)return;
-  let live=true,running=false;
+  let live=true,running=false,queued=false;
+  const controller=new AbortController();
   async function update(){
-   if(running)return;
+   if(!live)return;
+   if(running){queued=true;return;}
    running=true;
    try{
-    const result=await client.rpc('pitacco_store_features',{p_store:store});
+    const result=await client.rpc('pitacco_store_features',{p_store:store}).abortSignal(controller.signal);
     if(result.error||!result.data||typeof result.data!=='object'||Array.isArray(result.data))throw new Error('Módulos indisponíveis');
     if(live)setState({store,user,attempt,status:'ready',features:result.data});
    }catch{
     if(live)setState({store,user,attempt,status:'error',features:null});
-   }finally{running=false;}
+   }finally{running=false;if(queued){queued=false;void update()}}
   }
   update();
-  const timer=setInterval(update,30000);
-  return()=>{live=false;clearInterval(timer);};
+  const visible=()=>{if(document.visibilityState==='visible')void update()};
+  const timer=setInterval(visible,10000);
+  document.addEventListener('visibilitychange',visible);window.addEventListener('focus',visible);
+  return()=>{live=false;controller.abort();clearInterval(timer);document.removeEventListener('visibilitychange',visible);window.removeEventListener('focus',visible);};
  },[client,store,user,attempt]);
  const current=state&&state.store===store&&state.user===user&&state.attempt===attempt
   ?state:{status:'loading',features:null};

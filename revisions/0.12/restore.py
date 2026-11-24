@@ -189,3 +189,11 @@ subprocess.run([sys.executable,'revisions/0.12/merchant_navigation_v2.py'],check
 
 # Approved mobile and desktop merchant redesign.
 subprocess.run([sys.executable,'revisions/0.12/merchant_modern_0133.py'],check=True)
+
+# Persistent commercial suspension notice in the merchant web and Windows workspace.
+ui=pathlib.Path('web/src.jsx')
+content=ui.read_text(encoding='utf-8')
+anchor="{active&&!isDriver&&manager&&allowed('Entregas')&&<IncidentCenter"
+assert content.count(anchor)==1,'Commercial block notice mount not found'
+content="import CommercialBlockNotice from './CommercialBlockNotice.jsx';\n"+content.replace(anchor,"{active&&!isDriver&&<CommercialBlockNotice key={selected} client={supabase} storeId={selected} manager={manager} onRegularize={()=>setTab('Assinaturas')}/>}\n"+anchor,1)
+ui.write_text(content,encoding='utf-8')

@@ -1,0 +1,3 @@
+-- Promoted to the official Supabase migration:
+-- supabase/migrations/20261124143259_pitacco_commercial_catalog_and_billing_guarded.sql
+-- Do not apply a second copy of the commercial schema.
