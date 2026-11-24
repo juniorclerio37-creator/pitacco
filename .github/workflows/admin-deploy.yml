@@ -6,6 +6,9 @@ on:
     paths:
       - 'revisions/0.12/web/AdminApp.jsx'
       - 'revisions/0.12/web/OwnerSubscriptions.jsx'
+      - 'revisions/0.12/web/OwnerFinance.jsx'
+      - 'revisions/0.12/web/OwnerCommercialFinance.jsx'
+      - 'revisions/0.12/web/OwnerPlans.jsx'
       - 'revisions/0.12/web/PlanChange.jsx'
       - 'revisions/0.12/web/OwnerCourierCampaigns.jsx'
       - 'revisions/0.12/web/owner-courier-campaigns.css'
@@ -72,6 +75,7 @@ jobs:
           grep -Rql 'pitacco_owner_repair_decide' web/dist-admin/assets
           grep -Rql 'pitacco_owner_recovery_preflight' web/dist-admin/assets
           grep -Rql 'pitacco_admin_send_courier_campaign' web/dist-admin/assets
+          grep -Rql 'pitacco_owner_resolve_asaas_incident' web/dist-admin/assets
       - name: Publicar no Worker existente
         shell: bash
         env:

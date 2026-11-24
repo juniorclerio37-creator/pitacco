@@ -1,0 +1,42 @@
+begin;
+do $test$
+declare s uuid;c uuid;i uuid;actor uuid:=gen_random_uuid();u uuid:=gen_random_uuid();offer jsonb;cust text:='cus_test_'||replace(gen_random_uuid()::text,'-','');pay text:='pay_test_'||replace(gen_random_uuid()::text,'-','');cov timestamptz;claim uuid;result jsonb;
+begin
+ insert into auth.users(id,email) values(u,u::text||'@example.invalid');
+ insert into public.stores(name) values('VALIDACAO RECUPERACAO TEMPORARIA') returning id into s;
+ insert into public.store_members(store_id,user_id,role) values(s,u,'gestor');
+ update pitacco_private.subscription_control set asaas_environment='production';
+ select x into offer from pitacco_private.plan_catalog_versions v cross join lateral jsonb_array_elements(v.plans) x where v.revision='2026-11-24-v3' and x->>'code'='complete';
+ insert into pitacco_private.commercial_contracts(store_id,revision,plan_code,effective_from,terms,assigned_by) values(s,'2026-11-24-v3','complete',(now() at time zone 'America/Sao_Paulo')::date,offer,u) returning id into c;
+ insert into pitacco_private.fixo_prepaid_state(contract_id,first_due_at) values(c,now());
+ i:=pitacco_private.ensure_fixo_prepaid_invoice(c);
+ insert into pitacco_private.asaas_commercial_customers(store_id,customer_id) values(s,cust);
+ insert into pitacco_private.asaas_commercial_charges(invoice_id,customer_id,payment_id) values(i,cust,pay);
+ assert public.pitacco_asaas_settle_commercial_invoice(pay,cust,i,5990)='processed';
+ select paid_until into cov from pitacco_private.fixo_prepaid_state where contract_id=c;
+ assert public.pitacco_asaas_record_commercial_incident(i,pay,cust,'PAYMENT_PARTIALLY_REFUNDED','REFUNDED')='review_required';
+ update pitacco_private.commercial_billing_control set enforce_own_orders=true,payment_instructions='Teste isolado de cobrança',pix_cnpj='00000000000000',pix_recipient='Fixture de teste' where singleton;
+ assert not pitacco_private.commercial_orders_blocked(s),'no block on raw incident';
+ perform pitacco_private.resolve_asaas_incident(i,'recovery_due',1250,'Conferência fictícia',actor);
+ assert pitacco_private.asaas_current_resolution(i)='recovery_due';
+ assert not pitacco_private.commercial_orders_blocked(s),'48 hours grace';
+ update pitacco_private.asaas_commercial_resolutions set due_at=now() where invoice_id=i;
+ assert pitacco_private.commercial_orders_blocked(s),'recovery debt overdue';
+ perform set_config('request.jwt.claim.sub',u::text,true);
+ result:=public.pitacco_commercial_invoices(s,0);
+ assert result->'rows'->0->>'status'='recovery_due';
+ assert (result->'rows'->0->>'recovery_amount_cents')::bigint=1250;
+ claim:=public.pitacco_submit_commercial_payment(i,'TEST-RECOVERY-123','application/pdf',encode(convert_to('%PDF-TEST','UTF8'),'base64'));
+ assert (select recovery_amount_cents=1250 from pitacco_private.commercial_payment_claims where id=claim),'proof bound to amount';
+ begin
+ perform public.pitacco_owner_resolve_asaas_incident(i,'waived',0,'Unauthorized');
+ raise exception 'Unexpected access';
+ exception when insufficient_privilege then null;end;
+ perform pitacco_private.confirm_asaas_recovery(i,1250,'TEST-RECOVERY-123','Crédito fictício conferido',actor);
+ assert not pitacco_private.commercial_orders_blocked(s),'unblocked after recovery';
+ assert (select paid_until=cov from pitacco_private.fixo_prepaid_state where contract_id=c),'no second coverage';
+ assert pitacco_private.asaas_current_resolution(i)='recovery_paid';
+ assert public.pitacco_asaas_record_commercial_incident(i,pay,cust,'PAYMENT_PARTIALLY_REFUNDED','REFUNDED')='review_required';
+ assert pitacco_private.asaas_current_resolution(i)='recovery_paid','replay does not reopen';
+end $test$;
+rollback;
