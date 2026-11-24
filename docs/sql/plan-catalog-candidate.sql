@@ -247,4 +247,100 @@ begin
 end;
 $$;
 
+-- Separate contractual terms from the live catalog. No legacy contract is silently migrated.
+create table pitacco_private.commercial_contracts(
+ id uuid primary key default gen_random_uuid(),
+ store_id uuid not null references public.stores(id),
+ revision text not null references pitacco_private.plan_catalog_versions(revision),
+ plan_code text not null, effective_from date not null,
+ terms jsonb not null, assigned_by uuid not null, created_at timestamptz not null default now(),
+ unique(store_id,effective_from)
+);
+alter table pitacco_private.commercial_contracts enable row level security;
+revoke all on pitacco_private.commercial_contracts from public,anon,authenticated;
+-- The approved request is the source of the snapshot. This records future commercial
+-- terms, without changing legacy entitlement, provider payment records or store.plan.
+create or replace function public.pitacco_owner_schedule_commercial_contract(p_request uuid,p_effective date,p_reason text)
+returns uuid language plpgsql security definer set search_path='' as $contract$
+declare r pitacco_private.plan_change_requests%rowtype; offer jsonb; result uuid; today date:=(now() at time zone 'America/Sao_Paulo')::date;
+begin
+ if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
+ if p_effective is null or p_effective<today or p_effective>today+366 or length(btrim(coalesce(p_reason,''))) not between 5 and 500 then raise exception 'Vigência ou justificativa inválida' using errcode='22023';end if;
+ select * into r from pitacco_private.plan_change_requests where id=p_request;
+ if not found then raise exception 'Solicitação indisponível' using errcode='22023';end if;
+ perform 1 from public.stores where id=r.store_id for update;
+ select * into r from pitacco_private.plan_change_requests where id=p_request for update;
+ if r.status not in ('pending','in_review') then raise exception 'Solicitação indisponível' using errcode='22023';end if;
+ select p into offer from pitacco_private.plan_catalog_versions v cross join lateral jsonb_array_elements(v.plans) p where v.revision=r.terms_version and p->>'code'=r.requested_plan;
+ if offer is null then raise exception 'Condições indisponíveis' using errcode='22023';end if;
+ if exists(select 1 from pitacco_private.commercial_contracts c where c.store_id=r.store_id) then raise exception 'Já existe contrato comercial; alteração de vigência requer conciliação dos ciclos' using errcode='22023';end if;
+ insert into pitacco_private.commercial_contracts(store_id,revision,plan_code,effective_from,terms,assigned_by) values(r.store_id,r.terms_version,r.requested_plan,p_effective,offer,auth.uid()) returning id into result;
+ update pitacco_private.plan_change_requests set status='approved',updated_at=now(),decided_by=auth.uid(),decision_note=btrim(p_reason) where id=r.id;
+ insert into pitacco_private.subscription_admin_audit(store_id,actor_id,action,details) values(r.store_id,auth.uid(),'commercial_contract_scheduled',jsonb_build_object('contract_id',result,'request_id',r.id,'effective_from',p_effective,'reason',p_reason,'terms',offer));
+ return result;
+end $contract$;
+alter table pitacco_private.plan_change_requests drop constraint plan_change_requests_status_check;
+alter table pitacco_private.plan_change_requests add constraint plan_change_catalog_status_check check(status in ('pending','in_review','cancelled','declined','approved'));
+-- Compute the eligible product base only from explicit server-calculated subtotal
+-- and discount; never substitute gross, which includes freight. Missing or
+-- ambiguous adjustments block a final amount and require reconciliation.
+create or replace function pitacco_private.commission_product_base(p_receipt jsonb)
+returns bigint language plpgsql immutable set search_path='' as $base$
+declare subtotal numeric; discount numeric;
+begin
+ if jsonb_typeof(p_receipt) is distinct from 'object' or
+ coalesce(p_receipt->>'subtotal','') !~ '^[0-9]{1,10}(\.[0-9]{1,2})?$' or
+ coalesce(p_receipt->>'discount','') !~ '^[0-9]{1,10}(\.[0-9]{1,2})?$' then return null;end if;
+ if p_receipt ?| array['refund','refunds','refunded_amount','cancelled_items','partial_refund','refunded_product_cents','cancelled_product_cents'] then return null;end if;
+ if lower(coalesce(p_receipt->>'payment_status','')) in ('refunded','partially_refunded','estornado','estorno_parcial') then return null;end if;
+ subtotal:=(p_receipt->>'subtotal')::numeric;discount:=(p_receipt->>'discount')::numeric;
+ if discount>subtotal then return null;end if;
+ return round((subtotal-discount)*100)::bigint;
+end $base$;
+revoke all on function pitacco_private.commission_product_base(jsonb) from public,anon,authenticated;
+create or replace function public.pitacco_commercial_amount_preview(p_store uuid,p_day date default null)
+returns jsonb language plpgsql stable security definer set search_path='' as $amount$
+declare c pitacco_private.commercial_contracts%rowtype; today date:=(now() at time zone 'America/Sao_Paulo')::date;
+ day date:=coalesce(p_day,today); period_start date; period_end date; due_at timestamptz;
+ base bigint:=0; unknown bigint:=0; count_orders bigint:=0; rate integer; monthly bigint; commission bigint; trial_end date; monthly_start date; monthly_due date; monthly_charge bigint;
+begin
+ if auth.uid() is null or not (public.pitacco_is_platform_owner() or public.is_store_manager(p_store)) then raise exception 'Sem permissão' using errcode='42501';end if;
+ if day>today or day<'2000-01-01' then raise exception 'Data inválida' using errcode='22023';end if;
+ select * into c from pitacco_private.commercial_contracts where store_id=p_store and effective_from<=day order by effective_from desc limit 1;
+ if not found then return jsonb_build_object('status','unassigned','message','Nenhum contrato comercial vigente no novo catálogo.');end if;
+ rate:=(c.terms->>'commission_basis_points')::integer;monthly:=(c.terms->>'monthly_cents')::bigint;
+ trial_end:=c.effective_from+(c.terms->>'trial_days')::integer;
+ if c.terms->>'billing_cycle'='weekly' then
+  period_start:=day-((extract(isodow from day)::integer+4)%7);
+  period_end:=period_start+7;
+ else
+  period_start:=date_trunc('month',day::timestamp)::date;
+  period_end:=(period_start+interval '1 month')::date;
+ end if;
+ due_at:=(period_end+time '23:59') at time zone 'America/Sao_Paulo';
+ if rate>0 then
+  with eligible as (
+   select pitacco_private.commission_product_base(o.receipt) as cents
+   from public.orders o where o.store_id=p_store and o.source='proprio' and o.status='accepted'
+   and o.created_at>=greatest(period_start,c.effective_from,trial_end)::timestamp at time zone 'America/Sao_Paulo'
+   and o.created_at<period_end::timestamp at time zone 'America/Sao_Paulo' and o.created_at<=now()
+   and coalesce(o.receipt->>'is_test','false')='false' and coalesce(o.receipt->>'test','false')='false' and coalesce(o.receipt->>'ifood_test','false')='false'
+   and not exists(select 1 from public.deliveries d where d.order_id=o.id and d.store_id=o.store_id and d.status='cancelada')
+   and (o.preparation_status='completed' or exists(select 1 from public.deliveries d where d.order_id=o.id and d.store_id=o.store_id and d.status='entregue'))
+  ) select coalesce(sum(cents),0),count(*) filter(where cents is null),count(*) into base,unknown,count_orders from eligible;
+ end if;
+ commission:=round(base::numeric*rate/10000)::bigint;
+ -- Monthly recurring price is separate from the commission cycle; never divide
+ -- the monthly fee into weekly charges. First renewal follows the trial.
+ monthly_start:=greatest(date_trunc('month',day::timestamp)::date,trial_end);
+ monthly_due:=(date_trunc('month',day::timestamp)+interval '1 month')::date;
+ monthly_charge:=case when trial_end>=monthly_due then 0 else monthly end;
+ return jsonb_build_object('status',case when unknown>0 then 'review_required' when day<trial_end then 'trial' else 'calculated' end,
+ 'plan_name',c.terms->>'name','revision',c.revision,'period_start',period_start,'period_end_exclusive',period_end,'due_at',due_at,'grace_until',due_at+interval '48 hours',
+ 'base_cents',base,'eligible_orders',count_orders,'unresolved_orders',unknown,'commission_basis_points',rate,'commission_cents',case when unknown=0 then commission else null end,
+ 'monthly_cents',monthly_charge,'monthly_period_start',monthly_start,'monthly_due_at',(monthly_due+time '23:59') at time zone 'America/Sao_Paulo',
+ 'trial_end',trial_end,'calculation_only',true);
+end $amount$;
+revoke all on function public.pitacco_owner_schedule_commercial_contract(uuid,date,text),public.pitacco_commercial_amount_preview(uuid,date) from public,anon,authenticated;
+grant execute on function public.pitacco_owner_schedule_commercial_contract(uuid,date,text),public.pitacco_commercial_amount_preview(uuid,date) to authenticated;
 notify pgrst,'reload schema';

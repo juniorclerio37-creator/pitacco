@@ -1,4 +1,5 @@
 import {MerchantPlanChange} from './PlanChange.jsx';
+import CommercialAmounts from './CommercialAmounts.jsx';
 import React,{useEffect,useState} from 'react';
 
 const labels={trial:'Período de teste',active:'Ativa · pagamento confirmado',overdue:'Vencida',legacy:'Cadastro anterior à cobrança',courtesy:'Cortesia',suspended:'Suspensa'};
@@ -52,6 +53,7 @@ export default function BillingStatus({client,storeId}){
    {result.payments?.length?<div style={{overflowX:'auto'}}><table><thead><tr><th>Pagamento</th><th>Provedor</th><th>Valor</th><th>Cobertura até</th></tr></thead><tbody>{result.payments.map((p,i)=><tr key={i}><td>{date.format(new Date(p.confirmed_at))}</td><td>{p.provider}</td><td>{money.format(Number(p.amount))}</td><td>{date.format(new Date(p.paid_until))}</td></tr>)}</tbody></table></div>:<p>Nenhum pagamento confirmado registrado.</p>}
   </>}
   <button type="button" className="secondary" disabled={busy} onClick={refresh}>Atualizar situação</button>
+  <CommercialAmounts client={client} storeId={storeId}/>
   <MerchantPlanChange key={storeId} client={client} storeId={storeId}/>
  </section>;
 }

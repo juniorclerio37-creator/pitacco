@@ -96,3 +96,27 @@ do $amount$ declare r jsonb; begin
  assert public.pitacco_subscription_overview() ? 'active_without_registered_amount';
 end $amount$;
 reset role;
+do $base_test$ begin
+ assert pitacco_private.commission_product_base('{"subtotal":100,"discount":10,"delivery_fee":8,"tip":5}')=9000;
+ assert pitacco_private.commission_product_base('{"subtotal":100,"discount":10,"refund":5}') is null;
+ assert pitacco_private.commission_product_base('{"total":100}') is null;
+ assert pitacco_private.commission_product_base('{"subtotal":10,"discount":11}') is null;
+end $base_test$;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+do $amount_test$ begin
+ assert public.pitacco_commercial_amount_preview('20000000-0000-0000-0000-000000000001')->>'status'='unassigned';
+end $amount_test$;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+do $amount_test$ declare req uuid; cid uuid; result jsonb; begin
+ select (p->>'id')::uuid into req from jsonb_array_elements(public.pitacco_owner_plan_requests()) p where p->>'requested_plan'='premium';
+ cid:=public.pitacco_owner_schedule_commercial_contract(req,(now() at time zone 'America/Sao_Paulo')::date,'Condições aceitas para teste isolado');
+ assert cid is not null;
+ result:=public.pitacco_commercial_amount_preview('20000000-0000-0000-0000-000000000001');
+ assert result->>'plan_name'='Premium' and result->>'status'='trial' and result->>'commission_cents'='0';
+end $amount_test$;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000003',true);
+do $amount_test$ begin
+ begin perform public.pitacco_commercial_amount_preview('20000000-0000-0000-0000-000000000001');raise exception 'Cross-store billing';exception when insufficient_privilege then null;end;
+end $amount_test$;
+reset role;
