@@ -21,6 +21,10 @@ export function mountCourierUpdateUI({client,onOpenSettings,request=fetch,clock=
    message('Seu Pitacco Entregador está atualizado.','success');
   }else if(!native&&window.PitaccoPush?.postMessage){
    message('Esta versão antiga ainda não atualiza pelo próprio app. Para ativar essa função, abra entregador.pitacco.com.br no navegador do celular e instale o novo APK.','warning');
+   if(state.latest&&compareCourierVersions(state.latest.version,'2.0.15')===1){
+    hint.hidden=false;
+    $('courierUpdateHintText').textContent='Nova versão '+state.latest.version+' disponível. Para esta primeira atualização, use o navegador do celular.';
+   }
   }else{
    message('Para instalar o app, acesse entregador.pitacco.com.br no Android.','info');
   }
