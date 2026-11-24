@@ -77,7 +77,7 @@ try {
 await db.exec('begin;');
 try{
  const candidates=new URL('../../../../../docs/sql/',import.meta.url);
- for(const file of ['asaas-commercial-reconciliation-candidate.sql','asaas-commercial-issuance-candidate.sql','asaas-commercial-readside-candidate.sql','asaas-commercial-payment-context-candidate.sql','asaas-commercial-enrollment-candidate.sql']){
+ for(const file of ['asaas-commercial-reconciliation-candidate.sql','asaas-commercial-issuance-candidate.sql','asaas-commercial-readside-candidate.sql','asaas-commercial-payment-context-candidate.sql','asaas-commercial-enrollment-candidate.sql','asaas-commercial-jobs-candidate.sql']){
   await db.exec(await fs.readFile(new URL(file,candidates),'utf8'));console.log('PASS isolated Asaas schema',file);
  }
  await db.exec(await fs.readFile(new URL('plan-catalog-candidate.test.sql',fixtureDirectory),'utf8'));
