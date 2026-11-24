@@ -95,6 +95,11 @@ jobs:
           npm test --prefix web
           npm ci --prefix web/tests/backend
           npm test --prefix web/tests/backend
+      - name: Validar a landing page no Chromium em oito larguras
+        run: |
+          npm install --prefix web --no-save --package-lock=false playwright@1.58.2
+          (cd web && npx playwright install --with-deps chromium)
+          node tests/landing-page.browser.mjs
       - name: Publicar somente o Worker existente e seus arquivos
         shell: bash
         env:
