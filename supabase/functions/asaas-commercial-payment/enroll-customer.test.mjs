@@ -7,7 +7,7 @@ const opts={storeId,name:'Estabelecimento de teste',document:cpf,reservation:'re
 const customer={id:'cus_test',cpfCnpj:cpf,externalReference:reference};
 const empty=()=>Response.json({data:[],totalCount:0,hasMore:false});
 test('validates checksum and rejects invalid fiscal documents',()=>{
- assert.equal(validDocument(cpf),cpf);assert.equal(validDocument('00000000000'),null);assert.equal(validDocument(cpf.slice(0,-1)+'9'),null);assert.equal(validDocument('abc'),null);
+ assert.equal(validDocument(cpf),cpf);assert.equal(validDocument('00000000000'),null);assert.equal(validDocument(cpf.slice(0,-1)+String((Number(cpf.at(-1))+1)%10)),null);assert.equal(validDocument('abc'),null);assert.equal(validDocument('00.000.000/E08G-12'),'00000000E08G12');
 });
 test('existing exact reference is reused',async()=>{
  const result=await enrollCustomer({...opts,fetcher:async(url,init)=>{assert.notEqual(init.method,'POST');return Response.json({data:[customer],totalCount:1,hasMore:false})}});
