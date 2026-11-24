@@ -1,5 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import PizzaEditor,{emptyPizza} from './PizzaEditor.jsx';
+import PizzaBuilder from './PizzaBuilder.jsx';
+import {normalizePizzaConfig} from './normalizePizzaConfig.mjs';
 import ProductComplements from './ProductComplements.jsx';
 import CentralComplementLibrary from './CentralComplementLibrary.jsx';
 import CatalogFinishedStock from './CatalogFinishedStock.jsx';
@@ -21,7 +23,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  const [pizzaDraftId,setPizzaDraftId]=useState(null),[pizzaDrafts,setPizzaDrafts]=useState([]);
  async function loadPizzaDrafts(){const {data,error}=await client.from('pitacco_pizza_drafts').select('id,name,config').eq('store_id',storeId).order('updated_at',{ascending:false});if(error){setNotice(error.message);return;}setPizzaDrafts(data||[]);}
  useEffect(()=>{if(pizzaPreview)loadPizzaDrafts();},[pizzaPreview,storeId]);
- async function savePizzaDraft(){if(busy)return;setBusy(true);try{if(!draft.name.trim())throw Error('Informe o nome da pizza.');const row={store_id:storeId,name:draft.name.trim(),config:pizzaDraft,updated_at:new Date().toISOString()};const query=pizzaDraftId?client.from('pitacco_pizza_drafts').update(row).eq('id',pizzaDraftId).eq('store_id',storeId):client.from('pitacco_pizza_drafts').insert(row);const {data,error}=await query.select('id').single();if(error)throw error;setPizzaDraftId(data.id);setNotice('Rascunho de pizza salvo. Venda ainda indisponível.');await loadPizzaDrafts();}catch(e){setNotice(e.message||String(e));}finally{setBusy(false);}}
+ async function savePizzaDraft(){if(busy)return;setBusy(true);try{if(!draft.name.trim())throw Error('Informe o nome da pizza.');if(draft.name.trim().length>180)throw Error('Nome muito longo.');normalizePizzaConfig(pizzaDraft);const metadata={description:draft.description,category:draft.category,image_url:draft.image_url||''};if(photo)metadata.image_url=mediaUrl(client,await uploadStoreImage(client,storeId,photo,'products'));const row={store_id:storeId,name:draft.name.trim(),config:{...pizzaDraft,metadata},updated_at:new Date().toISOString()};const query=pizzaDraftId?client.from('pitacco_pizza_drafts').update(row).eq('id',pizzaDraftId).eq('store_id',storeId):client.from('pitacco_pizza_drafts').insert(row);const {data,error}=await query.select('id').single();if(error)throw error;setPizzaDraftId(data.id);setDraft(p=>({...p,image_url:metadata.image_url}));setPhoto(null);setNotice('Cadastro de pizza validado e salvo. Venda ainda indisponível.');await loadPizzaDrafts();}catch(e){setNotice(e.message||String(e));}finally{setBusy(false);}}
  const changeGroup=(id,patch)=>setNewGroups(old=>old.map(g=>g.id===id?{...g,...patch}:g));
  const changeOption=(g,id,patch)=>changeGroup(g.id,{options:g.options.map(o=>o.id===id?{...o,...patch}:o)});
  const categoryName=value=>String(value||'').trim()||'Outros';
@@ -212,18 +214,18 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  {notice&&<p className="notice" role="status">{notice}</p>}
  <div className="menu-studio-editor">
  <div><form id="pitacco-product-editor" onSubmit={save} aria-label="Dados do produto">
- <label style={field}>Tipo de produto<select value={pizzaPreview?"pizza":"traditional"} onChange={e=>setPizzaPreview(e.target.value==="pizza")}><option value="traditional">Produto tradicional</option><option value="pizza">Pizza — prévia em desenvolvimento</option></select></label>
- {pizzaPreview&&<><p role="status">Configure e salve o rascunho da pizza. A venda ainda não está habilitada.</p><label style={field}>Rascunhos salvos<select disabled={busy} value={pizzaDraftId||''} onChange={e=>{const p=pizzaDrafts.find(x=>x.id===e.target.value);setPizzaDraftId(p?.id||null);setPizzaDraft(p?.config||emptyPizza());change('name',p?.name||'');}}><option value=''>Novo rascunho</option>{pizzaDrafts.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><PizzaEditor value={pizzaDraft} onChange={setPizzaDraft} disabled={busy}/><button type='button' disabled={busy} onClick={savePizzaDraft}>Salvar rascunho da pizza</button></>}
+ <label style={field}>Tipo de produto<select disabled={busy||Boolean(editing)} value={pizzaPreview?"pizza":"traditional"} onChange={e=>setPizzaPreview(e.target.value==="pizza")}><option value="traditional">Produto tradicional</option><option value="pizza">Pizza (montagem personalizada)</option></select></label>
+ {pizzaPreview&&<><p role="status">Configure e salve o rascunho da pizza. A venda ainda não está habilitada.</p><label style={field}>Rascunhos salvos<select disabled={busy} value={pizzaDraftId||''} onChange={e=>{const p=pizzaDrafts.find(x=>x.id===e.target.value);setPizzaDraftId(p?.id||null);setPizzaDraft(p?.config||emptyPizza());setDraft({...empty(),...p?.config?.metadata,name:p?.name||''});setPhoto(null);}}><option value=''>Novo rascunho</option>{pizzaDrafts.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><PizzaEditor value={pizzaDraft} onChange={setPizzaDraft} disabled={busy}/></>}
  <label style={field}>Foto do produto (JPG, PNG, WebP)<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f&&f.size>5*1024*1024){setNotice('Imagem maior que 5 MB.');return}setPhoto(f||null)}}/></label>
  <label style={field}>Nome<input required maxLength={180} value={draft.name} onChange={e=>change('name',e.target.value)}/></label>
  <label style={field}>Descrição<textarea maxLength={1200} rows={3} value={draft.description} onChange={e=>change('description',e.target.value)}/></label>
  <label style={field}>Categoria<input value={draft.category} onChange={e=>change('category',e.target.value)} list="catalog-categories"/><datalist id="catalog-categories">{categories.filter(x=>x!=='Todas').map(x=><option key={x} value={x}/>)}</datalist></label>
- <label style={field}>Status no delivery<select value={String(draft.menu_active)} onChange={e=>change('menu_active',e.target.value==='true')}><option value="true">Ativo</option><option value="false">Inativo</option></select></label>
+ {!pizzaPreview&&<><label style={field}>Status no delivery<select value={String(draft.menu_active)} onChange={e=>change('menu_active',e.target.value==='true')}><option value="true">Ativo</option><option value="false">Inativo</option></select></label>
  <label style={field}>Preço (R$)<input type="number" min="0" step="0.01" required value={draft.price} onChange={e=>change('price',e.target.value)}/></label>
  <label style={field}>Custo interno (R$)<input type="number" min="0" step="0.01" value={draft.cost} onChange={e=>change('cost',e.target.value)}/></label>
- <div className="quick-actions"><button type="button" className="secondary" onClick={()=>setShowEditor(false)}>Cancelar</button></div>
+ </>}{pizzaPreview&&<button type='button' disabled={busy} onClick={savePizzaDraft}>{busy?'Salvando…':'Salvar cadastro de pizza'}</button>}<div className="quick-actions"><button type="button" className="secondary" onClick={()=>setShowEditor(false)}>Cancelar</button></div>
  </form>
- <section className="panel" style={{display:"grid",gap:14,minWidth:0}} aria-label="Novos grupos de complementos">
+ {!pizzaPreview&&<section className="panel" style={{display:"grid",gap:14,minWidth:0}} aria-label="Novos grupos de complementos">
  <h3>Grupos e complementos</h3><p className="hint">Cadastre os grupos agora. Ao salvar o produto, eles serão adicionados à biblioteca de complementos da loja.</p>
  <button type="button" disabled={busy} onClick={()=>setNewGroups(old=>[...old,{id:crypto.randomUUID(),name:'',min:0,max:1,options:[]}])}>+ Criar grupo de complementos</button>
  {newGroups.map(g=><fieldset key={g.id} disabled={busy} style={{display:"grid",gap:12,minWidth:0,margin:0,padding:14,border:"1px solid #ddd",borderRadius:14}}>
@@ -241,11 +243,13 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  <button type="button" className="secondary" onClick={()=>setNewGroups(old=>old.filter(x=>x.id!==g.id))}>Retirar grupo</button>
  </fieldset>)}
  <button type="submit" form="pitacco-product-editor" disabled={busy||pizzaPreview} style={{width:"100%"}}>{busy?"Salvando…":"Salvar produto e complementos"}</button>
- </section>
+ </section>}
  {editing&&<ProductComplements key={editing+":"+newGroups.length} client={client} storeId={storeId} product={{id:editing,name:draft.name}} onGroupsChange={setGroups}/>}
  </div>
- <aside className="panel" style={{position:'sticky',top:0}}><span className="eyebrow">PRÉVIA AUTOMÁTICA · CLIENTE FINAL</span><div style={{border:'1px solid #ddd',borderRadius:18,overflow:'hidden',background:'white',color:'#222',marginTop:12}}>{(previewUrl||draft.image_url)?<img src={previewUrl||draft.image_url} alt="Foto selecionada" style={{width:'100%',height:230,objectFit:'contain',background:'#faf4fa'}}/>:<div style={{height:150,background:'#f0f1f3',display:'grid',placeItems:'center'}}>Foto do produto</div>}<div style={{padding:14}}><small>{draft.category||'Categoria'}</small><h3>{draft.name||'Nome do produto'}</h3><p>{draft.description||'Descrição do produto'}</p><h3>{brl(draft.price)}</h3>{[...groups,...newGroups].map((g,i)=><div key={i} style={{borderTop:'1px solid #eee',paddingTop:10,marginTop:10}}><b>{g.name}</b><small style={{display:'block'}}>Escolha {g.min} a {g.max} · {g.min>0?'Obrigatório':'Opcional'}</small>{g.options.filter(o=>o.available).map((o,j)=><p key={j} style={{margin:'7px 0'}}>◯ {o.name} · {brl(o.price)}</p>)}</div>)}<button type="button" disabled style={{width:'100%',marginTop:12}}>Adicionar ao pedido</button></div></div><p className="hint">Prévia ilustrativa em tempo real, sem publicação automática.</p></aside>
+ <aside className="panel" style={{position:'sticky',top:0}}><span className="eyebrow">PRÉVIA AUTOMÁTICA · CLIENTE FINAL</span><div style={{border:'1px solid #ddd',borderRadius:18,overflow:'hidden',background:'white',color:'#222',marginTop:12}}>{(previewUrl||draft.image_url)?<img src={previewUrl||draft.image_url} alt="Foto selecionada" style={{width:'100%',height:230,objectFit:'contain',background:'#faf4fa'}}/>:<div style={{height:150,background:'#f0f1f3',display:'grid',placeItems:'center'}}>Foto do produto</div>}<div style={{padding:14}}><small>{draft.category||'Categoria'}</small><h3>{draft.name||'Nome do produto'}</h3><p>{draft.description||'Descrição do produto'}</p>{pizzaPreview?<PizzaDraftPreview config={pizzaDraft}/>:<><h3>{brl(draft.price)}</h3>{[...groups,...newGroups].map((g,i)=><div key={i} style={{borderTop:'1px solid #eee',paddingTop:10,marginTop:10}}><b>{g.name}</b><small style={{display:'block'}}>Escolha {g.min} a {g.max} · {g.min>0?'Obrigatório':'Opcional'}</small>{g.options.filter(o=>o.available).map((o,j)=><p key={j} style={{margin:'7px 0'}}>◯ {o.name} · {brl(o.price)}</p>)}</div>)}<button type="button" disabled style={{width:'100%',marginTop:12}}>Adicionar ao pedido</button></>}</div></div><p className="hint">Prévia ilustrativa em tempo real, sem publicação automática.</p></aside>
  </div></div></div>}
  </>}
  </section>;
 }
+
+function PizzaDraftPreview({config}){let normalized;try{normalized=normalizePizzaConfig(config)}catch(e){return <p className='hint'>Complete a configuração: {e.message}</p>}return <PizzaBuilder key={JSON.stringify(normalized)} config={normalized}/>;}
