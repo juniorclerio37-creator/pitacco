@@ -67,11 +67,10 @@ for (const file of ['checkout-variants.test.sql','fideliza-runtime.test.sql','fi
  }
  console.log('PASS SQL regression',file);
 }
-// Candidate migration is exercised transactionally, never applied to production by this harness.
+// Commercial schema is installed by the normal migration loop above. Fixtures are always rolled back.
 await db.exec('begin;');
 try {
- await db.exec(await fs.readFile(new URL('../../../docs/sql/plan-catalog-candidate.sql',import.meta.url),'utf8'));
  await db.exec(await fs.readFile(new URL('plan-catalog-candidate.test.sql',fixtureDirectory),'utf8'));
- console.log('PASS shared commercial catalog candidate and stale terms rejection');
+ console.log('PASS commercial catalog, billing, payment, blocking and notices');
 } finally { await db.exec('rollback;'); }
 await db.close();
