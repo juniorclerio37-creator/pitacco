@@ -52,6 +52,7 @@ public class MainActivity extends Activity {
     private static final int SETUP_DONE = 5;
     private boolean waitingForSystem;
     private WebView web;
+    private CourierAppUpdater appUpdater;
     private LinearLayout offline;
 
     private static boolean isHttps(Uri uri) {
@@ -140,6 +141,8 @@ public class MainActivity extends Activity {
         ShiftSoundPlayer.recover(this);
         preparePush();
         registerGpsBridge();
+        appUpdater = new CourierAppUpdater(this);
+        registerUpdaterBridge();
         if (state == null || web.restoreState(state) == null) {
             Intent launch=getIntent();
             boolean admin=launch!=null && launch.getBooleanExtra("pitacco_admin_message",false);
@@ -147,6 +150,25 @@ public class MainActivity extends Activity {
         }
         waitingForSystem = state != null && state.getBoolean("permission_setup_waiting");
         if (!waitingForSystem) showFirstOpenSetup();
+    }
+
+    // This interface exists only in the official Android APK and only for the
+    // authenticated first-party courier website. No arbitrary install URLs.
+    private void registerUpdaterBridge() {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return;
+        WebViewCompat.addWebMessageListener(web,"PitaccoUpdater",
+                Collections.singleton("https://" + HOST),
+                (view,message,origin,mainFrame,reply)->{
+                    if(!mainFrame||!isHttps(origin)||!HOST.equalsIgnoreCase(origin.getHost()))return;
+                    String request=message.getData();
+                    if("version".equals(request))reply.postMessage("version:"+appUpdater.installedVersion());
+                    else if(request!=null && request.startsWith("install:") && request.length()<2500){
+                        try{
+                            JSONObject data=new JSONObject(request.substring(8));
+                            appUpdater.install(data,reply::postMessage);
+                        }catch(Exception error){reply.postMessage("update:error:Informações de atualização inválidas");}
+                    }
+                });
     }
 
     private SharedPreferences setupPreferences() {
@@ -519,6 +541,7 @@ public class MainActivity extends Activity {
     /** Recheck orders when the driver taps a native delivery notification. */
     @Override protected void onResume() {
         super.onResume();
+        if(appUpdater!=null)appUpdater.onResume();
         if (CourierLocationService.isRunning() && "granted".equals(activityPermissionState())) {
             Intent refreshMotion = new Intent(this, CourierLocationService.class)
                     .setAction(CourierLocationService.ACTION_REFRESH_MOTION);
@@ -564,6 +587,7 @@ public class MainActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
+        if(appUpdater!=null)appUpdater.close();
         web.destroy();
         super.onDestroy();
     }

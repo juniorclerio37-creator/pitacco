@@ -118,8 +118,8 @@ test("native courier notifications play a high-importance sound when app is in b
  assert.ok(activity.includes('AssignmentMessagingService.showAssignment'));
  assert.doesNotMatch(page,/id="nativeNotificationSettings"/);
  assert.ok(page.includes('postMessage("test")'));
- assert.ok(build.includes('versionCode 35'));
- assert.ok(build.includes("versionName '2.0.15'"));
+ assert.ok(build.includes('versionCode 36'));
+ assert.ok(build.includes("versionName '2.0.16'"));
  assert.ok(generator.includes('duration = 1.78'));
 });
 
@@ -413,7 +413,7 @@ test("ganhos de entregas concluídas usam regra individual e valor único para l
 test('site público é uma página de instalação e app mantém login interno',()=>{
  const page=read('acesso.html');
  assert.match(page,/id="publicInstaller"/);
- assert.match(page,/id="downloadAndroid"[^>]*Pitacco-Entregador-2\.0\.6[.]apk/);
+ assert.match(page,/id="downloadAndroid"[^>]*Pitacco-Entregador-2\.0\.15[.]apk/);
  assert.match(page,/html:not\([.]pitacco-native\) #nativeAccessPanel\{display:none/);
  assert.match(page,/html[.]pitacco-native #publicInstaller\{display:none/);
  assert.match(page,/window[.]PitaccoPush/);
@@ -460,8 +460,8 @@ test("Android GPS authorization remains part of the original courier app upgrade
  const activity=read("android-app/app/src/main/java/br/com/pitacco/entregador/MainActivity.java");
  const screen=read("painel.html");
  assert.match(app,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(app,/versionCode 35/);
- assert.match(app,/versionName '2\.0\.15'/);
+ assert.match(app,/versionCode 36/);
+ assert.match(app,/versionName '2\.0\.16'/);
  assert.match(activity,/registerGpsBridge\(\)/);
  assert.match(activity,/WebViewCompat\.addWebMessageListener\(web, "PitaccoGps"/);
  assert.match(activity,/requestPermissions\(permissions, requestCode\)/);
@@ -476,8 +476,8 @@ test("Android update preserves GPS permission prompts and registers push after l
  const workflow=read("../.github/workflows/courier-apk.yml");
  const panel=read("painel.html");
  assert.match(build,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(build,/versionCode 35/);
- assert.match(build,/versionName '2\.0\.15'/);
+ assert.match(build,/versionCode 36/);
+ assert.match(build,/versionName '2\.0\.16'/);
  for(const name of ["ACCESS_FINE_LOCATION","ACCESS_COARSE_LOCATION","POST_NOTIFICATIONS"])
   assert.ok(manifest.includes("android.permission."+name));
  assert.match(main,/permission_setup_v2_step/);

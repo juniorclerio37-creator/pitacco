@@ -25,7 +25,12 @@ h1{font-size:26px;margin:10px 0 4px;letter-spacing:-.6px}.sub{font-size:14px;col
 .warn{font-size:12px;color:#7a4959;line-height:1.5;margin-top:12px}
 .info{font-size:13px;color:#657183;background:#fff;border:1px solid #e6e9ef;border-radius:15px;padding:16px;margin:15px 0}
 .topactions{display:flex;gap:8px;align-items:center}
-#notice{color:#b91c1c;font-size:13px;min-height:20px;margin:12px 0}
+#notice{display:block;margin:12px 0;padding:10px 14px;border:1px solid transparent;border-left-width:4px;border-radius:11px;font-size:13px;font-weight:650;line-height:1.45}
+#notice[hidden]{display:none}
+#notice[data-kind="success"]{color:#17613d;background:#ecf8f0;border-color:#bae4cb;border-left-color:#1c9c65}
+#notice[data-kind="info"]{color:#31587b;background:#eff6fc;border-color:#c7dff2;border-left-color:#4d92cd}
+#notice[data-kind="warning"]{color:#895a15;background:#fff7e6;border-color:#f6dda3;border-left-color:#dd9b27}
+#notice[data-kind="error"]{color:#ab1e36;background:#fff0f2;border-color:#f4c4cd;border-left-color:#ca344f}
 #connectionBanner{display:flex;align-items:center;gap:8px;padding:12px 16px;margin:0 auto;max-width:1000px;background:#fff5e6;color:#7c3e0f;border:1px solid #f4cf9f;border-radius:12px;font-size:13px;line-height:1.5;font-weight:650}
 #connectionBanner[hidden]{display:none}
 .hidden{display:none!important}.empty{padding:30px;border:1px dashed #cfd6dd;border-radius:20px;text-align:center;color:#687383}
@@ -67,6 +72,14 @@ a.btn{text-decoration:none}
 .earn-footnote{font-size:11px;color:#7d8490;line-height:1.6;margin:14px 0 0}
 .earn-error{font-size:12px;color:#ae301d;line-height:1.5;margin:10px 0}
 @media(max-width:720px){.earn-content{grid-template-columns:1fr}.earnings{padding:16px;margin:19px 0}.earn-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(148px,1fr);grid-template-columns:none;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}.earn-tab{scroll-snap-align:start;padding:15px 12px}.earn-tab strong{font-size:20px}.earn-top h2{font-size:21px}}
+</style><style>
+.courier-update-hint{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0;padding:11px 13px;border:1px solid #f3d6a7;background:#fff6e8;border-radius:12px;color:#86531b;font-size:12px;font-weight:650}
+.courier-update-hint[hidden],.courier-update-action[hidden]{display:none}
+.courier-update-hint button{border:0;border-radius:9px;background:#f97316;color:white;padding:9px;font:inherit;cursor:pointer;white-space:nowrap}
+.courier-update-action{width:100%;margin:10px 0 5px;min-height:44px;font-weight:800}
+#courierUpdateStatus[data-kind="available"]{color:#a14b11;font-weight:800}
+#courierUpdateStatus[data-kind="success"]{color:#17603d;font-weight:700}
+#courierUpdateStatus[data-kind="error"]{color:#af2436}
 </style><link rel="stylesheet" href="./painel.css"><link rel="stylesheet" href="./pedido-detalhe.css"></head>
 <body>
 <header class="bar">
@@ -84,6 +97,7 @@ a.btn{text-decoration:none}
 </div>
 <main class="app-shell">
 <section class="app-view" data-view="pedidos" id="viewPedidos">
+ <div id="courierUpdateHint" class="courier-update-hint" role="status" hidden><span id="courierUpdateHintText">Atualização disponível</span><button type="button" id="openUpdateSettings">Ver nos ajustes</button></div>
   <div class="dashboard-legacy-fields" aria-hidden="true">
     <span id="greeting">Minhas entregas</span>
     <button type="button" id="miniEarnings" tabindex="-1"><b id="miniToday">R$ 0,00</b><span id="miniTodayCount">0 entregas</span></button>
@@ -130,7 +144,7 @@ a.btn{text-decoration:none}
       <span>Entregas concluídas <b id="bucketCompletedCount">0</b></span>
     </button>
   </nav>
-  <p id="notice" role="alert" aria-live="polite"></p>
+  <p id="notice" role="status" aria-live="polite" hidden></p>
   <div class="delivery-bucket-summary" aria-live="polite">
     <strong id="bucketTitle">Aguardando coleta</strong>
     <span class="auto-pill">Atualiza automaticamente</span>
@@ -214,6 +228,15 @@ a.btn{text-decoration:none}
   </div>
   <p class="note-inline">Quando não houver coordenadas verificadas, o aplicativo abre o endereço informado pela loja.</p>
  </section>
+ <section class="panel-white pref-panel" id="appUpdatePanel" aria-label="Atualizações do aplicativo">
+  <span class="eyebrow">ATUALIZAÇÕES DO APLICATIVO</span>
+  <h2>Versão do Pitacco Entregador</h2>
+  <p id="courierInstalledVersion" class="note-inline">Consultando a versão instalada…</p>
+  <p id="courierUpdateStatus" class="note-inline" role="status" aria-live="polite">Vamos avisar quando houver nova versão.</p>
+  <button type="button" class="settings-row" id="checkCourierUpdate"><span>Verificar atualizações</span><span class="setting-arrow">↻</span></button>
+  <button type="button" class="btn primary courier-update-action" id="installCourierUpdate" hidden>Baixar e instalar atualização</button>
+  <p class="note-inline">O Android pedirá sua confirmação para instalar. Não é necessário desinstalar o app nem sair da conta.</p>
+ </section>
  <section class="panel-white pref-panel courier-tech-internal" aria-hidden="true" inert hidden>
   <span class="eyebrow">LOCALIZAÇÃO PARA ENTREGAS</span>
   <p id="courierGpsStatus" role="status" aria-live="polite">Ative seu plantão para compartilhar sua posição com a loja.</p>
@@ -265,6 +288,7 @@ a.btn{text-decoration:none}
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2.57.0";
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "./config.mjs";
 import {createDriverAuth} from "./supabase-client.mjs";
+import {mountCourierUpdateUI} from "./app-update-ui.mjs";
 import {createOrderDetailsController} from "./order-details.mjs";
 import {buildNavigationUrl,buildBatchNavigationUrl} from "./navigation.mjs";
 import {suggestedBatchRoutes} from "./route-sequence.mjs";
@@ -603,7 +627,7 @@ function announceAssignments(deliveries,courier){
    &&[...current].some(id=>!assignmentBaseline.ids.has(id));
  assignmentBaseline={courier:courier.id,ids:current};
  if(!fresh)return;
- message("Nova entrega atribuída pela loja.");
+ message("Nova entrega atribuída pela loja.","info");
  // Native WebView must use the very same bundled bell+voice alert that the
  // Android "Testar som" action uses. A synthesized browser bell is not
  // the approved sound. Existing signed APKs already support "test".
@@ -615,7 +639,7 @@ function announceAssignments(deliveries,courier){
    native.postMessage("test");
    return;
   }catch{
-   message("A notificação Android falhou; confira as permissões do aplicativo.");
+   message("A notificação Android falhou; confira as permissões do aplicativo.","warning");
   }
  }
  // Browser-only fallback; web has no native sound bridge.
@@ -642,6 +666,7 @@ document.addEventListener("keydown",enableAssignmentSound,{once:true});
 const validViews=["pedidos","rotas","ganhos","perfil","config"];
 function switchView(view){
  const next=validViews.includes(view)?view:"pedidos";
+ message("");
  for(const section of document.querySelectorAll(".app-view"))section.hidden=section.dataset.view!==next;
  for(const btn of document.querySelectorAll(".bottom-nav [data-tab]")){
   if(btn.dataset.tab===next)btn.setAttribute("aria-current","page");else btn.removeAttribute("aria-current");
@@ -812,7 +837,21 @@ document.querySelectorAll("[data-earn-period]").forEach(button=>{
  });
 });
 const statuses={pendente:"Aguardando loja",atribuida:"Aguardando coleta",aceita:"Coletada",retirada:"Saiu para entrega",entregue:"Entregue",cancelada:"Cancelada"};
-function message(text){$("notice").textContent=text||"";}
+let noticeTimer=null;
+function message(text,kind="error"){
+ const node=$("notice");
+ if(noticeTimer){window.clearTimeout(noticeTimer);noticeTimer=null;}
+ const content=String(text||"").trim();
+ node.textContent=content;
+ if(!content){node.hidden=true;node.removeAttribute("data-kind");return;}
+ const severity=["success","info","warning","error"].includes(kind)?kind:"error";
+ node.hidden=false;node.dataset.kind=severity;
+ node.setAttribute("role",severity==="error"?"alert":"status");
+ node.setAttribute("aria-live",severity==="error"?"assertive":"polite");
+ if(severity!=="error")noticeTimer=window.setTimeout(()=>{
+  if(node.textContent===content&&node.dataset.kind===severity)message("");
+ },severity==="success"?4500:6500);
+}
 function paymentOf(d){return paymentCards.get(d.id)||{state:"unknown",method:"Não informada",amount:null};}
 async function confirmCourierCollection(d){
  if(busy)throw Error("Aguarde a operação anterior terminar.");
@@ -823,7 +862,7 @@ async function confirmCourierCollection(d){
   if(data?.state!=="paid"||data?.received_by_courier!==true)
    throw Error("O servidor não confirmou o recebimento.");
   paymentCards.set(d.id,data);
-  try{await refresh(true);}catch{message("Pagamento registrado no Pitacco. Atualize a lista quando houver conexão.");}
+  try{await refresh(true);}catch{message("Pagamento registrado no Pitacco. Atualize a lista quando houver conexão.","warning");}
   return data;
  }catch(err){
   message(String(err?.message||"Pagamento não registrado. Tente novamente."));
@@ -892,7 +931,7 @@ async function collectCourierOrder(d){
   if(isMerchantIfoodDelivery(d))
    notice="Coleta registrada no Pitacco. O iFood será avisado quando você tocar em Sair para entrega.";
   try{await refresh(true);}catch{notice+=" Atualize a lista para conferir a coleta.";}
-  message(notice);
+  message(notice,notice.includes("Atualize a lista")?"warning":"success");
   return true;
  }catch(error){message(String(error?.message||"Não foi possível confirmar a coleta"));return false}
  finally{busy=false}
@@ -934,7 +973,7 @@ async function departCourierRoute(d){
     notice+=" Há despacho de situação incerta: confira diretamente no iFood antes de tentar novamente.";
   }
   try{await refresh(true);}catch{notice+=" Atualize a lista quando houver conexão.";}
-  message(notice);
+  message(notice,/(Atenção:|pendente|situação incerta|aguarde|atualize a lista)/i.test(notice)?"warning":"success");
   return true;
  }catch(err){message(String(err?.message||"Não foi possível registrar a saída da loja"));return false}
  finally{busy=false}
@@ -966,7 +1005,7 @@ async function markArrival(d){
   }else if(d.source==="99food")info+=" Aviso à 99Food ainda não homologado.";
   else if(d.source==="keeta")info+=" Aviso à Keeta ainda não homologado.";
   try{await refresh(true);}catch{info+=" Atualize a lista para conferir o registro.";}
-  message(info);
+  message(info,/(ainda não confirmado|não homologado|Atualize a lista)/i.test(info)?"warning":"success");
   return true;
  }catch(error){
   message(String(error?.message||"Erro ao registrar chegada"));
@@ -1034,8 +1073,8 @@ async function verifyCode(d,code){
   orderDetails.close();
   rememberCompletedBatchStop(d);
   try{await refresh(true);}
-  catch{message("Entrega validada. Atualize a lista para conferir o registro.");}
-  message("Entrega concluída! Ganho registrado conforme o valor configurado pela loja.");
+  catch{message("Entrega validada. Atualize a lista para conferir o registro.","warning");}
+  message("Entrega concluída! Ganho registrado conforme o valor configurado pela loja.","success");
   return true;
  }catch(error){
   const details=String(error?.message||"Erro ao confirmar a entrega");
@@ -1049,7 +1088,7 @@ async function verifyCode(d,code){
 }
 async function openDeliveryFinish(d){
  if(isNotificationDiagnostic(d)){
-  message("Este registro é apenas um teste interno de notificação, sem cliente ou código de entrega. Não é possível concluí-lo.");
+  message("Este registro é apenas um teste interno de notificação, sem cliente ou código de entrega. Não é possível concluí-lo.","warning");
   return false;
  }
  if(busy)return false;
@@ -1444,7 +1483,7 @@ async function refreshSnapshot(){
  const {data:labels,error:labelsError}=badges;
  if(labelsError){
   orderCardBadges=new Map();
-  message("Números públicos e localizadores indisponíveis no momento. Atualize os pedidos para tentar novamente.");
+  message("Números públicos e localizadores indisponíveis no momento. Atualize os pedidos para tentar novamente.","warning");
  }else{
   orderCardBadges=new Map((Array.isArray(labels)?labels:[]).map(item=>[item.delivery_id,item]));
  }
@@ -1840,6 +1879,7 @@ $("testAssignmentSound").addEventListener("click",async()=>{
  }
  playWebSoundWhenNativeFails("Este aparelho não disponibiliza o teste nativo.");
 });
+mountCourierUpdateUI({client:sb,onOpenSettings:()=>switchView("config")});
 $("settingsRefresh").addEventListener("click",()=>{switchView("pedidos");refresh().catch(e=>message(String(e.message)));});
 document.querySelectorAll(".bottom-nav [data-tab]").forEach(b=>
  b.addEventListener("click",()=>switchView(b.dataset.tab)));

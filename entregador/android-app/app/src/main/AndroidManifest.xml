@@ -1,5 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Instalar atualizações exige autorização explícita do Android. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- The courier explicitly enables Allow all the time. GPS still runs ONLY while on shift. -->
@@ -18,6 +20,12 @@
         android:label="${pitaccoAppLabel}" android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="pitacco_new_assignment_loud_v2" />
         <meta-data android:name="firebase_messaging_auto_init_enabled" android:value="false" />
+        <provider android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.updater"
+            android:exported="false" android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/courier_update_paths" />
+        </provider>
         <receiver android:name=".CourierMotionReceiver"
             android:exported="false" />
         <service android:name=".CourierLocationService" android:exported="false" android:stopWithTask="false" android:foregroundServiceType="location" />
