@@ -16,7 +16,7 @@ const guides={
 };
 const brl=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 
-export default function PaymentHomologation({client,store,provider,onEvidence}){
+export default function PaymentHomologation({client,store,provider,onEvidence,merchant=false}){
  const [busy,setBusy]=useState(false),[result,setResult]=useState(null),[failure,setFailure]=useState('');
  const infinite=provider==='infinitepay';
  const providerLabel=paymentHomologationProviders[provider];
@@ -30,7 +30,7 @@ export default function PaymentHomologation({client,store,provider,onEvidence}){
   form.elements.token.value='';
   setBusy(true);setFailure('');setResult(null);
   try{
-   const response=await client.functions.invoke('payment-homologation',{body:{
+   const response=await client.functions.invoke(merchant?'merchant-payment-test':'payment-homologation',{body:{
     ...input,token:input.token.trim(),reference:input.reference.trim(),provider,store_id:store,expected_cents:Math.round(Number(input.amount)*100),
    }});
    if(response.error){
@@ -61,7 +61,7 @@ export default function PaymentHomologation({client,store,provider,onEvidence}){
     <label>Identificador da transação (transaction_nsu)<input name="transaction" required maxLength="140"/></label>
    </>}
    <label>Valor esperado em reais<input name="amount" type="number" required min=".01" max="10000" step=".01"/></label>
-   <button>{busy?'Consultando…':'Consultar pagamento'}</button>
+   <button>{busy?'Consultando…':merchant?'Testar conexão (pagamento de teste)':'Consultar pagamento'}</button>
   </fieldset>
   {failure&&<p role="alert">{failure}</p>}
   {result&&<div>

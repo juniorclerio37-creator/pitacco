@@ -5,6 +5,9 @@ import {mountDeliveryCoverageMap} from './deliveryMap.mjs';
 import {shopPoint,locateStoreByAddress} from './mapOrigin.mjs';
 import {storefrontLink} from './storefrontLink.mjs';
 import DeliveryCodeSettings from './DeliveryCodeSettings.jsx';
+import {ModernModal,IntegrationRow,BrandTile} from './MerchantModern.jsx';
+import PaymentHomologation from './PaymentHomologation.jsx';
+import {ShoppingBag,Truck,Store,Wallet,CreditCard,ScanLine} from 'lucide-react';
 
 const origin=import.meta.env.VITE_PITACCO_HOMOLOGACAO==='1'
  ? import.meta.env.VITE_PITACCO_HOMOLOG_SITE_ORIGIN || window.location.origin
@@ -81,7 +84,7 @@ export function StorefrontPayments({client,storeId,resource}){
   }catch(failure){setFailure(failure.message||'Não foi possível salvar.');}
   finally{setBusy(false);}
  }
- return <>
+ return <div className="modern-workspace modern-payments">
   <section className="panel" aria-label="Pagamentos do cardápio">
    <h3>Cardápio e formas de pagamento</h3>
    {error&&<p role="alert">{error} <button type="button" onClick={reload}>Tentar novamente</button></p>}
@@ -90,16 +93,16 @@ export function StorefrontPayments({client,storeId,resource}){
    {draft&&<form onSubmit={save}>
     <fieldset disabled={busy}>
      <legend>Atendimento e publicação</legend>
-     <label><input type="checkbox" checked={draft.enabled} onChange={e=>change('enabled',e.target.checked)}/> Publicar cardápio</label>
-     <label><input type="checkbox" checked={draft.delivery_enabled} onChange={e=>change('delivery_enabled',e.target.checked)}/> Aceitar entrega</label>
-     <label><input type="checkbox" checked={draft.pickup_enabled} onChange={e=>change('pickup_enabled',e.target.checked)}/> Aceitar retirada</label>
+     <label className="modern-switch-row"><ShoppingBag size={20}/><span>Publicar cardápio</span><input type="checkbox" checked={draft.enabled} onChange={e=>change('enabled',e.target.checked)}/></label>
+     <label className="modern-switch-row"><Truck size={20}/><span>Aceitar entrega</span><input type="checkbox" checked={draft.delivery_enabled} onChange={e=>change('delivery_enabled',e.target.checked)}/></label>
+     <label className="modern-switch-row"><Store size={20}/><span>Aceitar retirada</span><input type="checkbox" checked={draft.pickup_enabled} onChange={e=>change('pickup_enabled',e.target.checked)}/></label>
      <p className="storefront-delivery-note">Os valores de frete são definidos exclusivamente em <strong>Administrar Loja → Área de Entrega</strong>, não nas formas de pagamento.</p>
     </fieldset>
     <fieldset disabled={busy}>
      <legend>Formas aceitas no checkout</legend>
-     {Object.entries(methods).map(([method,label])=><label key={method}>
+     {Object.entries(methods).map(([method,label])=><label key={method} className="modern-switch-row">{method==='dinheiro'?<Wallet size={20}/>:method==='cartao_entrega'?<CreditCard size={20}/>:<ScanLine size={20}/>}<span>{label}</span>
       <input type="checkbox" checked={draft.payment_methods.includes(method)} onChange={e=>change('payment_methods',
-       e.target.checked?[...draft.payment_methods,method]:draft.payment_methods.filter(value=>value!==method))}/> {label}
+       e.target.checked?[...draft.payment_methods,method]:draft.payment_methods.filter(value=>value!==method))}/>
      </label>)}
      {draft.payment_methods.includes('pix_manual')&&<label>Instruções do Pix manual
       <textarea required minLength={3} maxLength={1000} value={draft.pix_instructions} onChange={e=>change('pix_instructions',e.target.value)}/>
@@ -107,14 +110,14 @@ export function StorefrontPayments({client,storeId,resource}){
     </fieldset>
     {failure&&<p role="alert">{failure}</p>}
     {notice&&<p role="status">{notice}</p>}
-    <button disabled={busy||!draft.payment_methods.length||(!draft.delivery_enabled&&!draft.pickup_enabled)}>
+    <button className="modern-primary" disabled={busy||!draft.payment_methods.length||(!draft.delivery_enabled&&!draft.pickup_enabled)}>
      {busy?'Salvando…':'Salvar cardápio e pagamentos'}
     </button>
    </form>}
   </section>
-  <DeliveryCodeSettings client={client} storeId={storeId}/>
   <PaymentProviders client={client} storeId={storeId}/>
- </>;
+  <DeliveryCodeSettings client={client} storeId={storeId}/>
+ </div>;
 }
 
 
@@ -429,45 +432,9 @@ export function StoreDeliveryArea({client,store}){
 }
 
 function PaymentProviders({client,storeId}){
- const [choices,setChoices]=useState(null),[busy,setBusy]=useState(false),[attempt,setAttempt]=useState(0);
- const [failure,setFailure]=useState(''),[notice,setNotice]=useState('');
- useEffect(()=>{
-  let live=true;
-  (async()=>{
-   try{
-    const {data,error}=await client.from('pitacco_store_payment_providers').select('provider,requested_enabled').eq('store_id',storeId);
-    if(error)throw error;
-    if(live)setChoices(Object.fromEntries(data.map(row=>[row.provider,row.requested_enabled])));
-   }catch(error){if(live)setFailure(error.message||'Não foi possível carregar as integrações.');}
-  })();
-  return()=>{live=false;};
- },[client,storeId,attempt]);
- async function save(event){
-  event.preventDefault();setBusy(true);setFailure('');setNotice('');
-  try{
-   const rows=Object.keys(providers).map(provider=>({store_id:storeId,provider,requested_enabled:!!choices[provider]}));
-   const {error}=await client.from('pitacco_store_payment_providers').upsert(rows,{onConflict:'store_id,provider'});
-   if(error)throw error;
-   setNotice('Preferências de integração salvas.');
-  }catch(error){setFailure(error.message||'Não foi possível salvar as opções.');}
-  finally{setBusy(false);}
- }
- return <section className="panel" aria-label="Integrações de pagamento">
-  <h3>Integrações de pagamento online</h3>
-  <p>Escolha quais provedores a loja quer usar. A disponibilidade no checkout depende da integração e da homologação pelo Pitacco.</p>
-  {failure&&<p role="alert">{failure}</p>}
-  {notice&&<p role="status">{notice}</p>}
-  {choices===null&&(failure
-   ?<button type="button" onClick={()=>{setFailure('');setAttempt(value=>value+1);}}>Tentar novamente</button>
-   :<p role="status">Carregando provedores…</p>)}
-  {choices!==null&&<form onSubmit={save}>
-   <fieldset disabled={busy}>
-    <legend>Provedores da loja</legend>
-    {Object.entries(providers).map(([provider,label])=><label key={provider}>
-     <input type="checkbox" checked={!!choices[provider]} onChange={e=>setChoices({...choices,[provider]:e.target.checked})}/> {label}
-    </label>)}
-   </fieldset>
-   <button disabled={busy}>{busy?'Salvando…':'Salvar preferências de integração'}</button>
-  </form>}
- </section>;
+ const [choices,setChoices]=useState(null),[busy,setBusy]=useState(false),[attempt,setAttempt]=useState(0),[selected,setSelected]=useState(''),[failure,setFailure]=useState(''),[notice,setNotice]=useState('');
+ useEffect(()=>{let live=true;setChoices(null);client.from('pitacco_store_payment_providers').select('provider,requested_enabled').eq('store_id',storeId).then(({data,error})=>{if(!live)return;if(error)setFailure(error.message);else setChoices(Object.fromEntries((data||[]).map(row=>[row.provider,row.requested_enabled])))});return()=>{live=false}},[client,storeId,attempt]);
+ async function save(e){e.preventDefault();setBusy(true);setFailure('');setNotice('');try{const rows=Object.keys(providers).map(provider=>({store_id:storeId,provider,requested_enabled:!!choices[provider]}));const {error}=await client.from('pitacco_store_payment_providers').upsert(rows,{onConflict:'store_id,provider'});if(error)throw error;setNotice('Preferências de integração salvas. A ativação depende da homologação.')}catch(e){setFailure(e.message||'Não foi possível salvar.')}finally{setBusy(false)}}
+ return <section className="modern-workspace" aria-label="Integrações de pagamento"><div className="modern-section-title"><h3>Provedores online</h3></div><p className="modern-hint">Configure os provedores para recebimento online. A disponibilidade depende da homologação.</p>{failure&&<p role="alert">{failure}</p>}{choices===null&&(failure?<button onClick={()=>setAttempt(x=>x+1)}>Tentar novamente</button>:<p>Carregando provedores…</p>)}{choices&&<div className="modern-stack">{Object.entries(providers).sort(([a],[b])=>a==='pagbank'?-1:b==='pagbank'?1:0).map(([id,label])=><IntegrationRow key={id} id={id} label={label} status={choices[id]?'Solicitado':'Não conectado'} pending={!!choices[id]} onClick={()=>{setSelected(id);setNotice('')}}/>)}<IntegrationRow id="asaas" label="Asaas" status="Pendente" pending onClick={()=>setSelected('asaas')}/></div>}
+ {selected&&<ModernModal title={providers[selected]||'Asaas'} subtitle="Configuração do provedor" icon={<BrandTile id={selected}/>} onClose={()=>setSelected('')}>{selected==='asaas'?<p>O Asaas ainda não está homologado como provedor de checkout desta loja.</p>:<><form onSubmit={save}><label className="modern-switch-row"><span>Solicitar recebimento online</span><input type="checkbox" checked={!!choices[selected]} onChange={e=>setChoices(x=>({...x,[selected]:e.target.checked}))}/></label><p className="modern-hint">Preferência não ativa pagamentos. Credenciais de produção não são solicitadas antes de existir conexão homologada.</p><button type="submit" className="modern-primary" disabled={busy}>Salvar preferências de integração</button>{notice&&<p role="status">{notice}</p>}</form><PaymentHomologation client={client} store={storeId} provider={selected} merchant/></>}</ModernModal>}</section>
 }

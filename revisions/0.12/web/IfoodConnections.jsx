@@ -40,7 +40,7 @@ export default function IfoodConnections({client,storeId,canRead,test=false}){
   finally{setBusy(false);}
  }
  return <section className="panel" aria-label="Integração com iFood">
-  <h3>iFood</h3>
+  <h3>Vincular estabelecimento</h3>
   {canRead&&!ready&&<p role="status">Consultando vínculos…</p>}
   {!canRead&&<p>O gestor da loja pode consultar e vincular as contas.</p>}
   {canRead&&rows?.length===0&&<p>Nenhuma conta iFood vinculada.</p>}
