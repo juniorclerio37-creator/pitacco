@@ -29,4 +29,20 @@ select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000003'
 do $$ begin
  begin perform public.pitacco_merchant_plan_options('20000000-0000-0000-0000-000000000001');raise exception 'Cross-store access accepted';exception when insufficient_privilege then null;end;
 end $$;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+do $catalog$ declare c jsonb; v jsonb; begin
+ c:=public.pitacco_owner_plan_catalog();
+ assert public.pitacco_owner_plan_requests()#>>'{0,accepted_offer,monthly_cents}'='6990';
+ v:=public.pitacco_owner_publish_plan_catalog(c->>'terms_version',c->'plans'||'[{"code":"premium","name":"Premium","monthly_cents":9990,"commission_basis_points":100,"billing_cycle":"weekly","trial_days":7,"available":true}]'::jsonb);
+ assert jsonb_array_length(v->'plans')=3;
+ assert v#>>'{plans,2,billing_cycle}'='weekly';
+end $catalog$;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+do $catalog$ declare c jsonb; rid uuid; begin
+ c:=public.pitacco_merchant_plan_options('20000000-0000-0000-0000-000000000001');
+ assert c#>>'{plans,2,name}'='Premium';
+ perform public.pitacco_cancel_plan_change('20000000-0000-0000-0000-000000000001',(c#>>'{requests,0,id}')::uuid);
+ rid:=public.pitacco_request_plan_change('20000000-0000-0000-0000-000000000001','premium',c->>'terms_version');
+ assert rid is not null;
+end $catalog$;
 reset role;
