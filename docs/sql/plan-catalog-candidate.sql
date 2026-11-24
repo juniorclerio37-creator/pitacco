@@ -695,7 +695,7 @@ revoke all on function pitacco_private.commercial_notice_stage(timestamptz,times
 -- Authorized employees see the operational warning, not private invoice or payment amounts.
 create or replace function public.pitacco_store_commercial_block_status(p_store uuid)
 returns jsonb language plpgsql stable security definer set search_path='' as $block_status$
-declare blocked boolean; stage text; due_time timestamptz; grace_time timestamptz; pending_count bigint; action_count bigint; total_count bigint;
+declare blocked boolean; v_stage text; due_time timestamptz; grace_time timestamptz; pending_count bigint; action_count bigint; total_count bigint;
 begin
  if auth.uid() is null or not (public.pitacco_is_platform_owner() or public.can_access_store(p_store)) then raise exception 'Sem permissão' using errcode='42501';end if;
  blocked:=pitacco_private.commercial_orders_blocked(p_store);
@@ -712,8 +712,8 @@ begin
  )
  select (select r.stage from ranked r),(select r.due_at from ranked r),(select r.grace_until from ranked r),
  count(*) filter(where awaiting_review),count(*) filter(where not awaiting_review),count(*)
- into stage,due_time,grace_time,pending_count,action_count,total_count from relevant;
- return jsonb_build_object('orders_blocked',blocked,'notice_stage',case when blocked then 'blocked' else coalesce(stage,'none') end,
+ into v_stage,due_time,grace_time,pending_count,action_count,total_count from relevant;
+ return jsonb_build_object('orders_blocked',blocked,'notice_stage',case when blocked then 'blocked' else coalesce(v_stage,'none') end,
  'due_at',due_time,'grace_until',grace_time,'awaiting_review',pending_count,'payment_required',action_count,'unpaid_count',total_count);
 end $block_status$;
 revoke all on function public.pitacco_store_commercial_block_status(uuid) from public,anon,authenticated;
