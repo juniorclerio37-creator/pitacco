@@ -252,10 +252,11 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  </section>;
 }
 
+const stablePizzaJson=value=>JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a.localeCompare(b))):item);
 function PizzaDraftPreview({config,client,storeId,saved}){
  const [checking,setChecking]=useState(false),[result,setResult]=useState(null),[error,setError]=useState('');
  let normalized,canCheck=false;
- try{normalized=normalizePizzaConfig(config);canCheck=Boolean(saved&&JSON.stringify(normalizePizzaConfig(saved.config))===JSON.stringify(normalized));}catch(e){if(!normalized)return <p className='hint'>Complete a configuração: {e.message}</p>}
+ try{normalized=normalizePizzaConfig(config);canCheck=Boolean(saved&&stablePizzaJson(normalizePizzaConfig(saved.config))===stablePizzaJson(normalized));}catch(e){if(!normalized)return <p className='hint'>Complete a configuração: {e.message}</p>}
  async function verify(selection){if(!canCheck||checking)return;setChecking(true);setResult(null);setError('');try{const {data,error}=await client.rpc('pitacco_quote_pizza_draft',{p_store:storeId,p_draft:saved.id,p_size:selection.sizeId,p_flavors:selection.flavorIds,p_extras:selection.extraIds});if(error)throw error;if(!Number.isSafeInteger(data?.total_cents))throw Error('Cotação inválida');setResult(data);}catch(e){setError(e.message||'Falha ao conferir preço');}finally{setChecking(false);}}
  return <><PizzaBuilder key={JSON.stringify(normalized)} config={normalized} onConfirm={canCheck?verify:undefined} confirmLabel='Conferir preço no servidor' confirmBusy={checking}/>{!canCheck&&<p className='hint'>Salve a configuração para conferir o preço no servidor.</p>}{result&&<p role='status'>Última montagem conferida ({result.size_name}): <b>{brl(result.total_cents/100)}</b></p>}{error&&<p role='alert'>{error}</p>}</>;
 }
