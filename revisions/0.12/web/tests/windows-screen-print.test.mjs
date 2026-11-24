@@ -222,3 +222,14 @@ test('Windows empty board has exactly its stage columns and never wraps into a s
  assert.match(css,/grid-template-rows:minmax\(300px,auto\)/);
  assert.doesNotMatch(css,/pedidos-kanban\{grid-template-columns:repeat\(4,minmax\(250px/);
 });
+
+test('Windows exposes iFood cancellation after acceptance using the shared official integration',()=>{
+ const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
+ const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
+ assert.match(orders,/popupLayout&&o\.source==='ifood'&&\['preparing','ready','delivery'\]\.includes\(stage\(o\)\)/);
+ assert.match(orders,/onClick=\{\(\)=>void openIfoodReject\(o\)\}>Cancelar pedido no iFood/);
+ assert.match(orders,/onGetIfoodReasons\(order\.id\)/);
+ assert.match(operations,/ifood-manual-action'[,].*action:'reasons'/);
+ assert.match(operations,/ifood-manual-action'[,].*action:'cancel'/);
+ assert.match(orders,/Aguardando confirmação oficial/);
+});

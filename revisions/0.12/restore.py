@@ -161,9 +161,9 @@ for relative in ['package.json','package-lock.json','src-tauri/tauri.conf.json',
  p=pathlib.Path('web')/relative
  value=p.read_text(encoding='utf-8')
  if relative.endswith('Cargo.lock'):
-  value=value.replace('name = "deliverygestor-desktop"\nversion = "0.12.0"', 'name = "deliverygestor-desktop"\nversion = "0.12.32"')
+  value=value.replace('name = "deliverygestor-desktop"\nversion = "0.12.0"', 'name = "deliverygestor-desktop"\nversion = "0.12.33"')
  else:
-  value=value.replace('"0.12.0"', '"0.12.32"')
+  value=value.replace('"0.12.0"', '"0.12.33"')
  p.write_text(value,encoding='utf-8')
 
 # Menu importador web: qualquer loja com permissão pode importar sem afetar o app Windows.
@@ -173,7 +173,7 @@ subprocess.run([sys.executable,'revisions/0.12/mount_universal_menu_import.py'],
 ui=pathlib.Path('web/src.jsx')
 content=ui.read_text(encoding='utf-8')
 if 'Pitacco Windows v0.12.10' in content:
- ui.write_text(content.replace('Pitacco Windows v0.12.10','Pitacco Windows v0.12.32'),encoding='utf-8')
+ ui.write_text(content.replace('Pitacco Windows v0.12.10','Pitacco Windows v0.12.33'),encoding='utf-8')
 
 # Shared delivery geometry is advisory in the UI; the server still validates every quote.
 shutil.copyfile("supabase/functions/delivery-quote/coverage-geometry.mjs","web/deliveryCoverageGeometry.mjs")

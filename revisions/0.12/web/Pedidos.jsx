@@ -153,12 +153,15 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
     </div>}
     {o.source==='ifood'&&o.status==='pending'&&<div className="pedidos-card-actions">
      <button type="button" className="primary" disabled={busy||o.status!=='pending'||acceptMode==='automatic'||!onAcceptIfood||ifoodAcceptExpired(o)||o.receipt?.ifood_manual_accept==='requested'||o.receipt?.ifood_manual_cancel==='requested'} onClick={()=>onAcceptIfood?.(o.id)}>Aceitar</button>
-     <button type="button" className="secondary" disabled={busy||o.status!=='pending'||acceptMode==='automatic'||!onRejectIfood||!onGetIfoodReasons||o.receipt?.ifood_manual_accept==='requested'||o.receipt?.ifood_manual_cancel==='requested'} onClick={()=>void openIfoodReject(o)}>Recusar</button>
+     <button type="button" className="secondary" disabled={busy||o.status!=='pending'||!onRejectIfood||!onGetIfoodReasons||o.receipt?.ifood_manual_accept==='requested'||o.receipt?.ifood_manual_cancel==='requested'} onClick={()=>void openIfoodReject(o)}>Recusar</button>
      {o.status==='pending'&&acceptMode==='automatic'&&<span role="status">Aceite automático ativo · aguardando iFood</span>}
      {o.receipt?.ifood_manual_accept==='requested'&&<span role="status">Aguardando confirmação do iFood</span>}
      {o.receipt?.ifood_manual_cancel==='requested'&&<span role="status">Cancelamento solicitado ao iFood</span>}
     </div>}
     {o.status==='accepted'&&<div className="pedidos-card-actions">
+     {popupLayout&&o.source==='ifood'&&['preparing','ready','delivery'].includes(stage(o))&&
+      (o.receipt?.ifood_manual_cancel==='requested'?<span role="status">Cancelamento solicitado ao iFood</span>:
+       <button type="button" className="secondary pedidos-step-button" disabled={busy||!onRejectIfood||!onGetIfoodReasons} onClick={()=>void openIfoodReject(o)}>Cancelar pedido no iFood</button>)}
      {stage(o)==='preparing'&&<button type="button" className="primary pedidos-step-button" disabled={busy} onClick={()=>onReady(o.id)}>{popupLayout?'Marcar pronto':'Marcar pedido pronto'}</button>}
      {stage(o)==='ready'&&o.source==='proprio'&&o.receipt?.logistics==='retirada'&&!popupLayout&&<button type="button" className="primary pedidos-step-button" disabled={busy||!onPickup} onClick={()=>onPickup?.(o.id)}>Confirmar retirada</button>}
      {stage(o)==='ready'&&canDispatch(o,delivery,dispatchMode)&&<button type="button" className="primary pedidos-step-button" disabled={busy} onClick={()=>onAssign(o)}>{popupLayout?'Despachar':'Selecionar entregador'}</button>}
