@@ -95,19 +95,33 @@ async function fetchReasons(externalId: string, token: string):
     signal: AbortSignal.timeout(8000),
     redirect: "error",
   });
-  if (!response.ok) throw Object.assign(new Error("O iFood não disponibilizou motivos para este pedido."), {
-    code: response.status === 404 ? 409 : 503,
-  });
+  if (response.status === 204) return [];
+  if (!response.ok) {
+    console.warn("ifood cancellation reasons upstream HTTP", response.status);
+    const message = response.status === 401 || response.status === 403
+      ? "O iFood recusou a autorização para consultar motivos de cancelamento."
+      : response.status === 404 || response.status === 409 || response.status === 422
+      ? "O iFood não disponibilizou motivos para este pedido no estado atual."
+      : "Consulta dos motivos de cancelamento indisponível no iFood (HTTP " + response.status + ").";
+    throw Object.assign(new Error(message), {code:409});
+  }
   const body = await response.json().catch(() => null);
-  if (!Array.isArray(body?.reasons)) throw new Error("Lista de motivos inválida.");
-  return body.reasons.filter((r: unknown) =>
-    r !== null && typeof r === "object" &&
-    typeof (r as {code?: unknown}).code === "string" &&
-    /^[0-9]{2,6}$/.test((r as {code: string}).code) &&
-    typeof (r as {description?: unknown}).description === "string"
-  ).slice(0,100).map((r: {code:string;description:string})=>({
-    code:r.code,description:r.description.slice(0,150),
-  }));
+  const rows = Array.isArray(body) ? body : body?.reasons;
+  if (!Array.isArray(rows)) {
+    console.warn("ifood cancellation reasons unexpected format", body && typeof body === "object" ? Object.keys(body).slice(0,12) : typeof body);
+    throw Object.assign(new Error("O iFood retornou os motivos em um formato não reconhecido."),{code:409});
+  }
+  const reasons = rows.flatMap((row: unknown) => {
+    if (!row || typeof row !== "object") return [];
+    const r = row as Record<string,unknown>;
+    const raw = r.code ?? r.cancelCodeId ?? r.cancellationCode;
+    const code = typeof raw === "string" || typeof raw === "number" ? String(raw) : "";
+    if (!/^[0-9]{2,6}$/.test(code) || typeof r.description !== "string" || !r.description.trim()) return [];
+    return [{code,description:r.description.slice(0,150)}];
+  }).slice(0,100);
+  console.info("ifood cancellation reasons parsed", {count:reasons.length,format:Array.isArray(body)?"array":"reasons"});
+  if (rows.length && !reasons.length) throw Object.assign(new Error("Nenhum código válido foi reconhecido na resposta do iFood."),{code:409});
+  return reasons;
 }
 async function markFailure(action: "accept"|"cancel", orderId:string, category:string):Promise<void>{
   const endpoint=action==="accept"?"pitacco_ifood_manual_failure":"pitacco_ifood_manual_cancel_failure";
@@ -224,6 +238,7 @@ Deno.serve(async (request: Request):Promise<Response> => {
       return reply(request,503,{error:"O resultado da operação está pendente. Confira o iFood antes de tentar novamente."});
     }
     const code=(e as {code?:number}).code;
+    console.warn("ifood manual action failed", {action,code:code||0,category:e instanceof Error?e.name:"unknown"});
     return reply(request,code===401||code===403?403:code===400||code===409?409:503,{
       error:code===401||code===403?"Sem autorização para este pedido.":
         code===400||code===409?(e as Error).message:"Integração iFood temporariamente indisponível.",
