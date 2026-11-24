@@ -1,7 +1,8 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.57.0';
 import {directDistance,finiteBrazil,polygonValid,withinPolygon} from './coverage-geometry.mjs';
 
-const allowedOrigins=new Set(['https://pitacco.com.br','https://www.pitacco.com.br','https://app.pitacco.com.br']);
+const nativeOrigins=new Set(['http://tauri.localhost','https://tauri.localhost']);
+const allowedOrigins=new Set(['https://pitacco.com.br','https://www.pitacco.com.br','https://app.pitacco.com.br',...nativeOrigins]);
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const slugPattern=/^[a-z0-9][a-z0-9-]{2,59}$/;
 const normalize=(value:string)=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
@@ -360,6 +361,15 @@ Deno.serve(async request=>{
    .select('store_id,delivery_enabled,enabled').eq('slug',slug).maybeSingle();
   if(menuError||!menu?.enabled||!menu.delivery_enabled)
    return problem(404,'Entrega indisponível nesta loja.',origin);
+  // Desktop quotes are available only to an authenticated manager of this store.
+  if(nativeOrigins.has(origin)){
+   const token=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
+   if(!token)return problem(401,'Entre como gestor para calcular o frete.',origin);
+   const {data:identity,error:authError}=await db.auth.getUser(token);
+   if(authError||!identity.user)return problem(401,'Sessão inválida.',origin);
+   const {data:allowed,error:permissionError}=await db.rpc('pitacco_can_manage_courier_store',{p_actor:identity.user.id,p_store:menu.store_id});
+   if(permissionError||allowed!==true)return problem(403,'Sem permissão para calcular o frete desta loja.',origin);
+  }
   const {data:rules,error:rulesError}=await db.from('pitacco_delivery_pricing')
    .select('*').eq('store_id',menu.store_id).maybeSingle();
   if(rulesError||!rules?.enabled)
