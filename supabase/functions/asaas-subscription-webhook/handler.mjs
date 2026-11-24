@@ -79,7 +79,7 @@ export function createAsaasWebhook({ environment, token, apiKey, supabaseUrl, se
       });
       if (!verification.ok) return reply(503, 'provider_verification_unavailable');
       const payment = await verification.json();
-      if (payment.id !== id) return reply(503, 'provider_verification_unavailable');
+      if (payment.id !== id) return reply(200, 'payment_not_eligible');
       if (typeof payment.externalReference === 'string' && payment.externalReference.startsWith('pitacco:commercial:')) {
         if (!commercialEnabled) return reply(503, 'commercial_sync_disabled');
         if (payment.deleted === true) payment.status = 'DELETED';
