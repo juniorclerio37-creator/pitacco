@@ -1,4 +1,6 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
+import PizzaBuilder from './PizzaBuilder.jsx';
+import {quotePizzaSelection} from './pizzaPricing.mjs';
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const methods={dinheiro:'Dinheiro',pix_manual:'Pix manual',pix:'Pix',cartao:'Cartão',cartao_entrega:'Cartão na entrega',cartao_na_entrega:'Cartão na entrega',credit_card:'Crédito',debit_card:'Débito'};
 const id=()=>crypto.randomUUID();
@@ -21,11 +23,13 @@ export default function MerchantNewOrder({client,storeId,onNavigate}){
  const products=menu?.products||[],shown=products.filter(p=>String(p.name+' '+(p.category||'')).toLowerCase().includes(searchProduct.toLowerCase()));
  const subtotal=useMemo(()=>cart.reduce((sum,l)=>sum+l.quantity*l.unit,0),[cart]);
  const amount=subtotal+(delivery?Number(quote?.fee||0):0);
- const validProduct=product&&(product.option_groups||[]).every(g=>{const n=(g.options||[]).filter(o=>chosen.includes(o.id)).length;return n>=Number(g.min||0)&&n<=Number(g.max??100)});
+ const validProduct=product&&!product.pizza_config&&(product.option_groups||[]).every(g=>{const n=(g.options||[]).filter(o=>chosen.includes(o.id)).length;return n>=Number(g.min||0)&&n<=Number(g.max??100)});
  function add(){if(!validProduct)return;const options=[...chosen].sort(),key=product.id+':'+options.join(',');
  const unit=Number(product.price)+(product.option_groups||[]).flatMap(g=>g.options||[]).filter(o=>options.includes(o.id)).reduce((n,o)=>n+Number(o.price),0);
  const names=(product.option_groups||[]).flatMap(g=>g.options||[]).filter(o=>options.includes(o.id)).map(o=>o.name);
- const old=cart.find(l=>l.key===key);if((old?.quantity||0)+quantity>20){setError('Máximo de 20 unidades por combinação.');return}
+ insertLine(options,names,unit);}
+ function addPizza(selection){try{if(!product?.pizza_config)return;const q=quotePizzaSelection(product.pizza_config,selection);insertLine(q.options,q.names,q.total/100);}catch(e){setError(e.message||'Montagem inválida');}}
+ function insertLine(options,names,unit){const key=product.id+':'+options.join(',');const old=cart.find(l=>l.key===key);if(!Number.isInteger(quantity)||quantity<1||(old?.quantity||0)+quantity>20){setError('Máximo de 20 unidades por combinação.');return}if(!old&&cart.length>=30){setError('Máximo de 30 combinações por pedido.');return}
  setCart(previous=>old?previous.map(l=>l.key===key?{...l,quantity:l.quantity+quantity}:l):[...previous,{key,product_id:product.id,name:product.name,options,names,quantity,unit}]);setProduct(null);setChosen([]);setQuantity(1);setError('')}
  useEffect(()=>{setQuote(null);if(!delivery||!menu||address.trim().length<12)return;let live=true;const t=setTimeout(async()=>{setQuoting(true);try{
  const r=await client.functions.invoke('delivery-quote',{body:{slug:menu.store.slug,address:address.trim(),request_id:request.current}});if(r.error)throw r.error;if(r.data?.error||!r.data?.quote_id)throw Error(r.data?.error||'Frete indisponível');if(live){setQuote(r.data);setError('')}
@@ -52,8 +56,8 @@ export default function MerchantNewOrder({client,storeId,onNavigate}){
  <form onSubmit={submit}><fieldset disabled={busy} className="mn-pos-fieldset">
  <div className="mn-pos-grid"><div>
  <h3>Produtos</h3><input placeholder="Buscar produto ou categoria" value={searchProduct} onChange={e=>setSearchProduct(e.target.value)}/>
- <div className="mn-pos-products">{shown.map(p=><button key={p.id} type="button" className="secondary" onClick={()=>{setProduct(p);setChosen([]);setQuantity(1)}}><span>{p.name}</span><strong>{money(p.price)}</strong></button>)}</div>
- {product&&<div className="mn-pos-options"><h4>{product.name}</h4>{(product.option_groups||[]).map(g=><fieldset key={g.id}><legend>{g.name} · {g.min||0} a {g.max??100}</legend>{(g.options||[]).map(o=><label key={o.id}><input type="checkbox" checked={chosen.includes(o.id)} disabled={!chosen.includes(o.id)&&(g.options||[]).filter(x=>chosen.includes(x.id)).length>=Number(g.max??100)} onChange={e=>setChosen(v=>e.target.checked?[...v,o.id]:v.filter(x=>x!==o.id))}/>{o.name} · {money(o.price)}</label>)}</fieldset>)}<label>Quantidade<input type="number" min="1" max="20" value={quantity} onChange={e=>setQuantity(Math.max(1,Math.min(20,Number(e.target.value)||1)))}/></label><button type="button" disabled={!validProduct} onClick={add}>Adicionar ao pedido</button></div>}
+ <div className="mn-pos-products">{shown.map(p=><button key={p.id} type="button" className="secondary" onClick={()=>{setProduct(p);setChosen([]);setQuantity(1)}}><span>{p.name}</span><strong>{p.pizza_config?'A partir de ':''}{money(p.price)}</strong></button>)}</div>
+ {product&&<div className="mn-pos-options"><h4>{product.name}</h4>{product.pizza_config?<><label>Quantidade<input type='number' min='1' max='20' step='1' value={quantity} onChange={e=>setQuantity(Math.max(1,Math.min(20,Math.trunc(Number(e.target.value)||1))))}/></label><PizzaBuilder key={product.id} config={product.pizza_config} onConfirm={addPizza}/></>:<>{(product.option_groups||[]).map(g=><fieldset key={g.id}><legend>{g.name} · {g.min||0} a {g.max??100}</legend>{(g.options||[]).map(o=><label key={o.id}><input type="checkbox" checked={chosen.includes(o.id)} disabled={!chosen.includes(o.id)&&(g.options||[]).filter(x=>chosen.includes(x.id)).length>=Number(g.max??100)} onChange={e=>setChosen(v=>e.target.checked?[...v,o.id]:v.filter(x=>x!==o.id))}/>{o.name} · {money(o.price)}</label>)}</fieldset>)}<label>Quantidade<input type="number" min="1" max="20" value={quantity} onChange={e=>setQuantity(Math.max(1,Math.min(20,Number(e.target.value)||1)))}/></label><button type="button" disabled={!validProduct} onClick={add}>Adicionar ao pedido</button></>}</div>}
  <h3>Itens do pedido</h3>{cart.length===0&&<p>Nenhum item adicionado.</p>}{cart.map(l=><div className="line" key={l.key}><span>{l.quantity} × {l.name}<small>{l.names.join(', ')}</small></span><strong>{money(l.unit*l.quantity)}</strong><button type="button" className="secondary" onClick={()=>setCart(v=>v.filter(x=>x.key!==l.key))}>Remover</button></div>)}
  </div><div>
  <h3>Atendimento</h3><label>Modalidade<select value={type} onChange={e=>{setType(e.target.value);if(e.target.value==='entrega'&&isCredit)setPayment(menu.store.payment_methods[0]||'')}}>{menu.store.pickup_enabled&&<><option value="balcao">Balcão</option><option value="retirada">Retirada</option></>}{menu.store.delivery_enabled&&<option value="entrega">Entrega</option>}</select></label>
