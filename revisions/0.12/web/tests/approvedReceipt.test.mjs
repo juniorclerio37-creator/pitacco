@@ -73,3 +73,8 @@ test('pizza receipt identifies size, portions, dough and crust and total on both
  const job={receipt:{source:'proprio',items:[{name:'Pizza',quantity:2,unit_total:59.95,modifiers:[{group:'Tamanho',name:'Grande',price:5.05},{group:'Sabor',name:'Calabresa',numerator:1,denominator:2,price:0},{group:'Sabor',name:'Frango',numerator:1,denominator:2,price:0},{group:'Borda',name:'Catupiry',price:5},{group:'Massa',name:'Fina',price:0}]}],total:119.90,payment:'Pix'}};
  for(const width of [58,80]){const s=approvedReceipt(job,width);assert.match(s,/Tamanho: Grande/);assert.match(s,/Sabor 1\/2: Calabresa/);assert.match(s,/Sabor 1\/2: Frango/);assert.match(s,/Borda: Catupiry/);assert.match(s,/Massa: Fina/);assert.match(s,/2 x Pizza.*119,90/);assert.ok(s.split('\n').every(line=>line.length<=(width===58?30:44)));}
 });
+
+test('combo prints every component and nested pizza flavor fraction without charging twice',()=>{
+ const receipt={source:'proprio',items:[{name:'Combo pizza + bebida',quantity:2,unit_total:59.90,modifiers:[{group:'Combo',name:'Pizza Grande',quantity:1,options:[{group:'Tamanho',name:'Grande'},{group:'Sabor',name:'Calabresa',numerator:1,denominator:2},{group:'Sabor',name:'Frango',numerator:1,denominator:2}]},{group:'Combo',name:'Refrigerante',quantity:1,options:[]}]}],total:119.80,payment:'Pix'};
+ for(const width of [58,80]){const s=approvedReceipt({receipt},width);assert.match(s,/1x Pizza Grande/);assert.match(s,/Sabor 1\/2: Calabresa/);assert.match(s,/Sabor 1\/2: Frango/);assert.match(s,/1x Refrigerante/);assert.match(s,/119,80/);assert.ok(s.split('\n').every(line=>line.length<=(width===58?30:44)));}
+});
