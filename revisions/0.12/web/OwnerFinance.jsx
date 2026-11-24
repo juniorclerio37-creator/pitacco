@@ -23,6 +23,31 @@ function downloadCsv(days){
  document.body.appendChild(link);link.click();link.remove();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
+
+
+function AsaasCommercialControl({client,storeId}){
+ const [state,setState]=useState(null),[mode,setMode]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[revision,reload]=useState(0);
+ useEffect(()=>{let live=true;setState(null);setError('');client.rpc('pitacco_owner_asaas_commercial_status',{p_store:storeId||null}).then(({data,error})=>{if(live&&!error&&data){setState(data);setMode(data.auto_billing_type||'')}});return()=>{live=false}},[client,storeId,revision]);
+ async function save(e){e.preventDefault();if(busy||!storeId||!state?.enabled)return;setBusy(true);setError('');try{const {error}=await client.rpc('pitacco_owner_asaas_auto_issue',{p_store:storeId,p_billing_type:mode||null});if(error)throw error;reload(n=>n+1)}catch{setError('Não foi possível salvar. Verifique o cadastro financeiro desta loja.')}finally{setBusy(false)}}
+ if(!state)return null;
+ return <section className="panel" aria-label="Controle financeiro Asaas"><h3>Asaas · Controle de cobranças</h3><p>{state.enabled?'Integração habilitada':'Integração ainda não liberada'}</p>
+ {storeId&&<form onSubmit={save}><label>Emissão automática<select value={mode} onChange={e=>setMode(e.target.value)} disabled={busy||!state.enabled}><option value="">Desativada</option><option value="PIX">Pix</option><option value="BOLETO">Boleto</option></select></label><button disabled={busy||!state.enabled}>Salvar preferência</button></form>}
+ {error&&<p role="alert">{error}</p>}<h4>Emissões e pagamentos em conciliação</h4><button type="button" className="secondary" onClick={()=>reload(n=>n+1)}>Atualizar</button>
+ {state.review_rows?.length?<div style={{overflowX:'auto'}}><table><thead><tr><th>Loja</th><th>Fatura</th><th>Vencimento</th><th>Valor</th><th>Situação</th></tr></thead><tbody>{state.review_rows.map(r=><tr key={r.invoice_id}><td>{r.store_name}</td><td>{r.kind==='monthly'?'Mensalidade':'Comissão'}</td><td>{r.due_at?new Date(r.due_at).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'}):'—'}</td><td>{money.format(Number(r.amount_cents)/100)}</td><td>{r.payment_status==='review_required'?'Divergência ou estorno':r.issue_state==='reserved'?'Emissão reservada':'Emissão em análise'}{r.provider_status?' · '+r.provider_status:''}</td></tr>)}</tbody></table></div>:<p>Nenhuma pendência encontrada.</p>}
+ <p>Não emita outra cobrança nem confirme Pix manual enquanto a emissão estiver em análise.</p></section>
+}
+
+function AsaasEnrollment({client,storeId}){
+ const [state,setState]=useState(null),[busy,setBusy]=useState(false),[name,setName]=useState(''),[document,setDocument]=useState(''),[confirmed,setConfirmed]=useState(false),[error,setError]=useState('');
+ useEffect(()=>{let live=true;client.rpc('pitacco_owner_asaas_enrollment_access',{p_store:storeId}).then(({data,error})=>{if(live&&!error)setState(data)});return()=>{live=false}},[client,storeId]);
+ async function enroll(e){
+  e.preventDefault();if(busy||!confirmed)return;setBusy(true);setError('');
+  try{const {data,error}=await client.functions.invoke('asaas-commercial-enrollment',{body:{store_id:storeId,name,document,confirmed}});if(error||!['linked','already_linked'].includes(data?.outcome))throw Error('Cadastro indisponível ou em conciliação. Confira antes de repetir.');setState({allowed:true,linked:true});setDocument('');setName('');setConfirmed(false)}catch(e){setError(e.message)}finally{setBusy(false)}
+ }
+ if(!state?.allowed)return null;
+ return <section className="panel" aria-label="Cadastro financeiro Asaas"><h3>Cadastro financeiro Asaas</h3>{state.linked?<p>Estabelecimento vinculado ao Asaas.</p>:<form onSubmit={enroll}><p>Informe a identidade fiscal verificada do pagador. O documento será enviado ao Asaas para emissão de cobranças do Pitacco.</p><label>Nome ou razão social<input required minLength={3} maxLength={150} value={name} onChange={e=>setName(e.target.value)}/></label><label>CPF ou CNPJ<input required autoComplete="off" value={document} onChange={e=>setDocument(e.target.value)} maxLength={18}/></label><label><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>Confirmei os dados fiscais do pagador e a autorização para o cadastro.</label><button disabled={busy||!confirmed}>Vincular ao Asaas</button></form>}{error&&<p role="alert">{error}</p>}</section>;
+}
+
 export default function OwnerFinance({client,stores}){
  const [tab,setTab]=useState('overview');
  const [range,setRange]=useState(()=>{const dates=periods();return {start:dates.week,end:dates.today,store:''};});
@@ -64,6 +89,8 @@ export default function OwnerFinance({client,stores}){
    </select></div>
    <button disabled={busy}>Consultar</button>
   </form>
+  <AsaasCommercialControl key={range.store||'all'} client={client} storeId={range.store||null}/>
+  {range.store&&<AsaasEnrollment key={range.store} client={client} storeId={range.store}/>}
   {range.store&&<CommercialAmounts client={client} storeId={range.store}/>}
   <CommercialClosings client={client} storeId={range.store||null} owner/>
   <CommercialInvoices client={client} storeId={range.store||null} owner/>
