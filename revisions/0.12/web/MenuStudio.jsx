@@ -1,4 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react';
+import PizzaEditor,{emptyPizza} from './PizzaEditor.jsx';
 import ProductComplements from './ProductComplements.jsx';
 import CentralComplementLibrary from './CentralComplementLibrary.jsx';
 import CatalogFinishedStock from './CatalogFinishedStock.jsx';
@@ -16,6 +17,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  const [categoryIcons,setCategoryIcons]=useState({}),[configuringCategory,setConfiguringCategory]=useState(null),[iconBusy,setIconBusy]=useState(false);
  const [categoryRanks,setCategoryRanks]=useState({});
  const [newGroups,setNewGroups]=useState([]);
+ const [pizzaPreview,setPizzaPreview]=useState(false),[pizzaDraft,setPizzaDraft]=useState(emptyPizza);
  const changeGroup=(id,patch)=>setNewGroups(old=>old.map(g=>g.id===id?{...g,...patch}:g));
  const changeOption=(g,id,patch)=>changeGroup(g.id,{options:g.options.map(o=>o.id===id?{...o,...patch}:o)});
  const categoryName=value=>String(value||'').trim()||'Outros';
@@ -100,10 +102,10 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  const change=(k,v)=>setDraft(p=>({...p,[k]:v}));
  const begin=product=>{
   setEditing(product?.id||null);setDraft(product?{...empty(),...product}:empty());
-  setGroups([]);setNewGroups([]);setPhoto(null);setShowEditor(true);setNotice('');
+  setGroups([]);setNewGroups([]);setPizzaPreview(false);setPizzaDraft(emptyPizza());setPhoto(null);setShowEditor(true);setNotice('');
  };
  async function save(e){
-  e.preventDefault();if(busy)return;setBusy(true);setNotice('');
+  e.preventDefault();if(busy||pizzaPreview)return;setBusy(true);setNotice('');
   try{
    const price=Number(draft.price),cost=Number(draft.cost||0);
    if(!draft.name.trim()||!Number.isFinite(price)||price<0||!Number.isFinite(cost)||cost<0)throw Error('Confira nome, preço e custo.');
@@ -206,6 +208,8 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  {notice&&<p className="notice" role="status">{notice}</p>}
  <div className="menu-studio-editor">
  <div><form id="pitacco-product-editor" onSubmit={save} aria-label="Dados do produto">
+ <label style={field}>Tipo de produto<select value={pizzaPreview?"pizza":"traditional"} onChange={e=>setPizzaPreview(e.target.value==="pizza")}><option value="traditional">Produto tradicional</option><option value="pizza">Pizza — prévia em desenvolvimento</option></select></label>
+ {pizzaPreview&&<><p role="status">Prévia do módulo Pizza. O cadastro e a venda ainda não estão habilitados; as configurações desta prévia não serão salvas.</p><PizzaEditor value={pizzaDraft} onChange={setPizzaDraft} disabled={busy}/></>}
  <label style={field}>Foto do produto (JPG, PNG, WebP)<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f&&f.size>5*1024*1024){setNotice('Imagem maior que 5 MB.');return}setPhoto(f||null)}}/></label>
  <label style={field}>Nome<input required maxLength={180} value={draft.name} onChange={e=>change('name',e.target.value)}/></label>
  <label style={field}>Descrição<textarea maxLength={1200} rows={3} value={draft.description} onChange={e=>change('description',e.target.value)}/></label>
@@ -232,7 +236,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  <button type="button" disabled={g.options.length>=100} onClick={()=>changeGroup(g.id,{options:[...g.options,{id:crypto.randomUUID(),name:'',price:0,available:true}]})}>+ Adicionar complemento</button>
  <button type="button" className="secondary" onClick={()=>setNewGroups(old=>old.filter(x=>x.id!==g.id))}>Retirar grupo</button>
  </fieldset>)}
- <button type="submit" form="pitacco-product-editor" disabled={busy} style={{width:"100%"}}>{busy?"Salvando…":"Salvar produto e complementos"}</button>
+ <button type="submit" form="pitacco-product-editor" disabled={busy||pizzaPreview} style={{width:"100%"}}>{busy?"Salvando…":"Salvar produto e complementos"}</button>
  </section>
  {editing&&<ProductComplements key={editing+":"+newGroups.length} client={client} storeId={storeId} product={{id:editing,name:draft.name}} onGroupsChange={setGroups}/>}
  </div>
