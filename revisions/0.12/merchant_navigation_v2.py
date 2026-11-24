@@ -60,10 +60,9 @@ s=s.replace(needle," useEffect(()=>{if(view==='Configurações'&&['Impressoras',
 change('<Fideliza client={client} storeId={storeId} manager={manager}/>','<Fideliza client={client} storeId={storeId} manager={manager} initialSection={navigationSection||\'Visão geral\'} navigationKey={navigationKey}/>')
 p.write_text(s,encoding='utf-8')
 
-# Open the existing sale form from the global shortcut and retain the background subscriber.
+# Dedicated catalog-backed sale screen; the existing manual form remains available in Kitchen.
 p=Path('web/Operations.jsx')
 s=p.read_text(encoding='utf-8')
-needle=" const [orderBadges,setOrderBadges]"
-assert s.count(needle)==1
-s=s.replace(needle," useEffect(()=>{if(view==='Cozinha e expedição'&&navigationSection==='new-order'){const form=document.getElementById('new-order');if(form){form.open=true;form.scrollIntoView({block:'nearest'});form.querySelector('input')?.focus()}}},[view,navigationSection,navigationKey]);\n"+needle,1)
+s="import MerchantNewOrder from './MerchantNewOrder.jsx';\n"+s
+change("{manager&&view==='Cozinha e expedição'&&<>","{manager&&view==='Cozinha e expedição'&&navigationSection==='new-order'&&<MerchantNewOrder key={storeId} client={client} storeId={storeId} onNavigate={onNavigate}/>}\n {manager&&view==='Cozinha e expedição'&&navigationSection!=='new-order'&&<>")
 p.write_text(s,encoding='utf-8')
