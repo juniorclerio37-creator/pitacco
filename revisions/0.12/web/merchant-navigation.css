@@ -68,3 +68,51 @@
  .app.pitacco-mobile-workspace .mn-mobile-bar{z-index:123;min-height:calc(76px + env(safe-area-inset-bottom));box-sizing:border-box}
  .mn-mobile-bar .mn-more-open{color:#e5702b;font-weight:700}
 }
+
+/* The merchant shell exposes exactly one store selector and no permanent theme/account footer. */
+#pitacco-store-navigation:has(>.mn-compact)>.brand,
+#pitacco-store-navigation:has(>.mn-compact)>.store-sidebar-brand,
+#pitacco-store-navigation:has(>.mn-compact)>.theme-switch,
+#pitacco-store-navigation:has(>.mn-compact)>.account,
+#pitacco-store-navigation:has(>.mn-compact)>.logout{display:none!important}
+#pitacco-store-navigation:has(>.mn-compact){padding:8px 6px!important;overflow:hidden!important}
+#pitacco-store-navigation .merchant-nav.mn-compact{gap:2px;padding:2px 6px 7px;min-height:0;overflow-y:auto;color:#eaf0f6}
+#pitacco-store-navigation .mn-compact button{min-height:31px}
+#pitacco-store-navigation .mn-compact .mn-top{padding:0 2px;gap:4px;min-height:33px}
+#pitacco-store-navigation .mn-logo img{display:block;width:112px;max-height:28px;object-fit:contain;object-position:left}
+#pitacco-store-navigation .mn-compact .mn-store{margin:2px 0 3px;padding:6px 7px;border:1px solid #ffffff20;background:#ffffff0c;color:#fff}
+#pitacco-store-navigation .mn-compact .mn-store select{font-size:12px;color:inherit}
+#pitacco-store-navigation .mn-compact .mn-store select option{background:#172440;color:#fff}
+#pitacco-store-navigation .mn-compact .mn-store span{color:#b7c4d6}
+#pitacco-store-navigation .mn-compact .mn-search{margin-bottom:3px;padding:0 7px;border-color:#ffffff28;color:#d2dbe9}
+#pitacco-store-navigation .mn-compact .mn-search input{padding:5px 0;color:inherit}
+#pitacco-store-navigation .mn-compact :is(.mn-group-button,.mn-link){padding:5px 7px;min-height:31px;font-size:12.5px;color:#eaf0f6;border:0}
+#pitacco-store-navigation .mn-compact :is(.mn-group-button,.mn-link) svg{color:#b7c4d6}
+#pitacco-store-navigation .mn-compact .mn-current-group,#pitacco-store-navigation .mn-compact .mn-active .mn-link{color:#ffac74}
+#pitacco-store-navigation .mn-compact .mn-active{background:#ffffff13}
+#pitacco-store-navigation .mn-compact .mn-support{margin-top:4px;border-color:#ffffff20;padding-top:3px}
+.mn-account-panel,.mn-theme{display:grid;gap:4px;padding:6px 8px;border-radius:8px;background:#ffffff0d;color:inherit}
+.mn-account-panel small{font-size:11px;overflow-wrap:anywhere}
+.mn-theme>span{font-size:11px}
+.mn-theme>div{display:flex;gap:4px}
+#pitacco-store-navigation .mn-theme button{display:flex;align-items:center;justify-content:center;gap:4px;flex:1;min-width:0;background:#ffffff0b;color:#eaf0f6;border:1px solid #ffffff28;padding:4px;font-size:11px}
+#pitacco-store-navigation .mn-theme button[aria-pressed=true]{background:#b85422;border-color:#f28c51;color:#fff}
+.mn-incident-count{font-size:10px;background:#c62828;color:white;border-radius:12px;padding:2px 5px;line-height:1.1}
+@media(min-width:801px){
+ .app:not(.mn-sidebar-collapsed):has(#pitacco-store-navigation>.mn-compact)>main>header .store-header-select{display:none!important}
+ #pitacco-store-navigation .mn-compact.mn-collapsed .mn-top{justify-content:center}
+ #pitacco-store-navigation .mn-compact.mn-collapsed .mn-group-button,#pitacco-store-navigation .mn-compact.mn-collapsed .mn-link{justify-content:center;padding:5px 0}
+ #pitacco-store-navigation .mn-compact.mn-collapsed .mn-incident-count{position:absolute;right:2px;top:1px}
+ #pitacco-store-navigation .mn-compact.mn-collapsed .mn-group-button{position:relative}
+}
+
+.incident-center{display:grid;gap:12px}
+.incident-center h2{display:flex;align-items:center;gap:8px}
+.incident-card{border:1px solid #d9dfe7;border-radius:10px;padding:12px;display:grid;gap:6px}
+.incident-card h3,.incident-card p{margin:0}
+.incident-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.incident-actions a{display:inline-flex;gap:5px;align-items:center}
+.incident-alert{position:fixed;right:18px;top:18px;z-index:2500;max-width:min(520px,calc(100vw - 36px));padding:15px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:#fff1f2;color:#881b20;border:2px solid #cf383e;border-radius:12px;box-shadow:0 8px 36px #0004}
+.incident-alert p{margin:3px 0;font-size:13px}
+.incident-alert>div{flex:1;min-width:190px}
+.incident-alert button{background:#b91c1c;color:white}

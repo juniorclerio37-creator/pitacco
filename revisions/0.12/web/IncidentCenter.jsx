@@ -1,80 +1,26 @@
-import React,{useEffect,useState} from 'react';
-const labels={
- acceptance_late:'Pedido aguardando aceite',
- preparation_late:'Preparo acima do prazo',
- delivery_late:'Entrega atrasada',
- print_error:'Falha de impressão',
- marketplace_acceptance_failed:'Aceite recusado pelo marketplace',
- delivery_partner_failed:'Falha na solicitação de entrega parceira',
- payment_failed:'Falha de pagamento registrada'
-};
-const when=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'});
-
-export default function IncidentCenter({client,storeId=null,stores=[],owner=false}){
- const [store,setStore]=useState(storeId||''),[status,setStatus]=useState('open'),[page,setPage]=useState(0);
- const [revision,refresh]=useState(0),[data,setData]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState('');
- const [busy,setBusy]=useState(false),[ack,setAck]=useState(null),[reason,setReason]=useState('');
-
+import React,{useEffect,useRef,useState} from 'react';
+import {AlertTriangle,BellRing,Check,Phone,ShoppingBag} from 'lucide-react';
+const labels={customer_missing:'Cliente não localizado',wrong_address:'Endereço incorreto',payment:'Problema com pagamento',customer_refused:'Cliente recusou o pedido',code:'Problema com código',vehicle:'Problema com veículo',system_error:'Pedido travado',other:'Outra ocorrência'};
+export default function IncidentCenter({client,storeId,visible,onCount,onOpen,orders=[],deliveries=[]}){
+ const [rows,setRows]=useState([]),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+ const refreshRef=useRef(()=>{}),soundRef=useRef(null),activeId=useRef(null);
  useEffect(()=>{
-  let live=true;let running=false;
-  async function load(){
-   if(running)return;running=true;
-   try{
-    const {data,error}=await client.rpc('pitacco_incidents',{p_store:storeId||store||null,p_status:status,p_page:page});
-    if(error)throw error;
-    if(live){setData(data);setError('');}
-   }catch(failure){if(live)setError(failure.message||'Não foi possível consultar os incidentes.');}
-   finally{running=false}
-  }
-  void load();
-  const timer=setInterval(()=>{if(document.visibilityState==='visible')void load();},60000);
-  return()=>{live=false;clearInterval(timer)};
- },[client,storeId,store,status,page,revision]);
-
- async function acknowledge(event){
-  event.preventDefault();setBusy(true);setError('');setNotice('');
-  try{
-   const {error}=await client.rpc('pitacco_owner_acknowledge_incident',{p_incident:ack,p_reason:reason.trim()});
-   if(error)throw error;
-   setAck(null);setReason('');setNotice('Incidente reconhecido. Ele continuará aberto enquanto a falha persistir.');
-   refresh(i=>i+1);
-  }catch(failure){setError(failure.message||'Não foi possível registrar o reconhecimento.');}
-  finally{setBusy(false)}
- }
-
- return <section className="panel" aria-label={owner?'Monitoramento global de incidentes':'Diagnóstico automático da loja'}>
-  <h3>{owner?'Monitoramento automático · Todas as lojas':'Diagnóstico automático da loja'}</h3>
-  <p>O Pitacco registra problemas detectáveis no servidor e indica quando deixam de ocorrer. O monitoramento não reenvia pedidos, não cobra novamente e não declara uma impressão concluída sem confirmação.</p>
-  <div className="dispatch-actions">
-   {owner&&<label>Loja<select aria-label="Filtrar incidentes por loja" value={store} onChange={e=>{setStore(e.target.value);setPage(0)}}>
-    <option value="">Todas as lojas</option>{stores.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
-   </select></label>}
-   <label>Situação<select aria-label="Filtrar situação dos incidentes" value={status} onChange={e=>{setStatus(e.target.value);setPage(0)}}>
-    <option value="open">Em aberto</option><option value="resolved">Resolvidos</option><option value="all">Todos</option>
-   </select></label>
-   <button type="button" className="secondary" onClick={()=>refresh(i=>i+1)}>Atualizar diagnóstico</button>
-  </div>
-  {error&&<p role="alert">{error}</p>}
-  {notice&&<p role="status">{notice}</p>}
-  {!data&&!error&&<p role="status">Consultando ocorrências…</p>}
-  {data?.rows?.length===0&&<p>Nenhum incidente registrado para este filtro.</p>}
-  <ul>{data?.rows?.map(row=><li key={row.id} style={{margin:'12px 0'}}>
-    <strong>{labels[row.code]||row.code}</strong> · {row.status==='open'?'Em aberto':'Resolvido'}
-    {owner&&<span> · {row.store_name}</span>}
-    <div><small>Detectado: {when.format(new Date(row.first_seen_at))} · Última verificação: {when.format(new Date(row.last_seen_at))}</small></div>
-    <div><small>Identificador técnico: {row.entity_id.slice(0,8)} · {row.detections} verificação(ões)</small></div>
-    {row.acknowledged_at&&<div><small>Reconhecido pelo suporte em {when.format(new Date(row.acknowledged_at))}</small></div>}
-    {owner&&row.status==='open'&&!row.acknowledged_at&&<button type="button" className="secondary" onClick={()=>{setAck(row.id);setReason('')}}>Reconhecer ocorrência</button>}
-  </li>)}</ul>
-  {owner&&ack&&<form aria-label="Reconhecer incidente" onSubmit={acknowledge}>
-   <label>Motivo do reconhecimento<textarea value={reason} onChange={e=>setReason(e.target.value)} required minLength={5} maxLength={500}/></label>
-   <button disabled={busy}>Confirmar reconhecimento</button>
-   <button type="button" className="secondary" onClick={()=>setAck(null)}>Cancelar</button>
-  </form>}
-  {(page>0||data?.has_more)&&<div className="dispatch-actions">
-   <button type="button" className="secondary" disabled={page===0} onClick={()=>setPage(x=>x-1)}>Anterior</button>
-   <span>Página {page+1}</span>
-   <button type="button" className="secondary" disabled={!data?.has_more} onClick={()=>setPage(x=>x+1)}>Próxima</button>
-  </div>}
- </section>;
+  let alive=true;
+  async function refresh(){try{const {data,error}=await client.from('pitacco_delivery_incidents').select('*').eq('store_id',storeId).order('created_at',{ascending:false}).limit(100);if(error)throw error;if(alive){setRows(data||[]);setError('');}}catch(e){if(alive)setError(e?.message||'Não foi possível consultar ocorrências');}}
+  refreshRef.current=refresh;void refresh();
+  const timer=setInterval(refresh,5000);
+  let channel;try{channel=client.channel('merchant-incidents:'+storeId).on('postgres_changes',{event:'*',schema:'public',table:'pitacco_delivery_incidents',filter:'store_id=eq.'+storeId},refresh).subscribe()}catch{}
+  return()=>{alive=false;clearInterval(timer);if(channel)void client.removeChannel(channel).catch(()=>{});};
+ },[client,storeId]);
+ const pending=rows.filter(i=>i.state==='open'||i.state==='acknowledged'),urgent=rows.find(i=>i.state==='open');
+ useEffect(()=>{onCount(pending.length)},[pending.length,onCount]);
+ useEffect(()=>{
+  if(!urgent){activeId.current=null;return;}
+  if(activeId.current===urgent.id)return;activeId.current=urgent.id;
+  // Distinct three-note sound, independent of the new-order audio. The supplied voice asset can replace it.
+  try{const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;const ctx=new Ctx();soundRef.current=ctx;void ctx.resume().then(()=>{for(const [idx,hz] of [740,988,740].entries()){const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.value=hz;osc.connect(gain);gain.connect(ctx.destination);const t=ctx.currentTime+idx*.26;gain.gain.setValueAtTime(.001,t);gain.gain.exponentialRampToValueAtTime(.28,t+.025);gain.gain.exponentialRampToValueAtTime(.001,t+.21);osc.start(t);osc.stop(t+.22);if(idx===2)osc.onended=()=>void ctx.close().catch(()=>{});}}).catch(()=>{});}catch{}
+ },[urgent?.id]);
+ async function change(i,state){setBusy(true);setError('');try{const {error}=await client.rpc('pitacco_update_delivery_incident',{p_incident:i.id,p_state:state});if(error)throw error;await refreshRef.current()}catch(e){setError(e?.message||'Ação não registrada')}finally{setBusy(false)}}
+ function card(i){const o=orders.find(x=>x.id===i.order_id),d=deliveries.find(x=>x.id===i.delivery_id),receipt=o?.receipt||{};const num=receipt.display_number||receipt.external_order_number||i.order_id?.slice(0,8)||i.delivery_id.slice(0,8);const source=o?.source||d?.source||'';const phone=String(receipt.phone||receipt.customer_phone||'').replace(/[^+0-9]/g,'');return <article key={i.id} className="incident-card"><strong>#{num} · {source==='ifood'?'iFood':source==='99food'?'99Food':source==='keeta'?'Keeta':'Loja'}</strong><h3>{labels[i.kind]||'Ocorrência'}</h3><p>{d?.address||receipt.address||'Consulte o endereço nos detalhes do pedido'}</p><small>{new Date(i.created_at).toLocaleString('pt-BR')} · {i.state==='open'?'Aguardando atendimento':i.state==='acknowledged'?'Loja está verificando':i.state==='cancelled'?'Encerrada por cancelamento':'Resolvida'}</small>{['open','acknowledged'].includes(i.state)&&<><p>Entre em contato com o cliente pelos canais disponíveis{source==='ifood'||source==='99food'||source==='keeta'?' ou pelo suporte do marketplace':''}.</p><div className="incident-actions">{phone&&<a href={'tel:'+phone}><Phone size={16}/> Ligar</a>}{i.state==='open'&&<button type="button" disabled={busy} onClick={()=>change(i,'acknowledged')}><Check size={16}/> Estou verificando</button>}<button type="button" disabled={busy} onClick={()=>change(i,'resolved')}>Resolver ocorrência</button></div></>}</article>}
+ return <>{urgent&&!visible&&<div className="incident-alert" role="alert"><BellRing size={24}/><div><strong>{labels[urgent.kind]||'Ocorrência na entrega'}</strong><p>Seu entregador precisa de assistência. Verifique os canais de contato.</p></div><button type="button" onClick={onOpen}>Abrir ocorrência</button><button type="button" disabled={busy} onClick={()=>change(urgent,'acknowledged')}>Estou verificando</button></div>}{visible&&<section className="panel incident-center" aria-label="Central de ocorrências"><h2><AlertTriangle size={20}/> Central de ocorrências · {pending.length} pendente(s)</h2>{error&&<p role="alert">{error}</p>}{!rows.length&&!error&&<p>Nenhuma ocorrência registrada.</p>}{[...pending,...rows.filter(i=>!pending.includes(i))].map(card)}</section>}</>;
 }

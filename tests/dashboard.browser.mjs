@@ -1188,7 +1188,7 @@ try {
       await complements.getByText('Complemento salvo.',{exact:true}).waitFor();
       await page.getByRole('button',{name:'Fechar',exact:true}).click();
       await merchantNavigate('Operação','Pedidos');
-      await page.getByRole('combobox',{name:'Selecionar loja'}).selectOption(readOnlyStore.id);
+      await page.getByRole('combobox',{name:'Trocar estabelecimento'}).selectOption(readOnlyStore.id);
       await page.getByRole('alert').filter({hasText:'Não foi possível verificar o acesso à loja.'}).waitFor();
       await page.getByRole('button',{name:'Tentar novamente',exact:true}).click();
       const ordersRegion=page.getByRole('region',{name:'Central de pedidos',exact:true});
@@ -1264,7 +1264,7 @@ try {
         }}};
       },dashboard);
       await page.goto(dashboard+'/app/');
-      const windowsStore=page.getByRole('combobox',{name:'Selecionar loja',exact:true});
+      const windowsStore=page.getByRole('combobox',{name:'Trocar estabelecimento',exact:true});
       await windowsStore.getByRole('option',{name:'Selecione a loja deste computador'}).waitFor({state:'attached'});
       assert.equal(await windowsStore.inputValue(),'');
       await windowsStore.selectOption(store.id);

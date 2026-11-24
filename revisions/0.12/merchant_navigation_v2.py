@@ -6,13 +6,13 @@ def change(old,new):
  global s
  assert s.count(old)==1, f'Navigation anchor changed: {old[:110]} ({s.count(old)})'
  s=s.replace(old,new,1)
-s="import {MerchantNavigation,MerchantMobileBar} from './MerchantNavigation.jsx';\nimport {menuRouteIds,resolveMenuRoute,fallbackMenuItems,menuAllowed} from './merchantNavigation.mjs';\nimport NavigationFleetTracking from './FleetTracking.jsx';\n"+s
+s="import {MerchantNavigation,MerchantMobileBar} from './MerchantNavigation.jsx';\nimport {menuRouteIds,resolveMenuRoute,fallbackMenuItems,menuAllowed} from './merchantNavigation.mjs';\nimport NavigationFleetTracking from './FleetTracking.jsx';\nimport IncidentCenter from './IncidentCenter.jsx';\n"+s
 change("const merchantTabs=new Set([","const merchantTabs=new Set([...menuRouteIds,")
 change("const target=Object.hasOwn(landing,saved)?landing[saved]:saved;","const target=menuRouteIds.includes(saved)?saved:Object.hasOwn(landing,saved)?landing[saved]:saved;")
 change("[tab,setTab]=useState(()=>nativeAvailable()?'Pedidos':readMerchantTab()),","")
 change("function App(){","""function App(){
  const [navigationRoute,setNavigationRoute]=useState(()=>nativeAvailable()?'Pedidos':readMerchantTab());
- const [navigationKey,bumpNavigationKey]=useState(0);
+ const [navigationKey,bumpNavigationKey]=useState(0);\n const [incidentCount,setIncidentCount]=useState(0);
  const [menuCollapsed,setMenuCollapsed]=useState(()=>{try{return localStorage.getItem('pitacco-menu-collapsed')==='1'}catch{return false}});
  const route=resolveMenuRoute(navigationRoute),tab=route.tab;
  const setTab=React.useCallback(next=>{setNavigationRoute(next);bumpNavigationKey(n=>n+1)},[]);
@@ -24,7 +24,7 @@ change("},[tab]);\nuseEffect(()=>{if(featureSettings&&!allowed(tab))setTab('Pain
 # Preserve the original header, session, theme, logout and background subscription.
 start=s.index('<nav aria-label="Menu principal">')
 end=s.index('</nav>',start)+len('</nav>')
-s=s[:start]+"""<MerchantNavigation routeId={navigationRoute} onNavigate={target=>{setTab(target);setMessage('');setMobileMenuOpen(false)}} allowed={allowed} manager={manager} active={active} admin={admin} driver={isDriver} featureSettings={featureSettings} stores={stores} selected={selected} onStoreChange={setSelected} userId={session.user.id} extra={fallbackMenuItems(nav,secondaryTabs,landing)} collapsed={menuCollapsed} onCollapse={toggleMenu}/>"""+s[end:]
+s=s[:start]+"""<MerchantNavigation routeId={navigationRoute} onNavigate={target=>{setTab(target);setMessage('');setMobileMenuOpen(false)}} allowed={allowed} manager={manager} active={active} admin={admin} driver={isDriver} featureSettings={featureSettings} stores={stores} selected={selected} onStoreChange={setSelected} userId={session.user.id} theme={theme} onThemeChange={setTheme} email={profile?.email||session.user.email} role={profile?.role} version={nativeAvailable()?'Pitacco Windows v0.12.27':''} native={nativeAvailable()} onLogout={()=>supabase.auth.signOut()} incidentCount={incidentCount} extra={fallbackMenuItems(nav,secondaryTabs,landing)} collapsed={menuCollapsed} onCollapse={toggleMenu}/>"""+s[end:]
 # Add the collapse state to the merchant shell without depending on earlier layout class additions.
 import re
 shell=list(re.finditer(r'<div className=\{([^{}\n]*pitacco-mobile-workspace[^{}\n]*)\}>',s))
@@ -32,7 +32,7 @@ assert len(shell)==1, 'Merchant shell class not found'
 m=shell[0]
 s=s[:m.start()]+ '<div className={'+m.group(1)+'+(menuCollapsed?" mn-sidebar-collapsed":"")}>'+s[m.end():]
 change('<header className="pitacco-mobile-top">','<header className={"pitacco-mobile-top"+(isDriver?" mn-driver-top":" mn-redundant-top")}>')
-change('</main>',"""</main>{!nativeAvailable()&&<MerchantMobileBar routeId={navigationRoute} onNavigate={target=>{setTab(target);setMessage('');setMobileMenuOpen(false)}} onMore={()=>setMobileMenuOpen(open=>!open)} menuOpen={mobileMenuOpen} allowed={allowed} manager={manager} active={active} admin={admin} driver={isDriver} featureSettings={featureSettings}/>}""")
+change('</main>',"""{active&&!isDriver&&manager&&<IncidentCenter key={selected} client={supabase} storeId={selected} visible={route.section==='occurrences'} onCount={setIncidentCount} onOpen={()=>setTab('Ocorrências')} orders={orders} deliveries={deliveries}/>}</main>{!nativeAvailable()&&<MerchantMobileBar routeId={navigationRoute} onNavigate={target=>{setTab(target);setMessage('');setMobileMenuOpen(false)}} onMore={()=>setMobileMenuOpen(open=>!open)} menuOpen={mobileMenuOpen} allowed={allowed} manager={manager} active={active} admin={admin} driver={isDriver} featureSettings={featureSettings}/>}""")
 # Existing views are not remounted unnecessarily; direct section props only change when selected.
 change('<MenuStudio client={supabase} storeId={selected}',"<MenuStudio initialSection={route.section||'Produtos'} navigationKey={navigationKey} client={supabase} storeId={selected}")
 change('<FinancialReport key={selected} client={supabase} store={active}/>','<FinancialReport key={selected} client={supabase} store={active} initialView={route.section||\'report\'} navigationKey={navigationKey}/>')
