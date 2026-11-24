@@ -99,7 +99,8 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  // partir dos estados confirmados do pedido e da coleta, não por drag-and-drop.
  const boardStages=[['analysis','Em análise'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega']];
  const auxiliaryStages=[['scheduled','Agendados'],['historical','Outros']];
- const boardGroups=popupLayout&&filter==='all'?
+ const showWindowsBoard=popupLayout&&filter==='all';
+ const boardGroups=showWindowsBoard?
   [...boardStages,...auxiliaryStages.filter(([key])=>filtered.some(o=>stage(o)===key))].map(([id,label])=>({
    id,label,items:filtered.filter(o=>stage(o)===id)
   })):
@@ -118,11 +119,11 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
   </button>)}<div className="pedidos-kpi"><TrendingUp size={23} aria-hidden="true"/><span><strong>{brl(total)}</strong>Total registrado*</span></div></div>:
   <div className="pedidos-kpis">{stages.map(([key,label])=><button key={key} className={'pedidos-kpi '+(filter===key?'selected':'')} onClick={()=>setFilter(key)}><strong>{counts[key]}</strong><span>{label}</span></button>)}<div className="pedidos-kpi"><strong>{brl(total)}</strong><span>Total registrado*</span></div></div>}
   <div className="pedidos-tabs"><button className={filter==='all'?'selected':''} onClick={()=>setFilter('all')}>Em andamento</button>{(popupLayout?stages.filter(([key])=>['analysis','preparing','ready','delivery','completed'].includes(key)):stages).map(([key,label])=><button key={key} className={filter===key?'selected':''} onClick={()=>setFilter(key)}>{label} ({counts[key]})</button>)}<input aria-label="Buscar pedido, cliente ou item" placeholder="Buscar nome, telefone ou código…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
-  <div className="pedidos-split"><div className={"pedidos-list"+(popupLayout&&filter==='all'?" pedidos-kanban":"")}>
-   {filtered.length===0&&<p>Nenhum pedido encontrado.</p>}
+  <div className="pedidos-split"><div className={"pedidos-list"+(showWindowsBoard?" pedidos-kanban":"")} aria-label={showWindowsBoard?"Quadro de pedidos em andamento":undefined}>
+   {!showWindowsBoard&&filtered.length===0&&<p className="pedidos-list-empty" role="status">Nenhum pedido encontrado.</p>}
    {boardGroups.map(group=><section className="pedidos-stage-column" data-stage={group.id} key={group.id}>
     {popupLayout&&filter==='all'&&<header className="pedidos-stage-title"><strong>{group.label}</strong><span>{group.items.length}</span></header>}
-    {popupLayout&&filter==='all'&&group.items.length===0&&<p className="pedidos-stage-empty">Nenhum pedido aqui</p>}
+    {showWindowsBoard&&group.items.length===0&&<p className="pedidos-stage-empty">Nenhum pedido nesta etapa</p>}
     {group.items.map(o=>{
    const delivery=deliveriesByOrder.get(o.id);
    const source=sourceLabel(o.source)||o.channel||'Loja';

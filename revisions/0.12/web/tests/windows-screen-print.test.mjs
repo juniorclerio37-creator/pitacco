@@ -210,3 +210,15 @@ test('native Windows order alarm continues without visible or foreground WebView
  assert.match(migration,/interval '18 hours'/);
  assert.doesNotMatch(rust,/SUPABASE_SERVICE_ROLE_KEY/);
 });
+
+test('Windows empty board has exactly its stage columns and never wraps into a second row',()=>{
+ const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../pedidos.css',import.meta.url),'utf8');
+ assert.match(orders,/const showWindowsBoard=popupLayout&&filter==='all'/);
+ assert.match(orders,/!showWindowsBoard&&filtered\.length===0&&<p className="pedidos-list-empty"/);
+ assert.match(orders,/showWindowsBoard&&group\.items\.length===0/);
+ assert.match(orders,/\['analysis','Em análise'\],\['preparing','Em preparo'\],\['ready','Pronto'\],\['delivery','Em entrega'\]/);
+ assert.match(css,/grid-template-columns:repeat\(4,minmax\(190px,1fr\)\);grid-auto-flow:column/);
+ assert.match(css,/grid-template-rows:minmax\(300px,auto\)/);
+ assert.doesNotMatch(css,/pedidos-kanban\{grid-template-columns:repeat\(4,minmax\(250px/);
+});
