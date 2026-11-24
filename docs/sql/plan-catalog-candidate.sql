@@ -90,12 +90,12 @@ begin
 end $$;
 
 create or replace function public.pitacco_owner_plan_catalog_history()
-returns jsonb language plpgsql stable security definer set search_path='' as $
+returns jsonb language plpgsql stable security definer set search_path='' as $$
 begin
  if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Sem permissão' using errcode='42501';end if;
  return coalesce((select jsonb_agg(to_jsonb(h) order by h.created_at desc) from
  (select revision,plans,changed_by,created_at from pitacco_private.plan_catalog_versions order by created_at desc,revision desc limit 30) h),'[]'::jsonb);
-end $;
+end $$;
 revoke all on function public.pitacco_owner_plan_catalog_history() from public,anon,authenticated;
 grant execute on function public.pitacco_owner_plan_catalog_history() to authenticated;
 revoke all on function public.pitacco_owner_plan_catalog(),public.pitacco_owner_publish_plan_catalog(text,jsonb) from public,anon,authenticated;
