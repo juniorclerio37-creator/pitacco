@@ -1119,10 +1119,10 @@ try {
     const plan=page.getByRole('region',{name:'Catálogo comercial'});
     await plan.getByRole('heading',{name:'Grátis para sempre',exact:true}).waitFor();
     await plan.getByRole('heading',{name:'Completo',exact:true}).waitFor();
-    const complete=plan.locator('article').filter({has:page.getByRole('heading',{name:'Completo',exact:true})});
-    await complete.getByLabel('Mensalidade em centavos',{exact:true}).fill('6990');
-    await complete.getByLabel('Descrição',{exact:true}).fill('Oferta atualizada pelo administrador');
-    await complete.getByLabel('Nome',{exact:true}).fill('Completo revisado');
+    const complete=plan.locator('article[data-plan-code="complete"]');
+    await complete.locator('input[name="monthly_cents"]').fill('6990');
+    await complete.locator('textarea[name="description"]').fill('Oferta atualizada pelo administrador');
+    await complete.locator('input[name="name"]').fill('Completo revisado');
     page.once('dialog',dialog=>dialog.accept());
     await plan.getByRole('button',{name:'Salvar e publicar',exact:true}).click();
     await plan.getByRole('status').getByText('Ofertas publicadas no catálogo.').waitFor();
