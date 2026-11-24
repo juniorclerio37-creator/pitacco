@@ -1085,11 +1085,12 @@ try {
     await dark.click();
     assert.equal(await page.locator('.super-admin.pitacco-theme-dark').count(),1);
     await page.getByRole('button',{name:'Ativar modo claro'}).click();
-    await adminNavigate('Configuração dos planos');
+    await adminNavigate('Planos e assinaturas');
+    await page.getByRole('navigation',{name:'Gestão comercial de planos'}).getByRole('button',{name:'Configuração dos planos',exact:true}).click();
     const plan=page.getByRole('region',{name:'Catálogo comercial'});
     await plan.getByRole('heading',{name:'Grátis para sempre',exact:true}).waitFor();
     await plan.getByRole('heading',{name:'Completo',exact:true}).waitFor();
-    const complete=plan.locator('article').filter({has:plan.getByRole('heading',{name:'Completo',exact:true})});
+    const complete=plan.locator('article').filter({has:page.getByRole('heading',{name:'Completo',exact:true})});
     await complete.getByLabel('Nome',{exact:true}).fill('Completo revisado');
     await complete.getByLabel('Mensalidade em centavos',{exact:true}).fill('6990');
     await complete.getByLabel('Descrição',{exact:true}).fill('Oferta atualizada pelo administrador');

@@ -36,7 +36,7 @@ const client=(preview||location.hostname===adminHost)&&config.url&&config.key?cr
 const storefrontOrigin=preview?(import.meta.env.VITE_PITACCO_HOMOLOG_SITE_ORIGIN||''):'https://pitacco.com.br';
 const groups=[
  ['Visão estratégica',[['Painel geral',LayoutDashboard,'Super Dashboard'],['Indicadores e crescimento',Activity],['Central de operações',ClipboardCheck]]],
- ['Gestão comercial',[['Estabelecimentos',Store],['Usuários e permissões',ShieldCheck],['Assinaturas',CreditCard,'Planos e assinaturas'],['Plano Pitacco',Package,'Configuração dos planos'],['Financeiro do Pitacco',Wallet,'Financeiro'],['Cupons e campanhas',Megaphone]]],
+ ['Gestão comercial',[['Estabelecimentos',Store],['Usuários e permissões',ShieldCheck],['Assinaturas',CreditCard,'Planos e assinaturas'],['Financeiro do Pitacco',Wallet,'Financeiro'],['Cupons e campanhas',Megaphone]]],
  ['Gestão operacional',[['Pedidos',ShoppingBag,'Pedidos globais'],['Entregadores',Bike],['Mapa de operações',Bike],['Módulos do lojista',Package,'Módulos e funcionalidades'],['Homologação',Plug,'Integrações e homologação']]],
  ['Tecnologia e suporte',[['Central de Aplicativos',Monitor,'Aplicativos e versões'],['Central de Diagnósticos',Activity,'Monitoramento do sistema'],['Suporte e incidentes',CircleHelp,'Central de suporte'],['Comunicados aos entregadores',Megaphone,'Central de comunicados'],['Pitacco Intelligence',Sparkles,'Inteligência artificial'],['Auditoria',ShieldCheck,'Segurança e auditoria'],['Configurações gerais',Settings]]]
 ];
@@ -76,6 +76,7 @@ function AdminApp(){
  const [theme,setTheme]=useState(initialTheme),[sidebar,setSidebar]=useState(()=>!window.matchMedia('(max-width: 800px)').matches);
  const [storeSearch,setStoreSearch]=useState('');
  const [storeTab,setStoreTab]=useState('Identidade');
+ const [planTab,setPlanTab]=useState('catalog');
  const [error,setError]=useState(''),[busy,setBusy]=useState(false);
 
  useEffect(()=>{
@@ -197,12 +198,12 @@ function AdminApp(){
    {operations[page]&&<OwnerOperations key={page} client={client} stores={stores} kind={operations[page]}/>}
    {page==='Comunicados aos entregadores'&&<OwnerCourierCampaigns client={client} stores={stores}/>}
    {page==='Financeiro do Pitacco'&&<OwnerFinance client={client} stores={stores}/>}
-   {page==='Plano Pitacco'&&<OwnerPlans client={client} stores={stores}/>}
+
    {page==='Usuários e permissões'&&<OwnerAccess client={client} stores={stores}/>}
    {page==='Cupons e campanhas'&&<OwnerCampaigns client={client} stores={stores}/>}
    {page==='Mapa de operações'&&<OwnerFleet client={client} stores={stores}/>}
    {page==='Configurações gerais'&&<OwnerSettings client={client}/>}
-   {page==='Assinaturas'&&<OwnerSubscriptions client={client}/>}
+   {page==='Assinaturas'&&<><nav className="pitacco-local-tabs" aria-label="Gestão comercial de planos"><button type="button" aria-pressed={planTab==='catalog'} className={planTab==='catalog'?'active':'secondary'} onClick={()=>setPlanTab('catalog')}>Configuração dos planos</button><button type="button" aria-pressed={planTab==='subscriptions'} className={planTab==='subscriptions'?'active':'secondary'} onClick={()=>setPlanTab('subscriptions')}>Assinaturas das lojas</button></nav>{planTab==='catalog'?<OwnerPlans client={client}/>:<OwnerSubscriptions client={client}/>}</>}
    {page==='Módulos do lojista'&&<OwnerFeatures client={client} stores={stores}/>}
    {page==='Central de Aplicativos'&&<OwnerAppReleases client={client}/>}
    {page==='Suporte e incidentes'&&<SupportCenter client={client} stores={stores} owner/>}
