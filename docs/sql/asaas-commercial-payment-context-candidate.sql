@@ -12,7 +12,7 @@ begin
  select * into a from pitacco_private.commercial_asaas_charges where invoice_id=i.id and environment='production';
  select * into intent from pitacco_private.commercial_asaas_issue_intents where invoice_id=i.id and environment='production';
  return jsonb_build_object('invoice_id',i.id,'amount_cents',i.amount_cents,
- 'available',b.state='calculated' and b.amount_cents=i.amount_cents and not exists(select 1 from pitacco_private.commercial_manual_payments where invoice_id=i.id) and not exists(select 1 from pitacco_private.commercial_payment_claims where invoice_id=i.id and status='pending'),
+ 'available',exists(select 1 from pitacco_private.commercial_billing_control where singleton and asaas_enabled) and b.state='calculated' and b.amount_cents=i.amount_cents and not exists(select 1 from pitacco_private.commercial_manual_payments where invoice_id=i.id) and not exists(select 1 from pitacco_private.commercial_payment_claims where invoice_id=i.id and status='pending'),
  'customer_ready',exists(select 1 from pitacco_private.commercial_asaas_customers where store_id=b.store_id and environment='production'),
  'payment_id',a.payment_id,'customer_id',a.customer_id,'asaas_status',a.status,'issue_state',intent.state);
 end $$;
