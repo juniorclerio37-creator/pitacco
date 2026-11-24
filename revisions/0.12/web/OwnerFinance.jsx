@@ -1,6 +1,7 @@
 
 import React,{useEffect,useState} from 'react';
 import CommercialAmounts,{CommercialClosings,CommercialInvoices} from './CommercialAmounts.jsx';
+import OwnerPaymentProofs from './OwnerPaymentProofs.jsx';
 
 const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const saoPaulo=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'});
@@ -23,6 +24,7 @@ function downloadCsv(days){
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 export default function OwnerFinance({client,stores}){
+ const [tab,setTab]=useState('overview');
  const [range,setRange]=useState(()=>{const dates=periods();return {start:dates.week,end:dates.today,store:''};});
  const [report,setReport]=useState(null),[busy,setBusy]=useState(true),[error,setError]=useState(false),[detail,setDetail]=useState(null);
  useEffect(()=>{
@@ -49,7 +51,8 @@ export default function OwnerFinance({client,stores}){
  const max=report?Math.max(0,...report.days.map(row=>Number(row[metric]))):0;
  const metricLabel=metric==='gross'?'Valor bruto dos pedidos concluídos':'Assinaturas confirmadas no Asaas';
  return <section className="panel owner-finance-report" aria-label="Financeiro do Pitacco" aria-busy={busy}>
-  <form className="admin-finance-filters" onSubmit={submit}>
+  <nav className="pitacco-local-tabs" aria-label="Áreas financeiras"><button type="button" aria-pressed={tab==='overview'} onClick={()=>setTab('overview')}>Visão financeira</button><button type="button" aria-pressed={tab==='proofs'} onClick={()=>setTab('proofs')}>Comprovantes de pagamento</button></nav>
+  {tab==='proofs'?<OwnerPaymentProofs client={client} stores={stores}/>:<><form className="admin-finance-filters" onSubmit={submit}>
    <div className="field"><label htmlFor="finance-period">Período</label><select id="finance-period" name="preset" value={preset} onChange={event=>setPreset(event.target.value)}>
     <option value="today">Hoje</option><option value="week">7 dias</option><option value="last30">30 dias</option>
     <option value="month">Mês atual</option><option value="custom">Personalizado</option>
@@ -94,6 +97,6 @@ export default function OwnerFinance({client,stores}){
     <tbody>{report.days.map(row=><tr key={row.day}><th scope="row">{formatDay(row.day)}</th><td>{row.orders}</td>
      <td>{money.format(row.gross)}</td><td>{row.payments}</td><td>{money.format(row.subscriptions)}</td></tr>)}</tbody>
    </table></div>
-  </>}
+  </>}</>}
  </section>;
 }

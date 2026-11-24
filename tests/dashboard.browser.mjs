@@ -358,6 +358,7 @@ try {
         commercialHistory.unshift({revision:commercialCatalog.terms_version,plans:commercialCatalog.plans,created_at:new Date().toISOString(),changed_by:user.id});
         return route.fulfill({headers,json:commercialCatalog});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_owner_commercial_payment_claims')return route.fulfill({headers,json:{rows:[],has_more:false,counts:{pending:0,approved:0,rejected:0}}});
       if(pathname==='/rest/v1/rpc/pitacco_store_commercial_block_status')return route.fulfill({headers,json:commercialNotice});
       if(pathname==='/rest/v1/rpc/pitacco_merchant_commercial_billing_state')return route.fulfill({headers,json:{own_orders_blocked:false,payment_instructions:null}});
       if(pathname==='/rest/v1/rpc/pitacco_commercial_amount_preview')return route.fulfill({headers,json:{status:'unassigned',message:'Nenhum contrato comercial vigente no novo catálogo.'}});
@@ -1130,6 +1131,9 @@ try {
     await plan.getByText('fixture-1',{exact:false}).first().waitFor();
     await adminNavigate('Financeiro');
     const finance=page.getByRole('region',{name:'Financeiro do Pitacco'});
+    await finance.getByRole('button',{name:'Comprovantes de pagamento',exact:true}).click();
+    await finance.getByRole('region',{name:'Central de comprovantes'}).getByText('Nenhum comprovante neste filtro.').waitFor();
+    await finance.getByRole('button',{name:'Visão financeira',exact:true}).click();
     const daily=finance.getByRole('table',{name:'Valores por dia'});
     await daily.getByRole('cell',{name:/90,00/}).waitFor();
     await daily.getByRole('cell',{name:/59,90/}).waitFor();

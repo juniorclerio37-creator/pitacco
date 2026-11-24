@@ -304,3 +304,18 @@ do $notice_test$ declare r jsonb;begin
  assert r->>'notice_stage'='grace' and r->>'orders_blocked'='false' and r->>'payment_required'='1';
 end $notice_test$;
 reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+do $inbox$ declare r jsonb; begin
+ r:=public.pitacco_owner_commercial_payment_claims(null,'approved',0);
+ assert (r#>>'{counts,approved}')::int>=1;
+ assert jsonb_array_length(r->'rows')>=1;
+ assert not ((r->'rows'->0) ? 'proof');
+ assert public.pitacco_owner_commercial_payment_claims(null,'pending',0)->'rows'='[]'::jsonb;
+end $inbox$;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+do $inbox$ begin
+ begin perform public.pitacco_owner_commercial_payment_claims();raise exception 'Unauthorized claims inbox';exception when insufficient_privilege then null;end;
+end $inbox$;
+reset role;
