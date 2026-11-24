@@ -42,7 +42,7 @@ test('Pitacco Android declares separate opt-in background GPS and preserves one 
  assert.match(manifest,/android:foregroundServiceType="location"/);
  assert.match(manifest,/android:stopWithTask="false"/);
  assert.match(gradle,/applicationId 'br\.com\.pitacco\.entregador'/);
- assert.match(gradle,/versionCode 35/);
+ assert.match(gradle,/versionCode 36/);
  assert.match(gradle,/versionName '2\.0\.15'/);
 });
 test('Android 11+ requests all-the-time permission separately with driver disclosure',()=>{
