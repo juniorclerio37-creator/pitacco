@@ -8,7 +8,7 @@ export const featureLabels={
 const tabs={
  Painel:null,Produtos:'cardapio','Importar cardápio':'cardapio',Entregadores:'motoboys',
  'Relatório de motoboys':'motoboys','Pagamento de motoboys':'motoboys',
- Lançamentos:'financeiro',Despesas:'financeiro','Entrega externa':'integracoes',
+ Lançamentos:'financeiro',Despesas:'financeiro','Fiado / Caderneta':'financeiro','Entrega externa':'integracoes',
  WhatsApp:'integracoes'
 };
 export function featureForTab(name){
