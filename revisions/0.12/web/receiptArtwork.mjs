@@ -1,5 +1,6 @@
 import {clean,amount,cash,first,platformName,deliveryAddress,isPaid,collectionAtDelivery} from './approvedReceipt.mjs';
 import {receiptQrMatrix,receiptMenuMessage} from './receiptMenuQr.mjs';
+import {receiptLogoDimensions,monochromeLogo,drawReceiptPlatformMark} from './receiptBranding.mjs';
 export const receiptFontSize=value=>['small','medium','large'].includes(value)?value:'medium';
 export function receiptPayment(r){
  const raw=first(r.payment_method,typeof r.payment==='string'?r.payment:r.payment?.method,r.payment_type);
@@ -47,13 +48,30 @@ export function renderReceiptCanvas(job,width=80,opts={},makeCanvas=()=>document
   arr.forEach(s=>{txt(s,x,y,size,bold);y+=lh(size)});txt(v,right,top,size,true,'right');
  }
  const icon=(kind,x,top,size)=>ops.push(c=>{const s=size/24;c.save();c.translate(x,top);c.scale(s,s);c.strokeStyle='#000';c.lineWidth=1.8;c.lineCap='round';c.lineJoin='round';c.beginPath();if(kind==='person'){c.arc(12,6,4,0,Math.PI*2);c.moveTo(4,22);c.lineTo(4,19);c.quadraticCurveTo(4,12,12,12);c.quadraticCurveTo(20,12,20,19);c.lineTo(20,22);c.closePath()}else if(kind==='pin'){c.moveTo(12,23);c.bezierCurveTo(-6,7,4,0,12,0);c.bezierCurveTo(20,0,30,7,12,23);c.moveTo(16,8);c.arc(12,8,4,0,Math.PI*2)}else{c.roundRect(3,7,18,15,2);c.moveTo(8,7);c.lineTo(8,5);c.quadraticCurveTo(12,-1,16,5);c.lineTo(16,7)}c.stroke();c.restore()});
+ if(opts.printLogo===true&&opts.logoImage){
+  try{
+   const dims=receiptLogoDimensions(opts.logoImage.naturalWidth||opts.logoImage.width,opts.logoImage.naturalHeight||opts.logoImage.height,width,opts.logoSize);
+   const logo=monochromeLogo(opts.logoImage,dims,makeCanvas);
+   if(logo){const top=y,left=Math.floor((w-logo.width)/2);ops.push(c=>c.drawImage(logo,left,top));y+=logo.height+10;}
+  }catch{/* A missing or unreadable logo never blocks an order print. */}
+ }
  const store=first(opts.storeName,r.store_name,r.company_name,r.store?.name);
  if(store)lines(store.toUpperCase(),{size:base+9,bold:true,align:'center'});
  const subtitle=first(r.store_tagline,r.store?.tagline);if(subtitle)lines(subtitle,{align:'center'});
  const shopPhone=first(opts.whatsapp,r.store_phone,r.store?.phone);if(shopPhone&&opts.showWhatsapp!==false)lines(shopPhone,{align:'center'});
  const platform=platformName(first(r.platform,r.marketplace,r.source,job.platform,job.source));
  const number=platform==='Loja'?first(r.display_number,r.order_number,r.number,r.display_id,r.external_order_number,job.order_id?.slice(0,8)):first(r.external_order_number,r.marketplace_order_number,r.original_order_number,r.order_number,r.display_number,r.number,job.order_id?.slice(0,8));
- banner(platform+' Nº '+(number||'Não informado'),base+7);
+ if(opts.platformIcon!==false){
+  const size=base+7, markSize=Math.max(46,base+20), inset=pad+markSize+22, insetWidth=right-inset-8;
+  const arr=split(platform+' Nº '+(number||'Não informado'),insetWidth-14,size,true);
+  const top=y+4,h=Math.max(markSize+16,arr.length*lh(size)+16);
+  box(top,h,true);
+  ops.push(c=>drawReceiptPlatformMark(c,platform,pad+8,top+(h-markSize)/2,markSize));
+  ops.push(c=>{c.fillStyle='#fff';c.beginPath();c.roundRect(inset,top+5,insetWidth,h-10,5);c.fill()});
+  let yy=top+(h-arr.length*lh(size))/2;
+  for(const line of arr){txt(line,inset+insetWidth/2,yy,size,true,'center');yy+=lh(size)}
+  y=top+h+8;
+ }else banner(platform+' Nº '+(number||'Não informado'),base+7);
  const operation=/retirada|pickup|balc[aã]o|takeaway/i.test(first(r.fulfillment_type,r.order_type,r.delivery_type))?'RETIRADA':'ENTREGA';
  lines(operation,{bold:true,align:'center'});
  const stamp=first(r.created_at,r.date,job.created_at);if(stamp){const d=new Date(stamp);const date=/^\d{4}-\d{2}-\d{2}T/.test(stamp)&&Number.isFinite(d.getTime())?d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}):stamp;lines(date,{align:'center'})}

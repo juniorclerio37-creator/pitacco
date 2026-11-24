@@ -6,3 +6,12 @@ test('three real amounts, integer cents and legacy cash',()=>{assert.deepEqual(r
 test('paid or fiado never requests collection',()=>{assert.equal(receiptPayment({...receipt,payment_confirmed:true}).state,'paid');assert.equal(receiptPayment({...receipt,payment_method:'fiado'}).state,'no_collect');assert.equal(receiptPayment({...receipt,payment_method:'Pix'}).state,'unknown')});
 function fake(){const log=[];const ctx={font:'',measureText(s){return {width:s.length*Number(this.font.match(/\d+px/)?.[0].slice(0,-2)||25)*.53}},fillText(s,x,y){log.push({s,x,y,font:this.font,align:this.textAlign})},fillRect(){},beginPath(){},roundRect(){},fill(){},stroke(){},save(){},translate(){},scale(){},arc(){},moveTo(){},lineTo(){},quadraticCurveTo(){},bezierCurveTo(){},closePath(){},restore(){},getImageData(x,y,w,h){return {data:new Uint8ClampedArray(w*h*4).fill(255)}}};return {width:0,height:0,log,getContext:()=>ctx}}
 test('58 and 80mm, all sizes, wrapping and payment details',()=>{for(const width of [58,80]){const sizes=['small','medium','large'].map(fontSize=>renderReceiptCanvas({receipt},width,{fontSize},fake));assert.equal(sizes[0].width,width===58?384:576);assert.ok(sizes[2].height>sizes[1].height&&sizes[1].height>sizes[0].height);for(const s of sizes){const text=s.log.map(x=>x.s).join(' ');assert.match(text,/542012/);assert.match(text,/21,05/);assert.match(text,/30,00/);assert.match(text,/8,95/);assert.ok(s.log.every(x=>x.x>=0&&x.x<=s.width));}assert.match(rasterReceipt({receipt},width,{fontSize:'small'},fake),/^PITACCO_RASTER_V1:/)}assert.equal(receiptFontSize('invalid'),'medium')});
+
+test('platform identification is optional without hiding the real platform and order number',()=>{
+ for(const [source,label] of [['99food','99Food'],['ifood','iFood'],['proprio','Loja'],['cardapio','Loja'],['balcao','Loja'],['keeta','Keeta']]){
+  const job={receipt:{...receipt,source,display_number:'542012'}};
+  const withIcon=renderReceiptCanvas(job,58,{platformIcon:true},fake);
+  const noIcon=renderReceiptCanvas(job,58,{platformIcon:false},fake);
+  for(const image of [withIcon,noIcon]){const text=image.log.map(x=>x.s).join(' ');assert.ok(text.includes(label));assert.ok(text.includes('542012'));}
+ }
+});
