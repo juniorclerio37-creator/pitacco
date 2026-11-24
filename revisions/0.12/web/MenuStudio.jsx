@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import PizzaEditor,{emptyPizza} from './PizzaEditor.jsx';
 import PizzaBuilder from './PizzaBuilder.jsx';
+import PizzaRecipeEditor from './PizzaRecipeEditor.jsx';
 import {normalizePizzaConfig} from './normalizePizzaConfig.mjs';
 import ProductComplements from './ProductComplements.jsx';
 import CentralComplementLibrary from './CentralComplementLibrary.jsx';
@@ -248,6 +249,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  </fieldset>)}
  <button type="submit" form="pitacco-product-editor" disabled={busy||pizzaPreview} style={{width:"100%"}}>{busy?"Salvando…":"Salvar produto e complementos"}</button>
  </section>}
+ {pizzaPreview&&manager&&editing&&pizzaPublications.some(p=>p.product_id===editing)&&<PizzaRecipeEditor key={storeId+':'+editing} client={client} storeId={storeId} productId={editing} config={pizzaDraft} disabled={busy}/>}
  {editing&&!pizzaPreview&&<ProductComplements key={editing+":"+newGroups.length} client={client} storeId={storeId} product={{id:editing,name:draft.name}} onGroupsChange={setGroups}/>}
  </div>
  <aside className="panel" style={{position:'sticky',top:0}}><span className="eyebrow">PRÉVIA AUTOMÁTICA · CLIENTE FINAL</span><div style={{border:'1px solid #ddd',borderRadius:18,overflow:'hidden',background:'white',color:'#222',marginTop:12}}>{(previewUrl||draft.image_url)?<img src={previewUrl||draft.image_url} alt="Foto selecionada" style={{width:'100%',height:230,objectFit:'contain',background:'#faf4fa'}}/>:<div style={{height:150,background:'#f0f1f3',display:'grid',placeItems:'center'}}>Foto do produto</div>}<div style={{padding:14}}><small>{draft.category||'Categoria'}</small><h3>{draft.name||'Nome do produto'}</h3><p>{draft.description||'Descrição do produto'}</p>{pizzaPreview?<PizzaDraftPreview key={storeId+':'+(pizzaDraftId||'new')+':'+JSON.stringify(pizzaDraft)} config={pizzaDraft} client={client} storeId={storeId} saved={pizzaDrafts.find(p=>p.id===pizzaDraftId)}/>:<><h3>{brl(draft.price)}</h3>{[...groups,...newGroups].map((g,i)=><div key={i} style={{borderTop:'1px solid #eee',paddingTop:10,marginTop:10}}><b>{g.name}</b><small style={{display:'block'}}>Escolha {g.min} a {g.max} · {g.min>0?'Obrigatório':'Opcional'}</small>{g.options.filter(o=>o.available).map((o,j)=><p key={j} style={{margin:'7px 0'}}>◯ {o.name} · {brl(o.price)}</p>)}</div>)}<button type="button" disabled style={{width:'100%',marginTop:12}}>Adicionar ao pedido</button></>}</div></div><p className="hint">Prévia ilustrativa em tempo real, sem publicação automática.</p></aside>
