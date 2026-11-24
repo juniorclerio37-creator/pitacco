@@ -288,7 +288,7 @@ a.btn{text-decoration:none}
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2.57.0";
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "./config.mjs";
 import {createDriverAuth} from "./supabase-client.mjs";
-import {discoverCourierReleaseWithFallback,compareCourierVersions} from "./app-update.mjs";
+import {mountCourierUpdateUI} from "./app-update-ui.mjs";
 import {createOrderDetailsController} from "./order-details.mjs";
 import {buildNavigationUrl,buildBatchNavigationUrl} from "./navigation.mjs";
 import {suggestedBatchRoutes} from "./route-sequence.mjs";
@@ -1879,6 +1879,7 @@ $("testAssignmentSound").addEventListener("click",async()=>{
  }
  playWebSoundWhenNativeFails("Este aparelho não disponibiliza o teste nativo.");
 });
+mountCourierUpdateUI({client:sb,onOpenSettings:()=>switchView("config")});
 $("settingsRefresh").addEventListener("click",()=>{switchView("pedidos");refresh().catch(e=>message(String(e.message)));});
 document.querySelectorAll(".bottom-nav [data-tab]").forEach(b=>
  b.addEventListener("click",()=>switchView(b.dataset.tab)));
