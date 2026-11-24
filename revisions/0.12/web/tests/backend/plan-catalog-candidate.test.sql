@@ -120,3 +120,35 @@ do $amount_test$ begin
  begin perform public.pitacco_commercial_amount_preview('20000000-0000-0000-0000-000000000001');raise exception 'Cross-store billing';exception when insufficient_privilege then null;end;
 end $amount_test$;
 reset role;
+
+-- A previous closed Wednesday cycle, calculated only in this rolled-back fixture.
+insert into public.stores(id,name) values('20000000-0000-0000-0000-000000000002','Loja comissão');
+insert into public.store_members values('20000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002','gestor');
+insert into pitacco_private.commercial_contracts(store_id,revision,plan_code,effective_from,terms,assigned_by)
+select '20000000-0000-0000-0000-000000000002',revision,'free',date '2026-11-04',plans->0,'10000000-0000-0000-0000-000000000001'
+from pitacco_private.plan_catalog_versions where revision='2026-11-24-v1';
+insert into public.orders(id,store_id,channel,gross,status,source,preparation_status,created_at,receipt) values
+ ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000002','Delivery próprio',98,'accepted','proprio','completed','2026-11-05 12:00+00','{"subtotal":100,"discount":10,"delivery_fee":8}'),
+ ('30000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002','iFood',100,'accepted','ifood','completed','2026-11-05 12:00+00','{"subtotal":100,"discount":0}'),
+ ('30000000-0000-0000-0000-000000000003','20000000-0000-0000-0000-000000000002','Delivery próprio',50,'cancelled','proprio','completed','2026-11-05 12:00+00','{"subtotal":50,"discount":0}');
+do $closing_test$ declare a integer; b integer; begin
+ perform pitacco_private.refresh_commercial_closings();
+ select count(*) into a from pitacco_private.commercial_closings;
+ perform pitacco_private.refresh_commercial_closings();
+ select count(*) into b from pitacco_private.commercial_closings;
+ assert a=b and a>0;
+ assert exists(select 1 from pitacco_private.commercial_closings where store_id='20000000-0000-0000-0000-000000000002' and period_end='2026-11-11' and kind='commission' and amount_cents=450 and state='calculated' and grace_until=due_at+interval '48 hours');
+end $closing_test$;
+update public.orders set receipt=receipt||'{"refund":5}'::jsonb where id='30000000-0000-0000-0000-000000000001';
+select pitacco_private.refresh_commercial_closings();
+do $closing_test$ begin
+ assert exists(select 1 from pitacco_private.commercial_closings where store_id='20000000-0000-0000-0000-000000000002' and period_end='2026-11-11' and amount_cents is null and state='review_required');
+end $closing_test$;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+do $closing_test$ begin
+ assert jsonb_array_length(public.pitacco_commercial_closings('20000000-0000-0000-0000-000000000002')->'rows')>0;
+ begin perform public.pitacco_owner_refresh_commercial_closings();raise exception 'Unauthorized closing';exception when insufficient_privilege then null;end;
+ begin perform public.pitacco_commercial_closings(null);raise exception 'Unauthorized global closing';exception when insufficient_privilege then null;end;
+end $closing_test$;
+reset role;
