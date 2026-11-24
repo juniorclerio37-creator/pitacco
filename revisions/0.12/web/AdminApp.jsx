@@ -178,6 +178,7 @@ function AdminApp(){
    {page==='Central de Diagnósticos'&&<IncidentCenter client={client} stores={stores} owner/>}
    {page==='Pitacco Intelligence'&&<><PitaccoIntelligence client={client} stores={stores}/><IncidentCenter client={client} stores={stores} owner/></>}
    {page==='Homologação'&&<>
+    {/* Roteiro de homologação iFood com evidências por loja. */}
     <OwnerIfood client={client} stores={stores}/>
     <Owner99Food client={client} stores={stores}/>
     <Homologation client={client} stores={stores} storefrontOrigin={storefrontOrigin}/>
