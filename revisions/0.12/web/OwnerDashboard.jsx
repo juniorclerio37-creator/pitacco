@@ -48,6 +48,9 @@ export default function OwnerDashboard({client,onStore}){
   [Clock3,'Pedidos em andamento',stats.orders.in_progress,'Do pedido recebido à entrega'],
   [Bike,'Entregadores cadastrados',stats.couriers.registered,number.format(stats.couriers.active)+' ativos · '+number.format(stats.couriers.shared)+' da frota compartilhada'],
   [Truck,'Entregas em andamento',stats.deliveries_in_progress,'Aguardando entregador ou em rota'],
+  [Store,'Assinaturas ativas',stats.billing.active,'Assinaturas ativas no sistema'],
+  [Clock3,'Assinaturas em teste',stats.billing.trial,'Períodos de teste em andamento'],
+  [ClipboardList,'Assinaturas vencidas',stats.billing.overdue,'Acompanhe a inadimplência'],
  ];
  const stages=stats&&[
   ['Aguardando aceite',stats.orders.pending],['Em preparo',stats.orders.preparing],

@@ -1,7 +1,7 @@
 import React,{useEffect,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {createClient} from '@supabase/supabase-js';
-import {LayoutDashboard, Store, Package, CreditCard, ClipboardCheck, LogOut, Settings, ShoppingBag, Bike, ListChecks, Menu, Sun, Moon, Activity} from 'lucide-react';
+import {LayoutDashboard, Store, Package, CreditCard, ClipboardCheck, LogOut, Settings, ShoppingBag, Bike, ListChecks, Menu, Sun, Moon, Activity, ShieldCheck, CircleHelp, Plug, Megaphone, Sparkles, Monitor, Wallet} from 'lucide-react';
 import {connectionConfig} from './config.mjs';
 import OwnerSubscriptions from './OwnerSubscriptions.jsx';
 import OwnerDashboard from './OwnerDashboard.jsx';
@@ -33,12 +33,29 @@ const config=preview?connectionConfig(import.meta.env):{
 const client=(preview||location.hostname===adminHost)&&config.url&&config.key?createClient(config.url,config.key):null;
 const storefrontOrigin=preview?(import.meta.env.VITE_PITACCO_HOMOLOG_SITE_ORIGIN||''):'https://pitacco.com.br';
 const groups=[
- ['Visão geral',[['Painel geral',LayoutDashboard]]],
- ['Operação',[['Estabelecimentos',Store],['Pedidos',ShoppingBag],['Entregadores',Bike],['Comunicados aos entregadores',Bike]]],
- ['Gestão comercial',[['Assinaturas',CreditCard],['Plano Pitacco',Package],['Financeiro do Pitacco',CreditCard]]],
- ['Administração',[['Módulos do lojista',Package],['Homologação',ClipboardCheck]]],
- ['Sistema',[['Auditoria',ListChecks],['Central de Diagnósticos',Activity],['Pitacco Intelligence',ClipboardCheck],['Suporte e incidentes',ClipboardCheck],['Central de Aplicativos',Settings]]]
+ ['Visão estratégica',[['Painel geral',LayoutDashboard,'Super Dashboard']]],
+ ['Gestão comercial',[['Estabelecimentos',Store],['Assinaturas',CreditCard,'Planos e assinaturas'],['Plano Pitacco',Package,'Configuração dos planos'],['Financeiro do Pitacco',Wallet,'Financeiro']]],
+ ['Gestão operacional',[['Pedidos',ShoppingBag,'Pedidos globais'],['Entregadores',Bike],['Módulos do lojista',Package,'Módulos e funcionalidades'],['Homologação',Plug,'Integrações e homologação']]],
+ ['Tecnologia e suporte',[['Central de Aplicativos',Monitor,'Aplicativos e versões'],['Central de Diagnósticos',Activity,'Monitoramento do sistema'],['Suporte e incidentes',CircleHelp,'Central de suporte'],['Comunicados aos entregadores',Megaphone,'Central de comunicados'],['Pitacco Intelligence',Sparkles,'Inteligência artificial'],['Auditoria',ShieldCheck,'Segurança e auditoria']]]
 ];
+const descriptions={
+ 'Painel geral':'Visão geral de toda a operação do Pitacco',
+ Estabelecimentos:'Gerencie todas as lojas da plataforma',
+ Assinaturas:'Acompanhe assinaturas, testes e cobranças',
+ 'Plano Pitacco':'Configure as condições comerciais da plataforma',
+ 'Financeiro do Pitacco':'Receitas, comissões e conciliação da plataforma',
+ Pedidos:'Acompanhe os pedidos da plataforma',
+ Entregadores:'Gerencie os entregadores das lojas',
+ 'Módulos do lojista':'Gerencie funcionalidades e permissões por estabelecimento',
+ Homologação:'Acompanhe conexões e testes de integração',
+ 'Central de Aplicativos':'Gerencie versões e distribuição dos aplicativos',
+ 'Central de Diagnósticos':'Acompanhe a saúde operacional da plataforma',
+ 'Suporte e incidentes':'Gerencie chamados e acompanhe atendimentos',
+ 'Comunicados aos entregadores':'Envie e acompanhe comunicados operacionais',
+ 'Pitacco Intelligence':'Assistente administrativo e operacional',
+ Auditoria:'Acompanhe o histórico de ações administrativas'
+};
+const pageTitle=page=>groups.flatMap(([,items])=>items).find(([name])=>name===page)?.[2]||page;
 const operations={Pedidos:'orders',Entregadores:'couriers',Auditoria:'audit'};
 function initialTheme(){
  try{return localStorage.getItem('pitacco.admin.theme')==='dark'?'dark':'light';}
@@ -141,18 +158,18 @@ function AdminApp(){
  const ThemeIcon=theme==='dark'?Sun:Moon;
  return <div className={`app pitacco-admin-shell super-admin pitacco-theme-${theme}${sidebar?'':' admin-collapsed'}`}>
   <aside id="admin-sidebar">
-   <div className="brand pitacco-platform-brand"><img src="/pitacco-brand-013.svg" alt="Pitacco"/><strong>Pitacco Admin</strong></div>
+   <div className="brand pitacco-platform-brand"><span className="admin-brand-icon"><ShieldCheck size={30} aria-hidden="true"/></span><span><strong>PITACCO</strong><small>Super Admin</small></span></div>
    <nav aria-label="Administração geral">{groups.map(([group,pages])=><details key={group} open>
     <summary>{group}</summary>
-    {pages.map(([name,Icon])=><button key={name} type="button" aria-current={page===name?'page':undefined} className={page===name?'active':''}
-     onClick={()=>changePage(name)}><Icon size={18}/>{name}</button>)}
+    {pages.map(([name,Icon,label])=><button key={name} type="button" aria-current={page===name?'page':undefined} className={page===name?'active':''}
+     onClick={()=>changePage(name)}><Icon size={17} aria-hidden="true"/>{label||name}</button>)}
    </details>)}</nav>
    <button type="button" className="logout" onClick={signOut}><LogOut size={16}/> Sair</button>
   </aside>
   <main className="pitacco-workspace pitacco-workspace--admin">
    <header className="admin-top">
     <div><button type="button" className="secondary" aria-label="Menu administrativo" aria-controls="admin-sidebar" aria-expanded={sidebar} onClick={()=>setSidebar(value=>!value)}><Menu size={18}/></button>
-    <h2>{page}</h2></div>
+    <div className="admin-heading"><h2>{pageTitle(page)}</h2><p>{descriptions[page]}</p></div></div>
     <div className="admin-top-actions">
      <OwnerIncidentNotifier client={client} onOpen={()=>changePage('Central de Diagnósticos')}/>
      <details className="admin-search"><summary>Buscar loja</summary>
@@ -162,7 +179,7 @@ function AdminApp(){
        }}><option value="">Selecione a loja</option>{results.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}
      </details>
      <button type="button" className="secondary" aria-label={theme==='dark'?'Ativar modo claro':'Ativar modo escuro'} onClick={toggleTheme}><ThemeIcon size={18}/></button>
-     <details className="admin-profile"><summary>Perfil</summary><p>Proprietário do Pitacco</p><button type="button" className="secondary" onClick={signOut}>Encerrar sessão</button></details>
+     <details className="admin-profile"><summary><span className="admin-avatar" aria-hidden="true">PA</span><span><strong>Pitacco Admin</strong><small>Super Administrador</small></span></summary><p>Proprietário do Pitacco</p><button type="button" className="secondary" onClick={signOut}>Encerrar sessão</button></details>
     </div>
    </header>
    {error&&<p role="alert">{error}</p>}
