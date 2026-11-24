@@ -213,26 +213,26 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  <label style={field}>Status no delivery<select value={String(draft.menu_active)} onChange={e=>change('menu_active',e.target.value==='true')}><option value="true">Ativo</option><option value="false">Inativo</option></select></label>
  <label style={field}>Preço (R$)<input type="number" min="0" step="0.01" required value={draft.price} onChange={e=>change('price',e.target.value)}/></label>
  <label style={field}>Custo interno (R$)<input type="number" min="0" step="0.01" value={draft.cost} onChange={e=>change('cost',e.target.value)}/></label>
- <div className="quick-actions"><button type="button" className="secondary" onClick={()=>setShowEditor(false)}>Cancelar</button><button disabled={busy} type="submit">Salvar produto</button></div>
+ <div className="quick-actions"><button type="button" className="secondary" onClick={()=>setShowEditor(false)}>Cancelar</button></div>
  </form>
- <section className="panel" aria-label="Novos grupos de complementos">
+ <section className="panel" style={{display:"grid",gap:14,minWidth:0}} aria-label="Novos grupos de complementos">
  <h3>Grupos e complementos</h3><p className="hint">Cadastre os grupos agora. Ao salvar o produto, eles serão adicionados à biblioteca de complementos da loja.</p>
  <button type="button" disabled={busy} onClick={()=>setNewGroups(old=>[...old,{id:crypto.randomUUID(),name:'',min:0,max:1,options:[]}])}>+ Criar grupo de complementos</button>
- {newGroups.map(g=><fieldset key={g.id} disabled={busy}>
- <label>Nome do grupo<input maxLength={100} value={g.name} onChange={e=>changeGroup(g.id,{name:e.target.value})}/></label>
- <label>Mínimo<input type="number" min={0} max={100} value={g.min} onChange={e=>changeGroup(g.id,{min:e.target.value})}/></label>
- <label>Máximo<input type="number" min={1} max={100} value={g.max} onChange={e=>changeGroup(g.id,{max:e.target.value})}/></label>
- {g.options.map(o=><div className="catalog-option-edit" key={o.id}>
- <label>Nome do complemento<input maxLength={100} value={o.name} onChange={e=>changeOption(g,o.id,{name:e.target.value})}/></label>
- <label>Valor adicional (R$)<input type="number" min={0} max={100000} step=".01" value={o.price} onChange={e=>changeOption(g,o.id,{price:e.target.value})}/></label>
- <label>Foto<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f&&(!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>5*1024*1024)){setNotice('Selecione JPG, PNG ou WebP de até 5 MB.');return}changeOption(g,o.id,{photo:f||null})}}/></label>
- <label><input type="checkbox" checked={o.available} onChange={e=>changeOption(g,o.id,{available:e.target.checked})}/>Disponível</label>
+ {newGroups.map(g=><fieldset key={g.id} disabled={busy} style={{display:"grid",gap:12,minWidth:0,margin:0,padding:14,border:"1px solid #ddd",borderRadius:14}}>
+ <label style={{display:"grid",gap:6,minWidth:0}}>Nome do grupo<input style={{width:"100%",minWidth:0,boxSizing:"border-box"}} maxLength={100} value={g.name} onChange={e=>changeGroup(g.id,{name:e.target.value})}/></label>
+ <label style={{display:"grid",gap:6,minWidth:0}}>Mínimo<input style={{width:"100%",minWidth:0,boxSizing:"border-box"}} type="number" min={0} max={100} value={g.min} onChange={e=>changeGroup(g.id,{min:e.target.value})}/></label>
+ <label style={{display:"grid",gap:6,minWidth:0}}>Máximo<input style={{width:"100%",minWidth:0,boxSizing:"border-box"}} type="number" min={1} max={100} value={g.max} onChange={e=>changeGroup(g.id,{max:e.target.value})}/></label>
+ {g.options.map(o=><div className="catalog-option-edit" key={o.id} style={{display:"grid",gridTemplateColumns:"minmax(0,1fr)",gap:12,minWidth:0,padding:12}}>
+ <label style={{display:"grid",gap:6,minWidth:0}}>Nome do complemento<input style={{width:"100%",minWidth:0,boxSizing:"border-box"}} maxLength={100} value={o.name} onChange={e=>changeOption(g,o.id,{name:e.target.value})}/></label>
+ <label style={{display:"grid",gap:6,minWidth:0}}>Valor adicional (R$)<input style={{width:"100%",minWidth:0,boxSizing:"border-box"}} type="number" min={0} max={100000} step=".01" value={o.price} onChange={e=>changeOption(g,o.id,{price:e.target.value})}/></label>
+ <label style={{display:"grid",gap:6,minWidth:0}}>Foto<input style={{width:"100%",minWidth:0,boxSizing:"border-box"}} type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f&&(!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>5*1024*1024)){setNotice('Selecione JPG, PNG ou WebP de até 5 MB.');return}changeOption(g,o.id,{photo:f||null})}}/></label>
+ <label style={{display:"flex",alignItems:"center",gap:8}}><input style={{width:"auto"}} type="checkbox" checked={o.available} onChange={e=>changeOption(g,o.id,{available:e.target.checked})}/>Disponível</label>
  <button type="button" className="secondary" onClick={()=>changeGroup(g.id,{options:g.options.filter(x=>x.id!==o.id)})}>Retirar complemento</button>
  </div>)}
  <button type="button" disabled={g.options.length>=100} onClick={()=>changeGroup(g.id,{options:[...g.options,{id:crypto.randomUUID(),name:'',price:0,available:true}]})}>+ Adicionar complemento</button>
  <button type="button" className="secondary" onClick={()=>setNewGroups(old=>old.filter(x=>x.id!==g.id))}>Retirar grupo</button>
  </fieldset>)}
- {newGroups.length>0&&<button type="submit" form="pitacco-product-editor" disabled={busy}>Salvar produto e complementos</button>}
+ <button type="submit" form="pitacco-product-editor" disabled={busy} style={{width:"100%"}}>{busy?"Salvando…":"Salvar produto e complementos"}</button>
  </section>
  {editing&&<ProductComplements key={editing+":"+newGroups.length} client={client} storeId={storeId} product={{id:editing,name:draft.name}} onGroupsChange={setGroups}/>}
  </div>
