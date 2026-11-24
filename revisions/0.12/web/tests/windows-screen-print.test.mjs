@@ -19,7 +19,10 @@ test('native print preview uses actual thermal receipt renderer',()=>{
  const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
  assert.match(operations,/WindowsReceiptPreview/);
  const preview=readFileSync(new URL('../WindowsReceiptPreview.jsx',import.meta.url),'utf8');
- assert.match(preview,/approvedReceipt\(/);
+ assert.match(preview,/renderReceiptCanvas\(/);
+ assert.match(preview,/receiptFontSize/);
+ const bridge=readFileSync(new URL('../printBridge.mjs',import.meta.url),'utf8');
+ assert.match(bridge,/rasterReceipt\(job,job.width/);
  assert.match(preview,/savePrintPreference/);
  assert.match(preview,/58 mm/);
  assert.match(preview,/80 mm/);
