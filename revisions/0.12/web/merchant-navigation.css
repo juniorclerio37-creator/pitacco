@@ -151,3 +151,18 @@
 .mn-op-toggle i.on{background:#16874b}.mn-op-toggle i.on:after{left:16px}
 .mn-op-toggle:disabled{opacity:.65;cursor:not-allowed}.mn-op-error{color:#c14835;overflow-wrap:anywhere}
 .mn-collapsed .mn-new-order span{display:none}
+
+/* Dedicated direct sale, responsive in the shared web and Windows shell. */
+.mn-pos .mn-pos-fieldset{border:0;padding:0;margin:0;min-width:0}
+.mn-pos-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(260px,1fr);gap:20px}
+.mn-pos-grid>div{min-width:0}
+.mn-pos-grid>div>label{display:grid;gap:4px;margin:10px 0}
+.mn-pos-products{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;max-height:300px;overflow:auto;padding:6px 0}
+.mn-pos-products button{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:5px;min-height:64px;white-space:normal;overflow-wrap:anywhere}
+.mn-pos-products strong{color:#d75d17}
+.mn-pos-options{border:1px solid #9994;padding:12px;border-radius:10px;margin:10px 0}
+.mn-pos-options fieldset{border:0;margin:0;padding:6px 0}
+.mn-pos-options fieldset label{display:flex;align-items:center;gap:8px;padding:5px 0}
+.mn-pos-options input[type=checkbox]{width:auto}
+.mn-pos .line>span small{display:block;opacity:.75}
+@media(max-width:850px){.mn-pos-grid{grid-template-columns:1fr}.mn-pos-products{max-height:240px}}
