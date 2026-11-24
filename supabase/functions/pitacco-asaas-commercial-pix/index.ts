@@ -1,5 +1,5 @@
 
-const reply=(status:number,body:unknown)=>Response.json(body,{status,headers:{"cache-control":"no-store","access-control-allow-origin":"https://app.pitacco.com.br","access-control-allow-headers":"authorization, apikey, content-type, x-client-info","access-control-allow-methods":"POST, OPTIONS"}});
+const reply=(status:number,body:unknown)=>Response.json(body,{status,headers:{"cache-control":"no-store","access-control-allow-origin":"*","access-control-allow-headers":"authorization, apikey, content-type, x-client-info","access-control-allow-methods":"POST, OPTIONS"}});
 const env=Deno.env.get("ASAAS_ENVIRONMENT"),api=Deno.env.get("ASAAS_API_KEY"),base=Deno.env.get("SUPABASE_URL"),service=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const asaas=async(path:string,method="GET",body?:unknown)=>{
@@ -21,9 +21,9 @@ Deno.serve(async req=>{
   if(!user.ok)return reply(401,{error:"Sessão inválida"});
   const actor=(await user.json()).id;
   const raw=await req.text();if(raw.length>4096)return reply(413,{error:"Requisição inválida"});
-  const input=JSON.parse(raw),invoice=input.invoice_id,document=String(input.document||"").replace(/\D/g,"");
-  if(!uuid.test(invoice)||document.length>14)return reply(400,{error:"Dados inválidos"});
-  const ctx=await rpc("pitacco_asaas_prepare_customer",{p_actor:actor,p_invoice:invoice,p_document:document});
+  const input=JSON.parse(raw),invoice=input.invoice_id,document=String(input.document||"").replace(/\D/g,""),enroll=input.action==="register_customer";
+  if(!(enroll?uuid.test(input.store_id):uuid.test(invoice))||document.length>14)return reply(400,{error:"Dados inválidos"});
+  const ctx=enroll?await rpc("pitacco_asaas_prepare_store_customer",{p_actor:actor,p_store:input.store_id,p_document:document}):await rpc("pitacco_asaas_prepare_customer",{p_actor:actor,p_invoice:invoice,p_document:document});
   let customer=ctx.customer_id;
   if(!customer){
    const ref="pitacco:store:"+ctx.store_id;
@@ -36,6 +36,7 @@ Deno.serve(async req=>{
    customer=item.id;
    await rpc("pitacco_asaas_bind_customer",{p_store:ctx.store_id,p_customer:customer});
   }
+  if(enroll)return reply(200,{status:"linked"});
   const charge=await rpc("pitacco_asaas_reserve_charge",{p_actor:actor,p_invoice:invoice,p_customer:customer});
   const ref="pitacco:invoice:"+invoice;
   let item;
@@ -45,13 +46,18 @@ Deno.serve(async req=>{
    const hits=(list.data||[]).filter((x:any)=>x.externalReference===ref&&!x.deleted);
    if(list.hasMore||hits.length>1)return reply(409,{error:"Cobrança exige conciliação"});
    item=hits[0];
-   if(!item&&charge.allow_create)item=await asaas("/payments","POST",{customer,billingType:"PIX",value:charge.amount_cents/100,dueDate:charge.due_date,description:charge.kind==="monthly"?"Pitacco — mensalidade":"Pitacco — comissão semanal",externalReference:ref});
+   if(!item&&charge.allow_create)item=await asaas("/payments","POST",{customer,billingType:"UNDEFINED",value:charge.amount_cents/100,dueDate:charge.due_date,description:charge.kind==="monthly"?"Pitacco — mensalidade":"Pitacco — comissão semanal",externalReference:ref});
   }
-  if(!item||item.deleted||item.externalReference!==ref||item.customer!==customer||Math.round(item.value*100)!==charge.amount_cents||item.billingType!=="PIX"||!/^pay_[A-Za-z0-9_-]{1,100}$/.test(item.id))return reply(409,{error:"Cobrança exige conciliação"});
+  if(!item||item.deleted||item.externalReference!==ref||item.customer!==customer||Math.round(item.value*100)!==charge.amount_cents||!["PIX","CREDIT_CARD","UNDEFINED","BOLETO"].includes(item.billingType)||!/^pay_[A-Za-z0-9_-]{1,100}$/.test(item.id))return reply(409,{error:"Cobrança exige conciliação"});
   await rpc("pitacco_asaas_bind_charge",{p_invoice:invoice,p_customer:customer,p_payment:item.id});
   if(["RECEIVED","CONFIRMED"].includes(item.status)){const outcome=await rpc("pitacco_asaas_settle_commercial_invoice",{p_payment_id:item.id,p_customer_id:customer,p_invoice:invoice,p_amount_cents:charge.amount_cents});return reply(200,{status:outcome});}
   if(!["PENDING","OVERDUE"].includes(item.status))return reply(409,{error:"Situação da cobrança exige conciliação"});
-  const qr=await asaas("/payments/"+encodeURIComponent(item.id)+"/pixQrCode");
-  return reply(200,{status:item.status,amount_cents:charge.amount_cents,payload:qr.payload,encodedImage:qr.encodedImage,expirationDate:qr.expirationDate});
+  const link=new URL(item.invoiceUrl);
+  if(link.protocol!=="https:"||!(link.hostname==="asaas.com"||link.hostname.endsWith(".asaas.com"))||link.username||link.password)return reply(503,{error:"Endereço de pagamento não reconhecido"});
+  if(item.billingType==="PIX"){
+    const qr=await asaas("/payments/"+encodeURIComponent(item.id)+"/pixQrCode");
+    return reply(200,{status:item.status,amount_cents:charge.amount_cents,billing_type:item.billingType,invoice_url:link.href,payload:qr.payload,encodedImage:qr.encodedImage,expirationDate:qr.expirationDate});
+  }
+  return reply(200,{status:item.status,amount_cents:charge.amount_cents,billing_type:item.billingType,invoice_url:link.href});
  }catch{return reply(503,{error:"Não foi possível concluir. Consulte a cobrança novamente; não será emitida outra automaticamente após uma tentativa inconclusiva."});}
 });

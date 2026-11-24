@@ -27,6 +27,27 @@ function useBilling(client,name,args){
  return {result,error,busy,refresh:()=>setRevision(value=>value+1)};
 }
 
+
+function CommercialPayments({client,storeId,onPaid}){
+ const [rows,setRows]=useState([]),[error,setError]=useState(''),[busy,setBusy]=useState(false),[doc,setDoc]=useState(''),[selected,setSelected]=useState(null),[result,setResult]=useState(null),[revision,reload]=useState(0);
+ useEffect(()=>{let live=true;setRows([]);setSelected(null);setResult(null);setDoc('');setError('');client.rpc('pitacco_commercial_invoices',{p_store:storeId,p_page:0}).then(({data,error})=>{if(!live)return;if(error)setError('Não foi possível consultar as cobranças.');else setRows(Array.isArray(data?.rows)?data.rows:[])});return()=>{live=false}},[client,storeId,revision]);
+ async function pay(){if(busy||!selected)return;setBusy(true);setError('');setResult(null);try{const {data,error}=await client.functions.invoke('pitacco-asaas-commercial-pix',{body:{invoice_id:selected.id,document:doc.replace(/\D/g,'')}});if(error||data?.error)throw Error(data?.error||'Não foi possível gerar ou consultar a cobrança. Confira o documento cadastrado ou fale com o suporte.');if(['processed','duplicate'].includes(data?.status)){setSelected(null);setDoc('');reload(n=>n+1);onPaid?.();return;}const url=new URL(data.invoice_url);if(url.protocol!=='https:'||!(url.hostname==='asaas.com'||url.hostname.endsWith('.asaas.com'))||url.username||url.password)throw Error('Endereço de pagamento inválido');setResult({...data,invoice_url:url.href});setDoc('');}catch(e){setError(e.message||'Pagamento indisponível.')}finally{setBusy(false)}}
+ return <section className="panel" aria-label="Cobranças e pagamentos"><h3>Cobranças e pagamentos</h3><p>Pix e cartão de crédito na página segura do Asaas. O valor é definido pelo Pitacco. Nenhum dado de cartão é armazenado aqui.</p>
+ {error&&<p role="alert">{error}</p>}
+ <button type="button" className="secondary" disabled={busy} onClick={()=>reload(n=>n+1)}>Atualizar cobranças</button>
+ {!rows.length&&<p>Nenhuma cobrança disponível neste momento.</p>}
+ {rows.map(r=><article key={r.id} style={{padding:'14px 0',borderBottom:'1px solid var(--line,#e4e7eb)'}}><div className="line"><b>{r.kind==='monthly'?'Mensalidade':'Comissão semanal'}</b><strong>{money.format(r.amount_cents/100)}</strong></div><p>Vencimento: {date.format(new Date(r.due_at))} · {({paid:'Pago',open:'Em aberto',overdue:'Vencido',grace:'Em tolerância',review_required:'Em conciliação'})[r.status]||r.status}</p>
+ {r.status==='paid'&&r.payment_source&&<small>Pagamento confirmado: {r.payment_source==='asaas'?'Asaas':'Pix manual'}</small>}
+ {['open','overdue','grace'].includes(r.status)&&r.claim_status!=='pending'&&<button type="button" disabled={busy} onClick={()=>{setSelected(r);setDoc('');setResult(null);setError('')}}>{r.asaas_reserved?'Consultar pagamento Asaas':'Pagar com Pix ou cartão'}</button>}
+ {r.claim_status==='pending'&&<p>Comprovante em análise. Não efetue outro pagamento.</p>}</article>)}
+ {selected&&<div style={{paddingTop:16}}><h4>Pagamento de {money.format(selected.amount_cents/100)}</h4>
+ {!selected.asaas_customer_linked&&!result&&<label>CNPJ da empresa (preferencial) ou CPF já cadastrado<input value={doc} onChange={e=>setDoc(e.target.value.replace(/\D/g,'').slice(0,14))} inputMode="numeric" autoComplete="off" maxLength={14}/></label>}
+ {!result&&<button type="button" disabled={busy||(!selected.asaas_customer_linked&&![11,14].includes(doc.length))} onClick={pay}>{busy?'Consultando…':'Abrir opções de pagamento'}</button>}
+ {result&&<><p>Escolha a forma disponível na fatura do Asaas. A confirmação será automática após o recebimento.</p><a className="button" href={result.invoice_url} target="_blank" rel="noopener noreferrer">Abrir fatura segura do Asaas</a>{result.payload&&<><label>Pix Copia e Cola<textarea readOnly value={result.payload}/></label><button type="button" onClick={()=>navigator.clipboard?.writeText(result.payload)}>Copiar código Pix</button></> }<button type="button" className="secondary" onClick={()=>{reload(n=>n+1);onPaid?.()}}>Já paguei · atualizar</button></>}
+ <button type="button" className="secondary" disabled={busy} onClick={()=>{setSelected(null);setResult(null);setDoc('')}}>Fechar</button></div>}
+ <p><small>O Pix manual continua disponível quando configurado, desde que a mesma fatura não esteja reservada para pagamento pelo Asaas.</small></p></section>;
+}
+
 export default function BillingStatus({client,storeId}){
  const {result,error,busy,refresh}=useBilling(client,'pitacco_merchant_subscription_details',{p_store:storeId});
  const deadline=result?.paid_until||result?.trial_ends_at;
@@ -51,6 +72,7 @@ export default function BillingStatus({client,storeId}){
    {result.payments?.length?<div style={{overflowX:'auto'}}><table><thead><tr><th>Pagamento</th><th>Provedor</th><th>Valor</th><th>Cobertura até</th></tr></thead><tbody>{result.payments.map((p,i)=><tr key={i}><td>{date.format(new Date(p.confirmed_at))}</td><td>{p.provider}</td><td>{money.format(Number(p.amount))}</td><td>{date.format(new Date(p.paid_until))}</td></tr>)}</tbody></table></div>:<p>Nenhum pagamento confirmado registrado.</p>}
   </>}
   <button type="button" className="secondary" disabled={busy} onClick={refresh}>Atualizar situação</button>
+  <CommercialPayments key={'payments-'+storeId} client={client} storeId={storeId} onPaid={refresh}/>
   <MerchantPlanChange key={storeId} client={client} storeId={storeId}/>
  </section>;
 }
