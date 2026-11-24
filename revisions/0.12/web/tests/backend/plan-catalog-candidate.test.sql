@@ -152,3 +152,25 @@ do $closing_test$ begin
  begin perform public.pitacco_commercial_closings(null);raise exception 'Unauthorized global closing';exception when insufficient_privilege then null;end;
 end $closing_test$;
 reset role;
+
+do $anniversary_test$ begin
+ assert pitacco_private.monthly_due_on_or_after(date '2026-01-31',date '2026-02-01')=date '2026-02-28';
+ assert pitacco_private.monthly_due_on_or_after(date '2026-01-31',date '2026-03-01')=date '2026-03-31';
+ assert pitacco_private.monthly_due_on_or_after(date '2028-01-31',date '2028-02-01')=date '2028-02-29';
+ assert pitacco_private.monthly_due_on_or_after(date '2026-11-24'+30,date '2026-12-01')=date '2026-12-24';
+ assert pitacco_private.monthly_due_on_or_after(date '2026-11-24'+30,date '2027-01-01')=date '2027-01-24';
+end $anniversary_test$;
+-- First monthly fee must fall on registration + 30 days, not a second month after the trial.
+insert into public.stores(id,name,created_at) values('20000000-0000-0000-0000-000000000003','Loja mensal','2026-09-01 12:00+00');
+insert into pitacco_private.commercial_contracts(store_id,revision,plan_code,effective_from,terms,assigned_by)
+select '20000000-0000-0000-0000-000000000003',revision,'complete',date '2026-09-01',plans->1,'10000000-0000-0000-0000-000000000001'
+from pitacco_private.plan_catalog_versions where revision='2026-11-24-v1';
+do $anniversary_test$ declare r jsonb; begin
+ r:=pitacco_private.commercial_amount_calculate('20000000-0000-0000-0000-000000000003','2026-09-30');
+ assert r->>'first_monthly_due'='2026-10-01';
+ assert r->>'monthly_period_end_exclusive'='2026-10-01';
+ assert r->>'monthly_cents'='5990';
+ perform pitacco_private.refresh_commercial_closings();
+ assert exists(select 1 from pitacco_private.commercial_closings where store_id='20000000-0000-0000-0000-000000000003' and kind='monthly' and period_end='2026-10-01' and amount_cents=5990);
+ assert exists(select 1 from pitacco_private.commercial_closings where store_id='20000000-0000-0000-0000-000000000003' and kind='monthly' and period_end='2026-11-01' and amount_cents=5990);
+end $anniversary_test$;

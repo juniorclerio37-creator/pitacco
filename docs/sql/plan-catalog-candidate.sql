@@ -49,12 +49,12 @@ begin
   cycle:=plan->>'billing_cycle';
   if cycle is null or cycle not in ('weekly','monthly') then raise exception 'Periodicidade inválida' using errcode='22023';end if;
   if coalesce(plan->>'grace_hours','48') !~ '^[0-9]{1,3}$' or coalesce(plan->>'due_iso_weekday','3') !~ '^[1-7]$' or coalesce(plan->>'monthly_due_day','1') !~ '^[0-9]{1,2}$' then raise exception 'Prazo ou vencimento inválido' using errcode='22023';end if;
-  grace:=coalesce((plan->>'grace_hours')::integer,48);weekday:=coalesce((plan->>'due_iso_weekday')::integer,3);monthly_day:=coalesce((plan->>'monthly_due_day')::integer,1);
+  grace:=coalesce((plan->>'grace_hours')::integer,48);weekday:=3;monthly_day:=1;
   if grace>720 or monthly_day not between 1 and 28 then raise exception 'Prazo ou vencimento inválido' using errcode='22023';end if;
   amount:=(plan->>'monthly_cents')::integer; commission:=(plan->>'commission_basis_points')::integer; trial:=(plan->>'trial_days')::integer;
   if commission>10000 or trial>365 then raise exception 'Limites inválidos' using errcode='22023';end if;
   if exists(select 1 from jsonb_array_elements(checked) p where p->>'code'=code) then raise exception 'Plano duplicado' using errcode='22023';end if;
-  checked:=checked||jsonb_build_array(jsonb_build_object('code',code,'name',title,'monthly_cents',amount,'commission_basis_points',commission,'trial_days',trial,'description',description,'available',available,'billing_cycle',cycle,'grace_hours',grace,'due_iso_weekday',weekday,'monthly_due_day',monthly_day));
+  checked:=checked||jsonb_build_array(jsonb_build_object('code',code,'name',title,'monthly_cents',amount,'commission_basis_points',commission,'trial_days',trial,'description',description,'available',available,'billing_cycle',cycle,'grace_hours',grace,'due_iso_weekday',weekday,'monthly_due_rule','registration_plus_30_anniversary'));
  end loop;
  if not exists(select 1 from jsonb_array_elements(checked) p where p->>'code'='free') or not exists(select 1 from jsonb_array_elements(checked) p where p->>'code'='complete') then raise exception 'Preserve os planos originais no catálogo; desative se necessário' using errcode='22023';end if;
  select revision into old_revision from public.pitacco_plan_catalog_signal where singleton for update;
@@ -301,26 +301,41 @@ begin
  return round((subtotal-discount)*100)::bigint;
 end $base$;
 revoke all on function pitacco_private.commission_product_base(jsonb) from public,anon,authenticated;
+-- First due date: registration + 30 local calendar days. Subsequent dates
+-- retain the resulting day of month, clamped only for shorter months.
+create or replace function pitacco_private.monthly_due_on_or_after(p_anchor date,p_min date)
+returns date language plpgsql immutable strict set search_path='' as $anniversary$
+declare month_start date; candidate date; anchor_day integer;
+begin
+ if p_min<=p_anchor then return p_anchor;end if;
+ anchor_day:=extract(day from p_anchor)::integer;
+ month_start:=date_trunc('month',p_min::timestamp)::date;
+ candidate:=least(month_start+anchor_day-1,(month_start+interval '1 month')::date-1);
+ if candidate<p_min then
+  month_start:=(month_start+interval '1 month')::date;
+  candidate:=least(month_start+anchor_day-1,(month_start+interval '1 month')::date-1);
+ end if;
+ return greatest(candidate,p_anchor);
+end $anniversary$;
+revoke all on function pitacco_private.monthly_due_on_or_after(date,date) from public,anon,authenticated;
 create or replace function pitacco_private.commercial_amount_calculate(p_store uuid,p_day date)
 returns jsonb language plpgsql stable security definer set search_path='' as $amount$
 declare c pitacco_private.commercial_contracts%rowtype; today date:=(now() at time zone 'America/Sao_Paulo')::date;
  day date:=coalesce(p_day,today); period_start date; period_end date; due_at timestamptz;
- base bigint:=0; unknown bigint:=0; count_orders bigint:=0; rate integer; monthly bigint; commission bigint; trial_end date; monthly_start date; monthly_due date; monthly_charge bigint; weekday integer; grace integer; monthly_day integer; unfinished bigint:=0;
+ base bigint:=0; unknown bigint:=0; count_orders bigint:=0; rate integer; monthly bigint; commission bigint; trial_end date; monthly_start date; monthly_due date; monthly_charge bigint; weekday integer; grace integer; monthly_day integer; unfinished bigint:=0; registration date; anchor date; first_due date; previous_month date;
 begin
  if day>today or day<'2000-01-01' then raise exception 'Data inválida' using errcode='22023';end if;
  select * into c from pitacco_private.commercial_contracts where store_id=p_store and effective_from<=day order by effective_from desc limit 1;
  if not found then return jsonb_build_object('status','unassigned','message','Nenhum contrato comercial vigente no novo catálogo.');end if;
  rate:=(c.terms->>'commission_basis_points')::integer;monthly:=(c.terms->>'monthly_cents')::bigint;
  trial_end:=c.effective_from+(c.terms->>'trial_days')::integer;
- weekday:=coalesce((c.terms->>'due_iso_weekday')::integer,3);grace:=coalesce((c.terms->>'grace_hours')::integer,48);monthly_day:=coalesce((c.terms->>'monthly_due_day')::integer,1);
- if c.terms->>'billing_cycle'='weekly' then
-  period_start:=day-((extract(isodow from day)::integer-weekday+7)%7);
-  period_end:=period_start+7;
- else
-  period_start:=date_trunc('month',day::timestamp)::date;
-  period_end:=(period_start+interval '1 month')::date;
- end if;
- due_at:=(period_end+case when c.terms->>'billing_cycle'='monthly' then monthly_day-1 else 0 end+time '23:59') at time zone 'America/Sao_Paulo';
+ weekday:=3;grace:=coalesce((c.terms->>'grace_hours')::integer,48);
+ select (s.created_at at time zone 'America/Sao_Paulo')::date into registration from public.stores s where s.id=p_store;
+ anchor:=registration+30;
+ -- Every commission, including hybrid plans, closes Wednesday.
+ period_start:=day-((extract(isodow from day)::integer-3+7)%7);
+ period_end:=period_start+7;
+ due_at:=(period_end+time '23:59') at time zone 'America/Sao_Paulo';
  if rate>0 then
   with eligible as (
    select pitacco_private.commission_product_base(o.receipt) as cents
@@ -341,13 +356,15 @@ begin
  commission:=round(base::numeric*rate/10000)::bigint;
  -- Monthly recurring price is separate from the commission cycle; never divide
  -- the monthly fee into weekly charges. First renewal follows the trial.
- monthly_start:=greatest(date_trunc('month',day::timestamp)::date,trial_end);
- monthly_due:=(date_trunc('month',day::timestamp)+interval '1 month')::date;
- monthly_charge:=case when trial_end>=monthly_due then 0 else monthly end;
+ first_due:=pitacco_private.monthly_due_on_or_after(anchor,greatest(anchor,c.effective_from+1,trial_end));
+ monthly_due:=pitacco_private.monthly_due_on_or_after(anchor,greatest(first_due,day));
+ previous_month:=(date_trunc('month',monthly_due::timestamp)-interval '1 month')::date;
+ monthly_start:=case when monthly_due=first_due then c.effective_from else greatest(c.effective_from,least(previous_month+extract(day from anchor)::integer-1,(previous_month+interval '1 month')::date-1)) end;
+ monthly_charge:=monthly;
  return jsonb_build_object('status',case when unknown>0 then 'review_required' when day<trial_end then 'trial' else 'calculated' end,
  'plan_name',c.terms->>'name','revision',c.revision,'period_start',period_start,'period_end_exclusive',period_end,'due_at',due_at,'grace_until',due_at+make_interval(hours=>grace),
  'base_cents',base,'eligible_orders',count_orders,'unresolved_orders',unknown,'unfinished_orders',unfinished,'commission_basis_points',rate,'commission_cents',case when unknown=0 then commission else null end,
- 'monthly_cents',monthly_charge,'monthly_period_start',monthly_start,'monthly_period_end_exclusive',monthly_due,'monthly_due_at',(monthly_due+monthly_day-1+time '23:59') at time zone 'America/Sao_Paulo','monthly_grace_until',((monthly_due+monthly_day-1+time '23:59') at time zone 'America/Sao_Paulo')+make_interval(hours=>grace),
+ 'monthly_cents',monthly_charge,'monthly_period_start',monthly_start,'monthly_period_end_exclusive',monthly_due,'monthly_due_at',(monthly_due+time '23:59') at time zone 'America/Sao_Paulo','monthly_grace_until',((monthly_due+time '23:59') at time zone 'America/Sao_Paulo')+make_interval(hours=>grace),'registration_date',registration,'first_monthly_due',first_due,'monthly_anchor',anchor,
  'trial_end',trial_end,'calculation_only',true);
 end $amount$;
 revoke all on function pitacco_private.commercial_amount_calculate(uuid,date) from public,anon,authenticated;
@@ -383,8 +400,8 @@ begin
   -- Each cycle is refreshed once using its last local date. Re-runs update
   -- the same record, including late completion/cancellation, never duplicate it.
   for d in select day::date from generate_series(c.effective_from::timestamp,(today-1)::timestamp,interval '1 day') g(day)
-   where (extract(isodow from day+interval '1 day')::integer=coalesce((c.terms->>'due_iso_weekday')::integer,3) and c.terms->>'billing_cycle'='weekly')
-      or extract(day from day+interval '1 day')=1 loop
+   where (extract(isodow from day+interval '1 day')::integer=3 and (c.terms->>'commission_basis_points')::integer>0)
+      or ((c.terms->>'monthly_cents')::bigint>0 and (day+interval '1 day')::date=pitacco_private.monthly_due_on_or_after((select (s.created_at at time zone 'America/Sao_Paulo')::date+30 from public.stores s where s.id=c.store_id),(day+interval '1 day')::date)) loop
    r:=pitacco_private.commercial_amount_calculate(c.store_id,d);
    if r->>'revision' is distinct from c.revision then continue;end if;
    foreach k in array array['commission','monthly'] loop
