@@ -31,7 +31,8 @@ shell=list(re.finditer(r'<div className=\{([^{}\n]*pitacco-mobile-workspace[^{}\
 assert len(shell)==1, 'Merchant shell class not found'
 m=shell[0]
 s=s[:m.start()]+ '<div className={'+m.group(1)+'+(menuCollapsed?" mn-sidebar-collapsed":"")}>'+s[m.end():]
-change('</main>',"""</main>{!nativeAvailable()&&<MerchantMobileBar routeId={navigationRoute} onNavigate={target=>{setTab(target);setMessage('');setMobileMenuOpen(false)}} onMore={()=>setMobileMenuOpen(open=>!open)} allowed={allowed} manager={manager} active={active} admin={admin} driver={isDriver} featureSettings={featureSettings}/>}""")
+change('<header className="pitacco-mobile-top">','<header className={"pitacco-mobile-top"+(isDriver?" mn-driver-top":" mn-redundant-top")}>')
+change('</main>',"""</main>{!nativeAvailable()&&<MerchantMobileBar routeId={navigationRoute} onNavigate={target=>{setTab(target);setMessage('');setMobileMenuOpen(false)}} onMore={()=>setMobileMenuOpen(open=>!open)} menuOpen={mobileMenuOpen} allowed={allowed} manager={manager} active={active} admin={admin} driver={isDriver} featureSettings={featureSettings}/>}""")
 # Existing views are not remounted unnecessarily; direct section props only change when selected.
 change('<MenuStudio client={supabase} storeId={selected}',"<MenuStudio initialSection={route.section||'Produtos'} navigationKey={navigationKey} client={supabase} storeId={selected}")
 change('<FinancialReport key={selected} client={supabase} store={active}/>','<FinancialReport key={selected} client={supabase} store={active} initialView={route.section||\'report\'} navigationKey={navigationKey}/>')

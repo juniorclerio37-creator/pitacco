@@ -59,3 +59,12 @@
 /* Keep the current section visible without opening its group automatically. */
 .merchant-nav .mn-group-button.mn-current-group{color:#d75d17;font-weight:700}
 .pitacco-theme-dark .merchant-nav .mn-group-button.mn-current-group{color:#ffc498}
+
+/* Merchant mobile: bottom bar is the only menu trigger. Keep the driver fallback. */
+@media(max-width:800px){
+ .app.pitacco-mobile-workspace>.pitacco-mobile-top.mn-redundant-top{display:none!important}
+ .app.pitacco-mobile-workspace:has(>.mn-redundant-top)>.pitacco-mobile-backdrop{inset:0 0 calc(76px + env(safe-area-inset-bottom))}
+ .app.pitacco-mobile-workspace:has(>.mn-redundant-top)>aside.pitacco-mobile-drawer-open{inset:0 auto calc(76px + env(safe-area-inset-bottom)) 0;max-height:none}
+ .app.pitacco-mobile-workspace .mn-mobile-bar{z-index:123;min-height:calc(76px + env(safe-area-inset-bottom));box-sizing:border-box}
+ .mn-mobile-bar .mn-more-open{color:#e5702b;font-weight:700}
+}

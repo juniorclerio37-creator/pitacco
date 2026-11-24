@@ -35,9 +35,9 @@ export function MerchantNavigation({routeId,onNavigate,allowed,manager,active,ad
  <div className="mn-support">{usable(support)&&(!query||searchMenu(support,query))&&render(support,Headphones,true)}</div>
  </nav>;
 }
-export function MerchantMobileBar({routeId,onNavigate,onMore,allowed,manager,active,admin,driver,featureSettings}){
+export function MerchantMobileBar({routeId,onNavigate,onMore,menuOpen=false,allowed,manager,active,admin,driver,featureSettings}){
  if(driver)return null;
  const ctx={allowed,manager,active,admin,driver,featureSettings};
  const items=[['Painel','Início',LayoutDashboard],['Pedidos','Pedidos',ShoppingBag],['Entregas','Entregas',Bike],['Caixa','Caixa',Wallet]].filter(([id])=>menuAllowed(resolveMenuRoute(id),ctx));
- return <nav aria-label="Atalhos do celular" className="mn-mobile-bar">{items.map(([id,label,Icon])=><button type="button" key={id} aria-current={resolveMenuRoute(routeId).tab===id?'page':undefined} onClick={()=>onNavigate(id)}><Icon size={21}/><span>{label}</span></button>)}<button type="button" onClick={onMore}><Menu size={21}/><span>Mais</span></button></nav>;
+ return <nav aria-label="Atalhos do celular" className="mn-mobile-bar">{items.map(([id,label,Icon])=><button type="button" key={id} aria-current={resolveMenuRoute(routeId).tab===id?'page':undefined} onClick={()=>onNavigate(id)}><Icon size={21}/><span>{label}</span></button>)}<button type="button" aria-controls="pitacco-store-navigation" aria-expanded={menuOpen} className={menuOpen?'mn-more-open':undefined} onClick={onMore}><Menu size={21}/><span>Mais</span></button></nav>;
 }

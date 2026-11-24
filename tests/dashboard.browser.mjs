@@ -649,7 +649,7 @@ try {
     }
 
     async function merchantNavigate(group,name){
-      if(width<=800&&!await navigation.isVisible())await page.getByRole('button',{name:'Abrir menu'}).click();
+      if(width<=800&&!await navigation.isVisible())await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
       if(group){
         const toggle=navigation.getByRole('button',{name:group,exact:true});
         await toggle.waitFor();
@@ -659,8 +659,16 @@ try {
     }
 
     if (width <= 800) {
+      assert.equal(await page.locator('.pitacco-mobile-top.mn-redundant-top').isVisible(),false);
+      const more=page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true});
+      assert.equal(await more.getAttribute('aria-expanded'),'false');
+      await more.click();
+      await navigation.waitFor({state:'visible'});
+      assert.equal(await more.getAttribute('aria-expanded'),'true');
+      await more.click();
+      await navigation.waitFor({state:'hidden'});
       assert.equal(await navigation.isVisible(), false);
-      await page.getByRole('button', { name:'Abrir menu' }).click();
+      await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
       await navigation.waitFor({ state:'visible' });
     }
     if(width===1440){
@@ -713,7 +721,7 @@ try {
     await page.getByRole('heading',{name:'Movimento por dia'}).waitFor();
     if (width <= 800) assert.equal(await navigation.isVisible(), false);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-    if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
+    if (width <= 800) await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
     await merchantNavigate('Cardápio','Insumos e fichas técnicas');
     const inventory = page.getByRole('region', { name:'Controle de estoque' });
     await inventory.getByLabel('Nome').fill('Polpa de açaí');
@@ -728,7 +736,7 @@ try {
     await inventory.getByText(/Compra de teste/).waitFor();
     await inventory.getByRole('button', { name:'Insumos', exact:true }).click();
     await inventory.getByText(/250 g/).waitFor();
-    if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
+    if (width <= 800) await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
     await merchantNavigate('Operação','Pedidos');
     if(width===375){
       await page.getByRole('button',{name:'Agendados (0)',exact:true}).waitFor();
@@ -819,7 +827,7 @@ try {
       const releasedCard=page.getByRole('article',{name:'Card do pedido D-181',exact:true});
       await releasedCard.getByRole('button',{name:'Aceitar',exact:true}).waitFor();
     }
-    if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
+    if (width <= 800) await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
     await merchantNavigate('Financeiro','Visão financeira');
     const financial = page.getByRole('region', {name:'Relatório financeiro'});
     await financial.getByRole('button', {name:'Gerar relatório'}).click();
@@ -875,7 +883,7 @@ try {
     await payouts.getByRole('button',{name:'Importar repasse'}).click();
     await payouts.getByText('Repasse importado.').waitFor();
     await payouts.getByText('Divergente',{exact:true}).waitFor();
-    if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
+    if (width <= 800) await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
     await merchantNavigate('Configurações','Dados da loja');
     const menuLink=page.getByRole('link',{name:'https://pitacco.com.br/loja-teste',exact:true});
     await menuLink.waitFor();
@@ -987,14 +995,14 @@ try {
       await support.getByRole('button',{name:'Abrir chamado'}).click();
       await support.getByText('Chamado criado.',{exact:false}).waitFor();
     }
-    if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
+    if (width <= 800) await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
     await merchantNavigate('Operação','Alertas');
     const alerts=page.getByRole('region',{name:'Central de alertas'});
     await alerts.getByText('Preparo acima do prazo',{exact:true}).waitFor();
     await alerts.getByRole('button',{name:'Atualizar alertas'}).click();
     await alerts.getByRole('button',{name:'Abrir pedidos'}).click();
     await page.locator('.pitacco-pedidos').first().waitFor({state:'visible'});
-    if (width <= 800) await page.getByRole('button', { name:'Abrir menu' }).click();
+    if (width <= 800) await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
     await merchantNavigate('Configurações','Assinatura');
     const billing=page.getByRole('region',{name:'Situação da assinatura'});
     await billing.getByText('Vencida',{exact:true}).waitFor();
@@ -1153,7 +1161,7 @@ try {
     adminMode=false;
     await page.goto(dashboard+'/app/');
     await page.getByRole('region',{name:'Indicadores da loja'}).waitFor();
-    if(width<=800)await page.getByRole('button',{name:'Abrir menu'}).click();
+    if(width<=800)await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
     await navigation.getByRole('button',{name:'Clientes',exact:true}).waitFor();
     await navigation.getByRole('button',{name:'Cardápio',exact:true}).waitFor();
     const catalogGroup=navigation.getByRole('button',{name:'Cardápio',exact:true});

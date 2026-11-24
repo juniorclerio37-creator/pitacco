@@ -34,3 +34,10 @@ test('all menu groups start closed, only manual expansion or search opens them',
  assert.doesNotMatch(source,/\},\[routeId,key\]\)/);
  assert.match(source,/expanded=!!query\|\|open\.includes\(g\.name\)/);
 });
+
+test('mobile merchant menu opens only from the bottom More button and remains accessible',()=>{
+ const source=readFileSync(new URL('../MerchantNavigation.jsx',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../merchant-navigation.css',import.meta.url),'utf8');
+ assert.match(source,/aria-controls="pitacco-store-navigation" aria-expanded=\{menuOpen\}/);
+ assert.match(css,/\.pitacco-mobile-top\.mn-redundant-top\{display:none!important\}/);
+});
