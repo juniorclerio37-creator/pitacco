@@ -1412,6 +1412,28 @@ let deliveryPoint=null,deliveryMap,deliveryQuote=null;
 // the current catalog; payment, identity, PIN and freight authorization never do.
 const cartStorageKey='pitacco-cart:'+slug;
 let cartRecoveryId=null,cartStoragePaused=false,cartStorageWarned=false,cartRestoreWarning='';
+// Pizza selection uses the same UUID option list as traditional checkout.
+let pizzaSelectedSize='';
+function pizzaSelection(product,ids){
+ const c=product.pizza_config;if(!c||!Array.isArray(ids)||new Set(ids).size!==ids.length)throw Error('Montagem inválida');
+ const sizes=c.sizes.filter(s=>ids.includes(s.id));if(sizes.length!==1)throw Error('Escolha o tamanho da pizza');
+ const s=sizes[0],flavors=c.flavors.filter(f=>ids.includes(f.id)),extras=c.extras.filter(e=>ids.includes(e.id));
+ if(1+flavors.length+extras.length!==ids.length||!flavors.length||flavors.length>s.maxFlavors)throw Error('Confira os sabores da pizza');
+ const price=o=>{const n=o.prices?.[s.id];if(o.available===false||!Number.isSafeInteger(n)||n<0)throw Error('Opção indisponível para este tamanho');return n};
+ const amounts=flavors.map(price),extra=extras.reduce((sum,e)=>sum+price(e),0);
+ if(['Borda','Massa'].some(k=>extras.filter(e=>e.kind===k).length>1))throw Error('Escolha uma borda e uma massa');
+ let base;
+ switch(c.rule){case 'max':base=Math.max(...amounts);break;case 'min':base=Math.min(...amounts);break;case 'avg':base=Math.round(amounts.reduce((a,b)=>a+b,0)/amounts.length);break;case 'fixed':base=s.fixedPrice;break;default:throw Error('Regra de preço inválida')}
+ if(!Number.isSafeInteger(base)||base<0||!Number.isSafeInteger(base+extra))throw Error('Preço inválido');
+ return {unit:(base+extra)/100,labels:[s.name,...flavors.map(f=>f.name),...extras.map(e=>e.name)]};
+}
+function pizzaFromPrice(p){if(!p.pizza_config)return money(p.price);const c=p.pizza_config;const values=c.sizes.flatMap(s=>c.flavors.filter(f=>f.available!==false&&Number.isSafeInteger(f.prices?.[s.id])).map(f=>c.rule==='fixed'?s.fixedPrice:f.prices[s.id])).filter(Number.isSafeInteger);return values.length?'A partir de '+money(Math.min(...values)/100):'Indisponível';}
+function pizzaOptionGroups(product,sizeId){
+ const c=product.pizza_config,s=c.sizes.find(s=>s.id===sizeId);if(!s)return [];
+ const map=o=>({id:o.id,name:o.name,image_url:o.image_url,price:o.prices[sizeId]/100});
+ const valid=o=>o.available!==false&&Number.isSafeInteger(o.prices?.[sizeId]);
+ return [{name:'Sabores',min:1,max:s.maxFlavors,options:c.flavors.filter(valid).map(map)},...['Borda','Massa','Adicional'].map(kind=>({name:kind,min:0,max:kind==='Adicional'?Math.min(99,c.extras.length):1,options:c.extras.filter(o=>o.kind===kind&&valid(o)).map(map)}))];
+}
 function reconcileCartDraft(items,products){
  const restored=[];let changed=false;
  if(!Array.isArray(items))return {items:[],changed:true};
@@ -1419,6 +1441,7 @@ function reconcileCartDraft(items,products){
   const product=products.find(p=>p.id===saved?.product_id);
   if(!product||!Number.isInteger(saved.quantity)||saved.quantity<1||saved.quantity>20||!Array.isArray(saved.options)||saved.options.length>100){changed=true;continue;}
   const ids=[...new Set(saved.options)];let valid=ids.length===saved.options.length;
+  if(product.pizza_config){try{if(!valid)throw Error('Opções repetidas');const q=pizzaSelection(product,ids);const existing=restored.find(i=>i.product_id===product.id&&i.options.length===ids.length&&ids.every(id=>i.options.includes(id)));if(existing){existing.quantity=Math.min(20,existing.quantity+saved.quantity);changed=true;}else restored.push({product_id:product.id,quantity:saved.quantity,options:ids,name:product.name,labels:q.labels,unit:q.unit});}catch{changed=true;}continue;}
   const options=[];
   for(const id of ids){const option=(product.option_groups||[]).flatMap(g=>g.options||[]).find(o=>o.id===id&&o.available!==false);if(!option){valid=false;break;}options.push(option);}
   for(const group of product.option_groups||[]){const count=ids.filter(id=>(group.options||[]).some(o=>o.id===id)).length;if(count<Number(group.min||0)||count>Number(group.max||0))valid=false;}
@@ -1966,7 +1989,7 @@ function v2Feature(){
   name.onclick=()=>openProduct(product);info.append(name);
   const description=el('p',product.description||'Personalize seu pedido do jeito que preferir.','v2-top-description');
   info.append(description);
-  const bottom=el('div',undefined,'v2-top-bottom');bottom.append(el('strong',money(product.price),'v2-top-price'));
+  const bottom=el('div',undefined,'v2-top-bottom');bottom.append(el('strong',pizzaFromPrice(product),'v2-top-price'));
   const add=button('+','v2-top-add');add.setAttribute('aria-label','Personalizar '+product.name+' em destaque');
   add.onclick=()=>openProduct(product);bottom.append(add);info.append(bottom);
   card.append(image,info);root.append(card);
@@ -2181,8 +2204,9 @@ function renderProducts(){
   const info=el('span',undefined,'product-text');
   info.append(el('strong',product.name,'product-name'));
   if(product.description)info.append(el('span',product.description,'product-description'));
-  info.append(el('strong',money(product.price)));
-  if(product.option_groups?.some(group=>group.max>0))info.append(el('span','Escolher complementos','product-customize'));
+  info.append(el('strong',pizzaFromPrice(product)));
+  if(product.pizza_config)info.append(el('span','Monte sua pizza','product-customize'));
+  else if(product.option_groups?.some(group=>group.max>0))info.append(el('span','Escolher complementos','product-customize'));
   const visual=el('span',undefined,'product-visual');
   visual.setAttribute('aria-hidden','true');
   visual.append(el('span',product.name.trim().slice(0,1).toUpperCase()));
@@ -2215,7 +2239,23 @@ function openProduct(product,item=null){
  addPhoto(intro,product.image_url);
  if(product.description)intro.append(el('p',product.description));
  if(intro.children.length)$('productBody').append(intro);
- for(const [index,group] of (product.option_groups||[]).entries()){
+ pizzaSelectedSize='';
+ if(product.pizza_config){
+  const field=el('fieldset',undefined,'options'),select=el('select');
+  field.append(el('legend','Escolha o tamanho'));
+  const placeholder=el('option','Selecione um tamanho');placeholder.value='';select.append(placeholder);
+  for(const s of product.pizza_config.sizes){const o=el('option',s.name+' · '+s.diameter+' cm · '+s.slices+' fatias');o.value=s.id;select.append(o);}
+  pizzaSelectedSize=product.pizza_config.sizes.find(s=>item?.options.includes(s.id))?.id||'';
+  select.value=pizzaSelectedSize;field.append(select);$('productBody').append(field);
+  const container=el('div');$('productBody').append(container);
+  function renderPizzaOptions(saved){container.replaceChildren();groups=[];renderOptionFields(pizzaOptionGroups(product,pizzaSelectedSize),saved,container);updateProduct();}
+  select.onchange=()=>{pizzaSelectedSize=select.value;renderPizzaOptions(null);};
+  renderPizzaOptions(item);
+ }else renderOptionFields(product.option_groups||[],item,$('productBody'));
+ $('productError').hidden=true;updateProduct();$('productDialog').showModal();$('productBody').scrollTop=0;
+}
+function renderOptionFields(optionGroups,item,container){
+ for(const [index,group] of optionGroups.entries()){
   if(group.max===0||(!group.options.length&&!group.min))continue;
   const field=el('fieldset',undefined,'options');
   const meta=el('p',undefined,'options-meta');
@@ -2247,12 +2287,8 @@ function openProduct(product,item=null){
   for(const option of group.options)addOption(option);
   if(!choices.length)field.append(el('p','Nenhuma opção disponível neste grupo.','hint-error'));
   groups.push({group,field,count,choices});
-  $('productBody').append(field);
+  container.append(field);
  }
- $('productError').hidden=true;
- updateProduct();
- $('productDialog').showModal();
- $('productBody').scrollTop=0;
 }
 function getChoices(row){return row.choices.filter(({input})=>input.checked).map(({option})=>option)}
 function updateProduct(){
@@ -2272,7 +2308,7 @@ function updateProduct(){
  $('less').disabled=quantity<=1;
  $('more').disabled=quantity>=20;
  $('productQuantity').textContent=quantity;
- $('productTotal').textContent=money((Number(current.price)+extra)*quantity);
+ if(current.pizza_config){try{const q=pizzaSelection(current,[pizzaSelectedSize,...groups.flatMap(getChoices).map(o=>o.id)]);$('productTotal').textContent=money(q.unit*quantity);}catch{$('productTotal').textContent='Selecione tamanho e sabores';}}else $('productTotal').textContent=money((Number(current.price)+extra)*quantity);
 }
 function productError(text){
  $('productError').textContent=text;
@@ -2307,7 +2343,8 @@ $('addProduct').onclick=()=>{
   return;
  }
  const options=groups.flatMap(getChoices);
- const chosen=options.map(option=>option.id);
+ const chosen=options.map(option=>option.id);let pizzaQuote=null;
+ if(current.pizza_config){chosen.unshift(pizzaSelectedSize);try{pizzaQuote=pizzaSelection(current,chosen);}catch(e){productError(e.message);return;}}
  const existing=cart.find(item=>item!==editing&&item.product_id===current.id&&item.options.length===chosen.length&&chosen.every(id=>item.options.includes(id)));
  if(existing){
   if(existing.quantity+quantity>20){productError('Limite de 20 unidades por combinação.');return}
@@ -2315,8 +2352,8 @@ $('addProduct').onclick=()=>{
   if(editing)cart=cart.filter(item=>item!==editing);
  }else{
   if(!editing&&cart.length>=30){productError('Limite de 30 combinações por pedido.');return}
-  const item={product_id:current.id,quantity,options:chosen,name:current.name,labels:options.map(option=>option.name),
-   unit:Number(current.price)+options.reduce((sum,option)=>sum+Number(option.price),0)};
+  const item={product_id:current.id,quantity,options:chosen,name:current.name,labels:pizzaQuote?.labels||options.map(option=>option.name),
+   unit:pizzaQuote?.unit??(Number(current.price)+options.reduce((sum,option)=>sum+Number(option.price),0))};
   if(editing)cart[cart.indexOf(editing)]=item;
   else cart.push(item);
  }
