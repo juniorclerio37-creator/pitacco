@@ -608,7 +608,7 @@ function announceAssignments(deliveries,courier){
    &&[...current].some(id=>!assignmentBaseline.ids.has(id));
  assignmentBaseline={courier:courier.id,ids:current};
  if(!fresh)return;
- message("Nova entrega atribuída pela loja.");
+ message("Nova entrega atribuída pela loja.","info");
  // Native WebView must use the very same bundled bell+voice alert that the
  // Android "Testar som" action uses. A synthesized browser bell is not
  // the approved sound. Existing signed APKs already support "test".
@@ -620,7 +620,7 @@ function announceAssignments(deliveries,courier){
    native.postMessage("test");
    return;
   }catch{
-   message("A notificação Android falhou; confira as permissões do aplicativo.");
+   message("A notificação Android falhou; confira as permissões do aplicativo.","warning");
   }
  }
  // Browser-only fallback; web has no native sound bridge.
@@ -912,7 +912,7 @@ async function collectCourierOrder(d){
   if(isMerchantIfoodDelivery(d))
    notice="Coleta registrada no Pitacco. O iFood será avisado quando você tocar em Sair para entrega.";
   try{await refresh(true);}catch{notice+=" Atualize a lista para conferir a coleta.";}
-  message(notice);
+  message(notice,notice.includes("Atualize a lista")?"warning":"success");
   return true;
  }catch(error){message(String(error?.message||"Não foi possível confirmar a coleta"));return false}
  finally{busy=false}
@@ -954,7 +954,7 @@ async function departCourierRoute(d){
     notice+=" Há despacho de situação incerta: confira diretamente no iFood antes de tentar novamente.";
   }
   try{await refresh(true);}catch{notice+=" Atualize a lista quando houver conexão.";}
-  message(notice);
+  message(notice,/(Atenção:|pendente|situação incerta|aguarde|atualize a lista)/i.test(notice)?"warning":"success");
   return true;
  }catch(err){message(String(err?.message||"Não foi possível registrar a saída da loja"));return false}
  finally{busy=false}
@@ -986,7 +986,7 @@ async function markArrival(d){
   }else if(d.source==="99food")info+=" Aviso à 99Food ainda não homologado.";
   else if(d.source==="keeta")info+=" Aviso à Keeta ainda não homologado.";
   try{await refresh(true);}catch{info+=" Atualize a lista para conferir o registro.";}
-  message(info);
+  message(info,/(ainda não confirmado|não homologado|Atualize a lista)/i.test(info)?"warning":"success");
   return true;
  }catch(error){
   message(String(error?.message||"Erro ao registrar chegada"));
@@ -1054,8 +1054,8 @@ async function verifyCode(d,code){
   orderDetails.close();
   rememberCompletedBatchStop(d);
   try{await refresh(true);}
-  catch{message("Entrega validada. Atualize a lista para conferir o registro.");}
-  message("Entrega concluída! Ganho registrado conforme o valor configurado pela loja.");
+  catch{message("Entrega validada. Atualize a lista para conferir o registro.","warning");}
+  message("Entrega concluída! Ganho registrado conforme o valor configurado pela loja.","success");
   return true;
  }catch(error){
   const details=String(error?.message||"Erro ao confirmar a entrega");
@@ -1069,7 +1069,7 @@ async function verifyCode(d,code){
 }
 async function openDeliveryFinish(d){
  if(isNotificationDiagnostic(d)){
-  message("Este registro é apenas um teste interno de notificação, sem cliente ou código de entrega. Não é possível concluí-lo.");
+  message("Este registro é apenas um teste interno de notificação, sem cliente ou código de entrega. Não é possível concluí-lo.","warning");
   return false;
  }
  if(busy)return false;
