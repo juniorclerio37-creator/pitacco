@@ -25,7 +25,12 @@ h1{font-size:26px;margin:10px 0 4px;letter-spacing:-.6px}.sub{font-size:14px;col
 .warn{font-size:12px;color:#7a4959;line-height:1.5;margin-top:12px}
 .info{font-size:13px;color:#657183;background:#fff;border:1px solid #e6e9ef;border-radius:15px;padding:16px;margin:15px 0}
 .topactions{display:flex;gap:8px;align-items:center}
-#notice{color:#b91c1c;font-size:13px;min-height:20px;margin:12px 0}
+#notice{display:block;margin:12px 0;padding:10px 14px;border:1px solid transparent;border-left-width:4px;border-radius:11px;font-size:13px;font-weight:650;line-height:1.45}
+#notice[hidden]{display:none}
+#notice[data-kind="success"]{color:#17613d;background:#ecf8f0;border-color:#bae4cb;border-left-color:#1c9c65}
+#notice[data-kind="info"]{color:#31587b;background:#eff6fc;border-color:#c7dff2;border-left-color:#4d92cd}
+#notice[data-kind="warning"]{color:#895a15;background:#fff7e6;border-color:#f6dda3;border-left-color:#dd9b27}
+#notice[data-kind="error"]{color:#ab1e36;background:#fff0f2;border-color:#f4c4cd;border-left-color:#ca344f}
 #connectionBanner{display:flex;align-items:center;gap:8px;padding:12px 16px;margin:0 auto;max-width:1000px;background:#fff5e6;color:#7c3e0f;border:1px solid #f4cf9f;border-radius:12px;font-size:13px;line-height:1.5;font-weight:650}
 #connectionBanner[hidden]{display:none}
 .hidden{display:none!important}.empty{padding:30px;border:1px dashed #cfd6dd;border-radius:20px;text-align:center;color:#687383}
@@ -130,7 +135,7 @@ a.btn{text-decoration:none}
       <span>Entregas concluídas <b id="bucketCompletedCount">0</b></span>
     </button>
   </nav>
-  <p id="notice" role="alert" aria-live="polite"></p>
+  <p id="notice" role="status" aria-live="polite" hidden></p>
   <div class="delivery-bucket-summary" aria-live="polite">
     <strong id="bucketTitle">Aguardando coleta</strong>
     <span class="auto-pill">Atualiza automaticamente</span>
@@ -642,6 +647,7 @@ document.addEventListener("keydown",enableAssignmentSound,{once:true});
 const validViews=["pedidos","rotas","ganhos","perfil","config"];
 function switchView(view){
  const next=validViews.includes(view)?view:"pedidos";
+ message("");
  for(const section of document.querySelectorAll(".app-view"))section.hidden=section.dataset.view!==next;
  for(const btn of document.querySelectorAll(".bottom-nav [data-tab]")){
   if(btn.dataset.tab===next)btn.setAttribute("aria-current","page");else btn.removeAttribute("aria-current");
@@ -812,7 +818,21 @@ document.querySelectorAll("[data-earn-period]").forEach(button=>{
  });
 });
 const statuses={pendente:"Aguardando loja",atribuida:"Aguardando coleta",aceita:"Coletada",retirada:"Saiu para entrega",entregue:"Entregue",cancelada:"Cancelada"};
-function message(text){$("notice").textContent=text||"";}
+let noticeTimer=null;
+function message(text,kind="error"){
+ const node=$("notice");
+ if(noticeTimer){window.clearTimeout(noticeTimer);noticeTimer=null;}
+ const content=String(text||"").trim();
+ node.textContent=content;
+ if(!content){node.hidden=true;node.removeAttribute("data-kind");return;}
+ const severity=["success","info","warning","error"].includes(kind)?kind:"error";
+ node.hidden=false;node.dataset.kind=severity;
+ node.setAttribute("role",severity==="error"?"alert":"status");
+ node.setAttribute("aria-live",severity==="error"?"assertive":"polite");
+ if(severity!=="error")noticeTimer=window.setTimeout(()=>{
+  if(node.textContent===content&&node.dataset.kind===severity)message("");
+ },severity==="success"?4500:6500);
+}
 function paymentOf(d){return paymentCards.get(d.id)||{state:"unknown",method:"Não informada",amount:null};}
 async function confirmCourierCollection(d){
  if(busy)throw Error("Aguarde a operação anterior terminar.");
