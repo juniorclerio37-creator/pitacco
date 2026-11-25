@@ -247,3 +247,7 @@
 .pitacco-pedidos.windows-cards-only .pedidos-card-actions>[role="status"] {font-size:10px;line-height:1.25;flex:1 0 100%;padding:0;margin:0;color:var(--store-muted,#536173)}
 .pitacco-pedidos.windows-cards-only .pedidos-card-actions>.pedidos-accept-deadline {flex:0 0 auto;font-weight:800;font-variant-numeric:tabular-nums;color:#b92532;white-space:nowrap}
 .pitacco-pedidos.windows-cards-only .pedidos-card-actions svg {width:14px;height:14px}
+
+/* Own order and marketplace cancellation use the same compact visual label. */
+.pitacco-pedidos .pedidos-card-actions>.pedidos-card-cancel {background:transparent!important;border:1px solid #d48b90!important;color:#b92532!important;font-weight:700}
+.pitacco-pedidos .pedidos-card-actions>.pedidos-card-cancel:hover:not(:disabled){background:#fff1f2!important}

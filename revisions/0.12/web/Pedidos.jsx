@@ -96,7 +96,9 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  const currentDelivery=deliveriesByOrder.get(current?.id);
  const currentLocalizer=validLocalizer(badgeByOrder.get(current?.id));
  const canDecide=current?.source==='proprio'&&current.status==='pending';
- const canCancelOwn=current?.source==='proprio'&&['analysis','scheduled','preparing','ready','delivery'].includes(stage(current))&&['pending','accepted'].includes(current.status);
+ const canCancelOwnOrder=o=>o?.source==='proprio'&&['analysis','scheduled','preparing','ready','delivery'].includes(stage(o))&&['pending','accepted'].includes(o.status);
+ const canCancelOwn=canCancelOwnOrder(current);
+ function openOwnCancel(order){if(!canCancelOwnOrder(order))return;setSelected(order.id);setDecision({id:order.id,status:'cancelled',reason:''});}
  const canCancelIfood=current?.source==='ifood'&&['pending','accepted'].includes(current.status)&&['analysis','preparing','ready','delivery'].includes(stage(current));
  const waitingIfood=current?.source==='ifood'&&current.status==='pending';
  const ifoodRequestPending=waitingIfood&&current.receipt?.ifood_manual_accept==='requested';
@@ -187,6 +189,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
     {o.source==='proprio'&&o.status==='pending'&&stage(o)==='analysis'&&<div className="pedidos-card-actions">
      {popupLayout&&<button type="button" className="secondary pedidos-reject-button" disabled={busy} onClick={()=>{setSelected(o.id);setDecision({id:o.id,status:'rejected',reason:''})}}>Recusar</button>}
      <button type="button" className="primary pedidos-step-button" disabled={busy} onClick={()=>onAccept(o.id)}>Aceitar</button>
+     {canCancelOwnOrder(o)&&<button type="button" className="secondary pedidos-card-cancel" disabled={busy||!onDecision} onClick={()=>openOwnCancel(o)}>Cancelar</button>}
     </div>}
     {o.source==='ifood'&&o.status==='pending'&&<div className="pedidos-card-actions">
      <button type="button" className="primary" disabled={busy||o.status!=='pending'||acceptMode==='automatic'||!onAcceptIfood||ifoodAcceptExpired(o)||o.receipt?.ifood_manual_accept==='requested'||o.receipt?.ifood_manual_cancel==='requested'} onClick={()=>onAcceptIfood?.(o.id)}>Aceitar</button>
@@ -196,7 +199,9 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
      {o.receipt?.ifood_manual_accept==='requested'&&<span role="status">Aguardando confirmação do iFood</span>}
      {o.receipt?.ifood_manual_cancel==='requested'&&<span role="status">Cancelamento solicitado ao iFood</span>}
     </div>}
+    {o.status==='pending'&&stage(o)!=='analysis'&&canCancelOwnOrder(o)&&<div className="pedidos-card-actions"><button type="button" className="secondary pedidos-card-cancel" disabled={busy||!onDecision} onClick={()=>openOwnCancel(o)}>Cancelar</button></div>}
     {o.status==='accepted'&&<div className="pedidos-card-actions">
+     {canCancelOwnOrder(o)&&<button type="button" className="secondary pedidos-card-cancel" disabled={busy||!onDecision} onClick={()=>openOwnCancel(o)}>Cancelar</button>}
      {popupLayout&&o.source==='ifood'&&['preparing','ready','delivery'].includes(stage(o))&&
       (o.receipt?.ifood_manual_cancel==='requested'?<span role="status">Cancelamento solicitado ao iFood</span>:
        <button type="button" className="secondary pedidos-card-cancel" title="Cancelar pedido no iFood" aria-label="Cancelar pedido no iFood" disabled={busy||!onRejectIfood||!onGetIfoodReasons} onClick={()=>void openIfoodReject(o)}>Cancelar</button>)}
@@ -244,7 +249,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
 {canDecide&&<>
  {stage(current)!=='scheduled'&&<button className="primary" disabled={busy} onClick={()=>onAccept(current.id)}>Aceitar e iniciar preparo</button>}
  <button type="button" className="secondary" disabled={busy} onClick={()=>setDecision({id:current.id,status:'rejected',reason:''})}>Recusar pedido</button>
- </>}{canCancelOwn&&<button type="button" className="secondary" disabled={busy} onClick={()=>setDecision({id:current.id,status:'cancelled',reason:''})}>Cancelar pedido</button>}{waitingIfood&&!ifoodRequestPending&&!ifoodCancelPending&&acceptMode!=='automatic'&&<>
+ </>}{canCancelOwn&&<button type="button" className="secondary" disabled={busy||!onDecision} onClick={()=>openOwnCancel(current)}>Cancelar</button>}{waitingIfood&&!ifoodRequestPending&&!ifoodCancelPending&&acceptMode!=='automatic'&&<>
  { !ifoodExpired&&<button className="primary" disabled={busy||!onAcceptIfood} onClick={()=>onAcceptIfood?.(current.id)}>Aceitar pedido no iFood</button>}
  </>}{canCancelIfood&&!ifoodRequestPending&&!ifoodCancelPending&&<button type="button" className="secondary" disabled={busy||!onRejectIfood||!onGetIfoodReasons} aria-label="Cancelar pedido no iFood" onClick={()=>void openIfoodReject(current)}>Cancelar</button>}
   </>}>
@@ -281,7 +286,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  event.preventDefault();
  const ok=await onDecision(current.id,decision.status,decision.reason);if(ok)setDecision(null);
  }}>
- {decision.status==='cancelled'&&<p>O pedido será cancelado e a entrega própria encerrada. Confira os pagamentos e eventuais estornos separadamente. Alimentos preparados não retornam ao estoque.</p>}
+ {decision.status==='cancelled'&&<><h4>Cancelar pedido da loja</h4><p>O pedido será cancelado no Pitacco. {current.receipt?.logistics==='retirada'?'A retirada será cancelada.':'A entrega própria será encerrada.'} Nenhuma solicitação de cancelamento será enviada ao iFood. Confira pagamentos e eventuais estornos separadamente. Alimentos preparados não retornam ao estoque.</p></>}
  <label>Motivo {decision.status==='rejected'?'da recusa':'do cancelamento'}
  <input required minLength={3} maxLength={240} value={decision.reason} onChange={event=>setDecision({...decision,reason:event.target.value})}/>
  </label>

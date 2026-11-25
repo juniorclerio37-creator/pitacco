@@ -233,3 +233,12 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  assert.match(operations,/ifood-manual-action'[,].*action:'cancel'/);
  assert.match(orders,/Aguardando confirmação oficial/);
 });
+
+ test('own orders expose local cancellation on pickup and delivery regardless of channel',()=>{
+ const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
+ assert.match(orders,/const canCancelOwnOrder=o=>o\?\.source==='proprio'/);
+ assert.match(orders,/onClick=\{\(\)=>openOwnCancel\(o\)\}>Cancelar<\/button>/);
+ assert.match(orders,/setDecision\(\{id:order\.id,status:'cancelled',reason:''\}\)/);
+ assert.match(orders,/onDecision\(current\.id,decision\.status,decision\.reason\)/);
+ assert.match(orders,/Nenhuma solicitação de cancelamento será enviada ao iFood/);
+ });
