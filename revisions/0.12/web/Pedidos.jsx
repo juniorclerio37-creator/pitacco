@@ -4,6 +4,7 @@ import './pedidos.css';
 import FleetTracking from './FleetTracking.jsx';
 import OrderDetails from './OrderDetails.jsx';
 import {deliveryLabel,sourceLabel} from './DeliveryDialog.jsx';
+import {shippingReserved} from './IfoodShippingOrder.jsx';
 import {receiptItems} from './receiptItems.mjs';
 import {orderAddress,publicOrderNumber,validLocalizer} from './orderDisplay.mjs';
 const scheduledTime=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'});
@@ -28,7 +29,7 @@ const deliveryType=(order,delivery)=>{
  if(mode==='loja')return {type:'own',label:delivery?.status==='retirada'&&delivery.arrived_at?deliveryLabel(delivery):'Entrega própria'};
  return {type:'unknown',label:'Logística a confirmar'};
 };
-const canAssign=(order,delivery)=>order.status==='accepted'&&order.preparation_status==='ready'&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id;
+const canAssign=(order,delivery)=>order.status==='accepted'&&order.preparation_status==='ready'&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id&&!shippingReserved(delivery);
 const isAutomaticDispatch=mode=>mode==='automatico';
 const canDispatch=(order,delivery)=>canAssign(order,delivery);
 const canConcludeOnWindows=(order,delivery,step)=>(
