@@ -9,3 +9,9 @@ for(const done of [true,false])test('Order event acknowledgment requires durable
  const p=createShippingTestPoller({rpc:async(n,b)=>{calls.push([n,b]);if(n.endsWith('claim_poll'))return [{merchant_id:m,lease:l}];if(n.endsWith('order_event_done'))return done;if(n.endsWith('test_event'))return {handled:false,test_merchant:true};return true},token:async()=>'fixture',timeout:()=>undefined,fetcher:async(u)=>{calls.push([u]);return u.endsWith(':polling')?{status:200,ok:true,json:async()=>[e]}:{status:200,ok:true}},enqueue:async()=>{calls.push(['duplicate']);return false},process:async()=>{calls.push(['processed'])},logger:{warn:()=>{}}});
  await p.poll();assert.ok(calls.some(x=>x[0]==='processed'));assert.equal(calls.some(x=>x[0].endsWith('/acknowledgment')),done);assert.equal(calls.at(-1)[1].p_ok,done);
 });
+
+test('POS address request is durably saved before acknowledgment without unrelated metadata',async()=>{
+ const calls=[];const addressEvent={...event,fullCode:'DELIVERY_ADDRESS_CHANGE_REQUESTED',metadata:{address:{streetName:'Rua teste',city:'Cidade teste',coordinates:{latitude:-22,longitude:-43},secret:'never persist'},other:'never persist'}};
+ const p=createShippingTestPoller({rpc:async(n,b)=>{calls.push([n,b]);if(n.endsWith('claim_poll'))return [{merchant_id:m,lease:l}];return {handled:true}},token:async()=>'fixture',timeout:()=>undefined,fetcher:async(u)=>{calls.push([u]);return u.endsWith(':polling')?{status:200,ok:true,json:async()=>[addressEvent]}:{status:200,ok:true}},enqueue:async()=>{throw Error('POS duplicate')},process:async()=>{},logger:{warn:()=>{}}});
+ await p.poll();const i=calls.findIndex(x=>x[0].endsWith('address_event'));assert.ok(i>=0&&i<calls.findIndex(x=>x[0].endsWith('/acknowledgment')));assert.equal(calls[i][1].p_address.streetName,'Rua teste');assert.equal(calls[i][1].p_address.secret,undefined);
+});

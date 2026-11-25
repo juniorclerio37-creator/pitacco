@@ -18,3 +18,6 @@ O agendamento cron de 30 segundos estava efetivamente produzindo intervalos de c
 
 ## Pedidos externos — preparação do cenário 3
 Console isolado de homologação com cotação persistida, trava por merchant e uso único por quoteId, envio explícito de item fictício, registro de HTTP 202/ID/rastreamento e consulta de pickupCode somente para pedido POS de teste confirmado pelo provedor. Não integra ainda pedidos reais do balcão ou cardápio; não contabiliza vendas. Em timeout ou resposta ambígua não repetir. A alteração de endereço e cancelamento externos ainda precisam de implementação e testes. Não habilitar em produção até confirmação do ambiente de teste e dos contratos da API.
+
+## Cenários 4 e 5 — ações externas de teste
+Endereço recebido em evento POS persistido com metadados mínimos antes do acknowledgment; decisão vinculada ao evento e limitada a 15 minutos. Cancelamento consulta motivos oficiais a cada tentativa e exige seleção e confirmação do operador. Reserva transacional impede duplicação; eventos oficiais determinam resultado. Somente pedidos externos de homologação vinculados e confirmados pelo iFood. Ainda exige testes reais, vídeos e logs. Autenticação das credenciais centralizadas de produção (IFOOD_PRODUCTION_CLIENT_ID/SECRET) retornou HTTP 403 em 25/11/2026; não liberar produção nem trocar credenciais de teste.

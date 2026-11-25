@@ -42,7 +42,7 @@ Deno.serve(async req=>{
  if(!/^Bearer \S+$/.test(auth))return reply(401,{error:'Faça login no Pitacco.'});
  try{
   const raw=await req.text();if(raw.length>4096)return reply(413,{error:'Solicitação inválida.'});
-  const d=JSON.parse(raw);if(!uuid.test(d.store_id??'')||!['status','inside_quote','outside_quote','details','booking_status','request_driver','external_create','external_list','external_details'].includes(d.action))return reply(400,{error:'Ação inválida.'});
+  const d=JSON.parse(raw);if(!uuid.test(d.store_id??'')||!['status','inside_quote','outside_quote','details','booking_status','request_driver','external_create','external_list','external_details','external_status','external_reasons','external_decision'].includes(d.action))return reply(400,{error:'Ação inválida.'});
   let actor:string|null=null;
   if(auth!=='Bearer '+svc){const r=await fetch(url+'/auth/v1/user',{headers:{apikey:pub,authorization:auth},signal:AbortSignal.timeout(6000),redirect:'error'});if(!r.ok)return reply(401,{error:'Sessão inválida.'});actor=(await r.json()).id;if(!uuid.test(actor??''))return reply(401,{error:'Conta inválida.'});}
   if(['inside_quote','details','booking_status','request_driver'].includes(d.action)&&!uuid.test(d.order_id??''))return reply(400,{error:'Selecione um pedido de teste.'});
@@ -50,6 +50,31 @@ Deno.serve(async req=>{
   if(d.action==='status')return reply(200,{environment:'test',client_id:clientId,merchant_id:ctx.merchant_id,orders:ctx.orders,has_location:ctx.store_latitude!=null&&ctx.store_longitude!=null,mutations_enabled:true,external_create_enabled:true});
   const external=(action:string,data:unknown={})=>rpc('pitacco_ifood_shipping_external_test',{p_store:d.store_id,p_actor:actor,p_action:action,p_data:data});
   if(d.action==='external_list')return reply(200,{orders:await external('list')});
+  if(['external_status','external_reasons','external_decision'].includes(d.action)){
+   if(!uuid.test(d.external_id??''))return reply(400,{error:'Selecione um pedido externo de teste.'});
+   const op=(action:string,data:unknown={})=>rpc('pitacco_ifood_shipping_external_operation',{p_store:d.store_id,p_actor:actor,p_external:d.external_id,p_action:action,p_data:data});
+   let state:any;try{state=await op('status')}catch{return reply(403,{error:'Pedido externo não vinculado à homologação.'})}
+   if(d.action==='external_status')return reply(200,state);
+   if(state.terminal)return reply(409,{error:'Pedido de teste encerrado.'});
+   const details=await provider(buildShippingRequest('details',{orderId:d.external_id}));
+   if(!details.ok)return reply(200,{available:false,provider_http:details.status,provider_code:details.code});
+   if(details.data?.id!==d.external_id||details.data?.merchant?.id!==ctx.merchant_id||details.data?.isTest!==true||details.data?.salesChannel!=='POS')return reply(409,{error:'Pedido externo de teste não confirmado pelo iFood.'});
+   let reasons:any[]=[];
+   if(d.action==='external_reasons'||d.decision==='cancel'){
+    const r=await provider(buildShippingRequest('reasons',{orderId:d.external_id}));
+    if(r.status!==204&&(!r.ok||!Array.isArray(r.data)))return reply(200,{available:false,provider_http:r.status,provider_code:r.code});
+    reasons=(Array.isArray(r.data)?r.data:[]).filter((x:any)=>typeof x?.cancelCodeId==='string'&&/^\d{1,8}$/.test(x.cancelCodeId)&&typeof x.description==='string'&&x.description.trim().length>0&&x.description.length<=250).slice(0,100).map((x:any)=>({cancelCodeId:x.cancelCodeId,description:x.description}));
+    if(d.action==='external_reasons')return reply(200,{available:true,reasons});
+   }
+   if(d.confirmed!==true||!['accept_address','deny_address','cancel'].includes(d.decision))return reply(400,{error:'Confirme a ação de homologação.'});
+   let request:any;
+   try{request=buildShippingRequest(d.decision,{orderId:d.external_id,reasonCode:d.reason_code,reasons,pendingAddress:{orderId:d.external_id,createdAt:state.address_requested_at},now:Date.now()})}catch{return reply(409,{error:'Motivo inválido ou solicitação de endereço expirada.'})}
+   let claim:any;try{claim=await op('claim',{action:d.decision,request_id:d.request_id,reason_code:d.reason_code})}catch{return reply(409,{error:'Ação já solicitada, expirada ou indisponível. Atualize o estado.'})}
+   let http=0,code=null;
+   try{const r=await provider(request);http=r.status;code=r.code}catch{/* ambiguous operation is never retried automatically */}
+   const result=await op('finish',{action:d.decision,request_id:claim.request_id,attempt:claim.attempt,http});
+   return reply(200,{...result,provider_code:code,...await op('status')});
+  }
   if(d.action==='external_details'){
    if(!uuid.test(d.external_id??''))return reply(400,{error:'Selecione um pedido de homologação.'});
    const list=await external('list');

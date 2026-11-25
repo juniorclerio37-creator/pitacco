@@ -8,7 +8,15 @@ export function createShippingTestPoller({rpc,token,fetcher,enqueue,process,requ
   const code=event?.fullCode??aliases[event?.code]??event?.code;
   if(!uuid.test(event?.id??'')||!uuid.test(event?.merchantId??'')||!uuid.test(event?.orderId??'')||!Number.isFinite(Date.parse(event?.createdAt))||typeof code!=='string')return false;
   if(!knownTest&&!codes.has(code)&&event.salesChannel!=='POS')return false;
-  const r=await rpc('pitacco_ifood_shipping_test_event',{p_id:event.id,p_merchant:event.merchantId,p_order:event.orderId,p_code:code,p_at:new Date(event.createdAt).toISOString()});
+  const eventArgs={p_id:event.id,p_merchant:event.merchantId,p_order:event.orderId,p_at:new Date(event.createdAt).toISOString()};
+  let r;
+  if(code==='DELIVERY_ADDRESS_CHANGE_REQUESTED'&&event.salesChannel==='POS'){
+   const address=event.metadata?.address,fields=['streetName','streetNumber','complement','neighborhood','city','state','country','postalCode','reference'];
+   const safe=Object.fromEntries(fields.filter(k=>typeof address?.[k]==='string').map(k=>[k,address[k].trim().slice(0,160)]));
+   const lat=address?.coordinates?.latitude,lng=address?.coordinates?.longitude;
+   if(typeof lat==='number'&&typeof lng==='number'&&Number.isFinite(lat)&&Number.isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180)safe.coordinates={latitude:lat,longitude:lng};
+   r=await rpc('pitacco_ifood_shipping_test_address_event',{...eventArgs,p_address:safe});
+  }else r=await rpc('pitacco_ifood_shipping_test_event',{...eventArgs,p_code:code});
   return event.salesChannel==='POS'&&(knownTest||r?.handled===true||r?.test_merchant===true);
  }
  async function pollOne(row){
