@@ -20,7 +20,7 @@ end=source.index('];',start)
 assert "'Primeiros passos'" not in source[start:end]
 source=source[:end]+",['Primeiros passos',LaunchChecksIcon,'Configurações']"+source[end:]
 
-anchor="{tab==='Minha Loja'&&active&&<StoreProfile key={selected} client={supabase} store={active} manager={manager} onSaved={loadStores} onAppearance={()=>setTab('Aparência do cardápio')}/>}"
+anchor="{tab==='Minha Loja'&&active&&<StoreProfile key={selected} client={supabase} store={active} manager={manager} onSaved={loadStores} storeLogoUrl={storeBrand?.store_id===selected?storeBrand.logo_url:''} onAppearance={()=>setTab('Aparência do cardápio')}/>}"
 once(anchor,anchor+"""
 {tab==='Primeiros passos'&&active&&!nativeAvailable()&&(manager
  ?<StoreLaunchWizard key={selected} client={supabase} store={active} manager={manager}
