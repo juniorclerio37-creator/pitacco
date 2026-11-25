@@ -38,7 +38,7 @@ end $$;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
 select public.pitacco_owner_enable_ifood_linking(true);
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
-do $ begin
+do $central$ begin
  perform public.pitacco_ifood_central_request('20000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001');
  assert (select count(*) from public.pitacco_ifood_central_requests('20000000-0000-0000-0000-000000000001'))=1;
  begin
@@ -53,7 +53,7 @@ do $ begin
   perform public.pitacco_ifood_central_approve(gen_random_uuid(),auth.uid(),gen_random_uuid(),'Unauthorized');
   raise exception 'Approval is service-only';
  exception when insufficient_privilege then null; end;
-end $;
+end $central$;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
 select set_config('pitacco.test_central_request',id::text,true) from public.pitacco_owner_ifood_central_requests() where merchant_id='40000000-0000-0000-0000-000000000001';
 select public.pitacco_owner_ifood_central_review(current_setting('pitacco.test_central_request')::uuid,'awaiting');
