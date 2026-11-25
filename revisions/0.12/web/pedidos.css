@@ -253,7 +253,7 @@
 .pitacco-pedidos .pedidos-card-actions>.pedidos-card-cancel:hover:not(:disabled){background:#fff1f2!important}
 
 /* Identical compact board in web and Windows; retain web summary and routing. */
-.pitacco-pedidos.web-compact-orders:not([data-layout="routes"]) .pedidos-kpis{display:grid}
+.pitacco-pedidos.web-compact-orders .pedidos-kpis{display:none!important}
 .pitacco-pedidos.web-compact-orders .pedidos-heading>span{display:inline}
 .pitacco-pedidos.web-compact-orders[data-layout="routes"]>.pedidos-split{display:none}
 .pitacco-pedidos.web-compact-orders .pedidos-list.pedidos-kanban{overflow-x:auto;grid-template-columns:repeat(4,minmax(190px,1fr));grid-auto-columns:minmax(190px,1fr)}

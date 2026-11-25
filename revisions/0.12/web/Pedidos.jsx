@@ -124,6 +124,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  const boardStages=[['analysis','Em análise'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega']];
  const auxiliaryStages=[['scheduled','Agendados'],['historical','Outros']];
  const showWindowsBoard=filter==='all';
+ const visibleStages=stages.filter(([key])=>popupLayout||['completed','cancelled','rejected','scheduled'].includes(key));
  const boardGroups=showWindowsBoard?
   [...boardStages,...auxiliaryStages.filter(([key])=>filtered.some(o=>stage(o)===key))].map(([id,label])=>({
    id,label,items:filtered.filter(o=>stage(o)===id)
@@ -142,7 +143,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
    <Icon size={23} aria-hidden="true"/><span><strong>{counts[key]}</strong>{label}</span>
   </button>)}<div className="pedidos-kpi"><TrendingUp size={23} aria-hidden="true"/><span><strong>{brl(total)}</strong>Total registrado*</span></div></div>:
   <div className="pedidos-kpis">{stages.map(([key,label])=><button key={key} className={'pedidos-kpi '+(filter===key?'selected':'')} onClick={()=>setFilter(key)}><strong>{counts[key]}</strong><span>{label}</span></button>)}<div className="pedidos-kpi"><strong>{brl(total)}</strong><span>Total registrado*</span></div></div>}
-  <div className="pedidos-tabs" aria-label="Filtrar pedidos por situação"><button type="button" aria-pressed={filter==='all'} className={filter==='all'?'selected':''} onClick={()=>setFilter('all')}>Em andamento</button>{stages.map(([key,label])=><button type="button" key={key} data-order-filter={key} aria-pressed={filter===key} className={filter===key?'selected':''} onClick={()=>setFilter(key)}>{key==='completed'?'Concluídos':label} ({counts[key]})</button>)}<input aria-label="Buscar pedido, cliente ou item" placeholder="Buscar nome, telefone ou código…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
+  <div className="pedidos-tabs" aria-label="Filtrar pedidos por situação"><button type="button" aria-pressed={filter==='all'} className={filter==='all'?'selected':''} onClick={()=>setFilter('all')}>{popupLayout?'Em andamento':'Pedidos'}</button>{visibleStages.map(([key,label])=><button type="button" key={key} data-order-filter={key} aria-pressed={filter===key} className={filter===key?'selected':''} onClick={()=>setFilter(key)}>{key==='completed'?'Concluídos':label} ({counts[key]})</button>)}<input aria-label="Buscar pedido, cliente ou item" placeholder="Buscar nome, telefone ou código…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
   <div className="pedidos-split"><div className={"pedidos-list"+(showWindowsBoard?" pedidos-kanban":"")} aria-label={showWindowsBoard?"Quadro de pedidos em andamento":undefined}>
    {!showWindowsBoard&&filtered.length===0&&<p className="pedidos-list-empty" role="status">{filter==='completed'?'Nenhum pedido concluído encontrado.':filter==='cancelled'?'Nenhum pedido cancelado encontrado.':filter==='rejected'?'Nenhum pedido recusado encontrado.':'Nenhum pedido encontrado.'}</p>}
    {boardGroups.map(group=><section className="pedidos-stage-column" data-stage={group.id} key={group.id}>

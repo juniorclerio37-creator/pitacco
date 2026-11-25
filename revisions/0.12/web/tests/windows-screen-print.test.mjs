@@ -268,3 +268,12 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  assert.ok(orders.includes('data-order-filter={key}'));
  assert.doesNotMatch(orders,/popupLayout\?stages\.filter/);
  });
+
+ test('web order toolbar removes duplicate stage controls while keeping history and native controls',()=>{
+ const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../pedidos.css',import.meta.url),'utf8');
+ assert.ok(orders.includes("const visibleStages=stages.filter(([key])=>popupLayout||['completed','cancelled','rejected','scheduled'].includes(key))"));
+ assert.ok(orders.includes("popupLayout?'Em andamento':'Pedidos'"));
+ assert.ok(orders.includes('visibleStages.map'));
+ assert.ok(css.includes('.pitacco-pedidos.web-compact-orders .pedidos-kpis{display:none!important}'));
+ });
