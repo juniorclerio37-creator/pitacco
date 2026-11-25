@@ -37,7 +37,7 @@ try {
       768: { status: 'accepted', delivery_status: 'retirada', preparation_status: 'ready', fulfillment: 'delivery', label: 'Saiu para entrega' },
       1440: { status: 'accepted', preparation_status: 'completed', fulfillment: 'pickup', label: 'Retirado' }
     }[width];
-    const scheduled = width === 768 ? '2026-11-17T21:00:00Z' : null;
+    const scheduled = width === 768 ? new Date(Date.now()+3*3600000).toISOString() : null;
     const area = {latitude:-22.7,longitude:-43.4,radius_m:3000,coverage_type:'circle',polygon:[]};
     await page.context().grantPermissions(['geolocation']);
     await page.context().setGeolocation({latitude:-22.71,longitude:-43.4});
@@ -116,7 +116,7 @@ try {
       }
       if(pathname.endsWith('/pitacco_public_store_open')){
         assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
-        return route.fulfill({json:{open:true,reason:'open',next_open_at:null,timezone:'America/Sao_Paulo'}});
+        return route.fulfill({json:{open:true,reason:'open',next_open_at:null,timezone:'America/Sao_Paulo',scheduling_available:Boolean(scheduled),paused:false}});
       }
       if(pathname.endsWith('/pitacco_public_schedule_slots')){
         assert.equal(route.request().postDataJSON().p_fulfillment,'delivery');
