@@ -88,7 +88,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  const badgeByOrder=useMemo(()=>new Map(badges.map(b=>[b.order_id,b])),[badges]);
  const number=o=>publicOrderNumber(o,badgeByOrder.get(o?.id));
  const counts=useMemo(()=>Object.fromEntries(stages.map(([id])=>[id,orders.filter(o=>stage(o)===id).length])),[orders,stage]);
- const filtered=useMemo(()=>orders.filter(o=>(filter==='all'?!terminal.has(stage(o)):stage(o)===filter)&&(!search||[number(o),o.receipt?.customer,o.receipt?.phone,...receiptItems(o.receipt).map(i=>i.name)].join(' ').toLowerCase().includes(search.toLowerCase()))),[orders,filter,search,stage]);
+ const filtered=useMemo(()=>orders.filter(o=>(filter==='all'?(!terminal.has(stage(o))||(!popupLayout&&['completed','cancelled'].includes(stage(o)))):stage(o)===filter)&&(!search||[number(o),o.receipt?.customer,o.receipt?.phone,...receiptItems(o.receipt).map(i=>i.name)].join(' ').toLowerCase().includes(search.toLowerCase()))),[orders,filter,search,stage,popupLayout]);
  const current=orders.find(o=>o.id===selected);
  const closeDetails=()=>{setSelected(null);setDecision(null)};
  useEffect(()=>{closeDetails()},[storeId]);
@@ -122,11 +122,12 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  // Agrupamento visual por etapa; a classificação continua sendo calculada a
  // partir dos estados confirmados do pedido e da coleta, não por drag-and-drop.
  const boardStages=[['analysis','Em análise'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega']];
+ const historyBoardStages=popupLayout?[]:[['completed','Concluídos'],['cancelled','Cancelados']];
  const auxiliaryStages=[['scheduled','Agendados'],['historical','Outros']];
  const showWindowsBoard=filter==='all';
  const visibleStages=stages.filter(([key])=>popupLayout||['completed','cancelled','rejected','scheduled'].includes(key));
  const boardGroups=showWindowsBoard?
-  [...boardStages,...auxiliaryStages.filter(([key])=>filtered.some(o=>stage(o)===key))].map(([id,label])=>({
+  [...boardStages,...historyBoardStages,...auxiliaryStages.filter(([key])=>filtered.some(o=>stage(o)===key))].map(([id,label])=>({
    id,label,items:filtered.filter(o=>stage(o)===id)
   })):
   [{id:'all',label:'',items:filtered}];
@@ -144,7 +145,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
   </button>)}<div className="pedidos-kpi"><TrendingUp size={23} aria-hidden="true"/><span><strong>{brl(total)}</strong>Total registrado*</span></div></div>:
   <div className="pedidos-kpis">{stages.map(([key,label])=><button key={key} className={'pedidos-kpi '+(filter===key?'selected':'')} onClick={()=>setFilter(key)}><strong>{counts[key]}</strong><span>{label}</span></button>)}<div className="pedidos-kpi"><strong>{brl(total)}</strong><span>Total registrado*</span></div></div>}
   <div className="pedidos-tabs" aria-label="Filtrar pedidos por situação"><button type="button" aria-pressed={filter==='all'} className={filter==='all'?'selected':''} onClick={()=>setFilter('all')}>{popupLayout?'Em andamento':'Pedidos'}</button>{visibleStages.map(([key,label])=><button type="button" key={key} data-order-filter={key} aria-pressed={filter===key} className={filter===key?'selected':''} onClick={()=>setFilter(key)}>{key==='completed'?'Concluídos':label} ({counts[key]})</button>)}<input aria-label="Buscar pedido, cliente ou item" placeholder="Buscar nome, telefone ou código…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
-  <div className="pedidos-split"><div className={"pedidos-list"+(showWindowsBoard?" pedidos-kanban":"")} aria-label={showWindowsBoard?"Quadro de pedidos em andamento":undefined}>
+  <div className="pedidos-split"><div className={"pedidos-list"+(showWindowsBoard?" pedidos-kanban":"")} aria-label={showWindowsBoard?(popupLayout?"Quadro de pedidos em andamento":"Quadro de pedidos"):undefined}>
    {!showWindowsBoard&&filtered.length===0&&<p className="pedidos-list-empty" role="status">{filter==='completed'?'Nenhum pedido concluído encontrado.':filter==='cancelled'?'Nenhum pedido cancelado encontrado.':filter==='rejected'?'Nenhum pedido recusado encontrado.':'Nenhum pedido encontrado.'}</p>}
    {boardGroups.map(group=><section className="pedidos-stage-column" data-stage={group.id} key={group.id}>
     {showWindowsBoard&&<header className="pedidos-stage-title"><strong>{group.label}</strong><span>{group.items.length}</span></header>}
@@ -188,7 +189,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
      {o.receipt?.ifood_manual_cancel==='requested'&&<span role="status">Cancelamento solicitado ao iFood</span>}
     </div>}
     {o.status==='pending'&&stage(o)!=='analysis'&&canCancelOwnOrder(o)&&<div className="pedidos-card-actions"><button type="button" className="secondary pedidos-card-cancel" disabled={busy||!onDecision} onClick={()=>openOwnCancel(o)}>Cancelar</button></div>}
-    {o.status==='accepted'&&<div className="pedidos-card-actions">
+    {o.status==='accepted'&&!terminal.has(stage(o))&&<div className="pedidos-card-actions">
      {canCancelOwnOrder(o)&&<button type="button" className="secondary pedidos-card-cancel" disabled={busy||!onDecision} onClick={()=>openOwnCancel(o)}>Cancelar</button>}
      {o.source==='ifood'&&['preparing','ready','delivery'].includes(stage(o))&&
       (o.receipt?.ifood_manual_cancel==='requested'?<span role="status">Cancelamento solicitado ao iFood</span>:
@@ -218,6 +219,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
       </button>}
      <button type="button" className="secondary pedidos-card-print" aria-label={(manualPrint?"Imprimir no navegador pedido ":"Reimprimir comanda do pedido ")+number(o)} disabled={busy} onClick={()=>onReprint(o.id)}><Printer size={16} aria-hidden="true"/></button>
     </div>}
+    {stage(o)==='completed'&&o.status==='accepted'&&<div className="pedidos-card-actions"><button type="button" className="secondary pedidos-card-print" aria-label={'Reimprimir pedido '+number(o)} disabled={busy||!onReprint} onClick={()=>onReprint(o.id)}><Printer size={16} aria-hidden="true"/></button></div>}
    </article>;
   })}</section>)}</div>
   </div>

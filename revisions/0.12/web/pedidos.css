@@ -256,12 +256,16 @@
 .pitacco-pedidos.web-compact-orders .pedidos-kpis{display:none!important}
 .pitacco-pedidos.web-compact-orders .pedidos-heading>span{display:inline}
 .pitacco-pedidos.web-compact-orders[data-layout="routes"]>.pedidos-split{display:none}
-.pitacco-pedidos.web-compact-orders .pedidos-list.pedidos-kanban{overflow-x:auto;grid-template-columns:repeat(4,minmax(190px,1fr));grid-auto-columns:minmax(190px,1fr)}
+.pitacco-pedidos.web-compact-orders .pedidos-list.pedidos-kanban{overflow-x:auto;grid-template-columns:repeat(6,minmax(190px,1fr));grid-auto-columns:minmax(190px,1fr)}
 .pitacco-pedidos.windows-cards-only .pedidos-card-actions>.pedidos-pickup-finish{background:#16803d!important;border-color:#16803d!important;color:#fff!important}
 .pitacco-pedidos.windows-cards-only .pickup-ready-note{color:#2464a6;font-weight:700}
 .pitacco-pedidos.web-compact-orders .pedidos-stage-column{background:var(--store-quiet,#f6f8fb);border-color:var(--store-border,#e2e8f0)}
-@media(max-width:700px){.pitacco-pedidos.web-compact-orders .pedidos-list.pedidos-kanban{grid-template-columns:repeat(4,minmax(210px,1fr));grid-auto-columns:minmax(210px,1fr);scroll-snap-type:x proximity}.pitacco-pedidos.web-compact-orders .pedidos-stage-column{scroll-snap-align:start}}
+@media(max-width:700px){.pitacco-pedidos.web-compact-orders .pedidos-list.pedidos-kanban{grid-template-columns:repeat(6,minmax(210px,1fr));grid-auto-columns:minmax(210px,1fr);scroll-snap-type:x proximity}.pitacco-pedidos.web-compact-orders .pedidos-stage-column{scroll-snap-align:start}}
 
 /* History filters remain visible in both compact merchant workspaces. */
 .pitacco-pedidos .pedidos-tabs button[data-order-filter="completed"]:not(.selected){color:#176534;border-color:#a7d9b8;background:#edf9f0}
 .pitacco-pedidos .pedidos-tabs button[data-order-filter="cancelled"]:not(.selected){color:#a32835;border-color:#e5b6bb;background:#fff1f2}
+
+/* Web history columns contain real terminal orders without operational actions. */
+.pitacco-pedidos .pedidos-stage-column[data-stage="completed"] .pedidos-stage-title{color:#176534;border-color:#a7d9b8}
+.pitacco-pedidos .pedidos-stage-column[data-stage="cancelled"] .pedidos-stage-title{color:#a32835;border-color:#e5b6bb}
