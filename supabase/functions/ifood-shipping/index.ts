@@ -42,18 +42,21 @@ Deno.serve(async req=>{
  if(!/^Bearer \S+$/.test(auth))return reply(401,{error:'Faça login no Pitacco.'});
  try{
   const raw=await req.text();if(raw.length>4096)return reply(413,{error:'Solicitação inválida.'});
-  const d=JSON.parse(raw);if(!uuid.test(d.store_id??'')||!['status','inside_quote','outside_quote','details'].includes(d.action))return reply(400,{error:'Ação inválida.'});
+  const d=JSON.parse(raw);if(!uuid.test(d.store_id??'')||!['status','inside_quote','outside_quote','details','booking_status','request_driver'].includes(d.action))return reply(400,{error:'Ação inválida.'});
   let actor:string|null=null;
   if(auth!=='Bearer '+svc){const r=await fetch(url+'/auth/v1/user',{headers:{apikey:pub,authorization:auth},signal:AbortSignal.timeout(6000),redirect:'error'});if(!r.ok)return reply(401,{error:'Sessão inválida.'});actor=(await r.json()).id;if(!uuid.test(actor??''))return reply(401,{error:'Conta inválida.'});}
-  if(['inside_quote','details'].includes(d.action)&&!uuid.test(d.order_id??''))return reply(400,{error:'Selecione um pedido de teste.'});
-  let ctx:any;try{ctx=await rpc('pitacco_ifood_shipping_test_context',{p_store:d.store_id,p_actor:actor,p_order:['inside_quote','details'].includes(d.action)?d.order_id:null})}catch{return reply(403,{error:'Apenas loja de homologação autorizada.'})}
-  if(d.action==='status')return reply(200,{environment:'test',client_id:clientId,merchant_id:ctx.merchant_id,orders:ctx.orders,has_location:ctx.store_latitude!=null&&ctx.store_longitude!=null,mutations_enabled:false});
+  if(['inside_quote','details','booking_status','request_driver'].includes(d.action)&&!uuid.test(d.order_id??''))return reply(400,{error:'Selecione um pedido de teste.'});
+  let ctx:any;try{ctx=await rpc('pitacco_ifood_shipping_test_context',{p_store:d.store_id,p_actor:actor,p_order:['inside_quote','details','booking_status','request_driver'].includes(d.action)?d.order_id:null})}catch{return reply(403,{error:'Apenas loja de homologação autorizada.'})}
+  if(d.action==='status')return reply(200,{environment:'test',client_id:clientId,merchant_id:ctx.merchant_id,orders:ctx.orders,has_location:ctx.store_latitude!=null&&ctx.store_longitude!=null,mutations_enabled:true,external_create_enabled:false});
   if(d.action==='outside_quote'){
    const latitude=d.latitude??ctx.store_latitude,longitude=d.longitude??ctx.store_longitude;
    let call;try{call=buildShippingRequest('outside_quote',{merchantId:ctx.merchant_id,latitude,longitude})}catch{return reply(400,{error:'Coordenadas inválidas.'})}
    const q=await provider(call);if(!q.ok)return reply(200,{available:false,provider_http:q.status,provider_code:q.code});
    return reply(200,{available:true,environment:'test',quote:safeQuote(q.data)});
   }
+  const book=(action:string,data:unknown={})=>rpc('pitacco_ifood_shipping_test_booking',{p_action:action,p_store:d.store_id,p_actor:actor,p_order:d.order_id,p_data:data});
+  const safeBooking=(b:any)=>({state:b.state,quote_id:b.quote_id,quote_amount:b.quote_amount,quote_expires_at:b.quote_expires_at,provider_http:b.provider_http});
+  if(d.action==='booking_status')return reply(200,safeBooking(await book('status')));
   const details=await provider(buildShippingRequest('details',{orderId:ctx.external_id}));
   if(!details.ok)return reply(200,{available:false,provider_http:details.status,provider_code:details.code});
   if(details.data?.id!==ctx.external_id||details.data?.merchant?.id!==ctx.merchant_id||details.data?.isTest!==true)return reply(409,{error:'O iFood não confirmou pedido de teste desta loja.'});
@@ -61,8 +64,20 @@ Deno.serve(async req=>{
   const pickupCode=typeof code==='string'&&/^[0-9A-Za-z-]{1,32}$/.test(code)?code:null;
   if(d.action==='details')return reply(200,{order_id:ctx.external_id,pickupCode,deliveredBy:details.data?.delivery?.deliveredBy??null,environment:'test'});
   if(!ctx.eligible||details.data?.orderType!=='DELIVERY'||details.data?.delivery?.deliveredBy!=='MERCHANT')return reply(409,{error:'Pedido não elegível para troca de logística.'});
+  if(d.action==='request_driver'){
+   if(d.confirmed!==true||!uuid.test(d.quote_id??'')||typeof d.netValue!=='number'||!Number.isFinite(d.netValue)||d.netValue<0)return reply(400,{error:'Confirme a cotação e seu valor antes de solicitar.'});
+   let claim:any;try{claim=await book('claim',{id:d.quote_id,netValue:d.netValue})}catch{return reply(409,{error:'Cotação expirada, alterada ou entrega já reservada. Atualize os dados.'})}
+   let http=0,code=null;
+   try{
+    let call;try{call=buildShippingRequest('request_driver',{orderId:ctx.external_id,quote:claim,now:Date.now()})}catch{http=400;throw Error('expired quote')}
+    const result=await provider(call);http=result.status;code=result.code;
+   }catch{/* ambiguous request remains reserved; never repeat automatically */}
+   let result:any;try{result=await book('finish',{attempt:claim.attempt,http})}catch{return reply(503,{error:'A entrega permanece reservada; consulte a situação antes de tentar novamente.'})}
+   return reply(200,{...safeBooking(result),provider_code:code,environment:'test'});
+  }
   const q=await provider(buildShippingRequest('inside_quote',{orderId:ctx.external_id}));
   if(!q.ok)return reply(200,{available:false,provider_http:q.status,provider_code:q.code,pickupCode});
-  return reply(200,{available:true,environment:'test',quote:safeQuote(q.data),pickupCode});
+  const quote=safeQuote(q.data);await book('quote',quote);
+  return reply(200,{available:true,environment:'test',quote,pickupCode});
  }catch(e){const m=e instanceof Error?e.message:'';return reply(503,{error:'Consulta Shipping indisponível.',...(/^oauth-\d{3}$/.test(m)?{provider_http:Number(m.slice(6))}:{})})}
 });
