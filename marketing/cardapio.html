@@ -1756,9 +1756,9 @@ async function requestDeliveryQuote(auto=false){
     throw Error(data?.error||'Não foi possível confirmar o frete.');
    if(token!==quoteGeneration||$('address').value.trim()!==address||
     (quotePoint&&(!deliveryPoint||deliveryPoint[0]!==quotePoint[0]||deliveryPoint[1]!==quotePoint[1])))return false;
-   deliveryQuote={id:data.quote_id,requestId,fee:Number(data.fee),address,
+   deliveryQuote={id:data.quote_id,requestId,fee:Number(data.fee),minMinutes:data.delivery_min_minutes,maxMinutes:data.delivery_max_minutes,address,
     point:quotePoint,expiresAt:data.expires_at};
-    quoteNotice('Entrega disponível! Taxa de entrega: '+money(data.fee),'success');
+    quoteNotice('Entrega disponível! Taxa de entrega: '+money(data.fee)+(Number.isInteger(data.delivery_min_minutes)&&Number.isInteger(data.delivery_max_minutes)?' · Previsão: '+data.delivery_min_minutes+'–'+data.delivery_max_minutes+' min':''),'success');
    v2UpdateSelectedAddressQuote();
    if(auto){
     const delay=Date.parse(deliveryQuote.expiresAt)-Date.now()-10000;
@@ -3532,7 +3532,7 @@ function v2RenderSavedAddresses(){
 }
 function v2UpdateSelectedAddressQuote(){
  const row=$('v2AddressList')?.querySelector('.v2-saved-address[data-selected=true] .saved-address-quote');if(!row)return;
- row.textContent=v2QuoteCurrent()?'Entrega disponível · '+money(deliveryQuote.fee):$('routeQuoteStatus').dataset.state==='loading'?'Verificando entrega…':'';
+ row.textContent=v2QuoteCurrent()?'Entrega disponível · '+money(deliveryQuote.fee)+(Number.isInteger(deliveryQuote.minMinutes)&&Number.isInteger(deliveryQuote.maxMinutes)?' · '+deliveryQuote.minMinutes+'–'+deliveryQuote.maxMinutes+' min':''):$('routeQuoteStatus').dataset.state==='loading'?'Verificando entrega…':'';
 }
 $('v2AddAddress').onclick=()=>{
  if(v2Profile.addresses.length>=8){msg('Máximo de oito endereços salvos por cliente.');return;}

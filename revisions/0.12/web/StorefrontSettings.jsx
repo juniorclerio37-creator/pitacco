@@ -140,6 +140,9 @@ export function StoreDeliveryArea({client,store}){
  const [mode,setMode]=useState('circle');
  const [radius,setRadius]=useState(5);
  const [rates,setRates]=useState(Array(10).fill(0));
+ const [times,setTimes]=useState(Array.from({length:10},()=>({min_minutes:'',max_minutes:''})));
+ const validTime=v=>v.min_minutes!==''&&v.max_minutes!==''&&Number.isInteger(Number(v.min_minutes))&&Number.isInteger(Number(v.max_minutes))&&Number(v.min_minutes)>=1&&Number(v.max_minutes)>=Number(v.min_minutes)&&Number(v.max_minutes)<=720;
+ const numericTime=v=>({min_minutes:Number(v.min_minutes),max_minutes:Number(v.max_minutes)});
  const [regions,setRegions]=useState([]);
  const [activeRegionId,setActiveRegionId]=useState(null);
  const [status,setStatus]=useState('loading');
@@ -195,7 +198,7 @@ export function StoreDeliveryArea({client,store}){
   (async()=>{
    try{
     const {data,error}=await client.from('pitacco_delivery_pricing')
-     .select('coverage_type,max_radius_km,distance_fees,polygon,polygon_fee,polygons,enabled')
+     .select('coverage_type,max_radius_km,distance_fees,distance_times,polygon,polygon_fee,polygons,enabled')
      .eq('store_id',store.id).maybeSingle();
     if(error)throw error;
     if(!live)return;
@@ -206,12 +209,13 @@ export function StoreDeliveryArea({client,store}){
     const normalized=stored.map((item,i)=>({
      id:String(item.id||'regiao-'+i),name:String(item.name||'Região '+(i+1)),
      vertices:Array.isArray(item.vertices)?item.vertices:[],
-     fee:Number(item.fee||0)
+     fee:Number(item.fee||0),min_minutes:item.min_minutes??'',max_minutes:item.max_minutes??''
     }));
     setMode(isPolygon?'polygon':'circle');
     setRadius(data?.max_radius_km||5);
     setRates(Array.isArray(data?.distance_fees)&&data.distance_fees.length===10
      ?data.distance_fees.map(Number):Array(10).fill(0));
+    setTimes(Array.from({length:10},(_,i)=>({min_minutes:data?.distance_times?.[i]?.min_minutes??'',max_minutes:data?.distance_times?.[i]?.max_minutes??''})));
     setRegions(normalized);
     setActiveRegionId(normalized[0]?.id||null);
     setEnabled(Boolean(data?.enabled));
@@ -258,7 +262,7 @@ export function StoreDeliveryArea({client,store}){
   if(regions.length>=MAX_DELIVERY_POLYGONS)return;
   const id=crypto.randomUUID();
   setRegions(previous=>[...previous,{
-   id,name:'Região '+(previous.length+1),vertices:[],fee:0
+   id,name:'Região '+(previous.length+1),vertices:[],fee:0,min_minutes:'',max_minutes:''
   }]);
   setActiveRegionId(id);
   setNotice('');
@@ -305,10 +309,11 @@ export function StoreDeliveryArea({client,store}){
      if(!Number.isFinite(Number(region.fee))||Number(region.fee)<0||Number(region.fee)>999.99)
       throw Error('Confira o valor do frete da região "'+region.name+'".');
     }
-    result=await client.rpc('pitacco_save_delivery_polygons',{
+    if(regions.some(v=>!validTime(v)))throw Error('Informe os prazos mínimo e máximo de cada região.');
+    result=await client.rpc('pitacco_save_delivery_polygons_times',{
      p_store:store.id,p_polygons:regions.map(region=>({
       id:region.id,name:region.name.trim(),
-      vertices:region.vertices,fee:Number(region.fee)
+      vertices:region.vertices,fee:Number(region.fee),...numericTime(region)
      }))
     });
    }else{
@@ -316,9 +321,9 @@ export function StoreDeliveryArea({client,store}){
     const fees=rates.map(Number);
     if(fees.some(value=>!Number.isFinite(value)||value<0||value>999.99))
      throw Error('Confira os valores de entrega por quilômetro.');
-    result=await client.rpc('pitacco_save_delivery_zone',{
-     p_store:store.id,p_mode:'circle',p_radius:radius,p_distance:fees,
-     p_polygon:[],p_polygon_fee:0
+    if(times.slice(0,radius).some(v=>!validTime(v)))throw Error('Informe os prazos mínimo e máximo de cada faixa ativa.');
+    result=await client.rpc('pitacco_save_delivery_zone_times',{
+     p_store:store.id,p_radius:radius,p_distance:fees,p_times:times.map(v=>validTime(v)?numericTime(v):null)
     });
    }
    if(result.error)throw result.error;
@@ -394,6 +399,7 @@ export function StoreDeliveryArea({client,store}){
         <input type="number" inputMode="decimal" required min="0" max="999.99"
          step="0.01" value={activeRegion.fee}
          onChange={e=>updateRegion(activeRegion.id,{fee:e.target.value})}/></label>
+       {['min_minutes','max_minutes'].map(key=><label key={key}>{key==='min_minutes'?'Prazo mínimo (min)':'Prazo máximo (min)'}<input required type="number" min="1" max="720" step="1" value={activeRegion[key]??''} onChange={e=>updateRegion(activeRegion.id,{[key]:e.target.value})}/></label>)}
       </div>
       <p>Toque no mapa para ligar os pontos desta região. Arraste os marcadores numerados para corrigir a divisa. As demais regiões continuam visíveis.</p>
       <div className="delivery-zone-polygon-actions">
@@ -415,9 +421,7 @@ export function StoreDeliveryArea({client,store}){
     <legend>Quanto cobrar de frete?</legend>
     <p>Escolha o frete de cada faixa em <strong>linha reta</strong> a partir da lojinha. Distâncias fora do círculo não serão atendidas.</p>
     <div className="delivery-zone-rates">
-     {rates.slice(0,radius).map((fee,i)=><label key={i}>Até {i+1} km (R$)
-      <input type="number" inputMode="decimal" required min="0" max="999.99"
-       step="0.01" value={fee} onChange={e=>setFee(i,e.target.value)}/></label>)}
+     {rates.slice(0,radius).map((fee,i)=><div className="delivery-region-editor" key={i}><strong>Até {i+1} km</strong><label>Frete (R$)<input type="number" inputMode="decimal" required min="0" max="999.99" step="0.01" value={fee} onChange={e=>setFee(i,e.target.value)}/></label>{['min_minutes','max_minutes'].map(key=><label key={key}>{key==='min_minutes'?'Prazo mínimo (min)':'Prazo máximo (min)'}<input type="number" required min="1" max="720" step="1" value={times[i][key]} onChange={e=>setTimes(prev=>prev.map((v,j)=>i===j?{...v,[key]:e.target.value}:v))}/></label>)}</div>)}
     </div>
    </fieldset>}
    <p className="storefront-delivery-note">O mesmo limite desenhado no mapa define onde o cardápio permite entregas. Frete grátis pode ser configurado como R$ 0,00.</p>

@@ -2,6 +2,7 @@ import React,{useEffect,useMemo,useState} from 'react';
 import {Bike, CheckCircle2, ChefHat, Clock3, Printer, ShoppingBag, TrendingUp} from 'lucide-react';
 import './pedidos.css';
 import {scheduleInfo} from './scheduleInfo.mjs';
+import {orderDeadline} from './orderDeadline.mjs';
 import {businessDay,isDailyOrder} from './dailyOrders.mjs';
 import FleetTracking from './FleetTracking.jsx';
 import GroupDeliveryDialog from './GroupDeliveryDialog.jsx';
@@ -75,7 +76,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  const [clock,setClock]=useState(Date.now);
  const [day,setDay]=useState(()=>businessDay());
  useEffect(()=>{const timer=setInterval(()=>setDay(businessDay()),5000);return()=>clearInterval(timer)},[]);
- const hasTimedIfood=orders.some(o=>o.source==='ifood'&&o.status==='pending'&&!o.receipt?.provider_scheduled_for);
+ const hasTimedIfood=orders.some(o=>['pending','accepted'].includes(o.status)&&o.preparation_status!=='completed');
  useEffect(()=>{
   if(!hasTimedIfood)return;
   setClock(Date.now());
@@ -103,6 +104,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  const closeDetails=()=>{setSelected(null);setDecision(null)};
  useEffect(()=>{closeDetails()},[storeId]);
  const deliveriesByOrder=useMemo(()=>new Map(deliveries.map(delivery=>[delivery.order_id,delivery])),[deliveries]);
+ const lateOrders=dailyOrders.filter(o=>orderDeadline(o,deliveriesByOrder.get(o.id),stage(o),clock)?.state==='late');
  const groupEligible=dailyOrders.filter(o=>stage(o)==='ready'&&canAssign(o,deliveriesByOrder.get(o.id)));
  const groupedOrders=groupEligible.filter(o=>groupIds.includes(o.id));
  const toggleGroup=id=>setGroupIds(ids=>ids.includes(id)?ids.filter(x=>x!==id):[...ids,id]);
@@ -158,6 +160,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
   </button>)}<div className="pedidos-kpi"><TrendingUp size={23} aria-hidden="true"/><span><strong>{brl(total)}</strong>Total registrado*</span></div></div>:
   <div className="pedidos-kpis">{stages.map(([key,label])=><button key={key} className={'pedidos-kpi '+(filter===key?'selected':'')} onClick={()=>setFilter(key)}><strong>{counts[key]}</strong><span>{label}</span></button>)}<div className="pedidos-kpi"><strong>{brl(total)}</strong><span>Total registrado*</span></div></div>}
   <div className="pedidos-tabs" aria-label="Filtrar pedidos por situação"><button type="button" aria-pressed={filter==='all'} className={filter==='all'?'selected':''} onClick={()=>setFilter('all')}>{popupLayout?'Em andamento':'Pedidos'}</button>{visibleStages.map(([key,label])=><button type="button" key={key} data-order-filter={key} aria-pressed={filter===key} className={filter===key?'selected':''} onClick={()=>setFilter(key)}>{key==='completed'?'Concluídos':label} ({counts[key]})</button>)}<input aria-label="Buscar pedido, cliente ou item" placeholder="Buscar nome, telefone ou código…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
+  {!!lateOrders.length&&<div className="order-deadline-alert" role="alert"><strong>{lateOrders.length} {lateOrders.length===1?'pedido em atraso':'pedidos em atraso'}</strong> · {lateOrders.map(o=>'#'+number(o)).join(', ')}</div>}
   {groupNotice&&<p role="status" className="notice">{groupNotice}</p>}
   {groupMode&&<div className="group-order-toolbar"><strong>{groupedOrders.length} pedidos selecionados</strong><span>Marque pedidos prontos de entrega própria.</span><button type="button" className="secondary" onClick={clearGroup}>Cancelar</button><button type="button" className="primary" disabled={groupedOrders.length<2||busy} onClick={()=>setGroupOpen(true)}>Selecionar entregador</button></div>}
   {groupOpen&&<GroupDeliveryDialog key={storeId} client={client} storeId={storeId} orders={groupedOrders} deliveryIds={groupedOrders.map(o=>deliveriesByOrder.get(o.id).id)} onClose={()=>setGroupOpen(false)} onSuccess={count=>{clearGroup();setGroupNotice(count+' pedidos agrupados. Aguardando coleta e saída do entregador.')}}/>}
@@ -172,6 +175,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
    const source=sourceLabel(o.source)||o.channel||'Loja';
    const items=receiptItems(o.receipt);
    const firstItem=items[0];
+   const deadline=orderDeadline(o,delivery,stage(o),clock);
    
    return <article key={o.id} aria-label={'Card do pedido '+number(o)} data-source={o.source}
     className={'pedidos-card order-card '+(scheduleInfo(o)?'scheduled-order ':'')+(current?.id===o.id?'selected':'')}>
@@ -192,6 +196,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
        <span className="pedidos-payment-pill" data-payment={cardPayment(o).state}>{cardPayment(o).label}</span>
        <DeliveryBadge order={o} delivery={delivery}/>
       </span>
+      {deadline&&<span className="order-deadline" data-state={deadline.state}><Clock3 size={13} aria-hidden="true"/><span>{deadline.label}</span><b>{deadline.text}</b></span>}
       {validLocalizer(badgeByOrder.get(o.id))&&<span className="pedidos-localizer" aria-label="Localizador de ligação do pedido"><strong>LOCALIZADOR</strong><b>{validLocalizer(badgeByOrder.get(o.id))}</b></span>}
      </div>
     </button>

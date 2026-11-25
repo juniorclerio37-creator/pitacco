@@ -396,6 +396,7 @@ Deno.serve(async request=>{
   const mode=rules.coverage_type||'road';
   let to:Point,meters:number,fee:number;
   let regionName:string|null=null;
+  let eta:any=null;
   if(mode==='circle'||mode==='polygon'||mode==='polygons'){
    // Customer confirms drop-off coordinates on the same map the store
    // configured. Never trust a typed address for polygon membership.
@@ -417,6 +418,8 @@ Deno.serve(async request=>{
      return problem(422,'Este endereço está fora do círculo de entregas da loja.',origin);
     const bracket=Math.max(1,Math.ceil(meters/1000));
     fee=Number(rules.distance_fees?.[bracket-1]);
+    eta=rules.distance_times?.[bracket-1];
+    regionName=`Até ${bracket} km`;
    }else if(mode==='polygons'){
     const regions=rules.polygons;
     if(!Array.isArray(regions)||regions.length<1||regions.length>12)
@@ -435,6 +438,7 @@ Deno.serve(async request=>{
      return problem(422,'Este endereço está fora de todas as regiões de entrega da loja.',origin);
     fee=Number(matched.fee);
     regionName=String(matched.name||'Região');
+    eta=matched;
    }else{
     // Compatibility with single-polygon settings created before migration.
     const polygon:Point[]=rules.polygon;
@@ -463,19 +467,24 @@ Deno.serve(async request=>{
     normalize(v.bairro||'')===normalize(destination.neighborhood)&&
     normalize(v.cidade||'')===normalize(destination.city));
    fee=Number(override?override.taxa:rules.distance_fees?.[Math.max(1,Math.ceil(meters/1000))-1]);
+   eta=override||rules.distance_times?.[Math.max(1,Math.ceil(meters/1000))-1];
+   if(override)regionName=String(override.bairro||'Bairro');
   }else return problem(409,'Modo de entrega não reconhecido.',origin);
   if(!Number.isFinite(fee)||fee<0||fee>999.99)
    return problem(409,'As taxas de entrega da loja precisam ser corrigidas.',origin);
+  const min=eta?.min_minutes,max=eta?.max_minutes;
+  const validEta=Number.isInteger(min)&&Number.isInteger(max)&&min>=1&&max>=min&&max<=720;
   const expiresAt=new Date(Date.now()+5*60*1000).toISOString();
   const {data:quote,error:insertError}=await db.from('pitacco_delivery_route_quotes').insert({
    store_id:menu.store_id,request_id:requestId,destination_address:address,
    destination_latitude:Number(to[0].toFixed(6)),
    destination_longitude:Number(to[1].toFixed(6)),
-   distance_m:meters,fee,pricing_updated_at:rules.updated_at,expires_at:expiresAt
+   distance_m:meters,fee,pricing_updated_at:rules.updated_at,expires_at:expiresAt,
+   delivery_min_minutes:validEta?min:null,delivery_max_minutes:validEta?max:null,delivery_region:regionName
   }).select('id').single();
   if(insertError)return problem(409,'Esta solicitação já possui cotação. Recomece o cálculo do frete.',origin);
   return response(200,{quote_id:quote.id,request_id:requestId,distance_m:meters,
-   distance_type:mode==='road'?'road':'straight',fee,region_name:regionName,expires_at:expiresAt},origin);
+   distance_type:mode==='road'?'road':'straight',fee,region_name:regionName,expires_at:expiresAt,delivery_min_minutes:validEta?min:null,delivery_max_minutes:validEta?max:null},origin);
  }catch(error){
   const message=error instanceof Error?error.message:'Falha ao calcular a entrega.';
   const status=message.includes('impreciso')||message.includes('localizado')?422:503;
