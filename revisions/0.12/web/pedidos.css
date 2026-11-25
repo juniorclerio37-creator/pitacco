@@ -272,3 +272,9 @@
 
 /* Approved scheduled-order highlight */
 .pitacco-pedidos .scheduled-order{border-color:#f4a45d!important;background:#fffaf3}.scheduled-order-badge{display:inline-flex;align-items:center;gap:5px;background:#ed600c;color:white;border-radius:6px;padding:4px 8px;font-weight:800;font-size:11px;width:fit-content}.scheduled-order-info{display:grid;gap:3px;background:#fff0dc;color:#963907;border-radius:6px;padding:6px;font-size:11px;overflow-wrap:anywhere}.scheduled-order-info small{color:#963907}.scheduled-order-detail{background:#fff3e5;border:1px solid #f5c394;border-radius:10px;padding:13px;color:#773008}.scheduled-order-detail h4{margin:8px 0}.scheduled-order-detail p{margin:5px 0}
+
+/* Grouping shared across the merchant web and native desktop shell. */
+.pitacco-pedidos .group-orders-start{border:1px solid #e77a3d;color:var(--store-accent,#c94b18);background:var(--store-surface,#fff);font-size:12px;padding:6px 5px;min-height:32px;width:100%;border-radius:6px}
+.group-order-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid #e77a3d;border-radius:8px;padding:8px;background:var(--store-surface,#fff);font-size:12px}.group-order-toolbar>span{flex:1}.group-order-toolbar button{min-height:32px;padding:5px 8px}
+.group-order-checkbox{display:flex;align-items:center;gap:6px;font-size:11px;padding:5px 7px;border-bottom:1px solid #e77a3d;color:var(--store-accent,#c94b18)}.group-order-checkbox input,.group-delivery-courier input{width:auto;accent-color:#d76a24}
+.group-delivery-dialog .modal-body{display:grid;gap:8px}.group-delivery-dialog h3{font-size:14px;margin:4px 0}.group-delivery-stop,.group-delivery-courier{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;padding:8px;border:1px solid var(--store-border,#e2e8f0);border-radius:7px;font-size:12px}.group-delivery-stop small,.group-delivery-courier small{display:block;flex-basis:100%;font-size:11px}.group-delivery-courier>span{flex:1}

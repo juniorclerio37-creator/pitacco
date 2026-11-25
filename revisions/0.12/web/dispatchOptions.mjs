@@ -8,7 +8,7 @@ export function kmBetween(a,b){
 export function dispatchOptions({couriers=[],positions=[],stops=[],store,now=Date.now()}){
  const limit=Math.max(1,Number(store?.max_orders_per_trip)||1);
  return couriers.filter(c=>c.fleet_type==='propria'&&c.active!==false).map(c=>{
-  const jobs=stops.filter(d=>d.courier_id===c.id&&!['entregue','cancelada'].includes(d.status));
+  const jobs=stops.filter(d=>d.courier_id===c.id&&!['entregue','cancelada'].includes(d.status)&&!d.capacity_released_at);
   const pos=positions.find(p=>p.courier_id===c.id),age=pos?(now-Date.parse(pos.observed_at))/1000:Infinity;
   const fresh=Number.isFinite(age)&&age>=-5&&age<90,online=Boolean(c.available&&fresh),inRoute=jobs.some(d=>d.status==='retirada'),full=jobs.length>=limit;
   return {c,jobs,fresh,online,inRoute,full,age:Math.max(0,Math.floor(age)),distance:fresh?kmBetween(pos,store):null,blocked:!online||inRoute||full};

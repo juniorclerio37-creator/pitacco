@@ -4,6 +4,7 @@ import './pedidos.css';
 import {scheduleInfo} from './scheduleInfo.mjs';
 import {businessDay,isDailyOrder} from './dailyOrders.mjs';
 import FleetTracking from './FleetTracking.jsx';
+import GroupDeliveryDialog from './GroupDeliveryDialog.jsx';
 import OrderDetails from './OrderDetails.jsx';
 import {deliveryLabel,sourceLabel} from './DeliveryDialog.jsx';
 import {shippingReserved} from './IfoodShippingOrder.jsx';
@@ -68,6 +69,9 @@ function DeliveryBadge({order,delivery}){
 export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers=[],badges=[],stage,onAccept,onAcceptIfood,onGetIfoodReasons,onRejectIfood,onDecision,onReady,onPickup,onConclude,onDetail,onAssign,onReprint,busy=false,actionError,merchantLayout=false,popupLayout=false,manualPrint=false,acceptMode='manual',dispatchMode='manual'}){
  const [filter,setFilter]=useState('all'),[search,setSearch]=useState(''),[selected,setSelected]=useState(null),[decision,setDecision]=useState(null);
  const [layout,setLayout]=useState('columns');
+ const [groupMode,setGroupMode]=useState(false),[groupIds,setGroupIds]=useState([]),[groupOpen,setGroupOpen]=useState(false),[groupNotice,setGroupNotice]=useState('');
+ const clearGroup=()=>{setGroupMode(false);setGroupIds([]);setGroupOpen(false)};
+ useEffect(()=>{clearGroup();setGroupNotice('')},[storeId]);
  const [clock,setClock]=useState(Date.now);
  const [day,setDay]=useState(()=>businessDay());
  useEffect(()=>{const timer=setInterval(()=>setDay(businessDay()),5000);return()=>clearInterval(timer)},[]);
@@ -99,6 +103,9 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  const closeDetails=()=>{setSelected(null);setDecision(null)};
  useEffect(()=>{closeDetails()},[storeId]);
  const deliveriesByOrder=useMemo(()=>new Map(deliveries.map(delivery=>[delivery.order_id,delivery])),[deliveries]);
+ const groupEligible=dailyOrders.filter(o=>stage(o)==='ready'&&canAssign(o,deliveriesByOrder.get(o.id)));
+ const groupedOrders=groupEligible.filter(o=>groupIds.includes(o.id));
+ const toggleGroup=id=>setGroupIds(ids=>ids.includes(id)?ids.filter(x=>x!==id):[...ids,id]);
  const currentDelivery=deliveriesByOrder.get(current?.id);
  const currentLocalizer=validLocalizer(badgeByOrder.get(current?.id));
  const canDecide=current?.source==='proprio'&&current.status==='pending';
@@ -151,10 +158,14 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
   </button>)}<div className="pedidos-kpi"><TrendingUp size={23} aria-hidden="true"/><span><strong>{brl(total)}</strong>Total registrado*</span></div></div>:
   <div className="pedidos-kpis">{stages.map(([key,label])=><button key={key} className={'pedidos-kpi '+(filter===key?'selected':'')} onClick={()=>setFilter(key)}><strong>{counts[key]}</strong><span>{label}</span></button>)}<div className="pedidos-kpi"><strong>{brl(total)}</strong><span>Total registrado*</span></div></div>}
   <div className="pedidos-tabs" aria-label="Filtrar pedidos por situação"><button type="button" aria-pressed={filter==='all'} className={filter==='all'?'selected':''} onClick={()=>setFilter('all')}>{popupLayout?'Em andamento':'Pedidos'}</button>{visibleStages.map(([key,label])=><button type="button" key={key} data-order-filter={key} aria-pressed={filter===key} className={filter===key?'selected':''} onClick={()=>setFilter(key)}>{key==='completed'?'Concluídos':label} ({counts[key]})</button>)}<input aria-label="Buscar pedido, cliente ou item" placeholder="Buscar nome, telefone ou código…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
+  {groupNotice&&<p role="status" className="notice">{groupNotice}</p>}
+  {groupMode&&<div className="group-order-toolbar"><strong>{groupedOrders.length} pedidos selecionados</strong><span>Marque pedidos prontos de entrega própria.</span><button type="button" className="secondary" onClick={clearGroup}>Cancelar</button><button type="button" className="primary" disabled={groupedOrders.length<2||busy} onClick={()=>setGroupOpen(true)}>Selecionar entregador</button></div>}
+  {groupOpen&&<GroupDeliveryDialog key={storeId} client={client} storeId={storeId} orders={groupedOrders} deliveryIds={groupedOrders.map(o=>deliveriesByOrder.get(o.id).id)} onClose={()=>setGroupOpen(false)} onSuccess={count=>{clearGroup();setGroupNotice(count+' pedidos agrupados. Aguardando coleta e saída do entregador.')}}/>}
   <div className="pedidos-split"><div className={"pedidos-list"+(showWindowsBoard?" pedidos-kanban":"")} aria-label={showWindowsBoard?(popupLayout?"Quadro de pedidos em andamento":"Quadro de pedidos"):undefined}>
    {!showWindowsBoard&&filtered.length===0&&<p className="pedidos-list-empty" role="status">{filter==='completed'?'Nenhum pedido concluído encontrado.':filter==='cancelled'?'Nenhum pedido cancelado ou recusado encontrado.':'Nenhum pedido encontrado.'}</p>}
    {boardGroups.map(group=><section className="pedidos-stage-column" data-stage={group.id} key={group.id}>
     {showWindowsBoard&&<header className="pedidos-stage-title"><strong>{group.label}</strong><span>{group.items.length}</span></header>}
+    {group.id==='ready'&&client&&storeId&&!groupMode&&<button type="button" className="group-orders-start secondary" disabled={busy||groupEligible.length<2} onClick={()=>{setGroupNotice('');setGroupMode(true);setGroupIds([])}}>Agrupar pedidos</button>}
     {showWindowsBoard&&group.items.length===0&&<p className="pedidos-stage-empty">Nenhum pedido nesta etapa</p>}
     {group.items.map(o=>{
    const delivery=deliveriesByOrder.get(o.id);
@@ -164,6 +175,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
    
    return <article key={o.id} aria-label={'Card do pedido '+number(o)} data-source={o.source}
     className={'pedidos-card order-card '+(scheduleInfo(o)?'scheduled-order ':'')+(current?.id===o.id?'selected':'')}>
+    {groupMode&&stage(o)==='ready'&&canAssign(o,delivery)&&<label className="group-order-checkbox"><input type="checkbox" checked={groupIds.includes(o.id)} onChange={()=>toggleGroup(o.id)}/> Incluir no agrupamento</label>}
     <button type="button" className="pedidos-card-select" aria-haspopup="dialog" aria-expanded={current?.id===o.id} onClick={()=>setSelected(o.id)}>
      <div className="pedidos-compact-content">
       {scheduleInfo(o)&&<span className="scheduled-order-badge"><Clock3 size={13}/> AGENDADO</span>}
