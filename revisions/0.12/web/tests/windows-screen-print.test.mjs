@@ -305,3 +305,14 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  assert.ok(ops.includes('fetchDailyOrders(client,storeId)'));
  assert.ok(nav.includes("item('Histórico de pedidos','Histórico de pedidos','Pedidos','history',true)"));
  });
+
+ test('merchant history retains recorded contact, address and financial detail after closure',()=>{
+ const history=readFileSync(new URL('../OrderHistory.jsx',import.meta.url),'utf8');
+ const detail=readFileSync(new URL('../OrderDetails.jsx',import.meta.url),'utf8');
+ assert.ok(history.includes('historyMode={true}'));
+ assert.ok(history.includes('customerPhone(o,row.delivery_data)'));
+ assert.ok(history.includes('address(o,row.delivery_data)'));
+ assert.ok(detail.includes('historyMode||!paid'));
+ assert.ok(detail.includes('Valor recebido pelo entregador'));
+ assert.ok(detail.includes('historicalChange'));
+ });

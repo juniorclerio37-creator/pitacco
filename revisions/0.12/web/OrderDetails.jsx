@@ -15,7 +15,7 @@ const paymentNames={dinheiro:'Dinheiro',cash:'Dinheiro',pix:'Pix',pix_manual:'Pi
  credit_card:'Cartão de crédito',debit_card:'Cartão de débito',online:'Online'};
 
 export default function OrderDetails({order,delivery,number,stage,stageLabel,platform,origin,localizer,items,
- modifiers,deliveryBadge,courierName,onClose,actions,actionError,decisionOpen,children}){
+ modifiers,deliveryBadge,courierName,onClose,actions,actionError,decisionOpen,children,historyMode=false}){
  const ref=useRef(null), closeRef=useRef(null);
  useEffect(()=>{
   const dialog=ref.current, trigger=document.activeElement;
@@ -28,7 +28,7 @@ export default function OrderDetails({order,delivery,number,stage,stageLabel,pla
  },[decisionOpen]);
  const receipt=order.receipt??{};
  const address=orderAddress(delivery?.address)||orderAddress(receipt.address||receipt.delivery_address);
- const phone=text(receipt.phone)||text(receipt.customer_phone);
+ const phone=text(receipt.phone)||text(receipt.customer_phone)||(historyMode?text(delivery?.customer_phone):'');
  const dial=phone.replace(/[^+0-9]/g,'');
  const time=Date.parse(order.created_at);
  const scheduled=Date.parse(order.scheduled_for);
@@ -44,7 +44,11 @@ export default function OrderDetails({order,delivery,number,stage,stageLabel,pla
    (/dinheiro|cash|na entrega/i.test(method)&&!/online|prepaid|pré.pago/i.test(timing)));
  const due=amount(receipt.amount_to_collect??receipt.amount_due??order.gross);
  const changeFor=amount(receipt.change_for??receipt.cash_given??receipt.troco_para);
- const showCollection=!pickup&&!paid&&collect&&due!==null;
+ const showCollection=!pickup&&(historyMode||!paid)&&collect&&due!==null;
+ const receivedAmount=amount(receipt.courier_collection?.amount);
+ const receivedAt=Date.parse(receipt.courier_collection?.received_at);
+ const historicalChange=historyMode&&changeFor!==null;
+ const historicalFee=historyMode?amount(receipt.delivery_fee_original):null;
  const note=text(receipt.notes)||text(receipt.observations)||text(receipt.observacao);
  const courier=text(courierName)||text(delivery?.courier_name)||text(delivery?.courier?.name);
  const route=address&&!pickup?'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(address):'';
@@ -64,7 +68,7 @@ export default function OrderDetails({order,delivery,number,stage,stageLabel,pla
    </header>
    <div className="order-detail-body">
     <section className="order-detail-customer" aria-label="Cliente">
-     <div><p className="order-detail-label">Cliente</p><strong>{receipt.customer||'Não informado'}</strong>
+     <div><p className="order-detail-label">Cliente</p><strong>{receipt.customer||(historyMode?delivery?.customer_name:null)||'Não informado'}</strong>
       {localizer&&<p className="order-detail-meta">Localizador: <b>{localizer}</b></p>}
      </div>
      {phone&&(dial.replace(/\D/g,'').length>=8?
@@ -88,8 +92,8 @@ export default function OrderDetails({order,delivery,number,stage,stageLabel,pla
      })}</ul>:<p className="order-detail-meta">Itens indisponíveis para este pedido.</p>}
      {note&&<p className="order-detail-note">Observação do pedido: {note}</p>}
     </section>
-    {address&&!pickup&&<section className="order-detail-section order-detail-address" aria-label="Endereço de entrega">
-     <div><h4><MapPin size={17} aria-hidden="true"/> Endereço de entrega</h4><p>{address}</p></div>
+    {address&&(!pickup||historyMode)&&<section className="order-detail-section order-detail-address" aria-label="Endereço de entrega">
+     <div><h4><MapPin size={17} aria-hidden="true"/> {pickup?'Endereço registrado':'Endereço de entrega'}</h4><p>{address}</p></div>
      {route&&<a className="order-detail-link" href={route} target="_blank" rel="noopener noreferrer"><Navigation size={15} aria-hidden="true"/> Abrir rota</a>}
     </section>}
     {(delivery||pickup||receipt.logistics==='loja'||receipt.logistics==='marketplace')&&
@@ -101,12 +105,15 @@ export default function OrderDetails({order,delivery,number,stage,stageLabel,pla
      {method&&<p className="order-detail-meta">{paymentNames[method.toLowerCase()]||method.replace(/_/g,' ')}{paid?' · Pago':''}</p>}
       {courierReceived&&<p className="order-detail-meta">✓ Recebido pelo entregador na entrega — confirmação registrada no Pitacco</p>}
      {!method&&paid&&<p className="order-detail-meta">Pago</p>}
+     {historyMode&&Number.isFinite(receivedAt)&&courierReceived&&<p className="order-detail-meta">Recebimento registrado em {new Date(receivedAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})}</p>}
      <dl>
       {receipt.subtotal!=null&&<div><dt>Subtotal</dt><dd>{money(receipt.subtotal)}</dd></div>}
       {receipt.delivery_fee!=null&&<div><dt>Taxa de entrega</dt><dd>{money(receipt.delivery_fee)}</dd></div>}
+      {historicalFee!==null&&historicalFee!==amount(receipt.delivery_fee)&&<div><dt>Taxa de entrega original</dt><dd>{money(historicalFee)}</dd></div>}
+      {historyMode&&receivedAmount!==null&&courierReceived&&<div><dt>Valor recebido pelo entregador</dt><dd>{money(receivedAmount)}</dd></div>}
       <div className="order-detail-total"><dt>Total</dt><dd>{money(order.gross)}</dd></div>
-      {showCollection&&<div className="order-detail-collect"><dt>Cobrar na entrega</dt><dd>{money(due)}</dd></div>}
-      {showCollection&&changeFor>0&&<><div><dt>Troco para</dt><dd>{money(changeFor)}</dd></div>
+      {showCollection&&<div className="order-detail-collect"><dt>{historyMode?'Valor previsto para cobrança na entrega':'Cobrar na entrega'}</dt><dd>{money(due)}</dd></div>}
+      {(showCollection||historicalChange)&&changeFor>0&&<><div><dt>Troco para</dt><dd>{money(changeFor)}</dd></div>
        <div><dt>Troco</dt><dd>{money(Math.max(0,changeFor-due))}</dd></div></>}
      </dl>
     </section>
