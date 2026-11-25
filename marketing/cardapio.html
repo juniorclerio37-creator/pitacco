@@ -1402,6 +1402,7 @@ const slug=segments[0]==='cardapio'
  : segments[0]||'';
 // O piloto de fotos aplica-se exclusivamente ao cardápio público da loja teste.
 if(slug==='acai-do-linho-demo')document.body.dataset.menuPhotoPilot='brendi-linho';
+// PITACCO_PAGBANK_PREVIEW_V1
 // A test link is never a live checkout. The opaque capability is scoped to one
 // sandbox seller and one payment; the marker remains even if the link expires.
 const pagbankPreviewMode=new URLSearchParams(location.search).has('pagbank_preview');

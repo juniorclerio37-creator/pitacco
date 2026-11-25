@@ -12,3 +12,5 @@ Cada estabelecimento autoriza a própria conta via Connect. O account_id retorna
 
 ## Prévia protegida do checkout
 O gestor de uma loja Sandbox vinculada cria um link com token aleatório de 256 bits, armazenado apenas como hash, válido por 30 minutos e restrito a uma cobrança. A prévia usa o cardápio e template reais, sem alterar o checkout normal, perfil, fidelidade ou pedidos operacionais. Nesta fase a prévia suporta retirada; o backend de teste valida também cotação de frete e cupom comum, ainda não verificados em fluxo completo. O servidor calcula valores e complementos, fixa a conta recebedora e bloqueia divergência de valor. O pagamento fictício nunca libera pedido real. Renovação OAuth com lease e rotação atômica no Vault está implementada, ainda não exercitada contra o PagBank. Estorno e confirmação de webhook precisam de testes oficiais antes da produção.
+
+A criação do link de teste fica bloqueada até o servidor confirmar que a página publicada contém a proteção Sandbox. Não abrir a prévia num checkout antigo.
