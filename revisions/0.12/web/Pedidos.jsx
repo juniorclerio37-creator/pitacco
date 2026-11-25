@@ -246,7 +246,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  <button type="button" className="secondary" disabled={busy} onClick={()=>setDecision({id:current.id,status:'rejected',reason:''})}>Recusar pedido</button>
  </>}{canCancelOwn&&<button type="button" className="secondary" disabled={busy} onClick={()=>setDecision({id:current.id,status:'cancelled',reason:''})}>Cancelar pedido</button>}{waitingIfood&&!ifoodRequestPending&&!ifoodCancelPending&&acceptMode!=='automatic'&&<>
  { !ifoodExpired&&<button className="primary" disabled={busy||!onAcceptIfood} onClick={()=>onAcceptIfood?.(current.id)}>Aceitar pedido no iFood</button>}
- </>}{canCancelIfood&&!ifoodRequestPending&&!ifoodCancelPending&&<button type="button" className="secondary" disabled={busy||!onRejectIfood||!onGetIfoodReasons} onClick={()=>void openIfoodReject(current)}>Cancelar pedido no iFood</button>}
+ </>}{canCancelIfood&&!ifoodRequestPending&&!ifoodCancelPending&&<button type="button" className="secondary" disabled={busy||!onRejectIfood||!onGetIfoodReasons} aria-label="Cancelar pedido no iFood" onClick={()=>void openIfoodReject(current)}>Cancelar</button>}
   </>}>
 {stage(current)==='ready'&&currentDelivery?.courier_id&&<p role="status" className="order-detail-note">Entregador atribuído · aguardando saída</p>}
 {stage(current)==='ready'&&currentDelivery?.logistics_provider==='marketplace'&&<p role="status" className="order-detail-note">Aguardando retirada pelo parceiro</p>}

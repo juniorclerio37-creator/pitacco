@@ -227,7 +227,7 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
  const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
  assert.match(orders,/popupLayout&&o\.source==='ifood'&&\['preparing','ready','delivery'\]\.includes\(stage\(o\)\)/);
- assert.match(orders,/onClick=\{\(\)=>void openIfoodReject\(o\)\}>Cancelar pedido no iFood/);
+ assert.match(orders,/aria-label="Cancelar pedido no iFood"[^>]*onClick=\{\(\)=>void openIfoodReject\(o\)\}>Cancelar<\/button>/);
  assert.match(orders,/onGetIfoodReasons\(order\.id\)/);
  assert.match(operations,/ifood-manual-action'[,].*action:'reasons'/);
  assert.match(operations,/ifood-manual-action'[,].*action:'cancel'/);

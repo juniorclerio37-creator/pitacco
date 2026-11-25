@@ -280,3 +280,40 @@
   .delivery-dialog.dispatch-only .courier-option{padding:9px 10px}
   .delivery-dialog.dispatch-only footer{padding:9px 14px}
 }
+
+/* Compact dispatch selector, Windows only. */
+.delivery-dialog.dispatch-only{width:min(590px,calc(100vw - 28px));border:1px solid var(--store-border,#e3e7ef);border-radius:19px;background:var(--store-surface,#fff);color:var(--store-ink,#161f2d)}
+.delivery-dialog.dispatch-only .modal-heading{display:flex;gap:10px;align-items:center;padding:15px 17px;margin:0}
+.dispatch-only .dispatch-icon,.dispatch-only .dispatch-courier-icon{display:grid;place-items:center;background:#ffede0;color:#bd4619;border-radius:10px;width:38px;height:38px;flex:none}
+.dispatch-only .dispatch-icon{background:#c94b18;color:white}
+.dispatch-only .dispatch-title{flex:1;min-width:0}
+.delivery-dialog.dispatch-only .dispatch-title h2{font-size:21px;margin:0 0 3px}
+.dispatch-only .dispatch-title .eyebrow{font-size:11px;color:var(--store-muted,#566477);text-transform:none;letter-spacing:0}
+.delivery-dialog.dispatch-only .modal-body{padding:12px 16px}
+.dispatch-only .dispatch-summary{display:flex;gap:5px;flex-wrap:wrap}
+.dispatch-only .dispatch-summary span{display:flex;align-items:center;gap:4px;border:1px solid #d6e5ff;background:#f1f6ff;color:#234f98;padding:5px 7px;border-radius:7px;font-size:11px}
+.dispatch-only .dispatch-address{font-size:12px;color:var(--store-muted,#566477)}
+.delivery-dialog.dispatch-only .delivery-choice:has(.dispatch-options){border:0;padding:0}
+.dispatch-only .dispatch-list-tools{display:flex;align-items:center;justify-content:space-between;font-size:11px}
+.dispatch-only .dispatch-list-tools button{display:flex;align-items:center;gap:4px;padding:4px 7px;font-size:11px}
+.delivery-dialog.dispatch-only .dispatch-options{grid-template-columns:1fr;max-height:none;overflow:visible;gap:8px;margin:12px 0}
+.delivery-dialog.dispatch-only .dispatch-option{position:relative;display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--store-border,#e3e7ef);background:var(--store-surface,#fff);border-radius:10px;cursor:pointer}
+.delivery-dialog.dispatch-only .dispatch-option.selected{border-color:#d65b20;box-shadow:0 0 0 1px #d65b20;background:var(--store-quiet,#fff4eb)}
+.dispatch-only .dispatch-option.recommended{margin-top:7px}
+.dispatch-only .dispatch-recommended{position:absolute;top:-10px;left:22px;display:flex;align-items:center;gap:3px;background:#b94b1b;color:#fff;padding:2px 7px;border-radius:20px;font-size:10px}
+.dispatch-only .dispatch-option input{accent-color:#c94b18;flex:none}
+.dispatch-only .dispatch-courier-info{flex:1;min-width:0}
+.dispatch-only .dispatch-courier-info small,.dispatch-only .dispatch-courier-note small{font-size:11px;margin:3px 0 0;color:var(--store-muted,#566477)}
+.dispatch-only .dispatch-status{display:inline-block;padding:2px 6px;border-radius:20px;font-size:10px;font-weight:750}
+.dispatch-only .dispatch-status.online{background:#daf5e3;color:#176534}
+.dispatch-only .dispatch-status.route{background:#fff0cf;color:#825000}
+.dispatch-only .dispatch-status.offline{background:#e6e9ee;color:#5d6676}
+.dispatch-only .dispatch-courier-note{flex:0 1 125px;border-left:1px solid var(--store-border,#e3e7ef);padding-left:8px;font-size:11px;color:var(--store-muted,#566477)}
+.delivery-dialog.dispatch-only .dispatch-option.is-blocked{opacity:.7;background:var(--store-quiet,#f4f6fa);cursor:not-allowed}
+.dispatch-only .dispatch-option.is-blocked .dispatch-courier-icon{background:#e2e6ec;color:#677286}
+.dispatch-only .dispatch-auto-note{padding:8px;border:1px solid #f4d2a7;background:#fff4e5;color:#845218;border-radius:8px;font-size:11px}
+.delivery-dialog .dispatch-partner{border:1px solid #edc7ca;border-radius:10px}
+.delivery-dialog .dispatch-partner h3{color:#b72532}
+.delivery-dialog.dispatch-only footer{position:sticky;bottom:0;gap:8px;background:var(--store-surface,#fff);padding:12px 16px;z-index:1}
+.delivery-dialog.dispatch-only .dispatch-confirm{background:#c94b18;color:#fff}
+@media(max-width:480px){.dispatch-only .dispatch-courier-note{flex-basis:80px}.dispatch-only .dispatch-courier-icon{display:none}}
