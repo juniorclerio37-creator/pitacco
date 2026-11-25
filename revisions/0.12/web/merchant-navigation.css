@@ -168,3 +168,5 @@
 @media(max-width:850px){.mn-pos-grid{grid-template-columns:1fr}.mn-pos-products{max-height:240px}}
 
 .mn-plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:14px 0}.mn-plan{border:1px solid #8884;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px}.mn-plan h4,.mn-plan p{margin:0}.mn-plan strong{font-size:1.65rem;color:#e76e27}.mn-plan button{margin-top:auto}
+
+.merchant-nav .mn-store-logo{width:38px;height:38px;object-fit:contain;border-radius:9px;flex:none;background:#fff;border:1px solid #e8e8e8}.merchant-nav .mn-store:has(.mn-store-logo){min-height:56px}

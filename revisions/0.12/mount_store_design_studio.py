@@ -24,5 +24,5 @@ needle="{tab==='Minha Loja'&&active&&<StoreProfile key={selected} client={supaba
 once(needle,needle+""" {tab==='Aparência do cardápio'&&active&&!nativeAvailable()&&(manager
   ?<StoreDesignStudio key={selected} client={supabase} store={active} manager={manager}/>
   :<section className="panel">Somente gestores podem editar a aparência do cardápio.</section>)}\n""")
-once("{tab==='Minha Loja'&&active&&<StoreProfile key={selected} client={supabase} store={active} manager={manager} onSaved={loadStores}/>}","{tab==='Minha Loja'&&active&&<StoreProfile key={selected} client={supabase} store={active} manager={manager} onSaved={loadStores} onAppearance={()=>setTab('Aparência do cardápio')}/>}")
+once("{tab==='Minha Loja'&&active&&<StoreProfile key={selected} client={supabase} store={active} manager={manager} onSaved={loadStores}/>}","{tab==='Minha Loja'&&active&&<StoreProfile key={selected} client={supabase} store={active} manager={manager} onSaved={loadStores} storeLogoUrl={storeBrand?.store_id===selected?storeBrand.logo_url:''} onAppearance={()=>setTab('Aparência do cardápio')}/>}")
 p.write_text(s,encoding='utf-8')

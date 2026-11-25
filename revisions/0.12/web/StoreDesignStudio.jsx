@@ -86,7 +86,7 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
    setSaved(next);setDesign(structuredClone(next));setVersion(data.draft_version);
    setPublishedVersion(data.published_version);setPublishedDesign(data.published||null);setHistory(data.history||[]);
    setPublishedAt(data.published_at);
-    setLegacyMedia({logo:data.legacy_logo_url||'',cover:data.legacy_banner_url||''});
+    setLegacyMedia({logo:store.logo_path?client.storage.from('pitacco-media').getPublicUrl(store.logo_path).data.publicUrl:data.legacy_logo_url||'',cover:data.legacy_banner_url||''});
   }).catch(e=>{if(alive)setError(studioError(e,'carregar o estúdio'))})
    .finally(()=>{if(alive)setLoading(false)});
   client.from('products').select('id,name,price,category,description,image_url').eq('store_id',store.id)
@@ -160,7 +160,7 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
    const now=data.published_at||new Date().toISOString();
    setSaved(next);setDesign(structuredClone(next));setPublishedDesign(structuredClone(next));
    setVersion(data.draft_version);setPublishedVersion(data.published_version);
-   setPublishedAt(now);
+   setPublishedAt(now);window.dispatchEvent(new Event('pitacco:store-identity'));
    setHistory(items=>[{id:null,version:data.published_version,created_at:now},...items].slice(0,20));
    setFiles({});setFileUrls({});
    setNotice('Alterações salvas e publicadas! O cardápio está atualizado para os clientes.');
@@ -175,7 +175,7 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
       const date=current.published_at||new Date().toISOString();
       setSaved(next);setDesign(structuredClone(next));setPublishedDesign(structuredClone(next));
       setVersion(current.draft_version);setPublishedVersion(current.published_version);
-      setPublishedAt(date);setHistory(current.history||[]);
+      setPublishedAt(date);window.dispatchEvent(new Event('pitacco:store-identity'));setHistory(current.history||[]);
       setFiles({});setFileUrls({});
       setNotice('Alterações salvas e publicadas! Publicação confirmada após reconectar.');
       return;
@@ -239,7 +239,7 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
      <section className="design-control-card"><h4>Imagens e informações</h4>
       <label className="design-field">Logotipo (até 5 MB)<input disabled={!manager||working} type="file" accept="image/jpeg,image/png,image/webp"
        onChange={e=>pickFile('logo',e.target.files?.[0])}/></label>
-      <div className="design-media-preview"><BannerImage url={imageFor('logo',design.logo_path)} style={{width:116,height:116,objectFit:'contain',borderRadius:12}}/><small>{files.logo?'Novo logotipo selecionado — publicar para aplicar.':'Logotipo atual da loja, preservado até ser substituído.'}</small></div>
+      <div className="design-media-preview"><BannerImage url={imageFor('logo',design.logo_path)} style={{width:116,height:116,objectFit:'contain',borderRadius:12}}/><small>{files.logo?'Novo logotipo selecionado — publicar para aplicar.':'Logotipo único da loja: usado no cardápio, Windows, acompanhamento e impressão.'}</small></div>
       <label className="design-field">Imagem de capa (até 5 MB)<input disabled={!manager||working} type="file" accept="image/jpeg,image/png,image/webp"
        onChange={e=>pickFile('cover',e.target.files?.[0])}/></label>
       <div className="design-media-preview"><BannerImage url={imageFor('cover',design.cover_path)} style={{width:'100%',maxHeight:160,objectFit:'cover',borderRadius:12}}/><small>{files.cover?'Nova capa selecionada — publicar para aplicar.':'Capa atual da loja, preservada até ser substituída.'}</small></div>

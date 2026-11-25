@@ -10,7 +10,7 @@ replace('web/printBridge.mjs','ingestJobs({jobs,device,call,ack})','ingestJobs({
 replace('web/Operations.jsx',"ingestJobs({jobs:remote||[],device,call:invoke,ack:args=>rpc('ack_print_job',args)})","ingestJobs({jobs:remote||[],device,call:invoke,ack:args=>rpc('ack_print_job',args),storeName,client,storeLogoPath})")
 replace('web/Operations.jsx','<WindowsReceiptPreview key={storeId} storeId={storeId}','<WindowsReceiptPreview key={storeId} client={client} storeId={storeId} storeLogoPath={storeLogoPath}')
 replace('web/Operations.jsx',"manager,onNavigate,storeName=''})","manager,onNavigate,storeName='',storeLogoPath=''})")
-replace('web/src.jsx',"storeName={active?.name||''} manager={manager}","storeName={active?.name||''} storeLogoPath={active?.logo_path||''} manager={manager}")
+replace('web/src.jsx',"storeName={active?.name||''} manager={manager}","storeName={active?.name||''} storeLogoPath={(storeBrand?.store_id===selected&&storeBrand.logo_path)||active?.logo_path||''} manager={manager}")
 replace('web/printBridge.mjs',' for(const job of jobs){',""" const menuUrls=new Map();
  for(const job of jobs){
   const preferences=readPrintPreferences(job.store_id);

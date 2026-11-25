@@ -218,7 +218,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
  </div>;
 }
 
-export default function StoreProfile({client,store,manager,onSaved,onAppearance}){
+export default function StoreProfile({client,store,manager,onSaved,onAppearance,storeLogoUrl=''}){
  const [draft,setDraft]=useState({}),[logo,setLogo]=useState(null),[preview,setPreview]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
  useEffect(()=>{setDraft(Object.fromEntries(keys.map(([k])=>[k,store?.[k]||''])));setLogo(null)},[store?.id]);
  useEffect(()=>{if(!logo){setPreview('');return}const url=URL.createObjectURL(logo);setPreview(url);return()=>URL.revokeObjectURL(url)},[logo]);
@@ -227,7 +227,7 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance}
   try{
    if(!draft.name?.trim())throw Error('Informe o nome da loja.');
    const row={...draft,name:draft.name.trim(),updated_at:new Date().toISOString()};
-   if(logo)row.logo_path=await uploadStoreImage(client,store.id,logo,'stores');
+
    // Authorized for both store managers and platform administrators; direct
    // stores UPDATE is restricted by RLS for normal merchant accounts.
    const {error}=await client.rpc('pitacco_update_store_identity',{
@@ -255,13 +255,11 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance}
    <section className="identity-section">
     <h4>Marca do estabelecimento</h4>
     <div className="identity-brand">
-     <div className="identity-avatar">{(preview||store.logo_path)?
-      <img src={preview||mediaUrl(client,store.logo_path)} alt="Logotipo da loja"/>
+     <div className="identity-avatar">{(storeLogoUrl||store.logo_path)?
+      <img src={storeLogoUrl||mediaUrl(client,store.logo_path)} alt="Logotipo da loja"/>
       :<strong>{(store.name||'L').slice(0,1).toUpperCase()}</strong>}</div>
      <div><strong>{store.name}</strong><small>Logotipo utilizado na identificação da loja</small>
-      <label className="identity-file">Atualizar logotipo (JPG, PNG, WebP, até 5 MB)
-       <input type="file" accept="image/png,image/jpeg,image/webp" disabled={!manager}
-        onChange={e=>setLogo(e.target.files?.[0]||null)}/></label>
+      <button type="button" className="secondary identity-file" disabled={!manager||!onAppearance} onClick={onAppearance}>Alterar logotipo no Estúdio de Cardápio</button><small>A imagem publicada será usada no cardápio, Windows, acompanhamento e impressão habilitada.</small>
      </div>
     </div>
     <div className="identity-grid">{input('name','Nome da loja')}{input('phone','Telefone / WhatsApp')}
