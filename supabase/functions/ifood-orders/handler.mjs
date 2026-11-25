@@ -83,6 +83,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
  let cachedToken,expires=0,renewing;
  let signatureKey,productionSignatureKey;
  let prodToken,prodExpiry=0,prodRenewing;
+ const prodMerchants=new Set();
  const isolated=Boolean(productionId&&productionSecret);
  async function rpc(name,body){
   const result=await fetcher(new URL('/rest/v1/rpc/'+name,supabaseUrl),{
@@ -120,20 +121,21 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
   })().finally(()=>{renewing=null;});
   return renewing;
  }
- async function productionToken(){
-  if(prodToken&&Date.now()<prodExpiry)return prodToken;
+ async function productionToken(merchant){
+  // A newly authorized merchant requires a fresh app-wide token.
+  if(prodToken&&Date.now()<prodExpiry&&prodMerchants.has(merchant))return prodToken;
   if(!prodRenewing)prodRenewing=(async()=>{
    const r=await fetcher(origin+'/authentication/v1.0/oauth/token',{method:'POST',body:new URLSearchParams({grantType:'client_credentials',clientId:productionId,clientSecret:productionSecret}),signal:AbortSignal.timeout(6000),redirect:'error'});
    if(!r.ok)throw Error('production-oauth-'+r.status);
    const d=await r.json();if(typeof d.accessToken!=='string'||!d.accessToken||!(Number(d.expiresIn)>0))throw Error('oauth-response');
    prodToken=d.accessToken;prodExpiry=Date.now()+Math.max(0,Number(d.expiresIn)-60)*1000;return prodToken;
   })().finally(()=>{prodRenewing=null});
-  return prodRenewing;
+  const access=await prodRenewing;prodMerchants.add(merchant);return access;
  }
  async function centralToken(merchant){
   if(!isolated)return clientId&&clientSecret?await token():null;
   const environment=await rpc('pitacco_ifood_central_environment',{p_merchant:merchant});
-  if(environment==='production')return productionToken();
+  if(environment==='production')return productionToken(merchant);
   if(environment==='test')return token();
   return null;
  }
@@ -145,7 +147,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    const response=await fetcher(origin+'/order/v1.0/orders/'+event.external_order_id,{
     headers:{authorization:'Bearer '+accessToken},signal:AbortSignal.timeout(7500),redirect:'error',
    });
-   if(response.status===401){if(accessToken===cachedToken)cachedToken=null;if(accessToken===prodToken)prodToken=null;}
+   if([401,403].includes(response.status)){if(accessToken===cachedToken)cachedToken=null;if(accessToken===prodToken)prodToken=null;}
    if(!response.ok)throw Error('order-'+response.status);
    const providerOrder=await response.json();
    const order=normalizeOrder(providerOrder,event);
@@ -163,7 +165,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    const response=await fetcher(origin+'/order/v1.0/orders/'+row.external_order_id+'/confirm',{
     method:'POST',headers:{authorization:'Bearer '+access},signal:AbortSignal.timeout(5000),redirect:'error',
    });
-   if(response.status===401){if(access===cachedToken)cachedToken=null;if(access===prodToken)prodToken=null;}
+   if([401,403].includes(response.status)){if(access===cachedToken)cachedToken=null;if(access===prodToken)prodToken=null;}
    retry=response.status===401||response.status===408||response.status===429||response.status>=500;
    if(!response.ok)logger.warn('iFood recusou uma solicitação de aceite automático.',response.status);
    // A successful submission leaves the order pending until the official event is processed.
