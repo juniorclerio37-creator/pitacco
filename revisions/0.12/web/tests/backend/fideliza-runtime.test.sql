@@ -166,8 +166,7 @@ begin
  assert pitacco_private.loyalty_balance(s,c,'points')=points_before+100;
 
  -- Agenda e cotação preservam os cálculos e o ponto de entrega originais.
- insert into public.pitacco_schedule_windows(store_id,weekday,enabled,opens_minute,closes_minute)
- select s,day,true,0,1440 from generate_series(1,7) day;
+ perform public.pitacco_store_hours_save_v2(s,(select jsonb_agg(jsonb_build_object('weekday',day,'slot',1,'opens_minute',0,'closes_minute',1440)) from generate_series(1,7) day),false,(public.pitacco_store_hours_state(s)->>'revision')::integer,true);
  slot:=(public.pitacco_public_schedule_slots('loyalty-test','pickup'))[1];assert slot is not null;
  insert into public.loyalty_coupons(store_id,code,discount_type,discount_value) values(s,'FRETE5','fixed',5);
  update public.public_checkouts set created_at=now()-interval '1 hour';
