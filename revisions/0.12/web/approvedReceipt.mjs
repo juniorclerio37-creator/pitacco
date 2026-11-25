@@ -85,6 +85,7 @@ export function approvedReceipt(job,width=80,opts={}){
  const store=first(opts.storeName,r.store_name,r.company_name,r.store?.name);
  if(store){center(store);if(opts.showWhatsapp&&opts.whatsapp)center('WhatsApp: '+opts.whatsapp);}
  center('CUPOM NAO FISCAL');
+ if(r.delivery_service==='priority'){lines.push(doubleRule);center('ENTREGA PRIORITARIA');lines.push(doubleRule);}
  const schedule=scheduleInfo(r);if(schedule){lines.push(doubleRule);center('PEDIDO AGENDADO');add('Modalidade: '+schedule.modality);add('Data/hora: '+schedule.when);if(schedule.release)add('Inicio do preparo: '+schedule.release);center('PRODUCAO CONFORME AGENDAMENTO');lines.push(doubleRule);}
  lines.push(rule);
  const platform=platformName(first(r.platform,r.marketplace,r.source,job.platform,job.source));

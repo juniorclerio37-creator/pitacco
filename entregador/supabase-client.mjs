@@ -73,7 +73,7 @@ export function createDriverAuth(supabase) {
       if (!Array.isArray(courierIds) || !courierIds.length) return [];
       // RLS MUST enforce ownership. Client-side filters alone are insufficient.
       const { data, error } = await supabase.from('deliveries')
-        .select('id,store_id,order_id,courier_id,customer_name,address,notes,delivery_fee,courier_payment,status,source,logistics_provider,batch_id,latitude,longitude,requires_delivery_code,delivery_code_verified_at,collected_at,arrived_at,arrival_provider_state,created_at')
+        .select('id,store_id,order_id,courier_id,customer_name,address,notes,delivery_fee,courier_payment,status,source,logistics_provider,batch_id,latitude,longitude,requires_delivery_code,delivery_code_verified_at,collected_at,arrived_at,arrival_provider_state,created_at,delivery_service,deliver_by')
         .in('courier_id', courierIds).in('status', ['pendente','atribuida','aceita','retirada']);
       if (error) throw error;
       return data ?? [];

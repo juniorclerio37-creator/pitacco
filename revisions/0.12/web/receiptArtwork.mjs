@@ -74,6 +74,7 @@ export function renderReceiptCanvas(job,width=80,opts={},makeCanvas=()=>document
   for(const line of arr){txt(line,inset+insetWidth/2,yy,size,true,'center');yy+=lh(size)}
   y=top+h+8;
  }else banner(platform+' Nº '+(number||'Não informado'),base+7);
+ if(r.delivery_service==='priority')banner('ENTREGA PRIORITÁRIA',base+6,true);
  const schedule=scheduleInfo(r);if(schedule){banner('PEDIDO AGENDADO',base+6);lines('Modalidade: '+schedule.modality,{bold:true});lines('Data/hora: '+schedule.when,{bold:true});if(schedule.release)lines('Início do preparo: '+schedule.release,{bold:true});banner('PRODUÇÃO CONFORME AGENDAMENTO',base,false);}
  const operation=/retirada|pickup|balc[aã]o|takeaway/i.test(first(r.fulfillment_type,r.order_type,r.delivery_type,r.logistics))?'RETIRADA':'ENTREGA';
  lines(operation,{bold:true,align:'center'});
@@ -85,7 +86,7 @@ export function renderReceiptCanvas(job,width=80,opts={},makeCanvas=()=>document
  const address=deliveryAddress(r.address||r.delivery_address||r.customer?.address||r.delivery?.address);
  if(opts.address!==false&&(address||r.reference)){rule();icon('pin',pad,y,base+6);if(address)lines('Endereço: '+address,{x:infoX,bold:true});if(r.reference)lines('Referência: '+clean(r.reference),{x:infoX})}
  const provider=first(r.delivery_provider,r.logistics_provider,r.fulfillment_provider);if(provider)lines('Entrega por: '+provider);
- const eta=first(r.delivery_eta,r.delivery_estimate,r.estimated_delivery);if(eta)lines('Previsão: '+eta);
+ const eta=r.delivery_eta&&typeof r.delivery_eta==='object'?(Number.isInteger(r.delivery_eta.min_minutes)&&Number.isInteger(r.delivery_eta.max_minutes)?r.delivery_eta.min_minutes+'–'+r.delivery_eta.max_minutes+' min':''):first(r.delivery_eta,r.delivery_estimate,r.estimated_delivery);if(eta)lines('Previsão: '+eta);
  rule();banner('QTD / DESCRIÇÃO / VALOR',base,true);
  let count=0;
  for(const item of Array.isArray(r.items)?r.items:[]){

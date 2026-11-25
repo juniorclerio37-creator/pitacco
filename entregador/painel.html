@@ -1202,12 +1202,12 @@ function renderRouteSuggestions(deliveries){
   box.append(element("strong","route-plan-title",
     "Rota agrupada • "+plan.stops.length+" entregas"));
   const routeHelp=!plan.estimated?
-    "Pedidos agrupados pela loja. Sem coordenadas suficientes para sugerir a ordem; use Ir em cada cartão.":
+    "Pedidos agrupados pela loja. Sem coordenadas suficientes para estimar distâncias; respeite a prioridade apresentada.":
     plan.anchor==="arrival"?
-      "Você já chegou a uma parada. Confirme esta entrega antes de seguir. As próximas paradas estão ordenadas por proximidade.":
+      "Você já chegou a uma parada. Confirme esta entrega antes de seguir. As próximas paradas consideram prioridade e proximidade.":
     plan.anchor==="last-stop"?
-      "Sequência atualizada a partir da última entrega confirmada, buscando a próxima parada mais perto.":
-      "Sequência estimada a partir da loja, indo sempre à parada seguinte mais próxima.";
+      "Sequência atualizada a partir da última entrega confirmada, considerando prioridade e proximidade.":
+      "Sequência estimada a partir da loja, priorizando atrasos e entregas prioritárias antes da proximidade.";
   box.append(element("p","route-plan-explain",
     routeHelp+" Estimativa em linha reta; não considera trânsito ou sentidos das ruas. Confira o trajeto no aplicativo de navegação."));
   const list=element("ol","route-plan-list");

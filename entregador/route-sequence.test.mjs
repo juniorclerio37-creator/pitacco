@@ -74,3 +74,5 @@ test('sem dados viáveis não estima caminho nem mistura lotes de lojas diferent
  assert.equal(plans[0].anchor,'unsorted');
  assert.deepEqual(plans[0].stops.map(x=>x.delivery.id),['a','b']);
 });
+
+test('prioridade supera proximidade e preserva chegada registrada',()=>{const origins=new Map([[store,{latitude:-22.75,longitude:-43.45}]]);const due=n=>new Date(Date.now()+n*60000).toISOString();const normal={...entry('normal',-22.751,-43.45),deliver_by:due(30)},priority={...entry('prioritaria',-22.76,-43.45),delivery_service:'priority',deliver_by:due(20)},late={...entry('atrasada',-22.77,-43.45),deliver_by:due(-5)},active={...entry('cheguei',-22.78,-43.45),arrived_at:due(-1)};const plans=suggestedBatchRoutes([normal,priority,late,active],origins);assert.deepEqual(plans[0].stops.map(x=>x.delivery.id),['cheguei','atrasada','prioritaria','normal']);});
