@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.ifood-central-link]
 verify_jwt = true
+
+[functions.ifood-central-check]
+verify_jwt = false

@@ -11,7 +11,7 @@ export default function IfoodConnections({client,storeId,canRead,test=false}){
    if(seq===generation.current){setRows(c.data||[]);setLinking(l.data===true);setRequests(r.data||[]);setReady(true)}
   }catch(e){if(seq===generation.current)setError(e.message||'Não foi possível consultar a integração.')}
  }
- useEffect(()=>{setReady(false);setRows([]);setRequests([]);setMerchant('');setNotice('');if(canRead)load();return()=>{generation.current++}},[client,storeId,canRead,test]);
+ useEffect(()=>{setReady(false);setRows([]);setRequests([]);setMerchant('');setNotice('');if(canRead)load();const timer=canRead&&!test?setInterval(()=>{if(!running.current)load()},15000):null;return()=>{generation.current++;if(timer)clearInterval(timer)}},[client,storeId,canRead,test]);
  async function submit(e){
   e.preventDefault();if(running.current)return;running.current=true;setBusy(true);setError('');setNotice('');
   try{
@@ -36,7 +36,7 @@ export default function IfoodConnections({client,storeId,canRead,test=false}){
   </form>}
   {canRead&&!test&&ready&&!linking&&<p>Novas solicitações estão temporariamente pausadas.</p>}
   {canRead&&!test&&requests.length>0&&<><h4>Minhas solicitações</h4><ul>{requests.map(r=><li key={r.id}><code>{r.merchant_id}</code> · {labels[r.state]||r.state}{r.state==='awaiting'&&<> · <a href="https://portal.ifood.com.br/" target="_blank" rel="noopener noreferrer">Autorizar no Portal do Parceiro</a></>}</li>)}</ul></>}
-  {!test&&<p>Após a autorização e validação, os pedidos serão recebidos automaticamente na sua loja.</p>}
+  {!test&&<p>Após autorizar no iFood, o Pitacco verifica a permissão automaticamente. Esta página se atualiza a cada 15 segundos.</p>}
   {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
  </section>;
 }
