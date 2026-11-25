@@ -1375,9 +1375,20 @@ body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data
 #pagbankPreviewDialog::backdrop{background:#17203399}
 #pagbankPreviewBody{display:grid;gap:12px}#pagbankPreviewBody img{justify-self:center;max-width:100%;height:auto;background:white;padding:8px;border-radius:10px}
 #pagbankPreviewBody textarea{width:100%;box-sizing:border-box;overflow-wrap:anywhere}#pagbankPreviewBody small{overflow-wrap:anywhere}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #pagbankPreviewDialog{padding:0;border-radius:24px;background:#fffcff;color:#310b40;width:min(96vw,440px);max-height:94dvh}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #pagbankPreviewDialog>div:first-child{background:linear-gradient(145deg,#31053e,#680981);color:#fff;padding:20px;border-radius:0 0 24px 24px}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #pagbankPreviewDialog>div:first-child h2{font-size:1.2rem;margin:0;color:inherit}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #pagbankPreviewBody{padding:20px;gap:12px}
+#pagbankPreviewBody .pb-v2-heading{display:flex;align-items:center;justify-content:center;gap:12px}#pagbankPreviewBody h2,#pagbankPreviewBody h3,#pagbankPreviewBody p{margin:0}#pagbankPreviewBody .pb-v2-heading h2{font-size:1.45rem;line-height:1.2}
+.pb-v2-steps{display:flex;justify-content:space-between;gap:8px;color:#76647f;font-size:.75rem;font-weight:750;padding:12px 0}.pb-v2-steps [data-active=true]{color:#860b9a}
+.pb-v2-option{display:flex;align-items:center;gap:14px;border:1.5px solid #a91bc5;border-radius:16px;padding:16px;background:#faf0ff}.pb-v2-option strong,.pb-v2-option small,.pb-v2-summary-line small{display:block}.pb-v2-option small,.pb-v2-summary-line small{color:#776581;font-size:.82rem}.pb-v2-pix-icon{color:#009f83;font-size:2rem;font-weight:900}.pb-v2-radio{margin-left:auto;color:#9916b6;font-size:1.4rem}
+.pb-v2-total{display:grid;gap:2px;text-align:center;background:#f3e6fb;padding:14px;border-radius:16px}.pb-v2-total strong{font-size:2rem;letter-spacing:-.05em;color:#810d96}.pb-v2-total.pb-v2-paid{background:#e5f7eb}.pb-v2-paid strong{color:#087c57}
+.pb-v2-waiting,.pb-v2-countdown,.pb-v2-auto{padding:10px;border-radius:12px;text-align:center;font-weight:750}.pb-v2-waiting{background:#fff0d3;color:#98520b}.pb-v2-countdown{background:#f3e6fb;color:#780b90;font-variant-numeric:tabular-nums}.pb-v2-auto{background:#e7f6ec;color:#166b50;font-size:.84rem}.pb-v2-instructions{text-align:center;font-weight:650}
+#pagbankPreviewBody .pb-v2-action{background:linear-gradient(135deg,#bd18d6,#650880);color:#fff;min-height:50px;border-radius:15px;width:100%}.pb-v2-approved-icon{display:grid;place-items:center;background:linear-gradient(#49c68f,#0a8660);color:white;width:58px;height:58px;border-radius:50%;font-size:2rem;flex:none}
+.pb-v2-summary{border:1px solid #e8d3f3;border-radius:16px;padding:14px;background:#fff}.pb-v2-summary-line{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #f0e6f5}.pb-v2-summary-line:last-child{border:0;background:#f3e6fb;border-radius:8px;padding:10px}.pb-v2-footer{text-align:center;color:#6f477c;font-weight:750;font-size:.8rem}
 .pagbank-preview-warning{padding:10px;border:1px solid #d97706;border-radius:8px}.pagbank-preview-status{font-weight:800}
 </style>
-<dialog id="pagbankPreviewDialog"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2>Pagamento via Pix</h2><button id="pagbankPreviewClose" type="button" class="secondary" aria-label="Fechar pagamento">Fechar</button></div><div id="pagbankPreviewBody"></div></dialog>
+<dialog id="pagbankPreviewDialog"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 id="pagbankPreviewTitle">Pagamento via Pix</h2><button id="pagbankPreviewClose" type="button" class="secondary" aria-label="Fechar pagamento">Fechar</button></div><div id="pagbankPreviewBody"></div></dialog>
 <script>
 /* A inicialização é um módulo externo; se a rede bloquear seu carregamento,
    mostrar uma falha clara, em vez de manter o cliente preso no skeleton. */
@@ -2816,8 +2827,72 @@ $('loyaltyApply').onclick=async()=>{
 };
 // Referral attribution comes only from the store-scoped link, never a checkout input.
 
+function pagbankPreviewCountdown(){
+ const node=$('pagbankPreviewCountdown');
+ if(!node||!pagbankPreviewCharge)return;
+ const left=Math.max(0,Math.ceil((Date.parse(pagbankPreviewCharge.expires_at)-Date.now())/1000));
+ node.textContent=Number.isFinite(left)&&left>0?'Expira em: '+Math.floor(left/60)+':'+String(left%60).padStart(2,'0'):'Prazo de pagamento encerrado. Consultando situação…';
+}
+function pagbankV2Render(){
+ const dialog=$('pagbankPreviewDialog'),body=$('pagbankPreviewBody'),charge=pagbankPreviewCharge;
+ const paid=charge?.status==='PAID',waiting=charge?.status==='WAITING';
+ dialog.dataset.pixStage=paid?'paid':charge?'payment':'selection';
+ $('pagbankPreviewTitle').textContent=menu?.store?.name||'Pitacco';
+ body.replaceChildren();
+ const note=el('p','AMBIENTE SANDBOX · Não utilize dinheiro real.','pagbank-preview-warning');
+ const heading=el('div',undefined,'pb-v2-heading');
+ if(!charge){
+  const steps=el('div',undefined,'pb-v2-steps');
+  ['✓ Sacola','② Pagamento','③ Confirmação'].forEach((s,i)=>{const n=el('span',s);if(i===1)n.dataset.active='true';steps.append(n)});
+  body.append(steps,el('h2','Forma de pagamento'),el('p','Escolha como deseja pagar seu pedido.'));
+  const option=el('div',undefined,'pb-v2-option');option.append(el('span','❖','pb-v2-pix-icon'));
+  const label=el('div');label.append(el('strong','Pix online'),el('small','Confirmação automática'));option.append(label,el('span','◉','pb-v2-radio'));body.append(option);
+  const items=pagbankPreviewItems||cart;
+  const total=items.reduce((sum,i)=>sum+Number(i.unit||0)*Number(i.quantity||0),0);
+  const amount=el('div',undefined,'pb-v2-total');amount.append(el('span','Total estimado'),el('strong',money(total)));body.append(amount);
+  const generate=el('button',pagbankPreviewBusy?'Gerando Pix…':pagbankPreviewItems?'Consultar mesmo envio':'Continuar →','primary pb-v2-action');
+  generate.type='button';generate.disabled=pagbankPreviewBusy||!items.length;
+  generate.onclick=async()=>{
+   if(pagbankPreviewBusy)return;
+   pagbankPreviewItems??=cart.map(x=>({product_id:x.product_id,quantity:x.quantity,options:[...x.options],name:x.name,unit:x.unit}));
+   pagbankPreviewBusy=true;pagbankPreviewError='';pagbankPreviewRender();
+   try{
+    const d=await pagbankPreviewCall('checkout',{items:pagbankPreviewItems.map(({product_id,quantity,options})=>({product_id,quantity,options}))});
+    if(!d.order_id||d.environment!=='sandbox'||d.order_released!==false||!Number.isInteger(d.cents))throw Error('Resposta de teste inválida.');
+    pagbankPreviewCharge=d;
+    if(d.status==='WAITING'){try{const q=await pagbankPreviewCall('qr');if(typeof q.image==='string'&&q.image.startsWith('data:image/png;base64,')&&/^[A-Za-z0-9+/=]+$/.test(q.image.slice(22)))pagbankPreviewQr=q.image}catch{}}
+   }catch(e){pagbankPreviewError=e.message||'Não foi possível gerar o Pix.'}
+   finally{pagbankPreviewBusy=false;pagbankPreviewRender();pagbankPreviewSchedule()}
+  };body.append(generate);
+ }else{
+  heading.append(el('span',paid?'✓':'❖',paid?'pb-v2-approved-icon':'pb-v2-pix-icon'),el('h2',paid?'Pagamento aprovado!':'Pagamento via Pix'));
+  body.append(heading,el('p',paid?'Confirmação recebida do PagBank.':'Pague com Pix de forma rápida e segura.'));
+  const amount=el('div',undefined,'pb-v2-total'+(paid?' pb-v2-paid':''));amount.append(el('span',paid?'Total pago':'Total a pagar'),el('strong',money(charge.cents/100)));body.append(amount);
+  if(waiting){
+   body.append(el('p','◷ Aguardando pagamento','pb-v2-waiting'));
+   if(pagbankPreviewQr){const image=el('img');image.src=pagbankPreviewQr;image.alt='QR Code Pix Sandbox';image.width=220;image.height=220;body.append(image)}
+   body.append(el('p','Abra o app do seu banco e escaneie o código (apenas em ambiente de teste).','pb-v2-instructions'));
+   const countdown=el('p','','pb-v2-countdown');countdown.id='pagbankPreviewCountdown';body.append(countdown);
+   if(charge.qr_text){const label=el('label','Pix Copia e Cola');label.htmlFor='pagbankV2Code';const input=el('textarea');input.id='pagbankV2Code';input.readOnly=true;input.rows=2;input.value=charge.qr_text;body.append(label,input);const copy=el('button','▣ Copiar código Pix','primary pb-v2-action');copy.type='button';copy.onclick=()=>navigator.clipboard.writeText(charge.qr_text).then(()=>{copy.textContent='✓ Código copiado'}).catch(()=>{pagbankPreviewError='Selecione e copie o código manualmente.';pagbankPreviewRender()});body.append(copy)}
+   const auto=el('p','↻ Aguardando confirmação automática do pagamento…','pb-v2-auto');auto.setAttribute('role','status');body.append(auto);
+   const check=el('button','Consultar pagamento','secondary');check.type='button';check.disabled=pagbankPreviewBusy;check.onclick=()=>void pagbankPreviewCheck();body.append(check);
+  }else if(paid){
+   body.append(el('p','Pagamento de teste confirmado. Nenhum pedido real foi enviado à loja.','pb-v2-auto'));
+   const summary=el('div',undefined,'pb-v2-summary');summary.append(el('h3','Resumo do pedido de teste'));
+   for(const item of charge.checkout?.items||[]){const line=el('div',undefined,'pb-v2-summary-line');const details=el('div');details.append(el('strong',item.quantity+'× '+item.name),el('small',(item.modifiers||[]).map(x=>x.name).join(', ')));line.append(details,el('strong',money(item.quantity*item.unit_total)));summary.append(line)}
+   const sum=el('div',undefined,'pb-v2-summary-line');sum.append(el('span','Total pago'),el('strong',money(charge.cents/100)));summary.append(sum);body.append(summary);
+   const close=el('button','Concluir teste ✓','primary pb-v2-action');close.type='button';close.onclick=()=>dialog.close();body.append(close);
+  }else body.append(el('p',({CANCELED:'Cobrança cancelada',DECLINED:'Pagamento recusado',REFUNDED:'Pagamento estornado'})[charge.status]||'Pagamento em análise','pb-v2-waiting'));
+  body.append(el('small',charge.order_id));
+ }
+ body.append(note,el('p','◆ pitacco · Checkout seguro','pb-v2-footer'));
+ if(pagbankPreviewError)body.append(el('p',pagbankPreviewError,'pagbank-preview-warning'));
+ $('pagbankPreviewClose').disabled=pagbankPreviewBusy;
+ pagbankPreviewCountdown();
+}
 function pagbankPreviewRender(){
- const dialog=$('pagbankPreviewDialog'),body=$('pagbankPreviewBody');
+ if(v2Only()){pagbankV2Render();return;}
+  const dialog=$('pagbankPreviewDialog'),body=$('pagbankPreviewBody');
  if(!dialog||!body)return;
  body.replaceChildren();
  body.append(el('p','SANDBOX · Nenhum valor real será movimentado e nenhum pedido será enviado à loja.','pagbank-preview-warning'));
@@ -2854,6 +2929,7 @@ function pagbankPreviewRender(){
  }
  if(pagbankPreviewError)body.append(el('p',pagbankPreviewError,'pagbank-preview-warning'));
  $('pagbankPreviewClose').disabled=pagbankPreviewBusy;
+
 }
 async function pagbankPreviewCheck(){
  if(pagbankPreviewBusy||!pagbankPreviewCharge||pagbankPreviewCharge.status!=='WAITING')return;
@@ -2866,6 +2942,7 @@ async function pagbankPreviewCheck(){
  }catch(e){pagbankPreviewError=e.message||'Consulta temporariamente indisponível.'}
  finally{pagbankPreviewBusy=false;pagbankPreviewRender();pagbankPreviewSchedule()}
 }
+setInterval(()=>{if($('pagbankPreviewDialog')?.open&&v2Only())pagbankPreviewCountdown()},1000);
 function pagbankPreviewSchedule(){clearTimeout(pagbankPreviewTimer);if($('pagbankPreviewDialog')?.open&&pagbankPreviewCharge?.status==='WAITING')pagbankPreviewTimer=setTimeout(()=>void pagbankPreviewCheck(),4500)}
 function openPagBankPreview(){
  if(!pagbankPreviewReady){msg('Link Sandbox indisponível. Gere um novo no painel.');return}
