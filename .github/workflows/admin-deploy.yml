@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - 'revisions/0.12/web/AdminApp.jsx'
+      - 'revisions/0.12/web/Homologation.jsx'
+      - 'revisions/0.12/web/PaymentHomologation.jsx'
+      - 'revisions/0.12/web/PagBankSandbox.jsx'
       - 'revisions/0.12/web/OwnerSubscriptions.jsx'
       - 'revisions/0.12/web/OwnerFinance.jsx'
       - 'revisions/0.12/web/OwnerCommercialFinance.jsx'
