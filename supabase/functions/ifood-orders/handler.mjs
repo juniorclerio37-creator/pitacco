@@ -1,3 +1,4 @@
+import {createShippingTestPoller} from './shipping-events.mjs';
 import {createDistributedIfood} from './distributed.mjs';
 const origin='https://merchant-api.ifood.com.br';
 const uuid=/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
@@ -78,7 +79,7 @@ function normalizeOrder(order,event) {
 }
 
 export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
- distributedId,distributedSecret,tokenKey,publicKey,fetcher=fetch,runInBackground=promise=>void promise,logger=console}) {
+ distributedId,distributedSecret,tokenKey,publicKey,shippingTest=false,fetcher=fetch,runInBackground=promise=>void promise,logger=console}) {
  let cachedToken,expires=0,renewing;
  let signatureKey;
  async function rpc(name,body){
@@ -161,6 +162,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
   return events.length;
  }
 
+ const shipping=shippingTest?createShippingTestPoller({rpc,token,fetcher,enqueue,process,logger}):null;
  async function courierAction(request) {
   const originHeader=request.headers.get('origin');
   const cors={'cache-control':'no-store','vary':'Origin'};
@@ -333,6 +335,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
     if(!uuid.test(candidate)||await rpc('pitacco_ifood_retry_authorized',{p_key:candidate})!==true){
      return reply(401,{error:'Não autorizado'});
     }
+    if(shipping&&clientId&&clientSecret)await shipping.poll();
     await distributed.poll(enqueue);
     const processed=await process();
     await autoConfirm();
@@ -355,6 +358,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
     const merchantIds=await rpc('pitacco_ifood_online',{p_merchants:event.merchantIds});
     return reply(202,{merchantIds});
    }
+   if(shipping&&await shipping.receive(event))return reply(202,{});
    const inserted=await enqueue(event);
    if(inserted)runInBackground(process(event.id).then(()=>event.code==='PLC'||event.fullCode==='PLACED'?autoConfirm(event.orderId):null).catch(()=>logger.warn('Fila iFood será retomada em nova tentativa.')));
    return reply(202,{});

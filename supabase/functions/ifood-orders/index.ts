@@ -1,6 +1,7 @@
 import { createIfoodOrders } from './handler.mjs';
 
 Deno.serve(createIfoodOrders({
+  shippingTest: true,
   clientId: Deno.env.get('IFOOD_CLIENT_ID'),
   clientSecret: Deno.env.get('IFOOD_CLIENT_SECRET'),
   distributedId: Deno.env.get('IFOOD_DISTRIBUTED_CLIENT_ID'),
