@@ -162,7 +162,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
   return events.length;
  }
 
- const shipping=shippingTest?createShippingTestPoller({rpc,token,fetcher,enqueue,process,logger}):null;
+ const shipping=shippingTest?createShippingTestPoller({rpc,token,fetcher,enqueue,process,logger,requiresOrderProcessing:event=>acceptedCodes.has(event.fullCode??codes.get(event.code))&&(!event.category||event.category==='FOOD')}):null;
  async function courierAction(request) {
   const originHeader=request.headers.get('origin');
   const cors={'cache-control':'no-store','vary':'Origin'};

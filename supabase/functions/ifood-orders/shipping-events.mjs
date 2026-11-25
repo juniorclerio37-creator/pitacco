@@ -1,5 +1,5 @@
 // Shipping polling shares the existing 30-second cron and is limited by server-side test-merchant leases.
-export function createShippingTestPoller({rpc,token,fetcher,enqueue,process,timeout=ms=>AbortSignal.timeout(ms),logger=console}){
+export function createShippingTestPoller({rpc,token,fetcher,enqueue,process,requiresOrderProcessing=()=>true,timeout=ms=>AbortSignal.timeout(ms),logger=console}){
  const uuid=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
  const root='https://merchant-api.ifood.com.br/events/v1.0';
  const codes=new Set(['REQUEST_DRIVER','REQUEST_DRIVER_SUCCESS','REQUEST_DRIVER_FAILED','ASSIGN_DRIVER','DELIVERY_CANCELLATION_REQUESTED','DELIVERY_CANCELLED','DELIVERY_CONCLUDED','DELIVERY_IN_TRANSIT','DELIVERY_ADDRESS_CHANGE_REQUESTED','DELIVERY_ADDRESS_CHANGE_ACCEPTED','DELIVERY_ADDRESS_CHANGE_DENIED','DELIVERY_ADDRESS_CHANGE_USER_CONFIRMED','DELIVERY_DROP_CODE_REQUESTED','CANCELLATION_REQUESTED','CANCELLATION_REQUEST_FAILED','CANCELLED']);
@@ -23,11 +23,13 @@ export function createShippingTestPoller({rpc,token,fetcher,enqueue,process,time
    if(!Array.isArray(events))throw Error('poll response');
    count=events.length;
    for(const event of events){
-    if(!uuid.test(event?.id??'')||event.merchantId!==row.merchant_id)continue;
+    if(!uuid.test(event?.id??'')||event.merchantId!==row.merchant_id||!uuid.test(event.orderId??'')||!Number.isFinite(Date.parse(event.createdAt)))throw Error('invalid polling event');
     const pos=await receive(event,true);
-    if(!pos&&uuid.test(event.orderId??'')){
-     const inserted=await enqueue(event,false);
-     if(inserted)await process(event.id);
+    if(!pos&&requiresOrderProcessing(event)){
+     await enqueue(event,false);
+     // A duplicate may still be pending, leased, or have failed its previous processing.
+     await process(event.id);
+     if(await rpc('pitacco_ifood_shipping_test_order_event_done',{p_event:event.id,p_merchant:event.merchantId,p_order:event.orderId})!==true)throw Error('order event pending');
     }
     const a=await fetcher(root+'/events/acknowledgment',{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify([{id:event.id}]),signal:timeout(7000),redirect:'error'});
     if(!a.ok)throw Error('ack rejected');
