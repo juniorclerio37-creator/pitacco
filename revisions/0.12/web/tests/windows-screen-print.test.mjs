@@ -242,3 +242,11 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  assert.match(orders,/onDecision\(current\.id,decision\.status,decision\.reason\)/);
  assert.match(orders,/Nenhuma solicitação de cancelamento será enviada ao iFood/);
  });
+
+ test('own pickup has Finalizar only when ready and cannot be dispatched',()=>{
+ const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
+ assert.ok(orders.includes("const canAssign=(order,delivery)=>order.receipt?.logistics!=='retirada'"));
+ assert.ok(orders.includes("o.receipt?.logistics==='retirada'?'Finalizar':'Concluir'"));
+ assert.ok(orders.includes('onClick={()=>onPickup?.(o.id)}>Finalizar</button>'));
+ assert.ok(orders.includes('Disponível para retirada'));
+ });

@@ -62,3 +62,9 @@ test('customer tracking exposes actual merchant-configured delivery PIN of 4 to 
  assert.match(sql,/digits smallint not null default 6 check \(digits between 4 and 8\)/);
  assert.match(html,/setInterval\(refresh,15000\)/);
 });
+
+ test('pickup ready is displayed to the customer and only explicit completion finishes it',()=>{
+ assert.match(html,/const collected=prep==='completed';current=collected\?4:prep==='ready'&&rawStatus==='accepted'\?3:/);
+ assert.match(html,/Seu pedido está pronto e disponível para retirada na loja/);
+ assert.match(html,/Seu pedido foi retirado e finalizado/);
+ });

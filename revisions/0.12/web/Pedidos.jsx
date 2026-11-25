@@ -29,7 +29,7 @@ const deliveryType=(order,delivery)=>{
  if(mode==='loja')return {type:'own',label:delivery?.status==='retirada'&&delivery.arrived_at?deliveryLabel(delivery):'Entrega própria'};
  return {type:'unknown',label:'Logística a confirmar'};
 };
-const canAssign=(order,delivery)=>order.status==='accepted'&&order.preparation_status==='ready'&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id&&!shippingReserved(delivery);
+const canAssign=(order,delivery)=>order.receipt?.logistics!=='retirada'&&order.status==='accepted'&&order.preparation_status==='ready'&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id&&!shippingReserved(delivery);
 const isAutomaticDispatch=mode=>mode==='automatico';
 const canDispatch=(order,delivery)=>canAssign(order,delivery);
 const canConcludeOnWindows=(order,delivery,step)=>(
@@ -206,7 +206,8 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
       (o.receipt?.ifood_manual_cancel==='requested'?<span role="status">Cancelamento solicitado ao iFood</span>:
        <button type="button" className="secondary pedidos-card-cancel" title="Cancelar pedido no iFood" aria-label="Cancelar pedido no iFood" disabled={busy||!onRejectIfood||!onGetIfoodReasons} onClick={()=>void openIfoodReject(o)}>Cancelar</button>)}
      {stage(o)==='preparing'&&<button type="button" className="primary pedidos-step-button" disabled={busy} onClick={()=>onReady(o.id)}>{popupLayout?'Marcar pronto':'Marcar pedido pronto'}</button>}
-     {stage(o)==='ready'&&o.source==='proprio'&&o.receipt?.logistics==='retirada'&&!popupLayout&&<button type="button" className="primary pedidos-step-button" disabled={busy||!onPickup} onClick={()=>onPickup?.(o.id)}>Confirmar retirada</button>}
+     {stage(o)==='ready'&&o.source==='proprio'&&o.receipt?.logistics==='retirada'&&<span role="status" className="pickup-ready-note">Disponível para retirada</span>}
+     {stage(o)==='ready'&&o.source==='proprio'&&o.receipt?.logistics==='retirada'&&!popupLayout&&<button type="button" className="primary pedidos-step-button" disabled={busy||!onPickup} onClick={()=>onPickup?.(o.id)}>Finalizar</button>}
      {stage(o)==='ready'&&canDispatch(o,delivery,dispatchMode)&&<button type="button" className="primary pedidos-step-button" disabled={busy} onClick={()=>onAssign(o)}>{popupLayout?'Despachar':'Selecionar entregador'}</button>}
      {stage(o)==='ready'&&canAssign(o,delivery)&&isAutomaticDispatch(dispatchMode)&&<span role="status">Atribuição automática ativa · seleção manual também disponível</span>}
      {stage(o)==='ready'&&delivery?.courier_id&&<span role="status">Entregador selecionado · aguardando saída</span>}
@@ -225,7 +226,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
          (o.receipt?.logistics==='retirada'?'Registrar retirada concluída':'Concluir somente após chegada e comprovação da entrega'):
          'Aguarde a saída e a comprovação da entrega antes de concluir'}
        onClick={()=>o.receipt?.logistics==='retirada'?onPickup?.(o.id):onConclude?.(o.id)}>
-       <CheckCircle2 size={16} aria-hidden="true"/> Concluir
+       <CheckCircle2 size={16} aria-hidden="true"/> {o.receipt?.logistics==='retirada'?'Finalizar':'Concluir'}
       </button>}
      <button type="button" className="secondary pedidos-card-print" aria-label={(manualPrint?"Imprimir no navegador pedido ":"Reimprimir comanda do pedido ")+number(o)} disabled={busy} onClick={()=>onReprint(o.id)}><Printer size={16} aria-hidden="true"/></button>
     </div>}
@@ -243,7 +244,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
 {['99food','keeta'].includes(current.source)&&!terminal.has(stage(current))&&<p className="order-detail-note">Para cancelar, use o painel oficial da plataforma. O Pitacco não possui cancelamento integrado confirmado para esta origem.</p>}{(currentDelivery||current.receipt?.logistics!=='retirada')&&<button className="secondary" onClick={()=>onDetail(current)}>Entrega e entregador</button>}
 {current.status==='accepted'&&<button className="secondary" disabled={busy} onClick={()=>onReprint(current.id)}>🖨️ {manualPrint?'Imprimir no navegador':'Reimprimir'}</button>}
 {stage(current)==='preparing'&&current.status==='accepted'&&<button className="primary" disabled={busy} onClick={()=>onReady(current.id)}>{popupLayout?'Marcar pronto':'Marcar pedido pronto'}</button>}
-{stage(current)==='ready'&&current.source==='proprio'&&current.receipt?.logistics==='retirada'&&<button className="primary" disabled={busy||!onPickup} onClick={()=>onPickup?.(current.id)}>Confirmar retirada</button>}
+{stage(current)==='ready'&&current.source==='proprio'&&current.receipt?.logistics==='retirada'&&<button className="primary" disabled={busy||!onPickup} onClick={()=>onPickup?.(current.id)}>Finalizar</button>}
 {stage(current)==='ready'&&canDispatch(current,currentDelivery,dispatchMode)&&<button className="primary" disabled={busy} onClick={()=>onAssign(current)}>{popupLayout?'Despachar':'Selecionar entregador'}</button>}
 {stage(current)==='delivery'&&current.source==='proprio'&&<button className="primary" disabled={busy||!onConclude} onClick={()=>onConclude?.(current.id)}>Concluir entrega</button>}
 {canDecide&&<>
@@ -253,6 +254,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  { !ifoodExpired&&<button className="primary" disabled={busy||!onAcceptIfood} onClick={()=>onAcceptIfood?.(current.id)}>Aceitar pedido no iFood</button>}
  </>}{canCancelIfood&&!ifoodRequestPending&&!ifoodCancelPending&&<button type="button" className="secondary" disabled={busy||!onRejectIfood||!onGetIfoodReasons} aria-label="Cancelar pedido no iFood" onClick={()=>void openIfoodReject(current)}>Cancelar</button>}
   </>}>
+{stage(current)==='ready'&&current.source==='proprio'&&current.receipt?.logistics==='retirada'&&<p role="status" className="order-detail-note">Disponível para retirada. Clique em Finalizar somente após entregar o pedido ao cliente.</p>}
 {stage(current)==='ready'&&currentDelivery?.courier_id&&<p role="status" className="order-detail-note">Entregador atribuído · aguardando saída</p>}
 {stage(current)==='ready'&&currentDelivery?.logistics_provider==='marketplace'&&<p role="status" className="order-detail-note">Aguardando retirada pelo parceiro</p>}
 {current.source==='ifood'&&currentDelivery?.logistics_provider==='loja'&&current.status==='accepted'&&current.receipt?.ifood_status!=='DISPATCHED'&&['ready','delivery'].includes(stage(current))&&<p role="status" className="order-detail-note">O despacho só é confirmado quando o iFood enviar DISPATCHED. No aplicativo do entregador, registre a coleta e toque em Sair para entrega. Se a saída já foi registrada, confira Sincronizar despacho com iFood.</p>}
