@@ -6,10 +6,11 @@ insert into public.orders(id,store_id,channel,gross,source,status,preparation_st
  ('30000000-0000-0000-0000-000000000071','20000000-0000-0000-0000-000000000071','Delivery próprio',20,'proprio','accepted','preparing'),
  ('30000000-0000-0000-0000-000000000072','20000000-0000-0000-0000-000000000071','Delivery próprio',20,'proprio','accepted','ready'),
  ('30000000-0000-0000-0000-000000000073','20000000-0000-0000-0000-000000000071','Delivery próprio',20,'proprio','accepted','completed'),
- ('30000000-0000-0000-0000-000000000074','20000000-0000-0000-0000-000000000071','Balcão',20,'proprio','accepted','ready'),
- ('30000000-0000-0000-0000-000000000075','20000000-0000-0000-0000-000000000071','Cardápio digital',20,'proprio','pending','preparing'),
+ ('30000000-0000-0000-0000-000000000074','20000000-0000-0000-0000-000000000071','Delivery próprio',20,'proprio','accepted','ready'),
+ ('30000000-0000-0000-0000-000000000075','20000000-0000-0000-0000-000000000071','Delivery próprio',20,'proprio','pending','preparing'),
  ('30000000-0000-0000-0000-000000000076','20000000-0000-0000-0000-000000000071','iFood',20,'ifood','accepted','ready');
-update public.orders set receipt='{"logistics":"retirada"}' where id in ('30000000-0000-0000-0000-000000000074','30000000-0000-0000-0000-000000000075');
+update public.orders set receipt='{"logistics":"retirada","merchant_sale_mode":"balcao","sales_channel":"venda_direta","point_of_sale":true}' where id='30000000-0000-0000-0000-000000000074';
+update public.orders set receipt='{"logistics":"retirada"}' where id='30000000-0000-0000-0000-000000000075';
 update public.orders set receipt='{"logistics":"loja"}' where id='30000000-0000-0000-0000-000000000072';
 insert into public.deliveries(id,store_id,order_id,customer_name,address,status,source,logistics_provider)
 values ('50000000-0000-0000-0000-000000000072','20000000-0000-0000-0000-000000000071','30000000-0000-0000-0000-000000000072','Cliente teste','Endereço de teste','pendente','proprio','loja');
