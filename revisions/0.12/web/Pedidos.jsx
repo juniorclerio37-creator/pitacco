@@ -189,9 +189,9 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
      {canCancelOwnOrder(o)&&<button type="button" className="secondary pedidos-card-cancel" disabled={busy||!onDecision} onClick={()=>openOwnCancel(o)}>Cancelar</button>}
     </div>}
     {o.source==='ifood'&&o.status==='pending'&&<div className="pedidos-card-actions">
-     <button type="button" className="primary" disabled={busy||o.status!=='pending'||acceptMode==='automatic'||!onAcceptIfood||ifoodAcceptExpired(o)||o.receipt?.ifood_manual_accept==='requested'||o.receipt?.ifood_manual_cancel==='requested'} onClick={()=>onAcceptIfood?.(o.id)}>Aceitar</button>
+     <button type="button" className="primary" disabled={busy||o.status!=='pending'||(acceptMode==='automatic'&&!scheduleInfo(o))||!onAcceptIfood||ifoodAcceptExpired(o)||o.receipt?.ifood_manual_accept==='requested'||o.receipt?.ifood_manual_cancel==='requested'} onClick={()=>onAcceptIfood?.(o.id)}>Aceitar</button>
      <button type="button" className="secondary pedidos-reject-button" disabled={busy||o.status!=='pending'||!onRejectIfood||!onGetIfoodReasons||o.receipt?.ifood_manual_accept==='requested'||o.receipt?.ifood_manual_cancel==='requested'} onClick={()=>void openIfoodReject(o)}>Recusar</button>
-     {o.status==='pending'&&acceptMode==='automatic'&&<span role="status">Aceite automático ativo · aguardando iFood</span>}
+     {o.status==='pending'&&acceptMode==='automatic'&&!scheduleInfo(o)&&<span role="status">Aceite automático ativo · aguardando iFood</span>}
      {acceptRemaining(o)!==null&&<span role="status" className={(acceptRemaining(o)<=120?'notice error ':'')+'pedidos-accept-deadline'} title={acceptDeadline(o)}>{acceptRemaining(o)>0?Math.floor(acceptRemaining(o)/60)+':'+String(acceptRemaining(o)%60).padStart(2,'0'):acceptDeadline(o)}</span>}
      {o.receipt?.ifood_manual_accept==='requested'&&<span role="status">Aguardando confirmação do iFood</span>}
      {o.receipt?.ifood_manual_cancel==='requested'&&<span role="status">Cancelamento solicitado ao iFood</span>}
@@ -248,7 +248,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
 {canDecide&&<>
  <button className="primary" disabled={busy} onClick={()=>onAccept(current.id)}>{scheduleInfo(current)?'Aceitar pedido':'Aceitar e iniciar preparo'}</button>
  <button type="button" className="secondary" disabled={busy} onClick={()=>setDecision({id:current.id,status:'rejected',reason:''})}>Recusar pedido</button>
- </>}{canCancelOwn&&<button type="button" className="secondary" disabled={busy||!onDecision} onClick={()=>openOwnCancel(current)}>Cancelar</button>}{waitingIfood&&!ifoodRequestPending&&!ifoodCancelPending&&acceptMode!=='automatic'&&<>
+ </>}{canCancelOwn&&<button type="button" className="secondary" disabled={busy||!onDecision} onClick={()=>openOwnCancel(current)}>Cancelar</button>}{waitingIfood&&!ifoodRequestPending&&!ifoodCancelPending&&(acceptMode!=='automatic'||scheduleInfo(current))&&<>
  { !ifoodExpired&&<button className="primary" disabled={busy||!onAcceptIfood} onClick={()=>onAcceptIfood?.(current.id)}>Aceitar pedido no iFood</button>}
  </>}{canCancelIfood&&!ifoodRequestPending&&!ifoodCancelPending&&<button type="button" className="secondary" disabled={busy||!onRejectIfood||!onGetIfoodReasons} aria-label="Cancelar pedido no iFood" onClick={()=>void openIfoodReject(current)}>Cancelar</button>}
   </>}>
@@ -262,7 +262,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
 {(waitingIfood||ifoodCancelPending||current.receipt?.ifood_manual_cancel==='failed')&&<div role="status" className="order-detail-meta">
  {ifoodCancelPending?<p>Cancelamento solicitado ao iFood. Aguardando confirmação oficial.</p>:
  ifoodRequestPending?<p>Aguardando confirmação oficial do iFood. Não aceite novamente.</p>:
- acceptMode==='automatic'?<p>Aceite automático ativo. Aguardando o iFood.</p>:
+ acceptMode==='automatic'&&!scheduleInfo(current)?<p>Aceite automático ativo. Aguardando o iFood.</p>:
  ifoodExpired?<p>Prazo de aceite do iFood encerrado.</p>:null}
  {current.receipt?.ifood_manual_accept==='failed'&&<p>O envio anterior falhou. Tente novamente se o prazo ainda estiver aberto.</p>}
  {current.receipt?.ifood_manual_cancel==='failed'&&<p>O iFood não confirmou o cancelamento anterior. Consulte o motivo e tente novamente se permitido.</p>}

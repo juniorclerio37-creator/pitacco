@@ -323,3 +323,9 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  assert.ok(history.includes("const labels={completed:'Concluído',cancelled:'Cancelado',rejected:'Recusado'}"));
  assert.ok(history.includes('Object.hasOwn(labels,row.order_stage)'));
  });
+
+ test('scheduled iFood orders expose manual acceptance even under automatic mode',()=>{
+ const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
+ assert.ok(orders.includes("acceptMode==='automatic'&&!scheduleInfo(o)"));
+ assert.ok(orders.includes("acceptMode!=='automatic'||scheduleInfo(current)"));
+ });
