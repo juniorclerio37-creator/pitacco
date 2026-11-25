@@ -74,6 +74,8 @@ function normalizeOrder(order,event) {
   discount:money(order.total.benefits),total:order.total.orderAmount,
   payment:methods.map(m=>text(m.method,50)).filter(Boolean).join(' / '),
   payment_status:methods.length&&methods.every(m=>m.prepaid===true)?'paid':'pending',
+  provider_delivery_due_at:iso(order.schedule?.deliveryDateTimeEnd)||iso(delivery.deliveryDateTime),
+  delivery_location:typeof address.coordinates?.latitude==='number'&&typeof address.coordinates?.longitude==='number'&&Math.abs(address.coordinates.latitude)<=90&&Math.abs(address.coordinates.longitude)<=180?{latitude:address.coordinates.latitude,longitude:address.coordinates.longitude}:null,
   provider_scheduled_for:iso(order.schedule?.deliveryDateTimeStart),
  };
 }
@@ -96,6 +98,12 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
  const distributed=createDistributedIfood({id:distributedId,secret:distributedSecret,tokenKey,supabaseUrl,publicKey,rpc,fetcher,logger});
  async function enqueue(event,viaPolling=false,production=false){
   const code=event.fullCode??codes.get(event.code);
+  if((code==='RECOMMENDED_PREPARATION_START'||event.code==='RPS')&&(!event.category||event.category==='FOOD')){
+   const due=iso(event.metadata?.expectedPreparationEndTimestamp),at=iso(event.createdAt);
+   if(!due||!at||!uuid.test(event.orderId??'')||!uuid.test(event.merchantId??''))return false;
+   await rpc('pitacco_ifood_preparation_estimate',{p_merchant:event.merchantId,p_order:event.orderId,p_at:at,p_start:iso(event.metadata?.expectedPreparationStartTimestamp),p_due:due,p_production:production,p_distributed:viaPolling});
+   return false; // metadata only: never advance order state or enqueue a fake lifecycle event
+  }
   if(!acceptedCodes.has(code)||(event.category&&event.category!=='FOOD'))return false;
   const at=iso(event.createdAt);
   if(!uuid.test(event.orderId??'')||!uuid.test(event.merchantId??'')||!at){
