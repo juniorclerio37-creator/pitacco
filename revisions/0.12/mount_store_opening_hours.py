@@ -22,7 +22,7 @@ once(needle,needle+"""
 needle="{tab==='Aparência do cardápio'&&active&&!nativeAvailable()&&(manager"
 assert s.count(needle)==1,'Storefront studio route not found'
 s=s.replace(needle,
- """{tab==='Horário de funcionamento'&&active&&(manager
+ """{tab==='Horário de funcionamento'&&active&&!nativeAvailable()&&(manager
  ?<StoreOpeningHours key={selected} client={supabase} store={active} manager={manager}/>
  :<section className="panel">Somente gestores podem editar o funcionamento da loja.</section>)}
  """+needle,1)
