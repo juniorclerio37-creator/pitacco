@@ -3124,6 +3124,7 @@ $('checkout').onsubmit=async event=>{
    msg('Este pedido não está habilitado para Fiado. Escolha outro pagamento ou fale com a loja.');
    return;
   }
+  if(payment==='fiado'&&($('loyaltyCoupon').value.trim()||$('loyaltyReward').value)){msg('Pedidos fiados não utilizam nem acumulam benefícios do Fideliza+. Remova o benefício ou escolha outra forma de pagamento.');return;}
   if(payment==='fiado'&&!/^[0-9]{6}$/.test($('fiadoPin').value)){
    msg('Informe seu PIN pessoal de seis dígitos para confirmar o Fiado.');
    $('fiadoPin').focus();

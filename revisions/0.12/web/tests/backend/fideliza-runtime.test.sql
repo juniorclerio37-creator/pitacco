@@ -163,7 +163,9 @@ begin
  perform public.pitacco_fiado_receive(s,fiado_customer,30,'pix',gen_random_uuid(),'Parcial');
  assert pitacco_private.loyalty_balance(s,c,'points')=points_before;
  perform public.pitacco_fiado_receive(s,fiado_customer,70,'pix',gen_random_uuid(),'Quitação');
- assert pitacco_private.loyalty_balance(s,c,'points')=points_before+100;
+ assert pitacco_private.loyalty_balance(s,c,'points')=points_before,'Fiado quitado jamais acumula pontos';
+ perform pitacco_private.loyalty_refresh_order(fiado_order);
+ assert not exists(select 1 from public.loyalty_ledger where store_id=s and order_id=fiado_order and event_type in ('earn','redeem')),'Fiado não gera pontos, cashback, contagem de pedidos ou indicação';
 
  -- Agenda e cotação preservam os cálculos e o ponto de entrega originais.
  perform public.pitacco_store_hours_save_v2(s,(select jsonb_agg(jsonb_build_object('weekday',day,'slot',1,'opens_minute',0,'closes_minute',1440)) from generate_series(1,7) day),false,(public.pitacco_store_hours_state(s)->>'revision')::integer,true);
