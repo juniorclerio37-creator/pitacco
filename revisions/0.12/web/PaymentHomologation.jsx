@@ -1,4 +1,5 @@
 import React,{useState} from 'react';
+import PagBankSandbox from './PagBankSandbox.jsx';
 
 export const paymentHomologationProviders={
  mercado_pago:'Mercado Pago',
@@ -42,7 +43,7 @@ export default function PaymentHomologation({client,store,provider,onEvidence,me
   }catch(error){setFailure(error.message||'Não foi possível consultar o provedor.');}
   finally{setBusy(false);}
  }
- return <form onSubmit={check} className="panel" autoComplete="off">
+ return <>{provider==='pagbank'&&<PagBankSandbox key={store} client={client} store={store} onEvidence={onEvidence}/>}<form onSubmit={check} className="panel" autoComplete="off">
   <h3>Consultar pagamento de teste · {providerLabel}</h3>
    {guides[provider]&&<>
    <p>{guides[provider].steps}</p>
@@ -70,5 +71,5 @@ export default function PaymentHomologation({client,store,provider,onEvidence,me
     {Number.isInteger(result.amount_cents)&&' · '+brl.format(result.amount_cents/100)}</p>}
    {result.reference&&onEvidence&&<button type="button" className="secondary" onClick={()=>onEvidence(result)}>Usar resultado no registro</button>}
   </div>}
- </form>;
+ </form></>;
 }

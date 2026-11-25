@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.delivery-quote]
 verify_jwt = false
+
+[functions.pagbank-connect]
+verify_jwt = false
