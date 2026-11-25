@@ -1227,6 +1227,21 @@ body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data
  <button type="button" class="v2-nav-button" data-v2-nav="fiado"><span class="v2-nav-icon" aria-hidden="true">▣</span>Fiado</button>
 </nav>
 
+<style>
+#customerSessionBar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;margin-block:12px;background:var(--paper,#fff);color:var(--ink,#24202b);border:1px solid color-mix(in srgb,var(--brand,#801095) 22%,transparent);border-radius:16px}
+#customerSessionBar[hidden],#customerSessionChange[hidden],#customerSessionHistory[hidden]{display:none!important}
+#customerSessionBar strong,#customerSessionBar small{display:block;overflow-wrap:anywhere}
+#customerSessionActions,.customer-order-actions{display:flex;gap:8px;flex-wrap:wrap}
+#customerSessionHistory{width:100%;min-width:0;display:grid;gap:12px}
+.customer-order-card{padding:14px;border:1px solid #ddd;border-radius:12px;display:grid;gap:8px;overflow-wrap:anywhere}
+.customer-order-card p{margin:0}.customer-order-card a{color:var(--brand,#801095);font-weight:700}
+#customerSessionBar button{max-width:100%;white-space:normal}
+</style>
+<section id="customerSessionBar" class="shell" aria-label="Minha conta neste aparelho" hidden>
+ <div><strong id="customerSessionGreeting"></strong><small>Cadastro lembrado neste aparelho</small></div>
+ <div id="customerSessionActions"><button type="button" id="customerSessionOrders" class="secondary" aria-expanded="false">Meus pedidos</button><button type="button" id="customerSessionLogout" class="secondary">Sair da conta</button></div>
+ <div id="customerSessionHistory" aria-live="polite" hidden></div>
+</section>
 <section id="storeOpenStatus" class="shell store-open-status" role="status" aria-live="polite" hidden></section>
 <section id="pitaccoPromos" class="shell pitacco-promos" aria-label="Destaques da loja" hidden></section>
 <main class="shell catalog"><section id="cartDraftNotice" class="cart-draft-notice" role="status" hidden><p id="cartDraftText"></p><button type="button" id="checkPendingCart" class="secondary" hidden>Conferir envio anterior</button><a id="recoveredOrderLink" hidden>Acompanhar pedido confirmado</a></section>
@@ -1321,7 +1336,7 @@ body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data
 <section class="v2-checkout-panel v2-checkout-panel--customer">
  <div id="v2PhoneFields"><div class="v2-identity-art" aria-hidden="true">🍧 <span>▣</span> 📍</div>
   <h3>Identifique-se para continuar</h3><p>Informe seu número de telefone para acessar sua conta e fazer o pedido.</p>
-  <label for="phone">Seu telefone (com DDD)</label><input id="phone" autocomplete="tel-national" required inputmode="tel" maxlength="30" placeholder="(XX) 9 9999-9999">
+  <button type="button" id="customerSessionChange" class="secondary" hidden>Trocar cliente / sair</button><label for="phone">Seu telefone (com DDD)</label><input id="phone" autocomplete="tel-national" required inputmode="tel" maxlength="30" placeholder="(XX) 9 9999-9999">
   <p class="v2-privacy-note">♢ Seus dados ficam protegidos neste aparelho e não são compartilhados entre lojas.</p>
  </div>
  <div id="v2NameFields" hidden><h3>◉ Seus dados</h3><p>Confirme as informações para continuar com o pedido.</p>
@@ -1546,6 +1561,7 @@ async function checkPendingCart(){
   const {data,error}=await client.rpc('pitacco_public_checkout_recovery',{p_slug:slug,p_request:id});
   if(error)throw error;if(id!==cartRecoveryId)return;
   if(data?.confirmed&&data.order_id&&data.tracking_token){
+   void rememberConfirmedOrder(data);
    cart=[];cartRecoveryId=null;persistCartDraft();renderCart();button.hidden=true;
    cartDraftNotice('Seu pedido anterior foi confirmado. A sacola está pronta para uma nova compra.');
    const link=$('recoveredOrderLink');link.href='/acompanhar/?token='+encodeURIComponent(data.tracking_token);link.hidden=false;
@@ -2519,7 +2535,7 @@ function cartStep(checkout){
  $('checkoutMessage').hidden=true;
  $('cartBody').scrollTop=0;
  if(v2Only()){
-  if(checkout)v2ShowCheckoutStage('identify');
+  if(checkout)v2ShowCheckoutStage(customerSessionActive&&Date.now()<customerSessionExpiry?'address':'identify');
   else {delete $('cartDialog').dataset.v2Stage;$('v2CheckoutNext').hidden=true;$('v2CheckoutBack').hidden=true;}
  }else if(checkout){v2RenderSavedAddresses();$('customer').focus();}
 }
@@ -3140,7 +3156,7 @@ $('checkout').onsubmit=async event=>{
   if(routeMode)pendingRequest.p_quote=deliveryQuote.id;
   if(!v2Only()){
    if(fulfillment==='delivery')v2SaveCurrentAddress();
-   void v2SaveProfile();
+   await v2SaveProfile();
   }
   // The quoted checkout recovers the customer's exact pin on the server
   // from the quote. Do NOT send p_latitude/p_longitude: that RPC does not
@@ -3192,6 +3208,7 @@ $('checkout').onsubmit=async event=>{
    throw Error(String(data.error));
   }
   if(!data?.order_id)throw Error('O servidor não retornou a confirmação do pedido.');
+  void rememberConfirmedOrder(data);
   referralCode='';try{localStorage.removeItem(referralStorageKey);}catch{}
   completed=true;submitting=false;cartRecoveryId=null;persistCartDraft();$('cartDraftNotice').hidden=true;
   if(usingLoyalty)void refreshLoyaltyWallet();
@@ -3246,6 +3263,110 @@ $('checkout').onsubmit=async event=>{
 const v2Stages=['identify','customer','address','payment','review'];
 let v2CurrentStage='identify',v2Profile={addresses:[],name:''},v2ProfilePhone='',v2SelectedAddress='',v2AddressEditing=true;
 let v2FiadoPixInstructions=null,v2ProfileBusy=false;
+let customerSessionActive=false,customerSessionExpiry=0,customerSessionBusy=false,customerSessionPhone='';
+const customerDeviceKey='pitacco-v2-customer-device:'+slug,customerLinksKey='pitacco-device-order-links:'+slug;
+function rememberedDevice(){
+ try{const d=localStorage.getItem(customerDeviceKey);return /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(d||'')?d:null}catch{return null}
+}
+function customerSessionDisplay(active,name='',expiry=0){
+ customerSessionActive=active;customerSessionExpiry=expiry;customerSessionPhone=active?loyaltyPhoneDigits($('phone').value):'';
+ $('phone').readOnly=active;$('v2LoyaltyPhone').readOnly=active;
+ $('customerSessionBar').hidden=!active;$('customerSessionChange').hidden=!active;
+ $('customerSessionGreeting').textContent=active?'Olá, '+name.split(/\s+/)[0]+'!':'';
+ if(!active){$('customerSessionHistory').replaceChildren();$('customerSessionHistory').hidden=true;$('customerSessionOrders').setAttribute('aria-expanded','false')}
+}
+function discardCustomerCredential(){
+ try{localStorage.removeItem(customerDeviceKey);localStorage.removeItem(customerLinksKey)}catch{}
+ customerSessionDisplay(false);
+}
+function pendingDeviceLinks(device){
+ try{const d=JSON.parse(localStorage.getItem(customerLinksKey)||'null');return d?.device===device&&Array.isArray(d.tokens)?d.tokens.filter(t=>/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(t)).slice(0,50):[]}catch{return []}
+}
+function storeDeviceLinks(device,tokens){try{if(rememberedDevice()===device)localStorage.setItem(customerLinksKey,JSON.stringify({device,tokens:tokens.slice(0,50)}))}catch{}}
+async function flushDeviceLinks(){
+ const device=rememberedDevice();if(!device||!customerSessionActive)return;
+ const tokens=pendingDeviceLinks(device);
+ for(const token of tokens){
+  if(device!==rememberedDevice()||!customerSessionActive)return;
+  try{const {data,error}=await client.rpc('pitacco_customer_device_orders',{p_slug:slug,p_device:device,p_action:'link',p_tracking:token});
+   if(!error&&data?.active)storeDeviceLinks(device,pendingDeviceLinks(device).filter(t=>t!==token));
+  }catch{}
+ }
+}
+async function rememberConfirmedOrder(data){
+ if(pagbankPreviewMode||studioPreviewActive||!customerSessionActive||!data?.tracking_token)return;
+ const device=rememberedDevice(),token=data.tracking_token;if(!device||!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(token))return;
+ storeDeviceLinks(device,[...new Set([token,...pendingDeviceLinks(device)])]);
+ await flushDeviceLinks();
+}
+async function restoreCustomerSession(){
+ if(pagbankPreviewMode||studioPreviewActive||customerSessionBusy||!menu)return;
+ const device=rememberedDevice();if(!device)return;
+ customerSessionBusy=true;
+ try{
+  const {data,error}=await client.rpc('pitacco_customer_device_session',{p_slug:slug,p_device:device,p_action:'resume'});
+  if(error||device!==rememberedDevice())return;
+  if(data?.reset){const wasActive=customerSessionActive;discardCustomerCredential();if(wasActive)location.reload();return}
+  if(!data?.active||typeof data.name!=='string'||!/^\d{10,11}$/.test(data.phone||''))return;
+  if(!customerSessionActive&&($('phone').value.trim()||$('customer').value.trim()))return;
+  if(customerSessionActive&&customerSessionPhone!==data.phone)return;
+  $('phone').value=data.phone;$('customer').value=data.name;$('v2LoyaltyPhone').value=data.phone;$('v2FiadoPhone').value=data.phone;
+  v2ProfilePhone=data.phone;v2Profile={name:data.name,addresses:Array.isArray(data.addresses)?data.addresses:[]};
+  customerSessionDisplay(true,data.name,Date.parse(data.expires_at));
+  $('v2ProfileStatus').textContent='✓ Seus dados foram recuperados neste aparelho.';
+  const preferred=v2Profile.addresses.find(a=>a.is_default)||v2Profile.addresses[0];
+  if(preferred&&!$('address').value.trim())v2SelectSavedAddress(preferred,false);
+  v2RenderSavedAddresses();renderCart();void refreshLoyaltyWallet();void flushDeviceLinks();
+ }catch{}finally{customerSessionBusy=false}
+}
+async function customerLogout(){
+ if(submitting||pendingRequest||cartRecoveryId||v2ProfileBusy||customerSessionBusy){msg('Aguarde a conclusão do envio ou da consulta antes de trocar de cliente.');return}
+ const device=rememberedDevice();if(!device)return;
+ if(!window.confirm('Sair da conta neste aparelho? Os dados pessoais serão desvinculados deste navegador.'))return;
+ customerSessionBusy=true;
+ try{
+  const {data,error}=await client.rpc('pitacco_customer_device_session',{p_slug:slug,p_device:device,p_action:'logout'});
+  if(error||data?.reset!==true)throw Error('Não foi possível sair. Tente novamente.');
+  discardCustomerCredential();location.reload();
+ }catch(e){msg(e.message||'Não foi possível sair.')}finally{customerSessionBusy=false}
+}
+function repeatCustomerOrder(order){
+ if(!customerSessionActive||Date.now()>=customerSessionExpiry||submitting||cartRecoveryId||(pendingRequest&&!completed)||pagbankPreviewMode||studioPreviewActive)return;
+ const restored=reconcileCartDraft(order.items,menu.products);
+ if(!restored.items.length){msg('Os itens deste pedido não estão mais disponíveis. Escolha outros produtos no cardápio.');return}
+ if(cart.length&&!completed&&!window.confirm('Substituir a sacola atual pelos itens disponíveis deste pedido?'))return;
+ if(completed){completed=false;pendingRequest=null;cartRecoveryId=null;$('success').hidden=true;$('cartReview').hidden=false;$('cartFooter').hidden=false;$('cartAction').textContent='Ver sacola';lockCheckout(false)}
+ cart=restored.items;cartRestoreWarning=restored.changed?'Alguns itens ou complementos não estão mais disponíveis. Confira sua sacola e os valores atuais.':'Pedido anterior recuperado. Confira os preços atuais antes de confirmar.';
+ $('notes').value='';$('fiadoPin').value='';$('v2CashChange').value='';$('schedule').value='';$('loyaltyCoupon').value='';$('loyaltyReward').value='';clearFiadoAccess();invalidateLoyalty();
+ renderCart();persistCartDraft();if(!$('cartDialog').open)$('cartDialog').showModal();cartStep(false);
+}
+async function showCustomerOrders(){
+ const root=$('customerSessionHistory'),toggle=$('customerSessionOrders');
+ if(!root.hidden){root.hidden=true;toggle.setAttribute('aria-expanded','false');return}
+ const device=rememberedDevice();if(!device||!customerSessionActive)return;
+ root.hidden=false;toggle.setAttribute('aria-expanded','true');root.replaceChildren(el('p','Carregando seus pedidos…'));
+ try{
+  await flushDeviceLinks();
+  const {data,error}=await client.rpc('pitacco_customer_device_orders',{p_slug:slug,p_device:device,p_action:'list'});
+  if(device!==rememberedDevice()||!customerSessionActive)return;
+  if(error||!data?.active)throw Error('Sessão indisponível. Reabra o cardápio para conferir.');
+  root.replaceChildren(el('h3','Histórico de pedidos'));
+  const orders=Array.isArray(data.orders)?data.orders:[];
+  if(!orders.length)root.append(el('p','Os pedidos confirmados neste aparelho aparecerão aqui.'));
+  for(const order of orders){
+   const card=el('article',undefined,'customer-order-card');card.append(el('strong','Pedido '+(order.number||String(order.id).slice(0,8))),el('small',new Date(order.created_at).toLocaleString('pt-BR')+' · '+money(Number(order.total||0))));
+   for(const item of order.summary||[])card.append(el('p',(item.quantity||1)+'× '+(item.name||'Produto')));
+   const actions=el('div',undefined,'customer-order-actions');
+   if(order.tracking_token&&/^[0-9a-f-]{36}$/i.test(order.tracking_token)){const link=el('a','Acompanhar pedido');link.href='/acompanhar/?token='+encodeURIComponent(order.tracking_token);actions.append(link)}
+   const repeat=button('Pedir novamente','primary');repeat.disabled=!Array.isArray(order.items)||!order.items.length;repeat.onclick=()=>repeatCustomerOrder(order);actions.append(repeat);card.append(actions);root.append(card);
+  }
+ }catch(e){root.replaceChildren(el('p',e.message||'Histórico temporariamente indisponível.'))}
+}
+$('customerSessionOrders').onclick=()=>void showCustomerOrders();
+$('customerSessionLogout').onclick=$('customerSessionChange').onclick=()=>void customerLogout();
+window.addEventListener('storage',e=>{if(e.key===customerDeviceKey&&customerSessionActive&&e.oldValue!==e.newValue)location.reload()});
+window.addEventListener('pageshow',e=>{if(e.persisted&&!pagbankPreviewMode&&!studioPreviewActive&&customerSessionActive)location.reload()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&customerSessionActive&&Date.now()>=customerSessionExpiry)location.reload()});
 const v2Only=()=>document.body.dataset.menuTemplate==='pitacco-v2'&&document.body.dataset.menuSkin==='principal';
 function v2DeviceCredential(){
  try{
@@ -3287,7 +3408,7 @@ function v2ShowCheckoutStage(stage){
  if(focus[stage])$(focus[stage]).focus({preventScroll:true});
 }
 async function v2LoadProfile(){
- if(pagbankPreviewMode)return;
+ if(pagbankPreviewMode||studioPreviewActive)return;
  const phone=loyaltyPhoneDigits($('phone').value);
  if(v2ProfilePhone===phone)return;
  const legacy=!v2Only();
@@ -3308,6 +3429,7 @@ async function v2LoadProfile(){
   p_slug:slug,p_phone:phone,p_device:device,p_action:'load'
  });
  if(phone!==loyaltyPhoneDigits($('phone').value))return;
+ if(data?.session_reset){discardCustomerCredential();v2ProfilePhone='';return;}
  if(error){
   $('v2ProfileStatus').textContent='Não foi possível consultar os dados salvos. Você pode informar os dados novamente.';
   return;
@@ -3325,7 +3447,7 @@ async function v2LoadProfile(){
  if(legacy)v2RenderSavedAddresses();
 }
 async function v2SaveProfile(){
- if(pagbankPreviewMode)return;
+ if(pagbankPreviewMode||studioPreviewActive)return;
  if(v2ProfileBusy)return;
  const name=$('customer').value.trim(),phone=loyaltyPhoneDigits($('phone').value),device=v2DeviceCredential();
  if(!device||name.length<2||!/^[0-9]{10,11}$/.test(phone))return;
@@ -3335,8 +3457,10 @@ async function v2SaveProfile(){
    p_slug:slug,p_phone:phone,p_device:device,p_action:'save',
    p_name:name,p_addresses:v2Profile.addresses
   });
+  if(data?.session_reset){discardCustomerCredential();v2ProfilePhone='';throw Error('Sessão encerrada. Confirme seus dados novamente.');}
   if(error||data?.error)throw Error(error?.message||data?.error||'Falha ao salvar');
-  if(phone!==loyaltyPhoneDigits($('phone').value))return;
+  if(phone!==loyaltyPhoneDigits($('phone').value)||device!==rememberedDevice())return;
+  if(data?.session_active===true)customerSessionDisplay(true,name,Date.now()+90*86400000);
   if(Array.isArray(data?.addresses))v2Profile.addresses=data.addresses;
   v2Profile.name=name;v2ProfilePhone=phone;
   $('v2ProfileStatus').textContent='✓ Dados salvos para suas próximas compras neste aparelho.';
@@ -3700,6 +3824,7 @@ async function startPublicMenu(){
   applyMenuStartupData(prepared);
   initOptions();
   if(pagbankPreviewMode&&v2Only()&&pagbankPreviewItems){const resume=el('button','Retomar pagamento de teste','primary pb-v2-resume');resume.type='button';resume.onclick=openPagBankPreview;document.querySelector('.pagbank-preview-banner')?.append(resume)}
+  await restoreCustomerSession();
   await waitForMenuIdentityPaint();
   if(studioPreviewActive){
    studioPreviewReady=true;studioPreviewReport('pitacco-studio-preview-ready');studioPreviewApply();
