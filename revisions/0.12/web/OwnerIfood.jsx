@@ -1,5 +1,6 @@
 import React,{useEffect,useRef,useState} from 'react';
 import IfoodConnections from './IfoodConnections.jsx';
+import IfoodShippingTest from './IfoodShippingTest.jsx';
 
 export default function OwnerIfood({client,stores}){
  const [storeId,setStoreId]=useState(''),[enabled,setEnabled]=useState(null);
@@ -30,7 +31,7 @@ export default function OwnerIfood({client,stores}){
     {stores.map(store=><option key={store.id} value={store.id}>{store.name}</option>)}
    </select>
   </label>
-  {storeId&&<React.Fragment key={storeId}><IfoodConnections client={client} storeId={storeId} canRead test/><IfoodTests client={client} store={storeId}/></React.Fragment>}
+  {storeId&&<React.Fragment key={storeId}><IfoodConnections client={client} storeId={storeId} canRead test/><IfoodTests client={client} store={storeId}/><IfoodShippingTest client={client} store={storeId}/></React.Fragment>}
   {!storeId&&<p>Selecione a loja de testes para abrir o vínculo e as cinco etapas. Não é necessário liberar os lojistas para testar.</p>}
   <h4>Liberação comercial</h4>
   <p>Use apenas após aprovação oficial do iFood. Os registros abaixo não substituem a homologação no portal.</p>
