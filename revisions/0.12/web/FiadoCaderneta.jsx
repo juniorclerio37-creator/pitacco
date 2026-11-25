@@ -12,7 +12,7 @@ export default function FiadoCaderneta({client,storeId,onNavigate,initialTab='cl
  const [selected,setSelected]=useState(''),[form,setForm]=useState(initial);
  const [tab,setTab]=useState(initialTab),[items,setItems]=useState({});
  useEffect(()=>setTab(initialTab),[initialTab,navigationKey]);
- const [choices,setChoices]=useState({}),[note,setNote]=useState('');
+ const [choices,setChoices]=useState({}),[note,setNote]=useState(''),[manualDiscount,setManualDiscount]=useState('');
  const [paymentAmount,setPaymentAmount]=useState(''),[paymentMethod,setPaymentMethod]=useState('pix');
  const [paymentNote,setPaymentNote]=useState(''),[paymentRequestKey,setPaymentRequestKey]=useState(null),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true);
  const [error,setError]=useState(''),[notice,setNotice]=useState('');
@@ -131,9 +131,9 @@ export default function FiadoCaderneta({client,storeId,onNavigate,initialTab='cl
    // Uma chave é mantida se a confirmação de rede falhar; o backend é idempotente.
    const key=requestKey||crypto.randomUUID();
    if(!requestKey)setRequestKey(key);
-   const result=await rpc('pitacco_fiado_balcao_create',{
-    p_store:storeId,p_customer:selected,p_request:key,p_items:cart,p_note:note});
-   setRequestKey(null);setItems({});setChoices({});setNote('');
+   const result=await rpc('pitacco_fiado_balcao_discount',{
+    p_store:storeId,p_customer:selected,p_request:key,p_items:cart,p_note:note,p_discount:Number(manualDiscount||0)});
+   setRequestKey(null);setItems({});setChoices({});setNote('');setManualDiscount('');
    reloadData('Pedido de balcão '+result.order_id+' registrado no fiado por '+fmt(result.total)+'.');
    setTab('pedidos');
   });
@@ -272,11 +272,13 @@ export default function FiadoCaderneta({client,storeId,onNavigate,initialTab='cl
     <h3>Resumo da venda</h3>
     <p><strong>{customer?.name||'Nenhum cliente selecionado'}</strong></p>
     {cart.map(c=><p key={c.product_id}>{c.quantity} × {products.find(p=>p.id===c.product_id)?.name}</p>)}
-    <h3>Total: {fmt(cartTotal)}</h3>
+    <p>Subtotal: {fmt(cartTotal)}</p>
+    <h3>Total: {fmt(Math.max(0,cartTotal-Number(manualDiscount||0)))}</h3>
     <p>Disponível: {fmt(customer?.available)}. O limite é revalidado no servidor ao confirmar.</p>
     <form className="fiado-form" onSubmit={createCounter}>
+     <label>Desconto manual (R$)<input type="number" min="0" step="0.01" value={manualDiscount} onChange={e=>setManualDiscount(e.target.value)}/><small>Exclusivo para venda de balcão. Não é cupom Fideliza+.</small></label>
      <label>Observações<input maxLength={1000} value={note} onChange={e=>setNote(e.target.value)}/></label>
-     <button disabled={busy||!customer?.enabled||!overview?.enabled||!cart.length||cartTotal>Number(customer?.available)}>
+     <button disabled={busy||!customer?.enabled||!overview?.enabled||!cart.length||!Number.isFinite(Number(manualDiscount||0))||Number(manualDiscount||0)<0||Number(manualDiscount||0)>=cartTotal||cartTotal-Number(manualDiscount||0)>Number(customer?.available)}>
       Finalizar pedido de balcão no fiado
      </button>
     </form>

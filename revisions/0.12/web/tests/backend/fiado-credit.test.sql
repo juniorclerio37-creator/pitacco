@@ -145,6 +145,20 @@ begin
  assert (select amount=20 and entries=2 from public.pitacco_period_financial_report(store,
    (now() at time zone 'America/Sao_Paulo')::date,(now() at time zone 'America/Sao_Paulo')::date)
    where metric='recebimentos_fiado'), 'Retentativa não duplica recebimentos no relatório';
+ -- Manual discount is allowed only via the manager counter RPC, and reserves the net debt.
+ created:=public.pitacco_fiado_balcao_discount(store,c,gen_random_uuid(),payload,'Desconto concedido pela loja',5);
+ second_order:=(created->>'order_id')::uuid;
+ assert (created->>'total')::numeric=15;
+ assert (select gross=15 and (receipt->>'manual_discount')::numeric=5 and receipt->>'discount_origin'='manual_balcao' from public.orders where id=second_order);
+ assert (select amount=15 from public.pitacco_fiado_charges where order_id=second_order);
+ assert (select used=15 from public.pitacco_fiado_customers where id=c);
+ update public.orders set status='cancelled' where id=second_order;
+ assert (select used=0 from public.pitacco_fiado_customers where id=c);
+ assert not has_function_privilege('anon','public.pitacco_fiado_balcao_discount(uuid,uuid,uuid,jsonb,text,numeric)','execute');
+ begin
+  perform public.pitacco_fiado_balcao_discount(store,c,gen_random_uuid(),payload,'',20);
+  raise exception 'Discount must be rejected';
+ exception when raise_exception then if sqlerrm<>'Desconto deve ser inferior ao subtotal' then raise;end if;end;
  -- Um novo pedido cancelado precisa devolver o limite reservado.
  created:=pg_temp.fiado_checkout_test('fiado-fixture',gen_random_uuid(),'Cliente Fiado','21988887777','',
     payload,'pickup','',null);
