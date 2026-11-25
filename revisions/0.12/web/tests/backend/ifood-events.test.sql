@@ -37,6 +37,26 @@ do $$ begin
 end $$;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
 select public.pitacco_owner_enable_ifood_linking(true);
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
+do $ begin
+ perform public.pitacco_ifood_central_request('20000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001');
+ assert (select count(*) from public.pitacco_ifood_central_requests('20000000-0000-0000-0000-000000000001'))=1;
+ begin
+  perform public.pitacco_ifood_central_request('20000000-0000-0000-0000-000000000002','40000000-0000-0000-0000-000000000001');
+  raise exception 'Other tenant must not be writable';
+ exception when insufficient_privilege then null; end;
+ begin
+  perform public.pitacco_owner_ifood_central_requests();
+  raise exception 'Owner-only review queue';
+ exception when insufficient_privilege then null; end;
+ begin
+  perform public.pitacco_ifood_central_approve(gen_random_uuid(),auth.uid(),gen_random_uuid(),'Unauthorized');
+  raise exception 'Approval is service-only';
+ exception when insufficient_privilege then null; end;
+end $;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+select set_config('pitacco.test_central_request',id::text,true) from public.pitacco_owner_ifood_central_requests() where merchant_id='40000000-0000-0000-0000-000000000001';
+select public.pitacco_owner_ifood_central_review(current_setting('pitacco.test_central_request')::uuid,'awaiting');
 
 reset role;
 insert into public.acceptance_settings(store_id,source,mode,enabled) values
@@ -58,20 +78,22 @@ declare
  auto_claim record;
  partner_order uuid;
 begin
- ref:=public.pitacco_ifood_begin_auth(actor,store_a,merchant,false,'encrypted-verifier-only',600);
+ begin
+  perform public.pitacco_ifood_begin_auth(actor,store_a,merchant,false,'encrypted-verifier-only',600);
+  raise exception 'Expected distributed production link to fail';
+ exception when raise_exception then
+  if sqlerrm not like 'Use a solicitação centralizada%' then raise; end if;
+ end;
+ ref:=public.pitacco_ifood_begin_auth(actor,store_a,merchant,true,'encrypted-verifier-only',600);
  assert not exists(select 1 from public.pitacco_ifood_take_auth(ref,actor,store_b));
  assert (select merchant_id from public.pitacco_ifood_take_auth(ref,actor,store_a))=merchant;
  assert not exists(select 1 from public.pitacco_ifood_take_auth(ref,actor,store_a));
- perform public.pitacco_ifood_link_verified(store_a,merchant,false,'encrypted-credential-only');
- begin
-  perform public.pitacco_ifood_link_verified(store_b,merchant,false,'other-encrypted-credential');
-  raise exception 'Expected same merchant to stay with existing tenant';
- exception when raise_exception then
-  if sqlerrm not like 'Esta conta iFood%' then raise; end if;
- end;
- assert not public.pitacco_ifood_enqueue(event_id,merchant,external_id,'PLACED',now());
- assert public.pitacco_ifood_enqueue(event_id,merchant,external_id,'PLACED',now(),true);
- assert not public.pitacco_ifood_enqueue(event_id,merchant,external_id,'PLACED',now(),true);
+ ref:=current_setting('pitacco.test_central_request')::uuid;
+ assert public.pitacco_ifood_central_approve(ref,'10000000-0000-0000-0000-000000000001',merchant,'Loja iFood A');
+ assert public.pitacco_ifood_central_environment(merchant)='production';
+ assert not public.pitacco_ifood_central_enqueue(event_id,merchant,external_id,'PLACED',now(),false);
+ assert public.pitacco_ifood_central_enqueue(event_id,merchant,external_id,'PLACED',now(),true);
+ assert not public.pitacco_ifood_central_enqueue(event_id,merchant,external_id,'PLACED',now(),true);
  select * into claim from public.pitacco_ifood_claim(event_id);
  assert claim.external_order_id=external_id;
  assert not exists(select 1 from public.pitacco_ifood_claim(event_id));
@@ -84,12 +106,12 @@ begin
  assert not exists(select 1 from public.pitacco_ifood_claim_auto_confirm(external_id));
  update public.acceptance_settings set mode='automatic' where store_id=store_a and source='ifood';
  select * into auto_claim from public.pitacco_ifood_claim_auto_confirm(external_id);
- assert auto_claim.external_order_id=external_id and auto_claim.uses_store_token;
+ assert auto_claim.external_order_id=external_id and not auto_claim.uses_store_token;
  assert not exists(select 1 from public.pitacco_ifood_claim_auto_confirm(external_id));
  perform public.pitacco_ifood_finish_auto_confirm(external_id,auto_claim.lease,false);
  assert exists(select 1 from public.orders o where o.receipt->>'external_order_id'=external_id::text and status='pending');
  event_id:=gen_random_uuid();
- assert public.pitacco_ifood_enqueue(event_id,merchant,external_id,'CONFIRMED',now(),true);
+ assert public.pitacco_ifood_central_enqueue(event_id,merchant,external_id,'CONFIRMED',now(),true);
  select * into claim from public.pitacco_ifood_claim(event_id);
  perform public.pitacco_ifood_complete(event_id,claim.lease,receipt,false);
  assert exists(select 1 from public.deliveries d join public.orders o on o.id=d.order_id
@@ -97,16 +119,16 @@ begin
    and d.logistics_provider='loja' and d.status='pendente' and d.courier_id is null);
  partner_order:=gen_random_uuid();
  event_id:=gen_random_uuid();
- assert public.pitacco_ifood_enqueue(event_id,merchant,partner_order,'CONFIRMED',now(),true);
+ assert public.pitacco_ifood_central_enqueue(event_id,merchant,partner_order,'CONFIRMED',now(),true);
  select * into claim from public.pitacco_ifood_claim(event_id);
  perform public.pitacco_ifood_complete(event_id,claim.lease,receipt||jsonb_build_object('external_order_id',partner_order,'logistics','marketplace'),false);
  assert exists(select 1 from public.deliveries where external_order_id=partner_order::text and logistics_provider='marketplace' and courier_id is null);
  event_id:=gen_random_uuid();
- assert public.pitacco_ifood_enqueue(event_id,merchant,external_id,'CANCELLED',now()+interval '1 minute',true);
+ assert public.pitacco_ifood_central_enqueue(event_id,merchant,external_id,'CANCELLED',now()+interval '1 minute',true);
  select * into claim from public.pitacco_ifood_claim(event_id);
  perform public.pitacco_ifood_complete(event_id,claim.lease,receipt,false);
  event_id:=gen_random_uuid();
- assert public.pitacco_ifood_enqueue(event_id,merchant,external_id,'CONFIRMED',now(),true);
+ assert public.pitacco_ifood_central_enqueue(event_id,merchant,external_id,'CONFIRMED',now(),true);
  select * into claim from public.pitacco_ifood_claim(event_id);
  perform public.pitacco_ifood_complete(event_id,claim.lease,receipt,false);
  assert (select count(*) from public.orders where source='ifood' and store_id=store_a and status='cancelled')=1;
