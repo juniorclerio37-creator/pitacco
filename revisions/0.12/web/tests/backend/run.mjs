@@ -45,6 +45,9 @@ await db.exec(await fs.readFile(web+'016_fideliza.sql','utf8'));
 // No PostgreSQL 17, testes usam pgcrypto real. No PGlite, a extensão não
 // existe; somente o harness isolado fornece emulação funcional.
 const liteCryptoShim=String.raw`
+-- Test-only byte generator for migrations requiring pgcrypto in PGlite.
+create function extensions.gen_random_bytes(n integer) returns bytea
+ language sql volatile as $lite$ select decode(substr(string_agg(md5(gen_random_uuid()::text),''),1,n*2),'hex') from generate_series(1,greatest(1,ceil(n/16.0)::integer)) $lite$;
 create function extensions.hmac(document text, key text, algorithm text) returns bytea
  language sql immutable as $lite$ select convert_to(md5(document||key||algorithm),'UTF8') $lite$;
 create function extensions.gen_salt(kind text, rounds integer) returns text
