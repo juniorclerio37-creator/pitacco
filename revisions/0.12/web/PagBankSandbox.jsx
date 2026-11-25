@@ -17,7 +17,7 @@ export default function PagBankSandbox({client,store,onEvidence}){
  if(!store)return null;
  return <section className="panel" aria-label="PagBank Connect Sandbox">
   <h3>PagBank Connect · ambiente de testes</h3>
-  <p>Conecte uma conta Sandbox na loja de homologação. Nenhum pagamento real será recebido e nenhum pedido será enviado à produção.</p>
+  <p>Autorize a própria conta PagBank da loja de homologação. A mesma conta não pode ser vinculada a outro estabelecimento. Nenhum pagamento real será recebido e nenhum pedido será enviado à produção.</p>
   <p role="status">{connection?.connected?'Conta de testes vinculada.':'Conta de testes ainda não vinculada.'}</p>
   <button type="button" disabled={busy||connection?.connected} onClick={start}>Conectar conta PagBank Sandbox</button>{' '}
   <button type="button" className="secondary" disabled={busy} onClick={()=>run(async()=>setConnection(await call('status')))}>Atualizar conexão</button>
