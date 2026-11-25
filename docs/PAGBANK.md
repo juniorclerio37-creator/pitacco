@@ -9,3 +9,6 @@
 
 ## Isolamento dos vendedores
 Cada estabelecimento autoriza a própria conta via Connect. O account_id retornado pelo PagBank é obrigatório, único entre lojas e diferente da conta da aplicação. A autorização é vinculada ao gestor autenticado e à loja; cobrança sem loja ou tentativa de trocar titular é recusada. Cobranças guardam o account_id original e consultas usam exclusivamente o token daquela loja. Não há fallback para o token da plataforma. A identidade jurídica do titular deverá ser validada no onboarding de produção; Sandbox não comprova titularidade bancária real.
+
+## Prévia protegida do checkout
+O gestor de uma loja Sandbox vinculada cria um link com token aleatório de 256 bits, armazenado apenas como hash, válido por 30 minutos e restrito a uma cobrança. A prévia usa o cardápio e template reais, sem alterar o checkout normal, perfil, fidelidade ou pedidos operacionais. Nesta fase a prévia suporta retirada; o backend de teste valida também cotação de frete e cupom comum, ainda não verificados em fluxo completo. O servidor calcula valores e complementos, fixa a conta recebedora e bloqueia divergência de valor. O pagamento fictício nunca libera pedido real. Renovação OAuth com lease e rotação atômica no Vault está implementada, ainda não exercitada contra o PagBank. Estorno e confirmação de webhook precisam de testes oficiais antes da produção.

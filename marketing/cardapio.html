@@ -1369,6 +1369,15 @@ body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data
 <button id="v2CheckoutBack" class="secondary" type="button" hidden>← Voltar</button>
 <button id="v2CheckoutNext" class="primary" type="button" hidden>Continuar →</button></footer>
 </div></dialog>
+<style>
+.pagbank-preview-banner{position:sticky;top:0;z-index:1000;background:#713f12;color:white;padding:10px 16px;text-align:center;font-weight:800;font-size:.85rem}
+#pagbankPreviewDialog{width:min(94vw,440px);max-height:92vh;overflow:auto;border:0;border-radius:20px;background:var(--paper,#fff);color:var(--ink,#172033);padding:20px;box-shadow:0 20px 70px #0004}
+#pagbankPreviewDialog::backdrop{background:#17203399}
+#pagbankPreviewBody{display:grid;gap:12px}#pagbankPreviewBody img{justify-self:center;max-width:100%;height:auto;background:white;padding:8px;border-radius:10px}
+#pagbankPreviewBody textarea{width:100%;box-sizing:border-box;overflow-wrap:anywhere}#pagbankPreviewBody small{overflow-wrap:anywhere}
+.pagbank-preview-warning{padding:10px;border:1px solid #d97706;border-radius:8px}.pagbank-preview-status{font-weight:800}
+</style>
+<dialog id="pagbankPreviewDialog"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2>Pagamento via Pix</h2><button id="pagbankPreviewClose" type="button" class="secondary" aria-label="Fechar pagamento">Fechar</button></div><div id="pagbankPreviewBody"></div></dialog>
 <script>
 /* A inicialização é um módulo externo; se a rede bloquear seu carregamento,
    mostrar uma falha clara, em vez de manter o cliente preso no skeleton. */
@@ -1393,6 +1402,25 @@ const slug=segments[0]==='cardapio'
  : segments[0]||'';
 // O piloto de fotos aplica-se exclusivamente ao cardápio público da loja teste.
 if(slug==='acai-do-linho-demo')document.body.dataset.menuPhotoPilot='brendi-linho';
+// A test link is never a live checkout. The opaque capability is scoped to one
+// sandbox seller and one payment; the marker remains even if the link expires.
+const pagbankPreviewMode=new URLSearchParams(location.search).has('pagbank_preview');
+const pagbankPreviewStorage='pitacco-pagbank-preview:'+slug;
+let pagbankPreviewToken='',pagbankPreviewReady=false,pagbankPreviewCharge=null,pagbankPreviewItems=null,pagbankPreviewQr='',pagbankPreviewBusy=false,pagbankPreviewTimer=null,pagbankPreviewError='';
+if(pagbankPreviewMode){
+ try{
+  const fragment=new URLSearchParams(location.hash.slice(1)).get('pagbank')||'';
+  if(/^[a-f0-9]{64}$/.test(fragment)){pagbankPreviewToken=fragment;sessionStorage.setItem(pagbankPreviewStorage,fragment);history.replaceState(null,'',location.pathname+location.search)}
+  else pagbankPreviewToken=sessionStorage.getItem(pagbankPreviewStorage)||'';
+ }catch{}
+}
+async function pagbankPreviewCall(action,extra={}){
+ if(!/^[a-f0-9]{64}$/.test(pagbankPreviewToken))throw Error('Abra um novo link de teste no painel da loja.');
+ const r=await fetch('https://mdevzehqcpcgxspwbiyz.supabase.co/functions/v1/pagbank-connect/preview',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action,token:pagbankPreviewToken,...extra}),signal:AbortSignal.timeout(25000),cache:'no-store',credentials:'omit',redirect:'error'});
+ const d=await r.json().catch(()=>null);
+ if(!r.ok||!d||d.provider_http)throw Error(d?.error||'Não foi possível concluir a operação Sandbox. Consulte o painel.');
+ return d;
+}
 const studioPreviewNonce=new URLSearchParams(location.search).get('pitacco_studio_preview')||'';
 const studioPreviewActive=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(studioPreviewNonce);
 if(studioPreviewActive){
@@ -1494,7 +1522,7 @@ async function checkPendingCart(){
 }
 $('checkPendingCart').onclick=()=>void checkPendingCart();
 window.addEventListener('storage',event=>{
- if(event.key!==cartStorageKey||!menu||pendingRequest||completed)return;
+ if(pagbankPreviewMode||event.key!==cartStorageKey||!menu||pendingRequest||completed)return;
  cartStoragePaused=true;
  try{cart=[];cartRecoveryId=null;restoreCartDraft();renderCart();if(cartRecoveryId)void checkPendingCart();}finally{cartStoragePaused=false;}
 });
@@ -1748,7 +1776,7 @@ function menuStartupRpc(name,args){
 }
 async function prepareMenuStartup(){
  const [loyalty,best,region]=await Promise.all([
-  menuStartupRpc('pitacco_loyalty_program',{p_slug:slug}),
+  pagbankPreviewMode?Promise.resolve(null):menuStartupRpc('pitacco_loyalty_program',{p_slug:slug}),
   menuStartupRpc('pitacco_public_top_sellers',{p_slug:slug}),
   menuStartupRpc('pitacco_public_store_region',{p_slug:slug})
  ]);
@@ -2448,6 +2476,7 @@ function renderCart(){
 }
 
 function cartStep(checkout){
+ if(pagbankPreviewMode&&checkout){openPagBankPreview();return;}
  $('checkout').hidden=!checkout;
  $('cart').hidden=checkout;
  $('continueCheckout').hidden=checkout;
@@ -2785,6 +2814,67 @@ $('loyaltyApply').onclick=async()=>{
 };
 // Referral attribution comes only from the store-scoped link, never a checkout input.
 
+function pagbankPreviewRender(){
+ const dialog=$('pagbankPreviewDialog'),body=$('pagbankPreviewBody');
+ if(!dialog||!body)return;
+ body.replaceChildren();
+ body.append(el('p','SANDBOX · Nenhum valor real será movimentado e nenhum pedido será enviado à loja.','pagbank-preview-warning'));
+ const charge=pagbankPreviewCharge;
+ if(!charge){
+  body.append(el('h3','Pix online · retirada de teste'));
+  const items=pagbankPreviewItems||cart;
+  const list=el('div',undefined,'v2-review-group');
+  for(const item of items)list.append(el('p',item.quantity+'× '+(item.name||'Produto')));
+  body.append(list,el('p','O valor será confirmado pelo servidor com os produtos e complementos da loja.'));
+  const generate=el('button',pagbankPreviewBusy?'Gerando Pix…':pagbankPreviewItems?'Consultar ou repetir o mesmo envio':'Gerar QR Code Pix','primary');
+  generate.type='button';generate.disabled=pagbankPreviewBusy||!items.length;
+  generate.onclick=async()=>{
+   if(pagbankPreviewBusy)return;
+   pagbankPreviewItems??=cart.map(x=>({product_id:x.product_id,quantity:x.quantity,options:[...x.options],name:x.name}));
+   pagbankPreviewBusy=true;pagbankPreviewError='';pagbankPreviewRender();
+   try{
+    const d=await pagbankPreviewCall('checkout',{items:pagbankPreviewItems.map(({product_id,quantity,options})=>({product_id,quantity,options}))});
+    if(!d.order_id||d.environment!=='sandbox'||d.order_released!==false||!Number.isInteger(d.cents))throw Error('Resposta de teste inválida.');
+    pagbankPreviewCharge=d;
+    if(d.status==='WAITING'){try{const q=await pagbankPreviewCall('qr');if(/^data:image\\/png;base64,[A-Za-z0-9+/=]+$/.test(q.image))pagbankPreviewQr=q.image}catch{}}
+   }catch(e){pagbankPreviewError=e.message||'Não foi possível gerar o Pix.'}
+   finally{pagbankPreviewBusy=false;pagbankPreviewRender();pagbankPreviewSchedule()}
+  };body.append(generate);
+ }else{
+  const states={WAITING:'Aguardando pagamento',PAID:'Pagamento de teste confirmado',CANCELED:'Cobrança cancelada',DECLINED:'Pagamento recusado',REFUNDED:'Pagamento estornado'};
+  body.append(el('h3',money(charge.cents/100)),el('p',states[charge.status]||'Pagamento em análise','pagbank-preview-status'));
+  if(charge.status==='WAITING'){
+   if(pagbankPreviewQr){const image=el('img');image.src=pagbankPreviewQr;image.alt='QR Code Pix Sandbox';image.width=220;image.height=220;body.append(image)}
+   if(charge.qr_text){const input=el('textarea');input.readOnly=true;input.rows=3;input.value=charge.qr_text;input.setAttribute('aria-label','Código Pix de teste');body.append(input);const copy=el('button','Copiar código Pix','secondary');copy.type='button';copy.onclick=()=>navigator.clipboard.writeText(charge.qr_text).catch(()=>{pagbankPreviewError='Selecione e copie o código manualmente.';pagbankPreviewRender()});body.append(copy)}
+   const check=el('button',pagbankPreviewBusy?'Consultando…':'Consultar pagamento','primary');check.type='button';check.disabled=pagbankPreviewBusy;check.onclick=()=>void pagbankPreviewCheck();body.append(check,el('p','Não pague este QR Code pelo aplicativo do seu banco.'));
+  }else if(charge.status==='PAID')body.append(el('p','A conta individual da loja recebeu a confirmação fictícia. Nenhum pedido de produção foi criado.'));
+  body.append(el('small',charge.order_id));
+ }
+ if(pagbankPreviewError)body.append(el('p',pagbankPreviewError,'pagbank-preview-warning'));
+ $('pagbankPreviewClose').disabled=pagbankPreviewBusy;
+}
+async function pagbankPreviewCheck(){
+ if(pagbankPreviewBusy||!pagbankPreviewCharge||pagbankPreviewCharge.status!=='WAITING')return;
+ pagbankPreviewBusy=true;pagbankPreviewError='';
+ try{
+  const next=await pagbankPreviewCall('check');
+  if(next.id!==pagbankPreviewCharge.id||next.cents!==pagbankPreviewCharge.cents||next.environment!=='sandbox'||next.order_released!==false)throw Error('Resposta de pagamento inválida.');
+  pagbankPreviewCharge={...pagbankPreviewCharge,...next};
+  if(next.status!=='WAITING')pagbankPreviewQr='';
+ }catch(e){pagbankPreviewError=e.message||'Consulta temporariamente indisponível.'}
+ finally{pagbankPreviewBusy=false;pagbankPreviewRender();pagbankPreviewSchedule()}
+}
+function pagbankPreviewSchedule(){clearTimeout(pagbankPreviewTimer);if($('pagbankPreviewDialog')?.open&&pagbankPreviewCharge?.status==='WAITING')pagbankPreviewTimer=setTimeout(()=>void pagbankPreviewCheck(),4500)}
+function openPagBankPreview(){
+ if(!pagbankPreviewReady){msg('Link Sandbox indisponível. Gere um novo no painel.');return}
+ if(!cart.length&&!pagbankPreviewCharge&&!pagbankPreviewItems){msg('Adicione produtos à sacola.');return}
+ if($('cartDialog').open)$('cartDialog').close();
+ const dialog=$('pagbankPreviewDialog');if(!dialog.open)dialog.showModal();
+ pagbankPreviewRender();pagbankPreviewSchedule();
+}
+$('pagbankPreviewClose').onclick=()=>{if(!pagbankPreviewBusy)$('pagbankPreviewDialog').close()};
+$('pagbankPreviewDialog').addEventListener('cancel',e=>{if(pagbankPreviewBusy)e.preventDefault()});
+$('pagbankPreviewDialog').addEventListener('close',()=>clearTimeout(pagbankPreviewTimer));
 function initOptions(){
  const shop=menu.store;
  setMenuTemplate(shop);
@@ -2870,6 +2960,7 @@ function lockCheckout(locked){
 
 $('checkout').onsubmit=async event=>{
  event.preventDefault();
+ if(pagbankPreviewMode){openPagBankPreview();return;}
  if(completed)return;
  if(submitting||cartRecoveryId||!cart.length)return;
  if(!pendingRequest){
@@ -3088,6 +3179,7 @@ function v2ShowCheckoutStage(stage){
  if(focus[stage])$(focus[stage]).focus({preventScroll:true});
 }
 async function v2LoadProfile(){
+ if(pagbankPreviewMode)return;
  const phone=loyaltyPhoneDigits($('phone').value);
  if(v2ProfilePhone===phone)return;
  const legacy=!v2Only();
@@ -3125,6 +3217,7 @@ async function v2LoadProfile(){
  if(legacy)v2RenderSavedAddresses();
 }
 async function v2SaveProfile(){
+ if(pagbankPreviewMode)return;
  if(v2ProfileBusy)return;
  const name=$('customer').value.trim(),phone=loyaltyPhoneDigits($('phone').value),device=v2DeviceCredential();
  if(!device||name.length<2||!/^[0-9]{10,11}$/.test(phone))return;
@@ -3475,11 +3568,22 @@ if(studioPreviewActive&&studioPreviewOrigin){
 
 async function startPublicMenu(){
  try{
+  if(pagbankPreviewMode){
+   if(studioPreviewActive)throw Error('O link Sandbox não pode ser usado no editor.');
+   const proof=await pagbankPreviewCall('validate');
+   if(proof.slug!==slug||proof.environment!=='sandbox')throw Error('Link Sandbox pertence a outra loja.');
+   pagbankPreviewReady=true;
+  }
   const {data,error}=await client.rpc('get_public_menu',{p_slug:slug});
   if(error)throw error;
   if(!data?.store||!Array.isArray(data.products))throw Error('Cardápio inválido ou indisponível.');
   menu=data;
-  if(studioPreviewActive)cartStoragePaused=true;
+  if(pagbankPreviewMode){
+   cartStoragePaused=true;menu.store.delivery_enabled=false;menu.store.payment_methods=['pix_online'];menu.store.pix_instructions='';
+   const template=new URLSearchParams(location.search).get('template');
+   if(['pitacco-v2','essencial','editorial','urbano','classic'].includes(template))menu.store.appearance={...menu.store.appearance,template};
+   document.body.prepend(el('div','AMBIENTE SANDBOX · Retirada fictícia · Não utilize dinheiro real','pagbank-preview-banner'));
+  }else if(studioPreviewActive)cartStoragePaused=true;
   else restoreCartDraft();
   // Preparar Fideliza+, produtos em destaque e endereço regional antes da exibição.
   const [prepared]=await Promise.all([prepareMenuStartup(),warmMenuStartupImages()]);
