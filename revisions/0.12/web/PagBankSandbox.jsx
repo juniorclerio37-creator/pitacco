@@ -12,7 +12,7 @@ export default function PagBankSandbox({client,store,onEvidence}){
  async function run(fn){setBusy(true);setError('');try{await fn()}catch(e){if(mounted.current)setError(e.message||'Teste indisponível.')}finally{if(mounted.current)setBusy(false)}}
  useEffect(()=>{mounted.current=true;if(store)run(async()=>{const r=await call('status');if(mounted.current)setConnection(r)});return()=>{mounted.current=false}},[store,client]);
  useEffect(()=>{if(charge?.status!=='WAITING'||!charge?.id)return;let stop=false;let pending=false;const interval=setInterval(async()=>{if(pending)return;pending=true;try{const next=await call('check',{id:charge.id});if(!stop&&mounted.current)setCharge(next)}catch{}finally{pending=false}},4500);return()=>{stop=true;clearInterval(interval)}},[charge?.id,charge?.status,store]);
- async function start(){await run(async()=>{const r=await call('start');const u=new URL(r.authorization_url);if(u.origin!=='https://connect.sandbox.pagbank.com.br'||u.pathname!=='/oauth2/authorize')throw Error('Endereço de autorização inválido.');setLink(u.href)})}
+ async function start(action='start'){await run(async()=>{const r=await call(action);const u=new URL(r.authorization_url);if(u.origin!=='https://connect.sandbox.pagbank.com.br'||u.pathname!=='/oauth2/authorize')throw Error('Endereço de autorização inválido.');setLink(u.href)})}
  async function previewStart(){await run(async()=>{const r=await call('preview_start');const u=new URL(r.url);if(u.origin!=='https://pitacco.com.br'||u.searchParams.get('pagbank_preview')!=='1'||!/^#pagbank=[a-f0-9]{64}$/.test(u.hash))throw Error('Link Sandbox inválido.');u.searchParams.set('template',template);setPreview(u.href)})}
  async function create(){await run(async()=>{request.current??=crypto.randomUUID();const r=await call('create',{id:request.current,cents:100});setCharge(r);setQr('');if(r.status==='WAITING'){try{const i=await call('qr',{id:r.id});if(/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(i.image))setQr(i.image)}catch{}}})}
  if(!store)return null;
@@ -20,9 +20,11 @@ export default function PagBankSandbox({client,store,onEvidence}){
   <h3>PagBank Connect · ambiente de testes</h3>
   <p>Autorize a própria conta PagBank da loja de homologação. A mesma conta não pode ser vinculada a outro estabelecimento. Nenhum pagamento real será recebido e nenhum pedido será enviado à produção.</p>
   <p role="status">{connection?.connected?'Conta de testes vinculada.':'Conta de testes ainda não vinculada.'}</p>
-  <button type="button" disabled={busy||connection?.connected} onClick={start}>Conectar conta PagBank Sandbox</button>{' '}
+  <button type="button" disabled={busy||connection?.connected} onClick={()=>start()}>Conectar conta PagBank Sandbox</button>{' '}
   <button type="button" className="secondary" disabled={busy} onClick={()=>run(async()=>setConnection(await call('status')))}>Atualizar conexão</button>
-  {link&&!connection?.connected&&<p><a href={link} target="_blank" rel="noopener noreferrer">Autorizar conta Sandbox no PagBank</a> · válido por 10 minutos.</p>}
+  {connection?.connected&&!connection.refund_allowed&&<div><p>Para testar devoluções de Pix, autorize também estornos na mesma conta Sandbox.</p><button type="button" disabled={busy} onClick={()=>start('upgrade')}>Autorizar estornos no PagBank Sandbox</button></div>}
+  {connection?.refund_allowed&&<p>Permissão de estorno concedida.</p>}
+  {link&&(!connection?.connected||!connection.refund_allowed)&&<p><a href={link} target="_blank" rel="noopener noreferrer">Autorizar conta Sandbox no PagBank</a> · válido por 10 minutos.</p>}
   {connection?.connected&&<button type="button" disabled={busy||!!charge} onClick={create}>Gerar Pix de teste · R$ 1,00</button>}
   {connection?.connected&&<div style={{marginTop:12}}><h4>Testar no próprio cardápio</h4><label>Template <select value={template} onChange={e=>{setTemplate(e.target.value);setPreview('')}}>{[['pitacco-v2','Pitacco V2'],['essencial','Essencial'],['editorial','Editorial'],['urbano','Urbano'],['classic','Clássico']].map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><button type="button" disabled={busy} onClick={previewStart}>Gerar link de checkout Sandbox</button>{preview&&<p><a href={preview} target="_blank" rel="noopener noreferrer">Abrir cardápio de teste</a> · válido por 30 minutos, uma cobrança fictícia.</p>}</div>}
   {error&&<p role="alert">{error}</p>}
