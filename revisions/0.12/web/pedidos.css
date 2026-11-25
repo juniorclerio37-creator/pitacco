@@ -269,3 +269,6 @@
 /* Web history columns contain real terminal orders without operational actions. */
 .pitacco-pedidos .pedidos-stage-column[data-stage="completed"] .pedidos-stage-title{color:#176534;border-color:#a7d9b8}
 .pitacco-pedidos .pedidos-stage-column[data-stage="cancelled"] .pedidos-stage-title{color:#a32835;border-color:#e5b6bb}
+
+/* Approved scheduled-order highlight */
+.pitacco-pedidos .scheduled-order{border-color:#f4a45d!important;background:#fffaf3}.scheduled-order-badge{display:inline-flex;align-items:center;gap:5px;background:#ed600c;color:white;border-radius:6px;padding:4px 8px;font-weight:800;font-size:11px;width:fit-content}.scheduled-order-info{display:grid;gap:3px;background:#fff0dc;color:#963907;border-radius:6px;padding:6px;font-size:11px;overflow-wrap:anywhere}.scheduled-order-info small{color:#963907}.scheduled-order-detail{background:#fff3e5;border:1px solid #f5c394;border-radius:10px;padding:13px;color:#773008}.scheduled-order-detail h4{margin:8px 0}.scheduled-order-detail p{margin:5px 0}

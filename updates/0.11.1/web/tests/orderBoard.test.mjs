@@ -9,3 +9,5 @@ test('board reflects confirmed backend stages and delivery pickup',()=>{
  assert.equal(orderStage({status:'accepted',preparation_status:'completed'}),'completed');
 });
 test('search handles names phone code and missing receipts',()=>{const o={id:'abc123',receipt:{customer:'Cliente Teste',phone:'11988888888'}};assert.ok(matchesOrder(o,' TESTE '));assert.ok(matchesOrder(o,'9888'));assert.ok(matchesOrder(o,'abc'));assert.equal(matchesOrder({},'teste'),false)});
+
+test('scheduled pending stays in analysis, accepted waits until preparation release',()=>{const future=new Date(Date.now()+3600000).toISOString();assert.equal(orderStage({status:'pending',scheduled_for:future,scheduled_release_at:future}),'analysis');assert.equal(orderStage({status:'accepted',scheduled_for:future,scheduled_release_at:future,preparation_status:'preparing'}),'analysis');assert.equal(orderStage({status:'accepted',scheduled_for:future,scheduled_release_at:new Date(Date.now()-1000).toISOString(),preparation_status:'preparing'}),'preparing');});

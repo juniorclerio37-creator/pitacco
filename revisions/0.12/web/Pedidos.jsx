@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {Bike, CheckCircle2, ChefHat, Clock3, Printer, ShoppingBag, TrendingUp} from 'lucide-react';
 import './pedidos.css';
+import {scheduleInfo} from './scheduleInfo.mjs';
 import {businessDay,isDailyOrder} from './dailyOrders.mjs';
 import FleetTracking from './FleetTracking.jsx';
 import OrderDetails from './OrderDetails.jsx';
@@ -128,9 +129,9 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  // partir dos estados confirmados do pedido e da coleta, não por drag-and-drop.
  const boardStages=[['analysis','Em análise'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega']];
  const historyBoardStages=popupLayout?[]:[['completed','Concluídos'],['cancelled','Cancelados']];
- const auxiliaryStages=[['scheduled','Agendados'],['historical','Outros']];
+ const auxiliaryStages=[['historical','Outros']];
  const showWindowsBoard=filter==='all';
- const visibleStages=stages.filter(([key])=>key!=='rejected'&&(popupLayout||['completed','cancelled','scheduled'].includes(key)));
+ const visibleStages=stages.filter(([key])=>!['rejected','scheduled'].includes(key)&&(popupLayout||['completed','cancelled'].includes(key)));
  const boardGroups=showWindowsBoard?
   [...boardStages,...historyBoardStages,...auxiliaryStages.filter(([key])=>filtered.some(o=>stage(o)===key))].map(([id,label])=>({
    id,label,items:filtered.filter(o=>boardStage(o)===id)
@@ -162,16 +163,18 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
    const firstItem=items[0];
    
    return <article key={o.id} aria-label={'Card do pedido '+number(o)} data-source={o.source}
-    className={'pedidos-card order-card '+(current?.id===o.id?'selected':'')}>
+    className={'pedidos-card order-card '+(scheduleInfo(o)?'scheduled-order ':'')+(current?.id===o.id?'selected':'')}>
     <button type="button" className="pedidos-card-select" aria-haspopup="dialog" aria-expanded={current?.id===o.id} onClick={()=>setSelected(o.id)}>
      <div className="pedidos-compact-content">
+      {scheduleInfo(o)&&<span className="scheduled-order-badge"><Clock3 size={13}/> AGENDADO</span>}
       <span className="pedidos-compact-heading">
        <PlatformIcon source={o.source}/><b className="pedidos-compact-number" title={source+' · Pedido #'+number(o)}>#{number(o)}</b>
-       <small>{o.scheduled_for?scheduledTime.format(new Date(o.scheduled_for)):o.created_at?(businessDay(o.created_at)!==day?scheduledTime.format(new Date(o.created_at)):new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'})):''}</small>
+       <small>{o.created_at?(businessDay(o.created_at)!==day?scheduledTime.format(new Date(o.created_at)):new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'})):''}</small>
        <b className="pedidos-compact-total">{brl(o.gross)}</b>
       </span>
       <span className="pedidos-compact-customer" title={o.receipt?.customer||'Cliente'}>{o.receipt?.customer||'Cliente'}</span>
       {firstItem&&<span className="pedidos-compact-item" title={items.map(i=>(i.quantity||1)+' × '+i.name).join(' · ')}>{firstItem.quantity||1} × {firstItem.name}{items.length>1&&<small> +{items.length-1}</small>}</span>}
+      {scheduleInfo(o)&&<span className="scheduled-order-info"><strong>{scheduleInfo(o).modality} agendada: {scheduleInfo(o).when}</strong>{o.status==='pending'&&<small>Aceite exclusivamente manual</small>}{o.status==='accepted'&&scheduleInfo(o).waiting&&<small>Pedido aceito · preparo a partir de {scheduleInfo(o).release}</small>}</span>}
       <span className="pedidos-compact-meta">
        {(!showWindowsBoard||stage(o)==='rejected')&&<span className="store-stage" data-stage={stage(o)}>{stages.find(([id])=>id===stage(o))?.[1]||'Em andamento'}</span>}
        <span className="pedidos-payment-pill" data-payment={cardPayment(o).state}>{cardPayment(o).label}</span>
@@ -243,7 +246,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
 {stage(current)==='ready'&&canDispatch(current,currentDelivery,dispatchMode)&&<button className="primary" disabled={busy} onClick={()=>onAssign(current)}>Selecionar entregador</button>}
 {stage(current)==='delivery'&&current.source==='proprio'&&<button className="primary" disabled={busy||!onConclude} onClick={()=>onConclude?.(current.id)}>Concluir entrega</button>}
 {canDecide&&<>
- {stage(current)!=='scheduled'&&<button className="primary" disabled={busy} onClick={()=>onAccept(current.id)}>Aceitar e iniciar preparo</button>}
+ <button className="primary" disabled={busy} onClick={()=>onAccept(current.id)}>{scheduleInfo(current)?'Aceitar pedido':'Aceitar e iniciar preparo'}</button>
  <button type="button" className="secondary" disabled={busy} onClick={()=>setDecision({id:current.id,status:'rejected',reason:''})}>Recusar pedido</button>
  </>}{canCancelOwn&&<button type="button" className="secondary" disabled={busy||!onDecision} onClick={()=>openOwnCancel(current)}>Cancelar</button>}{waitingIfood&&!ifoodRequestPending&&!ifoodCancelPending&&acceptMode!=='automatic'&&<>
  { !ifoodExpired&&<button className="primary" disabled={busy||!onAcceptIfood} onClick={()=>onAcceptIfood?.(current.id)}>Aceitar pedido no iFood</button>}
@@ -255,7 +258,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
 {current.source==='ifood'&&currentDelivery?.logistics_provider==='loja'&&current.status==='accepted'&&current.receipt?.ifood_status!=='DISPATCHED'&&['ready','delivery'].includes(stage(current))&&<p role="status" className="order-detail-note">O despacho só é confirmado quando o iFood enviar DISPATCHED. No aplicativo do entregador, registre a coleta e toque em Sair para entrega. Se a saída já foi registrada, confira Sincronizar despacho com iFood.</p>}
 {stage(current)==='delivery'&&<p role="status" className="order-detail-note">A conclusão exige chegada e comprovação registradas pelo entregador; pedidos de marketplaces aguardam a confirmação oficial.</p>}
 {canAssign(current,currentDelivery)&&isAutomaticDispatch(dispatchMode)&&<p role="status" className="order-detail-note">Atribuição automática ativa · você pode selecionar manualmente</p>}
-{canDecide&&stage(current)==='scheduled'&&<p className="order-detail-note">Aceite liberado às {scheduledTime.format(new Date(current.scheduled_release_at))}.</p>}
+{current.status==='accepted'&&scheduleInfo(current)?.waiting&&<p className="order-detail-note">Agendamento aceito. Preparo liberado a partir de {scheduleInfo(current).release}.</p>}
 {(waitingIfood||ifoodCancelPending||current.receipt?.ifood_manual_cancel==='failed')&&<div role="status" className="order-detail-meta">
  {ifoodCancelPending?<p>Cancelamento solicitado ao iFood. Aguardando confirmação oficial.</p>:
  ifoodRequestPending?<p>Aguardando confirmação oficial do iFood. Não aceite novamente.</p>:

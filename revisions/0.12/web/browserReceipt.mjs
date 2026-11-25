@@ -7,6 +7,8 @@ export const escapeReceiptHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({
 export function browserReceiptText(order,displayNumber,storeName=''){
  if(!order||!order.id||!order.receipt||!Array.isArray(order.receipt.items))throw Error('Dados do pedido indisponíveis para impressão.');
  const receipt={...order.receipt,
+  scheduled_for:order.scheduled_for||order.receipt.scheduled_for,
+  scheduled_release_at:order.scheduled_release_at||order.receipt.scheduled_release_at,
   display_number:displayNumber||order.receipt.display_number,
   store_name:storeName||order.receipt.store_name||'',
   source:order.source||order.receipt.source,

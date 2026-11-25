@@ -69,7 +69,15 @@ begin
  select id into selected_order from public.orders where request_id='40000000-0000-0000-0000-000000000001';
  assert (select scheduled_for-scheduled_release_at=interval '45 minutes' from public.orders where id=selected_order);
  begin
-  perform public.accept_order(selected_order);
+  perform public.dg_accept_own(selected_order);
+  raise exception 'Expected automatic acceptance restriction';
+ exception when insufficient_privilege then null;
+ end;
+ perform public.accept_order(selected_order);
+ assert (select status='accepted' from public.orders where id=selected_order),'Manual acceptance must work before preparation release';
+ assert (select receipt->>'scheduled_label' is not null from public.orders where id=selected_order),'Print snapshot has schedule';
+ begin
+  perform public.set_order_preparation(selected_order,'ready');
   raise exception 'Expected preparation time restriction';
  exception when raise_exception then
   if sqlerrm <> 'Pedido agendado ainda não foi liberado para preparo' then raise; end if;
@@ -84,8 +92,8 @@ do $test$
 declare selected_order uuid;
 begin
  select id into selected_order from public.orders where request_id='40000000-0000-0000-0000-000000000001';
- perform public.accept_order(selected_order);
- assert (select status='accepted' from public.orders where id=selected_order), 'The normal order pipeline starts after release';
+ perform public.set_order_preparation(selected_order,'ready');
+ assert (select preparation_status='ready' from public.orders where id=selected_order), 'The normal order pipeline advances after release';
 end;
 $test$;
 rollback;

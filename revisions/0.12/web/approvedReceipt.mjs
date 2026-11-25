@@ -1,3 +1,4 @@
+import {scheduleInfo} from './scheduleInfo.mjs';
 // Pitacco thermal receipt — one professional default for every establishment.
 // The same plain-text output powers native Windows ESC/POS and browser printing.
 // Keep all merchant data tenant-scoped at the caller. Never infer that a payment is paid.
@@ -84,12 +85,13 @@ export function approvedReceipt(job,width=80,opts={}){
  const store=first(opts.storeName,r.store_name,r.company_name,r.store?.name);
  if(store){center(store);if(opts.showWhatsapp&&opts.whatsapp)center('WhatsApp: '+opts.whatsapp);}
  center('CUPOM NAO FISCAL');
+ const schedule=scheduleInfo(r);if(schedule){lines.push(doubleRule);center('PEDIDO AGENDADO');add('Modalidade: '+schedule.modality);add('Data/hora: '+schedule.when);if(schedule.release)add('Inicio do preparo: '+schedule.release);center('PRODUCAO CONFORME AGENDAMENTO');lines.push(doubleRule);}
  lines.push(rule);
  const platform=platformName(first(r.platform,r.marketplace,r.source,job.platform,job.source));
  const number=platform==='Loja'?
   first(r.display_number,r.order_number,r.number,r.display_id,r.external_order_number,job.order_id?.slice(0,8)):
   first(r.external_order_number,r.marketplace_order_number,r.original_order_number,r.order_number,r.display_number,r.number,job.order_id?.slice(0,8));
- const operation=first(r.fulfillment_type,r.order_type,r.delivery_type);
+ const operation=first(r.fulfillment_type,r.order_type,r.delivery_type,r.logistics);
  center(/retirada|pickup|balc[aã]o/i.test(operation)?'RETIRADA':'ENTREGA');
  center(platform+' Nº '+(number||'Nao informado'));
  lines.push(doubleRule);

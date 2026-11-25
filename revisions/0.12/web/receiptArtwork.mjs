@@ -1,3 +1,4 @@
+import {scheduleInfo} from './scheduleInfo.mjs';
 import {clean,amount,cash,first,platformName,deliveryAddress,isPaid,collectionAtDelivery} from './approvedReceipt.mjs';
 import {receiptQrMatrix,receiptMenuMessage} from './receiptMenuQr.mjs';
 import {receiptLogoDimensions,monochromeLogo,drawReceiptPlatformMark} from './receiptBranding.mjs';
@@ -72,7 +73,8 @@ export function renderReceiptCanvas(job,width=80,opts={},makeCanvas=()=>document
   for(const line of arr){txt(line,inset+insetWidth/2,yy,size,true,'center');yy+=lh(size)}
   y=top+h+8;
  }else banner(platform+' Nº '+(number||'Não informado'),base+7);
- const operation=/retirada|pickup|balc[aã]o|takeaway/i.test(first(r.fulfillment_type,r.order_type,r.delivery_type))?'RETIRADA':'ENTREGA';
+ const schedule=scheduleInfo(r);if(schedule){banner('PEDIDO AGENDADO',base+6);lines('Modalidade: '+schedule.modality,{bold:true});lines('Data/hora: '+schedule.when,{bold:true});if(schedule.release)lines('Início do preparo: '+schedule.release,{bold:true});banner('PRODUÇÃO CONFORME AGENDAMENTO',base,false);}
+ const operation=/retirada|pickup|balc[aã]o|takeaway/i.test(first(r.fulfillment_type,r.order_type,r.delivery_type,r.logistics))?'RETIRADA':'ENTREGA';
  lines(operation,{bold:true,align:'center'});
  const stamp=first(r.created_at,r.date,job.created_at);if(stamp){const d=new Date(stamp);const date=/^\d{4}-\d{2}-\d{2}T/.test(stamp)&&Number.isFinite(d.getTime())?d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}):stamp;lines(date,{align:'center'})}
  rule();icon('person',pad,y,base+6);const infoX=pad+base+16;

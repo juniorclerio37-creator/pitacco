@@ -272,7 +272,7 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  test('web order toolbar removes duplicate stage controls while keeping history and native controls',()=>{
  const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
  const css=readFileSync(new URL('../pedidos.css',import.meta.url),'utf8');
- assert.ok(orders.includes("const visibleStages=stages.filter(([key])=>key!=='rejected'&&(popupLayout||['completed','cancelled','scheduled'].includes(key)))"));
+ assert.ok(orders.includes("const visibleStages=stages.filter(([key])=>!['rejected','scheduled'].includes(key)&&(popupLayout||['completed','cancelled'].includes(key)))"));
  assert.ok(orders.includes("popupLayout?'Em andamento':'Pedidos'"));
  assert.ok(orders.includes('visibleStages.map'));
  assert.ok(css.includes('.pitacco-pedidos.web-compact-orders .pedidos-kpis{display:none!important}'));
@@ -294,7 +294,7 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  assert.ok(orders.includes("dailyOrders.filter(o=>boardStage(o)===id).length"));
  assert.ok(orders.includes("items:filtered.filter(o=>boardStage(o)===id)"));
  assert.ok(orders.includes("!showWindowsBoard||stage(o)==='rejected'"));
- assert.ok(orders.includes("key!=='rejected'&&(popupLayout"));
+ assert.ok(orders.includes("!['rejected','scheduled'].includes(key)&&(popupLayout"));
  });
 
  test('daily board separates archived orders and links the dedicated history route',()=>{

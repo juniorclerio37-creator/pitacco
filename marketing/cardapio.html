@@ -3214,10 +3214,10 @@ $('checkout').onsubmit=async event=>{
   completed=true;submitting=false;cartRecoveryId=null;persistCartDraft();$('cartDraftNotice').hidden=true;
   if(usingLoyalty)void refreshLoyaltyWallet();
   $('checkout').hidden=true;$('cartReview').hidden=true;$('cartFooter').hidden=true;
-  $('cartTitle').textContent='Pedido confirmado';$('cartAction').textContent='Ver pedido';
+  $('cartTitle').textContent=pendingRequest.p_scheduled_for?'Pedido agendado enviado':'Pedido confirmado';$('cartAction').textContent='Ver pedido';
   $('success').hidden=false;
   $('success').replaceChildren(
-   el('h2',v2Only()?'✓ Pedido confirmado!':'Pedido recebido!'),
+   el('h2',pendingRequest.p_scheduled_for?'✓ Pedido agendado enviado com sucesso':v2Only()?'✓ Pedido confirmado!':'Pedido recebido!'),
    el('p','Número do pedido: '+data.order_id),
    el('p','Total confirmado: '+money(data.total)),
    el('p',pendingRequest.p_payment==='fiado'
@@ -3226,9 +3226,9 @@ $('checkout').onsubmit=async event=>{
       :'Fiado autorizado pela loja. O pagamento será feito depois, conforme o prazo combinado.'
      :data.payment_status==='paid_manual'?'Pagamento registrado.':'Pagamento pendente de confirmação.')
   );
-  if(pendingRequest.p_scheduled_for)$('success').append(el('p','Agendado para '+scheduleFormat.format(new Date(pendingRequest.p_scheduled_for))+'.'));
+  if(pendingRequest.p_scheduled_for){const scheduledNotice=el('div',undefined,'v2-review-group');scheduledNotice.append(el('h4','AGENDADO'),el('p',(pendingRequest.p_fulfillment==='pickup'?'Retirada':'Entrega')+' agendada para '+scheduleFormat.format(new Date(pendingRequest.p_scheduled_for))+'.'),el('p','Seu pedido foi enviado à loja com sucesso. A loja ainda precisa aceitar manualmente.'));$('success').append(scheduledNotice);}
   if(data.payment_instructions)$('success').append(el('p','Instruções de pagamento: '+data.payment_instructions));
-  if(v2Only()){
+  if(v2Only()&&!pendingRequest.p_scheduled_for){
    const banner=el('div',undefined,'v2-review-group');
    banner.append(el('h4','✓ Pedido realizado com sucesso'),el('p','Seu pedido foi recebido e poderá ser acompanhado em tempo real.'));
    $('success').prepend(banner);

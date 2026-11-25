@@ -1,6 +1,7 @@
 import React,{useEffect,useRef} from 'react';
 import {Clock3,CreditCard,MapPin,Navigation,Phone,ShoppingBag,X} from 'lucide-react';
 import {orderAddress} from './orderDisplay.mjs';
+import {scheduleInfo} from './scheduleInfo.mjs';
 
 const money=value=>Number(value??0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const text=value=>typeof value==='string'?value.trim():'';
@@ -31,7 +32,7 @@ export default function OrderDetails({order,delivery,number,stage,stageLabel,pla
  const phone=text(receipt.phone)||text(receipt.customer_phone)||(historyMode?text(delivery?.customer_phone):'');
  const dial=phone.replace(/[^+0-9]/g,'');
  const time=Date.parse(order.created_at);
- const scheduled=Date.parse(order.scheduled_for);
+ const schedule=scheduleInfo(order);
  const method=text(receipt.payment_method)||text(receipt.payment)||text(receipt.payment?.method)||text(receipt.payment_type);
  const timing=[receipt.payment_timing,receipt.payment_when,receipt.payment_location,receipt.payment_channel].map(text).join(' ');
  const state=text(receipt.payment_status||receipt.payment?.status).toLowerCase();
@@ -75,7 +76,7 @@ export default function OrderDetails({order,delivery,number,stage,stageLabel,pla
       <a className="order-detail-link" href={'tel:'+dial}><Phone size={15} aria-hidden="true"/>{phone}</a>:
       <span className="order-detail-meta">{phone}</span>)}
     </section>
-    {Number.isFinite(scheduled)&&<p className="order-detail-note">Agendado para {new Date(scheduled).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'})}</p>}
+    {schedule&&<section className="scheduled-order-detail"><strong className="scheduled-order-badge"><Clock3 size={16}/> AGENDADO</strong><h4>Informações do agendamento</h4><p>Modalidade: {schedule.modality}</p><p>Data e horário: <b>{schedule.when}</b></p>{schedule.release&&<p>Início do preparo: {schedule.release}</p>}{order.status==='pending'&&<p>Este pedido depende de aceite manual da loja e não entra no aceite automático.</p>}{order.status==='accepted'&&schedule.waiting&&<p>Pedido aceito · aguardando início do preparo.</p>}</section>}
     <section className="order-detail-section" aria-label="Itens do pedido">
      <h4><ShoppingBag size={17} aria-hidden="true"/> Itens do pedido</h4>
      {items.length?<ul className="order-detail-items">{items.map((item,index)=>{
