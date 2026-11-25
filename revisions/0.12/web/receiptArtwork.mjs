@@ -126,7 +126,7 @@ export function renderReceiptCanvas(job,width=80,opts={},makeCanvas=()=>document
    // Integer printer dots, minimum 4 quiet modules, 6 dots per module (about 34 mm).
    const module=6,quiet=4,side=(matrix.length+quiet*2)*module,left=Math.floor((w-side)/2),top=y+5;
    ops.push(c=>{c.fillStyle='#fff';c.fillRect(left,top,side,side);c.fillStyle='#000';matrix.forEach((row,yy)=>row.forEach((dark,xx)=>{if(dark)c.fillRect(left+(xx+quiet)*module,top+(yy+quiet)*module,module,module)}))});
-   y=top+side+5;lines(opts.menuUrl,{align:'center'});
+   y=top+side+5; // The menu address is encoded in the QR; do not print it as text.
   }
  }
  rule();lines('Cupom não fiscal',{align:'center'});lines('Impresso por Pitacco',{bold:true,align:'center'});

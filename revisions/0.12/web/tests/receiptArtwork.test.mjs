@@ -15,3 +15,17 @@ test('platform identification is optional without hiding the real platform and o
   for(const image of [withIcon,noIcon]){const text=image.log.map(x=>x.s).join(' ');assert.ok(text.includes(label));assert.ok(text.includes('542012'));}
  }
 });
+
+test('menu QR stays scannable without printing its URL on 58 or 80mm paper',()=>{
+ const menuUrl='https://pitacco.com.br/loja-teste';
+ for(const width of [58,80]){
+  let dots=0;
+  const canvas=renderReceiptCanvas({receipt},width,{menuQr:true,menuUrl},()=>{const c=fake(),ctx=c.getContext('2d');ctx.fillRect=(x,y,w,h)=>{if(w===6&&h===6)dots++};return c});
+  const printed=canvas.log.map(x=>x.s).join(' ');
+  assert.ok(dots>100,'QR modules must still be drawn');
+  assert.match(printed,/PEÇA PELO NOSSO CARDÁPIO/);
+  assert.doesNotMatch(printed,/https:\/\/|pitacco\.com\.br|loja-teste/i);
+  const without=renderReceiptCanvas({receipt},width,{menuQr:false,menuUrl},fake);
+  assert.ok(canvas.height>without.height);
+ }
+});
