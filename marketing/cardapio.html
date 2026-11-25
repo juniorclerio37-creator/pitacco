@@ -3320,7 +3320,7 @@ async function restoreCustomerSession(){
  }catch{}finally{customerSessionBusy=false}
 }
 async function customerLogout(){
- if(submitting||pendingRequest||cartRecoveryId||v2ProfileBusy||customerSessionBusy){msg('Aguarde a conclusão do envio ou da consulta antes de trocar de cliente.');return}
+ if(submitting||(pendingRequest&&!completed)||cartRecoveryId||v2ProfileBusy||customerSessionBusy){msg('Aguarde a conclusão do envio ou da consulta antes de trocar de cliente.');return}
  const device=rememberedDevice();if(!device)return;
  if(!window.confirm('Sair da conta neste aparelho? Os dados pessoais serão desvinculados deste navegador.'))return;
  customerSessionBusy=true;
@@ -3331,13 +3331,13 @@ async function customerLogout(){
  }catch(e){msg(e.message||'Não foi possível sair.')}finally{customerSessionBusy=false}
 }
 function repeatCustomerOrder(order){
- if(!customerSessionActive||Date.now()>=customerSessionExpiry||submitting||cartRecoveryId||(pendingRequest&&!completed)||pagbankPreviewMode||studioPreviewActive)return;
+ if(!customerSessionActive||Date.now()>=customerSessionExpiry||submitting||cartRecoveryId||(pendingRequest&&!completed)||pagbankPreviewMode||studioPreviewActive){msg('Confira a sessão e conclua o envio pendente antes de repetir um pedido.');return}
  const restored=reconcileCartDraft(order.items,menu.products);
  if(!restored.items.length){msg('Os itens deste pedido não estão mais disponíveis. Escolha outros produtos no cardápio.');return}
  if(cart.length&&!completed&&!window.confirm('Substituir a sacola atual pelos itens disponíveis deste pedido?'))return;
  if(completed){completed=false;pendingRequest=null;cartRecoveryId=null;$('success').hidden=true;$('cartReview').hidden=false;$('cartFooter').hidden=false;$('cartAction').textContent='Ver sacola';lockCheckout(false)}
  cart=restored.items;cartRestoreWarning=restored.changed?'Alguns itens ou complementos não estão mais disponíveis. Confira sua sacola e os valores atuais.':'Pedido anterior recuperado. Confira os preços atuais antes de confirmar.';
- $('notes').value='';$('fiadoPin').value='';$('v2CashChange').value='';$('schedule').value='';$('loyaltyCoupon').value='';$('loyaltyReward').value='';clearFiadoAccess();invalidateLoyalty();
+ $('notes').value='';$('fiadoPin').value='';$('v2CashChange').value='';$('schedule').value='';$('loyaltyCoupon').value='';$('loyaltyReward').value='';clearFiadoAccess();if(v2Only()){$('payment').value='';v2RenderPaymentCards()}else{$('payment').selectedIndex=0;$('payment').dispatchEvent(new Event('change'))}deliveryQuote=null;quoteGeneration++;invalidateLoyalty();
  renderCart();persistCartDraft();if(!$('cartDialog').open)$('cartDialog').showModal();cartStep(false);
 }
 async function showCustomerOrders(){
@@ -3824,8 +3824,8 @@ async function startPublicMenu(){
   applyMenuStartupData(prepared);
   initOptions();
   if(pagbankPreviewMode&&v2Only()&&pagbankPreviewItems){const resume=el('button','Retomar pagamento de teste','primary pb-v2-resume');resume.type='button';resume.onclick=openPagBankPreview;document.querySelector('.pagbank-preview-banner')?.append(resume)}
-  await restoreCustomerSession();
   await waitForMenuIdentityPaint();
+  await restoreCustomerSession();
   if(studioPreviewActive){
    studioPreviewReady=true;studioPreviewReport('pitacco-studio-preview-ready');studioPreviewApply();
   }
