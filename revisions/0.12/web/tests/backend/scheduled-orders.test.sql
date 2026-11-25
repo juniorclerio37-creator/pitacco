@@ -19,8 +19,7 @@ insert into public.loyalty_coupons(store_id,code,discount_type,discount_value)
  values ('20000000-0000-0000-0000-000000000001','AGENDADO','fixed',5);
 set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
-insert into public.pitacco_schedule_windows(store_id,weekday,enabled,opens_minute,closes_minute)
- select '20000000-0000-0000-0000-000000000001',day,true,0,1440 from generate_series(1,7) day;
+select public.pitacco_store_hours_save_v2('20000000-0000-0000-0000-000000000001',(select jsonb_agg(jsonb_build_object('weekday',day,'slot',1,'opens_minute',0,'closes_minute',1440)) from generate_series(1,7) day),false,0,true);
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
 do $test$
 begin

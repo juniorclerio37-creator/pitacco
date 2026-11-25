@@ -13,7 +13,7 @@ test('checkout uses a stable idempotency request key and backend RPC',()=>{
 test('checkout blocks concurrent submissions even if cart rerenders',()=>{
  assert.match(html,/if\(submitting\|\|cartRecoveryId\|\|!cart\.length\)return/);
  assert.match(html,/submitting=true/);
- assert.match(html,/disabled=Boolean\(cartRecoveryId\)\|\|\(!storeOpening\?\.open&&!pendingRequest\)\|\|submitting\|\|!cart\.length/);
+ assert.match(html,/disabled=Boolean\(cartRecoveryId\)\|\|\(!timingValid\(\)&&!pendingRequest\)\|\|submitting\|\|!cart\.length/);
  assert.match(html,/lockCheckout\(Boolean\(pendingRequest\)\)/);
 });
 test('checkout validates address, phone, and payment',()=>{
@@ -45,7 +45,7 @@ test('store opening hours block new orders in the browser and require server ver
  assert.match(html,/client\.rpc\('pitacco_public_store_open'/);
  assert.match(html,/storeOpenStatus/);
  assert.match(html,/refreshStoreOpening\(\)/);
- assert.match(html,/!storeOpening\?\.open/);
+ assert.match(html,/schedulingAvailable/);
  assert.match(html,/Loja fechada/);
 });
 

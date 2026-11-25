@@ -1199,7 +1199,7 @@ body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data
 #addressBlock #confirmDeliveryMap{width:100%;margin:0}
 #addressBlock #routeQuoteStatus{font-weight:650;padding:13px;border-radius:13px}
 
-</style></head><body>
+</style><style>.schedule-store-action{flex-basis:100%;padding:12px;border:0;border-radius:9px;background:var(--brand,#df5a20);color:#fff;font-weight:800}.schedule-choices{display:grid;gap:9px;margin-top:9px;padding:12px;background:var(--paper,#fff);border:1px solid #dedede;border-radius:10px}.schedule-times{display:flex;gap:7px;flex-wrap:wrap}.schedule-time{border:1px solid #d3d3d3;border-radius:8px;padding:9px 14px;background:var(--paper,#fff);color:var(--ink,#24211e)}.schedule-time[aria-pressed="true"]{background:var(--brand,#df5a20);color:white;border-color:var(--brand,#df5a20)}</style></head><body>
 <section id="menuStartup" class="menu-startup" role="status" aria-label="Carregando o cardápio">
  <div class="menu-startup__content"><span class="menu-startup__indicator" aria-hidden="true"></span>
   <strong>Preparando seu cardápio</strong><p>Organizando os produtos e benefícios da loja…</p>
@@ -1317,7 +1317,7 @@ body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data
   <div class="products" id="products"></div>
  </section>
 </main>
-<footer class="pitacco-footer" id="pitaccoFooter" hidden>Impulsionado por <a href="https://pitacco.com.br/" rel="noopener">Pitacco</a><span id="pitaccoSocial"></span></footer>
+<footer class="pitacco-footer" id="pitaccoFooter" hidden><span id="pitaccoSocial"></span></footer>
 <div id="cartDock" class="dock" hidden><p id="cartFeedback" class="feedback" role="status" hidden></p><button id="openCart" type="button"><span><span class="v2-dock-icon" aria-hidden="true">🛒</span><span class="dock-count" id="cartCount">0</span><span id="cartAction">Ver meu pedido</span></span><strong><span id="v2DockCount">0 itens · </span><span id="cartValue"></span><span class="v2-dock-extra" aria-hidden="true">›</span></strong></button></div>
 <dialog id="productDialog" aria-labelledby="productTitle"><div class="dialog-shell">
  <header class="dialog-header"><h2 class="dialog-title" id="productTitle"></h2><button type="button" class="close" id="closeProduct" aria-label="Fechar produto">×</button></header>
@@ -1344,7 +1344,7 @@ body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data
   <p id="v2ProfileStatus" class="v2-privacy-note" role="status">Seu nome e endereços podem ser reutilizados neste aparelho em compras futuras.</p>
  </div>
 </section>
-<section class="v2-checkout-panel v2-checkout-panel--delivery"><h3>📍 Entrega ou retirada</h3><p>Escolha como deseja receber seu pedido.</p><label for="fulfillment">Como deseja receber?</label><select id="fulfillment"></select><div id="scheduleBlock" hidden><label for="schedule">Quando deseja receber?</label><select id="schedule"><option value="">Assim que possível</option></select><small>Horários de Brasília. Para entrega, o horário é uma previsão.</small></div><div id="addressBlock">
+<section class="v2-checkout-panel v2-checkout-panel--delivery"><h3>📍 Entrega ou retirada</h3><p>Escolha como deseja receber seu pedido.</p><label for="fulfillment">Como deseja receber?</label><select id="fulfillment"></select><div id="scheduleBlock" hidden><label for="schedule">Quando deseja receber?</label><select id="schedule"><option value="">Assim que possível</option></select><div id="scheduleChoices" class="schedule-choices" hidden></div><small>Horários de Brasília. Para entrega, o horário é uma previsão.</small></div><div id="addressBlock">
  <div id="v2AddressBook" class="v2-address-book" hidden>
   <h3>Onde vamos entregar?</h3><p id="savedAddressHint">Escolha um endereço salvo ou cadastre um novo.</p><div class="checkout-address-actions"><button id="locateDelivery" type="button" class="address-action"><span aria-hidden="true">◎</span><span><strong>Usar minha localização</strong><small>Use quando estiver no endereço de entrega</small></span><span aria-hidden="true">›</span></button></div><h4 id="savedAddressesTitle" hidden>Meus endereços</h4>
   <div id="v2AddressList" class="v2-address-list"></div>
@@ -1483,6 +1483,9 @@ if(studioPreviewActive){
 let menu,cart=[],pendingRequest=null,submitting=false,scheduleRequest=0;
 let fiadoEligiblePhone='',fiadoLookupCounter=0,fiadoLookupTimer=null,fiadoLookupFingerprint='';
 let storeOpening=null;
+const schedulingAvailable=()=>storeOpening?.scheduling_available===true&&storeOpening?.paused!==true;
+const storefrontCanOrder=()=>storeOpening?.open===true||schedulingAvailable();
+const timingValid=()=>storeOpening?.open===true||Boolean(schedulingAvailable()&&$('schedule').value);
 let deliveryPoint=null,deliveryMap,deliveryQuote=null;
 // Persist product choices only. Prices, names and option rules always come from
 // the current catalog; payment, identity, PIN and freight authorization never do.
@@ -2412,7 +2415,7 @@ function cartFeedback(text){
 }
 $('search').addEventListener('input',renderProducts);
 $('addProduct').onclick=()=>{
- if(!current||pendingRequest||cartRecoveryId||completed||!storeOpening?.open)return;
+ if(!current||pendingRequest||cartRecoveryId||completed||!storefrontCanOrder())return;
  const invalid=groups.find(row=>getChoices(row).length<row.group.min||getChoices(row).length>row.group.max);
  if(invalid){
   invalid.field.dataset.invalid='true';
@@ -2515,9 +2518,9 @@ function renderCart(){
  $('cartValue').textContent=money(subtotal);
  $('v2DockCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0)+' itens · ';
  const n=cart.reduce((sum,item)=>sum+item.quantity,0);$('v2HeaderCount').textContent=String(n);$('v2HeaderCount').hidden=n===0;
- $('continueCheckout').disabled=Boolean(cartRecoveryId)||(!storeOpening?.open&&!pendingRequest)||!cart.length||(!v2Only()&&(!$('fulfillment').value||!$('payment').value));
+ $('continueCheckout').disabled=Boolean(cartRecoveryId)||(!storefrontCanOrder()&&!pendingRequest)||!cart.length||(!v2Only()&&(!$('fulfillment').value||!$('payment').value));
  $('cart').inert=Boolean(cartRecoveryId)||Boolean(pendingRequest);
- $('send').disabled=Boolean(cartRecoveryId)||(!storeOpening?.open&&!pendingRequest)||submitting||!cart.length||!$('fulfillment').value||!$('payment').value||
+ $('send').disabled=Boolean(cartRecoveryId)||(!timingValid()&&!pendingRequest)||submitting||!cart.length||!$('fulfillment').value||!$('payment').value||
    ($('fulfillment').value==='delivery'&&(!routeMode||!quoteValid));
  }finally{
   persistCartDraft();
@@ -2608,10 +2611,10 @@ function applyStudioDesign(shop){
   rootBanners.append(card);
  }
  rootBanners.hidden=rootBanners.childElementCount===0;
- const footer=$('pitaccoFooter');footer.hidden=false;
+ const footer=$('pitaccoFooter');footer.hidden=true;$('pitaccoSocial').replaceChildren();
  if(/^@[a-z0-9._]{1,30}$/i.test(d.instagram||'')){
   const a=el('a',d.instagram);a.href='https://www.instagram.com/'+d.instagram.slice(1)+'/';a.rel='noopener noreferrer';a.target='_blank';
-  $('pitaccoSocial').append(document.createTextNode(' · '),a);
+  $('pitaccoSocial').append(a);footer.hidden=false;
  }
 }
 
@@ -2623,22 +2626,26 @@ function showStoreOpening(opening){
  storeOpening=opening&&typeof opening.open==='boolean'?opening:{open:false,reason:'unavailable'};
  const status=$('storeOpenStatus');
  const isOpen=storeOpening.open;
+ const available=schedulingAvailable();
  status.classList.toggle('is-open',isOpen);
- document.body.classList.toggle('store-closed',!isOpen);
+ document.body.classList.toggle('store-closed',!isOpen&&!available);
  status.replaceChildren();
  $('v2OpenPill').dataset.open=String(isOpen);
- $('v2OpenPill').textContent=isOpen?'Aberto':'Fechado';
+ $('v2OpenPill').textContent=isOpen?'Aberto':available?'Agendamentos disponíveis':'Fechado';
  const title=el('strong',isOpen?'● Loja aberta — pedidos disponíveis':
   storeOpening.reason==='paused'?'● Pedidos temporariamente pausados':
-  '● Loja fechada — pedidos indisponíveis');
- const next=storeOpening.next_open_at&&!isOpen?
+  available?'● Loja fechada agora · Aceitando pedidos agendados':'● Loja fechada — pedidos indisponíveis');
+ const next=available&&!isOpen?'Agende seu pedido para um dos próximos horários de funcionamento.':storeOpening.next_open_at&&!isOpen?
   'Próxima abertura: '+brazilTime.format(new Date(storeOpening.next_open_at))+'.':
   storeOpening.reason==='unconfigured'?'Horário de funcionamento não configurado.':
   isOpen?'Você pode fazer seu pedido agora.':'Consulte os horários de atendimento.';
  status.append(title,el('span',next));
+ if(available&&!isOpen){const action=button('Agendar pedido','schedule-store-action');action.onclick=()=>{if(cart.length)$('openCart').click();else $('layout').scrollIntoView({behavior:'smooth',block:'start'});};status.append(action);}
+ if(!pendingRequest&&$('schedule').options[0]){if(!available){$('schedule').value='';$('scheduleBlock').hidden=true;}else if(!$('schedule').value){$('schedule').options[0].textContent=isOpen?'Assim que possível':'Selecione uma data e horário';}}
+ if(!pendingRequest&&available&&$('scheduleBlock').hidden&&$('fulfillment').value)void loadSchedule();
  status.hidden=false;
- $('cartDock').hidden=!isOpen&&!pendingRequest;
- $('addProduct').disabled=!isOpen;
+ $('cartDock').hidden=!isOpen&&!available&&!pendingRequest;
+ $('addProduct').disabled=!isOpen&&!available;
  if(menu)renderCart();
 }
 async function refreshStoreOpening(){
@@ -2878,7 +2885,7 @@ function pagbankV2Render(){
  const dialog=$('pagbankPreviewDialog'),body=$('pagbankPreviewBody'),charge=pagbankPreviewCharge;
  const paid=charge?.status==='PAID',waiting=charge?.status==='WAITING';
  dialog.dataset.pixStage=paid?'paid':charge?'payment':'selection';
- $('pagbankPreviewTitle').textContent=menu?.store?.name||'Pitacco';
+ $('pagbankPreviewTitle').textContent=menu?.store?.name||'Sua loja';
  body.replaceChildren();
  const note=el('p','AMBIENTE SANDBOX · Não utilize dinheiro real.','pagbank-preview-warning');
  const heading=el('div',undefined,'pb-v2-heading');
@@ -3061,22 +3068,35 @@ function initOptions(){
  showStoreOpening(shop.opening_hours);
  msg(!$('fulfillment').options.length?'Esta loja está sem modalidade de atendimento.':!$('payment').options.length?'Esta loja ainda está configurando o pagamento.':'');
 }
+function renderScheduleChoices(){
+ const root=$('scheduleChoices'),select=$('schedule');root.replaceChildren();
+ const dates=new Map(),formatDay=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}),formatTime=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
+ for(const option of [...select.options].filter(x=>x.value)){const key=formatDay.format(new Date(option.value));if(!dates.has(key))dates.set(key,[]);dates.get(key).push(option);}
+ root.hidden=!dates.size;if(!dates.size)return;
+ const selectedDate=select.value?formatDay.format(new Date(select.value)):dates.keys().next().value;
+ const dateInput=el('select');dateInput.setAttribute('aria-label','Data do agendamento');
+ for(const [key,options] of dates){const label=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'long',day:'2-digit',month:'2-digit'}).format(new Date(options[0].value));dateInput.add(new Option(label,key));}dateInput.value=selectedDate;
+ const times=el('div',undefined,'schedule-times');
+ function showTimes(){times.replaceChildren();for(const option of dates.get(dateInput.value)||[]){const b=button(formatTime.format(new Date(option.value)),'schedule-time');b.setAttribute('aria-pressed',String(select.value===option.value));b.onclick=()=>{select.value=option.value;showTimes();renderCart();};times.append(b);}}
+ dateInput.onchange=showTimes;
+ if(storeOpening?.open){const now=button('Pedir agora','schedule-time');now.setAttribute('aria-pressed',String(!select.value));now.onclick=()=>{select.value='';renderScheduleChoices();renderCart();};root.append(now);}
+ root.append(el('strong','Selecione a data'),dateInput,el('strong','Horário disponível'),times);showTimes();
+}
 async function loadSchedule(){
- const id=++scheduleRequest;
- const select=$('schedule');
- select.replaceChildren(new Option('Assim que possível',''));
- $('scheduleBlock').hidden=true;
+ const id=++scheduleRequest,select=$('schedule'),previous=select.value;
+ select.replaceChildren(new Option(storeOpening?.open?'Assim que possível':'Selecione data e horário',''));
+ $('scheduleBlock').hidden=true;$('scheduleChoices').hidden=true;
  const fulfillment=$('fulfillment').value;
  if(!fulfillment)return;
  try{
   const {data,error}=await client.rpc('pitacco_public_schedule_slots',{p_slug:slug,p_fulfillment:fulfillment});
-  if(error||id!==scheduleRequest||!Array.isArray(data)||!data.length)return;
+  if(error||id!==scheduleRequest||!Array.isArray(data)||!data.length){if(id===scheduleRequest)renderCart();return;}
   for(const time of data)select.add(new Option(scheduleFormat.format(new Date(time)),time));
-  $('scheduleBlock').hidden=false;
- }catch{
-  // The standard checkout is available when no scheduling data is returned.
- }
+  if([...select.options].some(o=>o.value===previous))select.value=previous;
+  $('scheduleBlock').hidden=false;renderScheduleChoices();renderCart();
+ }catch{if(id===scheduleRequest)renderCart();}
 }
+$('schedule').addEventListener('change',()=>{renderScheduleChoices();renderCart();});
 
 function lockCheckout(locked){
  for(const id of ['products','cart','customer','phone','address','addressFields','deliveryPoint','addressBlock','fulfillment','payment','notes','schedule','fiadoPin','loyaltyBox'])$(id).inert=locked;
@@ -3091,7 +3111,7 @@ $('checkout').onsubmit=async event=>{
  if(!pendingRequest){
   try{
    const currentOpening=await refreshStoreOpening();
-   if(!currentOpening.open){msg('Esta loja está fechada no momento. Aguarde o próximo horário de funcionamento.');return;}
+   if(!currentOpening.open&&!(currentOpening.scheduling_available===true&&$('schedule').value)){msg(currentOpening.scheduling_available?'Escolha uma data e um horário para agendar seu pedido.':'Esta loja está fechada no momento. Aguarde o próximo horário de funcionamento.');return;}
   }catch(error){msg(error.message);return;}
   const fulfillment=$('fulfillment').value,payment=$('payment').value;
   if(!fulfillment||!payment){
@@ -3614,6 +3634,7 @@ async function v2AdvanceCheckout(){
    v2ShowCheckoutStage('address');
   }else if(stage==='address'){
    if(!$('fulfillment').value){msg('Escolha entrega ou retirada.');return;}
+   if(!timingValid()){msg('Escolha uma data e horário para agendar seu pedido.');return;}
    if($('fulfillment').value==='delivery'){
     if(!completeDeliveryAddress()){msg('Confira o endereço de entrega.');return;}
     if(!menu.store.route_pricing?.enabled){

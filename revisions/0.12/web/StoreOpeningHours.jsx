@@ -16,6 +16,7 @@ const defaultPeriod=()=>({opens_minute:600,closes_minute:1320});
 
 export default function StoreOpeningHours({client,store,manager=true}){
  const [rows,setRows]=useState(Array.from({length:7},()=>[]));
+ const [acceptsScheduled,setAcceptsScheduled]=useState(false);
  const [paused,setPaused]=useState(false),[legacy,setLegacy]=useState(false),[revision,setRevision]=useState(0);
  const [current,setCurrent]=useState(null),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
  const [error,setError]=useState(''),[notice,setNotice]=useState(''),[reload,setReload]=useState(0);
@@ -29,7 +30,7 @@ export default function StoreOpeningHours({client,store,manager=true}){
    const organized=Array.from({length:7},()=>[]);
    for(const p of data.periods||[])if(p.weekday>=1&&p.weekday<=7)
     organized[p.weekday-1].push({opens_minute:p.opens_minute,closes_minute:p.closes_minute});
-   setRows(organized);setPaused(!!data.paused);setLegacy(!data.manager_configured);
+   setRows(organized);setPaused(!!data.paused);setAcceptsScheduled(data.current?.accepts_scheduled===true);setLegacy(!data.manager_configured);
    setRevision(data.revision);setCurrent(data.current);setLoaded(true);
   }).catch(e=>{if(alive)setError(e.message||'Não foi possível carregar os horários da loja.')})
    .finally(()=>{if(alive)setLoading(false)});
@@ -57,14 +58,14 @@ export default function StoreOpeningHours({client,store,manager=true}){
   }
   setBusy(true);
   try{
-   const {data,error}=await client.rpc('pitacco_store_hours_save',{
-    p_store:store.id,p_periods:periods,p_paused:nextPaused,p_expected_revision:revision
+   const {data,error}=await client.rpc('pitacco_store_hours_save_v2',{
+    p_store:store.id,p_periods:periods,p_paused:nextPaused,p_expected_revision:revision,p_accepts_scheduled:acceptsScheduled
    });
    if(error)throw error;
    if(!data?.saved)throw Error('O servidor não confirmou os horários.');
    setPaused(nextPaused);setRevision(data.revision);setCurrent(data.current);setLegacy(!data.current?.manager_configured);
    setNotice(nextPaused?'Pedidos pausados. O cardápio continuará visível, mas não aceitará novos pedidos.':
-    'Horários salvos! O cardápio agora recebe pedidos somente nos intervalos definidos.');
+    acceptsScheduled?'Horários salvos! O cardápio aceita agendamentos para os períodos configurados.':'Horários salvos! Pedidos imediatos somente nos intervalos definidos.');
   }catch(e){setError(e.message||'Não foi possível salvar os horários.');}
   finally{setBusy(false)}
  }
@@ -76,7 +77,7 @@ export default function StoreOpeningHours({client,store,manager=true}){
     <p>Defina quando seus clientes podem fazer pedidos pelo cardápio digital. O fechamento é automático, pelo horário de Brasília.</p>
    </div>
    <span className={'opening-state '+(open?'open':'closed')}>
-    {loading?'Verificando…':open?'● Aberta para pedidos':paused?'● Recebimento pausado':'● Fechada para pedidos'}
+    {loading?'Verificando…':open?'● Aberta para pedidos':paused?'● Recebimento pausado':current?.scheduling_available?'● Fechada agora · agendamentos disponíveis':'● Fechada para pedidos'}
    </span>
   </div>
   {error&&<p role="alert" className="notice error">{error}</p>}
@@ -88,9 +89,13 @@ export default function StoreOpeningHours({client,store,manager=true}){
     <strong>Horário inicial configurado para preservar suas vendas.</strong>
     <p>O funcionamento anterior foi mantido em 24 horas por dia. Ajuste os dias e horários abaixo para que a loja feche automaticamente.</p>
    </div>}
+   <div className="opening-scheduling">
+    <div><strong>🗓 Aceitar pedidos agendados</strong><p>Seu cardápio fica disponível 24 horas. Fora do expediente, os clientes podem agendar para os dias e períodos de funcionamento abaixo. Pedidos agendados exigem aceite manual.</p></div>
+    <label className="opening-switch" aria-label="Aceitar pedidos agendados"><input type="checkbox" role="switch" checked={acceptsScheduled} disabled={busy||!manager} onChange={e=>{setAcceptsScheduled(e.target.checked);setNotice('Salve as alterações para aplicar.')}}/><span aria-hidden="true"/></label>
+   </div>
    <div className="opening-pause">
-    <div><strong>Pausar o recebimento de pedidos</strong>
-     <p>Você pode fechar temporariamente sem perder o horário semanal. Os pedidos existentes continuam disponíveis.</p>
+    <div><strong>Pausa manual de todos os pedidos</strong>
+     <p>Interrompe temporariamente pedidos imediatos e agendados sem alterar os horários semanais. Os pedidos existentes continuam disponíveis.</p>
      {current?.next_open_at&&!paused&&!open&&<small>Próxima abertura: {nextTime(current.next_open_at)}.</small>}
     </div>
     <button type="button" disabled={!manager||busy} className={paused?'opening-resume':'opening-pause-button'}
@@ -135,7 +140,7 @@ export default function StoreOpeningHours({client,store,manager=true}){
     </div>)}
    </div>
    <div className="opening-save">
-    <p>O cardápio fica visível quando a loja fecha, mas não permite novos pedidos. A regra é aplicada diretamente pelo servidor, inclusive para pedidos agendados.</p>
+    <p>Quando o agendamento está habilitado, o cliente pode escolher os próximos horários de funcionamento mesmo fora do expediente. A pausa manual bloqueia novos pedidos de qualquer modalidade.</p>
     <button type="button" disabled={busy||!manager} onClick={()=>save()}>{busy?'Salvando…':'Salvar horário de funcionamento'}</button>
    </div>
   </>}
