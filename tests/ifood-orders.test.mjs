@@ -166,3 +166,24 @@ test('auto-accept submits to the official iFood endpoint and waits for the provi
  assert.equal(settled[1].p_retry,true);
  assert.equal(submitCount,2);
 });
+
+test('production webhook uses its own signature, merchant scope and token',async()=>{
+ const calls=[];let bg;
+ const handle=createIfoodOrders({...config,clientId:'test-id',clientSecret:'test-secret',productionId:'prod-id',productionSecret:'prod-secret',shippingTest:true,runInBackground:p=>{bg=p},fetcher:async(url,opts)=>{
+ const path=new URL(url).pathname;calls.push(path);
+ if(path.endsWith('/pitacco_ifood_central_enqueue')){assert.equal(JSON.parse(opts.body).p_production,true);return json(true)}
+ if(path.endsWith('/pitacco_ifood_claim'))return json([{event_id:id.event,merchant_id:id.merchant,external_order_id:id.order,lease:id.attempt}]);
+ if(path.endsWith('/pitacco_ifood_poll_credential'))return json(null);
+ if(path.endsWith('/pitacco_ifood_central_environment'))return json('production');
+ if(path.endsWith('/oauth/token')){assert.equal(opts.body.get('clientId'),'prod-id');return json({accessToken:'prod-access',expiresIn:3600})}
+ if(path.endsWith('/orders/'+id.order)){assert.equal(opts.headers.authorization,'Bearer prod-access');return json(order)}
+ if(path.endsWith('/pitacco_ifood_complete')){assert.equal(JSON.parse(opts.body).p_test,false);return json(null)}
+ if(path.endsWith('/pitacco_ifood_claim_auto_confirm'))return json([]);
+ throw Error('unexpected '+path);
+ }});
+ const body=JSON.stringify(event),submit=secret=>handle(new Request(endpoint+'/production',{method:'POST',body,headers:{'x-ifood-signature':createHmac('sha256',secret).update(body).digest('hex')}}));
+ assert.equal((await submit('test-secret')).status,401);assert.equal(calls.length,0);
+ assert.equal((await submit('prod-secret')).status,202);await bg;
+ assert.ok(calls.some(x=>x.endsWith('/pitacco_ifood_complete')));
+ assert.ok(!calls.some(x=>x.includes('shipping_test')));
+});

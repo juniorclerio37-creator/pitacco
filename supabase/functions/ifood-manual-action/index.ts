@@ -70,12 +70,17 @@ async function validateUser(request: Request): Promise<string> {
   if (!uuid.test(user?.id ?? "")) throw Object.assign(new Error("Conta inválida."), { code:401 });
   return user.id;
 }
-async function getIfoodToken(): Promise<string> {
+async function getIfoodToken(merchantId:string): Promise<string> {
+  if(!uuid.test(merchantId))throw Object.assign(new Error('Vínculo iFood inválido.'),{code:409});
+  const environment=await requestRpc('pitacco_ifood_central_environment',{p_merchant:merchantId});
+  if(environment!=='test'&&environment!=='production')throw Object.assign(new Error('Credencial central indisponível.'),{code:503});
+  const prefix=environment==='production'?'IFOOD_PRODUCTION_':'IFOOD_';
+  if(!env(prefix+'CLIENT_ID')||!env(prefix+'CLIENT_SECRET'))throw Object.assign(new Error('Credencial iFood indisponível.'),{code:503});
   const response = await fetch(root + "/authentication/v1.0/oauth/token", {
     method: "POST",
     body: new URLSearchParams({
-      clientId: env("IFOOD_CLIENT_ID"),
-      clientSecret: env("IFOOD_CLIENT_SECRET"),
+      clientId: env(prefix+"CLIENT_ID"),
+      clientSecret: env(prefix+"CLIENT_SECRET"),
       grantType: "client_credentials",
     }),
     signal: AbortSignal.timeout(8000),
@@ -189,7 +194,7 @@ Deno.serve(async (request: Request):Promise<Response> => {
       if(claim.status!=="requested"||claim.external_order_id!==lookup.external_order_id)
         return reply(request,409,{error:"Não foi possível reservar o aceite."});
       claimed=true;
-      const token=await getIfoodToken();
+      const token=await getIfoodToken(lookup.merchant_id||'');
       const response=await fetch(root+"/order/v1.0/orders/"+claim.external_order_id+"/confirm",{
         method:"POST",
         headers:{authorization:"Bearer "+token},
@@ -204,7 +209,7 @@ Deno.serve(async (request: Request):Promise<Response> => {
       }
       return reply(request,202,{status:"requested",message:"Aguardando evento CONFIRMED."});
     }
-    const token=await getIfoodToken();
+    const token=await getIfoodToken(lookup.merchant_id||'');
     const reasons=await fetchReasons(lookup.external_order_id,token);
     if(action==="reasons")return reply(request,200,{reasons});
     const reason=params.reason as string;

@@ -79,9 +79,11 @@ function normalizeOrder(order,event) {
 }
 
 export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
- distributedId,distributedSecret,tokenKey,publicKey,shippingTest=false,fetcher=fetch,runInBackground=promise=>void promise,logger=console}) {
+ productionId,productionSecret,distributedId,distributedSecret,tokenKey,publicKey,shippingTest=false,fetcher=fetch,runInBackground=promise=>void promise,logger=console}) {
  let cachedToken,expires=0,renewing;
- let signatureKey;
+ let signatureKey,productionSignatureKey;
+ let prodToken,prodExpiry=0,prodRenewing;
+ const isolated=Boolean(productionId&&productionSecret);
  async function rpc(name,body){
   const result=await fetcher(new URL('/rest/v1/rpc/'+name,supabaseUrl),{
    method:'POST',headers:{apikey:serviceKey,authorization:'Bearer '+serviceKey,'content-type':'application/json'},
@@ -91,7 +93,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
   return result.status===204?null:result.json();
  }
  const distributed=createDistributedIfood({id:distributedId,secret:distributedSecret,tokenKey,supabaseUrl,publicKey,rpc,fetcher,logger});
- async function enqueue(event,viaPolling=false){
+ async function enqueue(event,viaPolling=false,production=false){
   const code=event.fullCode??codes.get(event.code);
   if(!acceptedCodes.has(code)||(event.category&&event.category!=='FOOD'))return false;
   const at=iso(event.createdAt);
@@ -99,6 +101,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    if(viaPolling)return false;
    throw Error('invalid-event');
   }
+  if(isolated&&!viaPolling)return rpc('pitacco_ifood_central_enqueue',{p_id:event.id,p_merchant:event.merchantId,p_order:event.orderId,p_code:code,p_at:at,p_production:production});
   return rpc('pitacco_ifood_enqueue',{p_id:event.id,p_merchant:event.merchantId,p_order:event.orderId,p_code:code,p_at:at,p_distributed:viaPolling});
  }
  async function token(){
@@ -117,13 +120,32 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
   })().finally(()=>{renewing=null;});
   return renewing;
  }
+ async function productionToken(){
+  if(prodToken&&Date.now()<prodExpiry)return prodToken;
+  if(!prodRenewing)prodRenewing=(async()=>{
+   const r=await fetcher(origin+'/authentication/v1.0/oauth/token',{method:'POST',body:new URLSearchParams({grantType:'client_credentials',clientId:productionId,clientSecret:productionSecret}),signal:AbortSignal.timeout(6000),redirect:'error'});
+   if(!r.ok)throw Error('production-oauth-'+r.status);
+   const d=await r.json();if(typeof d.accessToken!=='string'||!d.accessToken||!(Number(d.expiresIn)>0))throw Error('oauth-response');
+   prodToken=d.accessToken;prodExpiry=Date.now()+Math.max(0,Number(d.expiresIn)-60)*1000;return prodToken;
+  })().finally(()=>{prodRenewing=null});
+  return prodRenewing;
+ }
+ async function centralToken(merchant){
+  if(!isolated)return clientId&&clientSecret?await token():null;
+  const environment=await rpc('pitacco_ifood_central_environment',{p_merchant:merchant});
+  if(environment==='production')return productionToken();
+  if(environment==='test')return token();
+  return null;
+ }
+ async function accessFor(merchant){return await distributed.accessFor(merchant)??await centralToken(merchant);}
  async function processOne(event){
   try{
-   const accessToken=await distributed.accessFor(event.merchant_id)??await token();
+   const accessToken=await accessFor(event.merchant_id);
+   if(!accessToken)throw Error('merchant-token-unavailable');
    const response=await fetcher(origin+'/order/v1.0/orders/'+event.external_order_id,{
     headers:{authorization:'Bearer '+accessToken},signal:AbortSignal.timeout(7500),redirect:'error',
    });
-   if(response.status===401&&accessToken===cachedToken)cachedToken=null;
+   if(response.status===401){if(accessToken===cachedToken)cachedToken=null;if(accessToken===prodToken)prodToken=null;}
    if(!response.ok)throw Error('order-'+response.status);
    const providerOrder=await response.json();
    const order=normalizeOrder(providerOrder,event);
@@ -136,12 +158,12 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
  async function submitConfirm(row){
   let retry=true;
   try{
-   const access=row.uses_store_token?await distributed.accessFor(row.merchant_id):clientId&&clientSecret?await token():null;
+   const access=row.uses_store_token?await distributed.accessFor(row.merchant_id):await centralToken(row.merchant_id);
    if(!access)return;
    const response=await fetcher(origin+'/order/v1.0/orders/'+row.external_order_id+'/confirm',{
     method:'POST',headers:{authorization:'Bearer '+access},signal:AbortSignal.timeout(5000),redirect:'error',
    });
-   if(response.status===401&&access===cachedToken)cachedToken=null;
+   if(response.status===401){if(access===cachedToken)cachedToken=null;if(access===prodToken)prodToken=null;}
    retry=response.status===401||response.status===408||response.status===429||response.status>=500;
    if(!response.ok)logger.warn('iFood recusou uma solicitação de aceite automático.',response.status);
    // A successful submission leaves the order pending until the official event is processed.
@@ -214,8 +236,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
     };
     let contactedProvider=false;
     try{
-     const access=await distributed.accessFor(claim.merchant_id) ??
-        (clientId&&clientSecret?await token():null);
+     const access=await accessFor(claim.merchant_id);
      if(!access){
       await finish('rejected',0);
       return reply(503,{provider_state:'rejected',
@@ -269,8 +290,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    if(!uuid.test(assigned.external_order_id)||!uuid.test(assigned.merchant_id)){
     return reply(409,{error:'Vínculo iFood inválido'});
    }
-   const access=await distributed.accessFor(assigned.merchant_id) ??
-      (clientId&&clientSecret?await token():null);
+   const access=await accessFor(assigned.merchant_id);
    if(!access)return reply(503,{error:input.action==='arrival'
     ?'Conexão iFood não homologada. Chegada registrada somente no Pitacco.'
     :'Conexão iFood indisponível para confirmar a entrega.'});
@@ -341,13 +361,14 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
     await autoConfirm();
     return reply(200,{processed});
    }
-   if(!clientId||!clientSecret)return reply(503,{error:'Webhook iFood ainda não configurado'});
+   const production=path.endsWith('/production');
+   if(production?!isolated:(!clientId||!clientSecret))return reply(503,{error:'Webhook iFood ainda não configurado'});
    const signature=request.headers.get('x-ifood-signature')||'';
    if(!/^[a-f0-9]{64}$/i.test(signature))return reply(401,{error:'Assinatura inválida'});
    const bytes=await readBody(request);
-   signatureKey??=crypto.subtle.importKey('raw',new TextEncoder().encode(clientSecret),{name:'HMAC',hash:'SHA-256'},false,['verify']);
+   const key=production?(productionSignatureKey??=crypto.subtle.importKey('raw',new TextEncoder().encode(productionSecret),{name:'HMAC',hash:'SHA-256'},false,['verify'])):(signatureKey??=crypto.subtle.importKey('raw',new TextEncoder().encode(clientSecret),{name:'HMAC',hash:'SHA-256'},false,['verify']));
    const signatureBytes=Uint8Array.from(signature.match(/../g),pair=>parseInt(pair,16));
-   if(!await crypto.subtle.verify('HMAC',await signatureKey,signatureBytes,bytes))return reply(401,{error:'Assinatura inválida'});
+   if(!await crypto.subtle.verify('HMAC',await key,signatureBytes,bytes))return reply(401,{error:'Assinatura inválida'});
    let event;
    try{event=JSON.parse(new TextDecoder().decode(bytes));}
    catch{return reply(400,{error:'Evento inválido'});}
@@ -355,11 +376,11 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    if(event.fullCode==='KEEPALIVE'||event.code==='KEEPALIVE'){
     if(event.merchantIds===undefined)return reply(202,{});
     if(!Array.isArray(event.merchantIds)||event.merchantIds.length>1000||event.merchantIds.some(id=>typeof id!=='string'||!uuid.test(id)))return reply(400,{error:'Lojas inválidas'});
-    const merchantIds=await rpc('pitacco_ifood_online',{p_merchants:event.merchantIds});
+    const merchantIds=isolated?await rpc('pitacco_ifood_central_online',{p_merchants:event.merchantIds,p_production:production}):await rpc('pitacco_ifood_online',{p_merchants:event.merchantIds});
     return reply(202,{merchantIds});
    }
-   if(shipping&&await shipping.receive(event))return reply(202,{});
-   const inserted=await enqueue(event);
+   if(!production&&shipping&&await shipping.receive(event))return reply(202,{});
+   const inserted=await enqueue(event,false,production);
    if(inserted)runInBackground(process(event.id).then(()=>event.code==='PLC'||event.fullCode==='PLACED'?autoConfirm(event.orderId):null).catch(()=>logger.warn('Fila iFood será retomada em nova tentativa.')));
    return reply(202,{});
   }catch(error){
