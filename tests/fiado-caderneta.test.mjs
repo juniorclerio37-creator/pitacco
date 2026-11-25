@@ -121,7 +121,8 @@ test("manager controls customers, partial receipts, manager approvals and POS se
  assert.match(approval,/revoke all on function public\.pitacco_fiado_rotate_code/);
  assert.match(panel,/pitacco_fiado_receive/);
  assert.match(panel,/pitacco_fiado_approve/);
- assert.match(panel,/pitacco_fiado_balcao_create/);
+ assert.match(panel,/pitacco_fiado_balcao_discount/);
+ assert.match(panel,/p_discount/);
  assert.match(pos,/public\.pitacco_validate_item_options/);
  assert.match(pos,/public\.is_store_manager\(p_store\)/);
  assert.match(pos,/pitacco\.fiado_customer/);
