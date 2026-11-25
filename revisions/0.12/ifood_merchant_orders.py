@@ -36,8 +36,8 @@ s = replace(s, ' useEffect(()=>{soundRef.current=sound},[sound]);', ''' useEffec
   </button>
   {soundMessage&&<small role="status">{soundMessage}</small>}
  </div>;''')
-s = replace(s, "    const waitingForAcceptance=incoming.filter(o=>orderStage(o)==='analysis');",
-"""    const waitingForAcceptance=incoming.filter(o=>orderStage(o)==='analysis'||(
+s = replace(s, "    const waitingForAcceptance=incoming.filter(o=>o.status==='pending'&&orderStage(o)==='analysis');",
+"""    const waitingForAcceptance=incoming.filter(o=>(o.status==='pending'&&orderStage(o)==='analysis')||(
      o.source==='ifood'&&o.status==='accepted'&&orderStage(o)!=='completed'&&
      Date.now()-Date.parse(o.receipt?.ifood_received_at)<120000));""")
 start = s.index('    if(fresh.length){')
