@@ -17,7 +17,7 @@ export function buildShippingRequest(action,input){
  case 'create_order':{
   const a=input.address,p=input.phone,items=input.items;
   check(input.quote?.merchantId===input.merchantId&&input.quote.latitude===a?.coordinates?.latitude&&input.quote.longitude===a?.coordinates?.longitude,'quote address mismatch');
-  check(str(input.customer)&&/^\d{2}$/.test(p?.areaCode??'')&&/^\d{8,9}$/.test(p?.number??''),'invalid customer');
+  check(str(input.customer,50)&&/^\d{2}$/.test(p?.areaCode??'')&&/^\d{8,9}$/.test(p?.number??''),'invalid customer');
   check(a&&/^\d{8}$/.test(a.postalCode)&&str(a.streetNumber)&&str(a.streetName)&&str(a.neighborhood)&&str(a.city)&&/^[A-Z]{2}$/.test(a.state)&&a.country==='BR'&&coord(a.coordinates?.latitude,a.coordinates?.longitude),'invalid address');
   check(cash(input.merchantFee)&&Number.isInteger(input.preparationTime)&&input.preparationTime>=0&&input.preparationTime<=7200,'invalid delivery fee or preparation time');
   check(Array.isArray(items)&&items.length>0&&items.length<=100,'invalid items');

@@ -1,5 +1,6 @@
 import React,{useEffect,useState} from 'react';
 import IfoodShippingOrder from './IfoodShippingOrder.jsx';
+import IfoodExternalShippingTest from './IfoodExternalShippingTest.jsx';
 const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const time=v=>Number.isFinite(v)?Math.ceil(v/60)+' min':'—';
 const errors={DeliveryDistanceTooHigh:'A distância excede a cobertura do iFood.',ServiceAreaMismatch:'Endereço fora da cobertura.',HighDemand:'Alta demanda de entregadores.',OffOpeningHours:'Fora do horário de funcionamento da logística.',MerchantEasyDeliveryDisabled:'Serviço sob demanda ainda não habilitado para a loja.',UnavailableFleet:'Não há entregadores disponíveis.',OriginNotFound:'Origem da loja não localizada pelo iFood.'};
@@ -11,7 +12,7 @@ export default function IfoodShippingTest({client,store}){
  useEffect(()=>{setStatus(null);setOrder('');run('status')},[store,client]);
  return <section className="panel" aria-label="Homologação Shipping iFood">
   <h4>iFood Shipping · Entregador parceiro</h4>
-  <p>Ambiente de homologação. Compare a entrega própria com a cotação oficial do iFood. A solicitação de entregador está restrita aos pedidos de teste do iFood; criação externa ainda não está habilitada.</p>
+  <p>Ambiente de homologação. Compare a entrega própria com a cotação oficial do iFood. A solicitação de entregador está restrita aos pedidos de teste do iFood; a criação externa é isolada das vendas reais e exige confirmação explícita.</p>
   <button type="button" className="secondary" disabled={busy} onClick={()=>run('status')}>Atualizar pedidos de teste</button>
   {status&&<><p>Aplicativo de teste: <code>{status.client_id}</code></p><p>Merchant ID: <code>{status.merchant_id}</code></p>
   <h5>Pedido recebido do iFood</h5><label>Pedido de teste elegível<select value={order} disabled={busy} onChange={e=>{setOrder(e.target.value);setResult(null)}}><option value="">Selecione</option>{(status.orders||[]).map(o=><option key={o.id} value={o.id}>#{o.number}</option>)}</select></label>
@@ -26,6 +27,7 @@ export default function IfoodShippingTest({client,store}){
   {busy&&<p role="status">Consultando…</p>}{error&&<p role="alert">{error}</p>}
   {result?.available===false&&<p role="alert">{errors[result.provider_code]||'O iFood não disponibilizou uma cotação.'} HTTP {result.provider_http}{result.provider_code?' · '+result.provider_code:''}</p>}
   {result?.quote&&<div role="status"><h5>Cotação oficial</h5><p>Valor do parceiro: <strong>{currency.format(result.quote.netValue)}</strong></p><p>Previsão: {time(result.quote.deliveryTime?.min)} – {time(result.quote.deliveryTime?.max)}</p><p>Validade: {new Date(result.quote.expirationAt).toLocaleString('pt-BR')}</p><small>Referência {result.quote.id}</small></div>}
+  {status?.external_create_enabled&&<IfoodExternalShippingTest key={store} client={client} store={store} quote={result?.quote||null} latitude={Number(lat)} longitude={Number(lng)}/>}
   {result&&'pickupCode' in result&&<p>Código de coleta (pickupCode): <strong>{result.pickupCode||'Ainda não disponibilizado pelo iFood'}</strong></p>}
  </section>;
 }

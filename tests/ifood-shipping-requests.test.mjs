@@ -14,3 +14,10 @@ test("address accepted",()=>assert.equal((()=>buildShippingRequest("accept_addre
 test("address rejected",()=>assert.equal((()=>buildShippingRequest("deny_address",{orderId:order,pendingAddress:{orderId:order,createdAt:"2026-11-25T13:55:00Z"},now}).path.endsWith("denyDeliveryAddressChange"))(),true));
 test("late address blocked",()=>assert.equal((()=>rejects(()=>buildShippingRequest("accept_address",{orderId:order,pendingAddress:{orderId:order,createdAt:"2026-11-25T13:40:00Z"},now})))(),true));
 test("unknown action rejected",()=>assert.equal((()=>rejects(()=>buildShippingRequest("other",{})))(),true));
+
+test('external test creation binds the merchant and coordinates to the quote',()=>{
+ const input={merchantId:merchant,quote,now,customer:'Cliente teste',phone:{areaCode:'21',number:'999999999'},address:{postalCode:'26000000',streetNumber:'1',streetName:'Rua teste',neighborhood:'Bairro teste',city:'Nova Iguaçu',state:'RJ',country:'BR',coordinates:{latitude:quote.latitude,longitude:quote.longitude}},merchantFee:0,preparationTime:600,prepaid:true,items:[{id:uid,name:'Item teste',quantity:1,unitPrice:1,optionsPrice:0}]};
+ const r=buildShippingRequest('create_order',input);assert.equal(r.path,'/shipping/v1.0/merchants/'+merchant+'/orders');assert.equal(r.body.delivery.quoteId,quote.id);assert.equal(r.body.items[0].totalPrice,1);
+ assert.throws(()=>buildShippingRequest('create_order',{...input,merchantId:order}));
+ assert.throws(()=>buildShippingRequest('create_order',{...input,address:{...input.address,coordinates:{latitude:0,longitude:0}}}));
+});
