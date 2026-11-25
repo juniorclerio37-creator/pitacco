@@ -280,3 +280,5 @@
 .group-delivery-dialog .modal-body{display:grid;gap:8px}.group-delivery-dialog h3{font-size:14px;margin:4px 0}.group-delivery-stop,.group-delivery-courier{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;padding:8px;border:1px solid var(--store-border,#e2e8f0);border-radius:7px;font-size:12px}.group-delivery-stop small,.group-delivery-courier small{display:block;flex-basis:100%;font-size:11px}.group-delivery-courier>span{flex:1}
 
 .order-deadline{display:flex;align-items:center;gap:4px;padding:3px 6px;border-radius:5px;font-size:11px;background:#edf8ef;color:#166534;line-height:1.3}.order-deadline b{margin-left:auto;font-variant-numeric:tabular-nums}.order-deadline[data-state=warning]{background:#fff4de;color:#92400e}.order-deadline[data-state=late],.order-deadline-alert{background:#fff0f0;color:#a71e25}.order-deadline[data-state=unknown]{background:var(--store-surface,#f3f4f6);color:var(--store-muted,#64748b)}.order-deadline-alert{font-size:12px;border:1px solid #efb4b4;padding:8px;border-radius:7px;margin:6px 0}
+
+.order-priority-label{display:block;background:#fff2df;color:#9a430b;border-radius:5px;padding:3px 6px;font-size:11px;font-weight:700}

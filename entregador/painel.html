@@ -72,7 +72,7 @@ a.btn{text-decoration:none}
 .earn-footnote{font-size:11px;color:#7d8490;line-height:1.6;margin:14px 0 0}
 .earn-error{font-size:12px;color:#ae301d;line-height:1.5;margin:10px 0}
 @media(max-width:720px){.earn-content{grid-template-columns:1fr}.earnings{padding:16px;margin:19px 0}.earn-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(148px,1fr);grid-template-columns:none;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}.earn-tab{scroll-snap-align:start;padding:15px 12px}.earn-tab strong{font-size:20px}.earn-top h2{font-size:21px}}
-</style><style>
+ .compact-priority{color:#a54c12;font-weight:800;font-size:11px}</style><style>
 .courier-update-hint{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0;padding:11px 13px;border:1px solid #f3d6a7;background:#fff6e8;border-radius:12px;color:#86531b;font-size:12px;font-weight:650}
 .courier-update-hint[hidden],.courier-update-action[hidden]{display:none}
 .courier-update-hint button{border:0;border-radius:9px;background:#f97316;color:white;padding:9px;font:inherit;cursor:pointer;white-space:nowrap}
@@ -291,7 +291,7 @@ import {createDriverAuth} from "./supabase-client.mjs";
 import {mountCourierUpdateUI} from "./app-update-ui.mjs";
 import {createOrderDetailsController} from "./order-details.mjs";
 import {buildNavigationUrl,buildBatchNavigationUrl} from "./navigation.mjs";
-import {suggestedBatchRoutes} from "./route-sequence.mjs";
+import {suggestedBatchRoutes,compareDeliveryPriority,deliveryPriorityLabel} from "./route-sequence.mjs";
 import {mountCourierSharedMap,freshGps} from "./dispatch-map.mjs";
 import {courierActionStage} from "./delivery-flow.mjs";
 import {arrivalProximity} from "./arrival-proximity.mjs";
@@ -1217,7 +1217,7 @@ function renderRouteSuggestions(deliveries){
    const summary=element("div","route-plan-stop-copy");
    const number=String(orderCardBadges.get(d.id)?.public_number||"Aguardando número");
    summary.append(element("b","","Parada "+(index+1)+" • Pedido #"+number));
-   summary.append(element("small","",d.address||"Endereço não informado"));
+   summary.append(element("small","",d.address||"Endereço não informado"));const priority=deliveryPriorityLabel(d);if(priority)summary.append(element("small","route-plan-arrived",priority));
    if(d.arrived_at)summary.append(element("small","route-plan-arrived",
      "Você já chegou • confirme esta entrega antes de seguir"));
    item.append(summary);
@@ -1272,7 +1272,7 @@ function card(d){
   if(Number.isFinite(when.getTime()))top.append(element("small","compact-order-time",
    when.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",timeZone:"America/Sao_Paulo"})));
  }
- identity.append(top);
+ identity.append(top);const priority=deliveryPriorityLabel(d);if(priority)identity.append(element("small","compact-priority",priority));
  identity.append(element("span","compact-customer",d.customer_name||"Cliente"));
  if(permittedStores.size>1)identity.append(element("small","compact-store","LOJA • "+(d.store_name||"Loja de origem")));
  if(d.notes)identity.append(element("small","compact-note-flag","• Observações no detalhe"));
@@ -1389,7 +1389,7 @@ function renderOrderBucket(){
   for(const result of finishedToday)target.append(renderFinishedCompact(result));
   return;
  }
- const selected=assignedDeliveries.filter(d=>deliveryBucket(d)===orderBucket);
+ const selected=assignedDeliveries.filter(d=>deliveryBucket(d)===orderBucket).sort((a,b)=>compareDeliveryPriority(a,b));
  if(!selected.length){
   target.append(element("div","bucket-empty",orderBucket==="coleta"
    ?"Nenhum pedido aguardando coleta.":"Nenhuma entrega em andamento."));

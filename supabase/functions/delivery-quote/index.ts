@@ -472,6 +472,16 @@ Deno.serve(async request=>{
   }else return problem(409,'Modo de entrega não reconhecido.',origin);
   if(!Number.isFinite(fee)||fee<0||fee>999.99)
    return problem(409,'As taxas de entrega da loja precisam ser corrigidas.',origin);
+  const service=body.delivery_service??'standard';
+  if(!['standard','priority'].includes(service))return problem(400,'Modalidade de entrega inválida.',origin);
+  const standard={fee,min_minutes:eta?.min_minutes??null,max_minutes:eta?.max_minutes??null};
+  const priority=eta?.priority;
+  const available=priority?.enabled===true&&Number.isFinite(priority.fee)&&priority.fee>fee&&priority.fee<=999.99&&Number.isInteger(priority.min_minutes)&&Number.isInteger(priority.max_minutes)&&priority.min_minutes>=1&&priority.max_minutes>=priority.min_minutes&&priority.max_minutes<eta.max_minutes&&priority.min_minutes<eta.min_minutes;
+  const options={standard,priority:available?{fee:priority.fee,min_minutes:priority.min_minutes,max_minutes:priority.max_minutes}:null};
+  if(service==='priority'){
+   if(!available)return problem(409,'Entrega prioritária indisponível nesta região. Selecione a entrega padrão.',origin);
+   fee=priority.fee;eta=priority;
+  }
   const min=eta?.min_minutes,max=eta?.max_minutes;
   const validEta=Number.isInteger(min)&&Number.isInteger(max)&&min>=1&&max>=min&&max<=720;
   const expiresAt=new Date(Date.now()+5*60*1000).toISOString();
@@ -480,11 +490,11 @@ Deno.serve(async request=>{
    destination_latitude:Number(to[0].toFixed(6)),
    destination_longitude:Number(to[1].toFixed(6)),
    distance_m:meters,fee,pricing_updated_at:rules.updated_at,expires_at:expiresAt,
-   delivery_min_minutes:validEta?min:null,delivery_max_minutes:validEta?max:null,delivery_region:regionName
+   delivery_min_minutes:validEta?min:null,delivery_max_minutes:validEta?max:null,delivery_region:regionName,delivery_service:service
   }).select('id').single();
   if(insertError)return problem(409,'Esta solicitação já possui cotação. Recomece o cálculo do frete.',origin);
   return response(200,{quote_id:quote.id,request_id:requestId,distance_m:meters,
-   distance_type:mode==='road'?'road':'straight',fee,region_name:regionName,expires_at:expiresAt,delivery_min_minutes:validEta?min:null,delivery_max_minutes:validEta?max:null},origin);
+   distance_type:mode==='road'?'road':'straight',fee,region_name:regionName,expires_at:expiresAt,delivery_min_minutes:validEta?min:null,delivery_max_minutes:validEta?max:null,delivery_service:service,delivery_options:options},origin);
  }catch(error){
   const message=error instanceof Error?error.message:'Falha ao calcular a entrega.';
   const status=message.includes('impreciso')||message.includes('localizado')?422:503;

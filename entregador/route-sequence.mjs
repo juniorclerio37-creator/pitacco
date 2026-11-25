@@ -16,6 +16,17 @@ function distanceKm(a,b) {
     Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dLon/2)**2;
   return 6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(Math.max(0,1-h)));
 }
+export function deliveryUrgency(d,now=Date.now()){
+ const due=Date.parse(d?.deliver_by),late=Number.isFinite(due)&&due<=now,priority=d?.delivery_service==='priority';
+ return late?(priority?0:1):priority?2:Number.isFinite(due)&&due<=now+600000?3:4;
+}
+export function compareDeliveryPriority(a,b,now=Date.now()){
+ const due=d=>Number.isFinite(Date.parse(d.deliver_by))?Date.parse(d.deliver_by):Infinity;
+ return Number(Boolean(b.arrived_at))-Number(Boolean(a.arrived_at))||deliveryUrgency(a,now)-deliveryUrgency(b,now)||(due(a)-due(b)||0);
+}
+export function deliveryPriorityLabel(d,now=Date.now()){
+ const rank=deliveryUrgency(d,now);return rank===0?'⚡ Prioritária em atraso':rank===1?'Entrega em atraso':rank===2?'⚡ Entrega prioritária':rank===3?'Prazo próximo':'';
+}
 function groupKey(delivery) {
   return String(delivery.store_id)+':'+String(delivery.batch_id);
 }
@@ -36,7 +47,8 @@ export function suggestedBatchRoutes(deliveries,origins=new Map(),lastStops=new 
     // ser confirmada: não sugerir seguir ao próximo cliente antes do PIN.
     const arrived=stops.filter(d=>d.arrived_at).sort((a,b)=>
       String(a.arrived_at).localeCompare(String(b.arrived_at)));
-    const queued=stops.filter(d=>!d.arrived_at);
+    const now=Date.now();
+    const queued=stops.filter(d=>!d.arrived_at).sort((a,b)=>compareDeliveryPriority(a,b,now));
     const last=point(lastStops.get(id));
     const store=point(origins.get(stops[0].store_id));
     let cursor=arrived.length?point(arrived[arrived.length-1]):last||store;
@@ -51,7 +63,7 @@ export function suggestedBatchRoutes(deliveries,origins=new Map(),lastStops=new 
         let chosen=0,best=Infinity;
         for(let i=0;i<remaining.length;i++){
           const km=distanceKm(cursor,point(remaining[i]));
-          if(km<best){best=km;chosen=i;}
+          if(deliveryUrgency(remaining[i],now)<deliveryUrgency(remaining[chosen],now)||(deliveryUrgency(remaining[i],now)===deliveryUrgency(remaining[chosen],now)&&km<best)){best=km;chosen=i;}
         }
         const [delivery]=remaining.splice(chosen,1);
         ordered.push({delivery,distance:best});

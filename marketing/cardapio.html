@@ -1353,7 +1353,7 @@ body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data
  <div id="v2AddressEditor"><div class="address-editor-heading"><h3>Novo endereço</h3><p>Informe o endereço. A taxa aparece automaticamente.</p></div><div class="address-cep"><label for="addressPostal">Buscar pelo CEP (opcional)</label><div><input id="addressPostal" autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000"><button id="lookupAddressCep" type="button" class="secondary">Buscar</button></div><small id="addressCepStatus" role="status"></small></div><div class="v2-address-title"><label for="v2AddressLabel">Salvar endereço como</label>
   <select id="v2AddressLabel"><option value="Casa">⌂ Casa</option><option value="Trabalho">▤ Trabalho</option><option value="Outro">♡ Outro</option></select></div>
  <fieldset id="addressFields" class="address-fields"><legend class="address-sr-only">Dados do endereço</legend>
-<div class="address-grid"><label>Rua ou avenida<input id="addressStreet" autocomplete="address-line1" maxlength="100" placeholder="Ex.: Rua Guaraná" required></label><label>Número<input id="addressNumber" autocomplete="off" maxlength="20" placeholder="Ex.: 5 ou s/n" required></label><label>Bairro<input id="addressNeighborhood" autocomplete="address-level3" maxlength="60" required></label><label>Cidade<input id="addressCity" autocomplete="address-level2" maxlength="60" required></label><label>Estado<select id="addressState" autocomplete="address-level1" required><option value="">Selecione</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></label><label class="address-wide">Complemento e referência (opcional)<input id="addressExtra" autocomplete="address-line2" maxlength="100" placeholder="Casa, bloco, apartamento ou ponto de referência"></label></div></fieldset></div><textarea id="address" rows="2" maxlength="500" readonly hidden aria-label="Endereço completo"></textarea><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço. A taxa de entrega aparecerá automaticamente.</p></div><fieldset id="deliveryPoint" hidden><legend class="address-sr-only">Ajustar localização</legend><button id="showDeliveryMap" type="button" class="address-map-toggle" aria-expanded="false" aria-controls="deliveryMapPanel">⌖ Ajustar localização no mapa</button><p id="deliveryPointStatus" role="status"></p><div id="deliveryMapPanel" hidden><h4>Confirme o local da entrega</h4><p>Toque na entrada do imóvel ou arraste o marcador até o ponto correto.</p><div id="deliveryMap" aria-label="Mapa para confirmar o endereço" hidden style="height:260px;margin:12px 0;z-index:0"></div><button id="confirmDeliveryMap" type="button" class="primary" disabled>Confirmar localização</button></div></fieldset></div></section><section class="v2-checkout-panel v2-checkout-panel--payment">
+<div class="address-grid"><label>Rua ou avenida<input id="addressStreet" autocomplete="address-line1" maxlength="100" placeholder="Ex.: Rua Guaraná" required></label><label>Número<input id="addressNumber" autocomplete="off" maxlength="20" placeholder="Ex.: 5 ou s/n" required></label><label>Bairro<input id="addressNeighborhood" autocomplete="address-level3" maxlength="60" required></label><label>Cidade<input id="addressCity" autocomplete="address-level2" maxlength="60" required></label><label>Estado<select id="addressState" autocomplete="address-level1" required><option value="">Selecione</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></label><label class="address-wide">Complemento e referência (opcional)<input id="addressExtra" autocomplete="address-line2" maxlength="100" placeholder="Casa, bloco, apartamento ou ponto de referência"></label></div></fieldset></div><textarea id="address" rows="2" maxlength="500" readonly hidden aria-label="Endereço completo"></textarea><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço. A taxa de entrega aparecerá automaticamente.</p><fieldset id="deliveryServices" hidden><legend>Tipo de entrega</legend><label><input type="radio" name="deliveryService" value="standard" checked> <span id="standardServiceLabel">Entrega padrão</span></label><label id="priorityServiceOption" hidden><input type="radio" name="deliveryService" value="priority"> <span id="priorityServiceLabel">⚡ Entrega prioritária</span></label></fieldset></div><fieldset id="deliveryPoint" hidden><legend class="address-sr-only">Ajustar localização</legend><button id="showDeliveryMap" type="button" class="address-map-toggle" aria-expanded="false" aria-controls="deliveryMapPanel">⌖ Ajustar localização no mapa</button><p id="deliveryPointStatus" role="status"></p><div id="deliveryMapPanel" hidden><h4>Confirme o local da entrega</h4><p>Toque na entrada do imóvel ou arraste o marcador até o ponto correto.</p><div id="deliveryMap" aria-label="Mapa para confirmar o endereço" hidden style="height:260px;margin:12px 0;z-index:0"></div><button id="confirmDeliveryMap" type="button" class="primary" disabled>Confirmar localização</button></div></fieldset></div></section><section class="v2-checkout-panel v2-checkout-panel--payment">
 <h3>▣ Forma de pagamento</h3><p>Escolha como deseja pagar o seu pedido.</p><label for="payment" class="v2-payment-native-label">Forma de pagamento</label><select id="payment" required></select>
  <div id="v2PaymentCards" class="v2-payment-cards" role="radiogroup" aria-label="Formas de pagamento configuradas pela loja"></div>
  <div id="v2ChangeBlock" class="v2-change-block" hidden><label for="v2CashChange">Vai pagar com quanto? (para calcular o troco)</label><input id="v2CashChange" inputmode="decimal" autocomplete="off" placeholder="Ex.: 50,00"><small>Informe quanto entregará ao motoboy. O troco considera produtos, descontos e taxa de entrega.</small></div>
@@ -1486,7 +1486,9 @@ let storeOpening=null;
 const schedulingAvailable=()=>storeOpening?.scheduling_available===true&&storeOpening?.paused!==true;
 const storefrontCanOrder=()=>storeOpening?.open===true||schedulingAvailable();
 const timingValid=()=>storeOpening?.open===true||Boolean(schedulingAvailable()&&$('schedule').value);
-let deliveryPoint=null,deliveryMap,deliveryQuote=null;
+let deliveryPoint=null,deliveryMap,deliveryQuote=null,deliveryService='standard';
+function renderDeliveryServices(options){const root=$('deliveryServices');root.hidden=!options?.priority&&deliveryService==='standard';$('priorityServiceOption').hidden=!options?.priority&&deliveryService!=='priority';for(const key of ['standard','priority']){const o=options?.[key];$(key+'ServiceLabel').textContent=(key==='priority'?'⚡ Entrega prioritária':'Entrega padrão')+(o?' · '+money(o.fee)+(Number.isInteger(o.min_minutes)&&Number.isInteger(o.max_minutes)?' · '+o.min_minutes+'–'+o.max_minutes+' min':''):'');root.querySelector('[value='+key+']').checked=deliveryService===key;}}
+$('deliveryServices').addEventListener('change',e=>{if(!['standard','priority'].includes(e.target.value)||pendingRequest||submitting)return;deliveryService=e.target.value;deliveryQuote=null;quoteGeneration++;renderDeliveryServices(null);void requestDeliveryQuote(true);});
 // Persist product choices only. Prices, names and option rules always come from
 // the current catalog; payment, identity, PIN and freight authorization never do.
 const cartStorageKey='pitacco-cart:'+slug;
@@ -1738,7 +1740,8 @@ async function requestDeliveryQuote(auto=false){
   $('showDeliveryMap').focus();return false;
  }
  const quotePoint=needsPoint&&deliveryPoint?[...deliveryPoint]:null;
- const key=address+'|'+(quotePoint?.join(',')||'auto');
+ const selectedService=deliveryService;
+ const key=address+'|'+(quotePoint?.join(',')||'auto')+'|'+selectedService;
  if(v2QuotePending&&v2QuotePendingKey===key)return v2QuotePending;
  const token=++quoteGeneration;
  const button=$('quoteDelivery');button.disabled=true;
@@ -1748,7 +1751,7 @@ async function requestDeliveryQuote(auto=false){
  const work=(async()=>{
   try{
    const {data,error}=await client.functions.invoke('delivery-quote',{
-    body:{slug,address,request_id:requestId,
+    body:{slug,address,request_id:requestId,delivery_service:selectedService,
      ...(quotePoint?{latitude:quotePoint[0],longitude:quotePoint[1]}:{})}
    });
    if(error)throw Error(await quoteFailureMessage(error));
@@ -1756,7 +1759,9 @@ async function requestDeliveryQuote(auto=false){
     throw Error(data?.error||'Não foi possível confirmar o frete.');
    if(token!==quoteGeneration||$('address').value.trim()!==address||
     (quotePoint&&(!deliveryPoint||deliveryPoint[0]!==quotePoint[0]||deliveryPoint[1]!==quotePoint[1])))return false;
-   deliveryQuote={id:data.quote_id,requestId,fee:Number(data.fee),minMinutes:data.delivery_min_minutes,maxMinutes:data.delivery_max_minutes,address,
+   if((data.delivery_service||'standard')!==selectedService)throw Error('Modalidade não confirmada.');
+   renderDeliveryServices(data.delivery_options);
+   deliveryQuote={service:selectedService,id:data.quote_id,requestId,fee:Number(data.fee),minMinutes:data.delivery_min_minutes,maxMinutes:data.delivery_max_minutes,address,
     point:quotePoint,expiresAt:data.expires_at};
     quoteNotice('Entrega disponível! Taxa de entrega: '+money(data.fee)+(Number.isInteger(data.delivery_min_minutes)&&Number.isInteger(data.delivery_max_minutes)?' · Previsão: '+data.delivery_min_minutes+'–'+data.delivery_max_minutes+' min':''),'success');
    v2UpdateSelectedAddressQuote();
@@ -1773,6 +1778,7 @@ async function requestDeliveryQuote(auto=false){
   }catch(error){
    if(token!==quoteGeneration)return false;
    const message=await quoteFailureMessage(error);
+   renderDeliveryServices(null);
    quoteNotice(auto?v2AutoQuoteError(message):message,'error');
    return false;
   }finally{
@@ -3184,6 +3190,7 @@ $('checkout').onsubmit=async event=>{
   // The quoted checkout recovers the customer's exact pin on the server
   // from the quote. Do NOT send p_latitude/p_longitude: that RPC does not
   // accept these arguments and could reject a valid delivery at checkout.
+  if($('schedule').value&&deliveryService==='priority'&&fulfillment==='delivery'){pendingRequest=null;msg('Entrega prioritária disponível apenas para pedidos imediatos. Selecione entrega padrão para agendar.');return;}
   if($('schedule').value)pendingRequest.p_scheduled_for=$('schedule').value;
  }
  persistCartDraft();
@@ -3360,7 +3367,7 @@ function repeatCustomerOrder(order){
  if(cart.length&&!completed&&!window.confirm('Substituir a sacola atual pelos itens disponíveis deste pedido?'))return;
  if(completed){completed=false;pendingRequest=null;cartRecoveryId=null;$('success').hidden=true;$('cartReview').hidden=false;$('cartFooter').hidden=false;$('cartAction').textContent='Ver sacola';lockCheckout(false)}
  cart=restored.items;cartRestoreWarning=restored.changed?'Alguns itens ou complementos não estão mais disponíveis. Confira sua sacola e os valores atuais.':'Pedido anterior recuperado. Confira os preços atuais antes de confirmar.';
- $('notes').value='';$('fiadoPin').value='';$('v2CashChange').value='';$('schedule').value='';$('loyaltyCoupon').value='';$('loyaltyReward').value='';clearFiadoAccess();if(v2Only()){$('payment').value='';v2RenderPaymentCards()}else{$('payment').selectedIndex=0;$('payment').dispatchEvent(new Event('change'))}deliveryQuote=null;quoteGeneration++;invalidateLoyalty();
+ $('notes').value='';$('fiadoPin').value='';$('v2CashChange').value='';$('schedule').value='';$('loyaltyCoupon').value='';$('loyaltyReward').value='';clearFiadoAccess();deliveryService='standard';renderDeliveryServices(null);if(v2Only()){$('payment').value='';v2RenderPaymentCards()}else{$('payment').selectedIndex=0;$('payment').dispatchEvent(new Event('change'))}deliveryQuote=null;quoteGeneration++;invalidateLoyalty();
  renderCart();persistCartDraft();if(!$('cartDialog').open)$('cartDialog').showModal();cartStep(false);
 }
 async function showCustomerOrders(){

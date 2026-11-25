@@ -123,6 +123,8 @@ export function StorefrontPayments({client,storeId,resource}){
 
 
 const MAX_DELIVERY_POLYGONS=12;
+const priorityDraft=v=>({enabled:v?.enabled===true,fee:v?.fee??'',min_minutes:v?.min_minutes??'',max_minutes:v?.max_minutes??''});
+function PriorityFields({value,onChange}){const v=priorityDraft(value);return <fieldset className="delivery-region-editor"><legend>Entrega prioritária</legend><label><input type="checkbox" checked={v.enabled} onChange={e=>onChange({...v,enabled:e.target.checked})}/> Disponibilizar nesta área</label>{v.enabled&&<div className="delivery-zone-rates">{[['fee','Taxa prioritária (R$)'],['min_minutes','Prazo mínimo (min)'],['max_minutes','Prazo máximo (min)']].map(([k,label])=><label key={k}>{label}<input type="number" required min={k==='fee'?0:1} max={k==='fee'?999.99:720} step={k==='fee'?0.01:1} value={v[k]} onChange={e=>onChange({...v,[k]:e.target.value})}/></label>)}</div>}<small>A taxa substitui o frete padrão. O prazo deve ser menor.</small></fieldset>}
 const deliveryRegionColors=['#ea580c','#2563eb','#059669','#9333ea','#d97706',
  '#db2777','#0e7490','#be123c','#64748b','#0d9488','#7c3aed','#ca8a04'];
 
@@ -142,7 +144,7 @@ export function StoreDeliveryArea({client,store}){
  const [rates,setRates]=useState(Array(10).fill(0));
  const [times,setTimes]=useState(Array.from({length:10},()=>({min_minutes:'',max_minutes:''})));
  const validTime=v=>v.min_minutes!==''&&v.max_minutes!==''&&Number.isInteger(Number(v.min_minutes))&&Number.isInteger(Number(v.max_minutes))&&Number(v.min_minutes)>=1&&Number(v.max_minutes)>=Number(v.min_minutes)&&Number(v.max_minutes)<=720;
- const numericTime=v=>({min_minutes:Number(v.min_minutes),max_minutes:Number(v.max_minutes)});
+ const numericTime=v=>({min_minutes:Number(v.min_minutes),max_minutes:Number(v.max_minutes),priority:v.priority?.enabled?{enabled:true,fee:Number(v.priority.fee),min_minutes:Number(v.priority.min_minutes),max_minutes:Number(v.priority.max_minutes)}:{enabled:false}});
  const [regions,setRegions]=useState([]);
  const [activeRegionId,setActiveRegionId]=useState(null);
  const [status,setStatus]=useState('loading');
@@ -209,13 +211,13 @@ export function StoreDeliveryArea({client,store}){
     const normalized=stored.map((item,i)=>({
      id:String(item.id||'regiao-'+i),name:String(item.name||'Região '+(i+1)),
      vertices:Array.isArray(item.vertices)?item.vertices:[],
-     fee:Number(item.fee||0),min_minutes:item.min_minutes??'',max_minutes:item.max_minutes??''
+     fee:Number(item.fee||0),min_minutes:item.min_minutes??'',max_minutes:item.max_minutes??'',priority:priorityDraft(item.priority)
     }));
     setMode(isPolygon?'polygon':'circle');
     setRadius(data?.max_radius_km||5);
     setRates(Array.isArray(data?.distance_fees)&&data.distance_fees.length===10
      ?data.distance_fees.map(Number):Array(10).fill(0));
-    setTimes(Array.from({length:10},(_,i)=>({min_minutes:data?.distance_times?.[i]?.min_minutes??'',max_minutes:data?.distance_times?.[i]?.max_minutes??''})));
+    setTimes(Array.from({length:10},(_,i)=>({min_minutes:data?.distance_times?.[i]?.min_minutes??'',max_minutes:data?.distance_times?.[i]?.max_minutes??'',priority:priorityDraft(data?.distance_times?.[i]?.priority)})));
     setRegions(normalized);
     setActiveRegionId(normalized[0]?.id||null);
     setEnabled(Boolean(data?.enabled));
@@ -309,6 +311,7 @@ export function StoreDeliveryArea({client,store}){
      if(!Number.isFinite(Number(region.fee))||Number(region.fee)<0||Number(region.fee)>999.99)
       throw Error('Confira o valor do frete da região "'+region.name+'".');
     }
+    if(regions.some(v=>v.priority?.enabled&&(!validTime(v.priority)||v.priority.fee===''||Number(v.priority.fee)<=Number(v.fee)||Number(v.priority.min_minutes)>=Number(v.min_minutes)||Number(v.priority.max_minutes)>=Number(v.max_minutes))))throw Error('A entrega prioritária precisa ter taxa maior e prazos menores.');
     if(regions.some(v=>!validTime(v)))throw Error('Informe os prazos mínimo e máximo de cada região.');
     result=await client.rpc('pitacco_save_delivery_polygons_times',{
      p_store:store.id,p_polygons:regions.map(region=>({
@@ -321,6 +324,7 @@ export function StoreDeliveryArea({client,store}){
     const fees=rates.map(Number);
     if(fees.some(value=>!Number.isFinite(value)||value<0||value>999.99))
      throw Error('Confira os valores de entrega por quilômetro.');
+    if(times.slice(0,radius).some((v,i)=>v.priority?.enabled&&(!validTime(v.priority)||v.priority.fee===''||Number(v.priority.fee)<=Number(fees[i])||Number(v.priority.min_minutes)>=Number(v.min_minutes)||Number(v.priority.max_minutes)>=Number(v.max_minutes))))throw Error('A entrega prioritária precisa ter taxa maior e prazos menores.');
     if(times.slice(0,radius).some(v=>!validTime(v)))throw Error('Informe os prazos mínimo e máximo de cada faixa ativa.');
     result=await client.rpc('pitacco_save_delivery_zone_times',{
      p_store:store.id,p_radius:radius,p_distance:fees,p_times:times.map(v=>validTime(v)?numericTime(v):null)
@@ -401,6 +405,7 @@ export function StoreDeliveryArea({client,store}){
          onChange={e=>updateRegion(activeRegion.id,{fee:e.target.value})}/></label>
        {['min_minutes','max_minutes'].map(key=><label key={key}>{key==='min_minutes'?'Prazo mínimo (min)':'Prazo máximo (min)'}<input required type="number" min="1" max="720" step="1" value={activeRegion[key]??''} onChange={e=>updateRegion(activeRegion.id,{[key]:e.target.value})}/></label>)}
       </div>
+      <PriorityFields value={activeRegion.priority} onChange={priority=>updateRegion(activeRegion.id,{priority})}/>
       <p>Toque no mapa para ligar os pontos desta região. Arraste os marcadores numerados para corrigir a divisa. As demais regiões continuam visíveis.</p>
       <div className="delivery-zone-polygon-actions">
        <div><button type="button" className="secondary" disabled={!polygon.length}
@@ -421,7 +426,7 @@ export function StoreDeliveryArea({client,store}){
     <legend>Quanto cobrar de frete?</legend>
     <p>Escolha o frete de cada faixa em <strong>linha reta</strong> a partir da lojinha. Distâncias fora do círculo não serão atendidas.</p>
     <div className="delivery-zone-rates">
-     {rates.slice(0,radius).map((fee,i)=><div className="delivery-region-editor" key={i}><strong>Até {i+1} km</strong><label>Frete (R$)<input type="number" inputMode="decimal" required min="0" max="999.99" step="0.01" value={fee} onChange={e=>setFee(i,e.target.value)}/></label>{['min_minutes','max_minutes'].map(key=><label key={key}>{key==='min_minutes'?'Prazo mínimo (min)':'Prazo máximo (min)'}<input type="number" required min="1" max="720" step="1" value={times[i][key]} onChange={e=>setTimes(prev=>prev.map((v,j)=>i===j?{...v,[key]:e.target.value}:v))}/></label>)}</div>)}
+     {rates.slice(0,radius).map((fee,i)=><div className="delivery-region-editor" key={i}><strong>Até {i+1} km</strong><label>Frete (R$)<input type="number" inputMode="decimal" required min="0" max="999.99" step="0.01" value={fee} onChange={e=>setFee(i,e.target.value)}/></label>{['min_minutes','max_minutes'].map(key=><label key={key}>{key==='min_minutes'?'Prazo mínimo (min)':'Prazo máximo (min)'}<input type="number" required min="1" max="720" step="1" value={times[i][key]} onChange={e=>setTimes(prev=>prev.map((v,j)=>i===j?{...v,[key]:e.target.value}:v))}/></label>)}<PriorityFields value={times[i].priority} onChange={priority=>setTimes(prev=>prev.map((v,j)=>i===j?{...v,priority}:v))}/></div>)}
     </div>
    </fieldset>}
    <p className="storefront-delivery-note">O mesmo limite desenhado no mapa define onde o cardápio permite entregas. Frete grátis pode ser configurado como R$ 0,00.</p>

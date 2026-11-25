@@ -104,6 +104,8 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  const closeDetails=()=>{setSelected(null);setDecision(null)};
  useEffect(()=>{closeDetails()},[storeId]);
  const deliveriesByOrder=useMemo(()=>new Map(deliveries.map(delivery=>[delivery.order_id,delivery])),[deliveries]);
+ const priorityRank=o=>{const urgent=o.source==='proprio'&&o.receipt?.delivery_service==='priority',late=orderDeadline(o,deliveriesByOrder.get(o.id),stage(o),clock)?.state==='late';return late?(urgent?0:1):urgent?2:orderDeadline(o,deliveriesByOrder.get(o.id),stage(o),clock)?.state==='warning'?3:4};
+ const byPriority=(a,b)=>priorityRank(a)-priorityRank(b);
  const lateOrders=dailyOrders.filter(o=>orderDeadline(o,deliveriesByOrder.get(o.id),stage(o),clock)?.state==='late');
  const groupEligible=dailyOrders.filter(o=>stage(o)==='ready'&&canAssign(o,deliveriesByOrder.get(o.id)));
  const groupedOrders=groupEligible.filter(o=>groupIds.includes(o.id));
@@ -143,9 +145,9 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  const visibleStages=stages.filter(([key])=>!['rejected','scheduled'].includes(key)&&(popupLayout||['completed','cancelled'].includes(key)));
  const boardGroups=showWindowsBoard?
   [...boardStages,...historyBoardStages,...auxiliaryStages.filter(([key])=>filtered.some(o=>stage(o)===key))].map(([id,label])=>({
-   id,label,items:filtered.filter(o=>boardStage(o)===id)
+   id,label,items:filtered.filter(o=>boardStage(o)===id).sort(byPriority)
   })):
-  [{id:'all',label:'',items:filtered}];
+  [{id:'all',label:'',items:[...filtered].sort(byPriority)}];
 
  return <div className={"pitacco-pedidos windows-cards-only"+(popupLayout?"":" web-compact-orders")} data-layout={!popupLayout&&client&&storeId?layout:"columns"}>
   <header className="pedidos-heading"><div><h2>Pedidos</h2><p>Acompanhe e processe os pedidos da sua loja.</p></div><span>Pedidos sincronizados com a loja</span></header>
@@ -196,6 +198,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
        <span className="pedidos-payment-pill" data-payment={cardPayment(o).state}>{cardPayment(o).label}</span>
        <DeliveryBadge order={o} delivery={delivery}/>
       </span>
+      {o.source==='proprio'&&o.receipt?.delivery_service==='priority'&&<span className="order-priority-label">⚡ Entrega prioritária</span>}
       {deadline&&<span className="order-deadline" data-state={deadline.state}><Clock3 size={13} aria-hidden="true"/><span>{deadline.label}</span><b>{deadline.text}</b></span>}
       {validLocalizer(badgeByOrder.get(o.id))&&<span className="pedidos-localizer" aria-label="Localizador de ligação do pedido"><strong>LOCALIZADOR</strong><b>{validLocalizer(badgeByOrder.get(o.id))}</b></span>}
      </div>
