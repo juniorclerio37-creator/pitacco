@@ -261,3 +261,7 @@
 .pitacco-pedidos.windows-cards-only .pickup-ready-note{color:#2464a6;font-weight:700}
 .pitacco-pedidos.web-compact-orders .pedidos-stage-column{background:var(--store-quiet,#f6f8fb);border-color:var(--store-border,#e2e8f0)}
 @media(max-width:700px){.pitacco-pedidos.web-compact-orders .pedidos-list.pedidos-kanban{grid-template-columns:repeat(4,minmax(210px,1fr));grid-auto-columns:minmax(210px,1fr);scroll-snap-type:x proximity}.pitacco-pedidos.web-compact-orders .pedidos-stage-column{scroll-snap-align:start}}
+
+/* History filters remain visible in both compact merchant workspaces. */
+.pitacco-pedidos .pedidos-tabs button[data-order-filter="completed"]:not(.selected){color:#176534;border-color:#a7d9b8;background:#edf9f0}
+.pitacco-pedidos .pedidos-tabs button[data-order-filter="cancelled"]:not(.selected){color:#a32835;border-color:#e5b6bb;background:#fff1f2}

@@ -259,3 +259,12 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  assert.ok(orders.includes("!popupLayout&&client&&storeId&&layout==='routes'"));
  assert.match(mount,/onAssign=\{o=>\{setDispatchOnly\(true\);setDetail\(o\)\}\}/);
  });
+
+ test('compact web and Windows expose completed, cancelled and rejected history separately',()=>{
+ const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
+ assert.ok(orders.includes("['completed','Concluído'],['cancelled','Cancelados'],['rejected','Recusados']"));
+ assert.ok(orders.includes("key==='completed'?'Concluídos':label"));
+ assert.ok(orders.includes("filter==='all'?!terminal.has(stage(o)):stage(o)===filter"));
+ assert.ok(orders.includes('data-order-filter={key}'));
+ assert.doesNotMatch(orders,/popupLayout\?stages\.filter/);
+ });
