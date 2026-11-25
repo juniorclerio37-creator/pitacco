@@ -1,4 +1,5 @@
 import {Printer} from 'lucide-react';
+import {fetchDailyOrders} from './dailyOrders.mjs';
 import {openBrowserPrint} from './browserReceipt.mjs';
 import {WindowsConnectionStatus} from './WindowsConnectionStatus.jsx';
 import DeliveryDialog,{deliveryLabel} from './DeliveryDialog.jsx';
@@ -64,7 +65,7 @@ export default function Operations({client,storeId,view,manager,onNavigate}){
    if(stopped)return;if(running){refreshAgain=true;return}running=true;
    try{
     const results=await Promise.all([
-     client.from('orders').select('*').eq('store_id',storeId).in('status',['pending','accepted','cancelled','rejected']).order('created_at',{ascending:false}).limit(100),
+     fetchDailyOrders(client,storeId),
      client.from('acceptance_settings').select('*').eq('store_id',storeId),
      client.from('print_sectors').select('*').eq('store_id',storeId).order('sector'),
      client.from('deliveries').select('*').eq('store_id',storeId).not('order_id','is',null),
@@ -80,6 +81,15 @@ export default function Operations({client,storeId,view,manager,onNavigate}){
     if(failure)throw failure;
     if(stopped)return;
     const incoming=[...new Map([...results[0].data||[],...results[6].data||[]].map(order=>[order.id,order])).values()];
+    // Resolve every visible order's delivery even when the legacy store-wide query reaches its row cap.
+    const linked=new Map((results[3].data||[]).map(d=>[d.id,d]));
+    const known=new Set([...linked.values()].map(d=>d.order_id));
+    const missing=incoming.filter(o=>!known.has(o.id)&&o.receipt?.logistics!=='retirada').map(o=>o.id);
+    for(let i=0;i<missing.length;i+=150){
+     const extra=await client.from('deliveries').select('*').eq('store_id',storeId).in('order_id',missing.slice(i,i+150));
+     if(extra.error)throw extra.error;for(const d of extra.data||[])linked.set(d.id,d);
+    }
+    if(stopped)return;results[3].data=[...linked.values()];
     const waitingForAcceptance=incoming.filter(o=>orderStage(o)==='analysis');
     const fresh=waitingForAcceptance.filter(o=>!seen.current.has(o.id));
     waitingForAcceptance.forEach(o=>seen.current.add(o.id));

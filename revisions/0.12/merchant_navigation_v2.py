@@ -66,3 +66,10 @@ s=p.read_text(encoding='utf-8')
 s="import MerchantNewOrder from './MerchantNewOrder.jsx';\n"+s
 change("{manager&&view==='Cozinha e expedição'&&<>","{manager&&view==='Cozinha e expedição'&&navigationSection==='new-order'&&<MerchantNewOrder key={storeId} client={client} storeId={storeId} onNavigate={onNavigate}/>}\n {manager&&view==='Cozinha e expedição'&&navigationSection!=='new-order'&&<>")
 p.write_text(s,encoding='utf-8')
+
+# Dedicated, read-only history route; keep the operational feed mounted for alerts.
+p=Path('web/Operations.jsx')
+s=p.read_text(encoding='utf-8')
+s="import OrderHistory from './OrderHistory.jsx';\n"+s
+change("{manager&&view==='Pedidos'&&<Pedidos", "{manager&&view==='Pedidos'&&navigationSection==='history'&&<OrderHistory key={storeId} client={client} storeId={storeId}/>}\n {manager&&view==='Pedidos'&&navigationSection!=='history'&&<Pedidos")
+p.write_text(s,encoding='utf-8')

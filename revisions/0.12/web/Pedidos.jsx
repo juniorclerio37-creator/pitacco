@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {Bike, CheckCircle2, ChefHat, Clock3, Printer, ShoppingBag, TrendingUp} from 'lucide-react';
 import './pedidos.css';
+import {businessDay,isDailyOrder} from './dailyOrders.mjs';
 import FleetTracking from './FleetTracking.jsx';
 import OrderDetails from './OrderDetails.jsx';
 import {deliveryLabel,sourceLabel} from './DeliveryDialog.jsx';
@@ -67,6 +68,8 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  const [filter,setFilter]=useState('all'),[search,setSearch]=useState(''),[selected,setSelected]=useState(null),[decision,setDecision]=useState(null);
  const [layout,setLayout]=useState('columns');
  const [clock,setClock]=useState(Date.now);
+ const [day,setDay]=useState(()=>businessDay());
+ useEffect(()=>{const timer=setInterval(()=>setDay(businessDay()),5000);return()=>clearInterval(timer)},[]);
  const hasTimedIfood=orders.some(o=>o.source==='ifood'&&o.status==='pending'&&!o.receipt?.provider_scheduled_for);
  useEffect(()=>{
   if(!hasTimedIfood)return;
@@ -88,8 +91,9 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  const badgeByOrder=useMemo(()=>new Map(badges.map(b=>[b.order_id,b])),[badges]);
  const number=o=>publicOrderNumber(o,badgeByOrder.get(o?.id));
  const boardStage=o=>stage(o)==='rejected'?'cancelled':stage(o);
- const counts=useMemo(()=>Object.fromEntries(stages.map(([id])=>[id,orders.filter(o=>boardStage(o)===id).length])),[orders,stage]);
- const filtered=useMemo(()=>orders.filter(o=>(filter==='all'?(!terminal.has(stage(o))||(!popupLayout&&terminal.has(stage(o))&&['completed','cancelled'].includes(boardStage(o)))):boardStage(o)===filter)&&(!search||[number(o),o.receipt?.customer,o.receipt?.phone,...receiptItems(o.receipt).map(i=>i.name)].join(' ').toLowerCase().includes(search.toLowerCase()))),[orders,filter,search,stage,popupLayout]);
+ const dailyOrders=useMemo(()=>orders.filter(o=>isDailyOrder(o,stage(o),day)),[orders,stage,day]);
+ const counts=useMemo(()=>Object.fromEntries(stages.map(([id])=>[id,dailyOrders.filter(o=>boardStage(o)===id).length])),[dailyOrders,stage]);
+ const filtered=useMemo(()=>dailyOrders.filter(o=>(filter==='all'?(!terminal.has(stage(o))||(!popupLayout&&terminal.has(stage(o))&&['completed','cancelled'].includes(boardStage(o)))):boardStage(o)===filter)&&(!search||[number(o),o.receipt?.customer,o.receipt?.phone,...receiptItems(o.receipt).map(i=>i.name)].join(' ').toLowerCase().includes(search.toLowerCase()))),[dailyOrders,filter,search,stage,popupLayout]);
  const current=orders.find(o=>o.id===selected);
  const closeDetails=()=>{setSelected(null);setDecision(null)};
  useEffect(()=>{closeDetails()},[storeId]);
@@ -119,7 +123,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
   }
  }
  const decisionApplies=(canDecide||canCancelOwn)&&decision?.id===current.id&&decision.status!=='ifood';
- const total=orders.filter(o=>!['cancelled','rejected'].includes(stage(o))).reduce((sum,o)=>sum+Number(o.gross||0),0); 
+ const total=dailyOrders.filter(o=>!['cancelled','rejected'].includes(stage(o))).reduce((sum,o)=>sum+Number(o.gross||0),0); 
  // Agrupamento visual por etapa; a classificação continua sendo calculada a
  // partir dos estados confirmados do pedido e da coleta, não por drag-and-drop.
  const boardStages=[['analysis','Em análise'],['preparing','Em preparo'],['ready','Pronto'],['delivery','Em entrega']];
@@ -163,7 +167,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
      <div className="pedidos-compact-content">
       <span className="pedidos-compact-heading">
        <PlatformIcon source={o.source}/><b className="pedidos-compact-number" title={source+' · Pedido #'+number(o)}>#{number(o)}</b>
-       <small>{o.scheduled_for?scheduledTime.format(new Date(o.scheduled_for)):o.created_at?new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</small>
+       <small>{o.scheduled_for?scheduledTime.format(new Date(o.scheduled_for)):o.created_at?(businessDay(o.created_at)!==day?scheduledTime.format(new Date(o.created_at)):new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'})):''}</small>
        <b className="pedidos-compact-total">{brl(o.gross)}</b>
       </span>
       <span className="pedidos-compact-customer" title={o.receipt?.customer||'Cliente'}>{o.receipt?.customer||'Cliente'}</span>
@@ -287,6 +291,6 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  <button type="button" disabled={busy} className="secondary" onClick={()=>setDecision(null)}>Voltar</button>
  </form>}
   </OrderDetails>}
-  <small>*Total de pedidos carregados, não necessariamente faturamento do dia.</small>
+  <small>Pedidos de hoje e pendências anteriores. Consulte o Histórico de pedidos para datas anteriores.</small>
  </div>
 }

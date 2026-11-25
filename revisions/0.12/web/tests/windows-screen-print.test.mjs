@@ -110,7 +110,7 @@ test('merchant Windows order alert controls belong to settings, not the Pedidos 
  assert.doesNotMatch(operations,/\['Painel','Pedidos','Configurações','Alertas'\]/);
  assert.doesNotMatch(operations,/desktop\?<div className="dispatch-actions">/);
  assert.doesNotMatch(operations,/manager&&desktop&&view==='Pedidos'&&<div className="operational-overview"/);
- assert.match(operations,/manager&&view==='Pedidos'&&<Pedidos/);
+ assert.match(operations,/manager&&view==='Pedidos'&&navigationSection!=='history'&&<Pedidos/);
  assert.match(operations,/Testar sino \+ voz/);
  assert.match(operations,/Ouvir sino/);
  assert.match(operations,/pitacco-audio-bell-volume/);
@@ -291,8 +291,17 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  test('refused orders share cancellation history without changing their original status',()=>{
  const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
  assert.ok(orders.includes("const boardStage=o=>stage(o)==='rejected'?'cancelled':stage(o)"));
- assert.ok(orders.includes("orders.filter(o=>boardStage(o)===id).length"));
+ assert.ok(orders.includes("dailyOrders.filter(o=>boardStage(o)===id).length"));
  assert.ok(orders.includes("items:filtered.filter(o=>boardStage(o)===id)"));
  assert.ok(orders.includes("!showWindowsBoard||stage(o)==='rejected'"));
  assert.ok(orders.includes("key!=='rejected'&&(popupLayout"));
+ });
+
+ test('daily board separates archived orders and links the dedicated history route',()=>{
+ const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
+ const ops=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
+ const nav=readFileSync(new URL('../merchantNavigation.mjs',import.meta.url),'utf8');
+ assert.ok(orders.includes('isDailyOrder(o,stage(o),day)'));
+ assert.ok(ops.includes('fetchDailyOrders(client,storeId)'));
+ assert.ok(nav.includes("item('Histórico de pedidos','Histórico de pedidos','Pedidos','history',true)"));
  });
