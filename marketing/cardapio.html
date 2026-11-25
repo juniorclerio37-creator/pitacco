@@ -1775,8 +1775,9 @@ function menuStartupRpc(name,args){
  });
 }
 async function prepareMenuStartup(){
+ if(pagbankPreviewMode)return {loyalty:null,best:null,region:null};
  const [loyalty,best,region]=await Promise.all([
-  pagbankPreviewMode?Promise.resolve(null):menuStartupRpc('pitacco_loyalty_program',{p_slug:slug}),
+  menuStartupRpc('pitacco_loyalty_program',{p_slug:slug}),
   menuStartupRpc('pitacco_public_top_sellers',{p_slug:slug}),
   menuStartupRpc('pitacco_public_store_region',{p_slug:slug})
  ]);
@@ -2836,7 +2837,7 @@ function pagbankPreviewRender(){
     const d=await pagbankPreviewCall('checkout',{items:pagbankPreviewItems.map(({product_id,quantity,options})=>({product_id,quantity,options}))});
     if(!d.order_id||d.environment!=='sandbox'||d.order_released!==false||!Number.isInteger(d.cents))throw Error('Resposta de teste inválida.');
     pagbankPreviewCharge=d;
-    if(d.status==='WAITING'){try{const q=await pagbankPreviewCall('qr');if(/^data:image\\/png;base64,[A-Za-z0-9+/=]+$/.test(q.image))pagbankPreviewQr=q.image}catch{}}
+    if(d.status==='WAITING'){try{const q=await pagbankPreviewCall('qr');if(typeof q.image==='string'&&q.image.startsWith('data:image/png;base64,')&&/^[A-Za-z0-9+/=]+$/.test(q.image.slice(22)))pagbankPreviewQr=q.image}catch{}}
    }catch(e){pagbankPreviewError=e.message||'Não foi possível gerar o Pix.'}
    finally{pagbankPreviewBusy=false;pagbankPreviewRender();pagbankPreviewSchedule()}
   };body.append(generate);

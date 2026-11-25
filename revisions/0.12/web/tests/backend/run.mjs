@@ -18,6 +18,14 @@ create table storage.buckets(id text primary key,name text,public boolean,file_s
 create table storage.objects(id uuid default gen_random_uuid(),bucket_id text,name text);
 alter table storage.objects enable row level security;
 create publication supabase_realtime;
+-- TEST ONLY: isolated databases have no Supabase Vault extension.
+-- Never include this fixture in the production schema or use real credentials.
+create schema vault;
+create table vault.secrets(id uuid primary key default gen_random_uuid(), name text, secret text not null, description text);
+create view vault.decrypted_secrets as select id,name,secret as decrypted_secret,description from vault.secrets;
+create function vault.create_secret(new_secret text,new_name text default null,new_description text default '') returns uuid language plpgsql as $testvault$ declare v uuid; begin insert into vault.secrets(name,secret,description) values(new_name,new_secret,new_description) returning id into v;return v;end $testvault$;
+create function vault.update_secret(secret_id uuid,new_secret text default null,new_name text default null,new_description text default null) returns void language sql as $testvault$ update vault.secrets set secret=coalesce(new_secret,secret),name=coalesce(new_name,name),description=coalesce(new_description,description) where id=secret_id $testvault$;
+revoke all on schema vault from public,anon,authenticated,service_role;
 `);
 const web=fileURLToPath(new URL('../../supabase/',import.meta.url));
 const mobile=process.env.DG_ANDROID_SUPABASE || fileURLToPath(new URL('../../../android/supabase/',import.meta.url));
