@@ -5,7 +5,7 @@ import {publicOrderNumber,orderAddress,validLocalizer} from './orderDisplay.mjs'
 import {receiptItems} from './receiptItems.mjs';
 import OrderDetails from './OrderDetails.jsx';
 import './order-history.css';
-const labels={analysis:'Em análise',preparing:'Em preparo',ready:'Pronto',delivery:'Em entrega',scheduled:'Agendado',completed:'Concluído',cancelled:'Cancelado',rejected:'Recusado',historical:'Histórico'};
+const labels={completed:'Concluído',cancelled:'Cancelado',rejected:'Recusado'};
 const origin=o=>o.source==='proprio'?(String(o.receipt?.point_of_sale)==='true'?'Balcão':'Cardápio digital'):({ifood:'iFood','99food':'99Food',keeta:'Keeta'}[o.source]||o.source||'Loja');
 const fmt=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'});
 const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
@@ -22,7 +22,7 @@ export default function OrderHistory({client,storeId}){
  useEffect(()=>{
   let live=true;setLoading(true);setError('');setRows([]);setMore(false);setSelected(null);
   client.rpc('pitacco_merchant_order_history',{p_store:storeId,p_from:filter.from,p_to:filter.to,p_status:filter.status,p_origin:filter.origin,p_query:filter.query,p_offset:page*PAGE})
-  .then(({data,error})=>{if(!live)return;if(error)throw error;setRows((data||[]).slice(0,PAGE));setMore((data||[]).length>PAGE)})
+  .then(({data,error})=>{if(!live)return;if(error)throw error;const closed=(data||[]).filter(row=>Object.hasOwn(labels,row.order_stage));setRows(closed.slice(0,PAGE));setMore(closed.length>PAGE)})
   .catch(e=>{if(live)setError(e.message||'Não foi possível carregar o histórico.')})
   .finally(()=>{if(live)setLoading(false)});
   return()=>{live=false};
@@ -30,11 +30,11 @@ export default function OrderHistory({client,storeId}){
  function submit(e){e.preventDefault();if(!draft.from||!draft.to||draft.to<draft.from||(Date.parse(draft.to)-Date.parse(draft.from))/86400000>366){setError('Selecione um período válido de até 367 dias.');return;}setPage(0);setFilter({...draft});}
  function reset(){const f=defaults();setDraft(f);setFilter(f);setPage(0)}
  return <section className="order-history" aria-label="Histórico de pedidos">
- <header className="history-heading"><History size={25}/><div><h2>Histórico de pedidos</h2><p>Consulte os pedidos registrados pela sua loja, sem interferir na operação do dia.</p></div></header>
+ <header className="history-heading"><History size={25}/><div><h2>Histórico de pedidos</h2><p>Consulte os pedidos concluídos, cancelados e recusados da sua loja.</p></div></header>
  <form className="history-filters" onSubmit={submit}>
  <label>Data inicial<input required type="date" value={draft.from} max={draft.to} onChange={e=>change('from',e.target.value)}/></label>
  <label>Data final<input required type="date" value={draft.to} min={draft.from} onChange={e=>change('to',e.target.value)}/></label>
- <label>Situação<select value={draft.status} onChange={e=>change('status',e.target.value)}><option value="all">Todas</option>{Object.entries(labels).filter(([k])=>k!=='rejected'&&k!=='historical').map(([k,v])=><option key={k} value={k}>{k==='cancelled'?'Cancelados e recusados':v}</option>)}</select></label>
+ <label>Situação<select value={draft.status} onChange={e=>change('status',e.target.value)}><option value="all">Todos os encerrados</option><option value="completed">Concluídos</option><option value="cancelled">Cancelados e recusados</option></select></label>
  <label>Origem<select value={draft.origin} onChange={e=>change('origin',e.target.value)}>{[['all','Todas as plataformas'],['cardapio','Cardápio digital'],['balcao','Balcão'],['ifood','iFood'],['99food','99Food'],['keeta','Keeta']].map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
  <label className="history-search">Buscar pedido, cliente ou telefone<div><Search size={16}/><input maxLength={100} value={draft.query} onChange={e=>change('query',e.target.value)} placeholder="Número, nome ou telefone"/></div></label>
  <div className="history-filter-actions"><button type="button" className="secondary" onClick={reset}>Limpar</button><button type="submit" className="primary">Filtrar pedidos</button></div>

@@ -316,3 +316,10 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  assert.ok(detail.includes('Valor recebido pelo entregador'));
  assert.ok(detail.includes('historicalChange'));
  });
+
+ test('merchant history offers only terminal statuses and keeps rejected with cancelled',()=>{
+ const history=readFileSync(new URL('../OrderHistory.jsx',import.meta.url),'utf8');
+ assert.ok(history.includes('<option value="all">Todos os encerrados</option><option value="completed">Concluídos</option><option value="cancelled">Cancelados e recusados</option>'));
+ assert.ok(history.includes("const labels={completed:'Concluído',cancelled:'Cancelado',rejected:'Recusado'}"));
+ assert.ok(history.includes('Object.hasOwn(labels,row.order_stage)'));
+ });
