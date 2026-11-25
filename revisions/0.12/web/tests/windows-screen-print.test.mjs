@@ -167,7 +167,7 @@ test('same installed Windows app keeps order cards and guarded conclusion next t
  assert.match(orders,/pedidos-complete-button/);
  assert.match(orders,/canConcludeOnWindows/);
  assert.match(orders,/canExecuteConclusion/);
- assert.match(orders,/onPickup\?\.\(o\.id\):onConclude\?\.\(o\.id\)/);
+ assert.match(orders,/onClick=\{\(\)=>onConclude\?\.\(o\.id\)\}/);
  assert.match(orders,/delivery\?\.logistics_provider==='loja'/);
  assert.match(css,/pedidos-card-actions/);
  assert.match(css,/pedidos-complete-button/);
@@ -214,7 +214,7 @@ test('native Windows order alarm continues without visible or foreground WebView
 test('Windows empty board has exactly its stage columns and never wraps into a second row',()=>{
  const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
  const css=readFileSync(new URL('../pedidos.css',import.meta.url),'utf8');
- assert.match(orders,/const showWindowsBoard=popupLayout&&filter==='all'/);
+ assert.match(orders,/const showWindowsBoard=filter==='all'/);
  assert.match(orders,/!showWindowsBoard&&filtered\.length===0&&<p className="pedidos-list-empty"/);
  assert.match(orders,/showWindowsBoard&&group\.items\.length===0/);
  assert.match(orders,/\['analysis','Em análise'\],\['preparing','Em preparo'\],\['ready','Pronto'\],\['delivery','Em entrega'\]/);
@@ -226,7 +226,7 @@ test('Windows empty board has exactly its stage columns and never wraps into a s
 test('Windows exposes iFood cancellation after acceptance using the shared official integration',()=>{
  const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
  const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
- assert.match(orders,/popupLayout&&o\.source==='ifood'&&\['preparing','ready','delivery'\]\.includes\(stage\(o\)\)/);
+ assert.match(orders,/o\.source==='ifood'&&\['preparing','ready','delivery'\]\.includes\(stage\(o\)\)/);
  assert.match(orders,/aria-label="Cancelar pedido no iFood"[^>]*onClick=\{\(\)=>void openIfoodReject\(o\)\}>Cancelar<\/button>/);
  assert.match(orders,/onGetIfoodReasons\(order\.id\)/);
  assert.match(operations,/ifood-manual-action'[,].*action:'reasons'/);
@@ -246,7 +246,16 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  test('own pickup has Finalizar only when ready and cannot be dispatched',()=>{
  const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
  assert.ok(orders.includes("const canAssign=(order,delivery)=>order.receipt?.logistics!=='retirada'"));
- assert.ok(orders.includes("o.receipt?.logistics==='retirada'?'Finalizar':'Concluir'"));
+ assert.ok(orders.includes("o.receipt?.logistics!=='retirada'&&canConcludeOnWindows"));
  assert.ok(orders.includes('onClick={()=>onPickup?.(o.id)}>Finalizar</button>'));
  assert.ok(orders.includes('Disponível para retirada'));
+ });
+
+ test('web and Windows share compact board and dispatcher while routing remains web-only',()=>{
+ const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
+ const mount=readFileSync(new URL('../../revisions/0.12/mount_orders_045.py',import.meta.url),'utf8');
+ assert.ok(orders.includes('pitacco-pedidos windows-cards-only'));
+ assert.ok(orders.includes('pedidos-compact-content'));
+ assert.ok(orders.includes("!popupLayout&&client&&storeId&&layout==='routes'"));
+ assert.match(mount,/onAssign=\{o=>\{setDispatchOnly\(true\);setDetail\(o\)\}\}/);
  });

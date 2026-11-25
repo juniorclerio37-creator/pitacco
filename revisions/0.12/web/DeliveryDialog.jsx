@@ -12,7 +12,7 @@ export default function DeliveryDialog({client,order,storeId,deliveryId,onClose,
  useEffect(()=>{const focus=document.activeElement;ref.current.showModal();let live=true;load().catch(e=>live&&setError(e.message)).finally(()=>live&&setBusy(false));return()=>{live=false;focus?.focus()}},[]);
  async function act(fn){setBusy(true);setError('');try{await fn();await load();onUpdate?.()}catch(e){setError(e.message)}finally{setBusy(false)}}
  const active=c=>stops.filter(d=>d.courier_id===c&& !['entregue','cancelada'].includes(d.status));
- const group=active(selected),prepared=order?.status==='accepted'&&order?.preparation_status==='ready',mayAssign=prepared&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id&&!shippingReserved(delivery);
+ const group=active(selected),prepared=order?.status==='accepted'&&order?.preparation_status==='ready',mayAssign=order.receipt?.logistics!=='retirada'&&prepared&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id&&!shippingReserved(delivery);
  const options=dispatchOptions({couriers,positions,stops,store});
  const recommended=options.find(x=>!x.blocked&&x.distance!==null);
  const choice=options.find(x=>x.c.id===selected);

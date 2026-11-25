@@ -18,9 +18,9 @@ s=s.replace(old,new)
 p.write_text(s,encoding='utf-8')
 
 p=Path('web/Pedidos.jsx');s=p.read_text(encoding='utf-8')
-old="const canAssign=(order,delivery)=>order.status==='accepted'&&order.preparation_status==='ready'&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id&&!shippingReserved(delivery);"
+old="const canAssign=(order,delivery)=>order.receipt?.logistics!=='retirada'&&order.status==='accepted'&&order.preparation_status==='ready'&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id&&!shippingReserved(delivery);"
 new="""const iFoodProviderClosed=order=>order?.source==='ifood'&&['CONCLUDED','CANCELLED'].includes(order?.receipt?.ifood_status);
-const canAssign=(order,delivery)=>order.status==='accepted'&&order.preparation_status==='ready'&&!iFoodProviderClosed(order)&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id&&!shippingReserved(delivery);"""
+const canAssign=(order,delivery)=>order.receipt?.logistics!=='retirada'&&order.status==='accepted'&&order.preparation_status==='ready'&&!iFoodProviderClosed(order)&&delivery?.logistics_provider==='loja'&&delivery.status==='pendente'&&!delivery.courier_id&&!shippingReserved(delivery);"""
 assert s.count(old)==1,'Unexpected dispatch business condition'
 s=s.replace(old,new)
 old="{o.receipt?.ifood_manual_cancel==='requested'&&<span role=\"status\">Cancelamento solicitado ao iFood</span>}"

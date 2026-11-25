@@ -23,10 +23,10 @@ test('site and Windows provide stage-specific actions without early dispatch',()
  const win=read('revisions/0.12/web/Operations.jsx');
  const dialog=read('revisions/0.12/web/DeliveryDialog.jsx');
  const mount=read('revisions/0.12/mount_orders_045.py');
- for(const label of ['Marcar pedido pronto','Selecionar entregador','Confirmar retirada','Acompanhar entrega','Concluir entrega']){
-  assert.ok(site.includes(label),'missing site '+label);
-  assert.ok(win.includes(label),'missing Windows '+label);
+ for(const label of ['Marcar pronto','Selecionar entregador','Finalizar','Acompanhar entrega','Concluir']){
+  assert.ok(site.includes(label),'missing shared order board '+label);
  }
+ assert.match(mount,/<Pedidos /);
  assert.match(site,/order\.preparation_status==='ready'&&delivery\?\.logistics_provider==='loja'/);
  assert.match(dialog,/prepared&&delivery\?\.logistics_provider==='loja'/);
  assert.match(dialog,/Confirmar despacho/);

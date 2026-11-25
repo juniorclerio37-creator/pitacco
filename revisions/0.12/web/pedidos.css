@@ -251,3 +251,13 @@
 /* Own order and marketplace cancellation use the same compact visual label. */
 .pitacco-pedidos .pedidos-card-actions>.pedidos-card-cancel {background:transparent!important;border:1px solid #d48b90!important;color:#b92532!important;font-weight:700}
 .pitacco-pedidos .pedidos-card-actions>.pedidos-card-cancel:hover:not(:disabled){background:#fff1f2!important}
+
+/* Identical compact board in web and Windows; retain web summary and routing. */
+.pitacco-pedidos.web-compact-orders:not([data-layout="routes"]) .pedidos-kpis{display:grid}
+.pitacco-pedidos.web-compact-orders .pedidos-heading>span{display:inline}
+.pitacco-pedidos.web-compact-orders[data-layout="routes"]>.pedidos-split{display:none}
+.pitacco-pedidos.web-compact-orders .pedidos-list.pedidos-kanban{overflow-x:auto;grid-template-columns:repeat(4,minmax(190px,1fr));grid-auto-columns:minmax(190px,1fr)}
+.pitacco-pedidos.windows-cards-only .pedidos-card-actions>.pedidos-pickup-finish{background:#16803d!important;border-color:#16803d!important;color:#fff!important}
+.pitacco-pedidos.windows-cards-only .pickup-ready-note{color:#2464a6;font-weight:700}
+.pitacco-pedidos.web-compact-orders .pedidos-stage-column{background:var(--store-quiet,#f6f8fb);border-color:var(--store-border,#e2e8f0)}
+@media(max-width:700px){.pitacco-pedidos.web-compact-orders .pedidos-list.pedidos-kanban{grid-template-columns:repeat(4,minmax(210px,1fr));grid-auto-columns:minmax(210px,1fr);scroll-snap-type:x proximity}.pitacco-pedidos.web-compact-orders .pedidos-stage-column{scroll-snap-align:start}}
