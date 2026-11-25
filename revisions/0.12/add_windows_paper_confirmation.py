@@ -7,6 +7,7 @@ from pathlib import Path
 
 p=Path('web/Operations.jsx')
 s=p.read_text(encoding='utf-8')
+s="import {buildPhysicalReceiptTest} from './receiptTestSample.mjs';\n"+s
 
 def change(old,new):
  global s
@@ -25,8 +26,9 @@ change(" async function saveMode(source,mode,enabled){",
   if(!desktop||!device||!manager)return setError('Abra o aplicativo Windows e entre na sua loja para executar o teste.');
   await act(async()=>{
    setPhysicalPrintCheck(null);setPhysicalPrintFeedback('');
-   const result=await invoke('test_printer',{printerName:sector.printer,width:Number(sector.width)});
-   setStatus(String(result));
+   const {receipt,warnings}=await buildPhysicalReceiptTest({client,storeId,storeName,storeLogoPath,width:Number(sector.width)});
+   const result=await invoke('test_printer',{printerName:sector.printer,width:Number(sector.width),receipt});
+   setStatus([String(result),...warnings].join(' '));
    const {data,error}=await client.rpc('pitacco_windows_print_check_started',{
     p_store:storeId,p_device:device,p_printer:sector.printer,p_width:Number(sector.width)
    });
@@ -60,11 +62,11 @@ change(" async function saveMode(source,mode,enabled){",
 change(' </div>:<>\n  <WindowsConnectionStatus client={client} storeId={storeId} onNavigate={onNavigate}/>',
 '''   <section className="panel" aria-label="Teste físico de impressora no Windows">
      <h3>Teste de impressão física</h3>
-     <p>Este teste é exclusivo do aplicativo Windows. Envie uma comanda para a impressora configurada, depois confirme se ela saiu no papel. Enviar ao spooler não confirma impressão física.</p>
+     <p>Imprima um pedido fictício com as preferências salvas da loja: fonte, logo, QR Code, complementos, valores e troco. Nenhuma venda será registrada. Confira o papel antes de confirmar o resultado.</p>
      {sectors.map(sector=><div className="line" key={'test:'+sector.sector}>
        <b>{sector.sector}</b>
        <span>{sector.printer} · {sector.width} mm</span>
-       <button type="button" disabled={busy||!device} onClick={()=>runWindowsPhysicalTest(sector)}>Imprimir teste</button>
+       <button type="button" disabled={busy||!device} onClick={()=>runWindowsPhysicalTest(sector)}>Imprimir pedido fictício</button>
      </div>)}
      {!sectors.length&&<p>Cadastre uma impressora acima para testar.</p>}
      {physicalPrintCheck&&<div className="windows-print-confirmation" aria-label="Confirmar impressão física">

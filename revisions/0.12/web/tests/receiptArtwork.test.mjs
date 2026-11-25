@@ -1,3 +1,4 @@
+import {receiptTestJob} from '../receiptTestSample.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {receiptPayment,receiptFontSize,renderReceiptCanvas,rasterReceipt} from '../receiptArtwork.mjs';
@@ -27,5 +28,14 @@ test('menu QR stays scannable without printing its URL on 58 or 80mm paper',()=>
   assert.doesNotMatch(printed,/https:\/\/|pitacco\.com\.br|loja-teste/i);
   const without=renderReceiptCanvas({receipt},width,{menuQr:false,menuUrl},fake);
   assert.ok(canvas.height>without.height);
+ }
+});
+
+test('physical sample uses real receipt artwork, unmistakable test marker and saved presentation settings',()=>{
+ for(const width of [58,80]){
+  const job=receiptTestJob('proprio',new Date('2026-11-25T12:00:00Z'));
+  const canvas=renderReceiptCanvas(job,width,{storeName:'Minha Loja',menuQr:true,menuUrl:'https://pitacco.com.br/loja-teste',fontSize:'small'},fake);
+  const text=canvas.log.map(x=>x.s).join(' ');
+  assert.match(text,/TESTE DE IMPRESSÃO/);assert.match(text,/SEM VALIDADE/);assert.match(text,/MINHA LOJA/);assert.match(text,/542012/);assert.match(text,/TROCO/);assert.match(text,/PEÇA PELO NOSSO CARDÁPIO/);assert.doesNotMatch(text,/https:\/\//);
  }
 });

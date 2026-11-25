@@ -58,6 +58,7 @@ export function renderReceiptCanvas(job,width=80,opts={},makeCanvas=()=>document
  }
  const store=first(opts.storeName,r.store_name,r.company_name,r.store?.name);
  if(store)lines(store.toUpperCase(),{size:base+9,bold:true,align:'center'});
+ if(job.test===true)banner('TESTE DE IMPRESSÃO — SEM VALIDADE',base,true);
  const subtitle=first(r.store_tagline,r.store?.tagline);if(subtitle)lines(subtitle,{align:'center'});
  const shopPhone=first(opts.whatsapp,r.store_phone,r.store?.phone);if(shopPhone&&opts.showWhatsapp!==false)lines(shopPhone,{align:'center'});
  const platform=platformName(first(r.platform,r.marketplace,r.source,job.platform,job.source));

@@ -1,4 +1,6 @@
 -- The published storefront logo is the canonical store identity.
+-- Fresh test installations must contain the same store media column as production.
+alter table public.stores add column if not exists logo_path text;
 create or replace function pitacco_private.published_store_logo_path(p_store uuid)
 returns text language sql stable set search_path='' as $$
  select coalesce(

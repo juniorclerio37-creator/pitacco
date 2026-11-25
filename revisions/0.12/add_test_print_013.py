@@ -4,12 +4,15 @@ p=Path('web/src-tauri/src/main.rs')
 s=p.read_text(encoding='utf-8')
 needle='#[tauri::command]async fn list_printers()'
 assert s.count(needle)==1
-command='''#[tauri::command]async fn test_printer(state:tauri::State<'_,State>,printer_name:String,width:u16)->Result<String,String>{
+command='''#[tauri::command]async fn test_printer(state:tauri::State<'_,State>,printer_name:String,width:u16,receipt:Option<String>)->Result<String,String>{
  let _=store(&state)?;
  if ![58,80].contains(&width){return Err("Largura inválida".into())}
  if printer_name.trim().is_empty()||printer_name.len()>256||printer_name.contains('\\0'){return Err("Impressora inválida".into())}
  tauri::async_runtime::spawn_blocking(move||{
-  let receipt=printer::receipt_bytes("PITACCO - TESTE DE IMPRESSAO\\nImpressora configurada\\nVerifique a largura e o corte\\n",width);
+  let receipt=match receipt {
+   Some(data)=>printer::raster_bytes(&data,width).ok_or_else(||"Imagem do teste inválida".to_string())?,
+   None=>printer::receipt_bytes("PITACCO - TESTE DE IMPRESSAO\\nImpressora configurada\\nVerifique a largura e o corte\\n",width)
+  };
   printer::send(&printer_name,&receipt).map(|id|format!("Enviado ao spooler do Windows (trabalho {id}). Confira o papel; envio não garante impressão física.")).map_err(|e|e.message)
  }).await.map_err(|e|e.to_string())?
 }
