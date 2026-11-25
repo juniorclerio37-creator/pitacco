@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.pagbank-connect]
 verify_jwt = false
+
+[functions.ifood-central-link]
+verify_jwt = true

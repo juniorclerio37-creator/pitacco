@@ -6,6 +6,9 @@ on:
     paths:
       - 'revisions/0.12/web/AdminApp.jsx'
       - 'revisions/0.12/web/Homologation.jsx'
+      - 'revisions/0.12/web/OwnerIfood.jsx'
+      - 'revisions/0.12/web/OwnerIfoodCentralRequests.jsx'
+      - 'revisions/0.12/web/IfoodConnections.jsx'
       - 'revisions/0.12/web/PaymentHomologation.jsx'
       - 'revisions/0.12/web/PagBankSandbox.jsx'
       - 'revisions/0.12/web/OwnerSubscriptions.jsx'

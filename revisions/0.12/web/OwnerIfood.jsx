@@ -1,6 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import IfoodConnections from './IfoodConnections.jsx';
 import IfoodShippingTest from './IfoodShippingTest.jsx';
+import OwnerIfoodCentralRequests from './OwnerIfoodCentralRequests.jsx';
 
 export default function OwnerIfood({client,stores}){
  const [storeId,setStoreId]=useState(''),[enabled,setEnabled]=useState(null);
@@ -35,11 +36,12 @@ export default function OwnerIfood({client,stores}){
   {!storeId&&<p>Selecione a loja de testes para abrir o vínculo e as cinco etapas. Não é necessário liberar os lojistas para testar.</p>}
   <h4>Liberação comercial</h4>
   <p>Use apenas após aprovação oficial do iFood. Os registros abaixo não substituem a homologação no portal.</p>
-  <p role="status">{enabled===null?'Consultando situação…':enabled?'Vínculo automático liberado':'Vínculo automático desativado'}</p>
+  <p role="status">{enabled===null?'Consultando situação…':enabled?'Solicitações centralizadas liberado':'Solicitações centralizadas desativado'}</p>
   <button type="button" disabled={busy||enabled===null} onClick={toggle}>
    {enabled?'Pausar integração dos lojistas':'Liberar após homologação'}
   </button>
   {error&&<p role="alert">{error}</p>}
+  <OwnerIfoodCentralRequests client={client}/>
  </section>;
 }
 
