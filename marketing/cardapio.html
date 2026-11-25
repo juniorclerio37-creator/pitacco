@@ -1561,7 +1561,8 @@ async function checkPendingCart(){
   const {data,error}=await client.rpc('pitacco_public_checkout_recovery',{p_slug:slug,p_request:id});
   if(error)throw error;if(id!==cartRecoveryId)return;
   if(data?.confirmed&&data.order_id&&data.tracking_token){
-   void rememberConfirmedOrder(data);
+   // History is optional; it must never block recovery of a confirmed checkout.
+   void rememberConfirmedOrder(data).catch(()=>{});
    cart=[];cartRecoveryId=null;persistCartDraft();renderCart();button.hidden=true;
    cartDraftNotice('Seu pedido anterior foi confirmado. A sacola está pronta para uma nova compra.');
    const link=$('recoveredOrderLink');link.href='/acompanhar/?token='+encodeURIComponent(data.tracking_token);link.hidden=false;
@@ -3823,8 +3824,8 @@ async function startPublicMenu(){
   setMenuTemplate(menu.store);
   applyMenuStartupData(prepared);
   initOptions();
-  if(pagbankPreviewMode&&v2Only()&&pagbankPreviewItems){const resume=el('button','Retomar pagamento de teste','primary pb-v2-resume');resume.type='button';resume.onclick=openPagBankPreview;document.querySelector('.pagbank-preview-banner')?.append(resume)}
   await waitForMenuIdentityPaint();
+  if(pagbankPreviewMode&&v2Only()&&pagbankPreviewItems){const resume=el('button','Retomar pagamento de teste','primary pb-v2-resume');resume.type='button';resume.onclick=openPagBankPreview;document.querySelector('.pagbank-preview-banner')?.append(resume)}
   await restoreCustomerSession();
   if(studioPreviewActive){
    studioPreviewReady=true;studioPreviewReport('pitacco-studio-preview-ready');studioPreviewApply();

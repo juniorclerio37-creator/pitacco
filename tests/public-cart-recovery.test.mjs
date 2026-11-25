@@ -9,7 +9,7 @@ function fixture(){
  const elements=new Map(),storage=new Map();
  const context=vm.createContext({slug:'loja-a',menu:{products},cart:[],completed:false,pendingRequest:null,
   localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},
-  $:id=>{if(!elements.has(id))elements.set(id,{});return elements.get(id)},renderCart(){},client:{rpc:async()=>({data:{confirmed:false}})}});
+  $:id=>{if(!elements.has(id))elements.set(id,{});return elements.get(id)},renderCart(){},rememberConfirmedOrder:async()=>{},client:{rpc:async()=>({data:{confirmed:false}})}});
  vm.runInContext(helpers,context);
  return {context,storage,elements,run:s=>vm.runInContext(s,context)};
 }
@@ -38,8 +38,9 @@ test('ambiguous checkout survives reload and only read-only confirmation clears 
  f.context.pendingRequest=null;f.run('restoreCartDraft()');
  let calls=0;f.context.client.rpc=async(name,args)=>{calls++;assert.equal(name,'pitacco_public_checkout_recovery');assert.equal(args.p_request,key);assert.equal(args.p_slug,'loja-a');return {data:{confirmed:false}}};
  await f.run('checkPendingCart()');assert.equal(f.storage.size,1);assert.equal(f.run('cartRecoveryId'),key);
+ let linked=0;f.context.rememberConfirmedOrder=async data=>{linked++;assert.equal(data.tracking_token,'token');throw Error('history offline')};
  f.context.client.rpc=async()=>({data:{confirmed:true,order_id:'order',tracking_token:'token'}});
- await f.run('checkPendingCart()');assert.equal(f.context.cart.length,0);assert.equal(f.storage.size,0);assert.equal(calls,1);
+ await f.run('checkPendingCart()');assert.equal(linked,1);assert.equal(f.context.cart.length,0);assert.equal(f.storage.size,0);assert.equal(calls,1);
  assert.equal(f.elements.get('recoveredOrderLink').href,'/acompanhar/?token=token');
 });
 test('freight reads the domain error from the Edge HTTP response',async()=>{
