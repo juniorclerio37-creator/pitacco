@@ -260,11 +260,11 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  assert.match(mount,/onAssign=\{o=>\{setDispatchOnly\(true\);setDetail\(o\)\}\}/);
  });
 
- test('compact web and Windows expose completed, cancelled and rejected history separately',()=>{
+ test('compact web and Windows expose completed and combined cancelled history',()=>{
  const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
  assert.ok(orders.includes("['completed','Concluído'],['cancelled','Cancelados'],['rejected','Recusados']"));
  assert.ok(orders.includes("key==='completed'?'Concluídos':label"));
- assert.ok(orders.includes("filter==='all'?(!terminal.has(stage(o))||(!popupLayout&&['completed','cancelled'].includes(stage(o)))):stage(o)===filter"));
+ assert.ok(orders.includes("filter==='all'?(!terminal.has(stage(o))||(!popupLayout&&terminal.has(stage(o))&&['completed','cancelled'].includes(boardStage(o)))):boardStage(o)===filter"));
  assert.ok(orders.includes('data-order-filter={key}'));
  assert.doesNotMatch(orders,/popupLayout\?stages\.filter/);
  });
@@ -272,7 +272,7 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  test('web order toolbar removes duplicate stage controls while keeping history and native controls',()=>{
  const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
  const css=readFileSync(new URL('../pedidos.css',import.meta.url),'utf8');
- assert.ok(orders.includes("const visibleStages=stages.filter(([key])=>popupLayout||['completed','cancelled','rejected','scheduled'].includes(key))"));
+ assert.ok(orders.includes("const visibleStages=stages.filter(([key])=>key!=='rejected'&&(popupLayout||['completed','cancelled','scheduled'].includes(key)))"));
  assert.ok(orders.includes("popupLayout?'Em andamento':'Pedidos'"));
  assert.ok(orders.includes('visibleStages.map'));
  assert.ok(css.includes('.pitacco-pedidos.web-compact-orders .pedidos-kpis{display:none!important}'));
@@ -283,7 +283,16 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  const css=readFileSync(new URL('../pedidos.css',import.meta.url),'utf8');
  assert.ok(orders.includes("historyBoardStages=popupLayout?[]:[['completed','Concluídos'],['cancelled','Cancelados']]"));
  assert.ok(orders.includes("...boardStages,...historyBoardStages"));
- assert.ok(orders.includes("!popupLayout&&['completed','cancelled'].includes(stage(o))"));
+ assert.ok(orders.includes("['completed','cancelled'].includes(boardStage(o))"));
  assert.ok(orders.includes("o.status==='accepted'&&!terminal.has(stage(o))"));
  assert.ok(css.includes('grid-template-columns:repeat(6,minmax(190px,1fr))'));
+ });
+
+ test('refused orders share cancellation history without changing their original status',()=>{
+ const orders=readFileSync(new URL('../Pedidos.jsx',import.meta.url),'utf8');
+ assert.ok(orders.includes("const boardStage=o=>stage(o)==='rejected'?'cancelled':stage(o)"));
+ assert.ok(orders.includes("orders.filter(o=>boardStage(o)===id).length"));
+ assert.ok(orders.includes("items:filtered.filter(o=>boardStage(o)===id)"));
+ assert.ok(orders.includes("!showWindowsBoard||stage(o)==='rejected'"));
+ assert.ok(orders.includes("key!=='rejected'&&(popupLayout"));
  });

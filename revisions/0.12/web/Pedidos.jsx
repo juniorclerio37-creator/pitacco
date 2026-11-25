@@ -87,8 +87,9 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  }
  const badgeByOrder=useMemo(()=>new Map(badges.map(b=>[b.order_id,b])),[badges]);
  const number=o=>publicOrderNumber(o,badgeByOrder.get(o?.id));
- const counts=useMemo(()=>Object.fromEntries(stages.map(([id])=>[id,orders.filter(o=>stage(o)===id).length])),[orders,stage]);
- const filtered=useMemo(()=>orders.filter(o=>(filter==='all'?(!terminal.has(stage(o))||(!popupLayout&&['completed','cancelled'].includes(stage(o)))):stage(o)===filter)&&(!search||[number(o),o.receipt?.customer,o.receipt?.phone,...receiptItems(o.receipt).map(i=>i.name)].join(' ').toLowerCase().includes(search.toLowerCase()))),[orders,filter,search,stage,popupLayout]);
+ const boardStage=o=>stage(o)==='rejected'?'cancelled':stage(o);
+ const counts=useMemo(()=>Object.fromEntries(stages.map(([id])=>[id,orders.filter(o=>boardStage(o)===id).length])),[orders,stage]);
+ const filtered=useMemo(()=>orders.filter(o=>(filter==='all'?(!terminal.has(stage(o))||(!popupLayout&&terminal.has(stage(o))&&['completed','cancelled'].includes(boardStage(o)))):boardStage(o)===filter)&&(!search||[number(o),o.receipt?.customer,o.receipt?.phone,...receiptItems(o.receipt).map(i=>i.name)].join(' ').toLowerCase().includes(search.toLowerCase()))),[orders,filter,search,stage,popupLayout]);
  const current=orders.find(o=>o.id===selected);
  const closeDetails=()=>{setSelected(null);setDecision(null)};
  useEffect(()=>{closeDetails()},[storeId]);
@@ -125,10 +126,10 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  const historyBoardStages=popupLayout?[]:[['completed','Concluídos'],['cancelled','Cancelados']];
  const auxiliaryStages=[['scheduled','Agendados'],['historical','Outros']];
  const showWindowsBoard=filter==='all';
- const visibleStages=stages.filter(([key])=>popupLayout||['completed','cancelled','rejected','scheduled'].includes(key));
+ const visibleStages=stages.filter(([key])=>key!=='rejected'&&(popupLayout||['completed','cancelled','scheduled'].includes(key)));
  const boardGroups=showWindowsBoard?
   [...boardStages,...historyBoardStages,...auxiliaryStages.filter(([key])=>filtered.some(o=>stage(o)===key))].map(([id,label])=>({
-   id,label,items:filtered.filter(o=>stage(o)===id)
+   id,label,items:filtered.filter(o=>boardStage(o)===id)
   })):
   [{id:'all',label:'',items:filtered}];
 
@@ -146,7 +147,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
   <div className="pedidos-kpis">{stages.map(([key,label])=><button key={key} className={'pedidos-kpi '+(filter===key?'selected':'')} onClick={()=>setFilter(key)}><strong>{counts[key]}</strong><span>{label}</span></button>)}<div className="pedidos-kpi"><strong>{brl(total)}</strong><span>Total registrado*</span></div></div>}
   <div className="pedidos-tabs" aria-label="Filtrar pedidos por situação"><button type="button" aria-pressed={filter==='all'} className={filter==='all'?'selected':''} onClick={()=>setFilter('all')}>{popupLayout?'Em andamento':'Pedidos'}</button>{visibleStages.map(([key,label])=><button type="button" key={key} data-order-filter={key} aria-pressed={filter===key} className={filter===key?'selected':''} onClick={()=>setFilter(key)}>{key==='completed'?'Concluídos':label} ({counts[key]})</button>)}<input aria-label="Buscar pedido, cliente ou item" placeholder="Buscar nome, telefone ou código…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
   <div className="pedidos-split"><div className={"pedidos-list"+(showWindowsBoard?" pedidos-kanban":"")} aria-label={showWindowsBoard?(popupLayout?"Quadro de pedidos em andamento":"Quadro de pedidos"):undefined}>
-   {!showWindowsBoard&&filtered.length===0&&<p className="pedidos-list-empty" role="status">{filter==='completed'?'Nenhum pedido concluído encontrado.':filter==='cancelled'?'Nenhum pedido cancelado encontrado.':filter==='rejected'?'Nenhum pedido recusado encontrado.':'Nenhum pedido encontrado.'}</p>}
+   {!showWindowsBoard&&filtered.length===0&&<p className="pedidos-list-empty" role="status">{filter==='completed'?'Nenhum pedido concluído encontrado.':filter==='cancelled'?'Nenhum pedido cancelado ou recusado encontrado.':'Nenhum pedido encontrado.'}</p>}
    {boardGroups.map(group=><section className="pedidos-stage-column" data-stage={group.id} key={group.id}>
     {showWindowsBoard&&<header className="pedidos-stage-title"><strong>{group.label}</strong><span>{group.items.length}</span></header>}
     {showWindowsBoard&&group.items.length===0&&<p className="pedidos-stage-empty">Nenhum pedido nesta etapa</p>}
@@ -168,7 +169,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
       <span className="pedidos-compact-customer" title={o.receipt?.customer||'Cliente'}>{o.receipt?.customer||'Cliente'}</span>
       {firstItem&&<span className="pedidos-compact-item" title={items.map(i=>(i.quantity||1)+' × '+i.name).join(' · ')}>{firstItem.quantity||1} × {firstItem.name}{items.length>1&&<small> +{items.length-1}</small>}</span>}
       <span className="pedidos-compact-meta">
-       {!showWindowsBoard&&<span className="store-stage" data-stage={stage(o)}>{stages.find(([id])=>id===stage(o))?.[1]||'Em andamento'}</span>}
+       {(!showWindowsBoard||stage(o)==='rejected')&&<span className="store-stage" data-stage={stage(o)}>{stages.find(([id])=>id===stage(o))?.[1]||'Em andamento'}</span>}
        <span className="pedidos-payment-pill" data-payment={cardPayment(o).state}>{cardPayment(o).label}</span>
        <DeliveryBadge order={o} delivery={delivery}/>
       </span>
