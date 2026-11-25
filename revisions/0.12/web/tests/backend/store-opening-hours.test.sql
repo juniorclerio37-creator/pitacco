@@ -124,6 +124,40 @@ begin
   if sqlerrm not like 'Loja fechada no momento%' then raise;end if;
  end;
 end $test$;
+-- Opening-hours scheduling uses the same weekly periods; no separate appointment agenda.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','d1000000-0000-0000-0000-000000000001',true);
+do $test$
+declare s uuid:='d2000000-0000-0000-0000-000000000001'; tomorrow integer:=extract(isodow from ((now() at time zone 'America/Sao_Paulo')::date+1)); cfg jsonb;
+begin
+ cfg:=public.pitacco_store_hours_save_v2(s,jsonb_build_array(jsonb_build_object('weekday',tomorrow,'slot',1,'opens_minute',720,'closes_minute',840),jsonb_build_object('weekday',tomorrow,'slot',2,'opens_minute',1080,'closes_minute',1320)),false,3,true);
+ assert cfg->'current'->>'scheduling_available'='true';
+ assert cfg->'current'->>'open'='false';
+end $test$;
+set local role anon;
+select set_config('request.jwt.claim.sub','',true);
+do $test$
+declare slots timestamptz[]:=public.pitacco_public_schedule_slots('horarios-loja','pickup'); result jsonb;
+ payload jsonb:='[{"product_id":"d3000000-0000-0000-0000-000000000001","quantity":1}]';
+begin
+ assert cardinality(slots)>0;
+ assert not exists(select 1 from unnest(slots) t where (t at time zone 'America/Sao_Paulo')::time not between time '12:00' and time '13:30' and (t at time zone 'America/Sao_Paulo')::time not between time '18:00' and time '21:30');
+ result:=public.pitacco_checkout_scheduled_order('horarios-loja',gen_random_uuid(),'Cliente','21999999999','',payload,'pickup','dinheiro','',slots[1]);
+ assert result->>'status'='pending','Closed shop accepts only valid scheduled orders';
+ begin
+  perform public.checkout_public_order('horarios-loja',gen_random_uuid(),'Cliente','21999999999','',payload,'pickup','dinheiro','');
+  raise exception 'Expected immediate checkout rejection';
+ exception when raise_exception then if sqlerrm not like 'Loja fechada no momento%' then raise;end if;end;
+end $test$;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','d1000000-0000-0000-0000-000000000001',true);
+select public.pitacco_store_hours_save_v2('d2000000-0000-0000-0000-000000000001',public.pitacco_store_hours_state('d2000000-0000-0000-0000-000000000001')->'periods',true,4,true);
+set local role anon;
+select set_config('request.jwt.claim.sub','',true);
+do $test$ begin
+ assert cardinality(public.pitacco_public_schedule_slots('horarios-loja','pickup'))=0;
+ assert public.pitacco_public_store_open('horarios-loja')->>'scheduling_available'='false';
+end $test$;
 reset role;
 do $test$
 begin

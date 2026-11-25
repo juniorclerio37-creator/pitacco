@@ -2643,6 +2643,7 @@ function showStoreOpening(opening){
  if(available&&!isOpen){const action=button('Agendar pedido','schedule-store-action');action.onclick=()=>{if(cart.length)$('openCart').click();else $('layout').scrollIntoView({behavior:'smooth',block:'start'});};status.append(action);}
  if(!pendingRequest&&$('schedule').options[0]){if(!available){$('schedule').value='';$('scheduleBlock').hidden=true;}else if(!$('schedule').value){$('schedule').options[0].textContent=isOpen?'Assim que possível':'Selecione uma data e horário';}}
  if(!pendingRequest&&available&&$('scheduleBlock').hidden&&$('fulfillment').value)void loadSchedule();
+ if(!pendingRequest&&available&&!$('scheduleBlock').hidden)renderScheduleChoices();
  status.hidden=false;
  $('cartDock').hidden=!isOpen&&!available&&!pendingRequest;
  $('addProduct').disabled=!isOpen&&!available;
@@ -3078,7 +3079,7 @@ function renderScheduleChoices(){
  for(const [key,options] of dates){const label=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'long',day:'2-digit',month:'2-digit'}).format(new Date(options[0].value));dateInput.add(new Option(label,key));}dateInput.value=selectedDate;
  const times=el('div',undefined,'schedule-times');
  function showTimes(){times.replaceChildren();for(const option of dates.get(dateInput.value)||[]){const b=button(formatTime.format(new Date(option.value)),'schedule-time');b.setAttribute('aria-pressed',String(select.value===option.value));b.onclick=()=>{select.value=option.value;showTimes();renderCart();};times.append(b);}}
- dateInput.onchange=showTimes;
+ dateInput.onchange=()=>{select.value='';showTimes();renderCart();};
  if(storeOpening?.open){const now=button('Pedir agora','schedule-time');now.setAttribute('aria-pressed',String(!select.value));now.onclick=()=>{select.value='';renderScheduleChoices();renderCart();};root.append(now);}
  root.append(el('strong','Selecione a data'),dateInput,el('strong','Horário disponível'),times);showTimes();
 }

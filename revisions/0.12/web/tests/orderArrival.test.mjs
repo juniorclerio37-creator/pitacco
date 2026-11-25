@@ -13,12 +13,13 @@ test('New direct and marketplace orders alert once and never cross stores',()=>{
  assert.deepEqual(observe([]),[]);
  assert.deepEqual(observe([...arrivals,order('old','99food','a','accepted'),outsider]),[]);
 });
-test('Scheduled order alerts when it enters the active queue',()=>{
+test('Scheduled order alerts on arrival, not when preparation is released',()=>{
  const observed=newOrderTracker('a');
  const after=new Date(Date.now()+3600000).toISOString();
  const before=new Date(Date.now()-3600000).toISOString();
- assert.deepEqual(observed([order('1','proprio','a','pending',{scheduled_release_at:after})]),[]);
- assert.equal(observed([order('1','proprio','a','pending',{scheduled_release_at:before})]).length,1);
+ assert.deepEqual(observed([]),[]);
+ assert.equal(observed([order('1','proprio','a','pending',{scheduled_release_at:after})]).length,1);
+ assert.equal(observed([order('1','proprio','a','pending',{scheduled_release_at:before})]).length,0);
 });
 test('Saved store is per account and must still be accessible',()=>{
  const vals=new Map();
