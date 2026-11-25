@@ -155,6 +155,21 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
    return <article key={o.id} aria-label={'Card do pedido '+number(o)} data-source={o.source}
     className={'pedidos-card order-card '+(current?.id===o.id?'selected':'')}>
     <button type="button" className="pedidos-card-select" aria-haspopup="dialog" aria-expanded={current?.id===o.id} onClick={()=>setSelected(o.id)}>
+     {popupLayout?<div className="pedidos-compact-content">
+      <span className="pedidos-compact-heading">
+       <PlatformIcon source={o.source}/><b className="pedidos-compact-number" title={'Pedido #'+number(o)}>#{number(o)}</b>
+       <small>{o.scheduled_for?scheduledTime.format(new Date(o.scheduled_for)):o.created_at?new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</small>
+       <b className="pedidos-compact-total">{brl(o.gross)}</b>
+      </span>
+      <span className="pedidos-compact-customer" title={o.receipt?.customer||'Cliente'}>{o.receipt?.customer||'Cliente'}</span>
+      {firstItem&&<span className="pedidos-compact-item" title={items.map(i=>(i.quantity||1)+' × '+i.name).join(' · ')}>{firstItem.quantity||1} × {firstItem.name}{items.length>1&&<small> +{items.length-1}</small>}</span>}
+      <span className="pedidos-compact-meta">
+       {!showWindowsBoard&&<span className="store-stage" data-stage={stage(o)}>{stages.find(([id])=>id===stage(o))?.[1]||'Em andamento'}</span>}
+       <span className="pedidos-payment-pill" data-payment={cardPayment(o).state}>{cardPayment(o).label}</span>
+       <DeliveryBadge order={o} delivery={delivery}/>
+      </span>
+      {validLocalizer(badgeByOrder.get(o.id))&&<span className="pedidos-localizer" aria-label="Localizador de ligação do pedido"><strong>LOCALIZADOR</strong><b>{validLocalizer(badgeByOrder.get(o.id))}</b></span>}
+     </div>:<>
      <span className="pedidos-card-row"><b className="pedidos-origin"><PlatformIcon source={o.source}/><span>{source}</span></b><span className="store-stage" data-stage={stage(o)}>{stages.find(([id])=>id===stage(o))?.[1]||'Em andamento'}</span></span>
      <span className="pedidos-card-row"><b className="pedidos-number"><ShoppingBag size={17} aria-hidden="true"/> #{number(o)}</b>
       <small>{o.scheduled_for?'Agendado '+scheduledTime.format(new Date(o.scheduled_for)):o.created_at?new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</small></span>
@@ -167,22 +182,24 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
      <span className="pedidos-card-row pedidos-card-info"><small>{items.reduce((n,item)=>n+(Number(item.quantity)||1),0)} item(ns)</small><span className="pedidos-payment-pill" data-payment={cardPayment(o).state}>{cardPayment(o).label}</span></span>
      {validLocalizer(badgeByOrder.get(o.id))&&<span className="pedidos-localizer" aria-label="Localizador de ligação do pedido"><strong>LOCALIZADOR</strong><b>{validLocalizer(badgeByOrder.get(o.id))}</b></span>}
      <DeliveryBadge order={o} delivery={delivery}/>
+     </>}
     </button>
     {o.source==='proprio'&&o.status==='pending'&&stage(o)==='analysis'&&<div className="pedidos-card-actions">
+     {popupLayout&&<button type="button" className="secondary pedidos-reject-button" disabled={busy} onClick={()=>{setSelected(o.id);setDecision({id:o.id,status:'rejected',reason:''})}}>Recusar</button>}
      <button type="button" className="primary pedidos-step-button" disabled={busy} onClick={()=>onAccept(o.id)}>Aceitar</button>
     </div>}
     {o.source==='ifood'&&o.status==='pending'&&<div className="pedidos-card-actions">
      <button type="button" className="primary" disabled={busy||o.status!=='pending'||acceptMode==='automatic'||!onAcceptIfood||ifoodAcceptExpired(o)||o.receipt?.ifood_manual_accept==='requested'||o.receipt?.ifood_manual_cancel==='requested'} onClick={()=>onAcceptIfood?.(o.id)}>Aceitar</button>
-     <button type="button" className="secondary" disabled={busy||o.status!=='pending'||!onRejectIfood||!onGetIfoodReasons||o.receipt?.ifood_manual_accept==='requested'||o.receipt?.ifood_manual_cancel==='requested'} onClick={()=>void openIfoodReject(o)}>Recusar</button>
+     <button type="button" className="secondary pedidos-reject-button" disabled={busy||o.status!=='pending'||!onRejectIfood||!onGetIfoodReasons||o.receipt?.ifood_manual_accept==='requested'||o.receipt?.ifood_manual_cancel==='requested'} onClick={()=>void openIfoodReject(o)}>Recusar</button>
      {o.status==='pending'&&acceptMode==='automatic'&&<span role="status">Aceite automático ativo · aguardando iFood</span>}
-     {acceptRemaining(o)!==null&&<span role="status" className={acceptRemaining(o)<=120?'notice error':''}>{acceptDeadline(o)}</span>}
+     {acceptRemaining(o)!==null&&<span role="status" className={(acceptRemaining(o)<=120?'notice error ':'')+'pedidos-accept-deadline'} title={acceptDeadline(o)}>{popupLayout&&acceptRemaining(o)>0?Math.floor(acceptRemaining(o)/60)+':'+String(acceptRemaining(o)%60).padStart(2,'0'):acceptDeadline(o)}</span>}
      {o.receipt?.ifood_manual_accept==='requested'&&<span role="status">Aguardando confirmação do iFood</span>}
      {o.receipt?.ifood_manual_cancel==='requested'&&<span role="status">Cancelamento solicitado ao iFood</span>}
     </div>}
     {o.status==='accepted'&&<div className="pedidos-card-actions">
      {popupLayout&&o.source==='ifood'&&['preparing','ready','delivery'].includes(stage(o))&&
       (o.receipt?.ifood_manual_cancel==='requested'?<span role="status">Cancelamento solicitado ao iFood</span>:
-       <button type="button" className="secondary pedidos-step-button" disabled={busy||!onRejectIfood||!onGetIfoodReasons} onClick={()=>void openIfoodReject(o)}>Cancelar pedido no iFood</button>)}
+       <button type="button" className="secondary pedidos-card-cancel" title="Cancelar pedido no iFood" aria-label="Cancelar pedido no iFood" disabled={busy||!onRejectIfood||!onGetIfoodReasons} onClick={()=>void openIfoodReject(o)}>Cancelar</button>)}
      {stage(o)==='preparing'&&<button type="button" className="primary pedidos-step-button" disabled={busy} onClick={()=>onReady(o.id)}>{popupLayout?'Marcar pronto':'Marcar pedido pronto'}</button>}
      {stage(o)==='ready'&&o.source==='proprio'&&o.receipt?.logistics==='retirada'&&!popupLayout&&<button type="button" className="primary pedidos-step-button" disabled={busy||!onPickup} onClick={()=>onPickup?.(o.id)}>Confirmar retirada</button>}
      {stage(o)==='ready'&&canDispatch(o,delivery,dispatchMode)&&<button type="button" className="primary pedidos-step-button" disabled={busy} onClick={()=>onAssign(o)}>{popupLayout?'Despachar':'Selecionar entregador'}</button>}
@@ -190,7 +207,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
      {stage(o)==='ready'&&delivery?.courier_id&&<span role="status">Entregador selecionado · aguardando saída</span>}
      {stage(o)==='ready'&&delivery?.logistics_provider==='marketplace'&&<span role="status">Aguardando coleta pelo parceiro</span>}
      {stage(o)==='delivery'&&o.source==='proprio'&&delivery?.logistics_provider==='loja'&&!popupLayout&&<button type="button" className="primary pedidos-step-button" disabled={busy||!onConclude} onClick={()=>onConclude?.(o.id)}>Concluir entrega</button>}
-     {stage(o)==='delivery'&&<button type="button" className="secondary pedidos-step-button" disabled={busy} onClick={()=>onDetail(o)}>Acompanhar entrega</button>}
+     {stage(o)==='delivery'&&<button type="button" className="secondary pedidos-step-button pedidos-track-button" disabled={busy} onClick={()=>onDetail(o)}>Acompanhar entrega</button>}
      {o.source==='ifood'&&delivery?.logistics_provider==='loja'&&
       (o.receipt?.ifood_status==='DISPATCHED'?<span role="status">Despacho confirmado pelo iFood</span>:
        delivery.status==='retirada'?<span role="status">Saída registrada · aguardando DISPATCHED do iFood. Confira a sincronização no app do entregador.</span>:
