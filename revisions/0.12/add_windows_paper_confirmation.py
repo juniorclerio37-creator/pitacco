@@ -66,7 +66,7 @@ change(' </div>:<>\n  <WindowsConnectionStatus client={client} storeId={storeId}
      {sectors.map(sector=><div className="line" key={'test:'+sector.sector}>
        <b>{sector.sector}</b>
        <span>{sector.printer} · {sector.width} mm</span>
-       <button type="button" disabled={busy||!device} onClick={()=>runWindowsPhysicalTest(sector)}>Imprimir pedido fictício</button>
+       <button type="button" disabled={busy||!device} onClick={()=>runWindowsPhysicalTest(sector)}>Testar impressão</button>
      </div>)}
      {!sectors.length&&<p>Cadastre uma impressora acima para testar.</p>}
      {physicalPrintCheck&&<div className="windows-print-confirmation" aria-label="Confirmar impressão física">
