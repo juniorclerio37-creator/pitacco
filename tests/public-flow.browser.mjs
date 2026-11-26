@@ -37,6 +37,7 @@ try {
       768: { status: 'accepted', delivery_status: 'retirada', preparation_status: 'ready', fulfillment: 'delivery', label: 'Saiu para entrega' },
       1440: { status: 'accepted', delivery_status: 'entregue', preparation_status: 'completed', fulfillment: 'delivery', label: 'Entregue' }
     }[width];
+    const pricedScenario=template==='pitacco-v2'&&width===1440;
     const scheduled = width === 768 ? new Date(Date.now()+3*3600000).toISOString() : null;
     const area = {latitude:-22.7,longitude:-43.4,radius_m:3000,coverage_type:'circle',polygon:[]};
     await page.context().grantPermissions(['geolocation']);
@@ -83,7 +84,7 @@ try {
           store: { appearance:{template,primary:'#217c5a'}, primary_color:'#e04020', name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true,
             delivery_fee: 0, route_pricing:{enabled:true,mode:'circle',max_radius_km:3},
             delivery_area:area, payment_methods: width===1440?['pix_manual','dinheiro','cartao_entrega','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket']:['pix_manual'],
-            payment_price_rules:width===1440?{cartao_credito:{adjustment_bps:300,revision:1},pix_maquininha:{adjustment_bps:-500,revision:1}}:{},
+            payment_price_rules:width===1440?{cartao_credito:{adjustment_bps:300,revision:1},pix_maquininha:{adjustment_bps:-500,revision:1},...(pricedScenario?{pix_manual:{adjustment_bps:-500,revision:2}}:{})}:{},
             opening_hours:{open:true,reason:'open',next_open_at:null} },
           products: [{ id: 'acai', name: 'Açaí', category: 'Açaís', price: 20, option_groups: [{
             id: 'adicionais', name: 'Adicionais', min: 1, max: 1,
@@ -144,16 +145,18 @@ try {
           delivery_options:{standard:{fee:5,min_minutes:40,max_minutes:60},priority:{fee:9,min_minutes:20,max_minutes:30}},
           expires_at:new Date(Date.now()+5*60*1000).toISOString()}});
       }
-      if (pathname.endsWith('/pitacco_checkout_quoted_delivery')) {
+      if (pathname.endsWith('/pitacco_checkout_quoted_delivery')||pathname.endsWith('/pitacco_confirm_priced_public_checkout')) {
+        assert.equal(pathname.endsWith('/pitacco_confirm_priced_public_checkout'),pricedScenario,'Adjusted checkout requires the price confirmation endpoint');
         assert.equal(route.request().postDataJSON().p_quote,'30000000-0000-0000-0000-000000000011');
         requests.push(route.request().postDataJSON());
         const payload=route.request().postDataJSON();
         const quote=quotes.get(payload.p_request);
         assert.ok(quote,'Checkout uses the original quote request');
         assert.equal(quote.service,width===1440?'priority':'standard');
+        if(pricedScenario){assert.equal(payload.p_expected_cents,7455);assert.equal(payload.p_price_revision,2);assert.equal(payload.p_use_loyalty,false);}
         const saved=recordedOrders.get(payload.p_request);
         if(saved)assert.deepEqual(payload,saved.payload,'Server replay uses the original request and full checkout snapshot');
-        else recordedOrders.set(payload.p_request,{payload,receipt:{order_id:orderId,tracking_token:token,total:(template==='classic'?22:69)+quote.fee,payment_status:'pending'}});
+        else recordedOrders.set(payload.p_request,{payload,receipt:{order_id:orderId,tracking_token:token,total:(template==='classic'?22:69)+quote.fee-(pricedScenario?3.45:0),payment_status:'pending'}});
         if (requests.length === 1) {
           await responseGate;
           return route.fulfill({ status: 503, json: { message: 'Resposta indisponível' } });
@@ -446,6 +449,7 @@ try {
       await page.locator('#v2CheckoutNext').click();
       await page.locator('#cartDialog[data-v2-stage="review"]').waitFor();
       assert.match(await page.locator('#v2OrderSummary').innerText(),/Pix manual/);
+      if(pricedScenario){assert.match(await page.locator('#v2OrderSummary').innerText(),/Desconto no pagamento/);assert.match(await page.locator('#v2OrderSummary').innerText(),/74,55/);}
     }
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
     await page.getByRole('button', { name: principal?'Finalizar pedido →':'Confirmar pedido' }).click();
@@ -474,6 +478,7 @@ try {
       { product_id: 'acai', quantity: 1, options: ['leite'] }
     ]);
     assert.match(await page.locator('#success').innerText(), /Pagamento pendente de confirmação/);
+    if(pricedScenario)assert.match(await page.locator('#success').innerText(),/74,55/);
     await page.clock.install();
     await page.getByRole('link', { name: 'Acompanhar meu pedido' }).click();
     await page.locator('#currentStatus').filter({hasText: tracking.label}).waitFor();
