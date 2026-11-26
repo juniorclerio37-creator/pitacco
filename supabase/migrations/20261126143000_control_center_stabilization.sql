@@ -10,14 +10,15 @@ begin
  end if;
  old_rows:=$old$case when p.invoice_id is not null then 'paid' when i.due_at<now() then 'overdue' else 'open' end as status$old$;
  select pg_get_functiondef('public.pitacco_control_rows(text,uuid,integer,text)'::regprocedure) into d;
- if strpos(d,old_rows)=0 then raise exception 'Control Center charges patch anchor not found'; end if;
- execute replace(d,old_rows,status_expr);
+ if strpos(d,old_rows)>0 then execute replace(d,old_rows,status_expr);
+ elsif strpos(d,status_expr)=0 then raise exception 'Control Center charges patch anchor not found'; end if;
  -- Keep existing receivable/forecast amounts unchanged; only use official status for overdue.
  old_receivables:=$old$receivables as(select i.amount_cents,i.due_at from pitacco_private.commercial_invoices i left join pitacco_private.commercial_manual_payments p on p.invoice_id=i.id where p.invoice_id is null)$old$;
  new_receivables:='receivables as(select i.amount_cents,i.due_at,'||status_expr||' from pitacco_private.commercial_invoices i join pitacco_private.commercial_closings b using(contract_id,kind,period_end) left join pitacco_private.commercial_manual_payments p on p.invoice_id=i.id where p.invoice_id is null)';
  select pg_get_functiondef('public.pitacco_control_dashboard(date,date)'::regprocedure) into d;
- if strpos(d,old_receivables)=0 or strpos(d,$old$filter(where due_at<now())$old$)=0 then raise exception 'Control Center dashboard patch anchors not found'; end if;
- execute replace(replace(d,old_receivables,new_receivables),$old$filter(where due_at<now())$old$,$new$filter(where status='overdue')$new$);
+ if strpos(d,old_receivables)>0 and strpos(d,$old$filter(where due_at<now())$old$)>0 then
+  execute replace(replace(d,old_receivables,new_receivables),$old$filter(where due_at<now())$old$,$new$filter(where status='overdue')$new$);
+ elsif strpos(d,new_receivables)=0 or strpos(d,$new$filter(where status='overdue')$new$)=0 then raise exception 'Control Center dashboard patch anchors not found'; end if;
 end $patch$;
 create index if not exists control_audit_store_idx on pitacco_private.control_audit(store_id);
 create index if not exists control_lifecycle_store_idx on pitacco_private.control_lifecycle(store_id);
