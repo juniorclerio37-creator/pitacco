@@ -80,3 +80,36 @@
  .delivery-region-list{grid-template-columns:1fr}
  .delivery-region-select{flex:1;min-height:50px}
 }
+
+/* The delivery-area form is a full-width single-column workspace, not a
+   generic merchant two-column form. Use the available panel width rather
+   than the viewport, including desktop mode on a phone. */
+.delivery-area-panel{container:delivery-area / inline-size;min-width:0;width:100%;max-width:100%;box-sizing:border-box}
+.delivery-area-panel :is(p,small,legend){overflow-wrap:anywhere}
+.delivery-area-panel form.delivery-zone-config{
+ display:grid;grid-template-columns:minmax(0,1fr);width:100%;min-width:0;
+ max-width:100%;align-items:start;justify-items:stretch;gap:14px
+}
+.delivery-area-panel form.delivery-zone-config>*{
+ grid-column:1/-1;min-width:0;max-width:100%;box-sizing:border-box
+}
+.delivery-area-panel form.delivery-zone-config>fieldset{
+ width:100%;min-inline-size:0;max-width:100%;margin:0
+}
+.delivery-area-panel .delivery-zone-map{width:100%;min-width:0;max-width:100%}
+.delivery-area-panel .delivery-zone-mode{grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))}
+.delivery-area-panel .delivery-zone-rates{grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}
+.delivery-area-panel .delivery-region-editor,.delivery-area-panel .delivery-zone-rates>label{min-width:0;max-width:100%;box-sizing:border-box}
+.delivery-area-panel .delivery-region-editor fieldset{width:100%;min-inline-size:0;margin:0}
+.delivery-area-panel .delivery-zone-mode label{min-width:0;white-space:normal;overflow-wrap:anywhere}
+.delivery-area-panel .delivery-zone-mode input[type=radio]{width:18px;height:18px;flex:none}
+.delivery-area-panel .delivery-zone-rates input{min-width:0;max-width:100%;box-sizing:border-box}
+.delivery-area-panel .delivery-zone-polygon-actions button{white-space:normal}
+@container delivery-area (max-width:620px){
+ .delivery-area-panel form.delivery-zone-config>fieldset{padding:10px}
+ .delivery-area-panel .delivery-zone-mode,.delivery-area-panel .delivery-region-list,.delivery-area-panel .delivery-zone-rates{grid-template-columns:minmax(0,1fr)}
+ .delivery-area-panel .delivery-region-editor{padding:10px}
+ .delivery-area-panel .delivery-zone-map{height:350px;min-height:280px}
+ .delivery-area-panel .delivery-region-heading>button,.delivery-area-panel form.delivery-zone-config>button[type=submit]{width:100%;justify-content:center}
+ .delivery-area-panel .delivery-region-item-actions button{min-width:29px}
+}

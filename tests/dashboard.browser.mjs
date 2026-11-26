@@ -927,6 +927,26 @@ try {
     const menuLink=page.getByRole('link',{name:'https://pitacco.com.br/loja-teste',exact:true});
     await menuLink.waitFor();
     assert.equal(await menuLink.getAttribute('href'),'https://pitacco.com.br/loja-teste');
+    if(width<=800){
+      await page.getByRole('button',{name:'Área de entrega',exact:true}).click();
+      const area=page.getByRole('region',{name:'Área de entrega',exact:true});
+      await area.locator('form.delivery-zone-config').waitFor();
+      async function assertAreaWidth(){
+        const geometry=await area.locator('form.delivery-zone-config').evaluate(form=>{
+          const rect=form.getBoundingClientRect();
+          const field=form.querySelector(':scope > fieldset').getBoundingClientRect();
+          const map=form.querySelector('.delivery-zone-map').getBoundingClientRect();
+          return {form:rect.width,field:field.width,map:map.width,overflow:form.scrollWidth>form.clientWidth+2};
+        });
+        assert.ok(geometry.field>=geometry.form-2,'Delivery options occupy the full form width');
+        assert.ok(geometry.map>=geometry.form-2,'Map occupies the full form width');
+        assert.equal(geometry.overflow,false,'Delivery form has no horizontal overflow');
+      }
+      await assertAreaWidth();
+      await area.getByRole('radio',{name:'Polígonos por região'}).check();
+      await assertAreaWidth();
+      await page.getByRole('button',{name:'Identidade da loja',exact:true}).click();
+    }
     if(width===1440){
       assert.equal(await page.getByRole('region',{name:'Central de ajuda'}).count(),0);
       assert.equal(await page.getByRole('region',{name:'Chamados de suporte'}).count(),0);
@@ -1024,7 +1044,8 @@ try {
       await hours.getByRole('button',{name:'Pausar pedidos agora'}).waitFor();
       assert.equal(storeHoursPaused,false);
     }
-    await page.getByRole('button', { name:'Agendamento', exact:true }).click();
+    assert.equal(await page.getByRole('button',{name:'Agendamento',exact:true}).count(),0,'No duplicate merchant scheduling tab');
+    await page.getByRole('button', { name:'Horário de funcionamento', exact:true }).click();
     const schedule = page.getByRole('region', {name:'Horário de funcionamento da loja'});
     await schedule.getByRole('switch',{name:'Aceitar pedidos agendados'}).check();
     if(width<=800){

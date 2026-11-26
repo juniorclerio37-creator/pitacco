@@ -189,3 +189,15 @@ subprocess.run([sys.executable,'revisions/0.12/merchant_navigation_v2.py'],check
 
 # Approved mobile and desktop merchant redesign.
 subprocess.run([sys.executable,'revisions/0.12/merchant_modern_0133.py'],check=True)
+
+# Scheduling is configured exclusively in opening hours. Remove the redundant
+# legacy internal tab after all source overlays, keeping legacy deep-link routing.
+import re
+ui=pathlib.Path('web/src.jsx')
+content=ui.read_text(encoding='utf-8')
+pattern=r"<button\b(?:(?!<button\b|</button>)[\s\S])*?>\s*Agendamento\s*</button>"
+matches=list(re.finditer(pattern,content))
+assert len(matches)==1, f'Expected one redundant merchant scheduling button, found {len(matches)}'
+assert "setTab('Agendamento')" in matches[0].group(), 'Unexpected scheduling button target'
+content=content[:matches[0].start()]+'<></>'+content[matches[0].end():]
+ui.write_text(content,encoding='utf-8')
