@@ -226,7 +226,8 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
      {stage(o)==='ready'&&o.source==='proprio'&&o.receipt?.logistics==='retirada'&&<span role="status" className="pickup-ready-note">Disponível para retirada</span>}
      {stage(o)==='ready'&&o.source==='proprio'&&o.receipt?.logistics==='retirada'&&<button type="button" className="primary pedidos-step-button pedidos-pickup-finish" disabled={busy||!onPickup} onClick={()=>onPickup?.(o.id)}>Finalizar</button>}
      {stage(o)==='ready'&&canDispatch(o,delivery,dispatchMode)&&<button type="button" className="primary pedidos-step-button" title="Despachar entrega" disabled={busy} onClick={()=>onAssign(o)}>Selecionar entregador</button>}
-     {stage(o)==='ready'&&canAssign(o,delivery)&&isAutomaticDispatch(dispatchMode)&&<span role="status">Atribuição automática ativa · seleção manual também disponível</span>}
+     {stage(o)==='ready'&&delivery&&(delivery.courier_id||shippingReserved(delivery))&&<button type="button" className="secondary pedidos-step-button" disabled={busy} onClick={()=>onDetail(o)}>Gerenciar entrega</button>}
+     {stage(o)==='ready'&&canAssign(o,delivery)&&isAutomaticDispatch(dispatchMode)&&!delivery.manual_dispatch_hold&&<span role="status">Atribuição automática ativa · seleção manual também disponível</span>}
      {stage(o)==='ready'&&delivery?.courier_id&&<span role="status">Entregador selecionado · aguardando saída</span>}
      {stage(o)==='ready'&&delivery?.logistics_provider==='marketplace'&&<span role="status">Aguardando coleta pelo parceiro</span>}
      
@@ -277,7 +278,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
 {stage(current)==='ready'&&currentDelivery?.logistics_provider==='marketplace'&&<p role="status" className="order-detail-note">Aguardando retirada pelo parceiro</p>}
 {current.source==='ifood'&&currentDelivery?.logistics_provider==='loja'&&current.status==='accepted'&&current.receipt?.ifood_status!=='DISPATCHED'&&['ready','delivery'].includes(stage(current))&&<p role="status" className="order-detail-note">O despacho só é confirmado quando o iFood enviar DISPATCHED. No aplicativo do entregador, registre a coleta e toque em Sair para entrega. Se a saída já foi registrada, confira Sincronizar despacho com iFood.</p>}
 {stage(current)==='delivery'&&<p role="status" className="order-detail-note">A conclusão exige chegada e comprovação registradas pelo entregador; pedidos de marketplaces aguardam a confirmação oficial.</p>}
-{canAssign(current,currentDelivery)&&isAutomaticDispatch(dispatchMode)&&<p role="status" className="order-detail-note">Atribuição automática ativa · você pode selecionar manualmente</p>}
+{canAssign(current,currentDelivery)&&isAutomaticDispatch(dispatchMode)&&!currentDelivery.manual_dispatch_hold&&<p role="status" className="order-detail-note">Atribuição automática ativa · você pode selecionar manualmente</p>}
 {current.status==='accepted'&&scheduleInfo(current)?.waiting&&<p className="order-detail-note">Agendamento aceito. Preparo liberado a partir de {scheduleInfo(current).release}.</p>}
 {(waitingIfood||ifoodCancelPending||current.receipt?.ifood_manual_cancel==='failed')&&<div role="status" className="order-detail-meta">
  {ifoodCancelPending?<p>Cancelamento solicitado ao iFood. Aguardando confirmação oficial.</p>:
