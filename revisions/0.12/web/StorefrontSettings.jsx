@@ -76,7 +76,7 @@ function PaymentPricingDrafts({client,storeId,menu}){
  const adjustment=Number(current?.adjustment_bps||0);
  useEffect(()=>{setOpen(false);setRows(null);setChannel('cardapio');setMethod('dinheiro');setError('');setMessage('')},[storeId]);
  useEffect(()=>{if(!open)return;let active=true;setRows(null);setError('');client.rpc('pitacco_payment_pricing_drafts',{p_store:storeId}).then(({data,error})=>{if(!active)return;if(error){setError('A configuração de preços ainda não está disponível. Nenhum preço foi alterado.');return}setRows(Array.isArray(data)?data:[])}).catch(()=>{if(active)setError('Não foi possível carregar as regras. Tente novamente.')});return()=>{active=false}},[open,client,storeId,refresh]);
- useEffect(()=>{setMode(adjustment<0?'discount':adjustment>0?'increase':'none');setPercent(String(Math.abs(adjustment)/100));setMessage('')},[channel,selected,adjustment,current?.revision]);
+ useEffect(()=>{setMode(adjustment<0?'discount':adjustment>0?'increase':'none');setPercent(String(Math.abs(adjustment)/100))},[channel,selected,adjustment,current?.revision]);
  const bp=mode==='none'?0:Math.round(Number(percent)*100)*(mode==='discount'?-1:1);
  const valid=Number.isFinite(bp)&&bp>=-9999&&bp<=10000&&Number(percent)>=0;
  const preview=valid?100+Math.round(bp)/100:100;
@@ -89,11 +89,11 @@ function PaymentPricingDrafts({client,storeId,menu}){
  {open&&<><p role="note">Em preparação — regras salvas como rascunho, sem efeito sobre os pedidos.</p>{error&&<p role="alert">{error} <button type="button" disabled={saving} onClick={()=>setRefresh(v=>v+1)}>Recarregar regras</button></p>}
  {rows===null&&!error&&<p role="status">Carregando regras…</p>}
  {rows&&<form onSubmit={save}><fieldset disabled={saving}><legend>Configuração por canal</legend>
- <label>Canal de venda<select value={channel} onChange={e=>setChannel(e.target.value)}><option value="cardapio">Cardápio digital</option><option value="balcao">Balcão e PDV</option></select></label>
- <label>Forma de pagamento para ajuste<select value={selected} onChange={e=>setMethod(e.target.value)}>{applicable.map(m=><option key={m} value={m}>{methods[m]}</option>)}</select></label>
+ <label>Canal de venda<select value={channel} onChange={e=>{setChannel(e.target.value);setMessage('')}}><option value="cardapio">Cardápio digital</option><option value="balcao">Balcão e PDV</option></select></label>
+ <label>Forma de pagamento para ajuste<select value={selected} onChange={e=>{setMethod(e.target.value);setMessage('')}}>{applicable.map(m=><option key={m} value={m}>{methods[m]}</option>)}</select></label>
  {!selected?<p>Habilite uma forma elegível nas configurações de pagamento.</p>:<>
- <label>Tipo de ajuste<select value={mode} onChange={e=>setMode(e.target.value)}><option value="none">Sem alteração</option><option value="increase">Acréscimo</option><option value="discount">Desconto</option></select></label>
- {mode!=='none'&&<label>Percentual (%)<input required type="number" min="0" max={mode==='discount'?99.99:100} step="0.01" value={percent} onChange={e=>setPercent(e.target.value)}/></label>}
+ <label>Tipo de ajuste<select value={mode} onChange={e=>{setMode(e.target.value);setMessage('')}}><option value="none">Sem alteração</option><option value="increase">Acréscimo</option><option value="discount">Desconto</option></select></label>
+ {mode!=='none'&&<label>Percentual (%)<input required type="number" min="0" max={mode==='discount'?99.99:100} step="0.01" value={percent} onChange={e=>{setPercent(e.target.value);setMessage('')}}/></label>}
  <p>Simulação em R$ 100,00 de produtos: <strong>{preview.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong></p>
  <button type="submit" disabled={!valid||saving}>{saving?'Salvando…':'Salvar rascunho de preço'}</button></>}
  </fieldset></form>}{message&&<p role="status">{message}</p>}</>}
