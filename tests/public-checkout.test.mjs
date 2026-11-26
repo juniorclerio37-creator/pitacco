@@ -132,3 +132,11 @@ test('changed payment price requires explicit customer reconfirmation and update
  assert.match(html,/if\(v2Only\(\)\)v2ShowCheckoutStage\('payment'\)/);
  assert.match(html,/Confira o novo total e confirme novamente/);
 });
+
+test('option group navigation triggers only when maximum is newly reached',()=>{
+ assert.match(html,/previousCount>=Number\(row.group.max\)\|\|row.selectedCount!==Number\(row.group.max\)/);
+ assert.match(html,/groups\[groups.indexOf\(row\)\+1\]/);
+ assert.match(html,/if\(!next\|\|!\$\('productDialog'\)\.open\)return/);
+ assert.match(html,/if\(option&&input.checked\)advanceCompletedOptionGroup\(row,previousCount\)/);
+ assert.match(html,/body.scrollTo\(\{top,behavior:reducedMotion\?'instant':'smooth'\}\)/);
+});

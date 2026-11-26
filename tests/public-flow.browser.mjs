@@ -193,13 +193,26 @@ try {
     }
     const productCard=page.getByRole('button',{name:'Personalizar Açaí',exact:true});
     await productCard.waitFor();
+    // Inspect product-only scrolling without introducing animation races in the tests.
+    await page.evaluate(()=>{
+      const body=document.getElementById('productBody');
+      const nativeScroll=body.scrollTo.bind(body);
+      window.productAutoScroll=[];
+      body.scrollTo=options=>{
+        window.productAutoScroll.push({top:options.top,behavior:options.behavior});
+        nativeScroll({...options,behavior:'instant'});
+      };
+    });
     // Pizza uses the same dialog, cart persistence and option payload in every template.
     const pizzaCard=page.getByRole('button',{name:'Personalizar Pizza Teste',exact:true});
     await pizzaCard.click();
     const pizza=page.getByRole('dialog',{name:'Pizza Teste'});
     await pizza.locator('select').selectOption('g');
     await pizza.getByRole('checkbox',{name:/Calabresa/}).check();
+    assert.equal(await page.evaluate(()=>window.productAutoScroll.length),0,'Partial flavor selection must not advance');
     await pizza.getByRole('checkbox',{name:/Frango/}).check();
+    const pizzaScroll=await page.evaluate(()=>window.productAutoScroll.slice());
+    if(width===375)assert.equal(pizzaScroll.length,1,'Reaching maximum flavors advances to the optional border');
     await pizza.getByRole('radio',{name:/Catupiry/}).check();
     assert.match(await pizza.locator('#productTotal').innerText(),/59,95/);
     await pizza.getByRole('button',{name:/Adicionar à sacola/}).click();
@@ -218,6 +231,29 @@ try {
     await pizza.getByRole('button',{name:'Salvar alterações'}).click();
     await pizzaCart.getByRole('button',{name:'Remover Pizza Teste'}).click();
     await page.locator('#closeCart').click();
+    // Verify the shared açaí dialog before diverging into template-specific checkout paths.
+    await productCard.click();
+    const advanceDialog=page.getByRole('dialog',{name:'Açaí'});
+    await page.evaluate(()=>{
+      window.productAutoScroll=[];
+      const body=document.getElementById('productBody');
+      // Force enough overflow to exercise advancement at every viewport, even on desktop.
+      body.style.maxHeight='140px';
+    });
+    await advanceDialog.getByRole('radio',{name:/Morango/}).check();
+    const advanceCalls=await page.evaluate(()=>window.productAutoScroll.slice());
+    assert.equal(advanceCalls.length,1,'Maximum of one advances to Extras');
+    assert.ok(advanceCalls[0].top>0);
+    await advanceDialog.getByRole('radio',{name:/Leite em pó/}).check();
+    assert.equal(await page.evaluate(()=>window.productAutoScroll.length),1,'Changing a full radio group does not jump');
+    await advanceDialog.getByRole('checkbox',{name:/Granola/}).check();
+    await advanceDialog.getByRole('checkbox',{name:/Banana/}).check();
+    assert.equal(await page.evaluate(()=>window.productAutoScroll.length),1,'Last group must not auto-submit or scroll');
+    await advanceDialog.getByRole('checkbox',{name:/Banana/}).uncheck();
+    assert.equal(await page.evaluate(()=>window.productAutoScroll.length),1,'Removing an option does not jump');
+    assert.equal(await advanceDialog.isVisible(),true);
+    await page.locator('#closeProduct').click();
+    await page.evaluate(()=>document.getElementById('productBody').style.removeProperty('max-height'));
     if(template==='classic'){
       // Classic has different navigation from V2. Test its real checkout path
       // without asserting V2-only hero, favourites and product cards.

@@ -2349,6 +2349,18 @@ function openProduct(product,item=null){
  }else renderOptionFields(product.option_groups||[],item,$('productBody'));
  $('productError').hidden=true;updateProduct();$('productDialog').showModal();$('productBody').scrollTop=0;
 }
+// Advance only on a new selection that reaches this group's maximum.
+function advanceCompletedOptionGroup(row,previousCount){
+ if(!row||previousCount>=Number(row.group.max)||row.selectedCount!==Number(row.group.max))return;
+ const next=groups[groups.indexOf(row)+1];
+ if(!next||!$('productDialog').open)return;
+ const body=$('productBody');
+ const target=body.scrollTop+next.field.getBoundingClientRect().top-body.getBoundingClientRect().top-12;
+ const top=Math.max(0,Math.min(target,body.scrollHeight-body.clientHeight));
+ if(Math.abs(body.scrollTop-top)<2)return;
+ const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ body.scrollTo({top,behavior:reducedMotion?'instant':'smooth'});
+}
 function renderOptionFields(optionGroups,item,container){
  for(const [index,group] of optionGroups.entries()){
   if(group.max===0||(!group.options.length&&!group.min))continue;
@@ -2366,7 +2378,10 @@ function renderOptionFields(optionGroups,item,container){
    input.checked=option?Boolean(item?.options.includes(option.id)):
     !group.options.some(choice=>item?.options.includes(choice.id));
    input.addEventListener('change',()=>{
+    const row=groups.find(entry=>entry.field===field);
+    const previousCount=row?.selectedCount??0;
     field.removeAttribute('data-invalid');$('productError').hidden=true;updateProduct();
+    if(option&&input.checked)advanceCompletedOptionGroup(row,previousCount);
    });
    label.append(input);
    if(option?.image_url&&imageUrl(option.image_url)){
@@ -2391,6 +2406,7 @@ function updateProduct(){
  for(const row of groups){
   const options=getChoices(row);
   extra+=options.reduce((sum,option)=>sum+Number(option.price),0);
+  row.selectedCount=options.length;
   row.count.textContent=options.length+' de '+row.group.max;
   row.count.dataset.ready=String(row.group.min>0&&options.length>=row.group.min);
   if(options.length<row.group.min)pendingGroups++;
