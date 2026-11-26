@@ -354,7 +354,12 @@ try {
       if(pathname==='/rest/v1/rpc/pitacco_commercial_invoices'){
         if(origin===api)assert.equal(route.request().postDataJSON().p_store,store.id,'Lojista consulta somente as próprias faturas');
         else{assert.equal(origin,realApi);assert.equal(adminMode,true);}
-        return route.fulfill({headers,json:{rows:[],has_more:false}});
+        return route.fulfill({headers,json:{rows:origin===api?[{id:'89000000-0000-0000-0000-000000000001',kind:'monthly',amount_cents:5990,due_at:new Date().toISOString(),status:'open',asaas_customer_linked:true,asaas_reserved:false}]:[],has_more:false}});
+      }
+      if(pathname==='/functions/v1/pitacco-asaas-commercial-pix'){
+        const input=route.request().postDataJSON();
+        assert.deepEqual(input,{invoice_id:'89000000-0000-0000-0000-000000000001',method:'PIX'},'No fiscal document is requested or transmitted at payment');
+        return route.fulfill({headers,json:{status:'PENDING',invoice_url:'https://www.asaas.com/i/fixture',billing_type:'PIX',payload:'fixture-pix-code'}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_owner_finance_report'){
         assert.equal(origin,realApi);
@@ -1104,6 +1109,15 @@ try {
     await billing.getByText('Vencida',{exact:true}).waitFor();
     await billing.getByRole('alert').filter({hasText:'Novos pedidos bloqueados'}).waitFor();
     assert.equal(await billing.getByRole('link',{name:'Regularizar assinatura'}).getAttribute('href'),'https://billing.example.invalid/');
+    await billing.getByRole('button',{name:'Pix Automático',exact:true}).click();
+    assert.equal(await billing.getByLabel(/CPF|CNPJ da empresa/).count(),0,'No fiscal document field in subscription checkout');
+    await billing.getByRole('button',{name:'Gerar Pix Automático',exact:true}).click();
+    await billing.getByLabel('Pix Copia e Cola').waitFor();
+    assert.equal(await billing.getByLabel('Pix Copia e Cola').inputValue(),'fixture-pix-code');
+    await billing.getByRole('button',{name:'Fechar',exact:true}).click();
+    assert.equal(await billing.locator('.sub-workspace').count(),0);
+    const billingGeometry=await billing.evaluate(el=>({width:el.clientWidth,scroll:el.scrollWidth}));
+    assert.ok(billingGeometry.scroll<=billingGeometry.width+2,'Subscription fits the available width');
     assert.equal(await page.getByRole('button',{name:'Homologação',exact:true}).count(),0);
     await page.goto(adminPortal);
     async function adminLogin(password='senha-de-teste'){
