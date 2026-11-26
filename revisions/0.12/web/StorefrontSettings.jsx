@@ -233,6 +233,7 @@ function DeliveryAreaPricing({client,store}){
  const [enabled,setEnabled]=useState(false);
  const [revision,setRevision]=useState(0);
  const [reloadAreas,setReloadAreas]=useState(0);
+ const [mapRetry,setMapRetry]=useState(0),[mapState,setMapState]=useState('loading'),[tileState,setTileState]=useState('loading'),[mapFailure,setMapFailure]=useState('');
  const container=useRef(null),map=useRef(null);
  const activeRegion=regions.find(region=>region.id===activeRegionId)||null;
  const invalidRegions=regions.filter(r=>r.vertices.length>=3&&!polygonValid(r.vertices));
@@ -313,6 +314,7 @@ function DeliveryAreaPricing({client,store}){
  useEffect(()=>{
   if(status!=='ready'||!container.current)return;
   let alive=true;
+  setMapState('loading');setTileState('loading');setMapFailure('');
   mountDeliveryCoverageMap(container.current,{
    center:origin,mode,radiusKm:radius,regions,activeRegionId,
    onVerticesChange:(next,id)=>{if(alive){
@@ -320,18 +322,19 @@ function DeliveryAreaPricing({client,store}){
      region.id===id?{...region,vertices:next}:region));
     setNotice('');
    }},
-   onSelectRegion:id=>{if(alive)setActiveRegionId(id)}
+   onSelectRegion:id=>{if(alive)setActiveRegionId(id)},
+   onTileStatus:state=>{if(alive)setTileState(state)}
   }).then(instance=>{
    if(!alive){instance.remove();return;}
-   map.current=instance;
+   map.current=instance;setMapState('ready');
    const latest=liveMapOptions.current;
    instance.setMode(latest.mode);
    instance.setRadius(latest.radius);
    instance.setRegions(latest.regions,latest.activeRegionId);
    instance.resize();
-  }).catch(failure=>{if(alive)setError('Mapa indisponível: '+failure.message)});
+  }).catch(failure=>{if(alive){setMapState('error');setMapFailure(failure?.message||'Não foi possível abrir o mapa.')}});
   return()=>{alive=false;map.current?.remove();map.current=null};
- },[store.id,status,origin?.[0],origin?.[1],revision]);
+ },[store.id,status,origin?.[0],origin?.[1],revision,mapRetry]);
  useEffect(()=>map.current?.setMode(mode),[mode]);
  useEffect(()=>map.current?.setRadius(radius),[radius]);
  useEffect(()=>map.current?.setRegions(regions,activeRegionId),[regions,activeRegionId]);
@@ -501,6 +504,9 @@ function DeliveryAreaPricing({client,store}){
    </fieldset>
    <div ref={container} className="storefront-map delivery-zone-map"
     aria-label="Mapa visual para delimitar onde a loja faz entregas"/>
+   {mapState==='loading'&&<p role="status">Carregando editor do mapa…</p>}
+   {mapState==='error'&&<div role="alert"><p>Mapa indisponível: {mapFailure}</p><button type="button" className="secondary" onClick={()=>setMapRetry(n=>n+1)}>Tentar abrir mapa novamente</button></div>}
+   {mapState==='ready'&&tileState==='error'&&<div role="alert"><p>O editor abriu, mas o serviço de imagens das ruas está indisponível. Confira a conexão. As regiões já desenhadas estão preservadas.</p><button type="button" className="secondary" onClick={()=>map.current?.retryTiles()}>Recarregar imagens do mapa</button></div>}
    <small>Geocodificação quando habilitada: Powered by <a href="https://www.geoapify.com/" target="_blank" rel="noreferrer">Geoapify</a>.</small>
    {mode==='circle'&&<fieldset disabled={busy||!origin}>
     <legend>Quanto cobrar de frete?</legend>
@@ -513,7 +519,7 @@ function DeliveryAreaPricing({client,store}){
    {enabled&&<p role="status">Regras de entrega ativas. Se alterar o modo, os limites ou os preços, salve novamente.</p>}
    {error&&<p role="alert">{error}</p>}
    {notice&&<p role="status">{notice}</p>}
-   <button type="submit" disabled={busy||!origin||status!=='ready'}>
+   <button type="submit" disabled={busy||!origin||status!=='ready'||(mode==='polygon'&&(mapState!=='ready'||tileState!=='ready'))}>
     {busy?'Salvando…':mode==='polygon'?'Salvar e ativar regiões poligonais':'Salvar e ativar círculo de entrega'}
    </button>
   </form>}
