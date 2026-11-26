@@ -5,12 +5,15 @@ insert into public.store_members(store_id,user_id,role) values ('90000000-0000-0
 insert into public.pitacco_delivery_route_quotes(id,store_id,request_id,destination_address,distance_m,fee,pricing_updated_at,expires_at,destination_latitude,destination_longitude) values
 ('90000000-0000-0000-0000-000000000064','90000000-0000-0000-0000-000000000062','90000000-0000-0000-0000-000000000065','Rua Exemplo, 39, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000, apto privado',500,5,now(),now()+interval '5 minutes',-22.7,-43.4),
 ('90000000-0000-0000-0000-000000000066','90000000-0000-0000-0000-000000000063','90000000-0000-0000-0000-000000000067','Rua Exemplo, 39, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000',500,5,now(),now()+interval '5 minutes',-22.8,-43.4);
+insert into public.pitacco_delivery_route_quotes(id,store_id,request_id,destination_address,distance_m,fee,pricing_updated_at,expires_at,created_at,destination_latitude,destination_longitude) values ('90000000-0000-0000-0000-000000000068','90000000-0000-0000-0000-000000000062','90000000-0000-0000-0000-000000000069','Rua Exemplo, 39, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000',500,5,now(),now()+interval '5 minutes',now()-interval '1 minute',-22.75,-43.4);
 set local role authenticated;
 select set_config('request.jwt.claim.sub','90000000-0000-0000-0000-000000000061',true);
 do $test$
 declare s uuid:='90000000-0000-0000-0000-000000000062';
 begin
  assert public.pitacco_save_verified_delivery_address(s,'90000000-0000-0000-0000-000000000064')='{"saved":true}'::jsonb;
+ -- Older in-flight automatic writes must never replace the latest chosen point.
+ perform public.pitacco_save_verified_delivery_address(s,'90000000-0000-0000-0000-000000000068');
  begin
   perform public.pitacco_save_verified_delivery_address(s,'90000000-0000-0000-0000-000000000066');
   raise exception 'Expected wrong store quote rejection';

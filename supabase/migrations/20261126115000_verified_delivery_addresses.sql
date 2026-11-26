@@ -37,10 +37,11 @@ begin
  if not found or q.destination_latitude is null or q.destination_longitude is null then raise exception 'Recalcule o frete antes de salvar a localização';end if;
  k:=pitacco_private.delivery_address_key(q.destination_address);
  if k is null then raise exception 'Informe rua, número, bairro, cidade e UF antes de salvar';end if;
- insert into pitacco_private.verified_delivery_addresses(store_id,street_key,house_key,district_key,city_key,state_key,postal_key,latitude,longitude)
- values(p_store,k[1],k[2],k[3],k[4],k[5],k[6],q.destination_latitude,q.destination_longitude)
+ insert into pitacco_private.verified_delivery_addresses(store_id,street_key,house_key,district_key,city_key,state_key,postal_key,latitude,longitude,verified_at)
+ values(p_store,k[1],k[2],k[3],k[4],k[5],k[6],q.destination_latitude,q.destination_longitude,q.created_at)
  on conflict(store_id,street_key,house_key,district_key,city_key,state_key,postal_key)
- do update set latitude=excluded.latitude,longitude=excluded.longitude,verified_at=now();
+ do update set latitude=excluded.latitude,longitude=excluded.longitude,verified_at=excluded.verified_at
+ where pitacco_private.verified_delivery_addresses.verified_at<=excluded.verified_at;
  insert into public.operation_audit(store_id,actor,action,details) values(p_store,auth.uid(),'delivery_address_verified',jsonb_build_object('quote_id',p_quote));
  return jsonb_build_object('saved',true);
 end $save$;

@@ -19,3 +19,12 @@ test('merchant freight requires complete structured address, current quote and e
  assert.equal(currentQuote(q,address,point,now),true);assert.equal(currentQuote(q,address,null,now),false);assert.equal(currentQuote(q,address+' changed',point,now),false);assert.equal(currentQuote(q,address,point,now+60001),false);
  assert.match(view,/requestId=id\(\)/);assert.match(view,/request\.current=requestId/);assert.match(view,/latitude:point\[0\],longitude:point\[1\]/);assert.match(view,/delivery&&!quoteCurrent/);assert.match(view,/aria-pressed=\{received\}/);
 });
+
+test('verified map points are remembered automatically after a valid quote',()=>{
+ assert.match(view,/if\(!quoteCurrent\|\|!point\|\|!quote\?\.quote_id\)return/);
+ assert.match(view,/rpc\('pitacco_save_verified_delivery_address',\{p_store:storeId,p_quote:quoteId\}\)/);
+ assert.match(view,/Localização salva automaticamente para os próximos pedidos/);
+ assert.doesNotMatch(view,/onClick=\{saveVerifiedLocation\}/);
+ assert.doesNotMatch(view,/window\.confirm\('Confirma que este é o ponto exato/);
+ assert.doesNotMatch(view,/setPoint\(suggestion.point\)/);
+});
