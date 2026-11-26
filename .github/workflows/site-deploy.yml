@@ -91,6 +91,8 @@ jobs:
       - name: Construir o painel real e o cardápio no bundle existente
         run: |
           bash scripts/build-cloudflare.sh
+          bash scripts/build-admin-cloudflare.sh
+          test -s web/dist-admin/index.html
           test -s web/dist/index.html
           test -s web/dist/app/index.html
           test -s web/dist/cardapio/index.html
