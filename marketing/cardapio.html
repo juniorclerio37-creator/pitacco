@@ -3422,10 +3422,10 @@ async function loadStartupBrand(){
  try{const saved=JSON.parse(localStorage.getItem(menuBrandCacheKey)||'null');if(saved&&Date.now()-saved.at<86400000)displayStartupBrand(saved.brand)}catch{}
  try{const {data,error}=await client.rpc('pitacco_public_menu_identity',{p_slug:slug});if(!error&&data?.name&&!menu)rememberStartupBrand(data)}catch{}
 }
-let identityRefreshRunning=false,identityRefreshAt=0;
+let identityRefreshRunning=false;
 async function refreshPublicStoreIdentity(){
- if(!menu||identityRefreshRunning||studioPreviewActive||pagbankPreviewMode||document.visibilityState!=='visible'||Date.now()-identityRefreshAt<25000)return;
- identityRefreshRunning=true;identityRefreshAt=Date.now();
+ if(!menu||identityRefreshRunning||studioPreviewActive||pagbankPreviewMode||document.visibilityState!=='visible')return;
+ identityRefreshRunning=true;
  try{
   const {data,error}=await client.rpc('pitacco_public_menu_identity',{p_slug:slug});
   if(error||typeof data?.name!=='string')return;

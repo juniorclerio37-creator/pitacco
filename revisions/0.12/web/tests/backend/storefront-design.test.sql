@@ -56,6 +56,13 @@ begin
   if sqlerrm not like 'Aparência alterada%' then raise;end if;
  end;
  d:=jsonb_set(d,'{primary}','"#d15723"'::jsonb);
+ d:=d||'{"logo_frame":{"size":120,"zoom":180,"x":-10,"y":5,"padding":3,"fit":"cover","shape":"circle"}}'::jsonb;
+ begin
+  perform public.pitacco_storefront_save_draft('92000000-0000-0000-0000-000000000001',jsonb_set(d,'{logo_frame,zoom}','999'::jsonb),1);
+  raise exception 'Invalid logo zoom accepted';
+ exception when raise_exception then
+  if sqlerrm<>'Enquadramento do logotipo inválido' then raise;end if;
+ end;
  perform public.pitacco_storefront_save_draft('92000000-0000-0000-0000-000000000001',d,1);
  perform public.pitacco_storefront_publish('92000000-0000-0000-0000-000000000001',2,1);
  result:=public.pitacco_storefront_restore_draft('92000000-0000-0000-0000-000000000001',1,2);
@@ -102,6 +109,11 @@ declare public_design jsonb;
 begin
  public_design:=public.get_public_menu('estudiolojaa')->'store'->'appearance';
  assert public_design->>'primary'='#d15723';
+ assert public_design->'logo_frame'->>'zoom'='180';
+ assert public_design->'logo_frame'->>'fit'='cover';
+ assert public.pitacco_public_menu_identity('estudiolojaa')->>'name'='Estúdio Loja A';
+ assert public.pitacco_public_menu_identity('invalid-test-store') is null;
+ assert not (public.pitacco_public_menu_identity('estudiolojaa') ? 'products');
  assert jsonb_array_length(public_design->'banners')=1;
 end $test$;
 rollback;
