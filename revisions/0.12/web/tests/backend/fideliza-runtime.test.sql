@@ -148,7 +148,7 @@ begin
  rr:=public.pitacco_loyalty_phone_wallet('loyalty-test',k);
  assert rr->>'linked'='true','Telefone localiza a mesma carteira';
  assert not has_function_privilege('authenticated','public.pitacco_loyalty_reset_key(uuid,uuid)','execute');
- -- A caderneta participa apenas depois da quitação integral e da entrega.
+ -- Fiado nunca gera benefícios, inclusive após a quitação integral.
  fiado_customer:=public.pitacco_fiado_save_customer_pin(s,'Cliente A','21999990001',500,true,7,'automatic',true,'438216');
  perform public.pitacco_fiado_toggle(s,true);
  req:=gen_random_uuid();
@@ -211,4 +211,41 @@ begin
  exception when insufficient_privilege then null;end;
 end $anon$;
 reset role;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000091',true);
+-- Each new external payment earns exactly once, through the same loyalty ledger.
+do $channel_loyalty$
+declare
+ s uuid:='20000000-0000-0000-0000-000000000091';
+ methods text[]:=array['cartao_credito','cartao_debito','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket'];
+ method text; sale_mode text; customer_phone text; c uuid; oid uuid; result jsonb; req uuid;
+ seq integer:=0;
+ items jsonb:='[{"product_id":"30000000-0000-0000-0000-000000000091","quantity":1}]';
+begin
+ update public.public_menu_settings set payment_methods=methods,pdv_payment_methods=methods where store_id=s;
+ foreach method in array methods loop
+  foreach sale_mode in array array['balcao','cardapio'] loop
+   seq:=seq+1;customer_phone:='2198888'||lpad(seq::text,4,'0');req:=gen_random_uuid();
+   if sale_mode='balcao' then
+    result:=public.pitacco_merchant_channel_checkout(s,req,'balcao','Cliente Teste',customer_phone,'',items,method,'','',null,null,100);
+    assert result->>'payment_status'='paid_manual','PDV external receipt must be confirmed';
+   else
+    result:=public.pitacco_loyalty_checkout('loyalty-test',req,'Cliente Teste',customer_phone,'',items,'pickup',method,'','','','',null,null,null);
+   end if;
+   oid:=(result->>'order_id')::uuid;
+   select id into c from pitacco_private.loyalty_customers where store_id=s and phone=customer_phone;
+   assert c is not null and oid is not null;
+   assert pitacco_private.loyalty_balance(s,c,'points')=0,'No points before fulfillment';
+   if sale_mode='cardapio' then
+    perform pg_temp.loyalty_finish(oid,false);
+    assert pitacco_private.loyalty_balance(s,c,'points')=0,'Unpaid storefront order earns nothing';
+   end if;
+   perform pg_temp.loyalty_finish(oid,true);
+   perform pitacco_private.loyalty_refresh_order(oid);
+   assert pitacco_private.loyalty_balance(s,c,'points')=100, 'External payment must earn points: '||method||' / '||sale_mode;
+   perform pitacco_private.loyalty_refresh_order(oid);
+   assert pitacco_private.loyalty_balance(s,c,'points')=100,'Repeated refresh cannot duplicate points';
+   update public.public_checkouts set created_at=now()-interval '1 hour';
+  end loop;
+ end loop;
+end $channel_loyalty$;
 rollback;
