@@ -936,10 +936,10 @@ try {
           const rect=form.getBoundingClientRect();
           const field=form.querySelector(':scope > fieldset').getBoundingClientRect();
           const map=form.querySelector('.delivery-zone-map').getBoundingClientRect();
-          return {form:rect.width,field:field.width,map:map.width,overflow:form.scrollWidth>form.clientWidth+2};
+          return {form:rect.width,field:field.width,map:map.width,display:getComputedStyle(form).display,overflow:form.scrollWidth>form.clientWidth+2};
         });
-        assert.ok(geometry.field>=geometry.form-2,'Delivery options occupy the full form width');
-        assert.ok(geometry.map>=geometry.form-2,'Map occupies the full form width');
+        assert.ok(Math.abs(geometry.field-geometry.form)<=2,'Delivery options occupy the full form width: '+JSON.stringify(geometry));
+        assert.ok(Math.abs(geometry.map-geometry.form)<=2,'Map occupies the full form width: '+JSON.stringify(geometry));
         assert.equal(geometry.overflow,false,'Delivery form has no horizontal overflow');
       }
       await assertAreaWidth();
