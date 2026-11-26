@@ -236,3 +236,42 @@ begin
 end $test$;
 select 'PASS auto constraints preserved; manual batch exceeds automatic capacity and accepts opposite/overdue destinations; departed route protected' as result;
 rollback;
+
+-- Ready transitions enqueue exactly once, for either logistics provider, without changing provider state.
+begin;
+do $ready_test$
+declare s uuid;m uuid:=gen_random_uuid();ext uuid;e uuid;l uuid;oid uuid;payload jsonb;c record;mode text;
+begin
+ insert into public.stores(name) values('iFood ready fixture') returning id into s;
+ insert into pitacco_private.ifood_merchants(merchant_id,store_id,test_only,enabled) values(m,s,true,true);
+ foreach mode in array array['loja','marketplace'] loop
+  ext:=gen_random_uuid();e:=gen_random_uuid();
+  perform public.pitacco_ifood_enqueue(e,m,ext,'CONFIRMED',now(),false);
+  select lease into l from public.pitacco_ifood_claim(e);
+  payload:=jsonb_build_object('external_order_id',ext,'merchant_id',m,'total',20,'created_at',now(),'logistics',mode);
+  perform public.pitacco_ifood_complete(e,l,payload,true);
+  select order_id into oid from pitacco_private.ifood_order_links where external_id=ext;
+  assert oid is not null;
+  assert not exists(select 1 from pitacco_private.ifood_ready_queue q where q.order_id=oid);
+  update public.orders set preparation_status='ready' where id=oid;
+  update public.orders set preparation_status='ready' where id=oid;
+  assert (select count(*) from pitacco_private.ifood_ready_queue q where q.order_id=oid)=1;
+  select * into c from public.pitacco_ifood_claim_ready();
+  assert c.order_id=oid and c.external_order_id=ext and c.merchant_id=m;
+  assert not exists(select 1 from public.pitacco_ifood_claim_ready());
+  perform public.pitacco_ifood_finish_ready(oid,gen_random_uuid(),'submitted',202);
+  assert (select state='sending' from pitacco_private.ifood_ready_queue q where q.order_id=oid);
+  perform public.pitacco_ifood_finish_ready(oid,c.lease,'submitted',202);
+  assert (select receipt->>'ifood_status'='CONFIRMED' from public.orders where id=oid);
+  assert (select state='submitted' from pitacco_private.ifood_ready_queue q where q.order_id=oid);
+  assert not exists(select 1 from public.pitacco_ifood_claim_ready());
+  e:=gen_random_uuid();perform public.pitacco_ifood_enqueue(e,m,ext,'READY_TO_PICKUP',now(),false);
+  select lease into l from public.pitacco_ifood_claim(e);
+  perform public.pitacco_ifood_complete(e,l,payload,true);
+  assert (select receipt->>'ifood_status'='READY_TO_PICKUP' from public.orders where id=oid);
+  assert exists(select 1 from public.deliveries d where d.order_id=oid and d.status='pendente');
+ end loop;
+ assert not has_function_privilege('authenticated','public.pitacco_ifood_claim_ready()','EXECUTE');
+ assert not has_function_privilege('anon','public.pitacco_ifood_finish_ready(uuid,uuid,text,integer)','EXECUTE');
+end $ready_test$;
+rollback;
