@@ -32,7 +32,8 @@ export function MerchantNavigation({routeId,onNavigate,allowed,manager,active,ad
  const selectedStore=stores.find(s=>s.id===selected);
  const storeName=selectedStore?.name||'Nenhum estabelecimento selecionado';
  const context={allowed,manager,active,admin,driver,featureSettings};
- const usable=r=>r.id!=='Atualizações'&&menuAllowed(r,context);
+ const sidebarOnlyRoutes=new Set(['Combos','Histórico de entregas','Desempenho de motoboys','Venda fiado no balcão','Resultado por pedido','Conciliação de repasses']);
+ const usable=r=>r.id!=='Atualizações'&&(!native||r.id!=='Relatórios')&&(native||!sidebarOnlyRoutes.has(r.id))&&menuAllowed(r,context);
  const actualGroups=[...groups,...(!native&&extra.length?[{name:'Outras funções',icon:'settings',items:extra}]:[])];
  const all=actualGroups.flatMap(g=>g.items);
  useEffect(()=>{setFavorites(read(key+':favorites',[]));setOpen([]);setQuery('');setAccountOpen(false)},[key]);
