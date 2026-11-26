@@ -52,4 +52,20 @@ begin
  end;
 end;
 $test$;
+reset role;
+insert into public.orders(id,store_id,channel,gross,fees,created_at,source,status,receipt) values
+ ('30000000-0000-0000-0000-000000000011','20000000-0000-0000-0000-000000000001','Delivery próprio',103,0,'2026-11-16T03:00:00Z','proprio','accepted','{"payment_price":{"adjustment_cents":300}}'),
+ ('30000000-0000-0000-0000-000000000012','20000000-0000-0000-0000-000000000001','Delivery próprio',95,0,'2026-11-16T05:00:00Z','proprio','accepted','{"payment_price":{"adjustment_cents":-500}}'),
+ ('30000000-0000-0000-0000-000000000013','20000000-0000-0000-0000-000000000001','Delivery próprio',104,0,'2026-11-16T05:00:00Z','proprio','cancelled','{"payment_price":{"adjustment_cents":400}}'),
+ ('30000000-0000-0000-0000-000000000014','20000000-0000-0000-0000-000000000002','Delivery próprio',108,0,'2026-11-16T05:00:00Z','proprio','accepted','{"payment_price":{"adjustment_cents":800}}');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+do $test$
+declare report jsonb;
+begin
+ select jsonb_object_agg(metric,amount) into report from public.pitacco_period_financial_report('20000000-0000-0000-0000-000000000001','2026-11-16','2026-11-16');
+ assert (report->>'vendas')::numeric=198,'Gross includes adjustments only once';
+ assert (report->>'acrescimos_pagamento')::numeric=3,'Do not count cancelled sales or other stores';
+ assert (report->>'descontos_pagamento')::numeric=5;
+end $test$;
 rollback;
