@@ -59,6 +59,14 @@ $rules$;
 revoke all on function public.pitacco_public_payment_price_rules(text) from public,anon,authenticated;
 grant execute on function public.pitacco_public_payment_price_rules(text) to anon,authenticated;
 
+-- Deliver the active rule snapshot with the catalog; no additional browser RPC.
+do $menu$
+declare d text:=pg_get_functiondef('public.get_public_menu(text)'::regprocedure);
+begin
+ if strpos(d,'''payment_methods'',cfg.payment_methods')=0 then raise exception 'Menu price rule anchor missing';end if;
+ execute replace(d,'''payment_methods'',cfg.payment_methods','''payment_methods'',cfg.payment_methods,''payment_price_rules'',public.pitacco_public_payment_price_rules(cfg.slug)');
+end $menu$;
+
 -- The existing checkout endpoints remain available for unadjusted methods.
 -- A new entry point binds the selected price to the same store/request/method,
 -- forwards to the existing validated checkout and never creates a second order.

@@ -83,6 +83,7 @@ try {
           store: { appearance:{template,primary:'#217c5a'}, primary_color:'#e04020', name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true,
             delivery_fee: 0, route_pricing:{enabled:true,mode:'circle',max_radius_km:3},
             delivery_area:area, payment_methods: width===1440?['pix_manual','dinheiro','cartao_entrega','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket']:['pix_manual'],
+            payment_price_rules:width===1440?{cartao_credito:{adjustment_bps:300,revision:1},pix_maquininha:{adjustment_bps:-500,revision:1}}:{},
             opening_hours:{open:true,reason:'open',next_open_at:null} },
           products: [{ id: 'acai', name: 'Açaí', category: 'Açaís', price: 20, option_groups: [{
             id: 'adicionais', name: 'Adicionais', min: 1, max: 1,
@@ -427,6 +428,8 @@ try {
         for(const method of ['dinheiro','cartao_credito','cartao_debito','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket']){
           await page.locator('#v2PaymentCards [data-kind="'+method+'"]').click();
           assert.equal(await page.locator('#payment').inputValue(),method,'Pagamento habilitado pela loja pode ser selecionado');
+          if(method==='cartao_credito')assert.match(await page.locator('#total').innerText(),/Acréscimo no pagamento/);
+          if(method==='pix_maquininha')assert.match(await page.locator('#total').innerText(),/Desconto no pagamento/);
         }
       }else assert.equal(await page.locator('#v2PaymentCards [data-kind="dinheiro"]').count(),0,'Método não cadastrado não aparece');
       if(width===375){

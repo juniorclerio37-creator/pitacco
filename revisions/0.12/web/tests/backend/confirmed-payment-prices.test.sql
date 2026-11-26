@@ -13,6 +13,7 @@ select set_config('request.jwt.claim.sub','',true);
 do $test$
 declare items jsonb:='[{"product_id":"30000000-0000-0000-0000-000000000097","quantity":1}]';req uuid:=gen_random_uuid();r jsonb;
 begin
+ assert (public.get_public_menu('priced-checkout')->'store'->'payment_price_rules')=public.pitacco_public_payment_price_rules('priced-checkout');
  assert public.pitacco_public_payment_price_rules('priced-checkout')='{"cartao_credito":{"adjustment_bps":300,"revision":1}}'::jsonb;
  begin
   perform public.checkout_public_order('priced-checkout',req,'Cliente','21999990097','',items,'pickup','cartao_credito','');

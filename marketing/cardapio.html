@@ -2460,6 +2460,16 @@ $('addProduct').onclick=()=>{
  renderCart();$('productDialog').close();
 };
 let renderingCart=false,cartRenderPending=false;
+function paymentPriceRule(method){
+ if(!method||method==='fiado'||method.startsWith('voucher_'))return null;
+ const r=menu?.store?.payment_price_rules?.[method];
+ return r&&Number.isInteger(r.adjustment_bps)&&r.adjustment_bps!==0&&r.adjustment_bps>=-9999&&r.adjustment_bps<=10000&&Number.isSafeInteger(r.revision)&&r.revision>0?r:null;
+}
+function paymentPriceAdjustment(method,subtotal,discount){
+ const r=paymentPriceRule(method);if(!r)return 0;
+ const base=Math.max(0,Math.round(subtotal*100)-Math.round(discount*100));
+ return Math.sign(r.adjustment_bps)*Math.round(base*Math.abs(r.adjustment_bps)/10000)/100;
+}
 function renderCart(){
  if(renderingCart){cartRenderPending=true;return;}
  renderingCart=true;
@@ -2525,7 +2535,9 @@ function renderCart(){
  }
  const benefit=loyaltyDiscount();
  if(benefit>0)$('total').append(totalLine('Desconto Fideliza+',-benefit));
- $('total').append(totalLine('Total',subtotal+fee-benefit));
+ const priceAdjustment=paymentPriceAdjustment($('payment').value,subtotal,benefit);
+ if(priceAdjustment)$('total').append(totalLine(priceAdjustment>0?'Acréscimo no pagamento':'Desconto no pagamento',priceAdjustment));
+ $('total').append(totalLine('Total',subtotal+fee-benefit+priceAdjustment));
  // A prévia determina somente o estado visual. A compra é validada pelo servidor.
  scheduleFiadoStatusCheck(subtotal+fee-benefit);
  $('cartCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0);
@@ -3214,6 +3226,8 @@ $('checkout').onsubmit=async event=>{
   // accept these arguments and could reject a valid delivery at checkout.
   if($('schedule').value&&deliveryService==='priority'&&fulfillment==='delivery'){pendingRequest=null;msg('Entrega prioritária disponível apenas para pedidos imediatos. Selecione entrega padrão para agendar.');return;}
   if($('schedule').value)pendingRequest.p_scheduled_for=$('schedule').value;
+  const rule=paymentPriceRule(payment);
+  if(rule){pendingRequest.p_expected_cents=Math.round(v2TotalToPay()*100);pendingRequest.p_price_revision=rule.revision;}
  }
  }finally{checkoutPreparing=false;}
  persistCartDraft();
@@ -3249,7 +3263,8 @@ $('checkout').onsubmit=async event=>{
    :pendingRequest.p_payment==='fiado'
     ?Object.fromEntries(Object.entries(pendingRequest).filter(([key])=>key!=='p_payment'))
     :pendingRequest;
-  const response=await client.rpc(endpoint,payload);
+  const priced=Object.hasOwn(pendingRequest,'p_price_revision');
+  const response=await client.rpc(priced?'pitacco_confirm_priced_public_checkout':endpoint,priced?{...payload,p_use_loyalty:usingLoyalty}:payload);
   const {data,error,status}=response;
   if(error){
    if(status>=400&&status<500&&status!==408){clearPendingCart();if(usingLoyalty)invalidateLoyalty();}
@@ -3612,6 +3627,8 @@ function v2RenderPaymentCards(){
   const icon=el('span',symbol,'v2-payment-icon');
   if(option.value.startsWith('voucher_'))icon.classList.add('v2-voucher-label');
   const content=el('span');content.append(el('strong',title));
+  const rule=paymentPriceRule(option.value);
+  if(rule){const adjustment=paymentPriceAdjustment(option.value,cart.reduce((n,i)=>n+i.unit*i.quantity,0),loyaltyDiscount());content.append(el('small',(rule.adjustment_bps>0?'Acréscimo: ':'Desconto: ')+Math.abs(rule.adjustment_bps/100).toLocaleString('pt-BR')+'% · '+money(Math.abs(adjustment))));}
   content.append(el('small',option.disabled&&option.value==='fiado'?
    'Fiado indisponível para este pedido. Escolha outra forma de pagamento ou fale com a loja.':description));
   b.append(icon,content,el('span',option.disabled?'⊘':b.dataset.selected==='true'?'◉':'◯','v2-radio-mark'));
@@ -3631,7 +3648,8 @@ new MutationObserver(()=>{if(v2Only())v2RenderPaymentCards();}).observe($('payme
 function v2TotalToPay(){
  const subtotal=cart.reduce((sum,item)=>sum+Number(item.unit||0)*Number(item.quantity||0),0);
  const fee=$('fulfillment').value==='delivery'?Number(deliveryQuote?.fee||0):0;
- return Math.round((subtotal+fee-loyaltyDiscount()+Number.EPSILON)*100)/100;
+ const benefit=loyaltyDiscount();
+ return Math.round((subtotal+fee-benefit+paymentPriceAdjustment($('payment').value,subtotal,benefit)+Number.EPSILON)*100)/100;
 }
 function v2CashChangeValue(){
  const raw=$('v2CashChange').value.trim().replace(',','.');
