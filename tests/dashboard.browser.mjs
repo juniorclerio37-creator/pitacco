@@ -384,8 +384,8 @@ try {
         assert.equal(origin,realApi);
         assert.equal(adminMode,true);
         return route.fulfill({headers,json:{terms_version:'fixture',plans:[
-          {code:'free',name:'Grátis para sempre',monthly_cents:0,commission_basis_points:500,billing_cycle:'weekly',trial_days:0,grace_hours:48},
-          {code:'complete',name:'Completo',monthly_cents:5990,commission_basis_points:0,billing_cycle:'monthly',trial_days:30,grace_hours:48}
+          {code:'free',name:'Completo Flex',monthly_cents:0,commission_basis_points:200,billing_cycle:'weekly',trial_days:0,grace_hours:48},
+          {code:'complete',name:'Completo Fixo',monthly_cents:5990,commission_basis_points:0,billing_cycle:'monthly',trial_days:15,grace_hours:0,first_payment_grace_hours:48}
         ]}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_owner_commercial_billing_control'){
@@ -546,7 +546,7 @@ try {
       }
       if(pathname==='/rest/v1/rpc/pitacco_merchant_plan_options'){
         assert.equal(route.request().postDataJSON().p_store,store.id);
-        return route.fulfill({headers,json:{plans:[{code:'free',name:'Grátis para sempre',monthly_cents:0,commission_basis_points:500,billing_cycle:'weekly'},{code:'complete',name:'Completo',monthly_cents:5990,commission_basis_points:0,billing_cycle:'monthly'}],requests:[],terms_version:'fixture'}});
+        return route.fulfill({headers,json:{plans:[{code:'free',name:'Completo Flex',monthly_cents:0,commission_basis_points:200,billing_cycle:'weekly'},{code:'complete',name:'Completo Fixo',monthly_cents:5990,commission_basis_points:0,billing_cycle:'monthly'}],requests:[],terms_version:'fixture'}});
       }
       if (['/rest/v1/rpc/pitacco_store_subscription_status','/rest/v1/rpc/pitacco_merchant_subscription_details'].includes(pathname)) {
         assert.equal(route.request().postDataJSON().p_store,store.id);
@@ -1311,11 +1311,11 @@ try {
     await page.getByRole('button',{name:'Ativar modo claro'}).click();
     await adminNavigate('Plano Pitacco');
     const plan=page.getByRole('region',{name:'Planos comerciais'});
-    await plan.getByRole('heading',{name:'Grátis para sempre',exact:true}).waitFor();
-    await plan.getByRole('heading',{name:'Completo',exact:true}).waitFor();
+    await plan.getByRole('heading',{name:'Completo Flex',exact:true}).waitFor();
+    await plan.getByRole('heading',{name:'Completo Fixo',exact:true}).waitFor();
     assert.equal(await plan.getByRole('article').count(),2);
     await plan.getByText(/59,90.*mês/).waitFor();
-    await plan.getByText('Comissão: 5%',{exact:true}).waitFor();
+    await plan.getByText('Comissão: 2%',{exact:true}).waitFor();
     await plan.getByText('Comissão: 0%',{exact:true}).waitFor();
     await adminNavigate('Financeiro do Pitacco');
     const finance=page.getByRole('region',{name:'Financeiro do Pitacco'});
