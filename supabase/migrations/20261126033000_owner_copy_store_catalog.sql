@@ -17,6 +17,7 @@ declare dest uuid:=coalesce(p_target,p_request); d jsonb;
 begin
  if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Acesso exclusivo do Super Admin' using errcode='42501';end if;
  if p_source is null or p_request is null or dest=p_source or (p_target is not null and not exists(select 1 from public.stores where id=dest)) then raise exception 'Destino inválido';end if;
+ if p_target is not null and exists(select 1 from public.products where store_id=dest) and not exists(select 1 from pitacco_private.owner_catalog_copy_requests where request_id=p_request and actor=auth.uid() and source_id=p_source and target_id=dest) then raise exception 'O destino precisa ter catálogo vazio';end if;
  select published into d from public.pitacco_storefront_designs where store_id=p_source;
  return coalesce((select jsonb_agg(jsonb_build_object('source',path,'target',pitacco_private.owner_copy_media_path(dest,p_request,path),'exists',exists(select 1 from storage.objects where bucket_id='pitacco-media' and name=pitacco_private.owner_copy_media_path(dest,p_request,path)))) from (select d->>'cover_path' as path union select value->>'image_path' from jsonb_array_elements(coalesce(d->'banners','[]'))) m where coalesce(path,'')<>''),'[]');
 end $;
@@ -24,7 +25,7 @@ revoke all on function public.pitacco_owner_copy_media_manifest(uuid,uuid,uuid) 
 grant execute on function public.pitacco_owner_copy_media_manifest(uuid,uuid,uuid) to authenticated;
 create function public.pitacco_owner_copy_catalog(p_source uuid,p_target uuid,p_new_name text,p_request uuid)
 returns jsonb language plpgsql security definer set search_path='' as $$
-declare dest uuid:=coalesce(p_target,p_request); pr record; gr record; opt record; pizza record; draft record; new_product uuid; new_group uuid; new_draft uuid; product_count int:=0; group_count int:=0; option_count int:=0; pizza_count int:=0; old_result record; result jsonb; source_name text; ids jsonb:='{}'; option_ids jsonb:='{}'; template_ids jsonb:='{}'; library_ids jsonb:='{}'; tpl record; item jsonb; opts jsonb; new_option uuid; new_template uuid; combo record; new_combo uuid; combo_items jsonb; design jsonb; target_design jsonb; banners jsonb; media record; revision integer; combo_count integer:=0; 
+declare dest uuid:=coalesce(p_target,p_request); pr record; gr record; opt record; pizza record; draft record; new_product uuid; new_group uuid; new_draft uuid; product_count int:=0; group_count int:=0; option_count int:=0; pizza_count int:=0; old_result record; result jsonb; source_name text; ids jsonb:='{}'; option_ids jsonb:='{}'; template_ids jsonb:='{}'; library_ids jsonb:='{}'; tpl record; item jsonb; opts jsonb; new_option uuid; new_template uuid; combo record; published_combo record; new_combo uuid; combo_items jsonb; design jsonb; target_design jsonb; banners jsonb; media record; revision integer; combo_count integer:=0; 
 begin
  if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Acesso exclusivo do Super Admin' using errcode='42501';end if;
  if p_source is null or p_request is null or (p_target is null and coalesce(length(btrim(p_new_name)),0) not between 3 and 100) or (p_target is not null and p_new_name is not null) or p_target=p_source then raise exception 'Origem ou destino inválido';end if;
@@ -78,6 +79,8 @@ begin
    pizza_count:=pizza_count+1;
   end if;
  end loop;
+ insert into public.pitacco_pizza_drafts(store_id,name,config)
+ select dest,d.name,d.config from public.pitacco_pizza_drafts d where d.store_id=p_source and not exists(select 1 from pitacco_private.pizza_catalog pc where pc.store_id=p_source and pc.draft_id=d.id);
  -- Remapeia componentes e complementos de combos; opções internas de pizza são locais à configuração.
  for combo in select * from public.pitacco_combo_drafts where store_id=p_source loop
   combo_items:='[]';
@@ -87,8 +90,15 @@ begin
    combo_items:=combo_items||jsonb_build_array(item||jsonb_build_object('product_id',ids->(item->>'product_id'),'options',opts));
   end loop;
   insert into public.pitacco_combo_drafts(store_id,name,items,rule,value) values(dest,combo.name,combo_items,combo.rule,combo.value) returning id into new_combo;
-  insert into pitacco_private.combo_catalog(product_id,store_id,draft_id,items,rule,value)
-   select (ids->>cc.product_id::text)::uuid,dest,new_combo,combo_items,cc.rule,cc.value from pitacco_private.combo_catalog cc where cc.store_id=p_source and cc.draft_id=combo.id;
+  for published_combo in select * from pitacco_private.combo_catalog cc where cc.store_id=p_source and cc.draft_id=combo.id loop
+   combo_items:='[]';
+   for item in select value from jsonb_array_elements(published_combo.items) loop
+    if not ids ? (item->>'product_id') then raise exception 'Combo publicado contém produto ausente';end if;
+    select coalesce(jsonb_agg(coalesce(option_ids->v,to_jsonb(v)) order by ord),'[]') into opts from jsonb_array_elements_text(item->'options') with ordinality as o(v,ord);
+    combo_items:=combo_items||jsonb_build_array(item||jsonb_build_object('product_id',ids->(item->>'product_id'),'options',opts));
+   end loop;
+   insert into pitacco_private.combo_catalog(product_id,store_id,draft_id,items,rule,value) values((ids->>published_combo.product_id::text)::uuid,dest,new_combo,combo_items,published_combo.rule,published_combo.value);
+  end loop;
   combo_count:=combo_count+1;
  end loop;
  insert into public.pitacco_pizza_flavor_library(store_id,name,description,ingredients,image_url,category,available)
