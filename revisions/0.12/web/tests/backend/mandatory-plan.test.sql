@@ -67,6 +67,8 @@ begin;
 do $test$
 declare u uuid; plan text; s uuid; e timestamptz; doc text; j int; i int; sumd int; d int; c uuid; same_store uuid;
 begin
+ -- Match production's enabled billing enforcement, not the isolated bootstrap default.
+ update pitacco_private.commercial_billing_control set require_selected_plan=true,enforce_own_orders=true where singleton;
  foreach plan in array array['free','complete'] loop
   u:=gen_random_uuid();
   insert into auth.users(id,email,email_confirmed_at) values(u,'signup-fixture-'||u||'@example.invalid',now());
@@ -94,7 +96,7 @@ begin
     assert not pitacco_private.commercial_orders_blocked(s);
     update pitacco_private.fixo_prepaid_state set first_due_at=now()-interval '49 hours' where contract_id=c;
     update public.pitacco_signup_trials set ends_at=now()-interval '49 hours' where first_store_id=s;
-    assert pitacco_private.commercial_orders_blocked(s);
+    assert pitacco_private.commercial_orders_blocked(s), 'New Fixo blocks after 15 days plus 48-hour grace when billing is enabled';
   end if;
   select r.store_id into same_store from public.pitacco_register_store_plan('Fixture cadastro',doc,plan,'2026-11-24-v4') r;
   assert same_store=s;
