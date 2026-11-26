@@ -1,4 +1,5 @@
 import React,{useEffect,useRef,useState} from 'react';
+import {postalDigits,formatPostal,lookupPostalAddress,mergePostalAddress} from './storePostalLookup.mjs';
 import {Store,UserRound,Building2,MapPin,ShieldCheck,MessageCircle} from 'lucide-react';
 import {mountStorePointPicker,currentDeviceLocation} from './deliveryMap.mjs';
 import {locateStoreByAddress} from './mapOrigin.mjs';
@@ -222,6 +223,24 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
 export default function StoreProfile({client,store,manager,onSaved,onAppearance,storeLogoUrl=''}){
  const draftDirty=useRef(false);
  const [draft,setDraft]=useState({}),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[loaded,setLoaded]=useState(false),[loadError,setLoadError]=useState(''),[revision,refresh]=useState(0);
+ const [cepState,setCepState]=useState('idle'),[cepNotice,setCepNotice]=useState('');
+ const cepRequest=useRef({generation:0,timer:null,controller:null});
+ function cancelCep(){const r=cepRequest.current;r.generation++;clearTimeout(r.timer);r.controller?.abort();r.controller=null;}
+ function scheduleCep(value,original,immediate=false){
+  cancelCep();const cep=postalDigits(value),r=cepRequest.current;
+  if(cep.length!==8){setCepState('idle');setCepNotice(cep?'Informe os oito dígitos do CEP.':'');return;}
+  const generation=r.generation,controller=new AbortController();r.controller=controller;
+  setCepState('loading');setCepNotice('Buscando endereço pelo CEP…');
+  r.timer=setTimeout(async()=>{
+   try{
+    const result=await lookupPostalAddress(cep,{signal:controller.signal});
+    if(generation!==r.generation||controller.signal.aborted)return;
+    setDraft(current=>mergePostalAddress(current,original,result,cep));
+    setCepState('success');setCepNotice(result.address&&result.neighborhood?'Endereço localizado. Confira os dados e informe o número.':'CEP localizado. Complete os campos que não foram retornados.');
+   }catch(error){if(generation!==r.generation||controller.signal.aborted)return;setCepState('error');setCepNotice((error?.message==='CEP não encontrado.'?'CEP não encontrado.':'Não foi possível consultar o CEP.')+' Preencha o endereço manualmente ou tente novamente.');}
+  },immediate?0:350);
+ }
+ useEffect(()=>{setCepState('idle');setCepNotice('');return cancelCep},[client,store.id,revision]);
  const [logoUpdate,setLogoUpdate]=useState(null),[logoBusy,setLogoBusy]=useState(false),[logoMessage,setLogoMessage]=useState('');
  const logoUrl=logoUpdate?.storeId===store.id?mediaUrl(client,logoUpdate.path):(storeLogoUrl||mediaUrl(client,store.logo_path));
  async function changeLogo(file){
@@ -257,7 +276,7 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
   return()=>{active=false;clearInterval(timer);window.removeEventListener('focus',refreshVisible);window.removeEventListener('pitacco:store-identity',refreshVisible)};
  },[client,store.id,revision]);
  async function save(e){
-  e.preventDefault();if(!manager)return;setBusy(true);setMessage('');
+  e.preventDefault();if(!manager||cepState==='loading')return;cancelCep();setBusy(true);setMessage('');
   try{
    if(!draft.name?.trim())throw Error('Informe o nome da loja.');
    const {document,person_type,legal_name,responsible_name,administrative_phone,administrative_email,whatsapp,name,description,address,address_number,address_complement,neighborhood,city,state,postal_code,instagram_url,facebook_url}=draft;
@@ -267,12 +286,12 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
   }catch(err){setMessage(err.message||String(err))}finally{setBusy(false)}
  }
  const addressDirty=storeAddressFields.some(key=>String(draft[key]||'').trim()!==String(store?.[key]||'').trim());
- const change=(key,value)=>{draftDirty.current=true;setDraft(p=>({...p,[key]:value}))};
+ const change=(key,value)=>{draftDirty.current=true;if(key==='postal_code'){const formatted=formatPostal(value);setDraft(p=>({...p,postal_code:formatted}));scheduleCep(formatted,draft);}else setDraft(p=>({...p,[key]:value}))};
  const input=(key,label,required=true,type='text')=><label key={key} className="identity-field"><span>{label}{required&&<span className="identity-required"> *</span>}</span>
   {key==='description'?<textarea maxLength={1500} rows={3} value={draft[key]||''} disabled={!manager||busy}
     onChange={e=>change(key,e.target.value)} placeholder="Conte aos clientes sobre seu estabelecimento"/>
-   :<input type={type} value={draft[key]||''} required={required} maxLength={key==='name'?100:key==='document'?18:180}
-     disabled={!manager||busy} autoComplete={key==='document'?'off':undefined} readOnly={key==='document'&&Boolean(draft.payer_registered&&draft.document)} onChange={e=>change(key,e.target.value)}/>}
+   :<input type={type} value={draft[key]||''} required={required} maxLength={key==='postal_code'?9:key==='name'?100:key==='document'?18:180} inputMode={key==='postal_code'?'numeric':undefined}
+     disabled={!manager||busy} autoComplete={key==='postal_code'?'postal-code':key==='document'?'off':undefined} readOnly={key==='document'&&Boolean(draft.payer_registered&&draft.document)} onChange={e=>change(key,e.target.value)}/>}
  </label>;
  if(!loaded)return <section className="identity-modern" aria-label="Dados e identidade da loja"><h3>Dados da loja</h3>{loadError?<><p role="alert">{loadError}</p><button type="button" onClick={()=>refresh(n=>n+1)}>Tentar novamente</button></>:<p role="status">Consultando cadastro…</p>}</section>;
  return <><section className="identity-modern" aria-label="Dados e identidade da loja">
@@ -307,12 +326,12 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
    <section className="identity-section identity-address">
     <h4><MapPin size={21}/> Endereço da Loja</h4>
     <p>Este é o endereço único usado no mapa do entregador, cálculo de frete, pagamentos e demais serviços.</p>
-    <div className="identity-grid">{input('postal_code','CEP')}{input('address','Rua / avenida')}{input('address_number','Número')}{input('address_complement','Complemento',false)}
+    <div className="identity-grid"><div>{input('postal_code','CEP')}<button type="button" className="secondary" disabled={!manager||busy||cepState==='loading'||postalDigits(draft.postal_code).length!==8} onClick={()=>{draftDirty.current=true;scheduleCep(draft.postal_code,draft,true)}}>{cepState==='loading'?'Consultando CEP…':'Buscar endereço'}</button>{cepNotice&&<small role={cepState==='error'?'alert':'status'}>{cepNotice}</small>}</div>{input('address','Rua / avenida')}{input('address_number','Número')}{input('address_complement','Complemento',false)}
       {input('neighborhood','Bairro')}{input('city','Cidade')}{input('state','Estado')}</div>
     <StorePointPicker client={client} store={store} manager={manager} addressDirty={addressDirty} onSaved={onSaved}/>
    </section>
    <div className="identity-save">{message&&<p role="status" className="notice">{message}</p>}
-    <small><ShieldCheck size={18}/> Os dados privados não aparecem no cardápio público.</small><button type="submit" disabled={busy||!manager}>{busy?'Salvando…':'Salvar dados da loja'}</button></div>
+    <small><ShieldCheck size={18}/> Os dados privados não aparecem no cardápio público.</small><button type="submit" disabled={busy||!manager||cepState==='loading'}>{busy?'Salvando…':'Salvar dados da loja'}</button></div>
   </form>
  </section><StoreReadiness client={client} storeId={store.id}/></>;
 }
