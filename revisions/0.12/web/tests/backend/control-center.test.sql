@@ -63,3 +63,75 @@ do $test$ declare owner_id uuid:=gen_random_uuid();user_id uuid:=gen_random_uuid
  assert not has_table_privilege('authenticated','pitacco_private.control_admins','select');
 end $test$;
 rollback;
+
+-- Order gates: use the same rules as the INSERT triggers, never change the debt.
+begin;
+do $test$
+declare a uuid:=gen_random_uuid();s uuid;other_s uuid;c uuid;i uuid;offer jsonb;src text;pe date:=current_date-7;existing uuid;fixo uuid;fc uuid;v_slug text:='control-gate-'||gen_random_uuid();
+begin
+ insert into auth.users(id,email,email_confirmed_at) values(a,a::text||'@example.invalid',now());
+ insert into pitacco_private.platform_owner(user_id,login_name_hash) values(a,sha256(convert_to(a::text,'UTF8'))) on conflict(singleton) do update set user_id=excluded.user_id;
+ perform set_config('request.jwt.claim.sub',a::text,true);perform set_config('request.jwt.claims','{"aal":"aal2"}',true);
+ update pitacco_private.commercial_billing_control set enforce_own_orders=true,payment_instructions='Teste isolado de cobrança',pix_cnpj='00000000000000',pix_recipient='Fixture de teste' where singleton;
+ insert into public.stores(name) values('Control gate Flex') returning id into s;
+ insert into public.stores(name) values('Control gate other') returning id into other_s;
+ update public.public_menu_settings set slug=v_slug,enabled=true,pickup_enabled=true where store_id=s;
+ update public.pitacco_store_hours set paused=false,accepts_scheduled=true where store_id=s;
+ delete from public.pitacco_opening_periods where store_id=s;
+ insert into public.pitacco_opening_periods(store_id,weekday,slot,opens_minute,closes_minute) select s,d,1,0,1440 from generate_series(1,7)d;
+ assert public.pitacco_public_store_open(v_slug)->>'open'='true';
+ assert cardinality(public.pitacco_public_schedule_slots(v_slug,'pickup'))>0;
+ insert into public.orders(store_id,channel,gross,status,source) values(s,'Delivery próprio',20,'pending','proprio') returning id into existing;
+ assert public.pitacco_control_store_block_status(s)->>'orders_blocked'='false';
+ perform set_config('request.jwt.claims','{"aal":"aal1"}',true);
+ begin perform public.pitacco_owner_subscription_action(s,'suspend',null,null,'MFA check');raise exception 'TEST suspension without MFA';exception when insufficient_privilege then null;end;
+ perform set_config('request.jwt.claims','{"aal":"aal2"}',true);
+ perform public.pitacco_owner_subscription_action(s,'suspend',null,null,'Isolated manual suspension');
+ assert public.pitacco_control_store_block_status(s)->>'manual_blocked'='true';
+ assert public.get_public_menu(v_slug)#>>'{store,opening_hours,open}'='false';
+ assert public.pitacco_public_store_open(v_slug)->>'scheduling_available'='false';
+ assert cardinality(public.pitacco_public_schedule_slots(v_slug,'pickup'))=0;
+ assert pitacco_private.store_opening_status(s,now())->>'open'='true','Merchant hours must not be altered';
+ assert public.pitacco_control_store_block_status(other_s)->>'orders_blocked'='false';
+ foreach src in array array['proprio','ifood','99food','keeta'] loop
+  begin insert into public.orders(store_id,channel,gross,status,source) values(s,'Delivery próprio',20,'pending',src);raise exception 'TEST manual bypass';exception when raise_exception then if sqlerrm<>'Loja temporariamente indisponível para novos pedidos' then raise;end if;end;
+ end loop;
+ update public.orders set status='accepted' where id=existing;
+ perform public.pitacco_owner_subscription_action(s,'reactivate',null,null,'Isolated manual release');
+ select x into offer from pitacco_private.plan_catalog_versions v cross join lateral jsonb_array_elements(v.plans) x where v.revision='2026-11-24-v4' and x->>'code'='free';
+ insert into pitacco_private.commercial_contracts(store_id,revision,plan_code,effective_from,terms,assigned_by) values(s,'2026-11-24-v4','free',pe-7,offer,a) returning id into c;
+ insert into pitacco_private.commercial_closings(contract_id,store_id,kind,period_start,period_end,due_at,grace_until,amount_cents,state,details) values(c,s,'commission',pe-6,pe,now()-interval '1 hour',now()+interval '47 hours',2000,'calculated','{}');
+ insert into pitacco_private.commercial_invoices(contract_id,kind,period_end,amount_cents,due_at,grace_until) values(c,'commission',pe,2000,now()-interval '1 hour',now()+interval '47 hours') returning id into i;
+ assert public.pitacco_control_store_block_status(s)->>'orders_blocked'='false';
+ update pitacco_private.commercial_closings set due_at=now()-interval '49 hours',grace_until=now()-interval '1 hour' where contract_id=c;
+ update pitacco_private.commercial_invoices set due_at=now()-interval '49 hours',grace_until=now()-interval '1 hour' where id=i;
+ assert public.pitacco_control_store_block_status(s)->>'financial_blocked'='true';
+ assert public.pitacco_public_store_open(v_slug)->>'open'='false';
+ assert public.pitacco_public_store_open(v_slug)->>'reason'='paused';
+ assert not (public.pitacco_public_store_open(v_slug) ? 'financial_blocked');
+ assert cardinality(public.pitacco_public_schedule_slots(v_slug,'pickup'))=0;
+ foreach src in array array['proprio','ifood','99food','keeta'] loop
+  begin insert into public.orders(store_id,channel,gross,status,source) values(s,'Delivery próprio',20,'pending',src);raise exception 'TEST automatic bypass';exception when raise_exception then if sqlerrm not like 'Estabelecimento bloqueado por inadimplência%' then raise;end if;end;
+ end loop;
+ perform public.pitacco_owner_subscription_action(s,'reactivate',null,null,'Manual release does not waive debt');
+ assert public.pitacco_control_store_block_status(s)->>'orders_blocked'='true';
+ insert into pitacco_private.commercial_manual_payments(invoice_id,amount_cents,reference,verified_by,note) values(i,2000,'TEST-'||gen_random_uuid(),a,'Isolated confirmed payment');
+ assert public.pitacco_control_store_block_status(s)->>'orders_blocked'='false';
+ assert jsonb_array_length(public.pitacco_control_store_block_status(s)->'history')=3;
+ assert public.pitacco_public_store_open(v_slug)->>'open'='true';
+ assert cardinality(public.pitacco_public_schedule_slots(v_slug,'pickup'))>0;
+ assert exists(select 1 from jsonb_array_elements(public.pitacco_control_stores('Control gate Flex')->'rows') r where r->>'id'=s::text and r->>'orders_blocked'='false');
+ insert into public.stores(name) values('Control gate Fixo') returning id into fixo;
+ select x into offer from pitacco_private.plan_catalog_versions v cross join lateral jsonb_array_elements(v.plans) x where v.revision='2026-11-24-v4' and x->>'code'='complete';
+ insert into pitacco_private.commercial_contracts(store_id,revision,plan_code,effective_from,terms,assigned_by) values(fixo,'2026-11-24-v4','complete',current_date,offer,a) returning id into fc;
+ insert into pitacco_private.fixo_prepaid_state(contract_id,first_due_at,first_trial_grace) values(fc,now()-interval '1 hour',true);
+ assert public.pitacco_control_store_block_status(fixo)->>'orders_blocked'='false';
+ update pitacco_private.fixo_prepaid_state set first_due_at=now()-interval '49 hours' where contract_id=fc;
+ assert public.pitacco_control_store_block_status(fixo)->>'financial_blocked'='true';
+ update pitacco_private.fixo_prepaid_state set activated_at=now()-interval '31 days',paid_until=now()-interval '1 hour' where contract_id=fc;
+ assert public.pitacco_control_store_block_status(fixo)->>'financial_blocked'='true';
+ update pitacco_private.fixo_prepaid_state set paid_until=now()+interval '30 days' where contract_id=fc;
+ assert public.pitacco_control_store_block_status(fixo)->>'orders_blocked'='false';
+ assert not has_function_privilege('anon','public.pitacco_control_store_block_status(uuid)','EXECUTE');
+end $test$;
+rollback;

@@ -43,6 +43,8 @@ try {
     await page.context().grantPermissions(['geolocation']);
     await page.context().setGeolocation({latitude:-22.71,longitude:-43.4});
     let identityName='Loja de teste';
+    let publicBlocked=template==='pitacco-v2'&&width===375;
+    const openingFixture=()=>publicBlocked?{open:false,reason:'paused',paused:true,next_open_at:null,scheduling_available:false}:{open:true,reason:'open',next_open_at:null,timezone:'America/Sao_Paulo',scheduling_available:Boolean(scheduled),paused:false};
     let polls=0,quoteAttempts=0,recoveryConfirmed=false;
     let savedProfile=null;
     const errors = [];
@@ -86,7 +88,7 @@ try {
             delivery_fee: 0, route_pricing:{enabled:true,mode:'circle',max_radius_km:3},
             delivery_area:area, payment_methods: width===1440?['pix_manual','dinheiro','cartao_entrega','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket']:['pix_manual'],
             payment_price_rules:width===1440?{cartao_credito:{adjustment_bps:300,revision:1},pix_maquininha:{adjustment_bps:-500,revision:1},...(pricedScenario?{pix_manual:{adjustment_bps:-500,revision:2}}:{})}:{},
-            opening_hours:{open:true,reason:'open',next_open_at:null} },
+            opening_hours:openingFixture() },
           products: [{ id: 'acai', name: 'Açaí', category: 'Açaís', price: 20, option_groups: [{
             id: 'adicionais', name: 'Adicionais', min: 1, max: 1,
             options: [{ id: 'morango', name: 'Morango', price: 2 }, { id: 'leite', name: 'Leite em pó', price: 3 }]
@@ -121,7 +123,7 @@ try {
       }
       if(pathname.endsWith('/pitacco_public_store_open')){
         assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
-        return route.fulfill({json:{open:true,reason:'open',next_open_at:null,timezone:'America/Sao_Paulo',scheduling_available:Boolean(scheduled),paused:false}});
+        return route.fulfill({json:openingFixture()});
       }
       if(pathname.endsWith('/pitacco_public_schedule_slots')){
         assert.equal(route.request().postDataJSON().p_fulfillment,'delivery');
@@ -175,6 +177,20 @@ try {
     });
 
     await page.goto(origin + (width===375?'/cardapio/?loja=loja-teste':'/loja-teste?utm_source=qr&loja=outro'));
+    if(publicBlocked){
+      await page.locator('#storeOpenStatus').filter({hasText:'Pedidos temporariamente pausados'}).waitFor();
+      assert.equal(await page.locator('body.store-closed').count(),1);
+      assert.equal(await page.locator('#addProduct').isDisabled(),true);
+      assert.equal(await page.locator('#cartDock').isVisible(),false);
+      assert.equal(await page.locator('#scheduleBlock').isVisible(),false);
+      assert.equal(await page.getByText(/inadimplência/i).count(),0);
+      publicBlocked=false;
+      await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+      await page.locator('#storeOpenStatus').filter({hasText:'Loja aberta — pedidos disponíveis'}).waitFor();
+      assert.equal(await page.locator('body.store-closed').count(),0);
+      assert.equal(await page.locator('#addProduct').isDisabled(),false);
+      console.log('PASS public storefront pause, financial privacy and live reopening');
+    }
     const productCard=page.getByRole('button',{name:'Personalizar Açaí',exact:true});
     await productCard.waitFor();
     // Pizza uses the same dialog, cart persistence and option payload in every template.
