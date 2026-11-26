@@ -7,12 +7,14 @@ const html=await readFile(new URL('../marketing/cardapio.html',import.meta.url),
 const origin='http://localhost:4179';
 const square='https://photos.pitacco.test/square.svg';
 const portrait='https://photos.pitacco.test/portrait.svg';
+const landscape='https://photos.pitacco.test/landscape.svg';
 const sample={
- store:{name:'Açaí do Linho - Loja de Testes',appearance:{template:'pitacco-v2'},pickup_enabled:true,delivery_enabled:false,
+ store:{name:'Loja de validação de fotos',appearance:{template:'pitacco-v2'},pickup_enabled:true,delivery_enabled:false,
   payment_methods:['dinheiro'],opening_hours:{open:true,reason:'open',next_open_at:null}},
  products:[
   {id:'square',name:'Açaí Quadrado',category:'Açaí Tradicional',price:15,description:'Foto quadrada',image_url:square,option_groups:[]},
-  {id:'portrait',name:'Açaí Retrato',category:'Premium',price:25,description:'Foto vertical',image_url:portrait,option_groups:[]}
+  {id:'portrait',name:'Açaí Retrato',category:'Premium',price:25,description:'Foto vertical',image_url:portrait,option_groups:[]},
+  {id:'landscape',name:'Açaí Paisagem',category:'Premium',price:25,description:'Foto horizontal',image_url:landscape,option_groups:[]}
  ]
 };
 const moduleStub=`export function createClient(){return {
@@ -28,10 +30,10 @@ const moduleStub=`export function createClient(){return {
 const browser=await chromium.launch({executablePath:process.env.PITACCO_CHROMIUM});
 try{
  for(const conf of [
-  {slug:'acai-do-linho-demo',template:'pitacco-v2',width:375,pilot:true},
-  {slug:'acai-do-linho-demo',template:'pitacco-v2',width:1280,pilot:true},
-  {slug:'loja-teste',template:'pitacco-v2',width:375,pilot:false},
-  {slug:'acai-do-linho-demo',template:'editorial',width:375,pilot:false}
+  {slug:'acaidolinho',template:'pitacco-v2',width:375},
+  {slug:'acaidolinho',template:'pitacco-v2',width:1280},
+  {slug:'acai-do-linho-demo',template:'pitacco-v2',width:375},
+  ...['pitacco-v2','essencial','editorial','urbano','classic'].flatMap(template=>[375,1280].map(width=>({slug:'loja-teste',template,width})))
  ]){
   const page=await browser.newPage({viewport:{width:conf.width,height:900}});
   page.setDefaultTimeout(20000);
@@ -46,6 +48,7 @@ try{
      body:moduleStub.replace('"template":"pitacco-v2"',`"template":"${conf.template}"`)});
    if(url.origin==='https://photos.pitacco.test'){
     const isPortrait=url.pathname.includes('portrait');
+    if(url.pathname.includes('landscape'))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400"><rect width="800" height="400" fill="#b184ac"/></svg>'});
     return route.fulfill({contentType:'image/svg+xml',body:isPortrait
       ?'<svg xmlns="http://www.w3.org/2000/svg" width="400" height="700"><rect width="400" height="700" fill="#b184ac"/><circle cx="200" cy="350" r="135" fill="#7b247d"/></svg>'
       :'<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect width="600" height="600" fill="#b184ac"/><circle cx="300" cy="300" r="235" fill="#7b247d"/></svg>'});
@@ -54,26 +57,15 @@ try{
   });
   await page.goto(origin+'/'+conf.slug);
   await page.locator('#menuStartup').waitFor({state:'hidden'});
-  const marker=await page.locator('body').getAttribute('data-menu-photo-pilot');
-  assert.equal(marker,conf.slug==='acai-do-linho-demo'?'brendi-linho':null);
-  await page.waitForFunction(()=>document.querySelectorAll('.v2-top-photo img').length===2);
-  const imgs=page.locator('.v2-top-photo img');
-  await page.waitForFunction(()=>[...document.querySelectorAll('.v2-top-photo img')].every(img=>img.complete&&img.naturalWidth>0));
-  const top=await imgs.evaluateAll(images=>images.map(img=>({
-   fit:getComputedStyle(img).objectFit,flag:img.dataset.photoFit||null,
-   width:img.parentElement.getBoundingClientRect().width,
-   height:img.parentElement.getBoundingClientRect().height
-  })));
-  if(conf.pilot){
-   assert.equal(top[0].fit,'cover');
-   assert.equal(top[0].flag,'cover');
-   assert.equal(top[1].fit,'contain');
-   assert.equal(top[1].flag,'contain');
-   if(conf.width===375)assert.ok(top.every(p=>Math.abs(p.width-p.height)<2),'Fotos em destaque devem ser quadradas no celular');
-  }else{
-   assert.deepEqual(top.map(p=>p.fit),['cover','cover'],'Outras lojas e templates mantêm o enquadramento antigo');
+  assert.equal(await page.locator('body').getAttribute('data-menu-photo-pilot'),null,'No store-specific photo pilot');
+  let top=[];
+  if(conf.template!=='classic'){
+   await page.waitForFunction(()=>document.querySelectorAll('.v2-top-photo img').length===2);
+   await page.waitForFunction(()=>[...document.querySelectorAll('.v2-top-photo img')].every(img=>img.complete&&img.naturalWidth>0));
+   top=await page.locator('.v2-top-photo img').evaluateAll(images=>images.map(img=>({fit:getComputedStyle(img).objectFit,flag:img.dataset.photoFit})));
+   assert.ok(top.every(p=>p.fit==='contain'&&p.flag==='contain'),'Featured products preserve full photos');
+   await page.locator('[data-v2-nav="cardapio"]').first().evaluate(button=>button.click());
   }
-  await page.locator('[data-v2-nav="cardapio"]').first().evaluate(button=>button.click());
   const products=page.locator('.category-grid .product-visual img');
   await products.first().waitFor({state:'visible'});
   await page.waitForFunction(()=>[...document.querySelectorAll('.category-grid .product-visual img')].every(img=>img.complete&&img.naturalWidth>0));
@@ -82,16 +74,18 @@ try{
    width:img.parentElement.getBoundingClientRect().width,
    height:img.parentElement.getBoundingClientRect().height
   })));
-  if(conf.pilot){
-   assert.deepEqual(cards.map(x=>x.fit),['cover','contain']);
-   if(conf.width===375)assert.ok(cards.every(p=>Math.abs(p.width-p.height)<2),'Cards devem manter área quadrada no celular');
-   await page.getByRole('button',{name:'Personalizar Açaí Quadrado'}).click();
+  assert.equal(cards.length,3);
+  assert.ok(cards.every(p=>p.fit==='contain'&&p.flag==='contain'),'Square, landscape and portrait cards show complete source photos');
+  for(const title of ['Açaí Quadrado','Açaí Retrato','Açaí Paisagem']){
+   await page.getByRole('button',{name:'Personalizar '+title,exact:true}).click();
    const detail=page.locator('.product-intro img');
    await detail.waitFor({state:'visible'});
-   assert.equal(await detail.evaluate(img=>getComputedStyle(img).objectFit),'contain','Detalhes não podem cortar foto');
-  }else assert.deepEqual(cards.map(x=>x.fit),['cover','cover']);
+   assert.equal(await detail.evaluate(img=>getComputedStyle(img).objectFit),'contain','Details preserve complete source photos');
+   await page.keyboard.press('Escape');
+   await page.locator('.product-intro img').waitFor({state:'hidden'});
+  }
   assert.deepEqual(errors,[],'Nenhum erro no console do navegador');
-  if(conf.pilot){
+  if(conf.slug==='acaidolinho'){
    await mkdir('artifacts',{recursive:true});
    await page.screenshot({path:`artifacts/menu-fotos-${conf.width}.png`,fullPage:false});
   }
