@@ -49,11 +49,11 @@ function initialTheme(){
  catch{return 'light';}
 }
 
-function OwnerCopyStore({client,store,stores,onCopied}){
- const [mode,setMode]=useState('duplicate'),[name,setName]=useState(store.name+' — cópia'),[target,setTarget]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[result,setResult]=useState(null),[request,setRequest]=useState(()=>crypto.randomUUID());
+function OwnerCopyStore({client,store,stores,onCopied,initialMode='duplicate',aal}){
+ const [mode,setMode]=useState(initialMode),[name,setName]=useState(store.name+' — cópia'),[target,setTarget]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[result,setResult]=useState(null),[request,setRequest]=useState(()=>crypto.randomUUID());
  const reset=()=>{setRequest(crypto.randomUUID());setResult(null);setError('');};
  async function copy(event){
-  event.preventDefault();if(busy||result)return;
+  event.preventDefault();if(busy||result||aal!=='aal2')return;
   const destination=stores.find(s=>s.id===target);
   if(mode==='catalog'&&!destination)return;
   if(!window.confirm(mode==='duplicate'?'Criar um novo estabelecimento com o catálogo de '+store.name+'?':'Copiar o cardápio de '+store.name+' para '+destination.name+'? O destino deve ter catálogo vazio. A identidade e os pagamentos serão preservados.'))return;
@@ -75,14 +75,14 @@ function OwnerCopyStore({client,store,stores,onCopied}){
  }
  return <section className="panel" aria-label="Duplicar loja ou clonar cardápio">
   <h3>Duplicação e clonagem</h3>
-  <p>Loja de origem: <strong>{store.name}</strong></p>
+  <p>Loja de origem: <strong>{store.name}</strong></p>{aal!=='aal2'&&<p role="alert">Confirme a autenticação em dois fatores na área de segurança antes de iniciar a cópia.</p>}
   <form onSubmit={copy}>
    <label><input type="radio" name="copy-mode" checked={mode==='duplicate'} disabled={busy} onChange={()=>{setMode('duplicate');reset();}}/> Duplicar loja</label>
    <label><input type="radio" name="copy-mode" checked={mode==='catalog'} disabled={busy} onChange={()=>{setMode('catalog');reset();}}/> Clonar cardápio para outra loja</label>
    {mode==='duplicate'?<label>Nome da nova loja<input required minLength={3} maxLength={100} value={name} disabled={busy} onChange={e=>{setName(e.target.value);reset();}}/></label>:<label>Loja de destino<select required value={target} disabled={busy} onChange={e=>{setTarget(e.target.value);reset();}}><option value="">Selecione a loja de destino</option>{stores.filter(s=>s.id!==store.id).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>}
    <p>Copia produtos, preços, categorias, complementos, pizzas, combos, aparência e banners, mantendo a disponibilidade original. O destino precisa ter catálogo vazio. Identidade, pagamentos, contatos e redes sociais do destino são preservados. Revise imagens e textos promocionais que possam mencionar a loja original. Custos e estoque não são copiados.</p>
    {mode==='duplicate'&&<p>A nova loja terá endereço, titularidade, usuários, assinatura e integrações próprios, a configurar posteriormente. O cardápio ficará desativado.</p>}
-   <button disabled={busy||!!result||(mode==='catalog'&&!target)}>{busy?'Copiando…':mode==='duplicate'?'Duplicar estabelecimento':'Clonar cardápio'}</button>
+   <button disabled={aal!=='aal2'||busy||!!result||(mode==='catalog'&&!target)}>{busy?'Copiando…':mode==='duplicate'?'Duplicar estabelecimento':'Clonar cardápio'}</button>
   </form>
   {error&&<p role="alert">{error}</p>}
   {result&&<div role="status"><strong>Cópia concluída.</strong><p>{result.products} produtos, {result.groups} grupos, {result.options} complementos e {result.pizzas} pizzas e {result.combos||0} combos.</p><button type="button" onClick={()=>onCopied(result.store_id)}>Abrir loja de destino</button></div>}
@@ -94,7 +94,7 @@ function AdminApp(){
  const [stores,setStores]=useState([]),[storeId,setStoreId]=useState(''),[page,setPage]=useState('Painel geral');
  const [theme,setTheme]=useState(initialTheme),[sidebar,setSidebar]=useState(()=>!window.matchMedia('(max-width: 800px)').matches);
  const [storeSearch,setStoreSearch]=useState('');
- const [storeTab,setStoreTab]=useState('Visão geral');
+ const [storeTab,setStoreTab]=useState('Visão geral'),[copyMode,setCopyMode]=useState('duplicate');
  const [error,setError]=useState(''),[busy,setBusy]=useState(false);
  const [adminEmailLogin,setAdminEmailLogin]=useState(false),[context,setContext]=useState({}),[accessRevision,recheckAccess]=useState(0);
 
@@ -192,6 +192,7 @@ function AdminApp(){
   if(row)setStores(current=>current.some(s=>s.id===target)?current:[...current,row]);
   setStoreId(target);setStoreTab('Visão geral');setPage('Estabelecimentos');
  }
+ function openCopy(row,mode){if(!verified.owner)return;openStore(row);setCopyMode(mode);setStoreTab('Duplicação e clonagem');}
  function changePage(next,nextContext={}){
   const entry=controlGroups.flatMap(([,items])=>items).find(r=>r[0]===next);
   if(entry&&!canControl(entry,verified)){setError('Seu perfil não permite abrir este módulo.');return;}
@@ -243,9 +244,9 @@ function AdminApp(){
    </>}
    {page==='Minha segurança'&&<ControlSecurity client={client} access={verified} onVerified={()=>recheckAccess(n=>n+1)}/>}
    {({'Usuários':'users','Cobranças e inadimplência':'charges','Custos e despesas':'costs','Mapa de operações':'map','Saúde da plataforma':'health','Configurações gerais':'settings','Administradores e permissões':'admins'})[page]&&<><ControlData key={page} client={client} view={({ 'Usuários':'users','Cobranças e inadimplência':'charges','Custos e despesas':'costs','Mapa de operações':'map','Saúde da plataforma':'health','Configurações gerais':'settings','Administradores e permissões':'admins'})[page]} stores={stores} access={verified} onNavigate={changePage}/>{page==='Administradores e permissões'&&<ControlSecurity client={client} access={verified} onVerified={()=>recheckAccess(n=>n+1)}/>}</>}
-   {page==='Estabelecimentos'&&!store&&<ControlDirectory key={(context.status||'all')+(context.plan||'all')} client={client} stores={stores} initialStatus={context.status} initialPlan={context.plan} onOpen={openStore}/>}
+   {page==='Estabelecimentos'&&!store&&<ControlDirectory key={(context.status||'all')+(context.plan||'all')} client={client} stores={stores} initialStatus={context.status} initialPlan={context.plan} onOpen={openStore} onCopy={verified.owner?openCopy:undefined}/>}
    {page==='Estabelecimentos'&&store&&<section className="panel" aria-label="Configuração do estabelecimento">
-    <div className="cc-store-detail-heading"><button type="button" className="cc-text-action" onClick={()=>setStoreId('')}><ArrowLeft size={17}/> Todos os estabelecimentos</button><span className="cc-kicker">Ficha do estabelecimento</span><h1>{store?.name}</h1><small>{store?.id}</small></div>
+    <div className="cc-store-detail-heading"><button type="button" className="cc-text-action" onClick={()=>setStoreId('')}><ArrowLeft size={17}/> Todos os estabelecimentos</button><span className="cc-kicker">Ficha do estabelecimento</span><h1>{store?.name}</h1><small>{store?.id}</small>{verified.owner&&<div className="cc-actions"><button type="button" className="secondary" onClick={()=>openCopy(store,'duplicate')}>Duplicar loja</button><button type="button" className="secondary" onClick={()=>openCopy(store,'catalog')}>Duplicar cardápio</button></div>}</div>
     {store&&<>
      <nav className="pitacco-local-tabs" aria-label="Seções do estabelecimento">
       {(verified.owner?['Visão geral','Identidade','Usuários e permissões','Pedidos','Financeiro','Assinatura e pagamentos','Módulos','Integrações','Entregadores','Dispositivos e versões','Configurações','Diagnósticos','Histórico e auditoria','Assistência','Catálogo','Duplicação e clonagem','Checkout','Agendamento']:['Visão geral',...(verified.modules?.includes('users')?['Usuários e permissões']:[]),...(verified.modules?.includes('health')?['Dispositivos e versões']:[]),...(verified.modules?.includes('finance')?['Financeiro']:[]),...(verified.modules?.includes('assistance')?['Assistência']:[])]).map(tab=><button key={tab} type="button" aria-pressed={storeTab===tab}
@@ -261,7 +262,7 @@ function AdminApp(){
      {operations[storeTab]&&<OwnerOperations key={store.id+storeTab} client={client} storeId={store.id} kind={operations[storeTab]}/>}
      {storeTab==='Identidade'&&<StoreProfile key={store.id} client={client} store={store} manager onSaved={()=>loadStores().catch(failure=>setError(failure.message))}/>}
      {storeTab==='Catálogo'&&<OwnerCatalog key={store.id} client={client} storeId={store.id}/>}
-     {storeTab==='Duplicação e clonagem'&&<OwnerCopyStore key={store.id} client={client} store={store} stores={stores} onCopied={async id=>{try{await loadStores();openStore(id);setStoreTab('Catálogo');}catch(err){setError(err.message);}}}/>}
+     {storeTab==='Duplicação e clonagem'&&<OwnerCopyStore key={store.id+copyMode} initialMode={copyMode} aal={verified.aal} client={client} store={store} stores={stores} onCopied={async id=>{try{await loadStores();openStore(id);setStoreTab('Catálogo');}catch(err){setError(err.message);}}}/>}
      {storeTab==='Checkout'&&<OwnerMenuSettings key={store.id} client={client} storeId={store.id} storefrontOrigin={storefrontOrigin}/>}
      {storeTab==='Agendamento'&&<ScheduleSettings key={store.id} client={client} storeId={store.id}/>}
     </>}
