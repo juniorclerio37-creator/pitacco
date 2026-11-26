@@ -754,6 +754,10 @@ try {
     await page.getByRole('heading', { name:'Visão Geral', exact:true }).waitFor();
     await page.locator('.storefront-share').waitFor({state:'attached'});
     assert.equal(await page.locator('.storefront-share').count(),1);
+    const menuLink=page.locator('.storefront-share').getByRole('link',{name:'https://pitacco.com.br/loja-teste',exact:true});
+    await menuLink.waitFor();
+    assert.equal(await menuLink.getAttribute('href'),'https://pitacco.com.br/loja-teste');
+    await page.locator('.storefront-share').getByRole('button',{name:'Copiar link'}).waitFor();
     try{
       await page.getByRole('region',{name:'Indicadores da loja'}).getByText('Ticket médio',{exact:true}).waitFor({timeout:8500});
     }catch(error){
@@ -945,8 +949,7 @@ try {
     await payouts.getByText('Divergente',{exact:true}).waitFor();
     if (width <= 800) await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
     await merchantNavigate('Configurações','Dados da loja');
-    const menuLink=page.getByRole('link',{name:'https://pitacco.com.br/loja-teste',exact:true});
-    await menuLink.waitFor();
+    assert.equal(await page.locator('.storefront-share').count(),0,'O link global fica exclusivamente na Visão Geral');
     const registration=page.getByRole('region',{name:'Dados e identidade da loja'});
     await registration.getByLabel('WhatsApp para clientes').waitFor();
     await registration.getByLabel('Enviar ou alterar logotipo da loja').waitFor();
@@ -956,7 +959,6 @@ try {
     await registration.getByRole('radio',{name:'Pessoa Jurídica (CNPJ)'}).check();
     await registration.getByLabel('Razão social').waitFor();
     await registration.getByRole('radio',{name:'Pessoa Física (CPF)'}).check();
-    assert.equal(await menuLink.getAttribute('href'),'https://pitacco.com.br/loja-teste');
     if(width<=800){
       await page.getByRole('button',{name:'Área de entrega',exact:true}).click();
       const area=page.getByRole('region',{name:'Área de entrega',exact:true});
