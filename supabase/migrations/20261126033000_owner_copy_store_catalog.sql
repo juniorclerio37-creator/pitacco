@@ -25,7 +25,7 @@ revoke all on function public.pitacco_owner_copy_media_manifest(uuid,uuid,uuid) 
 grant execute on function public.pitacco_owner_copy_media_manifest(uuid,uuid,uuid) to authenticated;
 create function public.pitacco_owner_copy_catalog(p_source uuid,p_target uuid,p_new_name text,p_request uuid)
 returns jsonb language plpgsql security definer set search_path='' as $$
-declare dest uuid:=coalesce(p_target,p_request); pr record; gr record; opt record; pizza record; draft record; new_product uuid; new_group uuid; new_draft uuid; product_count int:=0; group_count int:=0; option_count int:=0; pizza_count int:=0; old_result record; result jsonb; source_name text; ids jsonb:='{}'; option_ids jsonb:='{}'; template_ids jsonb:='{}'; library_ids jsonb:='{}'; tpl record; item jsonb; opts jsonb; new_option uuid; new_template uuid; combo record; published_combo record; new_combo uuid; combo_items jsonb; design jsonb; target_design jsonb; banners jsonb; media record; revision integer; combo_count integer:=0; 
+declare dest uuid:=coalesce(p_target,p_request); pr record; gr record; opt record; pizza record; pizza_draft record; new_product uuid; new_group uuid; new_draft uuid; product_count int:=0; group_count int:=0; option_count int:=0; pizza_count int:=0; old_result record; result jsonb; source_name text; ids jsonb:='{}'; option_ids jsonb:='{}'; template_ids jsonb:='{}'; library_ids jsonb:='{}'; tpl record; item jsonb; opts jsonb; new_option uuid; new_template uuid; combo record; published_combo record; new_combo uuid; combo_items jsonb; design jsonb; target_design jsonb; banners jsonb; media record; revision integer; combo_count integer:=0; 
 begin
  if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Acesso exclusivo do Super Admin' using errcode='42501';end if;
  if p_source is null or p_request is null or (p_target is null and coalesce(length(btrim(p_new_name)),0) not between 3 and 100) or (p_target is not null and p_new_name is not null) or p_target=p_source then raise exception 'Origem ou destino inválido';end if;
@@ -72,9 +72,9 @@ begin
   end loop;
   select * into pizza from pitacco_private.pizza_catalog where store_id=p_source and product_id=pr.id;
   if found then
-   select * into draft from public.pitacco_pizza_drafts where store_id=p_source and id=pizza.draft_id;
+   select * into pizza_draft from public.pitacco_pizza_drafts where store_id=p_source and id=pizza.draft_id;
    if not found then raise exception 'Cadastro de pizza de origem incompleto';end if;
-   insert into public.pitacco_pizza_drafts(store_id,name,config) values(dest,draft.name,draft.config) returning id into new_draft;
+   insert into public.pitacco_pizza_drafts(store_id,name,config) values(dest,pizza_draft.name,pizza_draft.config) returning id into new_draft;
    insert into pitacco_private.pizza_catalog(store_id,product_id,draft_id,config) values(dest,new_product,new_draft,pizza.config);
    pizza_count:=pizza_count+1;
   end if;
@@ -109,7 +109,7 @@ begin
  insert into public.pitacco_menu_category_order(store_id,category,sort_order)
  select dest,category,sort_order from public.pitacco_menu_category_order where store_id=p_source;
  select published into design from public.pitacco_storefront_designs where store_id=p_source;
- select coalesce(published,draft) into target_design from public.pitacco_storefront_designs where store_id=dest;
+ select coalesce(s.published,s.draft) into target_design from public.pitacco_storefront_designs s where s.store_id=dest;
  if design is not null then
   -- A marca do destino prevalece, inclusive cores já personalizadas e slogan.
   design:=design||jsonb_build_object('logo_path',coalesce((select logo_path from public.stores where id=dest),''),'instagram',coalesce(target_design->>'instagram',''),'slogan',coalesce(target_design->>'slogan','Cardápio digital'));
