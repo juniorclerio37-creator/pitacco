@@ -68,7 +68,7 @@ do $test$
 declare u uuid; plan text; s uuid; e timestamptz; doc text; j int; i int; sumd int; d int; c uuid; same_store uuid;
 begin
  -- Match production's enabled billing enforcement, not the isolated bootstrap default.
- update pitacco_private.commercial_billing_control set require_selected_plan=true,enforce_own_orders=true where singleton;
+ update pitacco_private.commercial_billing_control set require_selected_plan=true,enforce_own_orders=true,payment_instructions='Teste isolado de cobrança',pix_cnpj='00000000000',pix_recipient='Fixture de teste' where singleton;
  foreach plan in array array['free','complete'] loop
   u:=gen_random_uuid();
   insert into auth.users(id,email,email_confirmed_at) values(u,'signup-fixture-'||u||'@example.invalid',now());
