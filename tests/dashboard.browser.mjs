@@ -337,17 +337,23 @@ try {
         }
         return route.fulfill({headers,json:s===store.id});
       }
-      if(pathname==='/rest/v1/rpc/pitacco_owner_commercial_plans'){
+      if(pathname==='/rest/v1/rpc/pitacco_owner_plan_catalog'){
         assert.equal(origin,realApi);
         assert.equal(adminMode,true);
-        return route.fulfill({headers,json:[{code:'pitacco',monthly_cents:3990,sales_threshold_cents:200000,above_threshold_monthly_cents:5990}]});
+        return route.fulfill({headers,json:{terms_version:'fixture',plans:[
+          {code:'free',name:'Grátis para sempre',monthly_cents:0,commission_basis_points:500,billing_cycle:'weekly',trial_days:0,grace_hours:48},
+          {code:'complete',name:'Completo',monthly_cents:5990,commission_basis_points:0,billing_cycle:'monthly',trial_days:30,grace_hours:48}
+        ]}});
       }
-      if(pathname==='/rest/v1/rpc/pitacco_owner_monthly_plan_estimate'){
+      if(pathname==='/rest/v1/rpc/pitacco_owner_commercial_billing_control'){
         assert.equal(origin,realApi);
         assert.equal(adminMode,true);
-        const {p_store,p_month}=route.request().postDataJSON();
-        assert.equal(p_store,store.id);
-        return route.fulfill({headers,json:{month:p_month,monthly_cents:5990,sales_cents:200001,channels:[{source:'ifood',sales_cents:200001}]}});
+        return route.fulfill({headers,json:{pix_cnpj:'',pix_recipient:''}});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_commercial_invoices'){
+        assert.equal(origin,realApi);
+        assert.equal(adminMode,true);
+        return route.fulfill({headers,json:{rows:[],has_more:false}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_owner_finance_report'){
         assert.equal(origin,realApi);
@@ -1085,13 +1091,13 @@ try {
     assert.equal(await page.locator('.super-admin.pitacco-theme-dark').count(),1);
     await page.getByRole('button',{name:'Ativar modo claro'}).click();
     await adminNavigate('Plano Pitacco');
-    const plan=page.getByRole('region',{name:'Assinatura por faturamento'});
-    const tiers=plan.getByRole('table',{name:'Faixas da assinatura'});
-    await tiers.getByRole('cell',{name:/39,90/}).waitFor();
-    await tiers.getByRole('cell',{name:/59,90/}).waitFor();
-    await plan.getByLabel('Loja',{exact:true}).selectOption(store.id);
-    await plan.getByRole('button',{name:'Calcular faixa',exact:true}).click();
-    await plan.getByRole('status').getByText(/iFood/).waitFor();
+    const plan=page.getByRole('region',{name:'Planos comerciais'});
+    await plan.getByRole('heading',{name:'Grátis para sempre',exact:true}).waitFor();
+    await plan.getByRole('heading',{name:'Completo',exact:true}).waitFor();
+    assert.equal(await plan.getByRole('article').count(),2);
+    await plan.getByText(/59,90.*mês/).waitFor();
+    await plan.getByText('Comissão: 5%',{exact:true}).waitFor();
+    await plan.getByText('Comissão: 0%',{exact:true}).waitFor();
     await adminNavigate('Financeiro do Pitacco');
     const finance=page.getByRole('region',{name:'Financeiro do Pitacco'});
     const daily=finance.getByRole('table',{name:'Valores por dia'});
