@@ -1,6 +1,6 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {Bike,X} from 'lucide-react';
-import {dispatchOptions} from './dispatchOptions.mjs';
+import {dispatchOptions,routeDestinationSummary,routeDestinationMessage} from './dispatchOptions.mjs';
 import {sourceLabel} from './DeliveryDialog.jsx';
 import {orderAddress,publicOrderNumber} from './orderDisplay.mjs';
 export default function GroupDeliveryDialog({client,storeId,orders,deliveryIds,onClose,onSuccess}){
@@ -24,8 +24,8 @@ export default function GroupDeliveryDialog({client,storeId,orders,deliveryIds,o
  <h3>Selecionar entregador</h3>{data&&<p>Limite por viagem: {limit} pedidos</p>}{options.map(x=><label className="group-delivery-courier" key={x.c.id}><input type="radio" name="group-courier" disabled={busy||x.blocked||x.jobs.length+orders.length>limit} checked={courier===x.c.id} onChange={()=>{setCourier(x.c.id);setChecked(false)}}/><span><b>{x.c.name}</b><small>{!x.online?'Offline ou GPS desatualizado':x.inRoute?'Em entrega':x.jobs.length+orders.length>limit?'Capacidade insuficiente':x.jobs.length?'Em coleta':'Online'} · {x.jobs.length}/{limit} pedidos</small></span></label>)}
  {data&&!options.length&&<p>Nenhum entregador próprio disponível.</p>}
  {!!choice?.jobs.length&&<><h3>Pedidos já na rota</h3>{choice.jobs.map(d=><div className="group-delivery-stop" key={d.id}><b>{d.customer_name}</b><small>{orderAddress(d.address)}</small></div>)}</>}
- <p className="notice">Confira as direções e os prazos. A análise viária não está disponível; não agrupe destinos opostos.</p>
- <label className="group-delivery-courier"><input type="checkbox" checked={checked} disabled={!choice||busy} onChange={e=>setChecked(e.target.checked)}/><span>Conferi os endereços, a direção e os prazos de todos os pedidos.</span></label>
+ <p className="notice">{routeDestinationMessage(routeDestinationSummary([...deliveryIds.map(id=>data?.stops.find(d=>d.id===id)),...(choice?.jobs||[])]))}</p>
+ <label className="group-delivery-courier"><input type="checkbox" checked={checked} disabled={!choice||busy} onChange={e=>setChecked(e.target.checked)}/><span>Conferi os endereços e os prazos de todos os pedidos.</span></label>
  {busy&&<p role="status">Atualizando informações…</p>}{error&&<p className="notice error" role="alert">{error}</p>}</div>
  <footer><button className="secondary" disabled={busy} onClick={onClose}>Cancelar</button><button className="dispatch-confirm" disabled={busy||!valid} onClick={submit}>Confirmar agrupamento</button></footer></dialog>
 }
