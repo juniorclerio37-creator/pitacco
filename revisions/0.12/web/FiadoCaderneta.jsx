@@ -6,7 +6,7 @@ const fmt=n=>brl.format(Number(n||0));
 const day=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
 const initial={name:'',phone:'',limit:'100',enabled:true,due_days:7,approval_mode:'manual',block_overdue:true,pin:'',pin_confirm:''};
 
-export default function FiadoCaderneta({client,storeId,onNavigate,initialTab='clientes',navigationKey}){
+export default function FiadoCaderneta({client,storeId,onNavigate,initialTab='clientes',navigationKey,sidebarOnly=false}){
  const [overview,setOverview]=useState(null),[products,setProducts]=useState([]);
  const [groups,setGroups]=useState([]),[options,setOptions]=useState([]);
  const [selected,setSelected]=useState(''),[form,setForm]=useState(initial);
@@ -135,7 +135,7 @@ export default function FiadoCaderneta({client,storeId,onNavigate,initialTab='cl
     p_store:storeId,p_customer:selected,p_request:key,p_items:cart,p_note:note,p_discount:Number(manualDiscount||0)});
    setRequestKey(null);setItems({});setChoices({});setNote('');setManualDiscount('');
    reloadData('Pedido de balcão '+result.order_id+' registrado no fiado por '+fmt(result.total)+'.');
-   setTab('pedidos');
+   if(sidebarOnly)onNavigate?.('Contas a receber');else setTab('pedidos');
   });
  }
  const pending=charges.filter(x=>x.approval_required&&!x.approved&&x.state==='reserved');
@@ -156,10 +156,10 @@ export default function FiadoCaderneta({client,storeId,onNavigate,initialTab='cl
    <article><small>Vencido</small><strong>{fmt(totals.overdue)}</strong></article>
    <article><small>Recebimentos registrados</small><strong>{fmt(totals.received)}</strong></article>
   </div>
-  <nav className="fiado-tabs" aria-label="Áreas da caderneta">
+  {!sidebarOnly&&<nav className="fiado-tabs" aria-label="Áreas da caderneta">
    {[['clientes','Clientes'],['pedidos','Extrato e cobranças'],['balcao','Novo pedido de balcão']].map(([id,label])=>
     <button type="button" key={id} className={tab===id?'active':''} aria-pressed={tab===id} onClick={()=>setTab(id)}>{label}</button>)}
-  </nav>
+  </nav>}
   {loading&&<p role="status">Consultando caderneta da loja…</p>}
   {!loading&&tab==='clientes'&&<div className="fiado-columns">
    <section className="panel fiado-customer-list">
