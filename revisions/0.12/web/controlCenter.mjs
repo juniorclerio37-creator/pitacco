@@ -22,3 +22,6 @@ export const money=value=>value==null?'Não informado':new Intl.NumberFormat('pt
 export const count=value=>value==null?'—':new Intl.NumberFormat('pt-BR').format(Number(value));
 export const when=value=>value?new Date(value).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}):'Sem informação';
 export function periodDays(days=30){const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());const p=today.split('-');const end=p.length===3&&p[0].length===4?today:new Date().toISOString().slice(0,10);return {start:new Date(new Date(end+'T12:00:00Z').getTime()-(days-1)*86400000).toISOString().slice(0,10),end};}
+
+// Internal codes remain compatible with the database; never display old plan names.
+export const commercialPlanLabel=code=>({free:'Completo Flex',complete:'Completo Fixo'})[code]||'Sem plano definido';
