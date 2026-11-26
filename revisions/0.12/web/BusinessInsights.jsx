@@ -1,3 +1,4 @@
+import {calculateSalesOffer} from './salesOfferMath.mjs';
 import React,{useEffect,useState} from 'react';
 
 const brl=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
@@ -21,13 +22,9 @@ function DeliverySalesCoach({data}){
  const [first,setFirst]=useState(''),[second,setSecond]=useState(''),[cost,setCost]=useState(''),[fee,setFee]=useState(''),[fixed,setFixed]=useState(''),[margin,setMargin]=useState('20'),[discount,setDiscount]=useState('10');
  const a=products.find(p=>p.id===first),b=products.find(p=>p.id===second);
  const base=a?Number(a.price)+(b?Number(b.price):0):0;
- const numbers=[cost,fee,fixed,margin,discount].map(Number);
- const [c,f,x,m,d]=numbers;
- const ready=!!a&&[cost,fee,fixed,margin,discount].every(v=>v.trim()!=='')&&numbers.every(v=>Number.isFinite(v)&&v>=0)&&f+m<100&&d<100&&c>0;
- const minimum=ready?Math.ceil((c+x)/(1-(f+m)/100)*100)/100:null;
- const proposed=ready?Math.floor(base*(1-d/100)*100+1e-7)/100:null;
- const contribution=ready?proposed*(1-f/100)-c-x:null;
- const safe=ready&&proposed>=minimum;
+ const offer=a?calculateSalesOffer({base,cost,fee,fixed,margin,discount}):null;
+ const ready=!!offer;
+ const {minimum,proposed,contribution,safe,requiredVolume,maximumDiscount}=offer||{};
  function choose(p,q){setFirst(p?.id||'');setSecond(q?.id||'');setCost('');}
  const validPairs=pairs.filter(p=>products.some(x=>x.id===p.first.id)&&products.some(x=>x.id===p.second.id));
  return <section className="panel" aria-label="Consultor de vendas delivery" style={{margin:'16px 0'}}>
@@ -50,7 +47,7 @@ function DeliverySalesCoach({data}){
    <label>Margem de contribuição desejada (%)<input type="number" min="0" max="99" step="0.01" value={margin} onChange={e=>setMargin(e.target.value)}/></label>
    <label>Desconto pago pela loja (%)<input type="number" min="0" max="99" step="0.01" value={discount} onChange={e=>setDiscount(e.target.value)}/></label>
   </div>
-  {ready?<article className="panel" aria-live="polite"><h4>{safe?'Oferta compatível com a margem informada':'Reveja a oferta: margem abaixo da meta'}</h4><p>Preço sugerido pelo desconto: <strong>{brl.format(proposed)}</strong> · preço mínimo para a meta: <strong>{brl.format(minimum)}</strong></p><p>Contribuição estimada por pedido: {brl.format(contribution)} {proposed>0?'('+((contribution/proposed)*100).toFixed(1)+'%)':''}</p><p>{minimum<=base?'Desconto máximo aproximado: '+(Math.floor((1-minimum/base)*10000)/100).toFixed(2)+'%.':'O preço atual não cobre a meta; revise preço, custos ou margem.'}</p><p>Teste por sete dias, compare pedidos, ticket médio e contribuição com dias equivalentes. Não publique ofertas com estoque ou margem insuficientes.</p></article>:<p className="hint">Selecione um produto e informe todos os custos e taxas para receber um preço. A soma da taxa e margem deve ser menor que 100%.</p>}
+  {ready?<article className="panel" aria-live="polite"><h4>{safe?'Oferta compatível com a margem informada':'Reveja a oferta: margem abaixo da meta'}</h4><p>Preço sugerido pelo desconto: <strong>{brl.format(proposed)}</strong> · preço mínimo para a meta: <strong>{brl.format(minimum)}</strong></p><p>Contribuição estimada por pedido: {brl.format(contribution)} {proposed>0?'('+((contribution/proposed)*100).toFixed(1)+'%)':''}</p><p>{minimum<=base?'Desconto máximo aproximado: '+maximumDiscount.toFixed(2)+'%.':'O preço atual não cobre a meta; revise preço, custos ou margem.'}</p>{requiredVolume!==null&&<p>Para preservar a contribuição total do preço atual, seriam necessárias aproximadamente <strong>{requiredVolume}%</strong> mais vendas desta oferta, mantendo os mesmos custos. Não é uma previsão de crescimento.</p>}<p>Teste por sete dias, compare pedidos, ticket médio e contribuição com dias equivalentes. Não publique ofertas com estoque ou margem insuficientes.</p></article>:<p className="hint">Selecione um produto e informe todos os custos e taxas para receber um preço. A soma da taxa e margem deve ser menor que 100%.</p>}
   <p className="hint">Simulação para uma unidade de cada item, sem adicionais. Taxas percentuais incidem sobre o preço final; ajuste custos fixos conforme o canal. Não inclui despesas fixas, impostos não informados nem subsídios externos. Até 30 produtos simples elegíveis; pizzas e combos existentes exigem cálculo específico.</p>
  </section>;
 }
