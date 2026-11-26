@@ -65,7 +65,8 @@ try {
     let catalogCalls=0;
     let publicBlocked=template==='pitacco-v2'&&width===375;
     let rejectPriorityOnce=false,streetReferenceOnce=false;
-    const openingFixture=()=>publicBlocked?{open:false,reason:'paused',paused:true,next_open_at:null,scheduling_available:false}:{open:true,reason:'open',next_open_at:null,timezone:'America/Sao_Paulo',scheduling_available:Boolean(scheduled),paused:false};
+    const weeklyPeriods=[{weekday:1,opens_minute:720,closes_minute:840},{weekday:1,opens_minute:1080,closes_minute:1320},{weekday:5,opens_minute:1200,closes_minute:120},{weekday:7,opens_minute:0,closes_minute:1440}];
+    const openingFixture=()=>({weekly_periods:weeklyPeriods,accepts_scheduled:Boolean(scheduled),...(publicBlocked?{open:false,reason:'paused',paused:true,next_open_at:null,scheduling_available:false}:{open:true,reason:'open',next_open_at:null,timezone:'America/Sao_Paulo',scheduling_available:Boolean(scheduled),paused:false})});
     let polls=0,quoteAttempts=0,recoveryConfirmed=false;
     let savedProfile=null;
     const errors = [];
@@ -375,6 +376,15 @@ try {
     await page.locator('#v2StoreNav [data-v2-nav="sobre"]').click();
     await page.locator('#v2AboutPage').waitFor();
     assert.equal(await page.locator('#v2AboutPage').isVisible(),true);
+    assert.equal(await page.locator('#v2AboutHours .v2-about-day').count(),7,'All seven days appear');
+    assert.match(await page.locator('#v2AboutHours .v2-about-day').nth(0).innerText(),/12:00 às 14:00 · 18:00 às 22:00/);
+    assert.match(await page.locator('#v2AboutHours .v2-about-day').nth(1).innerText(),/Fechado/);
+    assert.match(await page.locator('#v2AboutHours .v2-about-day').nth(4).innerText(),/20:00 às 02:00 \(dia seguinte\)/);
+    assert.match(await page.locator('#v2AboutHours .v2-about-day').nth(6).innerText(),/24 horas/);
+    assert.deepEqual(await page.locator('#v2AboutPayments li').allTextContents(),width===1440?['Pix manual','Dinheiro','Cartão de crédito','Cartão de débito','Pix na maquininha','Alelo','Pluxee (Sodexo)','VR Benefícios','Ticket']:['Pix manual']);
+    assert.equal(await page.locator('#v2AboutScheduling').isVisible(),Boolean(scheduled));
+    if(scheduled)assert.match(await page.locator('#v2AboutSchedulingText').innerText(),/aceita pedidos agendados/);
+    assert.equal(await page.locator('#v2AboutIntro,#v2AboutServices').count(),0,'Old generic content removed');
     await page.getByRole('button',{name:'Cardápio',exact:true}).click();
     await productCard.waitFor();
     const saveFavorite=page.getByRole('button',{name:'Salvar Açaí nos favoritos'});

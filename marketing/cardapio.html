@@ -1449,6 +1449,17 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyaltyGo
  body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-compact-copy{padding-left:6px;font-size:.69rem}
  body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyaltyGo{padding:6px 8px;font-size:.72rem}
 }
+/* About contains only the shop's actual weekly hours, payment methods and scheduling. */
+body[data-menu-template="pitacco-v2"] .v2-about-block{border-top:1px solid var(--line,#eae3e7);padding:16px 0 0;margin-top:16px}
+body[data-menu-template="pitacco-v2"] .v2-about-block h3{font-size:1rem;margin:0 0 10px;color:var(--ink)}
+body[data-menu-template="pitacco-v2"] #v2AboutHours{display:grid;gap:0}
+body[data-menu-template="pitacco-v2"] .v2-about-day{display:grid;grid-template-columns:minmax(95px,1fr) minmax(0,1.6fr);align-items:start;gap:8px;padding:9px 0;border-bottom:1px solid var(--line,#eae3e7);font-size:.86rem;color:var(--ink)}
+body[data-menu-template="pitacco-v2"] .v2-about-day:last-child{border-bottom:0}
+body[data-menu-template="pitacco-v2"] .v2-about-day span{text-align:right;overflow-wrap:anywhere}
+body[data-menu-template="pitacco-v2"] .v2-about-day[data-closed=true] span{color:var(--muted)}
+body[data-menu-template="pitacco-v2"] .v2-about-payments{display:flex;gap:7px;flex-wrap:wrap;list-style:none;padding:0;margin:0}
+body[data-menu-template="pitacco-v2"] .v2-about-payments li{border:1px solid var(--line,#eae3e7);padding:7px 10px;border-radius:10px;font-size:.82rem;color:var(--ink);background:var(--paper,#fff)}
+body[data-menu-template="pitacco-v2"] #v2AboutSchedulingText{margin:0;font-size:.87rem}
 /* Account actions are part of the hero, never a separate greeting card. */
 #hero #customerSessionBar{position:relative;z-index:5;display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin:0 auto 12px;padding:0;min-width:0;color:inherit}
 #hero:has(#storeSocialLinks:not([hidden])) #customerSessionBar{padding-right:90px}
@@ -1515,7 +1526,11 @@ body[data-menu-template=classic] #hero:has(#customerSessionBar:not([hidden])) .h
  </div>
 </section>
 <section id="v2AboutPage" class="v2-section-page" aria-label="Sobre a loja" hidden>
- <div class="v2-about"><h2 id="v2AboutTitle">Sobre a loja</h2><p id="v2AboutIntro">Informações da loja e serviços disponíveis.</p><div id="v2AboutServices"></div></div>
+ <div class="v2-about"><h2>Sobre a loja</h2>
+ <section class="v2-about-block" aria-labelledby="v2AboutHoursTitle"><h3 id="v2AboutHoursTitle">Horários de atendimento</h3><div id="v2AboutHours"></div></section>
+ <section class="v2-about-block" aria-labelledby="v2AboutPaymentsTitle"><h3 id="v2AboutPaymentsTitle">Formas de pagamento aceitas</h3><ul id="v2AboutPayments" class="v2-about-payments"></ul><p id="v2AboutNoPayments" hidden>Formas de pagamento ainda não informadas.</p></section>
+ <section id="v2AboutScheduling" class="v2-about-block" aria-label="Pedidos agendados" hidden><h3>Pedidos agendados</h3><p id="v2AboutSchedulingText"></p></section>
+ </div>
 </section>
 <section id="v2FiadoPage" class="v2-section-page" aria-label="Meu Fiado" hidden>
  <div class="v2-page-hero v2-fiado-hero"><h2>▣ Meu Fiado</h2><p>Acompanhe seus pedidos fiados e pagamentos.</p></div>
@@ -2370,6 +2385,27 @@ function v2Feature(){
  if(heroProduct){setProductPhotoFit($('v2HeroImage'));$('v2HeroImage').src=heroProduct.image_url;}
 }
 
+function renderStoreAbout(){
+ if(!menu)return;
+ const hours=$('v2AboutHours'),payments=$('v2AboutPayments');hours.replaceChildren();payments.replaceChildren();
+ const weekly=storeOpening?.weekly_periods;
+ const days=['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado','Domingo'];
+ const fmt=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+ if(!Array.isArray(weekly))hours.append(el('p','Horários de atendimento não disponíveis no momento.'));
+ else days.forEach((day,index)=>{
+  const periods=weekly.filter(p=>p.weekday===index+1&&Number.isInteger(p.opens_minute)&&Number.isInteger(p.closes_minute)&&p.opens_minute>=0&&p.opens_minute<1440&&p.closes_minute>=0&&p.closes_minute<=1440&&p.opens_minute!==p.closes_minute).sort((a,b)=>a.opens_minute-b.opens_minute);
+  const row=el('div',undefined,'v2-about-day');row.dataset.closed=String(!periods.length);
+  const label=periods.length?periods.map(p=>p.opens_minute===0&&p.closes_minute===1440?'24 horas':fmt(p.opens_minute)+' às '+fmt(p.closes_minute)+(p.closes_minute<p.opens_minute?' (dia seguinte)':'')).join(' · '):'Fechado';
+  row.append(el('strong',day),el('span',label));hours.append(row);
+ });
+ const methods=[...$('payment').options].filter(o=>o.value&&o.value!=='fiado');
+ for(const option of methods){const [,title]=v2PaymentMetadata(option.value,option.textContent);payments.append(el('li',title));}
+ if(canOpenFiadoNavigation())payments.append(el('li','Fiado autorizado'));
+ $('v2AboutNoPayments').hidden=payments.children.length>0;
+ const accepts=storeOpening?.accepts_scheduled===true;
+ $('v2AboutScheduling').hidden=!accepts;
+ $('v2AboutSchedulingText').textContent=accepts?(schedulingAvailable()?'Esta loja aceita pedidos agendados.':'Pedidos agendados temporariamente indisponíveis.'):'';
+}
 function v2Go(page,initial=false){
  if(document.body.dataset.menuTemplate!=='pitacco-v2')return;
  if(page==='fiado'&&!canOpenFiadoNavigation())return;
@@ -2396,13 +2432,7 @@ function v2Go(page,initial=false){
   v2RenderWallet();
   if(menu)void refreshLoyaltyWallet();
  }
- if(page==='sobre'&&menu){
-  $('v2AboutTitle').textContent=menu.store.name;
-  $('v2AboutIntro').textContent=menu.store.appearance?.slogan||'Conheça os serviços disponíveis nesta loja.';
-  const area=$('v2AboutServices');area.replaceChildren();
-  for(const item of $('storeServices').children){if(item.tagName==='A'){const contact=item.cloneNode(true);contact.classList.add('v2-about-chip');area.append(contact)}else area.append(el('p',item.textContent,'v2-about-chip'));}
-  area.append(el('p','Horários de atendimento e disponibilidade de pedidos definidos pela loja.','v2-about-chip'));
- }
+ if(page==='sobre'&&menu)renderStoreAbout();
  if(!initial)window.scrollTo({top:0,behavior:'smooth'});
 }
 for(const b of $('v2StoreNav').querySelectorAll('[data-v2-nav]')){
@@ -2953,6 +2983,7 @@ const brazilTime=new Intl.DateTimeFormat('pt-BR',{
 });
 function showStoreOpening(opening){
  storeOpening=opening&&typeof opening.open==='boolean'?opening:{open:false,reason:'unavailable'};
+ if(v2Page==='sobre')renderStoreAbout();
  const status=$('storeOpenStatus');
  const isOpen=storeOpening.open;
  const available=schedulingAvailable();
@@ -3011,6 +3042,7 @@ function setFiadoNavigation(phone,visible){
  fiadoNavRevision++;
  fiadoNavPhone=visible===true&&phone===fiadoPhoneDigits($('phone').value)&&/^[0-9]{10,11}$/.test(phone)?phone:'';
  $('v2FiadoNav').hidden=!fiadoNavPhone;
+ if(v2Page==='sobre')renderStoreAbout();
  if(!fiadoNavPhone){
   $('v2FiadoPhone').value='';$('v2FiadoPin').value='';$('v2FiadoStatement').hidden=true;
   $('v2FiadoNotice').textContent='';$('v2FiadoCharges').replaceChildren();$('v2FiadoPayments').replaceChildren();
@@ -3450,7 +3482,6 @@ function renderPublicStoreIdentity(){
  social.hidden=!social.children.length;
  const digits=String(shop.whatsapp||'').replace(/\D/g,'');
  if(/^\d{10,11}$/.test(digits)||/^55\d{10,11}$/.test(digits)){const contact=el('a','WhatsApp da loja');contact.href='https://wa.me/'+(digits.length<=11?'55'+digits:digits);contact.target='_blank';contact.rel='noopener noreferrer';$('storeServices').append(contact);}
- $('v2AboutTitle').textContent=shop.name;
  $('storeInitial').textContent=shop.name.trim().slice(0,1).toUpperCase();
  document.title='Cardápio | '+shop.name;
 
