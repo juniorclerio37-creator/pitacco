@@ -159,3 +159,10 @@ test('delivery service switching retains server options and ignores stale quote 
  assert.match(html,/renderDeliveryServices\(\);renderCart\(\);\s*v2ScheduleDeliveryQuote\(true\)/);
  assert.match(html,/if\(token!==quoteGeneration\|\|selectedService!==deliveryService\)return false;\s*renderDeliveryServices\(\)/);
 });
+
+test('checkout places GPS after address fields, uses compact delivery radios and attaches cash change to cash choice',()=>{
+ assert.ok(html.indexOf('id="addressExtra"')<html.indexOf('id="locateDelivery"'));
+ assert.ok(html.indexOf('id="locateDelivery"')<html.indexOf('id="routeQuoteControls"'));
+ assert.match(html,/#addressBlock #deliveryServices input\[type=radio\]\{[^}]*width:19px[^}]*box-shadow:none/);
+ assert.match(html,/if\(option.value==='dinheiro'\)\{b.setAttribute\('aria-controls','v2ChangeBlock'\);change.dataset.paymentGroup=groupLabel;list.append\(change\)/);
+});

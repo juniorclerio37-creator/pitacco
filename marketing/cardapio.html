@@ -1206,6 +1206,21 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
 #addressBlock #deliveryMap{border-radius:10px}
 #addressBlock #confirmDeliveryMap{width:100%;margin:0}
 #addressBlock #routeQuoteStatus{font-weight:650;padding:13px;border-radius:13px}
+#addressBlock #deliveryServices{border:0;padding:0;margin:16px 0 0;min-width:0;display:grid;gap:9px}
+#addressBlock #deliveryServices legend{font-size:1rem;font-weight:750;margin:0 0 9px;padding:0}
+#addressBlock #deliveryServices .delivery-service-card{display:flex;align-items:center;gap:12px;margin:0;padding:12px 14px;border:1px solid color-mix(in srgb,var(--brand) 16%,#ddd);border-radius:13px;background:var(--paper,#fff);cursor:pointer}
+#addressBlock #deliveryServices .delivery-service-info{display:grid;gap:3px;min-width:0}
+#addressBlock #deliveryServices .delivery-service-info strong{font-size:.95rem;line-height:1.35}
+#addressBlock #deliveryServices .delivery-service-info small{font-size:.82rem;color:var(--muted,#665c6c);font-weight:500}
+#addressBlock #deliveryServices input[type=radio]{appearance:auto;flex:0 0 19px;width:19px;height:19px;min-width:19px;min-height:0;max-height:19px;padding:0;margin:0;border:0;border-radius:50%;box-shadow:none;background:transparent;accent-color:var(--brand);outline:none}
+#addressBlock #deliveryServices input[type=radio]:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+#addressBlock #deliveryServices input[type=radio]:focus:not(:focus-visible){outline:none}
+#addressBlock #deliveryServices .delivery-service-card:has(input:checked){background:color-mix(in srgb,var(--brand) 6%,var(--paper,#fff))}
+#addressBlock .checkout-address-actions .address-action{margin:0}
+#addressBlock .address-map-toggle{font-size:.82rem;padding:8px 0}
+#addressBlock #deliveryPointStatus:empty{display:none}
+#checkout #v2PaymentCards #v2ChangeBlock{margin-top:-7px;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--brand) 5%,var(--paper,#fff));border:1px solid color-mix(in srgb,var(--brand) 16%,#ddd)}
+#checkout #v2ChangeBlock small{display:block;margin-top:6px;font-size:.78rem;color:var(--muted,#665c6c)}
 
 </style><style>.schedule-store-action{flex-basis:100%;padding:12px;border:0;border-radius:9px;background:var(--brand,#df5a20);color:#fff;font-weight:800}.schedule-choices{display:grid;gap:9px;margin-top:9px;padding:12px;background:var(--paper,#fff);border:1px solid #dedede;border-radius:10px}.schedule-times{display:flex;gap:7px;flex-wrap:wrap}.schedule-time{border:1px solid #d3d3d3;border-radius:8px;padding:9px 14px;background:var(--paper,#fff);color:var(--ink,#24211e)}.schedule-time[aria-pressed="true"]{background:var(--brand,#df5a20);color:white;border-color:var(--brand,#df5a20)}</style></head><body>
 <section id="menuStartup" class="menu-startup" role="status" aria-label="Carregando o cardápio">
@@ -1356,14 +1371,14 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
 </section>
 <section class="v2-checkout-panel v2-checkout-panel--delivery"><h3>📍 Entrega ou retirada</h3><p>Escolha como deseja receber seu pedido.</p><label for="fulfillment">Como deseja receber?</label><select id="fulfillment"></select><div id="scheduleBlock" hidden><label for="schedule">Quando deseja receber?</label><select id="schedule"><option value="">Assim que possível</option></select><div id="scheduleChoices" class="schedule-choices" hidden></div><small>Horários de Brasília. Para entrega, o horário é uma previsão.</small></div><div id="addressBlock">
  <div id="v2AddressBook" class="v2-address-book" hidden>
-  <h3>Onde vamos entregar?</h3><p id="savedAddressHint">Escolha um endereço salvo ou cadastre um novo.</p><div class="checkout-address-actions"><button id="locateDelivery" type="button" class="address-action"><span aria-hidden="true">◎</span><span><strong>Usar minha localização</strong><small>Use quando estiver no endereço de entrega</small></span><span aria-hidden="true">›</span></button></div><h4 id="savedAddressesTitle" hidden>Meus endereços</h4>
+  <h3>Onde vamos entregar?</h3><p id="savedAddressHint">Escolha um endereço salvo ou cadastre um novo.</p><h4 id="savedAddressesTitle" hidden>Meus endereços</h4>
   <div id="v2AddressList" class="v2-address-list"></div>
   <button type="button" id="v2AddAddress" class="v2-add-address">＋ Adicionar novo endereço</button>
  </div>
  <div id="v2AddressEditor"><div class="address-editor-heading"><h3>Novo endereço</h3><p>Informe o endereço. A taxa aparece automaticamente.</p></div><div class="address-cep"><label for="addressPostal">Buscar pelo CEP (opcional)</label><div><input id="addressPostal" autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000"><button id="lookupAddressCep" type="button" class="secondary">Buscar</button></div><small id="addressCepStatus" role="status"></small></div><div class="v2-address-title"><label for="v2AddressLabel">Salvar endereço como</label>
   <select id="v2AddressLabel"><option value="Casa">⌂ Casa</option><option value="Trabalho">▤ Trabalho</option><option value="Outro">♡ Outro</option></select></div>
  <fieldset id="addressFields" class="address-fields"><legend class="address-sr-only">Dados do endereço</legend>
-<div class="address-grid"><label>Rua ou avenida<input id="addressStreet" autocomplete="address-line1" maxlength="100" placeholder="Ex.: Rua Guaraná" required></label><label>Número<input id="addressNumber" autocomplete="off" maxlength="20" placeholder="Ex.: 5 ou s/n" required></label><label>Bairro<input id="addressNeighborhood" autocomplete="address-level3" maxlength="60" required></label><label>Cidade<input id="addressCity" autocomplete="address-level2" maxlength="60" required></label><label>Estado<select id="addressState" autocomplete="address-level1" required><option value="">Selecione</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></label><label class="address-wide">Complemento e referência (opcional)<input id="addressExtra" autocomplete="address-line2" maxlength="100" placeholder="Casa, bloco, apartamento ou ponto de referência"></label></div></fieldset></div><textarea id="address" rows="2" maxlength="500" readonly hidden aria-label="Endereço completo"></textarea><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço. A taxa de entrega aparecerá automaticamente.</p><fieldset id="deliveryServices" hidden><legend>Tipo de entrega</legend><label><input type="radio" name="deliveryService" value="standard" checked> <span id="standardServiceLabel">Entrega padrão</span></label><label id="priorityServiceOption" hidden><input type="radio" name="deliveryService" value="priority"> <span id="priorityServiceLabel">⚡ Entrega prioritária</span></label></fieldset></div><fieldset id="deliveryPoint" hidden><legend class="address-sr-only">Ajustar localização</legend><button id="showDeliveryMap" type="button" class="address-map-toggle" aria-expanded="false" aria-controls="deliveryMapPanel">⌖ Ajustar localização no mapa</button><p id="deliveryPointStatus" role="status"></p><div id="deliveryMapPanel" hidden><h4>Confirme o local da entrega</h4><p>Toque na entrada do imóvel ou arraste o marcador até o ponto correto.</p><div id="deliveryMap" aria-label="Mapa para confirmar o endereço" hidden style="height:260px;margin:12px 0;z-index:0"></div><button id="confirmDeliveryMap" type="button" class="primary" disabled>Confirmar localização</button></div></fieldset></div></section><section class="v2-checkout-panel v2-checkout-panel--payment">
+<div class="address-grid"><label>Rua ou avenida<input id="addressStreet" autocomplete="address-line1" maxlength="100" placeholder="Ex.: Rua Guaraná" required></label><label>Número<input id="addressNumber" autocomplete="off" maxlength="20" placeholder="Ex.: 5 ou s/n" required></label><label>Bairro<input id="addressNeighborhood" autocomplete="address-level3" maxlength="60" required></label><label>Cidade<input id="addressCity" autocomplete="address-level2" maxlength="60" required></label><label>Estado<select id="addressState" autocomplete="address-level1" required><option value="">Selecione</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></label><label class="address-wide">Complemento e referência (opcional)<input id="addressExtra" autocomplete="address-line2" maxlength="100" placeholder="Casa, bloco, apartamento ou ponto de referência"></label></div></fieldset></div><textarea id="address" rows="2" maxlength="500" readonly hidden aria-label="Endereço completo"></textarea><fieldset id="deliveryPoint" hidden><legend class="address-sr-only">Localização da entrega</legend><div class="checkout-address-actions"><button id="locateDelivery" type="button" class="address-action"><span aria-hidden="true">◎</span><span><strong>Usar minha localização</strong><small>Use quando estiver no endereço de entrega</small></span><span aria-hidden="true">›</span></button></div><button id="showDeliveryMap" hidden type="button" class="address-map-toggle" aria-expanded="false" aria-controls="deliveryMapPanel">Escolher outro ponto no mapa</button><p id="deliveryPointStatus" role="status"></p><div id="deliveryMapPanel" hidden><h4>Confirme o local da entrega</h4><p>Toque na entrada do imóvel ou arraste o marcador até o ponto correto.</p><div id="deliveryMap" aria-label="Mapa para confirmar o endereço" hidden style="height:260px;margin:12px 0;z-index:0"></div><button id="confirmDeliveryMap" type="button" class="primary" disabled>Confirmar localização</button></div></fieldset><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço. A taxa de entrega aparecerá automaticamente.</p><fieldset id="deliveryServices" hidden><legend>Tipo de entrega</legend><label class="delivery-service-card"><input type="radio" name="deliveryService" value="standard" checked><span class="delivery-service-info"><strong>Entrega padrão</strong><small id="standardServiceLabel"></small></span></label><label class="delivery-service-card" id="priorityServiceOption" hidden><input type="radio" name="deliveryService" value="priority"><span class="delivery-service-info"><strong>⚡ Entrega prioritária</strong><small id="priorityServiceLabel"></small></span></label></fieldset></div></div></section><section class="v2-checkout-panel v2-checkout-panel--payment">
 <h3>▣ Forma de pagamento</h3><p>Escolha como deseja pagar o seu pedido.</p><label for="payment" class="v2-payment-native-label">Forma de pagamento</label><select id="payment" required></select>
  <div id="v2PaymentCards" class="v2-payment-cards" role="radiogroup" aria-label="Formas de pagamento configuradas pela loja"></div>
  <div id="v2ChangeBlock" class="v2-change-block" hidden><label for="v2CashChange">Vai pagar com quanto? (para calcular o troco)</label><input id="v2CashChange" inputmode="decimal" autocomplete="off" placeholder="Ex.: 50,00"><small>Informe quanto entregará ao motoboy. O troco considera produtos, descontos e taxa de entrega.</small></div>
@@ -1505,7 +1520,7 @@ function renderDeliveryServices(options){
  $('priorityServiceOption').hidden=!known?.priority&&deliveryService!=='priority';
  for(const key of ['standard','priority']){
   const o=known?.[key];
-  $(key+'ServiceLabel').textContent=(key==='priority'?'⚡ Entrega prioritária':'Entrega padrão')+(o?' · '+money(o.fee)+(Number.isInteger(o.min_minutes)&&Number.isInteger(o.max_minutes)?' · '+o.min_minutes+'–'+o.max_minutes+' min':''):'');
+  $(key+'ServiceLabel').textContent=o?money(o.fee)+(Number.isInteger(o.min_minutes)&&Number.isInteger(o.max_minutes)?' · '+o.min_minutes+'–'+o.max_minutes+' min':''):'';
   root.querySelector('[value='+key+']').checked=deliveryService===key;
  }
 }
@@ -1642,7 +1657,13 @@ function completeDeliveryAddress(){
  for(const id of addressInputs){if(!$(id).checkValidity()){$(id).reportValidity();$(id).focus();return false;}}
  return true;
 }
-function quoteNotice(text,state='info'){$('routeQuoteStatus').textContent=text;$('routeQuoteStatus').dataset.state=state;$('routeQuoteStatus').setAttribute('role',state==='error'?'alert':'status');v2UpdateSelectedAddressQuote();}
+function quoteNotice(text,state='info'){$('routeQuoteStatus').textContent=text;$('routeQuoteStatus').dataset.state=state;$('routeQuoteStatus').setAttribute('role',state==='error'?'alert':'status');updateDeliveryMapAction();v2UpdateSelectedAddressQuote();}
+function updateDeliveryMapAction(){
+ const open=!$('deliveryMapPanel').hidden;
+ const state=$('routeQuoteStatus').dataset.state;
+ $('showDeliveryMap').hidden=!open&&(!v2QuoteAddressReady()||(state==='success'&&!deliveryPoint));
+ if(!open)$('showDeliveryMap').textContent=deliveryPoint?'Alterar ponto no mapa':'Escolher outro ponto no mapa';
+}
 async function quoteFailureMessage(error){
  let detail='';
  try{const body=await error?.context?.clone().json();if(typeof body?.error==='string')detail=body.error;else if(typeof body?.message==='string')detail=body.message;}catch{}
@@ -1656,7 +1677,7 @@ function selectDeliveryPoint(point){
  deliveryPoint=point;suggestedDeliveryPoint=null;
  deliveryQuote=null;renderDeliveryServices(null);
  deliveryMap?.setPoint(point);
- $('deliveryPointStatus').textContent='Localização confirmada. A taxa será atualizada automaticamente e o endereço poderá ser reutilizado após a entrega.';
+ $('deliveryPointStatus').textContent='✓ Localização confirmada.';
  quoteGeneration++;v2ScheduleDeliveryQuote(true);
  if(menu)renderCart();
 }
@@ -1666,7 +1687,7 @@ $('address').addEventListener('input',event=>{
  if(!keepPoint){$('addressCepStatus').textContent='';suggestedDeliveryPoint=null;pendingMapPoint=null;$('confirmDeliveryMap').disabled=true;deliveryMap?.clearPoint();deliveryService='standard';renderDeliveryServices(null);}
  if(deliveryPoint&&!keepPoint){
   deliveryPoint=null;deliveryMap?.clearPoint();
-  $('deliveryPointStatus').textContent='Confirme novamente a localização do endereço.';
+  $('deliveryPointStatus').textContent='';
  }
  quoteGeneration++;
  v2ScheduleDeliveryQuote();
@@ -1676,7 +1697,7 @@ let pendingMapPoint=null,suggestedDeliveryPoint=null;
 function validDeliveryMapPoint(point){return Array.isArray(point)&&point.length===2&&point.every(v=>typeof v==='number'&&Number.isFinite(v))&&Math.abs(point[0])<=90&&Math.abs(point[1])<=180;}
 function closeDeliveryMap(){
  $('deliveryMapPanel').hidden=true;$('showDeliveryMap').setAttribute('aria-expanded','false');
- $('showDeliveryMap').textContent='⌖ Ajustar localização no mapa';pendingMapPoint=null;
+ pendingMapPoint=null;updateDeliveryMapAction();
 }
 $('showDeliveryMap').onclick=async()=>{
  const button=$('showDeliveryMap'),container=$('deliveryMap'),panel=$('deliveryMapPanel');
@@ -3721,7 +3742,9 @@ function v2PaymentMetadata(method,label){
 }
 function v2RenderPaymentCards(){
  if(!v2Only())return;
- const list=$('v2PaymentCards');list.replaceChildren();
+ const list=$('v2PaymentCards'),change=$('v2ChangeBlock'),cash=$('v2CashChange');
+ const restoreFocus=document.activeElement===cash,selection=restoreFocus?[cash.selectionStart,cash.selectionEnd]:null;
+ change.remove();list.replaceChildren();
  for(const option of $('payment').options){
   if(!option.value)continue;
   const [symbol,title,description]=v2PaymentMetadata(option.value,option.textContent);
@@ -3744,8 +3767,11 @@ function v2RenderPaymentCards(){
   };
   const groupLabel=option.parentElement?.label||'Outras formas de pagamento';
   if(list.lastElementChild?.dataset?.paymentGroup!==groupLabel){const heading=el('h4',groupLabel);heading.dataset.paymentGroup=groupLabel;list.append(heading)}b.dataset.paymentGroup=groupLabel;list.append(b);
+  if(option.value==='dinheiro'){b.setAttribute('aria-controls','v2ChangeBlock');change.dataset.paymentGroup=groupLabel;list.append(change);}
  }
- $('v2ChangeBlock').hidden=$('payment').value!=='dinheiro';
+ if(!change.isConnected)list.append(change);
+ change.hidden=$('payment').value!=='dinheiro';
+ if(restoreFocus&&!change.hidden){cash.focus({preventScroll:true});if(selection)cash.setSelectionRange(...selection);}
 }
 $('payment').addEventListener('change',()=>{if(v2Only())v2RenderPaymentCards();});
 new MutationObserver(()=>{if(v2Only())v2RenderPaymentCards();}).observe($('payment'),{childList:true,subtree:true,attributes:true,attributeFilter:['disabled']});

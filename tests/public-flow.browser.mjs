@@ -477,6 +477,7 @@ try {
     const pricingChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
     assert.equal(await page.locator('#quoteDelivery').isVisible(),false,'Nenhum template mostra botão manual de frete');
     assert.equal(await page.locator('#deliveryMapPanel').isVisible(),false,'Mapa opcional começa recolhido');
+    assert.equal(await page.locator('#addressExtra').evaluate(node=>Boolean(node.compareDocumentPosition(document.getElementById('locateDelivery'))&Node.DOCUMENT_POSITION_FOLLOWING)),true,'GPS after address fields');
     await page.locator('#showDeliveryMap').click();
     await page.locator('#deliveryMap[data-show-coverage=false]').waitFor();
     await page.locator('#showDeliveryMap').click();
@@ -484,7 +485,7 @@ try {
     await page.locator('#routeQuoteStatus').filter({hasText:'A loja precisa revisar'}).waitFor();
     assert.equal(await page.locator('#routeQuoteStatus').getAttribute('role'),'alert');
     await page.getByRole('button',{name:'Usar minha localização'}).click();
-    await page.getByText('Localização confirmada. A taxa será atualizada automaticamente e o endereço poderá ser reutilizado após a entrega.').waitFor();
+    await page.getByText('✓ Localização confirmada.',{exact:true}).waitFor();
     await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
     await pricingChecked;
     assert.match(await page.locator('#total').innerText(),/74,00/);
@@ -509,6 +510,8 @@ try {
     await page.locator('#deliveryServices input[value="priority"]').check();
     await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*9,00.*20–30 min/}).waitFor();
     assert.match(await page.locator('#total').innerText(),/78,00/);
+    const radioSize=await page.locator('#deliveryServices input[value="priority"]').evaluate(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,shadow:getComputedStyle(el).boxShadow}));
+    assert.ok(radioSize.width<=22&&radioSize.height<=22,'Delivery radios must remain compact');assert.equal(radioSize.shadow,'none');
     if(width!==1440){
       await page.locator('#deliveryServices input[value="standard"]').check();
       await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00.*40–60 min/}).waitFor();
@@ -523,6 +526,14 @@ try {
         for(const method of ['dinheiro','cartao_credito','cartao_debito','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket']){
           await page.locator('#v2PaymentCards [data-kind="'+method+'"]').click();
           assert.equal(await page.locator('#payment').inputValue(),method,'Pagamento habilitado pela loja pode ser selecionado');
+          if(method==='dinheiro'){
+            const cash=page.locator('#v2CashChange');await cash.waitFor({state:'visible'});
+            assert.equal(await page.locator('#v2ChangeBlock').evaluate(n=>n.previousElementSibling?.dataset.kind),'dinheiro','Change input directly follows cash');
+            await cash.fill('100,00');
+            await page.locator('#v2PaymentCards [data-kind="dinheiro"]').click();
+            assert.equal(await cash.inputValue(),'100,00','Cash input survives payment card rerender');
+            await cash.fill('');
+          }else assert.equal(await page.locator('#v2ChangeBlock').isVisible(),false);
           if(method==='cartao_credito')assert.match(await page.locator('#total').innerText(),/Acréscimo no pagamento/);
           if(method==='pix_maquininha')assert.match(await page.locator('#total').innerText(),/Desconto no pagamento/);
         }
