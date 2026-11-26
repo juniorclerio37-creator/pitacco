@@ -1326,6 +1326,71 @@ body[data-menu-template=classic] #hero:has(#storeSocialLinks:not([hidden])) .her
  body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #hero .store-mark{width:76px;height:76px}
  body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#storeBanner:not([hidden])) .hero-content{flex-direction:row;justify-content:center}
 }
+
+/* Approved V2 hero: original shop artwork in a centered medallion.
+   Other skins keep their individual composition and typography. */
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero{
+ padding:20px 0 32px;min-height:0;max-height:none;
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#storeBanner:not([hidden])){padding-bottom:32px}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .hero-content,
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#storeBanner:not([hidden])) .hero-content{
+ flex-direction:column;justify-content:center;align-items:center;min-height:0;padding:0;
+ position:relative;z-index:2;
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .identity{
+ flex-direction:column;align-items:center;text-align:center;gap:13px;width:100%;
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .identity>div:last-child{width:100%;max-width:750px}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .store-mark{
+ width:clamp(146px,17vw,190px);height:clamp(146px,17vw,190px);border-radius:50%;
+ padding:13%;padding:clamp(17px,2.3vw,24px);border:3px solid hsl(var(--template-accent-hue,45.28) 90% 65%);
+ background:color-mix(in srgb,var(--hero) 80%,var(--brand));
+ color:#fff;box-shadow:0 0 0 4px #ffffff24,0 8px 25px #16001d50,0 0 28px #ffffff24;
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .store-mark:has(#storeLogo:not([hidden])){
+ background:#fff;
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .store-mark img{
+ width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;display:block;
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .store-mark img[hidden]{display:none!important}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero #storeInitial{font-size:clamp(3rem,6vw,5rem);line-height:1}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero h1{
+ font-size:clamp(1.75rem,4vw,3.15rem);max-width:none;line-height:1.08;overflow-wrap:anywhere;
+ text-shadow:0 2px 12px #16001d45;
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero h1::after{
+ margin:7px auto 0;width:min(56%,180px);height:4px;
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero #storeSlogan{
+ margin:8px 0 0;font-size:clamp(.86rem,1.6vw,1.05rem);letter-spacing:.09em;
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .v2-hero-info{
+ display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 12px;
+ width:fit-content;max-width:calc(100% - 28px);padding:8px 13px;margin:17px auto 0;
+ border-radius:20px;background:#ffffff18;backdrop-filter:blur(5px);text-align:center;
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .v2-delivery-text{margin:0;font-size:.8rem}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .v2-hero-location{
+ margin:0;max-width:100%;font-size:.8rem;overflow-wrap:anywhere
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero #storeSocialLinks a{
+ border-radius:50%;border:1px solid #ffffffa6;background:#16001d40;
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#storeSocialLinks:not([hidden])) .hero-content{padding-top:38px}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero #v2HeroImage{
+ opacity:.22;right:-30px;bottom:-18px;max-height:67%;z-index:0;
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#storeBanner:not([hidden]))::after{
+ background:linear-gradient(180deg,#16001d38 0%,#16001d50 42%,#16001dbc 100%);
+}
+@media(max-width:600px){
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .identity{gap:12px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .store-mark{width:150px;height:150px;padding:16px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .v2-hero-info{gap:5px 9px;padding:7px 10px;margin-top:14px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .v2-hero-location{flex-basis:100%}
+}
 </style>
 <nav id="v2StoreNav" class="shell v2-store-nav" aria-label="Seções do cardápio">
  <button type="button" class="v2-nav-button" data-v2-nav="inicio" aria-current="page"><span class="v2-nav-icon" aria-hidden="true">⌂</span>Início</button>

@@ -194,3 +194,10 @@ test('clean banner has no redundant navigation and gives the store logo prominen
 test('storefront section navigation stays visible on the home page',()=>{
  assert.doesNotMatch(html,/\[data-v2-page=inicio\]\s*#v2StoreNav\s*\{\s*display:none/);
 });
+
+test('principal hero uses the approved centered medallion without replacing store artwork',()=>{
+ assert.match(html,/#hero \.identity\{\s*flex-direction:column;align-items:center;text-align:center/);
+ assert.match(html,/#hero \.store-mark\{\s*width:clamp\(146px,17vw,190px\);height:clamp\(146px,17vw,190px\);border-radius:50%/);
+ assert.match(html,/const value=studioAsset\(shop\.profile_logo_path\)\|\|shop\.logo_url/);
+ assert.match(html,/#hero \.store-mark img\{\s*width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain/);
+});
