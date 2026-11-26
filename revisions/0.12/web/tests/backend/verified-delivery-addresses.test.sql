@@ -35,4 +35,25 @@ begin
  assert public.pitacco_service_verified_delivery_address('90000000-0000-0000-0000-000000000063','Rua Exemplo, 39, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000') is null;
 end $test$;
 reset role;
+-- A customer pin must correspond to a real order and can only be promoted on completion.
+insert into public.pitacco_delivery_route_quotes(id,store_id,request_id,destination_address,distance_m,fee,pricing_updated_at,expires_at,destination_latitude,destination_longitude,address_point_selected) values
+('90000000-0000-0000-0000-000000000070','90000000-0000-0000-0000-000000000062','90000000-0000-0000-0000-000000000071','Rua Nova, 12, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000',500,5,now(),now()+interval '5 minutes',-22.71,-43.41,true),
+('90000000-0000-0000-0000-000000000072','90000000-0000-0000-0000-000000000062','90000000-0000-0000-0000-000000000073','Rua Exemplo, 39, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000',500,5,now(),now()+interval '5 minutes',-22.78,-43.41,true);
+insert into public.orders(id,store_id,request_id,channel,gross,fees,source,status,preparation_status,receipt)
+values
+('90000000-0000-0000-0000-000000000074','90000000-0000-0000-0000-000000000062','90000000-0000-0000-0000-000000000071','Delivery próprio',25,0,'proprio','accepted','preparing','{"address":"Rua Nova, 12, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000"}'),
+('90000000-0000-0000-0000-000000000075','90000000-0000-0000-0000-000000000062','90000000-0000-0000-0000-000000000073','Delivery próprio',25,0,'proprio','accepted','preparing','{"address":"Rua Exemplo, 39, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000"}');
+do $test$
+begin
+ assert (select count(*) from pitacco_private.delivery_address_observations)=2;
+ assert public.pitacco_service_verified_delivery_address('90000000-0000-0000-0000-000000000062','Rua Nova, 12, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000') is null;
+end $test$;
+update public.orders set preparation_status='completed' where id in ('90000000-0000-0000-0000-000000000074','90000000-0000-0000-0000-000000000075');
+do $test$
+declare s uuid:='90000000-0000-0000-0000-000000000062';
+begin
+ assert (public.pitacco_service_verified_delivery_address(s,'Rua Nova, 12, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000')->>'exact')='true';
+ assert (public.pitacco_service_verified_delivery_address(s,'Rua Exemplo, 39, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000')->>'latitude')::numeric=-22.7,'Customer cannot overwrite merchant-confirmed address';
+ assert (select count(*) from pitacco_private.delivery_address_observations)=0;
+end $test$;
 rollback;

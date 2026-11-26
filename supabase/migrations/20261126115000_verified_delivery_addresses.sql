@@ -5,6 +5,7 @@ create table pitacco_private.verified_delivery_addresses(
  latitude double precision not null check(latitude between -34 and 6),
  longitude double precision not null check(longitude between -75 and -32),
  verified_at timestamptz not null default now(),
+ verification_source text not null default 'merchant' check(verification_source in ('merchant','completed_delivery')),
  primary key(store_id,street_key,house_key,district_key,city_key,state_key,postal_key)
 );
 alter table pitacco_private.verified_delivery_addresses enable row level security;
@@ -40,8 +41,8 @@ begin
  insert into pitacco_private.verified_delivery_addresses(store_id,street_key,house_key,district_key,city_key,state_key,postal_key,latitude,longitude,verified_at)
  values(p_store,k[1],k[2],k[3],k[4],k[5],k[6],q.destination_latitude,q.destination_longitude,q.created_at)
  on conflict(store_id,street_key,house_key,district_key,city_key,state_key,postal_key)
- do update set latitude=excluded.latitude,longitude=excluded.longitude,verified_at=excluded.verified_at
- where pitacco_private.verified_delivery_addresses.verified_at<=excluded.verified_at;
+ do update set latitude=excluded.latitude,longitude=excluded.longitude,verified_at=excluded.verified_at,verification_source='merchant'
+ where pitacco_private.verified_delivery_addresses.verification_source='completed_delivery' or pitacco_private.verified_delivery_addresses.verified_at<=excluded.verified_at;
  insert into public.operation_audit(store_id,actor,action,details) values(p_store,auth.uid(),'delivery_address_verified',jsonb_build_object('quote_id',p_quote));
  return jsonb_build_object('saved',true);
 end $save$;
@@ -66,4 +67,59 @@ begin
 end $lookup$;
 revoke all on function public.pitacco_service_verified_delivery_address(uuid,text) from public,anon,authenticated,service_role;
 grant execute on function public.pitacco_service_verified_delivery_address(uuid,text) to service_role;
+-- Record only deliberate location selections that belong to a real order.
+alter table public.pitacco_delivery_route_quotes add column address_point_selected boolean not null default false;
+create table pitacco_private.delivery_address_observations(
+ order_id uuid primary key references public.orders(id) on delete cascade,
+ store_id uuid not null references public.stores(id) on delete cascade,
+ address_key text[] not null check(cardinality(address_key)=6),
+ latitude double precision not null check(latitude between -34 and 6),
+ longitude double precision not null check(longitude between -75 and -32),
+ observed_at timestamptz not null default now()
+);
+alter table pitacco_private.delivery_address_observations enable row level security;
+revoke all on pitacco_private.delivery_address_observations from public,anon,authenticated,service_role;
+
+create function pitacco_private.learn_delivery_address_from_order()
+returns trigger language plpgsql security definer set search_path='' as $learn$
+declare q public.pitacco_delivery_route_quotes%rowtype;k text[];o pitacco_private.delivery_address_observations%rowtype;
+begin
+ if new.status='cancelled' then
+  delete from pitacco_private.delivery_address_observations where order_id=new.id;
+  return new;
+ end if;
+ if new.source is distinct from 'proprio' or new.request_id is null then return new;end if;
+ if tg_op='INSERT' then
+  select * into q from public.pitacco_delivery_route_quotes
+   where store_id=new.store_id and request_id=new.request_id and address_point_selected
+    and destination_address=new.receipt->>'address' and expires_at>=new.created_at
+    and destination_latitude between -34 and 6 and destination_longitude between -75 and -32
+   order by created_at desc limit 1;
+  if found then
+   k:=pitacco_private.delivery_address_key(q.destination_address);
+   if k is not null then
+    insert into pitacco_private.delivery_address_observations(order_id,store_id,address_key,latitude,longitude,observed_at)
+    values(new.id,new.store_id,k,q.destination_latitude,q.destination_longitude,q.created_at)
+    on conflict(order_id) do nothing;
+   end if;
+  end if;
+ end if;
+ if new.status='accepted' and new.preparation_status='completed' then
+  select * into o from pitacco_private.delivery_address_observations where order_id=new.id and store_id=new.store_id;
+  if found then
+   k:=o.address_key;
+   insert into pitacco_private.verified_delivery_addresses(store_id,street_key,house_key,district_key,city_key,state_key,postal_key,latitude,longitude,verified_at,verification_source)
+   values(o.store_id,k[1],k[2],k[3],k[4],k[5],k[6],o.latitude,o.longitude,o.observed_at,'completed_delivery')
+   on conflict(store_id,street_key,house_key,district_key,city_key,state_key,postal_key)
+   do update set latitude=excluded.latitude,longitude=excluded.longitude,verified_at=excluded.verified_at
+   where pitacco_private.verified_delivery_addresses.verification_source='completed_delivery'
+    and pitacco_private.verified_delivery_addresses.verified_at<excluded.verified_at;
+   delete from pitacco_private.delivery_address_observations where order_id=new.id;
+  end if;
+ end if;
+ return new;
+end $learn$;
+revoke all on function pitacco_private.learn_delivery_address_from_order() from public,anon,authenticated,service_role;
+create trigger learn_verified_delivery_address after insert or update of preparation_status,status on public.orders
+ for each row execute function pitacco_private.learn_delivery_address_from_order();
 notify pgrst,'reload schema';

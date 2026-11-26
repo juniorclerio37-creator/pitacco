@@ -1636,7 +1636,7 @@ function selectDeliveryPoint(point){
  deliveryPoint=point;
  deliveryQuote=null;
  deliveryMap?.setPoint(point);
- $('deliveryPointStatus').textContent='Localização confirmada. A taxa será atualizada automaticamente.';
+ $('deliveryPointStatus').textContent='Localização confirmada. A taxa será atualizada automaticamente e o endereço poderá ser reutilizado após a entrega.';
  quoteGeneration++;v2ScheduleDeliveryQuote(true);
  if(menu)renderCart();
 }

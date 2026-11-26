@@ -527,6 +527,7 @@ Deno.serve(async request=>{
    store_id:menu.store_id,request_id:requestId,destination_address:address,
    destination_latitude:Number(to[0].toFixed(6)),
    destination_longitude:Number(to[1].toFixed(6)),
+   address_point_selected:typeof body.latitude==='number'&&typeof body.longitude==='number'&&mode!=='road',
    distance_m:meters,fee,pricing_updated_at:rules.updated_at,expires_at:expiresAt,
    delivery_min_minutes:validEta?min:null,delivery_max_minutes:validEta?max:null,delivery_region:regionName,delivery_service:service
   }).select('id').single();
