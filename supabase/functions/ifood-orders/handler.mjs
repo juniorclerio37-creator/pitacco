@@ -87,13 +87,23 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
  let prodToken,prodExpiry=0,prodRenewing;
  const prodMerchants=new Set();
  const isolated=Boolean(productionId&&productionSecret);
- async function rpc(name,body){
+ async function rpc(name,body,timeout=3500){
   const result=await fetcher(new URL('/rest/v1/rpc/'+name,supabaseUrl),{
    method:'POST',headers:{apikey:serviceKey,authorization:'Bearer '+serviceKey,'content-type':'application/json'},
-   body:JSON.stringify(body),signal:AbortSignal.timeout(3500),redirect:'error',
+   body:JSON.stringify(body),signal:AbortSignal.timeout(timeout),redirect:'error',
   });
   if(!result.ok)throw Object.assign(Error('database-'+result.status),{status:result.status});
   return result.status===204?null:result.json();
+ }
+ // Webhook enqueue and presence reads are idempotent. Bound both attempts below the provider's 5s deadline.
+ async function webhookRpc(name,body){
+  const started=Date.now();
+  try{return await rpc(name,body,1800)}catch(error){
+   if(error?.status&&error.status<500&&error.status!==429&&error.status!==408)throw error;
+   const remaining=4000-(Date.now()-started);if(remaining<300)throw error;
+   logger.warn('iFood webhook database retry',name,safeProviderError(error));
+   return rpc(name,body,Math.min(2200,remaining));
+  }
  }
  const distributed=createDistributedIfood({id:distributedId,secret:distributedSecret,tokenKey,supabaseUrl,publicKey,rpc,fetcher,logger});
  async function enqueue(event,viaPolling=false,production=false){
@@ -110,8 +120,8 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    if(viaPolling)return false;
    throw Error('invalid-event');
   }
-  if(isolated&&!viaPolling)return rpc('pitacco_ifood_central_enqueue',{p_id:event.id,p_merchant:event.merchantId,p_order:event.orderId,p_code:code,p_at:at,p_production:production});
-  return rpc('pitacco_ifood_enqueue',{p_id:event.id,p_merchant:event.merchantId,p_order:event.orderId,p_code:code,p_at:at,p_distributed:viaPolling});
+  if(isolated&&!viaPolling)return webhookRpc('pitacco_ifood_central_enqueue',{p_id:event.id,p_merchant:event.merchantId,p_order:event.orderId,p_code:code,p_at:at,p_production:production});
+  return (viaPolling?rpc:webhookRpc)('pitacco_ifood_enqueue',{p_id:event.id,p_merchant:event.merchantId,p_order:event.orderId,p_code:code,p_at:at,p_distributed:viaPolling});
  }
  async function token(){
   if(cachedToken&&Date.now()<expires)return cachedToken;
@@ -140,14 +150,21 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
   })().finally(()=>{prodRenewing=null});
   const access=await prodRenewing;prodMerchants.add(merchant);return access;
  }
- async function centralToken(merchant){
+ async function centralToken(merchant,timeout=3500){
   if(!isolated)return clientId&&clientSecret?await token():null;
-  const environment=await rpc('pitacco_ifood_central_environment',{p_merchant:merchant});
+  const environment=await rpc('pitacco_ifood_central_environment',{p_merchant:merchant},timeout);
   if(environment==='production')return productionToken(merchant);
   if(environment==='test')return token();
   return null;
  }
  async function accessFor(merchant){return await distributed.accessFor(merchant)??await centralToken(merchant);}
+ async function driverAccessFor(merchant){
+  // A credential lookup is a read; a transient database timeout must not consume a dispatch claim.
+  const read=()=>distributed.accessFor(merchant).then(value=>value??centralToken(merchant,12000));
+  try{return await read()}catch(error){logger.warn('iFood driver credential lookup retry',error?.name==='TimeoutError'?'timeout':'unavailable');return await read()}
+ }
+ function safeProviderError(error){return error?.name==='TimeoutError'||error?.name==='AbortError'?'timeout':/^(database|oauth|production-oauth)-[0-9]{3}$/.test(error?.message||'')?error.message:'unavailable';}
+ function invalidateCentral(access){if(access===cachedToken)cachedToken=null;if(access===prodToken){prodToken=null;prodMerchants.clear()}}
  async function processOne(event){
   try{
    const accessToken=await accessFor(event.merchant_id);
@@ -184,6 +201,30 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
   const requests=await rpc('pitacco_ifood_claim_auto_confirm',{p_order:orderId});
   const results=await Promise.allSettled(requests.map(submitConfirm));
   if(results.some(result=>result.status==='rejected'))logger.warn('A fila de aceite iFood será retomada.');
+ }
+ // Notify readiness without dispatching or synthesizing provider events.
+ async function submitReady(row){
+  let state='retry',status=null;
+  try{
+   const access=row.uses_store_token?await distributed.accessFor(row.merchant_id):await centralToken(row.merchant_id);
+   if(access){
+    const response=await fetcher(origin+'/order/v1.0/orders/'+row.external_order_id+'/readyToPickup',{
+     method:'POST',headers:{authorization:'Bearer '+access,'content-type':'application/json'},
+     signal:AbortSignal.timeout(5000),redirect:'error',
+    });
+    status=response.status;
+    if(status===401||status===403)invalidateCentral(access);
+    state=status===202?'submitted':[401,429].includes(status)?'retry':status===409||status===408||status>=500?'uncertain':'rejected';
+   }
+  }catch{state='uncertain';}
+  await rpc('pitacco_ifood_finish_ready',{p_order:row.order_id,p_lease:row.lease,p_state:state,p_http_status:status});
+ }
+ async function syncReady(){
+  try{
+   const rows=await rpc('pitacco_ifood_claim_ready',{});
+   const settled=await Promise.allSettled(rows.map(submitReady));
+   if(settled.some(r=>r.status==='rejected'))logger.warn('Fila de pedidos prontos requer reconciliação.');
+  }catch{logger.warn('Fila de pedidos prontos temporariamente indisponível.');}
  }
  async function process(eventId=null){
   const events=await rpc('pitacco_ifood_claim',{p_event:eventId});
@@ -224,10 +265,16 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    if(input.action==='dispatch'){
     // Only the authenticated courier who already collected a READY order
     // can claim this operation. iFood partner-delivery never passes the RPC.
-    const claimed=await fetcher(new URL('/rest/v1/rpc/pitacco_driver_ifood_dispatch_claim',supabaseUrl),{
+    const requestId=crypto.randomUUID();
+    const claimRequest=()=>fetcher(new URL('/rest/v1/rpc/pitacco_driver_ifood_dispatch_claim_v2',supabaseUrl),{
      method:'POST',headers:{apikey:publicKey,authorization,'content-type':'application/json'},
-     body:JSON.stringify({p_delivery:input.delivery}),signal:AbortSignal.timeout(5500),redirect:'error'
+     body:JSON.stringify({p_delivery:input.delivery,p_request:requestId}),signal:AbortSignal.timeout(10000),redirect:'error'
     });
+    let claimed;
+    try{claimed=await claimRequest()}catch(error){
+     logger.warn('iFood dispatch claim response lost; recovering same lease',safeProviderError(error));
+     claimed=await claimRequest();
+    }
     if(!claimed.ok)return reply(claimed.status===401?401:claimed.status===403?403:409,{
      error:'Apenas o motoboy responsável pode despachar um pedido pronto de entrega própria após confirmar a coleta.'
     });
@@ -242,16 +289,20 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
     const finish=async(state,status)=>{
      try{return await rpc('pitacco_ifood_dispatch_result',{
       p_delivery:input.delivery,p_lease:claim.lease,p_state:state,p_http_status:status
-     })===true}catch{return false}
+     },12000)===true}catch(error){logger.warn('iFood dispatch result persistence failed',safeProviderError(error));return false}
     };
     let contactedProvider=false;
     try{
-     const access=await accessFor(claim.merchant_id);
+     const access=await driverAccessFor(claim.merchant_id);
      if(!access){
       await finish('rejected',0);
       return reply(503,{provider_state:'rejected',
        error:'Integração iFood indisponível. A coleta foi registrada somente no Pitacco.'});
      }
+     // Atomically establish provider-contact intent before any external mutation.
+     // If the lease was replaced, or official completion arrived, do not send.
+     if(await rpc('pitacco_ifood_dispatch_begin',{p_delivery:input.delivery,p_lease:claim.lease},12000)!==true)
+      return reply(409,{provider_state:'pending',error:'O despacho mudou de estado. Atualize os pedidos.'});
      const url=origin+'/order/v1.0/orders/'+claim.external_order_id;
      const headers={authorization:'Bearer '+access,'content-type':'application/json'};
      if(claim.ready_on_ifood!==true){
@@ -260,7 +311,9 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
        method:'POST',headers,signal:AbortSignal.timeout(9000),redirect:'error'
       });
       if(ready.status!==202){
-       const state=[400,403,404,409,412,422].includes(ready.status)?'rejected':'uncertain';
+       if([401,403].includes(ready.status))invalidateCentral(access);
+       logger.warn('iFood ready provider HTTP',ready.status);
+       const state=[400,401,403,404,409,412,422].includes(ready.status)?'rejected':'uncertain';
        await finish(state,ready.status);
        return reply(state==='uncertain'?503:409,{provider_state:state,
         error:'O iFood ainda não aceitou o status Pronto. Despacho não enviado.'});
@@ -271,15 +324,18 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
       method:'POST',headers,body:JSON.stringify({deliveredBy:'MERCHANT'}),
       signal:AbortSignal.timeout(9000),redirect:'error'
      });
+     logger.warn('iFood dispatch provider HTTP',dispatched.status);
+     if([401,403].includes(dispatched.status))invalidateCentral(access);
      const state=dispatched.status===202?'submitted':
-       [400,403,404,409,412,422].includes(dispatched.status)?'rejected':'uncertain';
+       [400,401,403,404,409,412,422].includes(dispatched.status)?'rejected':'uncertain';
      if(!await finish(state,dispatched.status))return reply(503,{provider_state:'uncertain',
       error:'O iFood respondeu, mas não foi possível registrar a resposta. Consulte a plataforma.'});
      if(state!=='submitted')return reply(state==='uncertain'?503:409,{provider_state:state,
       error:'O iFood não confirmou o despacho. A coleta continua registrada no Pitacco.'});
      return reply(202,{provider_state:'submitted',
       message:'Despacho enviado ao iFood após a coleta. Aguardando o evento oficial DISPATCHED.'});
-    }catch{
+    }catch(error){
+     logger.warn('iFood dispatch failed',safeProviderError(error),contactedProvider?'provider-contacted':'before-provider');
      await finish(contactedProvider?'uncertain':'rejected',0);
      return reply(503,{provider_state:contactedProvider?'uncertain':'rejected',
       error:contactedProvider?
@@ -291,7 +347,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
     method:'POST',
     headers:{apikey:publicKey,authorization,'content-type':'application/json'},
     body:JSON.stringify({p_delivery:input.delivery,p_action:input.action}),
-    signal:AbortSignal.timeout(5500),redirect:'error',
+    signal:AbortSignal.timeout(12000),redirect:'error',
    });
    if(!permission.ok)return reply(permission.status===401?401:403,
      {error:'Entrega não autorizada ou integração iFood ainda indisponível'});
@@ -300,7 +356,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    if(!uuid.test(assigned.external_order_id)||!uuid.test(assigned.merchant_id)){
     return reply(409,{error:'Vínculo iFood inválido'});
    }
-   const access=await accessFor(assigned.merchant_id);
+   const access=await driverAccessFor(assigned.merchant_id);
    if(!access)return reply(503,{error:input.action==='arrival'
     ?'Conexão iFood não homologada. Chegada registrada somente no Pitacco.'
     :'Conexão iFood indisponível para confirmar a entrega.'});
@@ -317,6 +373,8 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    });
    // The Order API confirms a code only with HTTP 200 and a boolean result.
    // A conflict, permission error or malformed response is not an invalid PIN.
+   logger.warn('iFood driver provider HTTP',input.action,response.status);
+   if([401,403].includes(response.status))invalidateCentral(access);
    const isVerify=input.action==='verify';
    const verification=isVerify&&response.status===200?await response.json().catch(()=>null):null;
    const isSuccess=isVerify?verification?.valid===true:[200,202,204].includes(response.status);
@@ -327,7 +385,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
     });
     const unavailable=response.ok||[401,403,429].includes(response.status)||response.status>=500;
     return reply(unavailable?503:409,{
-     error:unavailable?'Não foi possível confirmar a entrega com o iFood. Tente novamente.':
+     error:[401,403].includes(response.status)?'O iFood recusou a autorização da integração para validar a entrega. Confira no Gestor de Pedidos.':unavailable?'Não foi possível confirmar a entrega com o iFood. Tente novamente.':
       'O iFood ainda não confirmou a entrega. Confira o status do pedido na plataforma.',
      provider_state:'not_confirmed',
     });
@@ -336,7 +394,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    const persisted=await rpc('pitacco_ifood_driver_result',{
     p_delivery:input.delivery,p_external:assigned.external_order_id,
     p_action:input.action,p_success:isSuccess,p_permanent:permanent,
-   });
+   },12000);
    if(persisted!==true)return reply(409,{error:'A entrega mudou de estado; atualize os pedidos.'});
    if(!isSuccess)return reply(response.status>=500||response.status===429?503:409,{
     error:'Chegada registrada no Pitacco, mas ainda não confirmada pelo iFood.',
@@ -346,7 +404,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
     {registered:true,provider_state:'submitted',message:'Chegada enviada ao iFood; aguardando confirmação da plataforma'}:
     {verified:true,delivered:true});
   }catch(error){
-   logger.warn('Operação de entrega iFood indisponível.');
+   logger.warn('Operação de entrega iFood indisponível.',input.action,safeProviderError(error));
    return reply(503,{error:'O iFood não respondeu. Confira a conexão e tente novamente; o registro local permanece.'});
   }
  }
@@ -368,6 +426,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
     if(shipping&&clientId&&clientSecret)await shipping.poll();
     await distributed.poll(enqueue);
     const processed=await process();
+    await syncReady();
     await autoConfirm();
     return reply(200,{processed});
    }
@@ -386,7 +445,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    if(event.fullCode==='KEEPALIVE'||event.code==='KEEPALIVE'){
     if(event.merchantIds===undefined)return reply(202,{});
     if(!Array.isArray(event.merchantIds)||event.merchantIds.length>1000||event.merchantIds.some(id=>typeof id!=='string'||!uuid.test(id)))return reply(400,{error:'Lojas inválidas'});
-    const merchantIds=isolated?await rpc('pitacco_ifood_central_online',{p_merchants:event.merchantIds,p_production:production}):await rpc('pitacco_ifood_online',{p_merchants:event.merchantIds});
+    const merchantIds=isolated?await webhookRpc('pitacco_ifood_central_online',{p_merchants:event.merchantIds,p_production:production}):await webhookRpc('pitacco_ifood_online',{p_merchants:event.merchantIds});
     return reply(202,{merchantIds});
    }
    if(!production&&shipping&&await shipping.receive(event))return reply(202,{});
@@ -396,7 +455,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
   }catch(error){
    if(error.message==='invalid-event')return reply(400,{error:'Dados do pedido inválidos'});
    if(error.message==='body-limit')return reply(413,{error:'Evento excede o tamanho permitido'});
-   logger.warn('Recepção iFood indisponível.');
+   logger.warn('Recepção iFood indisponível.',safeProviderError(error),path.endsWith('/production')?'production':'other');
    return reply(503,{error:'Serviço temporariamente indisponível'});
   }
  };

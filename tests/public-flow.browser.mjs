@@ -371,7 +371,7 @@ try {
     assert.equal(await productCard.count(),1,'Favoritos locais mantêm produto escolhido');
     await page.getByRole('button',{name:'Cardápio',exact:true}).click();
     await page.getByRole('heading',{name:'Açaís',exact:true}).waitFor();
-    assert.equal(await page.getByText('Leite em pó',{exact:true}).count(),0);
+    assert.equal(await page.getByText('Leite em pó',{exact:true}).isVisible(),false,'Complements stay hidden outside the product dialog');
     await page.getByRole('button',{name:'Bebidas',exact:true}).click();
     await page.getByRole('button',{name:'Personalizar Água',exact:true}).waitFor();
     assert.equal(await productCard.count(),0);

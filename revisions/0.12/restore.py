@@ -233,3 +233,11 @@ for name in ['ReceiptEditor','PrinterPanelBoundary']:
  content,count=re.subn(r"^import "+name+r" from ['\"]\./"+name+r"\.jsx['\"];\r?\n",'',content,flags=re.M)
  assert count==1, f'Unexpected legacy printing import: {name}'
 printing.write_text(content,encoding='utf-8')
+
+# iFood readiness remains a local kitchen step until the official event returns.
+p=pathlib.Path('web/Pedidos.jsx')
+s=p.read_text(encoding='utf-8')
+old='{stage(o)===\'ready\'&&delivery?.logistics_provider===\'marketplace\'&&<span role="status">Aguardando coleta pelo parceiro</span>}'
+new='{stage(o)===\'ready\'&&o.source===\'ifood\'&&o.receipt?.ifood_status===\'CONFIRMED\'&&<span role="status">Aguardando confirmação de pronto pelo iFood</span>}{stage(o)===\'ready\'&&delivery?.logistics_provider===\'marketplace\'&&(o.source!==\'ifood\'||o.receipt?.ifood_status!==\'CONFIRMED\')&&<span role="status">Aguardando coleta pelo parceiro</span>}'
+assert s.count(old)==1, 'iFood ready badge anchor changed'
+p.write_text(s.replace(old,new),encoding='utf-8')
