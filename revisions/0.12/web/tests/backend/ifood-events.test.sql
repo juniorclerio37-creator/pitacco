@@ -135,3 +135,67 @@ begin
  assert not exists(select 1 from public.orders where source='ifood' and store_id=store_b);
 end $$;
 rollback;
+
+-- New orders arriving while Pitacco is blocked are permanently suppressed, without disconnecting the provider.
+begin;
+do $test$
+declare s uuid;m uuid:=gen_random_uuid(); distributed_m uuid:=gen_random_uuid();o uuid:=gen_random_uuid(); dist_order uuid:=gen_random_uuid(); fresh uuid:=gen_random_uuid();prior uuid:=gen_random_uuid();queued uuid:=gen_random_uuid(); e uuid;l uuid;payload jsonb; c uuid; i uuid; a uuid:=gen_random_uuid(); offer jsonb; pe date:=current_date-7; cutoff timestamptz; delayed uuid:=gen_random_uuid();
+begin
+ insert into public.stores(name) values('iFood block fixture') returning id into s;
+ insert into pitacco_private.ifood_merchants(merchant_id,store_id,test_only,enabled) values(m,s,true,true);
+ insert into pitacco_private.ifood_merchants(merchant_id,store_id,test_only,enabled,credential) values(distributed_m,s,true,true,'fixture-only');
+ e:=gen_random_uuid();perform public.pitacco_ifood_enqueue(e,m,prior,'PLACED',now(),false);
+ select lease into l from public.pitacco_ifood_claim(e);
+ payload:=jsonb_build_object('external_order_id',prior,'merchant_id',m,'total',20,'created_at',now(),'logistics','loja');
+ perform public.pitacco_ifood_complete(e,l,payload,true);
+ assert exists(select 1 from pitacco_private.ifood_order_links where external_id=prior);
+ e:=gen_random_uuid();perform public.pitacco_ifood_enqueue(e,m,queued,'PLACED',now(),false);
+ select lease into l from public.pitacco_ifood_claim(e);
+ insert into pitacco_private.subscription_admin_controls(store_id,suspended) values(s,true);
+ perform public.pitacco_ifood_complete(e,l,null,null);
+ assert exists(select 1 from pitacco_private.ifood_suppressed_orders where merchant_id=m and external_order_id=queued);
+ assert (select done_at is not null from pitacco_private.ifood_events where id=e);
+ e:=gen_random_uuid();perform public.pitacco_ifood_central_enqueue(e,m,o,'PLACED',now(),false);
+ assert (select done_at is not null from pitacco_private.ifood_events where id=e);
+ assert not exists(select 1 from public.pitacco_ifood_claim(e));
+ e:=gen_random_uuid();perform public.pitacco_ifood_enqueue(e,distributed_m,dist_order,'PLACED',now(),true);
+ assert (select done_at is not null from pitacco_private.ifood_events where id=e);
+ assert not exists(select 1 from public.pitacco_ifood_claim(e));
+ assert m=any(public.pitacco_ifood_central_online(array[m],false)),'Do not disconnect provider';
+ e:=gen_random_uuid();perform public.pitacco_ifood_enqueue(e,m,prior,'CONFIRMED',now(),false);
+ select lease into l from public.pitacco_ifood_claim(e);
+ assert l is not null;perform public.pitacco_ifood_complete(e,l,payload,true);
+ assert (select state_rank=2 from pitacco_private.ifood_order_links where external_id=prior);
+ update pitacco_private.subscription_admin_controls set suspended=false where store_id=s;
+ e:=gen_random_uuid();perform public.pitacco_ifood_enqueue(e,m,o,'CONFIRMED',now(),false);
+ assert (select done_at is not null from pitacco_private.ifood_events where id=e);
+ assert not exists(select 1 from public.pitacco_ifood_claim(e));
+ e:=gen_random_uuid();perform public.pitacco_ifood_enqueue(e,distributed_m,dist_order,'CONFIRMED',now(),true);
+ assert (select done_at is not null from pitacco_private.ifood_events where id=e);
+ -- Financial block uses the same gate, not a separate provider state.
+ update pitacco_private.commercial_billing_control set enforce_own_orders=true,payment_instructions='Teste isolado de cobrança',pix_cnpj='00000000000000',pix_recipient='Fixture de teste' where singleton;
+ select x into offer from pitacco_private.plan_catalog_versions v cross join lateral jsonb_array_elements(v.plans) x where v.revision='2026-11-24-v4' and x->>'code'='free';
+ insert into pitacco_private.commercial_contracts(store_id,revision,plan_code,effective_from,terms,assigned_by) values(s,'2026-11-24-v4','free',pe-7,offer,a) returning id into c;
+ insert into pitacco_private.commercial_closings(contract_id,store_id,kind,period_start,period_end,due_at,grace_until,amount_cents,state,details) values(c,s,'commission',pe-6,pe,now()-interval '49 hours',now()-interval '1 hour',2000,'calculated','{}');
+ insert into pitacco_private.commercial_invoices(contract_id,kind,period_end,amount_cents,due_at,grace_until) values(c,'commission',pe,2000,now()-interval '49 hours',now()-interval '1 hour') returning id into i;
+ o:=gen_random_uuid();e:=gen_random_uuid();perform public.pitacco_ifood_enqueue(e,m,o,'PLACED',now(),false);
+ assert (select done_at is not null from pitacco_private.ifood_events where id=e);
+ insert into pitacco_private.commercial_manual_payments(invoice_id,amount_cents,reference,verified_by,note) values(i,2000,'TEST-'||gen_random_uuid(),a,'Isolated payment');
+ e:=gen_random_uuid();perform public.pitacco_ifood_enqueue(e,m,o,'CONFIRMED',now(),false);
+ assert (select done_at is not null from pitacco_private.ifood_events where id=e);
+ select cutoff_at into cutoff from pitacco_private.marketplace_admission_cutoffs where store_id=s;
+ assert cutoff is not null;
+ e:=gen_random_uuid();perform public.pitacco_ifood_enqueue(e,m,delayed,'CONFIRMED',now(),false);
+ select lease into l from public.pitacco_ifood_claim(e);
+ perform public.pitacco_ifood_complete(e,l,jsonb_build_object('external_order_id',delayed,'merchant_id',m,'total',20,'created_at',cutoff-interval '1 second','logistics','loja'),true);
+ assert exists(select 1 from pitacco_private.ifood_suppressed_orders where merchant_id=m and external_order_id=delayed);
+ assert not exists(select 1 from pitacco_private.ifood_order_links where external_id=delayed);
+ e:=gen_random_uuid();perform public.pitacco_ifood_enqueue(e,m,fresh,'PLACED',now(),false);
+ select lease into l from public.pitacco_ifood_claim(e);
+ assert l is not null;perform public.pitacco_ifood_complete(e,l,jsonb_build_object('external_order_id',fresh,'merchant_id',m,'total',20,'created_at',cutoff+interval '1 second','logistics','loja'),true);
+ assert exists(select 1 from pitacco_private.ifood_order_links where external_id=fresh);
+ assert not exists(select 1 from pitacco_private.ifood_order_links where external_id in(o,queued,dist_order));
+ assert (select count(*) from public.orders where store_id=s)=2;
+ assert not has_table_privilege('authenticated','pitacco_private.ifood_suppressed_orders','SELECT');
+end $test$;
+rollback;

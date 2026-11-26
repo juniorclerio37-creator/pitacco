@@ -186,7 +186,7 @@ try {
       assert.equal(await page.getByText(/inadimplência/i).count(),0);
       publicBlocked=false;
       await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
-      await page.locator('#storeOpenStatus').filter({hasText:'Loja aberta — pedidos disponíveis'}).waitFor();
+      await page.locator('#v2OpenPill').filter({hasText:'Aberto'}).waitFor();
       assert.equal(await page.locator('body.store-closed').count(),0);
       assert.equal(await page.locator('#addProduct').isDisabled(),false);
       console.log('PASS public storefront pause, financial privacy and live reopening');
