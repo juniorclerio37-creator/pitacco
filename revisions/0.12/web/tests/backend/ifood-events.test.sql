@@ -199,3 +199,82 @@ begin
  assert not has_table_privilege('authenticated','pitacco_private.ifood_suppressed_orders','SELECT');
 end $test$;
 rollback;
+
+-- End-to-end own courier lifecycle with mocked provider events, no external calls.
+begin;
+do $test$
+declare s uuid; m uuid:=gen_random_uuid(); ext uuid:=gen_random_uuid(); eid uuid; l uuid; oid uuid; did uuid; c uuid; b uuid; u uuid:=gen_random_uuid(); sess uuid:=gen_random_uuid(); req uuid:=gen_random_uuid(); req2 uuid:=gen_random_uuid(); rec jsonb; payload jsonb; code text;
+begin
+ perform set_config('request.jwt.claim.role','service_role',true);
+ perform set_config('request.jwt.claims','{"role":"service_role"}',true);
+ insert into public.stores(name) values('Fixture isolada E2E iFood') returning id into s;
+ insert into auth.users(id,email) values(u,'e2e-'||u||'@example.invalid');
+ insert into public.profiles(id,email,role) values(u,'e2e-'||u||'@example.invalid','entregador') on conflict(id) do update set role='entregador';
+ insert into auth.sessions(id,user_id,created_at) values(sess,u,now());
+ insert into public.couriers(user_id,name,fleet_type,store_id,active,available) values(u,'Motoboy fixture','propria',s,true,true) returning id into c;
+ insert into public.pitacco_courier_auth_state(user_id,store_id,must_change_password,credentials_issued_at) values(u,s,false,now()-interval '1 minute') on conflict(user_id) do update set must_change_password=false,credentials_issued_at=excluded.credentials_issued_at;
+ insert into pitacco_private.ifood_merchants(merchant_id,store_id,test_only,enabled) values(m,s,true,true);
+ payload:=jsonb_build_object('external_order_id',ext,'merchant_id',m,'total',20,'created_at',now(),'display_number','E2E','items','[]'::jsonb,'logistics','loja','address','Endereço fictício','payment_status','paid');
+ foreach code in array array['PLACED','CONFIRMED','READY_TO_PICKUP'] loop
+  eid:=gen_random_uuid();
+  assert public.pitacco_ifood_central_enqueue(eid,m,ext,code,now(),false);
+  select lease into l from public.pitacco_ifood_claim(eid);
+  assert l is not null;
+  perform public.pitacco_ifood_complete(eid,l,payload,true);
+ end loop;
+ select order_id into strict oid from pitacco_private.ifood_order_links where external_id=ext;
+ assert exists(select 1 from public.orders where id=oid and status='accepted' and preparation_status='ready' and receipt->>'ifood_status'='READY_TO_PICKUP');
+ select id into strict did from public.deliveries where order_id=oid and logistics_provider='loja';
+ insert into public.delivery_batches(store_id,courier_id,created_by) values(s,c,u) returning id into b;
+ update public.deliveries set courier_id=c,batch_id=b,status='atribuida' where id=did;
+ perform set_config('request.jwt.claim.sub',u::text,true);
+ perform set_config('request.jwt.claim.role','authenticated',true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated','session_id',sess)::text,true);
+ assert public.pitacco_courier_session_ready();
+ begin
+  perform public.pitacco_driver_ifood_dispatch_claim_v2(did,req);
+  raise exception 'Dispatch accepted before collection';
+ exception when sqlstate '22023' then null;end;
+ perform public.pitacco_driver_collect(did);
+ assert (select status='aceita' and collected_at is not null from public.deliveries where id=did);
+ begin
+  perform public.pitacco_driver_ifood_dispatch_claim_v2(did,req);
+  raise exception 'Dispatch accepted before departure';
+ exception when sqlstate '22023' then null;end;
+ perform public.pitacco_driver_depart(b);
+ assert (select status='retirada' from public.deliveries where id=did);
+ rec:=public.pitacco_driver_ifood_dispatch_claim_v2(did,req);
+ assert rec->>'status'='claimed' and rec->>'lease'=req::text;
+ rec:=public.pitacco_driver_ifood_dispatch_claim_v2(did,req);
+ assert rec->>'status'='claimed' and rec->>'lease'=req::text;
+ assert public.pitacco_driver_ifood_dispatch_claim_v2(did,req2)->>'status'='pending';
+ perform set_config('request.jwt.claim.role','service_role',true);
+ perform set_config('request.jwt.claims','{"role":"service_role"}',true);
+ assert public.pitacco_ifood_dispatch_begin(did,req);
+ assert not public.pitacco_ifood_dispatch_begin(did,req);
+ assert public.pitacco_ifood_dispatch_result(did,req,'submitted',202);
+ eid:=gen_random_uuid();
+ assert public.pitacco_ifood_central_enqueue(eid,m,ext,'DISPATCHED',now()+interval '1 second',false);
+ select lease into l from public.pitacco_ifood_claim(eid);
+ perform public.pitacco_ifood_complete(eid,l,payload,true);
+ assert (select receipt->>'ifood_status'='DISPATCHED' from public.orders where id=oid);
+ perform set_config('request.jwt.claim.role','authenticated',true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated','session_id',sess)::text,true);
+ assert public.pitacco_driver_ifood_dispatch_claim_v2(did,req2)->>'status'='already_confirmed';
+ perform public.pitacco_driver_arrive(did);
+ assert public.pitacco_driver_ifood_action(did,'verify')->>'external_order_id'=ext::text;
+ perform set_config('request.jwt.claim.role','service_role',true);
+ perform set_config('request.jwt.claims','{"role":"service_role"}',true);
+ assert not public.pitacco_ifood_driver_result(did,ext,'verify',false,false);
+ assert (select status='retirada' and delivery_code_verified_at is null from public.deliveries where id=did);
+ assert public.pitacco_ifood_driver_result(did,ext,'verify',true,false);
+ assert (select status='entregue' and delivery_code_verified_at is not null from public.deliveries where id=did);
+ eid:=gen_random_uuid(); assert public.pitacco_ifood_central_enqueue(eid,m,ext,'CONCLUDED',now()+interval '2 seconds',false);
+ select lease into l from public.pitacco_ifood_claim(eid);
+ perform public.pitacco_ifood_complete(eid,l,payload,true);
+ assert (select receipt->>'ifood_status'='CONCLUDED' from public.orders where id=oid);
+ assert (select status='entregue' and delivery_code_verified_at is not null from public.deliveries where id=did);
+ assert not public.pitacco_ifood_dispatch_begin(did,req);
+end $test$;
+select 'PASS isolated end-to-end PLACED CONFIRMED READY collection departure fenced dispatch DISPATCHED arrival invalid and valid code CONCLUDED' as result;
+rollback;
