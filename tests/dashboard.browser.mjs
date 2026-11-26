@@ -25,6 +25,7 @@ try {
     const windowsPings=[];
     let ifoodOrder=null;
     let logisticsOrders=[],logisticsDeliveries=[];
+    let flowGpsFresh=false;
     const flowOrder={id:'30000000-0000-0000-0000-000000000050',store_id:store.id,source:'proprio',
       status:'pending',gross:28,created_at:new Date().toISOString(),
       receipt:{display_number:'D-FLUXO',customer:'Cliente do fluxo',logistics:'loja',
@@ -594,6 +595,11 @@ try {
       if (pathname==='/rest/v1/rpc/pitacco_store_couriers'&&logisticsOrders.includes(flowOrder)){
         return route.fulfill({headers,json:[flowCourier]});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_store_courier_positions'&&logisticsOrders.includes(flowOrder)){
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:[{courier_id:flowCourier.id,latitude:-22.711,longitude:-43.4,
+          observed_at:new Date(Date.now()-(flowGpsFresh?1000:120000)).toISOString()}]});
+      }
       if (pathname==='/rest/v1/rpc/assign_order_courier'&&logisticsOrders.includes(flowOrder)){
         assert.deepEqual(route.request().postDataJSON(),{p_delivery:flowDelivery.id,p_courier:flowCourier.id,p_confirm_deviation:false});
         Object.assign(flowDelivery,{status:'atribuida',courier_id:flowCourier.id});
@@ -823,6 +829,10 @@ try {
       await card.getByRole('button',{name:'Selecionar entregador',exact:true}).click();
       const dispatch=page.locator('dialog.dispatch-only');
       await dispatch.getByText('Rua do Teste, 50',{exact:true}).waitFor();
+      await dispatch.getByText('GPS desatualizado',{exact:true}).waitFor();
+      assert.equal(await dispatch.getByRole('radio',{name:/Motoboy de teste/}).isDisabled(),true);
+      flowGpsFresh=true;
+      await dispatch.getByRole('button',{name:'Atualizar',exact:true}).click();
       await dispatch.getByRole('radio',{name:/Motoboy de teste/}).check();
       await dispatch.getByRole('button',{name:'Confirmar despacho',exact:true}).click();
       await dispatch.getByText(/Despacho registrado/).waitFor();
