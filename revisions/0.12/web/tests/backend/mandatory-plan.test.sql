@@ -61,3 +61,44 @@ begin
  assert pitacco_private.centralize_unlinked_import_groups(s)=0;
 end $test$;
 rollback;
+
+-- The real public signup RPC must create the contract and the trial atomically.
+begin;
+do $test$
+declare u uuid; plan text; s uuid; e timestamptz; doc text; j int; i int; sumd int; d int; c uuid; same_store uuid;
+begin
+ foreach plan in array array['free','complete'] loop
+  u:=gen_random_uuid();
+  insert into auth.users(id,email,email_confirmed_at) values(u,'signup-fixture-'||u||'@example.invalid',now());
+  perform set_config('request.jwt.claim.sub',u::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);
+  doc:=lpad((floor(random()*900000000)+100000000)::bigint::text,9,'0');
+  for j in 10..11 loop
+   sumd:=0;for i in 1..j-1 loop sumd:=sumd+substring(doc,i,1)::int*(j+1-i);end loop;
+   d:=(sumd*10)%11;doc:=doc||case when d=10 then '0' else d::text end;
+  end loop;
+  begin perform public.pitacco_register_store_plan('Fixture cadastro',doc,null,'2026-11-24-v4');raise exception 'TEST accepted missing plan';exception when raise_exception then if sqlerrm<>'Escolha o plano' then raise;end if;end;
+  select r.store_id,r.trial_ends_at into s,e from public.pitacco_register_store_plan('Fixture cadastro',doc,plan,'2026-11-24-v4') r;
+  assert s is not null;
+  assert pitacco_private.commercial_plan_access(s)='ready';
+  assert not pitacco_private.commercial_orders_blocked(s);
+  select id into strict c from pitacco_private.commercial_contracts where store_id=s and plan_code=plan;
+  if plan='free' then
+    assert e is null;
+    assert (select (terms->>'commission_basis_points')::int=200 and (terms->>'monthly_cents')::int=0 from pitacco_private.commercial_contracts where id=c);
+  else
+    assert e=now()+interval '15 days';
+    assert (select first_due_at=e and first_trial_grace and activated_at is null from pitacco_private.fixo_prepaid_state where contract_id=c);
+    update pitacco_private.fixo_prepaid_state set first_due_at=now()-interval '1 hour' where contract_id=c;
+    update public.pitacco_signup_trials set ends_at=now()-interval '1 hour' where first_store_id=s;
+    assert not pitacco_private.commercial_orders_blocked(s);
+    update pitacco_private.fixo_prepaid_state set first_due_at=now()-interval '49 hours' where contract_id=c;
+    update public.pitacco_signup_trials set ends_at=now()-interval '49 hours' where first_store_id=s;
+    assert pitacco_private.commercial_orders_blocked(s);
+  end if;
+  select r.store_id into same_store from public.pitacco_register_store_plan('Fixture cadastro',doc,plan,'2026-11-24-v4') r;
+  assert same_store=s;
+  assert (select count(*)=1 from pitacco_private.commercial_contracts where store_id=s);
+ end loop;
+end $test$;
+rollback;
