@@ -75,3 +75,9 @@ s=p.read_text(encoding='utf-8')
 s="import OrderHistory from './OrderHistory.jsx';\n"+s
 change("{manager&&view==='Pedidos'&&<Pedidos", "{manager&&view==='Pedidos'&&navigationSection==='history'&&<OrderHistory key={storeId} client={client} storeId={storeId}/>}\n {manager&&view==='Pedidos'&&navigationSection!=='history'&&<Pedidos")
 p.write_text(s,encoding='utf-8')
+
+# Explicit sidebar settings routes are the only navigation on Windows.
+p=Path('web/Operations.jsx')
+s=p.read_text(encoding='utf-8')
+change('<div className="tabs" aria-label="Seções de configuração">','<div hidden={desktop&&!!navigationSection} className="tabs" aria-label="Seções de configuração">')
+p.write_text(s,encoding='utf-8')
