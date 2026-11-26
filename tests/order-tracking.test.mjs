@@ -68,3 +68,6 @@ test('customer tracking exposes actual merchant-configured delivery PIN of 4 to 
  assert.match(html,/Seu pedido está pronto e disponível para retirada na loja/);
  assert.match(html,/Seu pedido foi retirado e finalizado/);
  });
+
+test('group tracking shows only approximate position and confirmed other arrival',()=>{assert.match(html,/position\?\.another_arrived/);assert.match(html,/approximate_radius_m:group\?1500:140/);assert.match(mapModule,/uncertainty.setRadius\(radius\)/);assert.match(html,/if\(!group\)link.href/);});
+test('WhatsApp message is prepared from the token-scoped order',()=>{assert.match(html,/d\.customer_name/);assert.match(html,/d\.public_number/);assert.match(html,/encodeURIComponent\(text\)/);assert.match(html,/d\.store\?\.whatsapp/);});

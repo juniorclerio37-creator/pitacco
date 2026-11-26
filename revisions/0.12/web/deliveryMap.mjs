@@ -337,7 +337,7 @@ export async function mountCustomerTrackingMap(container) {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   }).addTo(map);
   const markerIcon = illustratedCourierIcon(L,{customer:true});
-  let marker = null, uncertainty = null, firstPoint = true;
+  let marker = null, uncertainty = null, shopMarker=null, destinationMarker=null, firstPoint = true, previousRadius=null;
   const validPoint = p => p && p.latitude != null && p.longitude != null &&
     Number.isFinite(Number(p.latitude)) && Number.isFinite(Number(p.longitude)) &&
     Number(p.latitude) >= -90 && Number(p.latitude) <= 90 &&
@@ -346,26 +346,32 @@ export async function mountCustomerTrackingMap(container) {
     update(position) {
       if (!validPoint(position)) return false;
       const next = L.latLng(Number(position.latitude), Number(position.longitude));
+      const radius=position.approximate_radius_m===1500?1500:140;
       if (!marker) {
         marker = L.marker(next, {icon: markerIcon, title: 'Posição aproximada do entregador'}).addTo(map);
         marker.bindPopup('Posição aproximada do entregador');
         uncertainty = L.circle(next, {
-          radius: 140, color: '#ea580c', weight: 1.5, fillColor: '#fdba74',
+          radius, color: '#ea580c', weight: 1.5, fillColor: '#fdba74',
           fillOpacity: 0.12, interactive: false,
         }).addTo(map);
       } else {
         marker.setLatLng(next);
-        uncertainty.setLatLng(next);
+        uncertainty.setLatLng(next);uncertainty.setRadius(radius);
       }
+      const updatePoint=(current,p,label,icon)=>{if(!validPoint(p)){if(current)map.removeLayer(current);return null;}const point=L.latLng(Number(p.latitude),Number(p.longitude));if(current){current.setLatLng(point);return current;}return L.marker(point,{title:label,...(icon?{icon}:{})}).bindPopup(label).addTo(map);};
+      shopMarker=updatePoint(shopMarker,position.shop,'Loja',illustratedShopIcon(L));
+      destinationMarker=updatePoint(destinationMarker,position.destination,'Seu endereço');
       map.invalidateSize();
-      if (firstPoint) {
-        map.setView(next, 15);
-        firstPoint = false;
+      if (firstPoint||previousRadius!==radius) {
+        const bounds=uncertainty.getBounds();if(shopMarker)bounds.extend(shopMarker.getLatLng());if(destinationMarker)bounds.extend(destinationMarker.getLatLng());
+        map.fitBounds(bounds,{padding:[24,24],maxZoom:radius===1500?13:15});firstPoint=false;
       } else if (!map.getBounds().contains(next)) {
         map.panTo(next);
       }
+      previousRadius=radius;
       return true;
     },
+    clear() { for(const layer of [marker,uncertainty,shopMarker,destinationMarker])if(layer)map.removeLayer(layer);marker=uncertainty=shopMarker=destinationMarker=null;firstPoint=true;previousRadius=null; },
     resize() { map.invalidateSize(); },
     remove() { map.remove(); },
   };

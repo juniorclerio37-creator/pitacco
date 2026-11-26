@@ -226,8 +226,8 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
   e.preventDefault();if(!manager)return;setBusy(true);setMessage('');
   try{
    if(!draft.name?.trim())throw Error('Informe o nome da loja.');
-   const {document,person_type,legal_name,responsible_name,administrative_phone,administrative_email,whatsapp,name,description,address,address_number,address_complement,neighborhood,city,state,postal_code}=draft;
-   const {data,error}=await client.rpc('pitacco_save_store_registration',{p_store:store.id,p_data:{document,person_type,legal_name,responsible_name,administrative_phone,administrative_email,whatsapp,name,description,address,address_number,address_complement,neighborhood,city,state,postal_code}});
+   const {document,person_type,legal_name,responsible_name,administrative_phone,administrative_email,whatsapp,name,description,address,address_number,address_complement,neighborhood,city,state,postal_code,instagram_url,facebook_url}=draft;
+   const {data,error}=await client.rpc('pitacco_save_store_registration',{p_store:store.id,p_data:{document,person_type,legal_name,responsible_name,administrative_phone,administrative_email,whatsapp,name,description,address,address_number,address_complement,neighborhood,city,state,postal_code,instagram_url,facebook_url}});
    if(error||!data?.saved)throw error||Error('A gravação não foi confirmada.');
    setMessage('Dados da sua loja atualizados.');onSaved?.();
   }catch(err){setMessage(err.message||String(err))}finally{setBusy(false)}
@@ -267,6 +267,7 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
     <div className="identity-grid">{draft.person_type==='cnpj'&&input('legal_name','Razão social')}{input('document',draft.person_type==='cnpj'?'CNPJ':'CPF')}{input('responsible_name',draft.person_type==='cnpj'?'Nome do responsável da loja':'Nome completo')}{input('administrative_phone','Telefone administrativo',true,'tel')}{input('administrative_email','E-mail administrativo',true,'email')}{input('whatsapp','WhatsApp para clientes',true,'tel')}</div>
     <p><MessageCircle size={16}/> O WhatsApp para clientes é público. O telefone e e-mail administrativos são utilizados no cadastro e nas cobranças.</p>
    </section>
+   <section className="identity-section"><h4><MessageCircle size={21}/> Redes sociais da loja</h4><p>Os botões aparecem na página inicial do cardápio quando os links são preenchidos.</p><div className="identity-grid">{input('instagram_url','Instagram (link do perfil)',false,'url')}{input('facebook_url','Facebook (link da página)',false,'url')}</div></section>
    <section className="identity-section identity-address">
     <h4><MapPin size={21}/> Endereço da Loja</h4>
     <p>Este é o endereço único usado no mapa do entregador, cálculo de frete, pagamentos e demais serviços.</p>

@@ -1218,6 +1218,8 @@ body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data
  <span id="v2HeroLocation" class="v2-hero-location" hidden></span></div>
  <img id="v2HeroImage" class="v2-hero-visual" alt="" hidden>
 </header>
+<div id="storeSocialLinks" class="shell" aria-label="Redes sociais da loja" hidden style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:10px 12px"></div>
+<style>#storeSocialLinks a{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;padding:10px 16px;color:white;font-weight:750;text-decoration:none;font-size:.9rem;min-height:42px}#storeSocialLinks a svg{width:20px;height:20px;flex:none}#storeSocialLinks .instagram{background:linear-gradient(115deg,#b92c82,#7637c7)}#storeSocialLinks .facebook{background:#1767d4}#storeSocialLinks[hidden]{display:none!important}</style>
 <nav id="v2StoreNav" class="shell v2-store-nav" aria-label="Seções do cardápio">
  <button type="button" class="v2-nav-button" data-v2-nav="inicio" aria-current="page"><span class="v2-nav-icon" aria-hidden="true">⌂</span>Início</button>
  <button type="button" class="v2-nav-button" data-v2-nav="cardapio"><span class="v2-nav-icon" aria-hidden="true">🍽</span>Cardápio</button>
@@ -3019,6 +3021,12 @@ function initOptions(){
  setMenuTemplate(shop);
  applyStudioDesign(shop);
  $('storeName').textContent=shop.name;
+ const social=$('storeSocialLinks');social.replaceChildren();
+ for(const [kind,label,raw,pattern,shape] of [
+  ['instagram','Instagram',shop.instagram_url,/^https:\/\/(?:www\.)?instagram\.com\/[a-z0-9_.]+\/?$/i,'<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".7"/>'],
+  ['facebook','Facebook',shop.facebook_url,/^https:\/\/(?:www\.)?facebook\.com\/[a-z0-9._/-]+\/?$/i,'<path d="M14 21v-8h3l.5-4H14V7c0-1 .5-2 2-2h2V2h-3c-3 0-5 2-5 5v2H7v4h3v8"/>']
+ ]){if(typeof raw!=='string'||!pattern.test(raw))continue;const link=el('a',label,kind);link.href=raw;link.target='_blank';link.rel='noopener noreferrer';const icon=document.createElement('span');icon.setAttribute('aria-hidden','true');icon.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+shape+'</svg>';link.prepend(icon);social.append(link);}
+ social.hidden=!social.children.length;
  const digits=String(shop.whatsapp||'').replace(/\D/g,'');
  if(/^\d{10,11}$/.test(digits)||/^55\d{10,11}$/.test(digits)){const contact=el('a','WhatsApp da loja');contact.href='https://wa.me/'+(digits.length<=11?'55'+digits:digits);contact.target='_blank';contact.rel='noopener noreferrer';$('storeServices').append(contact);}
  $('v2AboutTitle').textContent=shop.name;
