@@ -1,4 +1,3 @@
-import BusinessInsights from './BusinessInsights.jsx';
 import MarketplaceReconciliation from './MarketplaceReconciliation.jsx';
 import OrderProfitReport from './OrderProfitReport.jsx';
 import React, {useEffect, useRef, useState} from 'react';
@@ -95,10 +94,8 @@ export default function FinancialReport({client,store,initialView='report',navig
     <div className="pitacco-local-tabs" role="group" aria-label="Tipos de relatório">
       <button type="button" className={view==='report'?'active':'secondary'} onClick={()=>setView('report')}>Resumo financeiro</button>
       <button type="button" className={view==='orders'?'active':'secondary'} onClick={()=>setView('orders')}>Resultado por pedido</button>
-      <button type="button" className={view==='insights'?'active':'secondary'} onClick={()=>setView('insights')}>Pitacco Intelligence</button>
       <button type="button" className={view==='settlement'?'active':'secondary'} onClick={()=>setView('settlement')}>Conciliação de repasses</button>
     </div>
-    {view==='insights'&&<BusinessInsights key={store.id} client={client} storeId={store.id}/>}
     {view==='settlement'&&<MarketplaceReconciliation client={client} storeId={store.id}/>}
     {view==='orders'&&<OrderProfitReport client={client} storeId={store.id}/>}
     {view==='report'&&<section className="panel" aria-label="Relatório financeiro" aria-busy={busy}>
