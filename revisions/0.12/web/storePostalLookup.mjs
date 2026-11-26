@@ -29,3 +29,19 @@ export async function lookupPostalAddress(value,{signal,fetcher=globalThis.fetch
   return result;
  }finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);}
 }
+
+export async function lookupStorePostalAddress(client,storeId,value,{signal}={}){
+ const cep=postalDigits(value);
+ if(cep.length!==8)throw Error('Informe os oito dígitos do CEP.');
+ if(signal?.aborted)throw Error('Consulta cancelada.');
+ const {data,error}=await client.functions.invoke('store-postal-lookup',{body:{cep,store_id:storeId}});
+ if(signal?.aborted)throw Error('Consulta cancelada.');
+ if(error){
+  let detail;try{detail=(await error.context?.json())?.error}catch{}
+  throw Error(detail==='CEP não encontrado.'?detail:'Consulta de CEP indisponível.');
+ }
+ if(data?.error)throw Error(data.error==='CEP não encontrado.'?data.error:'Consulta de CEP indisponível.');
+ const result=data?.address;
+ if(data?.cep!==cep||!result||typeof result.city!=='string'||!result.city.trim()||!/^[A-Z]{2}$/.test(result.state))throw Error('O serviço retornou um endereço incompleto ou incorreto.');
+ return Object.fromEntries(postalAddressFields.map(key=>[key,typeof result[key]==='string'?result[key].trim():'']));
+}
