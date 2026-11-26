@@ -66,28 +66,20 @@ export function illustratedCourierIcon(L,{stale=false,selected=false,customer=fa
  });
 }
 
+// Load Vite-bundled assets. No network-loaded JavaScript, no window.L dependency.
 let leafletPromise;
-function leaflet() {
-  if (!leafletPromise) {
-    const base = 'https://unpkg.com/leaflet@1.9.4/dist/';
-    leafletPromise = Promise.all([
-      ['link', 'href', 'leaflet.css', 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY='],
-      ['script', 'src', 'leaflet.js', 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo='],
-    ].map(([tag, source, file, integrity]) => new Promise((resolve, reject) => {
-      const element = document.createElement(tag);
-      if (tag === 'link') element.rel = 'stylesheet';
-      element.crossOrigin = 'anonymous';
-      element.integrity = integrity;
-      element[source] = base + file;
-      element.onload = resolve;
-      element.onerror = () => { element.remove(); reject(new Error('Não foi possível abrir o mapa.')); };
-      document.head.append(element);
-    }))).then(() => window.L).catch(error => {
-      leafletPromise = undefined;
-      throw error;
-    });
-  }
-  return leafletPromise;
+export function leaflet(){
+ if(!leafletPromise){
+  leafletPromise=Promise.all([import('leaflet'),import('leaflet/dist/leaflet.css')]).then(([module])=>{
+   const L=module.default||module;
+   if(typeof L.map!=='function')throw Error('Biblioteca do mapa inválida.');
+   return L;
+  }).catch(error=>{
+   leafletPromise=undefined;
+   throw Error('Não foi possível iniciar o mapa. Reabra a tela ou atualize o Pitacco.',{cause:error});
+  });
+ }
+ return leafletPromise;
 }
 
 export async function mountDeliveryMap(container, { center, radius, onSelect, mode='circle', polygon=[], polygons=[], showCoverage=true }) {
@@ -387,7 +379,7 @@ export async function mountCustomerTrackingMap(container) {
  */
 export async function mountDeliveryCoverageMap(container,{
  center,mode='circle',radiusKm=5,vertices=[],regions=[],activeRegionId=null,
- onVerticesChange,onSelectRegion
+ onVerticesChange,onSelectRegion,onTileStatus
 }={}){
  const L=await leaflet();
  if(!container.isConnected)throw Error('O mapa foi fechado.');
@@ -395,9 +387,16 @@ export async function mountDeliveryCoverageMap(container,{
  const point=hasOrigin?center:[-14.24,-51.93];
  const map=L.map(container,{scrollWheelZoom:false,zoomControl:true})
   .setView(point,hasOrigin?14:4);
- L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+ const streetTiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
   maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
- }).addTo(map);
+ });
+ let loadedTiles=0,failedTiles=0;
+ streetTiles.on('loading',()=>{loadedTiles=0;failedTiles=0;onTileStatus?.('loading')});
+ streetTiles.on('tileload',()=>{loadedTiles++;onTileStatus?.('ready')});
+ streetTiles.on('tileerror',()=>{failedTiles++;if(!loadedTiles)onTileStatus?.('error')});
+ streetTiles.on('load',()=>onTileStatus?.(loadedTiles?'ready':failedTiles?'error':'loading'));
+ streetTiles.addTo(map);
+
  const shopIcon=illustratedShopIcon(L);
  if(hasOrigin)L.marker(point,{icon:shopIcon,interactive:true,
   title:'Sua loja — centro da área de entrega'})
@@ -506,8 +505,9 @@ export async function mountDeliveryCoverageMap(container,{
    const region=polygonRegions.find(r=>r.id===id);
    if(region?.vertices.length)map.fitBounds(region.vertices,{padding:[24,24],maxZoom:16});
   },
+  retryTiles(){streetTiles.redraw()},
   resize(){map.invalidateSize()},
-  remove(){map.remove()}
+  remove(){streetTiles.off();map.remove()}
  };
 }
 
