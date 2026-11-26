@@ -19,7 +19,7 @@ export default function OperationalShortcuts({client,storeId,native,collapsed,on
  const dispatch=data?.store?.dispatch_mode,autoDispatch=['automatico','misto'].includes(dispatch);
  const toggle=(Icon,label,checked,disabled,click,note)=> <button type="button" className="mn-op-toggle" role="switch" aria-label={label} aria-checked={checked} disabled={disabled||busy} title={note||label} onClick={click}><Icon size={16}/><span>{label}{note&&<small>{note}</small>}</span><i className={checked?'on':''} aria-hidden="true"/></button>;
  return <section className="mn-operations" aria-label="Controle operacional">
- {canCreate&&<button type="button" className="mn-new-order" title="Novo Pedido" onClick={()=>{if(collapsed)onExpand();onNewOrder()}}><Plus size={20}/><span>Novo Pedido</span></button>}
+ {canCreate&&<button type="button" className="mn-new-order" aria-label="Novo Pedido" title="Novo Pedido" onClick={()=>{if(collapsed)onExpand();onNewOrder()}}><Plus size={20}/><span>Novo Pedido</span></button>}
  {!collapsed&&<>
  <small className="mn-op-heading">Controle operacional</small>
  {canAccept&&toggle(CheckCircle,'Aceite automático',all,!data,()=>change(async()=>{const {error}=await client.rpc('pitacco_set_global_acceptance_mode',{p_store:storeId,p_automatic:!all});if(error)throw error}),mixed?'Parcial · origens habilitadas':null)}

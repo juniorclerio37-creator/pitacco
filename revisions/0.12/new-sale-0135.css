@@ -1,7 +1,4 @@
 
-.app:not(.pitacco-admin-shell) main.pitacco-workspace>header .pitacco-new-sale{display:inline-flex;align-items:center;justify-content:center;gap:9px;flex:none;min-height:46px;padding:12px 20px;border:1px solid #c94b10;border-radius:12px;background:#e9601b;color:#fff;font-size:16px;font-weight:750;box-shadow:0 4px 12px #e9601b30;cursor:pointer}
-.app:not(.pitacco-admin-shell) main.pitacco-workspace>header .pitacco-new-sale:hover{background:#cb4a10}
-.pitacco-new-sale:focus-visible,.merchant-nav .mn-new-order:focus-visible{outline:3px solid #7041be;outline-offset:3px}
-.pitacco-new-sale>span{font-size:24px;line-height:1}
+/* Emphasize only the existing sidebar shortcut, not the workspace header. */
+.merchant-nav .mn-new-order:focus-visible{outline:3px solid #7041be;outline-offset:3px}
 .app:not(.pitacco-admin-shell) .merchant-nav .mn-new-order{min-height:46px;font-size:16px;font-weight:750;box-shadow:0 3px 10px #e9601b26}
-@media(max-width:800px){.app:not(.pitacco-admin-shell) main.pitacco-workspace>header{flex-wrap:wrap}.app:not(.pitacco-admin-shell) main.pitacco-workspace>header .pitacco-new-sale{order:3;width:100%;margin-top:8px}}

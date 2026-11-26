@@ -79,3 +79,20 @@ test('payment methods are listed only in Settings while legacy route remains sta
  assert.equal(menuAllowed(route,{allowed:()=>true,manager:true,active:true}),true);
  assert.equal(groups.find(g=>g.name==='Integrações').items.some(i=>i.id==='Pagamentos da loja'),false);
 });
+
+test('Novo Pedido stays highlighted only in the original merchant sidebar',()=>{
+ const app=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
+ const nav=readFileSync(new URL('../MerchantNavigation.jsx',import.meta.url),'utf8');
+ const shortcuts=readFileSync(new URL('../OperationalShortcuts.jsx',import.meta.url),'utf8');
+ const baseCss=readFileSync(new URL('../style.css',import.meta.url),'utf8');
+ assert.doesNotMatch(app,/pitacco-new-sale/,'No global header button');
+ assert.doesNotMatch(baseCss,/\.pitacco-new-sale/,'Remove obsolete header styling');
+ assert.match(nav,/<OperationalShortcuts[^>]*onNewOrder=\{\(\)=>go\('Novo Pedido'\)\}/);
+ assert.equal((shortcuts.match(/className="mn-new-order"/g)||[]).length,1);
+ assert.match(shortcuts,/aria-label="Novo Pedido"/);
+ assert.match(baseCss,/\.merchant-nav \.mn-new-order\{min-height:46px/);
+ const ctx={allowed:()=>true,manager:true,active:true};
+ assert.equal(menuAllowed(resolveMenuRoute('Novo Pedido'),ctx),true);
+ assert.equal(menuAllowed(resolveMenuRoute('Novo Pedido'),{...ctx,manager:false}),false);
+ assert.equal(menuAllowed(resolveMenuRoute('Novo Pedido'),{...ctx,driver:true}),false);
+});

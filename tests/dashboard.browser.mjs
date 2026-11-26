@@ -713,11 +713,16 @@ try {
     await page.locator('.store-identity-copy').getByText(store.name, { exact:true }).waitFor({ state:'attached' });
     await page.getByRole('heading',{name:'Visão Geral',exact:true}).waitFor();
 
-    // The shared header starts a sale at every viewport and reflects another session's saved name.
-    const newSale=page.locator('main>header').getByRole('button',{name:'Novo Pedido',exact:true});
+    // The original sidebar is the only prominent New Order entry point.
+    const orderNavigation=page.getByRole('navigation',{name:'Menu principal'});
+    if(width<=800)await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
+    const newSale=orderNavigation.getByRole('button',{name:'Novo Pedido',exact:true});
     await newSale.waitFor();
+    assert.equal(await page.locator('main').getByRole('button',{name:'Novo Pedido',exact:true}).count(),0,'No duplicate New Order button in workspace');
+    assert.equal(await page.locator('.mn-new-order').count(),1,'Exactly one highlighted New Order shortcut');
     await newSale.click();
     await page.getByRole('heading',{name:'Novo Pedido',exact:true}).waitFor();
+    assert.equal(await page.locator('main>header').getByRole('button',{name:'Novo Pedido',exact:true}).count(),0);
     const previousName=store.name;
     store.name='Nome atualizado em outra sessão';
     await page.evaluate(()=>window.dispatchEvent(new Event('pitacco:store-identity')));
