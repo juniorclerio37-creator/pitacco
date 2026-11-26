@@ -1598,16 +1598,23 @@ try {
         window.activeStoreCommands=[];
         window.nativeUpdateChecks=0;
         window.activeNativeStore=null;
+        window.prematureLocalQueueReads=0;
+        window.localQueueReads=0;
         window.__TAURI__={core:{invoke:async (command,args)=>{
           if(command==='set_active_store'){
-            if(args.storeId===null)await new Promise(resolve=>setTimeout(resolve,100));
+            await new Promise(resolve=>setTimeout(resolve,args.storeId===null?100:350));
             window.activeNativeStore=args.storeId;
             window.activeStoreCommands.push(args.storeId);
             return null;
           }
           if(command==='check_update'){window.nativeUpdateChecks++;return 'O Pitacco já está atualizado.';}
           if(command==='device_id')return 'fixture-device';
-          if(command==='list_printers'||command==='list_jobs')return [];
+          if(command==='list_printers')return [];
+          if(command==='list_jobs'){
+            if(!window.activeNativeStore){window.prematureLocalQueueReads++;throw Error('Selecione uma loja autenticada.');}
+            window.localQueueReads++;
+            return [];
+          }
           if(command==='get_autostart')return false;
           if(command==='notify_new_order')window.nativeNotices.push(args.message);
           if(command==='play_order_alert'||command==='play_order_alert_combo')window.nativeOrderSounds++;
@@ -1681,6 +1688,9 @@ try {
       assert.equal(await page.locator('[aria-label="Seções de configuração"]').isVisible(),false);
       await merchantNavigate('Configurações','Alertas e sons');
       await page.getByRole('heading',{name:'Preferências do aplicativo',exact:true}).waitFor();
+      await page.waitForFunction(()=>window.localQueueReads>0);
+      assert.equal(await page.evaluate(()=>window.prematureLocalQueueReads),0,'Local queue must wait for native store activation');
+      assert.equal(await page.getByText(/Fila local:.*Selecione uma loja autenticada/).count(),0);
       assert.equal(await page.getByRole('heading',{name:'Computador responsável pela impressão',exact:true}).count(),0);
       assert.equal(await page.getByRole('button',{name:'Verificar atualização',exact:true}).count(),1);
       assert.equal(await page.getByRole('button',{name:'Outras funções',exact:true}).count(),0);

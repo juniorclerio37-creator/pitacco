@@ -359,3 +359,14 @@ test('printing settings use only the official thermal model and no historical at
  assert.match(bridge,/approvedReceipt/);
  assert.match(bridge,/rasterReceipt/);
 });
+
+test('Windows waits for the authenticated native store before accessing either print queue',()=>{
+ const operations=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
+ assert.match(operations,/nativePrintScope\.current=activation/);
+ assert.match(operations,/ready:queueActiveStore\(manager\?storeId:null\)/);
+ assert.match(operations,/await scope\.ready/);
+ assert.match(operations,/return nativePrintScope\.current===scope/);
+ assert.match(operations,/if\(!await waitForNativePrintStore\(\)\|\|stopped\)return;const local=await invoke\('list_jobs'\)/);
+ assert.match(operations,/if\(desktop&&device&&await waitForNativePrintStore\(\)&&!stopped\)/);
+ assert.match(operations,/nativePrintScope\.current=null;void queueActiveStore\(null\)/);
+});
