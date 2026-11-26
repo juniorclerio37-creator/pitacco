@@ -453,6 +453,11 @@ try {
       }
       if (pathname === '/rest/v1/profiles') return route.fulfill({ headers, json: { ...user, role:adminMode||width===375?'admin':'gestor' } });
       if (pathname === '/rest/v1/store_members') return route.fulfill({headers,json:[]});
+      if(pathname==='/rest/v1/rpc/pitacco_daily_operational_orders'){
+        assert.deepEqual(route.request().postDataJSON(),{p_store:store.id});
+        const orders=width===375?[pendingOrder]:[pendingOrder,appointment];
+        return route.fulfill({headers,json:[...orders,...logisticsOrders,...(ifoodOrder?[ifoodOrder]:[])]});
+      }
       if (pathname === '/rest/v1/orders') {
         const filters = new URL(route.request().url()).searchParams;
         if(width===375 && filters.has('scheduled_release_at')){
