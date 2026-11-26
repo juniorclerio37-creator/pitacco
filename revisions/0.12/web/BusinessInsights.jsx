@@ -3,6 +3,19 @@ import React,{useEffect,useState} from 'react';
 const brl=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const weekdays=['','Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
 
+function ExpertChat({client,storeId}){
+ const [question,setQuestion]=useState(''),[answer,setAnswer]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const examples=['Como aumento meu ticket médio?','Quais combos devo testar esta semana?','Como atrair mais pedidos nos dias fracos?','Como melhorar a apresentação do meu cardápio?'];
+ async function consult(e){
+  e.preventDefault();if(busy||question.trim().length<5)return;setBusy(true);setAnswer('');setError('');
+  try{const {data,error}=await client.auth.getSession();if(error||!data?.session?.access_token)throw Error('Entre novamente para consultar o especialista.');
+   const r=await fetch('/api/intelligence/sales',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+data.session.access_token},body:JSON.stringify({storeId,question:question.trim()}),cache:'no-store'});
+   const p=await r.json().catch(()=>({}));if(!r.ok||typeof p.answer!=='string')throw Error(p.error||'Consultor indisponível.');
+   setAnswer(p.answer);
+  }catch(e){setError(e.message||'Não foi possível consultar.');}finally{setBusy(false);}
+ }
+ return <section className="panel" aria-label="Especialista em vendas de delivery" style={{marginTop:16}}><h3>Converse com seu especialista em delivery</h3><p>Peça um plano de vendas, sugestões de combos, estratégias de fidelização ou ideias de promoção.</p><div className="dispatch-actions" style={{flexWrap:'wrap',gap:8}}>{examples.map(q=><button key={q} type="button" className="secondary" disabled={busy} onClick={()=>setQuestion(q)}>{q}</button>)}</div><form onSubmit={consult}><label>Sua pergunta<textarea value={question} onChange={e=>setQuestion(e.target.value)} minLength={5} maxLength={1000} required disabled={busy} rows={3}/></label><p className="hint">A pergunta e indicadores comerciais resumidos são processados pelo Workers AI. Não inclua dados pessoais nem credenciais. As respostas são consultivas e não publicam alterações.</p><button disabled={busy||question.trim().length<5}>{busy?'Analisando…':'Consultar especialista'}</button></form>{error&&<p role="alert">{error}</p>}{answer&&<article className="panel" aria-live="polite"><h4>Plano recomendado</h4><p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{answer}</p><p className="hint">Valide preços e descontos no simulador antes de publicar.</p></article>}</section>;
+}
 function DeliverySalesCoach({data}){
  const products=data.catalog||[],pairs=data.combo_candidates||[];
  const [first,setFirst]=useState(''),[second,setSecond]=useState(''),[cost,setCost]=useState(''),[fee,setFee]=useState(''),[fixed,setFixed]=useState(''),[margin,setMargin]=useState('20'),[discount,setDiscount]=useState('10');
@@ -69,6 +82,7 @@ export default function BusinessInsights({client,storeId}){
     <article className="panel"><h4>Rentabilidade</h4><p>Custos completos: {s.complete_costs} de {s.orders} pedidos.</p><p>{s.known_contribution===null?'Dados insuficientes para calcular a contribuição.':('Contribuição dos pedidos com custos completos: '+brl.format(s.known_contribution))}</p><p>{s.negative_orders} pedidos com contribuição negativa registrada.</p>{s.complete_costs<s.orders&&<p>Complete os custos faltantes antes de avaliar a margem geral.</p>}<p className="hint">Contribuição direta, não lucro líquido; despesas fixas não incluídas.</p></article>
     <article className="panel"><h4>Oportunidade comercial</h4>{weak?<><p>Menor média registrada: <strong>{weekdays[weak.weekday]}</strong> · {weak.average_orders} pedidos.</p><p>Confira os horários de funcionamento e considere testar uma oferta se a loja estiver aberta.</p></>:<p>Amostra insuficiente para recomendar um dia de promoção (mínimo de 28 pedidos).</p>}<p className="hint">Quatro ocorrências de cada dia; feriados e dias fechados podem influenciar.</p></article>
    </div>
+   <ExpertChat key={'expert-'+storeId} client={client} storeId={storeId}/>
    <DeliverySalesCoach key={storeId} data={data}/>
    <h4>Alertas de reposição</h4>
    {data.stock_alerts.length===0?<p>Nenhum insumo cadastrado atingiu os critérios de alerta; confirme se o estoque está atualizado.</p>:data.stock_alerts.map((item,i)=><article key={i} className="panel" style={{margin:'8px 0'}}><strong>{item.name}</strong><p>Saldo: {item.balance} {item.unit} · mínimo: {item.minimum} {item.unit}</p><p>{Number(item.balance)<=Number(item.minimum)?'Estoque no mínimo ou abaixo. ':''}{item.days_left!==null?'Cobertura estimada: '+item.days_left+' dias.':'Histórico de consumo insuficiente para estimar cobertura.'}</p></article>)}
