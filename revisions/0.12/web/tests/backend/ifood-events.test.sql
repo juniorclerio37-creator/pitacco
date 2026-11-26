@@ -212,7 +212,7 @@ begin
  insert into public.profiles(id,email,role) values(u,'e2e-'||u||'@example.invalid','entregador') on conflict(id) do update set role='entregador';
  insert into auth.sessions(id,user_id,created_at) values(sess,u,now());
  insert into public.couriers(user_id,name,fleet_type,store_id,active,available) values(u,'Motoboy fixture','propria',s,true,true) returning id into c;
- insert into public.pitacco_courier_auth_state(user_id,store_id,must_change_password,credentials_issued_at) values(u,s,false,now()-interval '1 minute') on conflict(user_id) do update set must_change_password=false,credentials_issued_at=excluded.credentials_issued_at;
+ insert into public.pitacco_courier_auth_state(user_id,store_id,must_change_password,credentials_issued_at) values(u,s,false,now()-interval '1 minute') ;
  insert into pitacco_private.ifood_merchants(merchant_id,store_id,test_only,enabled) values(m,s,true,true);
  payload:=jsonb_build_object('external_order_id',ext,'merchant_id',m,'total',20,'created_at',now(),'display_number','E2E','items','[]'::jsonb,'logistics','loja','address','Endereço fictício','payment_status','paid');
  foreach code in array array['PLACED','CONFIRMED','READY_TO_PICKUP'] loop
