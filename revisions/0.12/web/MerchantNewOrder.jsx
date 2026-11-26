@@ -4,31 +4,35 @@ import {ShoppingCart,Store,Bike,ShoppingBag,CalendarDays,UserRound,UserRoundPlus
 import {CategoryIcon,inferCategoryIcon} from './CategoryIcons.jsx';
 import {quotePizzaSelection} from './pizzaPricing.mjs';
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const methods={dinheiro:'Dinheiro',pix_manual:'Pix manual',pix:'Pix',cartao:'Cartão',cartao_entrega:'Cartão na entrega',cartao_na_entrega:'Cartão na entrega',credit_card:'Crédito',debit_card:'Débito'};
+const methods={dinheiro:'Dinheiro',cartao_credito:'Cartão de crédito',cartao_debito:'Cartão de débito',pix_maquininha:'Pix na maquininha',pix_manual:'Pix manual',voucher_alelo:'Alelo',voucher_pluxee:'Pluxee (Sodexo)',voucher_vr:'VR Benefícios',voucher_ticket:'Ticket',pix:'Pix',cartao:'Cartão',cartao_entrega:'Cartão',cartao_na_entrega:'Cartão',credit_card:'Cartão de crédito',debit_card:'Cartão de débito'};
+const expandPaymentMethods=values=>[...new Set((values||[]).flatMap(v=>v==='cartao_entrega'?['cartao_credito','cartao_debito']:[v]))];
 const id=()=>crypto.randomUUID();
 export default function MerchantNewOrder({client,storeId,onNavigate}){
  const [menu,setMenu]=useState(null),[loyalty,setLoyalty]=useState(false),[fiado,setFiado]=useState([]),[error,setError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[result,setResult]=useState(null);
  const [name,setName]=useState(''),[phone,setPhone]=useState(''),[search,setSearch]=useState(''),[customers,setCustomers]=useState([]),[type,setType]=useState('balcao'),[payment,setPayment]=useState(''),[address,setAddress]=useState(''),[notes,setNotes]=useState(''),[change,setChange]=useState(''),[coupon,setCoupon]=useState(''),[credit,setCredit]=useState(''),[cart,setCart]=useState([]),[product,setProduct]=useState(null),[chosen,setChosen]=useState([]),[quantity,setQuantity]=useState(1),[quote,setQuote]=useState(null),[quoting,setQuoting]=useState(false);
- const [manualDiscount,setManualDiscount]=useState('');
+ const [manualDiscount,setManualDiscount]=useState(''),[pdvMethods,setPdvMethods]=useState([]),[received,setReceived]=useState(false);
  const request=useRef(id()),lock=useRef(false);
  async function rpc(n,args){const r=await client.rpc(n,args);if(r.error)throw r.error;if(r.data?.error)throw Error(r.data.error);return r.data}
  useEffect(()=>{let live=true;(async()=>{try{
-  const r=await client.from('public_menu_settings').select('slug,enabled').eq('store_id',storeId).maybeSingle();if(r.error)throw r.error;
+  const r=await client.from('public_menu_settings').select('slug,enabled,pdv_payment_methods').eq('store_id',storeId).maybeSingle();if(r.error)throw r.error;
   if(!r.data?.enabled)throw Error('O cardápio digital precisa estar publicado para este fluxo integrado.');
   const data=await rpc('get_public_menu',{p_slug:r.data.slug});
   const [program,creditData]=await Promise.all([client.rpc('pitacco_loyalty_program',{p_slug:r.data.slug}),client.rpc('pitacco_fiado_overview',{p_store:storeId})]);
   if(!live)return;if(program.error)throw program.error;
-  setMenu(data);setType(data.store.pickup_enabled?'balcao':'entrega');setLoyalty(!!program.data);setFiado((creditData.data?.customers||[]).filter(c=>c.enabled));setPayment((data.store.payment_methods||[])[0]||'');
+  setMenu(data);setPdvMethods(expandPaymentMethods(r.data.pdv_payment_methods??data.store.payment_methods));setType(data.store.pickup_enabled?'balcao':'entrega');setLoyalty(!!program.data);setFiado((creditData.data?.customers||[]).filter(c=>c.enabled));setPayment(expandPaymentMethods(data.store.pickup_enabled?(r.data.pdv_payment_methods??data.store.payment_methods):data.store.payment_methods)[0]||'');
  }catch(e){if(live)setError(e.message||String(e))}finally{if(live)setLoading(false)}})();return()=>{live=false}},[client,storeId]);
  useEffect(()=>{let live=true;if(search.trim().length<2){setCustomers([]);return}const t=setTimeout(()=>{client.rpc('pitacco_merchant_customers',{p_store:storeId,p_query:search,p_offset:0}).then(r=>{if(live&&!r.error)setCustomers(r.data?.rows||[])})},300);return()=>{live=false;clearTimeout(t)}},[client,storeId,search]);
  const delivery=type==='entrega',isCredit=payment==='fiado';
+ const availablePayments=delivery?expandPaymentMethods(menu?.store?.payment_methods):pdvMethods;
+ const externalPayment=['dinheiro','cartao_credito','cartao_debito','pix_maquininha','pix_manual','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket'].includes(payment);
+ useEffect(()=>{setReceived(false)},[cart,payment,type,coupon,manualDiscount]);
  const [searchProduct,setSearchProduct]=useState(''),[category,setCategory]=useState(''),[customerOpen,setCustomerOpen]=useState(true),[cartOpen,setCartOpen]=useState(false);
  const summaryRef=useRef(null);
  const products=menu?.products||[],categories=[...new Set(products.map(p=>String(p.category||'Outros')))];
  const normalize=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  const shown=products.filter(p=>(!category||String(p.category||'Outros')===category)&&normalize(p.name+' '+(p.category||'')).includes(normalize(searchProduct)));
  const itemCount=cart.reduce((n,l)=>n+l.quantity,0);
- function selectType(value){setType(value);setManualDiscount('');if(value==='entrega'&&isCredit)setPayment(menu.store.payment_methods[0]||'')}
+ function selectType(value){setType(value);setManualDiscount('');setReceived(false);const available=value==='entrega'?expandPaymentMethods(menu.store.payment_methods):pdvMethods;if(!available.includes(payment))setPayment(available[0]||'')}
  function changeLine(key,delta){setCart(previous=>previous.map(l=>l.key===key?{...l,quantity:Math.max(0,Math.min(20,l.quantity+delta))}:l).filter(l=>l.quantity>0))}
  function openSummary(){setCartOpen(true);requestAnimationFrame(()=>summaryRef.current?.scrollIntoView({behavior:'smooth',block:'start'}))}
 
@@ -57,7 +61,7 @@ export default function MerchantNewOrder({client,storeId,onNavigate}){
  try{
  const items=cart.map(({product_id,quantity,options})=>({product_id,quantity,options}));
  const note=notes.trim()+(payment==='dinheiro'&&change?' Troco para: R$ '+Number(change).toFixed(2):'');
- const data=isCredit&&type==='balcao'?await rpc('pitacco_fiado_balcao_discount',{p_store:storeId,p_customer:credit,p_request:request.current,p_items:items,p_note:notes.trim(),p_discount:discount}):await rpc('pitacco_merchant_create_checkout',{p_store:storeId,p_request:request.current,p_sale_mode:type,p_customer:isCredit?'':name.trim(),p_phone:isCredit?'':phone,p_address:delivery?address.trim():'',p_items:items,p_payment:payment,p_notes:isCredit?notes.trim():note,p_coupon:isCredit?'':coupon.trim(),p_quote:delivery?quote.quote_id:null,p_fiado_customer:isCredit?credit:null});
+ const data=isCredit&&type==='balcao'?await rpc('pitacco_fiado_balcao_discount',{p_store:storeId,p_customer:credit,p_request:request.current,p_items:items,p_note:notes.trim(),p_discount:discount}):await rpc('pitacco_merchant_channel_checkout',{p_store:storeId,p_request:request.current,p_sale_mode:type,p_customer:isCredit?'':name.trim(),p_phone:isCredit?'':phone,p_address:delivery?address.trim():'',p_items:items,p_payment:payment,p_notes:isCredit?notes.trim():note,p_coupon:isCredit?'':coupon.trim(),p_quote:delivery?quote.quote_id:null,p_fiado_customer:isCredit?credit:null,p_received_amount:!delivery&&externalPayment&&received?Math.round(amount*100)/100:null});
  if(!data?.order_id)throw Error('Pedido não confirmado pelo servidor. Verifique antes de repetir.');
  setResult(data);
  }catch(e){setError(e.message||String(e))}finally{lock.current=false;setBusy(false)}}
@@ -82,12 +86,13 @@ export default function MerchantNewOrder({client,storeId,onNavigate}){
  {cart.length===0&&<p className="mn-pos-empty">Nenhum item adicionado.</p>}{cart.map(l=>{const item=products.find(p=>p.id===l.product_id);return <div className="mn-pos-cart-line" key={l.key}><div className="mn-pos-cart-image">{item?.image_url?<img src={item.image_url} alt="" loading="lazy"/>:<Package size={24}/>}</div><div className="mn-pos-cart-text"><b>{l.name}</b><small>{l.names.join(', ')}</small><small>{l.quantity} × {money(l.unit)}</small><div className="mn-pos-quantity"><button type="button" className="secondary" aria-label={'Diminuir quantidade de '+l.name} onClick={()=>changeLine(l.key,-1)}><Minus size={15}/></button><b>{l.quantity}</b><button type="button" className="secondary" disabled={l.quantity>=20} aria-label={'Aumentar quantidade de '+l.name} onClick={()=>changeLine(l.key,1)}><Plus size={15}/></button></div></div><div className="mn-pos-cart-end"><button type="button" className="mn-pos-remove" aria-label={'Remover '+l.name} onClick={()=>setCart(v=>v.filter(x=>x.key!==l.key))}><Trash2 size={17}/></button><strong>{money(l.unit*l.quantity)}</strong></div></div>})}
  <label className="mn-pos-notes"><span><MessageSquare size={18}/> Observação do pedido</span><textarea maxLength={900} placeholder="Ex.: sem granola, pouco doce..." value={notes} onChange={e=>setNotes(e.target.value)}/></label>
  <div className="mn-pos-totals"><div className="line"><span>Subtotal</span><strong>{money(subtotal)}</strong></div>{delivery&&<div className="line"><span>Entrega</span><strong>{quote?money(quote.fee):'A calcular'}</strong></div>}{discount>0&&!invalidDiscount&&<div className="line"><span>Desconto manual</span><strong>− {money(discount)}</strong></div>}<div className="line mn-pos-total"><b>Total do pedido</b><strong>{money(amount)}</strong></div>{coupon&&<small>O cupom será validado e o valor final calculado no servidor.</small>}</div>
- <div className="mn-pos-payment"><h4><CreditCard size={19}/> Pagamento</h4> <label><span className="mn-pos-sr-only">Pagamento</span><select value={payment} onChange={e=>{setPayment(e.target.value);setChange('');setCoupon('');setManualDiscount('')}}><option value="">Selecione</option>{(menu.store.payment_methods||[]).filter(x=>x!=='fiado').map(m=><option key={m} value={m}>{methods[m]||m}</option>)}{!delivery&&fiado.length>0&&<option value="fiado">Fiado autorizado</option>}</select></label>
+ <div className="mn-pos-payment"><h4><CreditCard size={19}/> Pagamento</h4> <label><span className="mn-pos-sr-only">Pagamento</span><select value={payment} onChange={e=>{setPayment(e.target.value);setChange('');setCoupon('');setManualDiscount('')}}><option value="">Selecione</option>{availablePayments.filter(x=>x!=='fiado').map(m=><option key={m} value={m}>{methods[m]||m}</option>)}{!delivery&&fiado.length>0&&<option value="fiado">Fiado autorizado</option>}</select></label>
   {isCredit&&<label>Cliente autorizado<select value={credit} onChange={e=>setCredit(e.target.value)}><option value="">Selecione</option>{fiado.map(c=><option key={c.id} value={c.id}>{c.name} · {money(c.available)} disponíveis</option>)}</select></label>}
   {delivery&&<><label>Endereço completo<input required placeholder="Rua, número, bairro, cidade, UF, CEP" value={address} onChange={e=>setAddress(e.target.value)}/></label><p role="status">{quoting?'Calculando frete…':quote?'Taxa de entrega: '+money(quote.fee)+(Number.isInteger(quote.delivery_min_minutes)&&Number.isInteger(quote.delivery_max_minutes)?' · Previsão: '+quote.delivery_min_minutes+'–'+quote.delivery_max_minutes+' min':''):'Informe o endereço para calcular o frete.'}</p></>}
  {payment==='dinheiro'&&<label>Troco para (opcional)<input type="number" min="0" step="0.01" value={change} onChange={e=>setChange(e.target.value)}/></label>}
  {isCredit&&type==='balcao'&&<label>Desconto manual (R$)<input type="number" min="0" step="0.01" value={manualDiscount} onChange={e=>setManualDiscount(e.target.value)}/><small>Concedido pela loja, sem cupom ou benefício do Fideliza+.</small></label>}
  {loyalty&&!isCredit&&<label>Cupom (opcional)<input value={coupon} onChange={e=>setCoupon(e.target.value)}/></label>}
+ {!delivery&&externalPayment&&<><p>Receba o pagamento fora do Pitacco. Confirme somente após a aprovação ou recebimento.</p>{coupon?<small>Confirme o pagamento após o cálculo definitivo do cupom.</small>:<label><span><input type="checkbox" checked={received} onChange={e=>setReceived(e.target.checked)}/> Pagamento recebido</span></label>}</>}
  </div>
  <button type="submit" className="mn-pos-submit" disabled={busy||!cart.length||!payment||invalidDiscount||(delivery&&!quote)}><Check size={22}/>{busy?'Registrando…':'Finalizar Pedido'}</button></div></div>
  </div>

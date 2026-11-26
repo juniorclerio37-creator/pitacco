@@ -3053,10 +3053,12 @@ function initOptions(){
   $('fulfillment').add(new Option(label,value));
   $('storeServices').append(el('span',value==='delivery'?'Frete calculado pela área da loja':'Retirada na loja'));
  }
- const labels={dinheiro:'Dinheiro na entrega',cartao_entrega:'Cartão na entrega',pix_manual:'Pix manual — aguardar conferência'};
- for(const method of shop.payment_methods||[]){
+ const labels={dinheiro:'Dinheiro',cartao_credito:'Cartão de crédito',cartao_debito:'Cartão de débito',pix_maquininha:'Pix na maquininha',pix_manual:'Pix manual',voucher_alelo:'Alelo',voucher_pluxee:'Pluxee (Sodexo)',voucher_vr:'VR Benefícios',voucher_ticket:'Ticket',pix_online:'Pix online',cartao_online:'Cartão online'};
+ const enabledMethods=[...new Set((shop.payment_methods||[]).flatMap(v=>v==='cartao_entrega'?['cartao_credito','cartao_debito']:[v]))];
+ for(const method of enabledMethods){
   if(method==='fiado')continue; // Fiado depende da autorização deste telefone.
-  $('payment').add(new Option(labels[method]||method,method));
+  const groupLabel=['pix_online','cartao_online','pix','credito_online','debito_online'].includes(method)?'Pagamento online':method==='pix_manual'?'Transferência Pix':'Pagamento no recebimento';
+  let group=[...$('payment').querySelectorAll('optgroup')].find(g=>g.label===groupLabel);if(!group){group=document.createElement('optgroup');group.label=groupLabel;$('payment').append(group)}group.append(new Option(labels[method]||method,method));
  }
  // A verificação ocorre quando o cliente informa o telefone e altera o carrinho.
  $('fulfillment').onchange=()=>{
@@ -3576,7 +3578,14 @@ function v2PaymentMetadata(method,label){
   pix:['❖','Pix','Pagamento via Pix.'],
   pix_online:['❖','Pix online','Pagamento instantâneo.'],
   dinheiro:['💵','Dinheiro','Pagar na entrega.'],
-  cartao_entrega:['▤','Cartão na entrega','Débito ou crédito na entrega.'],
+  cartao_entrega:['▤','Cartão','Débito ou crédito.'],
+  cartao_credito:['▤','Cartão de crédito','Pague na maquininha no recebimento.'],
+  cartao_debito:['▤','Cartão de débito','Pague na maquininha no recebimento.'],
+  pix_maquininha:['❖','Pix na maquininha','Leia o QR Code da maquininha no recebimento.'],
+  voucher_alelo:['Alelo','Alelo','Vale-refeição na maquininha.'],
+  voucher_pluxee:['Pluxee','Pluxee (Sodexo)','Vale-refeição na maquininha.'],
+  voucher_vr:['VR','VR Benefícios','Vale-refeição na maquininha.'],
+  voucher_ticket:['Ticket','Ticket','Vale-refeição na maquininha.'],
   cartao:['▤','Cartão','Crédito ou débito.'],
   cartao_online:['▤','Cartão online','Pagamento pelo cartão.'],
   credito:['▤','Crédito','Pagamento com cartão de crédito.'],
@@ -3605,7 +3614,8 @@ function v2RenderPaymentCards(){
    $('payment').dispatchEvent(new Event('change',{bubbles:true}));
    v2RenderPaymentCards();renderCart();
   };
-  list.append(b);
+  const groupLabel=option.parentElement?.label||'Outras formas de pagamento';
+  if(list.lastElementChild?.dataset?.paymentGroup!==groupLabel){const heading=el('h4',groupLabel);heading.dataset.paymentGroup=groupLabel;list.append(heading)}b.dataset.paymentGroup=groupLabel;list.append(b);
  }
  $('v2ChangeBlock').hidden=$('payment').value!=='dinheiro';
 }

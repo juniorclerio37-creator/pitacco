@@ -12,9 +12,10 @@ import {ShoppingBag,Truck,Store,Wallet,CreditCard,ScanLine} from 'lucide-react';
 const origin=import.meta.env.VITE_PITACCO_HOMOLOGACAO==='1'
  ? import.meta.env.VITE_PITACCO_HOMOLOG_SITE_ORIGIN || window.location.origin
  : 'https://pitacco.com.br';
-const methods={dinheiro:'Dinheiro',cartao_entrega:'Cartão na entrega',pix_manual:'Pix manual'};
+const methods={dinheiro:'Dinheiro',cartao_credito:'Cartão de crédito',cartao_debito:'Cartão de débito',pix_maquininha:'Pix na maquininha',pix_manual:'Pix manual',voucher_alelo:'Alelo',voucher_pluxee:'Pluxee (Sodexo)',voucher_vr:'VR Benefícios',voucher_ticket:'Ticket'};
+const expandPaymentMethods=values=>[...new Set((values||[]).flatMap(v=>v==='cartao_entrega'?['cartao_credito','cartao_debito']:[v]))];
 const providers={mercado_pago:'Mercado Pago',pagbank:'PagBank (PagSeguro)',infinitepay:'InfinitePay'};
-const menuFields='slug,enabled,delivery_enabled,pickup_enabled,payment_methods,pix_instructions';
+const menuFields='slug,enabled,delivery_enabled,pickup_enabled,payment_methods,pdv_payment_methods,pix_instructions';
 
 export function useStorefrontMenu(client,storeId,userId,manager){
  const canRead=Boolean(client&&storeId&&userId);
@@ -67,16 +68,16 @@ export function StorefrontShare({menu,native}){
 export function StorefrontPayments({client,storeId,resource}){
  const {menu,error,reload,update}=resource;
  const [draft,setDraft]=useState(menu),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[failure,setFailure]=useState('');
- useEffect(()=>setDraft(menu),[menu]);
+ useEffect(()=>setDraft(menu?{...menu,payment_methods:expandPaymentMethods(menu.payment_methods),pdv_payment_methods:expandPaymentMethods(menu.pdv_payment_methods??menu.payment_methods)}:menu),[menu]);
  const change=(name,value)=>setDraft(previous=>({...previous,[name]:value}));
  async function save(event){
   event.preventDefault();
   setBusy(true);setNotice('');setFailure('');
   try{
-   const {error}=await client.rpc('save_public_menu_settings',{
+   const {error}=await client.rpc('pitacco_save_channel_payments',{
     p_store:storeId,p_slug:draft.slug,p_enabled:draft.enabled,p_delivery_enabled:draft.delivery_enabled,
-    p_pickup_enabled:draft.pickup_enabled,p_delivery_fee:0,
-    p_payment_methods:draft.payment_methods,p_pix_instructions:draft.pix_instructions,
+    p_pickup_enabled:draft.pickup_enabled,
+    p_public:draft.payment_methods,p_pdv:draft.pdv_payment_methods,p_pix_instructions:draft.pix_instructions,
    });
    if(error)throw error;
    update(draft);
@@ -98,19 +99,20 @@ export function StorefrontPayments({client,storeId,resource}){
      <label className="modern-switch-row"><Store size={20}/><span>Aceitar retirada</span><input type="checkbox" checked={draft.pickup_enabled} onChange={e=>change('pickup_enabled',e.target.checked)}/></label>
      <p className="storefront-delivery-note">Os valores de frete são definidos exclusivamente em <strong>Administrar Loja → Área de Entrega</strong>, não nas formas de pagamento.</p>
     </fieldset>
-    <fieldset disabled={busy}>
-     <legend>Formas aceitas no checkout</legend>
-     {Object.entries(methods).map(([method,label])=><label key={method} className="modern-switch-row">{method==='dinheiro'?<Wallet size={20}/>:method==='cartao_entrega'?<CreditCard size={20}/>:<ScanLine size={20}/>}<span>{label}</span>
-      <input type="checkbox" checked={draft.payment_methods.includes(method)} onChange={e=>change('payment_methods',
-       e.target.checked?[...draft.payment_methods,method]:draft.payment_methods.filter(value=>value!==method))}/>
-     </label>)}
-     {draft.payment_methods.includes('pix_manual')&&<label>Instruções do Pix manual
-      <textarea required minLength={3} maxLength={1000} value={draft.pix_instructions} onChange={e=>change('pix_instructions',e.target.value)}/>
-     </label>}
+    <fieldset disabled={busy}><legend>Cardápio digital — pagamento presencial</legend>
+     {Object.entries(methods).filter(([method])=>!method.startsWith('voucher_')&&method!=='pix_manual').map(([method,label])=><label key={method} className="modern-switch-row"><CreditCard size={20}/><span>{label}</span><input type="checkbox" checked={draft.payment_methods.includes(method)} onChange={e=>change('payment_methods',e.target.checked?[...draft.payment_methods,method]:draft.payment_methods.filter(v=>v!==method))}/></label>)}
+     <label className="modern-switch-row"><ScanLine size={20}/><span>Pix manual (transferência)</span><input type="checkbox" checked={draft.payment_methods.includes('pix_manual')} onChange={e=>change('payment_methods',e.target.checked?[...draft.payment_methods,'pix_manual']:draft.payment_methods.filter(v=>v!=='pix_manual'))}/></label>
     </fieldset>
+    <fieldset disabled={busy}><legend>Balcão e PDV</legend>
+     {Object.entries(methods).filter(([method])=>!method.startsWith('voucher_')).map(([method,label])=><label key={method} className="modern-switch-row"><CreditCard size={20}/><span>{label}</span><input type="checkbox" checked={draft.pdv_payment_methods.includes(method)} onChange={e=>change('pdv_payment_methods',e.target.checked?[...draft.pdv_payment_methods,method]:draft.pdv_payment_methods.filter(v=>v!==method))}/></label>)}
+    </fieldset>
+    <fieldset disabled={busy}><legend>Vale-refeição — somente na maquininha</legend><p>Habilite apenas as bandeiras aceitas pela sua maquininha. O Pitacco não processa esses pagamentos.</p>
+     {Object.entries(methods).filter(([method])=>method.startsWith('voucher_')).map(([method,label])=><div key={method}><strong>{label}</strong>{[['payment_methods','Cardápio digital'],['pdv_payment_methods','Balcão']].map(([field,channel])=><label key={field} className="modern-switch-row"><span>{channel}</span><input aria-label={label+' — '+channel} type="checkbox" checked={draft[field].includes(method)} onChange={e=>change(field,e.target.checked?[...draft[field],method]:draft[field].filter(v=>v!==method))}/></label>)}</div>)}
+    </fieldset>
+    {(draft.payment_methods.includes('pix_manual')||draft.pdv_payment_methods.includes('pix_manual'))&&<label>Instruções do Pix manual<textarea required minLength={3} maxLength={1000} value={draft.pix_instructions} onChange={e=>change('pix_instructions',e.target.value)}/></label>}
     {failure&&<p role="alert">{failure}</p>}
     {notice&&<p role="status">{notice}</p>}
-    <button className="modern-primary" disabled={busy||!draft.payment_methods.length||(!draft.delivery_enabled&&!draft.pickup_enabled)}>
+    <button className="modern-primary" disabled={busy||!draft.payment_methods.length||!draft.pdv_payment_methods.length||(!draft.delivery_enabled&&!draft.pickup_enabled)}>
      {busy?'Salvando…':'Salvar cardápio e pagamentos'}
     </button>
    </form>}

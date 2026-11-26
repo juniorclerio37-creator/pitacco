@@ -12,7 +12,7 @@ const amount=value=>{
  return Number.isFinite(number)&&number>=0?number:null;
 };
 const paymentNames={dinheiro:'Dinheiro',cash:'Dinheiro',pix:'Pix',pix_manual:'Pix manual',
- cartao:'Cartão',cartao_credito:'Cartão de crédito',cartao_debito:'Cartão de débito',
+ cartao:'Cartão',cartao_credito:'Cartão de crédito',cartao_debito:'Cartão de débito',pix_maquininha:'Pix na maquininha',voucher_alelo:'Vale-refeição — Alelo',voucher_pluxee:'Vale-refeição — Pluxee',voucher_vr:'Vale-refeição — VR',voucher_ticket:'Vale-refeição — Ticket',
  credit_card:'Cartão de crédito',debit_card:'Cartão de débito',online:'Online'};
 
 export default function OrderDetails({order,delivery,number,stage,stageLabel,platform,origin,localizer,items,
@@ -43,7 +43,7 @@ export default function OrderDetails({order,delivery,number,stage,stageLabel,pla
  const pickup=(delivery?.logistics_provider??receipt.logistics)==='retirada';
  const collect=receipt.payment_on_delivery!==false&&receipt.collect_on_delivery!==false&&
   (receipt.payment_on_delivery===true||receipt.collect_on_delivery===true||/entrega|delivery|offline|on.arrival/i.test(timing)||
-   (/dinheiro|cash|na entrega/i.test(method)&&!/online|prepaid|pré.pago/i.test(timing)));
+   (/dinheiro|cash|na entrega|cartao_credito|cartao_debito|pix_maquininha|voucher_/i.test(method)&&!/online|prepaid|pré.pago/i.test(timing)));
  const due=amount(receipt.amount_to_collect??receipt.amount_due??order.gross);
  const changeFor=amount(receipt.change_for??receipt.cash_given??receipt.troco_para);
  const showCollection=!pickup&&(historyMode||!paid)&&collect&&due!==null;
