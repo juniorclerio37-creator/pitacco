@@ -95,6 +95,16 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
   if(!result.ok)throw Object.assign(Error('database-'+result.status),{status:result.status});
   return result.status===204?null:result.json();
  }
+ // Webhook enqueue and presence reads are idempotent. Bound both attempts below the provider's 5s deadline.
+ async function webhookRpc(name,body){
+  const started=Date.now();
+  try{return await rpc(name,body,1800)}catch(error){
+   if(error?.status&&error.status<500&&error.status!==429&&error.status!==408)throw error;
+   const remaining=4000-(Date.now()-started);if(remaining<300)throw error;
+   logger.warn('iFood webhook database retry',name,safeProviderError(error));
+   return rpc(name,body,Math.min(2200,remaining));
+  }
+ }
  const distributed=createDistributedIfood({id:distributedId,secret:distributedSecret,tokenKey,supabaseUrl,publicKey,rpc,fetcher,logger});
  async function enqueue(event,viaPolling=false,production=false){
   const code=event.fullCode??codes.get(event.code);
@@ -110,8 +120,8 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    if(viaPolling)return false;
    throw Error('invalid-event');
   }
-  if(isolated&&!viaPolling)return rpc('pitacco_ifood_central_enqueue',{p_id:event.id,p_merchant:event.merchantId,p_order:event.orderId,p_code:code,p_at:at,p_production:production});
-  return rpc('pitacco_ifood_enqueue',{p_id:event.id,p_merchant:event.merchantId,p_order:event.orderId,p_code:code,p_at:at,p_distributed:viaPolling});
+  if(isolated&&!viaPolling)return webhookRpc('pitacco_ifood_central_enqueue',{p_id:event.id,p_merchant:event.merchantId,p_order:event.orderId,p_code:code,p_at:at,p_production:production});
+  return (viaPolling?rpc:webhookRpc)('pitacco_ifood_enqueue',{p_id:event.id,p_merchant:event.merchantId,p_order:event.orderId,p_code:code,p_at:at,p_distributed:viaPolling});
  }
  async function token(){
   if(cachedToken&&Date.now()<expires)return cachedToken;
@@ -351,7 +361,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
     });
     const unavailable=response.ok||[401,403,429].includes(response.status)||response.status>=500;
     return reply(unavailable?503:409,{
-     error:unavailable?'Não foi possível confirmar a entrega com o iFood. Tente novamente.':
+     error:[401,403].includes(response.status)?'O iFood recusou a autorização da integração para validar a entrega. Confira no Gestor de Pedidos.':unavailable?'Não foi possível confirmar a entrega com o iFood. Tente novamente.':
       'O iFood ainda não confirmou a entrega. Confira o status do pedido na plataforma.',
      provider_state:'not_confirmed',
     });
@@ -410,7 +420,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    if(event.fullCode==='KEEPALIVE'||event.code==='KEEPALIVE'){
     if(event.merchantIds===undefined)return reply(202,{});
     if(!Array.isArray(event.merchantIds)||event.merchantIds.length>1000||event.merchantIds.some(id=>typeof id!=='string'||!uuid.test(id)))return reply(400,{error:'Lojas inválidas'});
-    const merchantIds=isolated?await rpc('pitacco_ifood_central_online',{p_merchants:event.merchantIds,p_production:production}):await rpc('pitacco_ifood_online',{p_merchants:event.merchantIds});
+    const merchantIds=isolated?await webhookRpc('pitacco_ifood_central_online',{p_merchants:event.merchantIds,p_production:production}):await webhookRpc('pitacco_ifood_online',{p_merchants:event.merchantIds});
     return reply(202,{merchantIds});
    }
    if(!production&&shipping&&await shipping.receive(event))return reply(202,{});
