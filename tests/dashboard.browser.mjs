@@ -1266,7 +1266,10 @@ try {
       await ownCard.getByText('Entrega própria',{exact:true}).waitFor();
       await ownCard.getByRole('img',{name:'Plataforma 99Food'}).waitFor();
       await ownCard.getByText('2 × Açaí de teste',{exact:true}).waitFor();
-      await ownCard.getByText('Rua de Teste, 23 · Centro',{exact:true}).waitFor();
+      await ownCard.locator('.pedidos-card-select').click();
+      const ownDetails=page.getByRole('dialog',{name:'Pedido #LOJA-23'});
+      await ownDetails.getByText('Rua de Teste, 23 · Centro',{exact:true}).waitFor();
+      await ownDetails.getByRole('button',{name:'Fechar detalhes do pedido'}).click();
       await page.evaluate(()=>{
         window.__browserComandas=[];
         window.__browserPrints=0;
