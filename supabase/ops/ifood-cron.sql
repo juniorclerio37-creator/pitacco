@@ -12,6 +12,7 @@ select cron.schedule('pitacco-ifood-orders', '30 seconds', $cron$
           where e.merchant_id=m.merchant_id and e.done_at is null and e.attempts<10 and e.run_at<=now()))
     )
     or exists (select 1 from pitacco_private.ifood_auto_candidates())
+    or exists (select 1 from pitacco_private.ifood_ready_candidates())
     returning queue_key
   )
   select net.http_post(
