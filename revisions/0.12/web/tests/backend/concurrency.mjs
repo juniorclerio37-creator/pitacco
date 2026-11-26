@@ -4,13 +4,19 @@ const manager='10000000-0000-0000-0000-000000000001',courier='30000000-0000-0000
 await admin.query(`insert into auth.users(id,email) values('${manager}','manager@example.invalid'),('10000000-0000-0000-0000-000000000002','courier@example.invalid');insert into public.stores(id,name,max_orders_per_trip) values('20000000-0000-0000-0000-000000000001','Concurrency',1);insert into public.store_members values('20000000-0000-0000-0000-000000000001','${manager}','gestor');insert into public.couriers(id,user_id,name,fleet_type,store_id) values('${courier}','10000000-0000-0000-0000-000000000002','Courier','propria','20000000-0000-0000-0000-000000000001');insert into public.deliveries(id,store_id,customer_name,address) values('40000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','A','Example'),('40000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','B','Example');`);
 const clients=await Promise.all([0,1].map(async()=>{const c=new Client({connectionString:process.env.DATABASE_URL});await c.connect();await c.query(`set role authenticated;select set_config('request.jwt.claim.sub','${manager}',false)`);return c}));
 try{
- const results=await Promise.allSettled(clients.map((c,i)=>c.query('select public.assign_order_courier($1,$2,true)',[`40000000-0000-0000-0000-00000000000${i+1}`,courier])));
- assert.equal(results.filter(r=>r.status==='fulfilled').length,1,'Only one concurrent assignment fits capacity');
+ // Without explicit confirmation, one concurrent assignment may open a route;
+ // the second must not silently override the automatic target or existing route.
+ const results=await Promise.allSettled(clients.map((c,i)=>c.query('select public.assign_order_courier($1,$2,false)',[`40000000-0000-0000-0000-00000000000${i+1}`,courier])));
+ assert.equal(results.filter(r=>r.status==='fulfilled').length,1,'Unconfirmed concurrent assignment must not join an existing route');
  assert.equal(results.filter(r=>r.status==='rejected').length,1);
- const rows=await admin.query('select id,batch_id from public.deliveries where courier_id=$1',[courier]);assert.equal(rows.rowCount,1);
- await Promise.all(clients.map(c=>c.query('select public.assign_order_courier($1,$2,true)',[rows.rows[0].id,courier])));
- assert.equal((await admin.query("select count(*)::int n from public.operation_audit where action='route_manual_assigned'")).rows[0].n,1,'Concurrent retries do not duplicate audit or assignment');
- console.log('PASS PostgreSQL simultaneous capacity race and idempotent double assignment');
+ const initial=await admin.query('select id,batch_id from public.deliveries where courier_id=$1',[courier]);assert.equal(initial.rowCount,1);
+ const other=await admin.query('select id from public.deliveries where courier_id is null and store_id=$1',['20000000-0000-0000-0000-000000000001']);assert.equal(other.rowCount,1);
+ const confirmed=await Promise.all(clients.map(c=>c.query('select public.assign_order_courier($1,$2,true)',[other.rows[0].id,courier])));
+ assert.ok(confirmed.every(r=>r.rows[0].assign_order_courier===initial.rows[0].batch_id),'Both retries resolve the existing route');
+ const rows=await admin.query('select id,batch_id from public.deliveries where courier_id=$1',[courier]);assert.equal(rows.rowCount,2);assert.equal(new Set(rows.rows.map(r=>r.batch_id)).size,1);
+ await Promise.all(clients.map(c=>c.query('select public.assign_order_courier($1,$2,true)',[initial.rows[0].id,courier])));
+ assert.equal((await admin.query("select count(*)::int n from public.operation_audit where action='route_manual_assigned'")).rows[0].n,2,'Concurrent retries do not duplicate audit or assignment');
+ console.log('PASS PostgreSQL simultaneous manual confirmation, explicit capacity override and idempotent assignment');
 }finally{await Promise.all(clients.map(c=>c.end()));await admin.end()}
 
 // A mesma carteira não pode gastar os mesmos pontos em dois checkouts simultâneos.
