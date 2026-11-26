@@ -1,6 +1,8 @@
 name: Pitacco Control Center — validar e publicar
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
     paths:
@@ -124,7 +126,7 @@ jobs:
   publish:
     name: Construir e publicar admin.pitacco.com.br
     needs: [preflight, validate]
-    if: needs.preflight.outputs.ready == 'true'
+    if: github.event_name != 'pull_request' && needs.preflight.outputs.ready == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
