@@ -400,7 +400,7 @@ try {
     await page.locator('#routeQuoteStatus').filter({hasText:'A loja precisa revisar'}).waitFor();
     assert.equal(await page.locator('#routeQuoteStatus').getAttribute('role'),'alert');
     await page.getByRole('button',{name:'Usar minha localização'}).click();
-    await page.getByText('Localização confirmada. A taxa será atualizada automaticamente.').waitFor();
+    await page.getByText('Localização confirmada. A taxa será atualizada automaticamente e o endereço poderá ser reutilizado após a entrega.').waitFor();
     await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
     await pricingChecked;
     assert.match(await page.locator('#total').innerText(),/74,00/);
