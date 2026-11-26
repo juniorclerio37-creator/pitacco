@@ -31,6 +31,8 @@ on:
       - 'revisions/0.12/web/IntelligenceRepairs.jsx'
       - 'revisions/0.12/web/RecoveryPreflight.jsx'
       - 'cloudflare/admin-ai-worker.mjs'
+      - 'cloudflare/sales-coach.mjs'
+      - 'revisions/0.12/web/BusinessInsights.jsx'
       - 'wrangler.admin.jsonc'
       - 'revisions/0.12/web/super-admin.css'
       - 'scripts/build-admin-cloudflare.sh'
