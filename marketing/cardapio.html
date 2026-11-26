@@ -1863,7 +1863,7 @@ async function warmMenuStartupImages(){
  const shop=menu.store;
  const featured=v2TopSellerIds.map(id=>menu.products.find(p=>p.id===id)).filter(Boolean);
  const urls=[
-  studioAsset(shop.appearance?.logo_path)||shop.logo_url||studioAsset(shop.profile_logo_path),
+  studioAsset(shop.profile_logo_path)||studioAsset(shop.appearance?.logo_path)||shop.logo_url,
   studioAsset(shop.appearance?.cover_path)||shop.banner_url,
   ...[...featured,...menu.products].slice(0,2).map(p=>p.image_url)
  ].filter(imageUrl);
@@ -3042,7 +3042,7 @@ function initOptions(){
   document.documentElement.style.setProperty('--brand',displayPrimary);
   document.documentElement.style.setProperty('--on-brand',luminance>.179?'#000':'#fff');
  }
- for(const [image,value] of [['storeLogo',shop.logo_url||studioAsset(shop.profile_logo_path)],['storeBanner',shop.banner_url]]){
+ for(const [image,value] of [['storeLogo',studioAsset(shop.profile_logo_path)||shop.logo_url],['storeBanner',shop.banner_url]]){
   if(!imageUrl(value))continue;
   const node=$(image);
   node.addEventListener('load',()=>{node.hidden=false;if(image==='storeLogo')$('storeInitial').hidden=true},{once:true});
@@ -3801,7 +3801,7 @@ function studioPreviewApply(){
   cartStoragePaused=true;
   setMenuTemplate(menu.store);applyStudioDesign(menu.store);
   const logo=studioPreviewImage(studioPreviewFiles.logo)||
-   studioAsset(d.logo_path)||menu.store.logo_url||studioAsset(menu.store.profile_logo_path);
+   studioAsset(menu.store.profile_logo_path)||studioAsset(d.logo_path)||menu.store.logo_url;
   studioPreviewSetImage('storeLogo',logo);
   $('storeInitial').hidden=Boolean(logo);
   const visibleCover=studioPreviewImage(studioPreviewFiles.cover)||

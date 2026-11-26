@@ -488,7 +488,7 @@ try {
       assert.equal(mapUrl.searchParams.get('mlon'),'-43.453');
       assert.equal(await map.getAttribute('rel'),'noopener noreferrer');
       await page.clock.fastForward(15001);
-      await page.getByText(/rota com outras paradas/).waitFor();
+      await page.locator('#routeTitle').filter({hasText:'O entregador está realizando uma rota com outras entregas'}).waitFor();
       assert.equal(await map.isVisible(),false);
       assert.equal(await inlineMap.isVisible(),false);
     }

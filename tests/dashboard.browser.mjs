@@ -937,6 +937,8 @@ try {
     await menuLink.waitFor();
     const registration=page.getByRole('region',{name:'Dados e identidade da loja'});
     await registration.getByLabel('WhatsApp para clientes').waitFor();
+    await registration.getByLabel('Enviar ou alterar logotipo da loja').waitFor();
+    assert.equal(await registration.getByLabel('Enviar ou alterar logotipo da loja').isEnabled(),true,'O gestor altera a marca nos Dados da loja');
     assert.equal(await registration.getByLabel('WhatsApp para clientes').inputValue(),'21900000002');
     assert.equal(await registration.getByLabel('Telefone administrativo').inputValue(),'21900000001');
     await registration.getByRole('radio',{name:'Pessoa Jurídica (CNPJ)'}).check();
@@ -990,6 +992,7 @@ try {
       await merchantNavigate('Cardápio','Aparência do cardápio');
       const studio=page.getByRole('region',{name:'Estúdio de Cardápio Pitacco'});
       await studio.getByRole('heading',{name:'Estúdio de Cardápio'}).waitFor();
+      assert.equal(await studio.getByLabel(/logotipo/i).count(),0,'A aparência não oferece upload de logotipo');
       // The preview is not a sidebar; its geometry must follow the actual
       // available workspace, including desktop-mode browsers on phones.
       const preview=studio.getByRole('complementary',{name:'Prévia do cardápio em tempo real'});
