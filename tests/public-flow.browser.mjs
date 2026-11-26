@@ -62,6 +62,7 @@ try {
     await page.context().grantPermissions(['geolocation']);
     await page.context().setGeolocation({latitude:-22.71,longitude:-43.4});
     let identityName='Loja de teste';
+    let catalogCalls=0;
     let publicBlocked=template==='pitacco-v2'&&width===375;
     let rejectPriorityOnce=false,streetReferenceOnce=false;
     const openingFixture=()=>publicBlocked?{open:false,reason:'paused',paused:true,next_open_at:null,scheduling_available:false}:{open:true,reason:'open',next_open_at:null,timezone:'America/Sao_Paulo',scheduling_available:Boolean(scheduled),paused:false};
@@ -101,7 +102,10 @@ try {
       }
       if (routeOrigin !== origin || !pathname.startsWith('/fixture/')) return route.abort();
 
+      if(pathname.endsWith('/pitacco_public_menu_identity'))return route.fulfill({json:{name:identityName,primary_color:'#217c5a'}});
       if (pathname.endsWith('/get_public_menu')) {
+        catalogCalls++;
+        if(template==='pitacco-v2'&&width===375&&catalogCalls===1)return route.fulfill({status:503,json:{code:'57014',message:'canceling statement due to statement timeout'}});
         assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
         return route.fulfill({ json: {
           store: { appearance:{template,primary:'#217c5a'}, primary_color:'#e04020', name: identityName, delivery_enabled: true, pickup_enabled: true,

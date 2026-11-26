@@ -1154,7 +1154,9 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
 .menu-startup__indicator{width:42px;height:42px;border:4px solid #e7d9eb;border-top-color:#8e169e;border-radius:50%;animation:menu-startup-spin .8s linear infinite}
 .menu-startup__content strong{font-size:1.15rem;letter-spacing:-.02em}
 .menu-startup__content p{margin:0;color:var(--muted);font-size:.88rem}
-.menu-startup__skeleton{width:100%;height:118px;border-radius:20px;background:linear-gradient(115deg,#ede7ef,#f5f0f6,#ede7ef);background-size:200% 100%;animation:menu-startup-shimmer 1.7s ease-in-out infinite}
+.menu-startup__logo{width:132px;height:132px;border-radius:50%;object-fit:contain;background:white;padding:8px;border:2px solid var(--brand);box-shadow:0 8px 30px #0001}
+.menu-startup__retry{border:0;border-radius:999px;background:var(--brand);color:var(--on-brand,#fff);padding:12px 22px;font-weight:750}
+.menu-startup[data-error=true] .menu-startup__indicator{display:none}
 @keyframes menu-startup-spin{to{transform:rotate(360deg)}}
 @keyframes menu-startup-shimmer{to{background-position:-200% 0}}
 @media(prefers-reduced-motion:reduce){.menu-startup__indicator,.menu-startup__skeleton{animation:none}}
@@ -1280,13 +1282,20 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
 
 </style><style>.schedule-store-action{flex-basis:100%;padding:12px;border:0;border-radius:9px;background:var(--brand,#df5a20);color:#fff;font-weight:800}.schedule-choices{display:grid;gap:9px;margin-top:9px;padding:12px;background:var(--paper,#fff);border:1px solid #dedede;border-radius:10px}.schedule-times{display:flex;gap:7px;flex-wrap:wrap}.schedule-time{border:1px solid #d3d3d3;border-radius:8px;padding:9px 14px;background:var(--paper,#fff);color:var(--ink,#24211e)}.schedule-time[aria-pressed="true"]{background:var(--brand,#df5a20);color:white;border-color:var(--brand,#df5a20)}</style></head><body>
 <section id="menuStartup" class="menu-startup" role="status" aria-label="Carregando o cardápio">
- <div class="menu-startup__content"><span class="menu-startup__indicator" aria-hidden="true"></span>
-  <strong>Preparando seu cardápio</strong><p>Organizando os produtos e benefícios da loja…</p>
-  <span class="menu-startup__skeleton" aria-hidden="true"></span>
+ <div class="menu-startup__content"><img id="menuStartupLogo" class="menu-startup__logo" alt="" hidden><strong id="menuStartupName">Preparando seu cardápio</strong>
+  <p id="menuStartupMessage">Estamos preparando tudo para você escolher seus favoritos.</p><span class="menu-startup__indicator" aria-hidden="true"></span>
+  <button id="menuStartupRetry" type="button" class="menu-startup__retry" hidden>Tentar novamente</button>
  </div>
 </section>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
+ <section id="customerSessionBar" class="shell" aria-label="Minha conta" hidden>
+  <strong id="customerSessionGreeting"></strong>
+  <div id="customerSessionActions">
+   <button type="button" id="customerSessionOrders" class="secondary" aria-expanded="false" aria-controls="customerSessionHistory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>Meus pedidos</button>
+   <button type="button" id="customerSessionLogout" class="secondary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H5v16h5M13 8l4 4-4 4m-5-4h12"/></svg>Sair da conta</button>
+  </div>
+ </section>
  <div class="shell hero-content"><div class="identity"><div class="store-mark" aria-hidden="true"><span id="storeInitial">🍧</span><img id="storeLogo" alt="" hidden></div>
  <div><h1 id="storeName"></h1><p id="storeSlogan">Cardápio digital</p></div></div><div id="storeServices" class="services"></div></div>
  <div class="shell v2-hero-info"><span id="v2OpenPill" class="v2-open-pill">Consultando</span><span id="v2DeliveryText" class="v2-delivery-text"></span>
@@ -1327,6 +1336,16 @@ body[data-menu-template=classic] #hero:has(#storeSocialLinks:not([hidden])) .her
  body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#storeBanner:not([hidden])) .hero-content{flex-direction:row;justify-content:center}
 }
 
+/* The optional merchant framing is relative to the individual template's base size. */
+#hero .store-mark{--logo-frame-base:clamp(94px,10vw,124px);--logo-frame-max:42vw}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .store-mark{--logo-frame-base:clamp(146px,17vw,190px);--logo-frame-max:62vw}
+body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] #hero .store-mark{--logo-frame-base:clamp(80px,9vw,108px)}
+body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #hero .store-mark{--logo-frame-base:clamp(76px,8vw,106px)}
+@media(max-width:600px){
+ #hero .store-mark{--logo-frame-base:88px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .store-mark{--logo-frame-base:150px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #hero .store-mark{--logo-frame-base:76px}
+}
 /* Approved V2 hero: original shop artwork in a centered medallion.
    Other skins keep their individual composition and typography. */
 body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero{
@@ -1344,7 +1363,7 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .identity{
 body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .identity>div:last-child{width:100%;max-width:750px}
 body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .store-mark{
  width:clamp(146px,17vw,190px);height:clamp(146px,17vw,190px);border-radius:50%;
- padding:clamp(17px,2.3vw,24px);border:3px solid hsl(var(--template-accent-hue,45.28) 90% 65%);
+ padding:clamp(7px,1vw,10px);border:3px solid hsl(var(--template-accent-hue,45.28) 90% 65%);
  background:color-mix(in srgb,var(--hero) 80%,var(--brand));
  color:#fff;box-shadow:0 0 0 4px #ffffff24,0 8px 25px #16001d50,0 0 28px #ffffff24;
 }
@@ -1387,7 +1406,7 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#store
 }
 @media(max-width:600px){
  body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .identity{gap:12px}
- body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .store-mark{width:150px;height:150px;padding:16px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .store-mark{width:150px;height:150px;padding:7px}
  body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .v2-hero-info{gap:5px 9px;padding:7px 10px;margin-top:14px}
  body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .v2-hero-location{flex-basis:100%}
 }
@@ -1402,20 +1421,28 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#store
 </nav>
 
 <style>
-#customerSessionBar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;margin-block:12px;background:var(--paper,#fff);color:var(--ink,#24202b);border:1px solid color-mix(in srgb,var(--brand,#801095) 22%,transparent);border-radius:16px}
+/* Account actions are part of the hero, never a separate greeting card. */
+#hero #customerSessionBar{position:relative;z-index:5;display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin:0 auto 12px;padding:0;min-width:0;color:inherit}
+#hero:has(#storeSocialLinks:not([hidden])) #customerSessionBar{padding-right:90px}
 #customerSessionBar[hidden],#customerSessionChange[hidden],#customerSessionHistory[hidden]{display:none!important}
-#customerSessionBar strong,#customerSessionBar small{display:block;overflow-wrap:anywhere}
-#customerSessionActions,.customer-order-actions{display:flex;gap:8px;flex-wrap:wrap}
-#customerSessionHistory{width:100%;min-width:0;display:grid;gap:12px}
+#customerSessionGreeting{font-size:.85rem;line-height:1.2;max-width:100%;overflow-wrap:anywhere;text-shadow:0 1px 3px #0004}
+#customerSessionActions,.customer-order-actions{display:flex;gap:6px;flex-wrap:wrap;max-width:100%}
+#hero #customerSessionActions button{display:inline-flex;align-items:center;gap:5px;justify-content:center;min-height:36px;padding:6px 10px;border-radius:999px;background:#20162d80;color:#fff;border:1px solid #ffffff66;font-size:.76rem;font-weight:720;white-space:nowrap;max-width:100%;backdrop-filter:blur(5px)}
+#customerSessionActions svg{width:16px;height:16px;flex:none}
+body[data-menu-skin=essencial] #hero #customerSessionActions button{background:var(--paper,#fff);color:var(--ink,#173a2d);border-color:var(--line,#dfebe3)}
+body[data-menu-skin=essencial] #customerSessionGreeting{color:var(--ink,#173a2d);text-shadow:none}
+body[data-menu-template="pitacco-v2"]:not([data-menu-skin=editorial]) #hero:has(#customerSessionBar:not([hidden])) .hero-content{padding-top:0}
+body[data-menu-template=classic] #hero:has(#customerSessionBar:not([hidden])) .hero-content{padding-top:0}
+#customerSessionHistory{min-width:0;display:grid;gap:12px;margin-block:14px;padding:16px;background:var(--paper,#fff);color:var(--ink,#24202b);border:1px solid var(--line,#ddd);border-radius:16px;scroll-margin-top:16px}
+#customerSessionHistory h3,#customerSessionHistory>p{margin:0}
 .customer-order-card{padding:14px;border:1px solid #ddd;border-radius:12px;display:grid;gap:8px;overflow-wrap:anywhere}
 .customer-order-card p{margin:0}.customer-order-card a{color:var(--brand,#801095);font-weight:700}
-#customerSessionBar button{max-width:100%;white-space:normal}
+@media(max-width:600px){
+ #hero:has(#storeSocialLinks:not([hidden])) #customerSessionBar{padding-right:78px}
+ #hero #customerSessionActions button{padding:6px 8px;font-size:.74rem}
+}
 </style>
-<section id="customerSessionBar" class="shell" aria-label="Minha conta neste aparelho" hidden>
- <div><strong id="customerSessionGreeting"></strong><small>Cadastro lembrado neste aparelho</small></div>
- <div id="customerSessionActions"><button type="button" id="customerSessionOrders" class="secondary" aria-expanded="false">Meus pedidos</button><button type="button" id="customerSessionLogout" class="secondary">Sair da conta</button></div>
- <div id="customerSessionHistory" aria-live="polite" hidden></div>
-</section>
+<section id="customerSessionHistory" class="shell" aria-label="Histórico de pedidos" aria-live="polite" hidden></section>
 <section id="storeOpenStatus" class="shell store-open-status" role="status" aria-live="polite" hidden></section>
 <section id="pitaccoPromos" class="shell pitacco-promos" aria-label="Destaques da loja" hidden></section>
 <main class="shell catalog"><section id="cartDraftNotice" class="cart-draft-notice" role="status" hidden><p id="cartDraftText"></p><button type="button" id="checkPendingCart" class="secondary" hidden>Conferir envio anterior</button><a id="recoveredOrderLink" hidden>Acompanhar pedido confirmado</a></section>
@@ -1585,18 +1612,15 @@ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #pagbankPrevie
 </style>
 <dialog id="pagbankPreviewDialog"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 id="pagbankPreviewTitle">Pagamento via Pix</h2><button id="pagbankPreviewClose" type="button" class="secondary" aria-label="Fechar pagamento">Fechar</button></div><div id="pagbankPreviewBody"></div></dialog>
 <script>
-/* A inicialização é um módulo externo; se a rede bloquear seu carregamento,
-   mostrar uma falha clara, em vez de manter o cliente preso no skeleton. */
+/* Keep a readable recovery screen even if the external module cannot load. */
+document.getElementById('menuStartupRetry').onclick=()=>location.reload();
 setTimeout(()=>{
  const loading=document.getElementById('menuStartup');
- if(!loading||loading.hidden)return;
- loading.hidden=true;
- const message=document.getElementById('msg');
- if(message){
-  message.hidden=false;
-  message.textContent='O cardápio demorou para carregar. Verifique a conexão e atualize a página para tentar novamente.';
- }
-},12000);
+ if(!loading||loading.hidden||loading.dataset.error==='true')return;
+ loading.dataset.error='true';
+ document.getElementById('menuStartupMessage').textContent='Está demorando um pouco mais que o normal. Tente novamente.';
+ document.getElementById('menuStartupRetry').hidden=false;
+},25000);
 </script>
 <script type="module">
 import{createClient}from'https://esm.sh/@supabase/supabase-js@2';
@@ -2812,8 +2836,27 @@ const studioAsset=path=>{
  if(typeof path!=='string'||!/^stores\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(png|jpg|webp)$/.test(path))return '';
  return client.storage.from('pitacco-media').getPublicUrl(path).data.publicUrl;
 };
+function applyLogoFrame(frame){
+ const mark=$('storeLogo').parentElement,img=$('storeLogo');
+ for(const prop of ['width','height','padding','border-radius'])mark.style.removeProperty(prop);
+ for(const prop of ['object-fit','transform','transform-origin'])img.style.removeProperty(prop);
+ if(!frame||typeof frame!=='object')return;
+ const bounded=(v,min,max,fallback)=>typeof v==='number'&&Number.isFinite(v)?Math.min(max,Math.max(min,v)):fallback;
+ const size=bounded(frame.size,80,140,100)/100,zoom=bounded(frame.zoom,100,250,100)/100;
+ const x=bounded(frame.x,-50,50,0),y=bounded(frame.y,-50,50,0),padding=bounded(frame.padding,0,20,5);
+ mark.style.width='min(calc(var(--logo-frame-base, 100px) * '+size+'),var(--logo-frame-max, 42vw))';
+ mark.style.height=mark.style.width;
+ // Percentage padding on a flex child would resolve against the parent; use the frame's computed size.
+ mark.style.padding='min(calc(var(--logo-frame-base, 100px) * '+(size*padding/100)+'),calc(var(--logo-frame-max, 42vw) * '+(padding/100)+'))';
+ if(frame.shape==='circle')mark.style.borderRadius='50%';
+ else if(frame.shape==='rounded')mark.style.borderRadius='24%';
+ img.style.objectFit=frame.fit==='cover'?'cover':'contain';
+ img.style.transformOrigin='center';
+ img.style.transform='translate('+x+'%,'+y+'%) scale('+zoom+')';
+}
 function applyStudioDesign(shop){
  const d=shop.appearance;
+ applyLogoFrame(d?.logo_frame);
  if(!d||typeof d!=='object')return;
  const root=document.documentElement;
  const palette={primary:'--brand',secondary:'--muted',background:'--surface',paper:'--paper',foreground:'--ink',hero:'--hero',highlight:'--highlight'};
@@ -3360,20 +3403,53 @@ function renderPublicStoreIdentity(){
   }
  }else{logo.removeAttribute('src');logo.hidden=true;$('storeInitial').hidden=false;}
 }
+const menuBrandCacheKey='pitacco-public-brand:'+slug;
+function displayStartupBrand(shop){
+ if(!shop||typeof shop.name!=='string'||!shop.name.trim())return;
+ $('menuStartupName').textContent=shop.name.slice(0,120);
+ const url=studioAsset(shop.profile_logo_path)||shop.logo_url;
+ const img=$('menuStartupLogo');
+ if(imageUrl(url)){img.onload=()=>{img.hidden=false};img.onerror=()=>{img.hidden=true};if(img.getAttribute('src')!==url){img.hidden=true;img.src=url;}}
+ else{img.hidden=true;img.removeAttribute('src');}
+ if(/^#[a-f0-9]{6}$/i.test(shop.primary_color||''))$('menuStartup').style.setProperty('--brand',shop.primary_color);
+}
+function rememberStartupBrand(shop){
+ const brand=Object.fromEntries(['name','profile_logo_path','logo_url','primary_color'].map(key=>[key,shop[key]]));
+ displayStartupBrand(brand);
+ try{localStorage.setItem(menuBrandCacheKey,JSON.stringify({at:Date.now(),brand}))}catch{}
+}
+async function loadStartupBrand(){
+ try{const saved=JSON.parse(localStorage.getItem(menuBrandCacheKey)||'null');if(saved&&Date.now()-saved.at<86400000)displayStartupBrand(saved.brand)}catch{}
+ try{const {data,error}=await client.rpc('pitacco_public_menu_identity',{p_slug:slug});if(!error&&data?.name&&!menu)rememberStartupBrand(data)}catch{}
+}
 let identityRefreshRunning=false;
 async function refreshPublicStoreIdentity(){
  if(!menu||identityRefreshRunning||studioPreviewActive||pagbankPreviewMode||document.visibilityState!=='visible')return;
  identityRefreshRunning=true;
  try{
-  const {data,error}=await client.rpc('get_public_menu',{p_slug:slug});
-  if(error||!data?.store||typeof data.store.name!=='string')return;
-  // Preserve cart, price rules and checkout fields. The server validates each sale.
-  for(const key of ['name','whatsapp','instagram_url','facebook_url','profile_logo_path','logo_url'])menu.store[key]=data.store[key];
+  const {data,error}=await client.rpc('pitacco_public_menu_identity',{p_slug:slug});
+  if(error||typeof data?.name!=='string')return;
+  // Never re-fetch the full catalogue just to update the identity.
+  for(const key of ['name','whatsapp','instagram_url','facebook_url','profile_logo_path','logo_url'])menu.store[key]=data[key];
+  rememberStartupBrand({...data,primary_color:menu.store.primary_color});
   renderPublicStoreIdentity();
  }catch{}finally{identityRefreshRunning=false}
 }
 setInterval(()=>void refreshPublicStoreIdentity(),30000);
 window.addEventListener('focus',()=>void refreshPublicStoreIdentity());
+
+async function fetchPublicMenuWithRetry(){
+ for(let attempt=0;attempt<3;attempt++){
+  let result;
+  try{result=await client.rpc('get_public_menu',{p_slug:slug})}catch(error){result={error}}
+  if(!result?.error)return result?.data;
+  const error=result.error;
+  const temporary=error.code==='57014'||[408,429,500,502,503,504].includes(result.status)||/timeout|timed out|network|failed to fetch|fetch failed/i.test(error.message||'');
+  if(!temporary||attempt===2)throw error;
+  $('menuStartupMessage').textContent='Estamos conectando à loja. Só mais um instante.';
+  await new Promise(resolve=>setTimeout(resolve,300*(attempt+1)+Math.random()*180));
+ }
+}
 
 function initOptions(){
  const shop=menu.store;
@@ -3758,7 +3834,7 @@ async function showCustomerOrders(){
  const root=$('customerSessionHistory'),toggle=$('customerSessionOrders');
  if(!root.hidden){root.hidden=true;toggle.setAttribute('aria-expanded','false');return}
  const device=rememberedDevice();if(!device||!customerSessionActive)return;
- root.hidden=false;toggle.setAttribute('aria-expanded','true');root.replaceChildren(el('p','Carregando seus pedidos…'));
+ root.hidden=false;toggle.setAttribute('aria-expanded','true');root.replaceChildren(el('p','Carregando seus pedidos…'));root.scrollIntoView({behavior:'smooth',block:'start'});
  try{
   await flushDeviceLinks();
   const {data,error}=await client.rpc('pitacco_customer_device_orders',{p_slug:slug,p_device:device,p_action:'list'});
@@ -4247,10 +4323,11 @@ async function startPublicMenu(){
    if(proof.slug!==slug||proof.environment!=='sandbox')throw Error('Link Sandbox pertence a outra loja.');
    pagbankPreviewReady=true;
   }
-  const {data,error}=await client.rpc('get_public_menu',{p_slug:slug});
-  if(error)throw error;
+  if(!studioPreviewActive&&!pagbankPreviewMode)void loadStartupBrand();
+  const data=await fetchPublicMenuWithRetry();
   if(!data?.store||!Array.isArray(data.products))throw Error('Cardápio inválido ou indisponível.');
   menu=data;
+  if(!studioPreviewActive&&!pagbankPreviewMode)rememberStartupBrand(menu.store);
   if(pagbankPreviewMode){
    pagbankPreviewRestoreDraft();
    cartStoragePaused=true;menu.store.delivery_enabled=false;menu.store.payment_methods=['pix_online'];menu.store.pix_instructions='';
@@ -4273,8 +4350,9 @@ async function startPublicMenu(){
   $('menuStartup').hidden=true;
   if(!studioPreviewActive&&cartRecoveryId)void checkPendingCart();
  }catch(err){
-  $('menuStartup').hidden=true;
-  msg('Cardápio indisponível: '+(err?.message||String(err)));
+  $('menuStartup').dataset.error='true';
+  $('menuStartupMessage').textContent='Não foi possível carregar o cardápio agora. Tente novamente.';
+  $('menuStartupRetry').hidden=false;
   studioPreviewReport('pitacco-studio-preview-error');
  }
 }

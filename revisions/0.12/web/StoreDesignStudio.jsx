@@ -15,6 +15,8 @@ const fonts=[['sistema','Moderna'],['arredondada','Arredondada'],['serifada','El
 const photoSizes=[['pequeno','Pequena'],['medio','Média'],['grande','Grande']];
 const field=(label,value,change,props={})=><label className="design-field">{label}<input value={value||''} onChange={event=>change(event.target.value)} {...props}/></label>;
 const cash=value=>Number(value||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const logoFrameDefault={size:100,zoom:100,x:0,y:0,padding:5,fit:'contain',shape:'default'};
+const logoFrameFor=d=>({...logoFrameDefault,...(d?.logo_frame||{})});
 const defaultDesign=(()=>{const {id,name,description,...style}=templates[0];return {template:id,...style,photo_size:'medio',
  show_descriptions:true,slogan:'Cardápio digital',instagram:'',logo_path:'',cover_path:'',banners:[]};})();
 const stamp=value=>value?new Date(value).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
@@ -95,6 +97,8 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
  },[client,store.id,loadAttempt,focus]);
  useEffect(()=>()=>Object.values(fileUrls).forEach(url=>URL.revokeObjectURL(url)),[fileUrls]);
  const update=(key,value)=>setDesign(d=>({...d,[key]:value}));
+ const updateLogoFrame=(key,value)=>setDesign(d=>({...d,logo_frame:{...logoFrameFor(d),[key]:value}}));
+ const resetLogoFrame=()=>setDesign(d=>{const next={...d};delete next.logo_frame;return next});
  const setBanner=(index,key,value)=>setDesign(d=>({...d,banners:d.banners.map((b,i)=>i===index?{...b,[key]:value}:b)}));
  function pickFile(key,file){
   if(!file)return;
@@ -234,6 +238,15 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
         onChange={e=>update(key,e.target.value)}/><small>{design[key]}</small></span>
       </label>)}</div>
       <p className="design-tip">O sistema escolhe automaticamente a cor do texto dos botões para melhorar a leitura.</p>
+     </section>
+     <section className="design-control-card"><h4>Enquadramento do logotipo</h4>
+      <p>Ajuste a imagem cadastrada em Dados da loja sem alterar o arquivo original. Confira o resultado na prévia em tempo real.</p>
+      <div style={{display:'grid',gap:12}}>
+       {[['size','Tamanho da medalha',80,140,1,'%'],['zoom','Zoom da imagem',100,250,1,'%'],['x','Posição horizontal',-50,50,1,'%'],['y','Posição vertical',-50,50,1,'%'],['padding','Espaçamento interno',0,20,1,'%']].map(([key,label,min,max,step,unit])=><label key={key} className="design-field">{label}: {logoFrameFor(design)[key]}{unit}<input type="range" min={min} max={max} step={step} value={logoFrameFor(design)[key]} disabled={!manager||working} onChange={e=>updateLogoFrame(key,Number(e.target.value))}/></label>)}
+       <label className="design-field">Encaixe da imagem<select value={logoFrameFor(design).fit} disabled={!manager||working} onChange={e=>updateLogoFrame('fit',e.target.value)}><option value="contain">Ajustar sem cortar</option><option value="cover">Preencher e recortar</option></select></label>
+       <label className="design-field">Formato da moldura<select value={logoFrameFor(design).shape} disabled={!manager||working} onChange={e=>updateLogoFrame('shape',e.target.value)}><option value="default">Padrão do template</option><option value="circle">Circular</option><option value="rounded">Arredondado</option></select></label>
+       <button type="button" className="secondary" disabled={!manager||working} onClick={resetLogoFrame}>Restaurar enquadramento padrão</button>
+      </div>
      </section>
      <section className="design-control-card"><h4>Imagens e informações</h4>
       <label className="design-field">Imagem de capa (até 5 MB)<input disabled={!manager||working} type="file" accept="image/jpeg,image/png,image/webp"
