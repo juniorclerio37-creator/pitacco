@@ -1,5 +1,13 @@
 import {Client} from 'pg';import assert from 'node:assert/strict';
 const admin=new Client({connectionString:process.env.DATABASE_URL});await admin.connect();
+// Realistic isolated checkout fixtures need a valid Flex contract under the mandatory-plan gate.
+async function activateFixturePlan(client,storeId){
+ const result=await client.query(`insert into pitacco_private.commercial_contracts(store_id,revision,plan_code,effective_from,terms)
+ select $1,v.revision,'free',(now() at time zone 'America/Sao_Paulo')::date,x from public.pitacco_plan_catalog_signal s
+ join pitacco_private.plan_catalog_versions v on v.revision=s.revision cross join lateral jsonb_array_elements(v.plans) x
+ where s.singleton and x->>'code'='free'`,[storeId]);
+ assert.equal(result.rowCount,1);
+}
 const manager='10000000-0000-0000-0000-000000000001',courier='30000000-0000-0000-0000-000000000001';
 await admin.query(`insert into auth.users(id,email) values('${manager}','manager@example.invalid'),('10000000-0000-0000-0000-000000000002','courier@example.invalid');insert into public.stores(id,name,max_orders_per_trip) values('20000000-0000-0000-0000-000000000001','Concurrency',1);insert into public.store_members values('20000000-0000-0000-0000-000000000001','${manager}','gestor');insert into public.couriers(id,user_id,name,fleet_type,store_id) values('${courier}','10000000-0000-0000-0000-000000000002','Courier','propria','20000000-0000-0000-0000-000000000001');insert into public.deliveries(id,store_id,customer_name,address) values('40000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','A','Example'),('40000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','B','Example');`);
 const clients=await Promise.all([0,1].map(async()=>{const c=new Client({connectionString:process.env.DATABASE_URL});await c.connect();await c.query(`set role authenticated;select set_config('request.jwt.claim.sub','${manager}',false)`);return c}));
@@ -25,6 +33,7 @@ const loyaltyClients=await Promise.all([0,1].map(async()=>{const c=new Client({c
 try{
  const s='20000000-0000-0000-0000-000000000093',p='30000000-0000-0000-0000-000000000093';
  await loyaltyAdmin.query(`insert into public.stores(id,name) values($1,'Fideliza concorrente');`,[s]);
+ await activateFixturePlan(loyaltyAdmin,s);
  await loyaltyAdmin.query(`insert into public.public_menu_settings(store_id,slug,enabled,pickup_enabled,delivery_enabled,delivery_fee,payment_methods) values($1,'loyalty-race',true,true,true,0,array['pix_manual']) on conflict(store_id) do update set slug=excluded.slug,enabled=true,pickup_enabled=true,payment_methods=excluded.payment_methods`,[s]);
  await loyaltyAdmin.query(`insert into public.products(id,store_id,name,price,cost,menu_active) values($1,$2,'Produto',100,0,true)`,[p,s]);
  await loyaltyAdmin.query(`insert into public.loyalty_programs(store_id,points_enabled,points_per_real,min_points_to_redeem,points_reward_cents) values($1,true,1,100,1000)`,[s]);
@@ -51,6 +60,7 @@ const checkoutClients=await Promise.all([0,1].map(async()=>{const c=new Client({
 try{
  const s='93000000-0000-0000-0000-000000000001',p='93000000-0000-0000-0000-000000000002',r='93000000-0000-0000-0000-000000000003';
  await checkoutAdmin.query(`insert into public.stores(id,name,dispatch_mode) values($1,'Checkout race fixture','manual')`,[s]);
+ await activateFixturePlan(checkoutAdmin,s);
  await checkoutAdmin.query(`insert into public.public_menu_settings(store_id,slug,enabled,pickup_enabled,delivery_enabled,payment_methods,pix_instructions) values($1,'checkout-race-fixture',true,true,false,array['pix_manual'],'Fixture Pix') on conflict(store_id) do update set slug=excluded.slug,enabled=true,pickup_enabled=true,delivery_enabled=false,payment_methods=excluded.payment_methods,pix_instructions=excluded.pix_instructions`,[s]);
  await checkoutAdmin.query(`insert into public.products(id,store_id,name,price,cost,menu_active) values($1,$2,'Fixture',25,8,true)`,[p,s]);
  const items=JSON.stringify([{product_id:p,quantity:2,options:[]}]);
