@@ -33,10 +33,13 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
  const [suggestedPoint,setSuggestedPoint]=useState(null);
  const [needsDeviceAdjustment,setNeedsDeviceAdjustment]=useState(false);
  const [viewCenter,setViewCenter]=useState(null);
- const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');
+ const [busy,setBusy]=useState(false),[deviceBusy,setDeviceBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');
  const [retryAttempt,setRetryAttempt]=useState(0);
  const mapEl=useRef(null),map=useRef(null),automaticLookup=useRef(null);
- const retryTimer=useRef(null),selectionVersion=useRef(0);
+ const retryTimer=useRef(null),selectionVersion=useRef(0),deviceRequest=useRef(0),manualProposal=useRef(false);
+ const pickedRef=useRef(picked);pickedRef.current=picked;
+ const mounted=useRef(true);
+ useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;deviceRequest.current++}},[]);
  const addressSignature=[store?.id,store?.address,store?.address_number,store?.neighborhood,
    store?.city,store?.state,store?.postal_code].map(x=>String(x||'').trim()).join('|');
  const currentAddressRef=useRef(addressSignature);
@@ -44,10 +47,9 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
  const savedAddress=Boolean(store?.address?.trim()&&store?.city?.trim()&&store?.state?.trim());
  useEffect(()=>{
   const p=pointFromStore(store);
-  setPoint(p);setSuggestedPoint(null);setNeedsDeviceAdjustment(false);
-  // A background lookup must not override an unsaved manual correction.
-  if(selectionVersion.current===0)setPicked(p);
-  setMessage('');setError('');
+  setPoint(p);
+  // A saved address refresh must not discard an explicit GPS/map proposal.
+  if(!manualProposal.current){setSuggestedPoint(null);setNeedsDeviceAdjustment(false);setPicked(p);setMessage('');setError('');}
  },[store?.id,store?.latitude,store?.longitude]);
  useEffect(()=>{
   // A new address begins a new automatic attempt; any previous retry belongs
@@ -55,8 +57,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
   if(retryTimer.current)clearTimeout(retryTimer.current);
   retryTimer.current=null;
   automaticLookup.current=null;
-  selectionVersion.current=0;
-  setNeedsDeviceAdjustment(false);
+  if(!manualProposal.current){selectionVersion.current=0;setNeedsDeviceAdjustment(false);}
   setRetryAttempt(0);
  },[addressSignature]);
  useEffect(()=>()=>{if(retryTimer.current)clearTimeout(retryTimer.current)},[]);
@@ -64,10 +65,10 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
   if(!mapEl.current)return;
   let alive=true;
   mountStorePointPicker(mapEl.current,{
-   center:point||suggestedPoint,viewCenter,
-   onSelect:p=>{if(alive){selectionVersion.current++;setPicked(p);setNeedsDeviceAdjustment(false);setMessage('');setError('');}}
+   center:pickedRef.current||point||suggestedPoint,viewCenter,
+   onSelect:p=>{if(alive){manualProposal.current=true;selectionVersion.current++;setPicked(p);setNeedsDeviceAdjustment(false);setMessage('');setError('');}}
   }).then(instance=>{
-   if(alive){map.current=instance;if(!point&&!suggestedPoint&&viewCenter)instance.focus(viewCenter,14);}
+   if(alive){map.current=instance;if(pickedRef.current)instance.setPoint(pickedRef.current);else if(!point&&!suggestedPoint&&viewCenter)instance.focus(viewCenter,14);}
    else instance.remove();
   }).catch(err=>{if(alive)setError('O mapa não pôde ser aberto: '+err.message)});
   return()=>{alive=false;map.current?.remove();map.current=null};
@@ -83,7 +84,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
     const p=(data||[]).find(row=>row.latitude!=null&&row.longitude!=null&&
       Number.isFinite(Number(row.latitude))&&Number.isFinite(Number(row.longitude))&&
       Date.now()-Date.parse(row.observed_at)<5*60_000);
-    if(p){
+    if(p&&!manualProposal.current){
      const location=[Number(p.latitude),Number(p.longitude)];
      setViewCenter(location);
      map.current?.focus(location,14);
@@ -104,20 +105,21 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
    if(approximate){
     // Never let an asynchronous lookup replace a GPS or manually selected
     // point, particularly on browsers with slower device geolocation.
-    if(selectionVersion.current===pickedBefore){
+    if(!manualProposal.current&&selectionVersion.current===pickedBefore){
      setSuggestedPoint(p);
      setPicked(p);map.current?.setPoint(p);
      setMessage('O mapa encontrou apenas uma posição estimada. Confira a entrada da loja e clique em "Salvar ponto da loja" para confirmar.');
     }
    }else{
     setPoint(p);setSuggestedPoint(null);
-    if(selectionVersion.current===pickedBefore){
+    if(!manualProposal.current&&selectionVersion.current===pickedBefore){
      setPicked(p);map.current?.setPoint(p);
     }
-    setMessage('A loja foi localizada automaticamente pelo endereço cadastrado.');
+    if(!manualProposal.current)setMessage('A loja foi localizada automaticamente pelo endereço cadastrado.');
     onSaved?.();
    }
   }catch(err){
+   if(!mounted.current||requestedAddress!==currentAddressRef.current||manualProposal.current)return;
    const detail=err.message||String(err);
    const retry=automatic&&err.retryable===true&&retryAttempt<1;
    setError(retry
@@ -137,21 +139,23 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
  // Map origin is computed as soon as a complete address is loaded or saved.
  // Merchants do not need to click a location button.
  useEffect(()=>{
-  if(point||!manager||!savedAddress||addressDirty||!store?.id)return;
+  if(point||!manager||!savedAddress||addressDirty||!store?.id||manualProposal.current||deviceBusy)return;
   const key=addressSignature+'|'+retryAttempt;
   if(automaticLookup.current===key)return;
   automaticLookup.current=key;
   void locate({automatic:true});
- },[store?.id,addressSignature,point,manager,savedAddress,addressDirty,retryAttempt]);
+ },[store?.id,addressSignature,point,manager,savedAddress,addressDirty,retryAttempt,deviceBusy]);
  async function locateByDevice(){
-  setBusy(true);setMessage('');setError('');
+  if(!manager||deviceBusy)return;
+  const request=++deviceRequest.current,selection=selectionVersion.current;
+  setDeviceBusy(true);setMessage('');setError('');
   try{
-   if(addressDirty)throw Error('Salve primeiro o endereço atualizado da loja.');
-   if(!savedAddress)throw Error('Cadastre o endereço da loja antes de usar o GPS.');
    // The manager explicitly grants location permission in the browser.
    // GPS is a proposal, never an implicit update to the store database.
    const {point:p,accuracyMeters}=await currentDeviceLocation();
-   selectionVersion.current++;
+   if(!mounted.current||request!==deviceRequest.current||selection!==selectionVersion.current)return;
+   manualProposal.current=true;selectionVersion.current++;
+   if(retryTimer.current){clearTimeout(retryTimer.current);retryTimer.current=null;}
    const lowPrecision=accuracyMeters==null||accuracyMeters>250;
    setNeedsDeviceAdjustment(lowPrecision);
    setSuggestedPoint(p);setPicked(p);
@@ -167,14 +171,14 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
       '. Confirme o marcador na entrada da loja antes de salvar.');
    }
   }catch(err){
-   setError('Não foi possível obter o GPS: '+(err.message||String(err))+
-    ' Habilite a localização no celular ou computador e permita o acesso no navegador.');
-  }finally{setBusy(false)}
+   if(mounted.current&&request===deviceRequest.current)setError('Não foi possível obter o GPS: '+(err.message||String(err))+
+    ' Habilite a localização no celular ou computador e permita o acesso no navegador. Você também pode marcar o ponto manualmente.');
+  }finally{if(mounted.current&&request===deviceRequest.current)setDeviceBusy(false)}
  }
  async function savePoint(){
   setBusy(true);setMessage('');setError('');
   try{
-   if(addressDirty)throw Error('Salve primeiro o endereço atualizado da loja.');
+   if(addressDirty||!savedAddress)throw Error('Complete e salve primeiro o endereço da loja.');
    if(!picked||picked.some(x=>!Number.isFinite(x)))throw Error('Selecione o ponto da loja no mapa.');
    if(needsDeviceAdjustment)throw Error('A localização fornecida pelo dispositivo é imprecisa. Arraste a lojinha até a entrada real e tente salvar novamente.');
    const {data,error}=await client.functions.invoke('delivery-quote',{
@@ -182,7 +186,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
    });
    if(error)throw error;
    if(!data?.saved)throw Error(data?.error||'A gravação do ponto não foi confirmada.');
-   setPoint([...picked]);setSuggestedPoint(null);setNeedsDeviceAdjustment(false);
+   manualProposal.current=false;setPoint([...picked]);setSuggestedPoint(null);setNeedsDeviceAdjustment(false);
    setMessage('Ponto exato da loja salvo. O mapa da Roteirização utilizará este marcador.');
    onSaved?.();
   }catch(err){setError('Não foi possível salvar o ponto: '+(err.message||String(err)));}
@@ -193,7 +197,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
  return <div className="store-point-editor">
   <div className="store-point-editor-title"><strong>Posição exata da loja no mapa</strong>
    <small>Confirme a entrada do estabelecimento para centralizar entregas e motoboys.</small></div>
-  {addressDirty&&<p role="status" className="store-point-warning">Salve as alterações do endereço acima antes de ajustar o marcador.</p>}
+  {(addressDirty||!savedAddress)&&<p role="status" className="store-point-warning">Você pode usar o GPS ou ajustar o marcador agora. Complete e salve o endereço acima antes de salvar o ponto da loja.</p>}
   <div ref={mapEl} className="store-point-map" aria-label="Mapa para marcar a entrada da loja"/>
   {!point&&<p className="store-point-warning">
     {busy?'Localizando a loja automaticamente pelo endereço cadastrado…':
@@ -201,15 +205,16 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
    </p>}
   <div className="store-point-actions">
    <button type="button" className="secondary"
-    disabled={!manager||busy||addressDirty||!savedAddress}
+    disabled={!manager||deviceBusy}
     onClick={locateByDevice}>Usar localização do celular ou computador</button>
+   {deviceBusy&&<small role="status">Obtendo localização do dispositivo…</small>}
    {error&&<button type="button" className="secondary"
-    disabled={!manager||busy||addressDirty||!savedAddress}
+    disabled={!manager||busy||deviceBusy||addressDirty||!savedAddress}
     onClick={()=>{if(retryTimer.current){clearTimeout(retryTimer.current);retryTimer.current=null}
      automaticLookup.current=null;void locate();}}>
     Tentar localizar novamente
    </button>}
-   {picked&&<button type="button" disabled={!manager||busy||addressDirty||!changed} onClick={savePoint}>
+   {picked&&<button type="button" disabled={!manager||busy||deviceBusy||addressDirty||!savedAddress||needsDeviceAdjustment||!changed} onClick={savePoint}>
      Salvar ponto da loja
    </button>}
   </div>
@@ -224,6 +229,7 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
  const draftDirty=useRef(false);
  const [draft,setDraft]=useState({}),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[loaded,setLoaded]=useState(false),[loadError,setLoadError]=useState(''),[revision,refresh]=useState(0);
  const [cepState,setCepState]=useState('idle'),[cepNotice,setCepNotice]=useState('');
+ const [savedRegistration,setSavedRegistration]=useState(null);
  const cepRequest=useRef({generation:0,timer:null,controller:null});
  function cancelCep(){const r=cepRequest.current;r.generation++;clearTimeout(r.timer);r.controller?.abort();r.controller=null;}
  function scheduleCep(value,original,immediate=false){
@@ -258,14 +264,14 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
  }
  useEffect(()=>{
   let active=true,running=false,initialized=false;
-  draftDirty.current=false;setLoaded(false);setLoadError('');setMessage('');setDraft({});
+  draftDirty.current=false;setLoaded(false);setLoadError('');setMessage('');setDraft({});setSavedRegistration(null);
   async function refreshRegistration(){
    if(running||draftDirty.current)return;running=true;
    try{
     const {data,error}=await client.rpc('pitacco_store_registration',{p_store:store.id});
     if(!active||draftDirty.current)return;
     if(error||!data)throw Error('Não foi possível consultar os dados da loja.');
-    setDraft(data);setLoaded(true);setLoadError('');initialized=true;
+    setDraft(data);setSavedRegistration(data);setLoaded(true);setLoadError('');initialized=true;
    }catch{if(active&&!initialized)setLoadError('Não foi possível consultar os dados da loja.')}
    finally{running=false}
   }
@@ -282,10 +288,12 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
    const {document,person_type,legal_name,responsible_name,administrative_phone,administrative_email,whatsapp,name,description,address,address_number,address_complement,neighborhood,city,state,postal_code,instagram_url,facebook_url}=draft;
    const {data,error}=await client.rpc('pitacco_save_store_registration',{p_store:store.id,p_data:{document,person_type,legal_name,responsible_name,administrative_phone,administrative_email,whatsapp,name,description,address,address_number,address_complement,neighborhood,city,state,postal_code,instagram_url,facebook_url}});
    if(error||!data?.saved)throw error||Error('A gravação não foi confirmada.');
-   draftDirty.current=false;setMessage('Dados da sua loja atualizados.');window.dispatchEvent(new Event('pitacco:store-identity'));onSaved?.();
+   draftDirty.current=false;setSavedRegistration({...draft});setMessage('Dados da sua loja atualizados.');window.dispatchEvent(new Event('pitacco:store-identity'));onSaved?.();
   }catch(err){setMessage(err.message||String(err))}finally{setBusy(false)}
  }
- const addressDirty=storeAddressFields.some(key=>String(draft[key]||'').trim()!==String(store?.[key]||'').trim());
+ const addressBase=savedRegistration||store;
+ const addressDirty=storeAddressFields.some(key=>key==='postal_code'?postalDigits(draft[key])!==postalDigits(addressBase?.[key]):String(draft[key]||'').trim()!==String(addressBase?.[key]||'').trim());
+ const mapStore={...store,...Object.fromEntries(storeAddressFields.map(key=>[key,addressBase?.[key]]))};
  const change=(key,value)=>{draftDirty.current=true;if(key==='postal_code'){const formatted=formatPostal(value);setDraft(p=>({...p,postal_code:formatted}));scheduleCep(formatted,draft);}else setDraft(p=>({...p,[key]:value}))};
  const input=(key,label,required=true,type='text')=><label key={key} className="identity-field"><span>{label}{required&&<span className="identity-required"> *</span>}</span>
   {key==='description'?<textarea maxLength={1500} rows={3} value={draft[key]||''} disabled={!manager||busy}
@@ -328,7 +336,7 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
     <p>Este é o endereço único usado no mapa do entregador, cálculo de frete, pagamentos e demais serviços.</p>
     <div className="identity-grid"><div>{input('postal_code','CEP')}<button type="button" className="secondary" disabled={!manager||busy||cepState==='loading'||postalDigits(draft.postal_code).length!==8} onClick={()=>{draftDirty.current=true;scheduleCep(draft.postal_code,draft,true)}}>{cepState==='loading'?'Consultando CEP…':'Buscar endereço'}</button>{cepNotice&&<small role={cepState==='error'?'alert':'status'}>{cepNotice}</small>}</div>{input('address','Rua / avenida')}{input('address_number','Número')}{input('address_complement','Complemento',false)}
       {input('neighborhood','Bairro')}{input('city','Cidade')}{input('state','Estado')}</div>
-    <StorePointPicker client={client} store={store} manager={manager} addressDirty={addressDirty} onSaved={onSaved}/>
+    <StorePointPicker key={store.id} client={client} store={mapStore} manager={manager} addressDirty={addressDirty} onSaved={onSaved}/>
    </section>
    <div className="identity-save">{message&&<p role="status" className="notice">{message}</p>}
     <small><ShieldCheck size={18}/> Os dados privados não aparecem no cardápio público.</small><button type="submit" disabled={busy||!manager||cepState==='loading'}>{busy?'Salvando…':'Salvar dados da loja'}</button></div>
