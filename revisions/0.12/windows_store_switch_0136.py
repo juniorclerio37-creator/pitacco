@@ -96,7 +96,12 @@ s=s.replace("(|_,_|{},||{}).await.map_err(|e|e.to_string())?;\n   Ok(\"Atualiza�
    Ok("Atualização instalada.""")
 old=' if std::env::args().any(|a|a=="--minimized"){if let Some(w)=app.get_webview_window("main"){w.hide()?;}}'
 new=''' let reopen_marker=dir.join("show-after-update");
- let reopen=std::fs::remove_file(&reopen_marker).is_ok();
+ let explicit_reopen=std::fs::remove_file(&reopen_marker).is_ok();
+ let version_marker=dir.join("last-started-version");
+ let current_version=app.package_info().version.to_string();
+ let changed_version=std::fs::read_to_string(&version_marker).ok().as_deref()!=Some(current_version.as_str());
+ let _=std::fs::write(&version_marker,current_version.as_bytes());
+ let reopen=explicit_reopen||changed_version;
  if reopen{if let Some(w)=app.get_webview_window("main"){w.show()?;let _=w.set_focus();}}
  else if std::env::args().any(|a|a=="--minimized"){if let Some(w)=app.get_webview_window("main"){w.hide()?;}}'''
 assert s.count(old)==1
