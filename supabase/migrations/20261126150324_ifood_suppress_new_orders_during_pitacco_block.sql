@@ -33,12 +33,14 @@ do $patch$
 declare d text; a text; b text;
 begin
  select pg_get_functiondef('public.pitacco_ifood_complete(uuid,uuid,jsonb,boolean)'::regprocedure) into d;
+ d:=replace(d,chr(13),'');
  a:='if not found then return; end if;'||chr(10)||'  if p_order is null then';
  b:='if not found then return; end if;'||chr(10)||$new$  if pitacco_private.ifood_suppress_new_order(e.merchant_id,e.order_id) then
     update pitacco_private.ifood_events set done_at=now(),lease=null where id=e.id;
     return;
   end if;
   if p_order is null then$new$;
+ b:=replace(b,chr(13),'');
  if strpos(d,a)>0 then execute replace(d,a,b);elsif strpos(d,b)=0 then raise exception 'iFood completion guard anchor missing';end if;
 end $patch$;
 -- Close queued events for stores already blocked at migration time, preserving existing orders.
