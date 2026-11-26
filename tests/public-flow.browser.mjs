@@ -10,7 +10,7 @@ assert.match(deliveryMapScript,/export async function mountCustomerTrackingMap/)
 const mapFixture = `
  export async function mountDeliveryMap(container,{onSelect,showCoverage}) {
   container.dataset.showCoverage=String(showCoverage);
-  return {setArea(){},setPoint(){},clearPoint(){},showPoint(point){onSelect(point)},resize(){},remove(){}};
+  return {setArea(){},setPoint(){},clearPoint(){},showPoint(point){onSelect(point)},focus(point){container.dataset.focus=JSON.stringify(point)},resize(){},remove(){}};
  }
  export function currentLocation(){
   return new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(
@@ -63,7 +63,7 @@ try {
     await page.context().setGeolocation({latitude:-22.71,longitude:-43.4});
     let identityName='Loja de teste';
     let publicBlocked=template==='pitacco-v2'&&width===375;
-    let rejectPriorityOnce=false;
+    let rejectPriorityOnce=false,streetReferenceOnce=false;
     const openingFixture=()=>publicBlocked?{open:false,reason:'paused',paused:true,next_open_at:null,scheduling_available:false}:{open:true,reason:'open',next_open_at:null,timezone:'America/Sao_Paulo',scheduling_available:Boolean(scheduled),paused:false};
     let polls=0,quoteAttempts=0,recoveryConfirmed=false;
     let savedProfile=null;
@@ -156,6 +156,7 @@ try {
         if(payload.address.startsWith('Rua Fora Entrega'))
           return route.fulfill({status:422,json:{error:'Este endereço está fora do círculo de entregas da loja.'}});
         if(++quoteAttempts===1)return route.fulfill({status:409,json:{error:'Existe uma região poligonal inválida. Corrija em Área de Entrega.'}});
+        if(streetReferenceOnce&&payload.latitude===undefined){streetReferenceOnce=false;return route.fulfill({status:422,json:{error:'Encontramos uma localização aproximada. Confirme o ponto exato no mapa para calcular a taxa.',requires_confirmation:true,suggested_center:[-22.712,-43.412]}});}
         if(payload.latitude!==undefined||payload.longitude!==undefined)
           assert.deepEqual([payload.latitude,payload.longitude],[-22.71,-43.4]);
         else
@@ -484,6 +485,13 @@ try {
     assert.equal(await page.locator('#deliveryMapPanel').isVisible(),false);
     await page.locator('#routeQuoteStatus').filter({hasText:'A loja precisa revisar'}).waitFor();
     assert.equal(await page.locator('#routeQuoteStatus').getAttribute('role'),'alert');
+    streetReferenceOnce=true;
+    await page.locator('#addressExtra').fill('Referência de teste');
+    await page.locator('#deliveryPointStatus').filter({hasText:'Já conhecemos uma referência desta rua'}).waitFor();
+    await page.locator('#showDeliveryMap').click();
+    assert.equal(await page.locator('#deliveryMap').getAttribute('data-focus'),'[-22.712,-43.412]');
+    assert.equal(await page.locator('#confirmDeliveryMap').isDisabled(),true,'Street reference must not confirm a house');
+    await page.locator('#showDeliveryMap').click();
     await page.getByRole('button',{name:'Usar minha localização'}).click();
     await page.getByText('✓ Localização confirmada.',{exact:true}).waitFor();
     await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();

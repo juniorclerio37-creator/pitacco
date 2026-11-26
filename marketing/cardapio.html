@@ -1689,7 +1689,7 @@ async function quoteFailureMessage(error){
 }
 
 function selectDeliveryPoint(point){
- deliveryPoint=point;suggestedDeliveryPoint=null;
+ deliveryPoint=point;suggestedDeliveryPoint=null;suggestedStreetCenter=null;
  deliveryQuote=null;renderDeliveryServices(null);
  deliveryMap?.setPoint(point);
  $('deliveryPointStatus').textContent='✓ Localização confirmada.';
@@ -1699,7 +1699,7 @@ function selectDeliveryPoint(point){
 $('address').addEventListener('input',event=>{
  deliveryQuote=null;
  const keepPoint=Boolean(event.detail?.keepPoint);
- if(!keepPoint){$('addressCepStatus').textContent='';suggestedDeliveryPoint=null;pendingMapPoint=null;$('confirmDeliveryMap').disabled=true;deliveryMap?.clearPoint();deliveryService='standard';renderDeliveryServices(null);}
+ if(!keepPoint){$('addressCepStatus').textContent='';suggestedDeliveryPoint=null;suggestedStreetCenter=null;pendingMapPoint=null;$('confirmDeliveryMap').disabled=true;deliveryMap?.clearPoint();deliveryService='standard';renderDeliveryServices(null);}
  if(deliveryPoint&&!keepPoint){
   deliveryPoint=null;deliveryMap?.clearPoint();
   $('deliveryPointStatus').textContent='';
@@ -1708,7 +1708,7 @@ $('address').addEventListener('input',event=>{
  v2ScheduleDeliveryQuote();
  if(menu)renderCart();
 });
-let pendingMapPoint=null,suggestedDeliveryPoint=null;
+let pendingMapPoint=null,suggestedDeliveryPoint=null,suggestedStreetCenter=null;
 function validDeliveryMapPoint(point){return Array.isArray(point)&&point.length===2&&point.every(v=>typeof v==='number'&&Number.isFinite(v))&&Math.abs(point[0])<=90&&Math.abs(point[1])<=180;}
 function closeDeliveryMap(){
  $('deliveryMapPanel').hidden=true;$('showDeliveryMap').setAttribute('aria-expanded','false');
@@ -1731,7 +1731,7 @@ $('showDeliveryMap').onclick=async()=>{
    });
   }
   if(pendingMapPoint){deliveryMap?.showPoint(pendingMapPoint);deliveryMap?.focus?.(pendingMapPoint,17);}
-  else deliveryMap?.clearPoint();
+  else {deliveryMap?.clearPoint();if(suggestedStreetCenter)deliveryMap?.focus?.(suggestedStreetCenter,16);}
   deliveryMap?.resize();
  }catch(error){deliveryMap?.remove();deliveryMap=null;closeDeliveryMap();$('deliveryPointStatus').textContent='Não foi possível abrir o mapa. Tente novamente ou use sua localização atual.';}
  finally{button.disabled=false;}
@@ -1837,6 +1837,11 @@ async function requestDeliveryQuote(auto=false){
       pendingMapPoint=[...suggestedDeliveryPoint];deliveryMap.showPoint(pendingMapPoint);deliveryMap.focus?.(pendingMapPoint,17);$('confirmDeliveryMap').disabled=false;
      }
      $('deliveryPointStatus').textContent='Encontramos uma localização aproximada. Confira o marcador no mapa e confirme a entrada do imóvel.';
+    }
+    if(token===quoteGeneration&&$('address').value.trim()===address&&details?.requires_confirmation===true&&validDeliveryMapPoint(details.suggested_center)&&!deliveryPoint&&!suggestedDeliveryPoint){
+     suggestedStreetCenter=[...details.suggested_center];
+     if(!$('deliveryMapPanel').hidden&&deliveryMap&&!pendingMapPoint){deliveryMap.clearPoint();deliveryMap.focus?.(suggestedStreetCenter,16);$('confirmDeliveryMap').disabled=true;}
+     $('deliveryPointStatus').textContent='Já conhecemos uma referência desta rua. Toque no local exato do seu imóvel no mapa.';
     }
     throw Error(await quoteFailureMessage(error));
    }

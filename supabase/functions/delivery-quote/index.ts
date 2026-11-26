@@ -1,5 +1,5 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.57.0';
-import {directDistance,finiteBrazil,polygonValid,withinPolygon} from './coverage-geometry.mjs';
+import {directDistance,finiteBrazil,polygonValid,withinPolygon,approximateStreetCenter} from './coverage-geometry.mjs';
 
 const nativeOrigins=new Set(['http://tauri.localhost','https://tauri.localhost']);
 const allowedOrigins=new Set(['https://pitacco.com.br','https://www.pitacco.com.br','https://app.pitacco.com.br',...nativeOrigins]);
@@ -445,7 +445,8 @@ Deno.serve(async request=>{
        }
       }
      }
-     if(!location?.precise)return response(422,{error:location?'Encontramos uma localização aproximada. Confirme o ponto exato no mapa para calcular a taxa.':'Não foi possível localizar o número com precisão. Marque o endereço do cliente no mapa.',...(location?{suggested_point:location.point,suggested_label:location.label}:{}),requires_confirmation:true},origin);
+     const streetCenter=!location&&validSaved&&saved.exact===false?approximateStreetCenter(saved.latitude,saved.longitude):null;
+     if(!location?.precise)return response(422,{error:location||streetCenter?'Encontramos uma localização aproximada. Confirme o ponto exato no mapa para calcular a taxa.':'Não foi possível localizar o número com precisão. Marque o endereço do cliente no mapa.',...(location?{suggested_point:location.point,suggested_label:location.label}:streetCenter?{suggested_center:streetCenter,suggested_label:'Referência aproximada da rua'}:{}),requires_confirmation:true},origin);
      to=location.point;
     }catch(error){return problem(422,error instanceof Error?error.message:'Confirme o ponto de entrega no mapa.',origin);}
    }
