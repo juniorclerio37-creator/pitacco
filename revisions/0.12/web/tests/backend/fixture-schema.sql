@@ -111,3 +111,10 @@ alter table public.couriers add column if not exists phone text;
 
 -- Supabase auth fields used by the unified registration function.
 alter table auth.users add column if not exists raw_user_meta_data jsonb;
+
+-- The live delivery schema records arrival and verification of the delivery code.
+-- Mirror the production columns in the isolated migration test harness.
+alter table public.deliveries
+ add column if not exists arrived_at timestamptz,
+ add column if not exists delivery_code_verified_at timestamptz,
+ add column if not exists arrival_provider_state text;
