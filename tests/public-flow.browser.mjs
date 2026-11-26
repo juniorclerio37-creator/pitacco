@@ -371,6 +371,7 @@ try {
     if(template==='essencial'){const order=await productCard.evaluate(card=>({photo:card.querySelector('.product-visual').getBoundingClientRect().left,text:card.querySelector('.product-text').getBoundingClientRect().left}));assert.ok(order.photo<order.text,'Fotos do catálogo Essencial à esquerda');}
     assert.equal(await page.locator('#layout #products .product').count(),3,'Todos os itens aparecem no catálogo abaixo dos destaques');
     await page.getByRole('heading',{name:'Todo o cardápio',exact:true}).waitFor();
+    assert.equal(await page.locator('#v2FiadoNav').isVisible(),false,'Visitante sem telefone autorizado não vê a aba Fiado');
     await page.locator('#v2StoreNav [data-v2-nav="sobre"]').click();
     await page.locator('#v2AboutPage').waitFor();
     assert.equal(await page.locator('#v2AboutPage').isVisible(),true);
@@ -507,6 +508,7 @@ try {
     assert.equal(await page.locator('#fiadoAuth').isVisible(),false);
     if(width===375){
       await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
+      assert.equal(await page.locator('#v2FiadoNav').getAttribute('hidden'),null,'Aba liberada para telefone autorizado');
       await page.locator('#v2PaymentCards [data-kind="fiado"]').click();
       assert.equal(await page.locator('#fiadoAuth').isVisible(),true,'PIN solicitado somente ao selecionar Fiado');
       assert.equal(await page.locator('#fiadoPin').count(),1,'Campo de PIN disponível');
@@ -522,12 +524,14 @@ try {
       await disableFiado;
       await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
       assert.equal(await page.locator('#payment option[value="fiado"]').isDisabled(),true,'Autorizado, mas sem crédito para este pedido');
+      assert.equal(await page.locator('#v2FiadoNav').getAttribute('hidden'),null,'Cliente cadastrado pode consultar extrato mesmo sem crédito para comprar');
       assert.match(await page.locator('#fiadoUnavailable').innerText(),/Fiado indisponível para este pedido/);
       assert.doesNotMatch(await page.locator('#fiadoUnavailable').innerText(),/R\$|saldo disponível|limite de crédito/i);
       const hideFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
       await page.locator('#phone').evaluate((el,value)=>{el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));},'21999999997');
       await hideFiado;
       assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Telefone não autorizado não vê Fiado');
+      assert.equal(await page.locator('#v2FiadoNav').isVisible(),false,'Aba oculta imediatamente ao trocar para telefone sem autorização');
       const showFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
       await page.locator('#phone').evaluate((el,value)=>{el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));},'21999999999');
       await showFiado;
@@ -535,6 +539,7 @@ try {
       assert.equal(await page.locator('#payment option[value="fiado"]').isDisabled(),false);
     }else{
       assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Fiado oculto para telefone não autorizado');
+      assert.equal(await page.locator('#v2FiadoNav').isVisible(),false,'Aba oculta quando cadastro não existe nesta loja');
     }
       if(width===375){
         await page.locator('#v2CheckoutBack').click();

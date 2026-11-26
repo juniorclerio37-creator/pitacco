@@ -1417,7 +1417,7 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#store
  <button type="button" class="v2-nav-button" data-v2-nav="promocoes"><span class="v2-nav-icon" aria-hidden="true">🔥</span>Promoções</button>
  <button type="button" id="loyaltyOpen" class="v2-nav-button" aria-label="Meu Fideliza+" data-v2-nav="fideliza" hidden><span class="v2-nav-icon" aria-hidden="true">☆</span>Fideliza+</button>
  <button type="button" class="v2-nav-button" data-v2-nav="sobre"><span class="v2-nav-icon" aria-hidden="true">ⓘ</span>Sobre</button>
- <button type="button" class="v2-nav-button" data-v2-nav="fiado"><span class="v2-nav-icon" aria-hidden="true">▣</span>Fiado</button>
+ <button type="button" class="v2-nav-button" id="v2FiadoNav" data-v2-nav="fiado" hidden><span class="v2-nav-icon" aria-hidden="true">▣</span>Fiado</button>
 </nav>
 
 <style>
@@ -1713,7 +1713,7 @@ if(studioPreviewActive){
 }
 
 let menu,cart=[],pendingRequest=null,submitting=false,checkoutPreparing=false,scheduleRequest=0;
-let fiadoEligiblePhone='',fiadoLookupCounter=0,fiadoLookupTimer=null,fiadoLookupFingerprint='';
+let fiadoEligiblePhone='',fiadoLookupCounter=0,fiadoLookupTimer=null,fiadoLookupFingerprint='',fiadoNavPhone='',fiadoNavRevision=0;
 let storeOpening=null;
 const schedulingAvailable=()=>storeOpening?.scheduling_available===true&&storeOpening?.paused!==true;
 const storefrontCanOrder=()=>storeOpening?.open===true||schedulingAvailable();
@@ -2372,6 +2372,7 @@ function v2Feature(){
 
 function v2Go(page,initial=false){
  if(document.body.dataset.menuTemplate!=='pitacco-v2')return;
+ if(page==='fiado'&&!canOpenFiadoNavigation())return;
  v2Page=page;document.body.dataset.v2Page=page;v2FavoritesOnly=page==='favoritos';
  $('v2Home').hidden=page!=='inicio';
  $('v2LoyaltyPage').hidden=page!=='fideliza';
@@ -2389,7 +2390,7 @@ function v2Go(page,initial=false){
   $('v2CatalogTitle').textContent=names[page]||'Cardápio';
   renderCategories();renderProducts();if(page==='inicio')v2Feature();
  }
- if(page==='fiado'){$('v2FiadoPhone').value=$('phone').value;$('v2FiadoNotice').textContent='';$('v2FiadoStatement').hidden=true;$('v2FiadoLogin').hidden=false;}
+ if(page==='fiado'){$('v2FiadoPhone').value=fiadoNavPhone;$('v2FiadoPhone').readOnly=true;$('v2FiadoPin').value='';$('v2FiadoNotice').textContent='';$('v2FiadoStatement').hidden=true;$('v2FiadoLogin').hidden=false;}
  if(page==='fideliza'){
   $('v2LoyaltyPhone').value=$('phone').value;
   v2RenderWallet();
@@ -3003,7 +3004,37 @@ function removeFiadoOption(){
  const opt=$('payment').querySelector('option[value="fiado"]');
  if(opt){if($('payment').value==='fiado')$('payment').value='';opt.remove();}
 }
+function canOpenFiadoNavigation(){
+ return Boolean(fiadoNavPhone&&fiadoNavPhone===fiadoPhoneDigits($('phone').value)&&!$('v2FiadoNav').hidden);
+}
+function setFiadoNavigation(phone,visible){
+ fiadoNavRevision++;
+ fiadoNavPhone=visible===true&&phone===fiadoPhoneDigits($('phone').value)&&/^[0-9]{10,11}$/.test(phone)?phone:'';
+ $('v2FiadoNav').hidden=!fiadoNavPhone;
+ if(!fiadoNavPhone){
+  $('v2FiadoPhone').value='';$('v2FiadoPin').value='';$('v2FiadoStatement').hidden=true;
+  $('v2FiadoNotice').textContent='';$('v2FiadoCharges').replaceChildren();$('v2FiadoPayments').replaceChildren();
+  $('v2FiadoPayInstructions').hidden=true;$('v2FiadoPayInstructions').textContent='';
+  v2FiadoPixInstructions=null;
+  if(v2Page==='fiado')v2Go('inicio',true);
+ }
+}
+async function refreshFiadoNavigation(){
+ if(!menu||studioPreviewActive||pagbankPreviewMode||document.hidden)return;
+ const phone=fiadoPhoneDigits($('phone').value);
+ if(!/^[0-9]{10,11}$/.test(phone))return;
+ const revision=++fiadoNavRevision,checkoutRequest=fiadoLookupCounter;
+ try{
+  const {data,error}=await client.rpc('pitacco_fiado_checkout_status',{p_slug:slug,p_phone:phone,p_order_total:0});
+  if(revision!==fiadoNavRevision||checkoutRequest!==fiadoLookupCounter||phone!==fiadoPhoneDigits($('phone').value))return;
+  setFiadoNavigation(phone,!error&&data?.visible===true);
+ }catch{
+  if(revision===fiadoNavRevision&&checkoutRequest===fiadoLookupCounter)setFiadoNavigation(phone,false);
+ }
+}
+window.addEventListener('focus',()=>void refreshFiadoNavigation());
 function clearFiadoAccess(){
+ setFiadoNavigation('',false);
  fiadoLookupCounter++;
  fiadoLookupFingerprint='';
  fiadoEligiblePhone='';
@@ -3017,7 +3048,8 @@ function clearFiadoAccess(){
 function scheduleFiadoStatusCheck(total){
  if(!menu||submitting||pendingRequest)return;
  const phone=fiadoPhoneDigits($('phone').value);
- if(!/^[0-9]{10,11}$/.test(phone)){if(fiadoLookupFingerprint)clearFiadoAccess();return;}
+ if(!/^[0-9]{10,11}$/.test(phone)){if(fiadoLookupFingerprint||fiadoNavPhone)clearFiadoAccess();return;}
+ if(fiadoNavPhone&&fiadoNavPhone!==phone)setFiadoNavigation('',false);
  const rounded=Math.round(Math.max(0,total||0)*100)/100;
  const fingerprint=JSON.stringify([slug,phone,rounded]);
  if(fingerprint===fiadoLookupFingerprint)return;
@@ -3037,6 +3069,7 @@ async function refreshFiadoEligibility(phone,amount,request){
   const {data,error}=await client.rpc('pitacco_fiado_checkout_status',{p_slug:slug,p_phone:phone,p_order_total:amount});
   if(request!==fiadoLookupCounter||phone!==fiadoPhoneDigits($('phone').value))return;
   if(error)throw error;
+  setFiadoNavigation(phone,data?.visible===true);
   if(data?.visible!==true){removeFiadoOption();$('fiadoUnavailable').hidden=true;return;}
   let option=$('payment').querySelector('option[value="fiado"]');
   if(!option){option=new Option('Fiado — pagar depois','fiado');$('payment').add(option);}
@@ -3050,6 +3083,7 @@ async function refreshFiadoEligibility(phone,amount,request){
   renderCart();
  }catch{
   if(request!==fiadoLookupCounter)return;
+  setFiadoNavigation('',false);
   fiadoEligiblePhone='';
   removeFiadoOption();
   $('fiadoUnavailable').hidden=true;
@@ -3796,6 +3830,7 @@ function customerSessionDisplay(active,name='',expiry=0){
 function discardCustomerCredential(){
  try{localStorage.removeItem(customerDeviceKey);localStorage.removeItem(customerLinksKey)}catch{}
  customerSessionDisplay(false);
+ clearFiadoAccess();
 }
 function pendingDeviceLinks(device){
  try{const d=JSON.parse(localStorage.getItem(customerLinksKey)||'null');return d?.device===device&&Array.isArray(d.tokens)?d.tokens.filter(t=>/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(t)).slice(0,50):[]}catch{return []}
@@ -4233,6 +4268,7 @@ function v2RenderFiadoStatement(data){
 }
 $('v2FiadoCheck').onclick=async()=>{
  const button=$('v2FiadoCheck'),phone=loyaltyPhoneDigits($('v2FiadoPhone').value),pin=$('v2FiadoPin').value;
+ if(!canOpenFiadoNavigation()||phone!==fiadoNavPhone)return;
  if(!/^[0-9]{10,11}$/.test(phone)||!/^[0-9]{6}$/.test(pin)){
   $('v2FiadoNotice').textContent='Informe telefone com DDD e PIN pessoal de seis dígitos.';return;
  }
@@ -4245,8 +4281,8 @@ $('v2FiadoCheck').onclick=async()=>{
   if(vErr||!verified?.verified||!verified?.token)throw Error('Não foi possível validar seus dados. Verifique com a loja.');
   const {data,error}=await client.rpc('pitacco_v2_fiado_statement',{p_slug:slug,p_token:verified.token});
   if(error||data?.error)throw Error(error?.message||data?.error||'Não foi possível carregar o extrato.');
-  v2RenderFiadoStatement(data);
- }catch(e){$('v2FiadoNotice').textContent=e.message||'Não foi possível consultar o Fiado.';}
+  if(canOpenFiadoNavigation()&&phone===fiadoNavPhone&&v2Page==='fiado')v2RenderFiadoStatement(data);
+ }catch(e){if(canOpenFiadoNavigation()&&phone===fiadoNavPhone&&v2Page==='fiado')$('v2FiadoNotice').textContent=e.message||'Não foi possível consultar o Fiado.';}
  finally{button.disabled=false;}
 };
 $('v2FiadoPay').onclick=()=>{
