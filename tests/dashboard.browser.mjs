@@ -1145,7 +1145,7 @@ try {
       assert.equal(storeHoursPaused,false);
     }
     assert.equal(await page.getByRole('button',{name:'Agendamento',exact:true}).count(),0,'No duplicate merchant scheduling tab');
-    await page.getByRole('button', { name:'Horário de funcionamento', exact:true }).click();
+    await merchantNavigate('Configurações','Horários de funcionamento');
     const schedule = page.getByRole('region', {name:'Horário de funcionamento da loja'});
     await schedule.getByRole('switch',{name:'Aceitar pedidos agendados'}).check();
     if(width<=800){
@@ -1158,7 +1158,7 @@ try {
     await schedule.getByText('Horários salvos! O cardápio aceita agendamentos para os períodos configurados.').waitFor();
     assert.equal(storeAcceptsScheduled,true,'Agendamento edits the same published opening configuration');
     if(width===1440){
-      await page.getByRole('button',{name:'Impressão e aceite',exact:true}).click();
+      await merchantNavigate('Configurações','Configurar impressão e visualizar nota');
       const manual=page.getByRole('region',{name:'Impressão manual no navegador'});
       await manual.getByRole('heading',{name:'Impressão manual no navegador'}).waitFor();
       await manual.getByText(/O teste físico da impressora/).waitFor();
