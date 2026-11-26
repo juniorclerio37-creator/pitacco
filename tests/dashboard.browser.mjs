@@ -788,7 +788,9 @@ try {
       await ordersRegion.waitFor();
       logisticsOrders=[flowOrder];
       const card=ordersRegion.getByRole('article',{name:'Card do pedido D-FLUXO',exact:true});
-      const expectStage=label=>card.getByText(label,{exact:true}).waitFor({timeout:12000});
+      const expectStage=label=>label==='Concluído'
+        ?card.getByText(label,{exact:true}).waitFor({timeout:12000})
+        :ordersRegion.locator('.pedidos-stage-column[data-stage="'+({'Em análise':'analysis','Em preparo':'preparing','Pronto':'ready','Em entrega':'delivery'}[label])+'"]').getByRole('article',{name:'Card do pedido D-FLUXO',exact:true}).waitFor({timeout:12000});
       await expectStage('Em análise');
       await card.getByRole('img',{name:'Plataforma Loja'}).waitFor();
       await card.getByText('1 × Açaí do fluxo',{exact:true}).waitFor();
@@ -804,7 +806,7 @@ try {
       await details.getByRole('button',{name:'Fechar detalhes do pedido'}).click();
       await card.getByRole('button',{name:'Aceitar',exact:true}).click();
       await expectStage('Em preparo');
-      await card.getByRole('button',{name:'Marcar pedido pronto',exact:true}).click();
+      await card.getByRole('button',{name:'Marcar pronto',exact:true}).click();
       await expectStage('Pronto');
       await card.getByRole('button',{name:'Selecionar entregador',exact:true}).click();
       const dispatch=page.locator('dialog.dispatch-only');
