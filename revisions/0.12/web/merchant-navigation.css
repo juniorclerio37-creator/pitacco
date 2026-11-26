@@ -311,3 +311,7 @@
 #pitacco-store-navigation .mn-installed-version,#pitacco-store-navigation .mn-update-feedback{display:block;padding:1px 8px 6px 35px;color:#b7c4d6;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
 #pitacco-store-navigation .mn-update-feedback[role="alert"]{color:#ffd1c2}
 #pitacco-store-navigation .mn-collapsed .mn-windows-update{padding:0}
+
+/* Single-purpose Windows category and courier screens. */
+.menu-studio-list.catalog-categories-only{grid-template-columns:minmax(0,1fr)}
+.courier-registration-only{display:block;margin-bottom:16px}
