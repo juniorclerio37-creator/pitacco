@@ -1675,6 +1675,9 @@ try {
       await page.getByRole('region',{name:'Conciliação de repasses'}).waitFor();
       await merchantNavigate('Configurações','Configurar impressão e visualizar nota');
       await page.getByRole('heading',{name:'Computador responsável pela impressão',exact:true}).waitFor();
+      assert.equal(await page.getByRole('heading',{name:'Modelos HTML de impressão',exact:true}).count(),0);
+      assert.equal(await page.getByRole('heading',{name:'Atenção à impressão',exact:true}).count(),0);
+      await page.getByRole('heading',{name:'Impressoras por setor',exact:true}).waitFor();
       assert.equal(await page.locator('[aria-label="Seções de configuração"]').isVisible(),false);
       await merchantNavigate('Configurações','Alertas e sons');
       await page.getByRole('heading',{name:'Preferências do aplicativo',exact:true}).waitFor();
