@@ -61,3 +61,11 @@ test('merchant header highlights the selected establishment instead of Pitacco b
  assert.match(css,/\.mn-store-logo\{[^}]*object-fit:contain/s);
  assert.match(css,/\.mn-store-name\{[^}]*overflow-wrap:anywhere/s);
 });
+
+test('configuration routes stay in one canonical menu without the legacy settings toolbar',()=>{
+ const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
+ assert.doesNotMatch(source,/className="store-settings-tabs"/);
+ for(const [id,group] of [['Área de entrega','Entregas'],['Pagamentos da loja','Integrações'],['Aparência do cardápio','Cardápio'],['Minha Loja','Configurações'],['Horário de funcionamento','Configurações']]){
+  assert.deepEqual(groups.filter(g=>g.items.some(i=>i.id===id)).map(g=>g.name),[group]);
+ }
+});

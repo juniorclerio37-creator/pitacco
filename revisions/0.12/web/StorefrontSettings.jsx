@@ -395,7 +395,7 @@ function DeliveryAreaPricing({client,store}){
   finally{setBusy(false)}
  }
  return <section className="panel delivery-area-panel" aria-label="Área de entrega">
-  <h3>Administrar Loja · Área de Entrega</h3>
+  <h3>Área de entrega</h3>
   {mode==='polygon'&&invalidRegions.length>0&&<p role="alert" style={{color:'#b42333'}}>Revise {invalidRegions.map(r=>r.name).join(', ')}: o contorno tem linhas cruzadas ou pontos inválidos. Selecione a região, limpe os pontos e desenhe o contorno em ordem, sem cruzar linhas. O frete depende dessa correção; os valores cadastrados foram preservados.</p>}
   <p>Configure o círculo com taxas por km ou várias regiões poligonais com um preço por região. O cardápio utiliza somente o modo que você salvar.</p>
   <p><strong>Loja:</strong> {address||'Cadastre o endereço em Dados e identidade.'}</p>

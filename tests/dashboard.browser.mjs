@@ -991,6 +991,7 @@ try {
     if (width <= 800) await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
     await merchantNavigate('Configurações','Dados da loja');
     assert.equal(await page.locator('.storefront-share').count(),0,'O link global fica exclusivamente na Visão Geral');
+    assert.equal(await page.locator('.store-settings-tabs').count(),0,'No repeated legacy settings toolbar');
     const registration=page.getByRole('region',{name:'Dados e identidade da loja'});
     await registration.getByLabel('WhatsApp para clientes').waitFor();
     await registration.getByLabel('Enviar ou alterar logotipo da loja').waitFor();
@@ -1001,7 +1002,7 @@ try {
     await registration.getByLabel('Razão social').waitFor();
     await registration.getByRole('radio',{name:'Pessoa Física (CPF)'}).check();
     if(width<=800){
-      await page.getByRole('button',{name:'Área de entrega',exact:true}).click();
+      await merchantNavigate('Entregas','Área de entrega');
       const area=page.getByRole('region',{name:'Área de entrega',exact:true});
       await area.locator('form.delivery-zone-config').waitFor();
       async function assertAreaWidth(){
@@ -1018,7 +1019,7 @@ try {
       await assertAreaWidth();
       await area.getByRole('radio',{name:'Polígonos por região'}).check();
       await assertAreaWidth();
-      await page.getByRole('button',{name:'Identidade da loja',exact:true}).click();
+      await merchantNavigate('Configurações','Dados da loja');
     }
     if(width===1440){
       assert.equal(await page.getByRole('region',{name:'Central de ajuda'}).count(),0);
@@ -1126,9 +1127,9 @@ try {
       assert.equal(studioPublishedVersion,1,'Sem mudanças não deve criar versão publicada adicional');
       await studio.getByRole('button',{name:/Prévia e publicação/}).click();
       assert.equal(await studio.getByRole('button',{name:'Salvar rascunho'}).count(),0);
-      await page.getByRole('button',{name:'Identidade da loja',exact:true}).click();
+      await merchantNavigate('Configurações','Dados da loja');
       assert.equal(await page.getByRole('region',{name:'Estúdio de Cardápio Pitacco'}).count(),0);
-      await page.getByRole('button',{name:'Horário de funcionamento',exact:true}).click();
+      await merchantNavigate('Configurações','Horários de funcionamento');
       const hours=page.getByRole('region',{name:'Horário de funcionamento da loja'});
       await hours.getByRole('heading',{name:'Horário de funcionamento'}).waitFor();
       await hours.getByText('Horário inicial configurado para preservar suas vendas.').waitFor();
