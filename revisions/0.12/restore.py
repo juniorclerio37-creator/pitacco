@@ -204,3 +204,6 @@ for target in ['Minha Loja','Configurações','Agendamento','Área de entrega','
  assert "setTab('"+target+"')" in legacy, f'Unexpected toolbar: {target}'
 content=content[:matches[0].start()]+content[matches[0].end():]
 ui.write_text(content,encoding='utf-8')
+
+# Shared merchant header action and cross-session canonical store refresh.
+subprocess.run([sys.executable,'revisions/0.12/integration_review_0135.py'],check=True)

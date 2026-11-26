@@ -6,6 +6,16 @@ do $test$ declare u uuid:=gen_random_uuid(); s uuid; v jsonb; own uuid; begin
  perform set_config('request.jwt.claim.sub',u::text,true);
  v:=public.pitacco_save_store_registration(s,jsonb_build_object('person_type','cpf','document','52998224725','name','Fixture cadastro','responsible_name','Titular teste','administrative_phone','21900000001','administrative_email','fixture@example.invalid','whatsapp','21900000002','address','Rua Teste','address_number','12','address_complement','Loja A','neighborhood','Centro','city','Nova Iguaçu','state','RJ','postal_code','26000000','instagram_url','https://www.instagram.com/fixture.shop/','facebook_url','https://www.facebook.com/fixture.shop'));
  assert v->>'saved'='true';
+ -- Valid emails reach the central registration; malformed addresses do not mutate it.
+ begin
+  perform public.pitacco_save_store_registration(s,public.pitacco_store_registration(s)||jsonb_build_object('administrative_email','fixture@example'));
+  raise exception 'TEST malformed email accepted';
+ exception when raise_exception then
+  if sqlerrm='TEST malformed email accepted' then raise;end if;
+  assert sqlerrm='Confira os dados de contato e titularidade';
+ end;
+ assert public.pitacco_store_registration(s)->>'administrative_email'='fixture@example.invalid';
+
  v:=public.pitacco_store_registration(s);
  assert v->>'document'='52998224725' and v->>'whatsapp'='21900000002' and v->>'administrative_phone'='21900000001';
  assert (select phone='21900000002' and address='Rua Teste' from public.stores where id=s);

@@ -393,6 +393,7 @@ try {
         assert.equal(adminMode,true);
         return route.fulfill({headers,json:{pix_cnpj:'',pix_recipient:''}});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_store_identity')return route.fulfill({headers,json:{store_id:store.id,logo_path:null,legacy_logo_url:null}});
       if(pathname==='/rest/v1/rpc/pitacco_store_registration'){
         assert.equal(route.request().postDataJSON().p_store,store.id);
         return route.fulfill({headers,json:{...store,person_type:'cpf',document:'52998224725',responsible_name:'Titular de teste',administrative_phone:'21900000001',administrative_email:'fixture@example.invalid',whatsapp:'21900000002',payer_registered:false}});
@@ -671,6 +672,7 @@ try {
           Object.assign(store,updates);
           return route.fulfill({headers,json:{id:store.id}});
         }
+        if(route.request().headers().accept?.includes('object'))return route.fulfill({headers,json:store});
         return route.fulfill({headers,json:origin===api&&width===1440?[store,readOnlyStore]:[store]});
       }
       if (pathname === '/rest/v1/couriers' && route.request().headers().accept?.includes('object')) {
@@ -711,7 +713,22 @@ try {
     await page.locator('.store-identity-copy').getByText(store.name, { exact:true }).waitFor({ state:'attached' });
     await page.getByRole('heading',{name:'Visão Geral',exact:true}).waitFor();
 
+    // The shared header starts a sale at every viewport and reflects another session's saved name.
+    const newSale=page.locator('main>header').getByRole('button',{name:'Novo Pedido',exact:true});
+    await newSale.waitFor();
+    await newSale.click();
+    await page.getByRole('heading',{name:'Novo Pedido',exact:true}).waitFor();
+    const previousName=store.name;
+    store.name='Nome atualizado em outra sessão';
+    await page.evaluate(()=>window.dispatchEvent(new Event('pitacco:store-identity')));
+    await page.locator('.store-identity-copy').getByText(store.name,{exact:true}).waitFor({state:'attached'});
+    store.name=previousName;
+    await page.evaluate(()=>window.dispatchEvent(new Event('pitacco:store-identity')));
+    await page.locator('.store-identity-copy').getByText(store.name,{exact:true}).waitFor({state:'attached'});
+
     const navigation = page.getByRole('navigation', { name:'Menu principal' });
+    if(width<=800)await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
+    await navigation.getByRole('button',{name:'Visão Geral',exact:true}).click();
     if(width===1440){
       await navigation.getByRole('button',{name:'Operação',exact:true}).waitFor();
       for(const category of ['Operação','Clientes','Configurações']){
