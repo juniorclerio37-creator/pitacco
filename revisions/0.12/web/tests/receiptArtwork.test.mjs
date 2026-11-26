@@ -39,3 +39,11 @@ test('physical sample uses real receipt artwork, unmistakable test marker and sa
   assert.match(text,/TESTE DE IMPRESSÃO/);assert.match(text,/SEM VALIDADE/);assert.match(text,/MINHA LOJA/);assert.match(text,/542012/);assert.match(text,/TROCO/);assert.match(text,/PEÇA PELO NOSSO CARDÁPIO/);assert.doesNotMatch(text,/https:\/\//);
  }
 });
+
+test('thermal artwork prints valid iFood contact and excludes expired contact',()=>{
+ for(const width of [58,80]){
+ const job={receipt:{source:'ifood',display_number:'5392',customer:'Cliente',phone:'08001234567',localizer:'123456',phone_localizer_expiration:'2099-01-01T00:00:00Z',items:[]}};
+ const text=renderReceiptCanvas(job,width,{},fake).log.map(x=>x.s).join(' ');assert.match(text,/08001234567/);assert.match(text,/123456/);
+ job.receipt.phone_localizer_expiration='2000-01-01T00:00:00Z';assert.doesNotMatch(renderReceiptCanvas(job,width,{},fake).log.map(x=>x.s).join(' '),/08001234567|123456/);
+ }
+});

@@ -1,3 +1,4 @@
+import {receiptContact} from './receiptContact.mjs';
 import {scheduleInfo} from './scheduleInfo.mjs';
 import {clean,amount,cash,first,platformName,deliveryAddress,isPaid,collectionAtDelivery} from './approvedReceipt.mjs';
 import {receiptQrMatrix,receiptMenuMessage} from './receiptMenuQr.mjs';
@@ -81,8 +82,8 @@ export function renderReceiptCanvas(job,width=80,opts={},makeCanvas=()=>document
  const stamp=first(r.created_at,r.date,job.created_at);if(stamp){const d=new Date(stamp);const date=/^\d{4}-\d{2}-\d{2}T/.test(stamp)&&Number.isFinite(d.getTime())?d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}):stamp;lines(date,{align:'center'})}
  rule();icon('person',pad,y,base+6);const infoX=pad+base+16;
  lines('Cliente: '+first(r.customer_name,r.customer?.name,typeof r.customer==='string'?r.customer:'','Não informado'),{x:infoX,bold:true});
- const phone=first(r.phone,r.customer_phone,r.customer?.phone,r.buyer?.phone,r.delivery?.customer_phone);if(opts.phone!==false&&phone)lines('Telefone: '+phone,{x:infoX});
- const loc=first(r.localizer,r.localizador,r.locator,r.order_locator,r.delivery_locator,r.external_locator,r.pickup_locator);if(loc)lines('Localizador: '+loc,{x:infoX,bold:true});
+ const {phone,locator:loc}=receiptContact(r);if(opts.phone!==false&&phone)lines('Telefone: '+phone,{x:infoX});
+ if(loc)lines('Localizador: '+loc,{x:infoX,bold:true});
  const address=deliveryAddress(r.address||r.delivery_address||r.customer?.address||r.delivery?.address);
  if(opts.address!==false&&(address||r.reference)){rule();icon('pin',pad,y,base+6);if(address)lines('Endereço: '+address,{x:infoX,bold:true});if(r.reference)lines('Referência: '+clean(r.reference),{x:infoX})}
  const provider=first(r.delivery_provider,r.logistics_provider,r.fulfillment_provider);if(provider)lines('Entrega por: '+provider);

@@ -128,7 +128,8 @@ test('device location stays available on both phone and computer with accuracy v
  assert.match(map,/navigator\.geolocation\.getCurrentPosition/);
  assert.match(map,/accuracyMeters/);
  assert.match(profile,/Usar localização do celular ou computador/);
- assert.match(profile,/if\(needsDeviceAdjustment\)throw Error/);
+ assert.match(profile,/Confirmar e salvar ponto da loja/);
+ assert.match(profile,/addressDirty\|\|!savedAddress\|\|\(!changed&&!needsDeviceAdjustment\)/);
  assert.match(profile,/setNeedsDeviceAdjustment\(false\)/);
  assert.match(areas,/!automaticPoint\.approximate/);
 });

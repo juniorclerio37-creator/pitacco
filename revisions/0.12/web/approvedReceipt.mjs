@@ -1,3 +1,4 @@
+import {receiptContact} from './receiptContact.mjs';
 import {scheduleInfo} from './scheduleInfo.mjs';
 // Pitacco thermal receipt — one professional default for every establishment.
 // The same plain-text output powers native Windows ESC/POS and browser printing.
@@ -98,9 +99,8 @@ export function approvedReceipt(job,width=80,opts={}){
  lines.push(doubleRule);
  if(r.created_at||r.date||job.created_at)add('Criado em: '+first(r.created_at,r.date,job.created_at));
  add('Cliente: '+first(r.customer_name,r.customer?.name,typeof r.customer==='string'?r.customer:'','Nao informado'));
- const phone=first(r.phone,r.customer_phone,r.customer?.phone,r.buyer?.phone,r.delivery?.customer_phone);
+ const {phone,locator}=receiptContact(r);
  if(opts.phone!==false&&phone)add('Telefone: '+phone);
- const locator=first(r.localizer,r.localizador,r.locator,r.order_locator,r.delivery_locator,r.external_locator,r.pickup_locator);
  if(locator)add('Localizador: '+locator);
  const address=deliveryAddress(r.address||r.delivery_address||r.customer?.address||r.delivery?.address);
  if(opts.address!==false&&address)add('Endereco: '+address);

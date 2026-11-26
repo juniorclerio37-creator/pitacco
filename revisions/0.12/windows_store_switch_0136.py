@@ -71,9 +71,13 @@ new="""  let live=true;
 assert s.count(old)==1, 'Native printer context anchor changed'
 s=s.replace(old,new,1)
 # Wait for native activation independently of the React tenant selection.
-anchor=" const seen=useRef(new Set()),soundRef=useRef(false),notifySeen=useRef(new Set());"
+anchor="  const activation={storeId:manager?storeId:null,ready:queueActiveStore(manager?storeId:null)};"
 assert s.count(anchor)==1, 'Native scope ref anchor changed'
-s=s.replace(anchor,anchor+"""
+# Insert the hook at the component entry, before any effect runs.
+import re
+entry=r"(export default function Operations\([^\n]*\)\{)"
+assert len(re.findall(entry,s))==1, 'Operations component entry changed'
+s=re.sub(entry,lambda m:m.group(0)+"""
  const nativePrintScope=useRef(null);
  async function waitForNativePrintStore(){
   const scope=nativePrintScope.current;
@@ -81,7 +85,7 @@ s=s.replace(anchor,anchor+"""
   try{await scope.ready}catch{return false}
   return nativePrintScope.current===scope;
  }
-""",1)
+""",s,count=1)
 anchor="   try{const local=await invoke('list_jobs');if(stopped)return;"
 assert s.count(anchor)==1, 'Local print queue polling anchor changed'
 s=s.replace(anchor,"   try{if(!await waitForNativePrintStore()||stopped)return;const local=await invoke('list_jobs');if(stopped)return;",1)
