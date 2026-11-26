@@ -2,11 +2,16 @@ begin;
 insert into auth.users(id,email,email_confirmed_at) values
  ('10000000-0000-0000-0000-000000000081','insights-manager@example.invalid',now()),
  ('10000000-0000-0000-0000-000000000082','insights-other@example.invalid',now());
+insert into pitacco_private.platform_owner(user_id,login_name_hash) values ('10000000-0000-0000-0000-000000000082',sha256(convert_to('00000000082','UTF8')));
 insert into public.stores(id,name) values ('20000000-0000-0000-0000-000000000081','Loja insights'),('20000000-0000-0000-0000-000000000082','Outra insights');
 insert into public.store_members values ('20000000-0000-0000-0000-000000000081','10000000-0000-0000-0000-000000000081','gestor');
 insert into public.pitacco_ingredients(store_id,name,unit,minimum) values ('20000000-0000-0000-0000-000000000081','Açaí teste','g',100),('20000000-0000-0000-0000-000000000082','Insumo privado','g',100);
 set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000081',true);
+do $test$ begin
+ begin perform public.pitacco_business_insights('20000000-0000-0000-0000-000000000081');raise exception 'Merchant access accepted';exception when insufficient_privilege then null;end;
+end $test$;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000082',true);
 do $test$
 declare d jsonb;
 begin
@@ -17,7 +22,8 @@ begin
  assert jsonb_array_length(d->'stock_alerts')=1;
  assert d#>>'{stock_alerts,0,name}'='Açaí teste';
  assert d#>'{stock_alerts,0,days_left}'='null'::jsonb;
- begin perform public.pitacco_business_insights('20000000-0000-0000-0000-000000000082');raise exception 'Cross-store access accepted';exception when insufficient_privilege then null;end;
+ assert d#>>'{sales,orders}'='0';
+ assert public.pitacco_business_insights('20000000-0000-0000-0000-000000000082')#>>'{stock_alerts,0,name}'='Insumo privado';
 end $test$;
 reset role;
 

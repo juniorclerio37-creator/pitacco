@@ -23,3 +23,5 @@ test('marketing, legacy menu, assets and the application keep their existing rou
  assert.equal(assetPath('https://app.pitacco.com.br/acaidolinho'),'/acaidolinho');
  assert.equal(assetPath('https://pitacco.com.br/acaidolinho','POST'),'/acaidolinho');
 });
+
+ test('merchant and public storefront cannot access intelligence endpoint',async()=>{ const result=await worker.fetch(new Request('https://app.pitacco.com.br/api/intelligence/sales',{method:'POST'}),{ASSETS:{fetch:()=>{throw Error('unexpected asset fallback')}}});assert.equal(result.status,404);});

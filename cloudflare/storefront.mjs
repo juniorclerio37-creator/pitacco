@@ -1,4 +1,3 @@
-import {handleSalesCoach} from './sales-coach.mjs';
 const storefrontHosts = new Set(['pitacco.com.br', 'www.pitacco.com.br']);
 const reserved = new Set([
   'www', 'app', 'entregador', 'pitacco', 'admin', 'api', 'mail', 'cadastro',
@@ -9,7 +8,7 @@ const reserved = new Set([
 export default {
   fetch(request, env) {
     const {ASSETS}=env;
-    if(new URL(request.url).pathname==='/api/intelligence/sales')return handleSalesCoach(request,env);
+    if(new URL(request.url).pathname.startsWith('/api/intelligence/'))return new Response('Not found',{status:404,headers:{'Cache-Control':'no-store'}});
     const url = new URL(request.url);
     const slug = url.pathname.match(/^\/([a-z0-9][a-z0-9-]{2,59})\/?$/)?.[1];
     if (storefrontHosts.has(url.hostname) && slug && !reserved.has(slug) &&
