@@ -2,8 +2,8 @@ import {Client} from 'pg';import assert from 'node:assert/strict';
 const admin=new Client({connectionString:process.env.DATABASE_URL});await admin.connect();
 // Realistic isolated checkout fixtures need a valid Flex contract under the mandatory-plan gate.
 async function activateFixturePlan(client,storeId){
- const result=await client.query(`insert into pitacco_private.commercial_contracts(store_id,revision,plan_code,effective_from,terms)
- select $1,v.revision,'free',(now() at time zone 'America/Sao_Paulo')::date,x from public.pitacco_plan_catalog_signal s
+ const result=await client.query(`insert into pitacco_private.commercial_contracts(store_id,revision,plan_code,effective_from,terms,assigned_by)
+ select $1,v.revision,'free',(now() at time zone 'America/Sao_Paulo')::date,x,'10000000-0000-0000-0000-000000000001'::uuid from public.pitacco_plan_catalog_signal s
  join pitacco_private.plan_catalog_versions v on v.revision=s.revision cross join lateral jsonb_array_elements(v.plans) x
  where s.singleton and x->>'code'='free'`,[storeId]);
  assert.equal(result.rowCount,1);
