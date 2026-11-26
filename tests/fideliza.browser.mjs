@@ -25,8 +25,8 @@ try{
    if(url.origin==='https://esm.sh')return route.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:`export function createClient(){return {rpc:async(name,payload)=>{const r=await fetch('/fixture/'+name,{method:'POST',body:JSON.stringify(payload)});const data=await r.json();return {data:r.ok?data:null,error:r.ok?null:data,status:r.status}}}}`});
    if(!url.pathname.startsWith('/fixture/'))return route.abort();
    const p=route.request().postDataJSON();
-   if(name==='get_public_menu')return route.fulfill({json:{store:{appearance:{template,...templatePalettes[template]},name:'Loja Fideliza',delivery_enabled:false,pickup_enabled:true,payment_methods:['pix_manual'],opening_hours:{open:true,reason:'open'}},products:[{id:'p1',name:'Açaí',category:'Açaí',price:50,image_url:'https://fixtures.pitacco.test/acai.svg',option_groups:[]},{id:'p2',name:'Creme de cupuaçu',category:'Açaí',price:50,option_groups:[]},{id:'p3',name:'Combo da casa',category:'Açaí',price:50,option_groups:[]}]}});
-   if(name==='pitacco_public_store_region')return route.fulfill({json:'Localidade de teste com nome comprido · Nova Iguaçu'});
+   if(name==='get_public_menu')return route.fulfill({json:{store:{appearance:{template,...templatePalettes[template]},name:'Loja Fideliza',delivery_enabled:false,pickup_enabled:true,payment_methods:['pix_manual'],opening_hours:{open:true,reason:'open'}},products:[{id:'p1',name:'Açaí',category:'Açaí',price:50,image_url:'https://fixtures.pitacco.test/acai.svg',option_groups:[]},{id:'p2',name:'Creme de cupuaçu',category:'Açaí',price:50,option_groups:[]},{id:'p3',name:'Combo da casa',category:'Açaí',price:50,option_groups:[]},{id:'p4',name:'Açaí especial',category:'Açaí',price:50,option_groups:[]}]}});
+   if(name==='pitacco_public_top_sellers')return route.fulfill({json:['p1','p3','p2','p4']});
    if(name==='pitacco_public_store_open')return route.fulfill({json:{open:true,reason:'open'}});
    if(name==='pitacco_public_schedule_slots')return route.fulfill({json:[]});
    if(name==='pitacco_loyalty_program')return route.fulfill({json:{rules,campaigns:[{id:'campaign',title:'Oferta da semana',code:'SEMANA5',discount_type:'fixed',discount_value:5,minimum_order_cents:0}]}});
@@ -123,6 +123,17 @@ try{
     'Categorias não podem mudar de posição depois que o carregamento desaparece');
   await page.locator('.product-open').first().waitFor();
   await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
+  if(template==='pitacco-v2'){
+   assert.deepEqual(await page.locator('#v2TopProducts .v2-top-name').allTextContents(),['Açaí','Combo da casa','Creme de cupuaçu','Açaí especial']);
+   assert.equal(await page.locator('#v2TopProducts .v2-top-badge').filter({hasText:'Mais pedido'}).count(),4);
+   const compactGrid=await page.locator('#v2TopProducts').evaluate(grid=>({
+    columns:getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+    photos:[...grid.querySelectorAll('.v2-top-photo')].map(e=>e.getBoundingClientRect().height),
+    overflow:grid.scrollWidth>grid.clientWidth+1
+   }));
+   assert.equal(compactGrid.columns,width<=600?2:4);
+   assert.ok(compactGrid.photos.every(height=>height<=149)&&!compactGrid.overflow,'Four compact cards fit without overflow: '+JSON.stringify(compactGrid));
+  }else assert.equal(await page.locator('#v2TopProducts .v2-top-product').count(),2);
   await page.evaluate(()=>{for(const image of document.images)if(image.src.includes('fixtures.pitacco.test'))image.loading='eager';});
   await page.waitForFunction(()=>[...document.images].filter(i=>i.src.includes('fixtures.pitacco.test')).every(i=>i.complete&&i.naturalWidth>0),null,{timeout:10000});
   assert.equal(await page.locator('.product').first().evaluate(card=>{const photo=card.querySelector('.product-visual').getBoundingClientRect(),image=card.querySelector('.product-visual img').getBoundingClientRect();return image.bottom<=photo.bottom+1&&image.height<=photo.height+1;}),true,'Foto real limitada à área visual sem cobrir texto');

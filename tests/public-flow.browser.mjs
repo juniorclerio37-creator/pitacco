@@ -361,7 +361,7 @@ try {
     assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--brand')),'#217c5a','Published studio palette takes precedence over old branding');
     assert.equal(await page.locator('body').getAttribute('data-menu-template'),'pitacco-v2','Versão 2 é o template principal');
     await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
-    assert.equal(await page.locator('#v2TopProducts .v2-top-product').count(),2,'Início mostra exatamente dois destaques');
+    assert.equal(await page.locator('#v2TopProducts .v2-top-product').count(),template==='pitacco-v2'?3:2,'Início mostra até quatro destaques no V2 principal, sem inventar produtos');
     assert.equal(await page.locator('.v2-top-badge').first().evaluate(e=>parseFloat(getComputedStyle(e).fontSize)<20),true,'Selo de destaque não herda tamanho da imagem');
     const initialColor=await page.locator('#storeInitial').evaluate(e=>getComputedStyle(e).color);
     if(['essencial','editorial'].includes(template))assert.notEqual(initialColor,'rgb(255, 255, 255)','Inicial escura no cabeçalho claro');else assert.equal(initialColor,'rgb(255, 255, 255)','Inicial clara no cabeçalho escuro');

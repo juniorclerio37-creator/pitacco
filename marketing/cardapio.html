@@ -1439,6 +1439,24 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyaltyGo
  body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-compact-copy{padding-left:6px;font-size:.69rem}
  body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyaltyGo{padding:6px 8px;font-size:.72rem}
 }
+/* Compact four-product showcase for principal V2; keep the catalog cards unchanged. */
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-product{display:flex;flex-direction:column;border-radius:14px}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-photo{width:100%;height:clamp(100px,12vw,148px);aspect-ratio:auto;min-height:0}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-photo img{padding:5px}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-photo>span:not(.v2-top-badge){font-size:2.4rem}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-badge{top:6px;left:6px;font-size:.64rem;padding:4px 7px;max-width:calc(100% - 45px)}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-heart{top:5px;right:5px;width:32px;height:32px;font-size:1.15rem}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-product-details{flex:1;display:flex;flex-direction:column;gap:5px;padding:7px 9px}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-name{font-size:.86rem;line-height:1.25;min-height:2.5em;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-description{display:none}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-bottom{margin-top:auto;gap:4px}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-price{font-size:clamp(.79rem,1.3vw,1.03rem);overflow-wrap:anywhere}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-add{flex:none;width:36px;height:36px;border-radius:10px;font-size:1.2rem}
+@media(max-width:600px){
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-photo{height:clamp(86px,25vw,120px)}
+}
 /* About contains only the shop's actual weekly hours, payment methods and scheduling. */
 body[data-menu-template="pitacco-v2"] .v2-about-block{border-top:1px solid var(--line,#eae3e7);padding:16px 0 0;margin-top:16px}
 body[data-menu-template="pitacco-v2"] .v2-about-block h3{font-size:1rem;margin:0 0 10px;color:var(--ink)}
@@ -1488,7 +1506,7 @@ body[data-menu-template=classic] #hero:has(#customerSessionBar:not([hidden])) .h
  </div>
  <nav id="v2HomeCategories" class="v2-home-categories" aria-label="Categorias do cardápio"></nav>
  <div class="v2-top-products-title"><h2><span id="v2HighlightsIcon" aria-hidden="true">🔥</span> Destaques da loja</h2><button type="button" id="v2AllProductsButton">Ver todos ›</button></div>
- <div id="v2TopProducts" aria-label="Dois produtos em destaque"></div>
+ <div id="v2TopProducts" aria-label="Produtos em destaque"></div>
 </section>
 
 <section id="v2LoyaltyPage" class="v2-section-page" aria-label="Minha área Fideliza+" hidden>
@@ -2106,9 +2124,10 @@ function v2SaveFavorite(id){
  try{localStorage.setItem(v2FavoritesKey,JSON.stringify([...v2Favorites].slice(-100)))}catch{}
  renderProducts();
 }
-// Os dois primeiros são escolhidos por vendas confirmadas desta loja.
+// Os destaques são escolhidos por vendas registradas desta loja.
 // Na ausência de histórico, a vitrine usa itens reais do catálogo, sem inventar vendas.
 let v2TopSellerIds=[];
+const v2HighlightLimit=()=>document.body.dataset.menuSkin==='principal'?4:2;
 const MENU_STARTUP_RPC_LIMIT_MS=3400;
 function menuStartupRpc(name,args){
  // Cada RPC tem prazo finito. Resultados atrasados não modificam a página já montada.
@@ -2130,7 +2149,7 @@ async function prepareMenuStartup(){
 function applyMenuStartupData(prepared){
  const {loyalty,best}=prepared;
  v2TopSellerIds=!best?.error&&Array.isArray(best?.data)
-  ?best.data.filter(id=>typeof id==='string').slice(0,2):[];
+  ?[...new Set(best.data.filter(id=>typeof id==='string'))].slice(0,4):[];
  if(!loyalty?.error&&loyalty?.data?.rules){
   loyaltyProgram=loyalty.data;
   $('loyaltyBox').hidden=false;$('loyaltyOpen').hidden=false;
@@ -2144,7 +2163,7 @@ async function warmMenuStartupImages(){
  const urls=[
   studioAsset(shop.profile_logo_path)||studioAsset(shop.appearance?.logo_path)||shop.logo_url,
   studioAsset(shop.appearance?.cover_path)||shop.banner_url,
-  ...[...featured,...menu.products].slice(0,2).map(p=>p.image_url)
+  ...[...featured,...menu.products].slice(0,4).map(p=>p.image_url)
  ].filter(imageUrl);
  await Promise.all([...new Set(urls)].map(url=>new Promise(resolve=>{
   const image=new Image();let finished=false;
@@ -2171,7 +2190,7 @@ async function v2LoadTopSellers(){
  if(!menu||document.body.dataset.menuTemplate!=='pitacco-v2')return;
  const [result]=await Promise.allSettled([client.rpc('pitacco_public_top_sellers',{p_slug:slug})]);
  const best=result.status==='fulfilled'?result.value:null;
- if(!best?.error&&Array.isArray(best?.data))v2TopSellerIds=best.data.filter(id=>typeof id==='string').slice(0,2);
+ if(!best?.error&&Array.isArray(best?.data))v2TopSellerIds=[...new Set(best.data.filter(id=>typeof id==='string'))].slice(0,4);
  v2Feature();
 }
 // All models use the same persisted category keys; no platform pizza emoji.
@@ -2331,7 +2350,7 @@ function v2RenderHomeLoyaltyProgress(){
 function v2Feature(){
  if(document.body.dataset.menuTemplate!=='pitacco-v2'||!menu)return;
  const products=menu.products,ranked=v2TopSellerIds.map(id=>products.find(p=>p.id===id)).filter(Boolean);
- const selected=[...ranked,...products.filter(p=>!ranked.some(r=>r.id===p.id))].slice(0,2);
+ const selected=[...ranked,...products.filter(p=>!ranked.some(r=>r.id===p.id))].slice(0,v2HighlightLimit());
  const root=$('v2TopProducts');root.replaceChildren();
  for(const product of selected){
   const card=el('article',undefined,'v2-top-product'),image=el('div',undefined,'v2-top-photo');
@@ -2339,7 +2358,7 @@ function v2Feature(){
    const img=el('img');img.alt='';img.loading='lazy';img.decoding='async';setProductPhotoFit(img);img.src=product.image_url;image.append(img);
   }else image.append(el('span','🍧'));
   const isRanked=v2TopSellerIds.includes(product.id),isCombo=/combo/i.test(product.category+' '+product.name);
-  const badge=el('span',isCombo?'Combo':isRanked?'Mais pedido':'Destaque','v2-top-badge');
+  const badge=el('span',isRanked?'Mais pedido':isCombo?'Combo':'Destaque','v2-top-badge');
   badge.dataset.combo=String(isCombo);image.append(badge);
   const fav=button(v2Favorites.has(product.id)?'♥':'♡','v2-top-heart');
   fav.setAttribute('aria-pressed',String(v2Favorites.has(product.id)));
