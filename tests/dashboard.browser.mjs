@@ -931,9 +931,15 @@ try {
       await page.getByRole('button',{name:'Salvar e ativar círculo de entrega'}).click();
       await page.getByText(/Taxas do círculo por quilômetro salvas/).waitFor();
       await merchantNavigate('Integrações','Meios de pagamento');
-      await page.getByRole('checkbox',{name:'InfinitePay'}).check();
-      await page.getByRole('button',{name:'Salvar preferências de integração'}).click();
-      await page.getByText('Preferências de integração salvas.').waitFor();
+      const providers=page.getByRole('region',{name:'Integrações de pagamento'});
+      await providers.getByRole('button',{name:/InfinitePay/}).click();
+      const providerSettings=page.locator('dialog.modern-dialog');
+      await providerSettings.getByRole('checkbox',{name:'Solicitar recebimento online'}).check();
+      await providerSettings.getByText(/Preferência não ativa pagamentos/).waitFor();
+      await providerSettings.getByRole('button',{name:'Salvar preferências de integração'}).click();
+      await providerSettings.getByText('Preferências de integração salvas. A ativação depende da homologação.').waitFor();
+      await providerSettings.getByRole('button',{name:'Fechar janela',exact:true}).click();
+      await providers.getByRole('button',{name:/InfinitePay.*Solicitado/}).waitFor();
       await merchantNavigate('Cardápio','Aparência do cardápio');
       const studio=page.getByRole('region',{name:'Estúdio de Cardápio Pitacco'});
       await studio.getByRole('heading',{name:'Estúdio de Cardápio'}).waitFor();
