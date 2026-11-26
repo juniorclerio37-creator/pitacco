@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cardápio</title><style>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cardápio</title><link rel="stylesheet" href="/assets/delivery-map.css"><style>
 :root{--ink:#281e29;--muted:#685e68;--line:#eae3e7;--paper:#fff;--surface:#f8f5f6;--hero:#30202e;--brand:#ca4936;--on-brand:#fff;--radius:22px;color-scheme:light}
 [hidden]{display:none!important}*{box-sizing:border-box}
 body{margin:0;background:var(--surface);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
@@ -1635,7 +1635,7 @@ async function quoteFailureMessage(error){
 }
 
 function selectDeliveryPoint(point){
- deliveryPoint=point;
+ deliveryPoint=point;suggestedDeliveryPoint=null;
  deliveryQuote=null;
  deliveryMap?.setPoint(point);
  $('deliveryPointStatus').textContent='Localização confirmada. A taxa será atualizada automaticamente e o endereço poderá ser reutilizado após a entrega.';
@@ -1645,7 +1645,7 @@ function selectDeliveryPoint(point){
 $('address').addEventListener('input',event=>{
  deliveryQuote=null;
  const keepPoint=Boolean(event.detail?.keepPoint);
- if(!keepPoint){$('addressCepStatus').textContent='';}
+ if(!keepPoint){$('addressCepStatus').textContent='';suggestedDeliveryPoint=null;pendingMapPoint=null;$('confirmDeliveryMap').disabled=true;deliveryMap?.clearPoint();}
  if(deliveryPoint&&!keepPoint){
   deliveryPoint=null;deliveryMap?.clearPoint();
   $('deliveryPointStatus').textContent='Confirme novamente a localização do endereço.';
@@ -1654,7 +1654,8 @@ $('address').addEventListener('input',event=>{
  v2ScheduleDeliveryQuote();
  if(menu)renderCart();
 });
-let pendingMapPoint=null;
+let pendingMapPoint=null,suggestedDeliveryPoint=null;
+function validDeliveryMapPoint(point){return Array.isArray(point)&&point.length===2&&point.every(v=>typeof v==='number'&&Number.isFinite(v))&&Math.abs(point[0])<=90&&Math.abs(point[1])<=180;}
 function closeDeliveryMap(){
  $('deliveryMapPanel').hidden=true;$('showDeliveryMap').setAttribute('aria-expanded','false');
  $('showDeliveryMap').textContent='⌖ Ajustar localização no mapa';pendingMapPoint=null;
@@ -1665,7 +1666,7 @@ $('showDeliveryMap').onclick=async()=>{
  const area=menu?.store?.delivery_area;
  if(!area)return;
  panel.hidden=false;container.hidden=false;button.disabled=true;button.setAttribute('aria-expanded','true');
- button.textContent='⌖ Recolher mapa';pendingMapPoint=deliveryPoint?[...deliveryPoint]:null;
+ button.textContent='⌖ Recolher mapa';pendingMapPoint=deliveryPoint?[...deliveryPoint]:suggestedDeliveryPoint?[...suggestedDeliveryPoint]:null;
  $('confirmDeliveryMap').disabled=!pendingMapPoint;
  try{
   if(!deliveryMap){
@@ -1675,9 +1676,10 @@ $('showDeliveryMap').onclick=async()=>{
     onSelect:point=>{pendingMapPoint=point;deliveryMap?.setPoint(point);$('confirmDeliveryMap').disabled=false;}
    });
   }
-  if(pendingMapPoint)deliveryMap?.showPoint(pendingMapPoint);else deliveryMap?.clearPoint();
+  if(pendingMapPoint){deliveryMap?.showPoint(pendingMapPoint);deliveryMap?.focus?.(pendingMapPoint,17);}
+  else deliveryMap?.clearPoint();
   deliveryMap?.resize();
- }catch(error){closeDeliveryMap();$('deliveryPointStatus').textContent=error.message;}
+ }catch(error){deliveryMap?.remove();deliveryMap=null;closeDeliveryMap();$('deliveryPointStatus').textContent='Não foi possível abrir o mapa. Tente novamente ou use sua localização atual.';}
  finally{button.disabled=false;}
 };
 $('confirmDeliveryMap').onclick=()=>{
@@ -1688,8 +1690,16 @@ $('locateDelivery').onclick=async()=>{
  const button=$('locateDelivery');button.disabled=true;
  $('deliveryPointStatus').textContent='Localizando…';
  try{
-  const {currentLocation}=await import('/assets/delivery-map.mjs');
-  selectDeliveryPoint(await currentLocation());
+  // GPS must remain usable even if loading the visual map fails.
+  const point=await new Promise((resolve,reject)=>{
+   if(!navigator.geolocation)return reject(Error('Seu navegador não oferece localização.'));
+   navigator.geolocation.getCurrentPosition(({coords})=>{
+    const position=[Number(coords.latitude.toFixed(6)),Number(coords.longitude.toFixed(6))];
+    if(!validDeliveryMapPoint(position))return reject(Error('Localização inválida. Tente novamente.'));
+    resolve(position);
+   },error=>reject(Error(error?.code===1?'Permita o acesso à localização no navegador e tente novamente.':error?.code===3?'A localização demorou demais. Tente novamente.':'Não foi possível obter sua localização.')), {enableHighAccuracy:true,timeout:15000,maximumAge:0});
+  });
+  selectDeliveryPoint(point);
   deliveryMap?.showPoint(deliveryPoint);closeDeliveryMap();
   if(!v2QuoteAddressReady())$('deliveryPointStatus').textContent='Localização encontrada. Complete rua, número, bairro e cidade para confirmar a entrega.';
  }catch(error){$('deliveryPointStatus').textContent=error.message;}
@@ -1764,7 +1774,18 @@ async function requestDeliveryQuote(auto=false){
     body:{slug,address,request_id:requestId,delivery_service:selectedService,
      ...(quotePoint?{latitude:quotePoint[0],longitude:quotePoint[1]}:{})}
    });
-   if(error)throw Error(await quoteFailureMessage(error));
+   if(error){
+    // An approximate geocoder response is a suggestion, never a confirmed coordinate.
+    let details;try{details=await error.context?.clone().json();}catch{}
+    if(token===quoteGeneration&&$('address').value.trim()===address&&details?.requires_confirmation===true&&validDeliveryMapPoint(details.suggested_point)&&!deliveryPoint){
+     suggestedDeliveryPoint=[...details.suggested_point];
+     if(!$('deliveryMapPanel').hidden&&deliveryMap&&!pendingMapPoint){
+      pendingMapPoint=[...suggestedDeliveryPoint];deliveryMap.showPoint(pendingMapPoint);deliveryMap.focus?.(pendingMapPoint,17);$('confirmDeliveryMap').disabled=false;
+     }
+     $('deliveryPointStatus').textContent='Encontramos uma localização aproximada. Confira o marcador no mapa e confirme a entrada do imóvel.';
+    }
+    throw Error(await quoteFailureMessage(error));
+   }
    if(!data?.quote_id||data.request_id!==requestId||!Number.isFinite(Number(data.fee)))
     throw Error(data?.error||'Não foi possível confirmar o frete.');
    if(token!==quoteGeneration||$('address').value.trim()!==address||

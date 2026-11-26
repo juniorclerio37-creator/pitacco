@@ -140,3 +140,13 @@ test('option group navigation triggers only when maximum is newly reached',()=>{
  assert.match(html,/if\(option&&input.checked\)advanceCompletedOptionGroup\(row,previousCount\)/);
  assert.match(html,/body.scrollTo\(\{top,behavior:reducedMotion\?'instant':'smooth'\}\)/);
 });
+
+test('public maps are bundled with Leaflet and the checkout keeps suggestions unconfirmed',()=>{
+ const build=readFileSync(new URL('../scripts/build-cloudflare.sh',import.meta.url),'utf8');
+ assert.match(build,/esbuild web\/deliveryMap\.mjs --bundle --format=esm/);
+ assert.doesNotMatch(build,/cp web\/deliveryMap\.mjs/);
+ assert.match(html,/href="\/assets\/delivery-map\.css"/);
+ assert.match(html,/details\?\.requires_confirmation===true&&validDeliveryMapPoint\(details.suggested_point\)/);
+ assert.match(html,/suggestedDeliveryPoint=\[\.\.\.details.suggested_point\]/);
+ assert.match(html,/selectDeliveryPoint\(pendingMapPoint\);closeDeliveryMap\(\)/);
+});

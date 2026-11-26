@@ -23,10 +23,29 @@ const mapFixture = `
  }`;
 const browser = await chromium.launch({ executablePath: process.env.PITACCO_CHROMIUM });
 const origin = 'http://localhost:4179';
+// Exercise the real production build, not only the fixture that masks bare imports.
+const bundledMap=await readFile(new URL('../web/dist/assets/delivery-map.mjs',import.meta.url),'utf8');
+const bundledMapCss=await readFile(new URL('../web/dist/assets/delivery-map.css',import.meta.url),'utf8');
 const orderId = '10000000-0000-0000-0000-000000000001';
 const token = '20000000-0000-0000-0000-000000000001';
 
 try {
+  const mapPage=await browser.newPage({viewport:{width:375,height:800}});
+  await mapPage.route('**/*',async route=>{
+   const url=new URL(route.request().url());
+   if(url.origin===origin&&url.pathname==='/map-smoke')return route.fulfill({contentType:'text/html',body:'<link rel="stylesheet" href="/assets/delivery-map.css"><div id="map" style="width:340px;height:260px"></div><script type="module">import {mountDeliveryMap} from "/assets/delivery-map.mjs";const map=await mountDeliveryMap(document.getElementById("map"),{center:[-22.71,-43.4],showCoverage:false,onSelect:p=>window.selected=p});map.showPoint([-22.71,-43.4]);window.mapReady=true;</script>'});
+   if(url.origin===origin&&url.pathname==='/assets/delivery-map.mjs')return route.fulfill({contentType:'text/javascript',body:bundledMap});
+   if(url.origin===origin&&url.pathname==='/assets/delivery-map.css')return route.fulfill({contentType:'text/css',body:bundledMapCss});
+   if(url.hostname==='tile.openstreetmap.org')return route.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jE1sAAAAASUVORK5CYII=','base64')});
+   return route.abort();
+  });
+  await mapPage.goto(origin+'/map-smoke');
+  await mapPage.waitForFunction(()=>window.mapReady===true);
+  await mapPage.locator('.leaflet-container .pitacco-delivery-address-pin').waitFor({state:'visible'});
+  await mapPage.locator('#map').click({position:{x:90,y:100}});
+  await mapPage.waitForFunction(()=>Array.isArray(window.selected));
+  await mapPage.close();
+  console.log('PASS real bundled public Leaflet map and click selection');
   for(const template of ['pitacco-v2','essencial','editorial','urbano','classic']) for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     page.setDefaultTimeout(30000);
