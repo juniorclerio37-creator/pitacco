@@ -335,6 +335,16 @@ try {
         assert.equal(input.p_expected_revision,0);
         return route.fulfill({headers,json:{channel:input.p_channel,method:input.p_method,adjustment_bps:input.p_adjustment_bps,processing_cost_bps:0,revision:1}});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_save_storefront_publication'){
+        const input=route.request().postDataJSON();assert.equal(input.p_store,store.id);
+        assert.equal(Object.hasOwn(input,'p_public'),false);
+        return route.fulfill({headers,json:{saved:true,enabled:input.p_enabled,delivery_enabled:input.p_delivery_enabled,pickup_enabled:input.p_pickup_enabled}});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_save_payment_methods_only'){
+        const input=route.request().postDataJSON();assert.equal(input.p_store,store.id);
+        assert.equal(Object.hasOwn(input,'p_enabled'),false);
+        return route.fulfill({headers,json:{saved:true,payment_methods:input.p_public,pdv_payment_methods:input.p_pdv,pix_instructions:input.p_pix_instructions}});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_save_channel_payments'){
         const input=route.request().postDataJSON();
         assert.equal(input.p_store,store.id);
@@ -1016,6 +1026,16 @@ try {
       await page.getByRole('button',{name:'Salvar e ativar círculo de entrega'}).click();
       await page.getByText(/Taxas do círculo por quilômetro salvas/).waitFor();
       await merchantNavigate('Integrações','Meios de pagamento');
+      const publication=page.getByRole('region',{name:'Publicação e atendimento'});
+      const paymentPanel=page.getByRole('region',{name:'Formas de pagamento',exact:true});
+      await publication.getByRole('checkbox',{name:'Aceitar retirada'}).check();
+      await publication.getByRole('button',{name:'Salvar publicação',exact:true}).click();
+      await publication.getByText('Publicação salva.',{exact:true}).waitFor();
+      await paymentPanel.getByRole('checkbox',{name:'Ticket — Balcão'}).check();
+      await paymentPanel.getByRole('button',{name:'Salvar formas de pagamento',exact:true}).click();
+      await paymentPanel.getByText('Formas de pagamento salvas.',{exact:true}).waitFor();
+      const track=await paymentPanel.locator('.ps-track').first().boundingBox();
+      assert.ok(track.width>track.height*1.5,'Payment selector is horizontal');
       const pricing=page.getByRole('region',{name:'Preços por forma de pagamento'});
       await pricing.getByRole('button',{name:'Preparar regras de preço'}).click();
       await pricing.getByLabel('Canal de venda').selectOption('balcao');

@@ -7,7 +7,7 @@ import {storefrontLink} from './storefrontLink.mjs';
 import DeliveryCodeSettings from './DeliveryCodeSettings.jsx';
 import {ModernModal,IntegrationRow,BrandTile} from './MerchantModern.jsx';
 import PaymentHomologation from './PaymentHomologation.jsx';
-import {ShoppingBag,Truck,Store,Wallet,CreditCard,ScanLine} from 'lucide-react';
+import {ShoppingBag,Truck,Store,Wallet,CreditCard,ScanLine,Banknote,Smartphone,Utensils,KeyRound,Link2} from 'lucide-react';
 
 const origin=import.meta.env.VITE_PITACCO_HOMOLOGACAO==='1'
  ? import.meta.env.VITE_PITACCO_HOMOLOG_SITE_ORIGIN || window.location.origin
@@ -110,65 +110,63 @@ function PaymentPricingDrafts({client,storeId,menu}){
  </section>;
 }
 
+const paymentDescriptions={dinheiro:'Pagamento em espécie.',cartao_credito:'Pagamento com cartão de crédito na maquininha.',cartao_debito:'Pagamento com cartão de débito na maquininha.',pix_maquininha:'Pagamento via Pix na maquininha.',pix_manual:'Transferência Pix com a chave da loja.'};
+const paymentIcons={dinheiro:Banknote,cartao_credito:CreditCard,cartao_debito:CreditCard,pix_maquininha:ScanLine,pix_manual:ScanLine};
+const voucherShort={voucher_alelo:'Alelo',voucher_pluxee:'Pluxee',voucher_vr:'VR',voucher_ticket:'Ticket'};
+function PaymentSectionTitle({icon:Icon,children,description}){return <div className="ps-heading"><span className="ps-heading-icon"><Icon size={23}/></span><div><h3>{children}</h3>{description&&<p>{description}</p>}</div></div>}
+function PaymentSwitch({icon:Icon,label,description,checked,onChange,accessibleLabel}){
+ return <label className="ps-switch-row">{Icon&&<Icon className="ps-method-icon" size={22}/>}<span className="ps-switch-copy"><strong>{label}</strong>{description&&<small>{description}</small>}</span><span aria-hidden="true" className={'ps-status '+(checked?'on':'off')}>{checked?'Ativado':'Desativado'}</span><span className="ps-toggle"><input type="checkbox" aria-label={accessibleLabel||label} checked={Boolean(checked)} onChange={e=>onChange(e.target.checked)}/><span aria-hidden="true" className="ps-track"/></span></label>;
+}
 export function StorefrontPayments({client,storeId,resource}){
  const {menu,error,reload,update}=resource;
- const [draft,setDraft]=useState(()=>menu?{...menu,payment_methods:expandPaymentMethods(menu.payment_methods),pdv_payment_methods:expandPaymentMethods(menu.pdv_payment_methods??menu.payment_methods)}:menu),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[failure,setFailure]=useState('');
- useEffect(()=>setDraft(menu?{...menu,payment_methods:expandPaymentMethods(menu.payment_methods),pdv_payment_methods:expandPaymentMethods(menu.pdv_payment_methods??menu.payment_methods)}:menu),[menu]);
- const change=(name,value)=>setDraft(previous=>({...previous,[name]:value}));
- async function save(event){
-  event.preventDefault();
-  setBusy(true);setNotice('');setFailure('');
+ const [publication,setPublication]=useState(null),[payment,setPayment]=useState(null),[busy,setBusy]=useState(''),[feedback,setFeedback]=useState({});
+ const publicationKey=JSON.stringify(menu?[menu.enabled,menu.delivery_enabled,menu.pickup_enabled]:null);
+ const paymentKey=JSON.stringify(menu?[menu.payment_methods,menu.pdv_payment_methods,menu.pix_instructions]:null);
+ useEffect(()=>{setPublication(menu?{enabled:menu.enabled,delivery_enabled:menu.delivery_enabled,pickup_enabled:menu.pickup_enabled}:null)},[storeId,publicationKey]);
+ useEffect(()=>{setPayment(menu?{payment_methods:expandPaymentMethods(menu.payment_methods),pdv_payment_methods:expandPaymentMethods(menu.pdv_payment_methods??menu.payment_methods),pix_instructions:menu.pix_instructions||''}:null)},[storeId,paymentKey]);
+ useEffect(()=>setFeedback({}),[storeId]);
+ function changePublication(field,value){setPublication(old=>({...old,[field]:value}));setFeedback(old=>({...old,publication:null}))}
+ function changePayment(field,method,checked){setPayment(old=>({...old,[field]:checked?[...new Set([...old[field],method])]:old[field].filter(v=>v!==method)}));setFeedback(old=>({...old,payment:null}))}
+ async function save(event,kind){
+  event.preventDefault();if(busy)return;setBusy(kind);setFeedback(old=>({...old,[kind]:null}));
   try{
-   const {error}=await client.rpc('pitacco_save_channel_payments',{
-    p_store:storeId,p_slug:draft.slug,p_enabled:draft.enabled,p_delivery_enabled:draft.delivery_enabled,
-    p_pickup_enabled:draft.pickup_enabled,
-    p_public:draft.payment_methods,p_pdv:draft.pdv_payment_methods,p_pix_instructions:draft.pix_instructions,
-   });
-   if(error)throw error;
-   update(draft);
-   setNotice('Configurações do cardápio e formas de pagamento salvas.');
-  }catch(failure){setFailure(failure.message||'Não foi possível salvar.');}
-  finally{setBusy(false);}
+   const args=kind==='publication'?{p_store:storeId,p_enabled:publication.enabled,p_delivery_enabled:publication.delivery_enabled,p_pickup_enabled:publication.pickup_enabled}:{p_store:storeId,p_public:payment.payment_methods,p_pdv:payment.pdv_payment_methods,p_pix_instructions:payment.pix_instructions};
+   const {data,error}=await client.rpc(kind==='publication'?'pitacco_save_storefront_publication':'pitacco_save_payment_methods_only',args);
+   if(error)throw error;if(!data||data.saved!==true)throw Error('A configuração não foi confirmada pelo servidor.');
+   const {saved,...fields}=data;update({...menu,...fields});
+   setFeedback(old=>({...old,[kind]:{message:kind==='publication'?'Publicação salva.':'Formas de pagamento salvas.'}}));
+  }catch(e){setFeedback(old=>({...old,[kind]:{error:e.message||'Não foi possível salvar.'}}))}
+  finally{setBusy('')}
  }
- return <div className="modern-workspace modern-payments">
-  <section className="panel" aria-label="Pagamentos do cardápio">
-   <h3>Cardápio e formas de pagamento</h3>
-   {error&&<p role="alert">{error} <button type="button" onClick={reload}>Tentar novamente</button></p>}
-   {menu===undefined&&!error&&<p role="status">Carregando configurações…</p>}
-   {menu===null&&<p role="status">O endereço da loja está sendo preparado.</p>}
-   {draft&&<form onSubmit={save}>
-    <fieldset disabled={busy}>
-     <legend>Atendimento e publicação</legend>
-     <label className="modern-switch-row"><ShoppingBag size={20}/><span>Publicar cardápio</span><input type="checkbox" checked={draft.enabled} onChange={e=>change('enabled',e.target.checked)}/></label>
-     <label className="modern-switch-row"><Truck size={20}/><span>Aceitar entrega</span><input type="checkbox" checked={draft.delivery_enabled} onChange={e=>change('delivery_enabled',e.target.checked)}/></label>
-     <label className="modern-switch-row"><Store size={20}/><span>Aceitar retirada</span><input type="checkbox" checked={draft.pickup_enabled} onChange={e=>change('pickup_enabled',e.target.checked)}/></label>
-     <p className="storefront-delivery-note">Os valores de frete são definidos exclusivamente em <strong>Administrar Loja → Área de Entrega</strong>, não nas formas de pagamento.</p>
-    </fieldset>
-    <fieldset disabled={busy}><legend>Cardápio digital — pagamento presencial</legend>
-     {Object.entries(methods).filter(([method])=>!method.startsWith('voucher_')&&method!=='pix_manual').map(([method,label])=><label key={method} className="modern-switch-row"><CreditCard size={20}/><span>{label}</span><input type="checkbox" checked={draft.payment_methods.includes(method)} onChange={e=>change('payment_methods',e.target.checked?[...draft.payment_methods,method]:draft.payment_methods.filter(v=>v!==method))}/></label>)}
-     <label className="modern-switch-row"><ScanLine size={20}/><span>Pix manual (transferência)</span><input type="checkbox" checked={draft.payment_methods.includes('pix_manual')} onChange={e=>change('payment_methods',e.target.checked?[...draft.payment_methods,'pix_manual']:draft.payment_methods.filter(v=>v!=='pix_manual'))}/></label>
-    </fieldset>
-    <fieldset disabled={busy}><legend>Balcão e PDV</legend>
-     {Object.entries(methods).filter(([method])=>!method.startsWith('voucher_')).map(([method,label])=><label key={method} className="modern-switch-row"><CreditCard size={20}/><span>{label}</span><input type="checkbox" checked={draft.pdv_payment_methods.includes(method)} onChange={e=>change('pdv_payment_methods',e.target.checked?[...draft.pdv_payment_methods,method]:draft.pdv_payment_methods.filter(v=>v!==method))}/></label>)}
-    </fieldset>
-    <fieldset disabled={busy}><legend>Vale-refeição — somente na maquininha</legend><p>Habilite apenas as bandeiras aceitas pela sua maquininha. O Pitacco não processa esses pagamentos.</p>
-     {Object.entries(methods).filter(([method])=>method.startsWith('voucher_')).map(([method,label])=><div key={method}><strong>{label}</strong>{[['payment_methods','Cardápio digital'],['pdv_payment_methods','Balcão']].map(([field,channel])=><label key={field} className="modern-switch-row"><span>{channel}</span><input aria-label={label+' — '+channel} type="checkbox" checked={draft[field].includes(method)} onChange={e=>change(field,e.target.checked?[...draft[field],method]:draft[field].filter(v=>v!==method))}/></label>)}</div>)}
-    </fieldset>
-    {(draft.payment_methods.includes('pix_manual')||draft.pdv_payment_methods.includes('pix_manual'))&&<label>Instruções do Pix manual<textarea required minLength={3} maxLength={1000} value={draft.pix_instructions} onChange={e=>change('pix_instructions',e.target.value)}/></label>}
-    {failure&&<p role="alert">{failure}</p>}
-    {notice&&<p role="status">{notice}</p>}
-    <button className="modern-primary" disabled={busy||!draft.payment_methods.length||!draft.pdv_payment_methods.length||(!draft.delivery_enabled&&!draft.pickup_enabled)}>
-     {busy?'Salvando…':'Salvar cardápio e pagamentos'}
-    </button>
-   </form>}
-  </section>
-  {menu&&<PaymentPricingDrafts key={storeId} client={client} storeId={storeId} menu={menu}/>}
+ function status(kind){return feedback[kind]?.error?<p role="alert">{feedback[kind].error}</p>:feedback[kind]?.message?<p role="status">{feedback[kind].message}</p>:null}
+ const hasPix=payment&&(payment.payment_methods.includes('pix_manual')||payment.pdv_payment_methods.includes('pix_manual'));
+ return <div className="modern-workspace modern-payments ps-workspace">
+  <h2 className="ps-page-title">Cardápio e formas de pagamento</h2>
+  {error&&<p role="alert">{error} <button type="button" onClick={reload}>Tentar novamente</button></p>}
+  {menu===undefined&&!error&&<p role="status">Carregando configurações…</p>}
+  {menu===null&&<p role="status">O endereço da loja está sendo preparado.</p>}
+  {publication&&<section className="panel ps-panel" aria-label="Publicação e atendimento"><PaymentSectionTitle icon={Store}>Publicação e atendimento</PaymentSectionTitle>
+   <form className="ps-form" onSubmit={e=>save(e,'publication')}><fieldset disabled={Boolean(busy)} className="ps-group ps-publication">
+    {[[ShoppingBag,'enabled','Publicar cardápio','Controla se o cardápio está disponível ao cliente.'],[Truck,'delivery_enabled','Aceitar entrega','Permite pedidos com entrega.'],[Store,'pickup_enabled','Aceitar retirada','Permite pedidos para retirada no local.']].map(([Icon,field,label,description])=><PaymentSwitch key={field} icon={Icon} label={label} description={description} checked={publication[field]} onChange={v=>changePublication(field,v)}/>)}
+   </fieldset>{status('publication')}<button type="submit" className="modern-primary ps-save" disabled={Boolean(busy)||(!publication.delivery_enabled&&!publication.pickup_enabled)}>{busy==='publication'?'Salvando…':'Salvar publicação'}</button></form>
+  </section>}
+  {payment&&<section className="panel ps-panel" aria-label="Formas de pagamento"><PaymentSectionTitle icon={CreditCard} description="Configure as formas aceitas em cada canal de venda.">Formas de pagamento</PaymentSectionTitle>
+   <form className="ps-form" onSubmit={e=>save(e,'payment')}>
+    {[[Smartphone,'payment_methods','Cardápio digital — pagamento presencial'],[Store,'pdv_payment_methods','Balcão e PDV']].map(([Icon,field,title])=><fieldset key={field} disabled={Boolean(busy)} className="ps-group"><legend className="ps-group-title"><Icon size={20}/>{title}</legend><div className="ps-group-body">
+     {Object.entries(methods).filter(([method])=>!method.startsWith('voucher_')).map(([method,label])=><PaymentSwitch key={method} icon={paymentIcons[method]} label={method==='pix_manual'&&field==='payment_methods'?'Pix manual (transferência)':label} description={paymentDescriptions[method]} checked={payment[field].includes(method)} onChange={v=>changePayment(field,method,v)}/>)}
+    </div></fieldset>)}
+    <fieldset disabled={Boolean(busy)} className="ps-group"><legend className="ps-group-title"><Utensils size={20}/>Vale-refeição — somente na maquininha</legend><div className="ps-group-body"><p className="ps-voucher-note">Habilite apenas as bandeiras aceitas pela sua maquininha. O Pitacco não processa esses pagamentos.</p><div className="ps-voucher-grid">
+     {Object.entries(methods).filter(([method])=>method.startsWith('voucher_')).map(([method,label])=><div key={method} className="ps-voucher-card"><div className="ps-voucher-title"><span className={'ps-voucher-brand '+method}>{voucherShort[method]}</span><strong>{label}</strong></div>{[['payment_methods','Cardápio digital'],['pdv_payment_methods','Balcão']].map(([field,channel])=><PaymentSwitch key={field} label={channel} accessibleLabel={label+' — '+channel} checked={payment[field].includes(method)} onChange={v=>changePayment(field,method,v)}/>)}</div>)}
+    </div></div></fieldset>
+    {hasPix&&<label className="ps-pix"><span><KeyRound size={20}/> Instruções do Pix manual</span><textarea required minLength={3} maxLength={1000} value={payment.pix_instructions} disabled={Boolean(busy)} onChange={e=>{setPayment(old=>({...old,pix_instructions:e.target.value}));setFeedback(old=>({...old,payment:null}))}}/></label>}
+    {status('payment')}<button type="submit" className="modern-primary ps-save" disabled={Boolean(busy)||!payment.payment_methods.length||!payment.pdv_payment_methods.length}>{busy==='payment'?'Salvando…':'Salvar formas de pagamento'}</button>
+   </form>
+  </section>}
   <PaymentProviders client={client} storeId={storeId}/>
+  {menu&&<PaymentPricingDrafts key={storeId} client={client} storeId={storeId} menu={menu}/>}
   <DeliveryCodeSettings client={client} storeId={storeId}/>
  </div>;
 }
-
-
 
 const MAX_DELIVERY_POLYGONS=12;
 const priorityDraft=v=>({enabled:v?.enabled===true,fee:v?.fee??'',min_minutes:v?.min_minutes??'',max_minutes:v?.max_minutes??''});

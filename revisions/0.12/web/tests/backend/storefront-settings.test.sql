@@ -32,6 +32,21 @@ begin
  assert (select pdv_payment_methods=array['dinheiro','pix_maquininha','voucher_ticket'] from public.public_menu_settings where store_id='20000000-0000-0000-0000-000000000001');
  assert public.get_public_menu('acaidolinho')->'store'->'payment_methods'='["dinheiro","cartao_credito","voucher_alelo"]'::jsonb;
 end $$;
+-- Independent saves never overwrite the other panel or change freight.
+select public.pitacco_save_storefront_publication('20000000-0000-0000-0000-000000000001',false,true,true);
+do $$begin
+ assert (select not enabled and pdv_payment_methods=array['dinheiro','pix_maquininha','voucher_ticket'] from public.public_menu_settings where store_id='20000000-0000-0000-0000-000000000001');
+end $$;
+select public.pitacco_save_payment_methods_only('20000000-0000-0000-0000-000000000001',array['dinheiro','cartao_credito','voucher_alelo'],array['dinheiro','pix_maquininha','voucher_ticket'],'');
+do $$begin
+ assert (select not enabled and delivery_enabled and pickup_enabled from public.public_menu_settings where store_id='20000000-0000-0000-0000-000000000001');
+ assert not has_function_privilege('anon','public.pitacco_save_payment_methods_only(uuid,text[],text[],text)','execute');
+ begin
+  perform public.pitacco_save_storefront_publication('20000000-0000-0000-0000-000000000002',true,true,true);
+  raise exception 'Expected tenant isolation';
+ exception when insufficient_privilege then null;end;
+end $$;
+select public.pitacco_save_storefront_publication('20000000-0000-0000-0000-000000000001',true,true,true);
 -- A real circle definition, configured in Área de Entrega, replaces the
 -- old delivery_fee=5 setting that still exists for schema compatibility.
 select public.pitacco_save_delivery_zone('20000000-0000-0000-0000-000000000001',
