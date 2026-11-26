@@ -120,11 +120,7 @@ try {
     await page.route('**/*', async route => {
       const { pathname, origin, searchParams } = new URL(route.request().url());
       if(origin==='https://unpkg.com'){externalMapScriptRequests++;return route.abort();}
-      if(origin==='https://viacep.com.br'){
-        const headers={'access-control-allow-origin':'*'};
-        if(pathname==='/ws/26070293/json/')return route.fulfill({headers,json:{cep:'26070-293',logradouro:'Rua do CEP simulado',bairro:'Bairro simulado',localidade:'Nova Iguaçu',uf:'RJ'}});
-        return route.fulfill({headers,json:{erro:true}});
-      }
+      if(origin==='https://viacep.com.br'||origin==='https://brasilapi.com.br')throw Error('Merchant must not access a CEP provider directly');
       if(origin==='https://tile.openstreetmap.org'){
         if(mapTilesOffline)return route.abort();
         // Deterministic one-pixel PNG stands in for the real network tile.
@@ -424,9 +420,16 @@ try {
         return route.fulfill({headers,json:{pix_cnpj:'',pix_recipient:''}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_store_identity')return route.fulfill({headers,json:{store_id:store.id,logo_path:null,legacy_logo_url:null}});
+      if(pathname==='/functions/v1/store-postal-lookup'){
+        const args=route.request().postDataJSON();
+        assert.equal(args.store_id,store.id);
+        assert.match(args.cep,/^\d{8}$/);
+        if(args.cep==='26070293')return route.fulfill({headers,json:{cep:args.cep,address:{address:'Rua do CEP simulado',neighborhood:'Bairro simulado',city:'Nova Iguaçu',state:'RJ'}}});
+        return route.fulfill({headers,json:{error:'CEP não encontrado.'}});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_store_registration'){
         assert.equal(route.request().postDataJSON().p_store,store.id);
-        return route.fulfill({headers,json:{...store,person_type:'cpf',document:'52998224725',responsible_name:'Titular de teste',administrative_phone:'21900000001',administrative_email:'fixture@example.invalid',whatsapp:'21900000002',payer_registered:false}});
+        return route.fulfill({headers,json:{...store,person_type:'cpf',document:'52998224725',responsible_name:'Titular de teste',administrative_phone:'21900000001',administrative_email:'fixture@example.invalid',whatsapp:'21900000002',payer_registered:false,instagram_url:'https://www.instagram.com/loja.teste/'}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_commercial_invoices'){
         if(origin===api)assert.equal(route.request().postDataJSON().p_store,store.id,'Lojista consulta somente as próprias faturas');
@@ -1060,10 +1063,16 @@ try {
     await registration.getByRole('radio',{name:'Pessoa Jurídica (CNPJ)'}).check();
     await registration.getByLabel('Razão social').waitFor();
     await registration.getByRole('radio',{name:'Pessoa Física (CPF)'}).check();
+    const instagram=registration.getByLabel('Instagram (@ do perfil)',{exact:true});
+    assert.equal(await instagram.inputValue(),'@loja.teste');
+    assert.equal(await instagram.getAttribute('type'),'text');
+    await instagram.fill('@novo.perfil');
     const postal=registration.getByLabel('CEP',{exact:false});
     await postal.fill('26070293');
     await registration.getByText('Endereço localizado. Confira os dados e informe o número.',{exact:true}).waitFor();
     assert.equal(await postal.inputValue(),'26070-293');
+    const streetBox=await registration.getByLabel('Rua / avenida',{exact:false}).boundingBox(),cepBox=await postal.boundingBox();
+    assert.ok(Math.abs(streetBox.height-cepBox.height)<=1,'Street and CEP have the same input height');
     assert.equal(await registration.getByLabel('Rua / avenida',{exact:false}).inputValue(),'Rua do CEP simulado');
     assert.equal(await registration.getByLabel('Bairro',{exact:false}).inputValue(),'Bairro simulado');
     assert.equal(await registration.getByLabel('Cidade',{exact:false}).inputValue(),'Nova Iguaçu');
