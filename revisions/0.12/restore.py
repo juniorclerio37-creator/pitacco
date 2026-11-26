@@ -219,3 +219,6 @@ subprocess.run([sys.executable,'revisions/0.12/print_replay_0137.py'],check=True
 
 # Bundle pinned Leaflet instead of injecting external CDN scripts at runtime.
 subprocess.run([sys.executable,'revisions/0.12/bundle_leaflet_0138.py'],check=True)
+
+# Signed, non-disruptive native startup updates.
+subprocess.run([sys.executable,'revisions/0.12/safe_windows_auto_update.py'],check=True)

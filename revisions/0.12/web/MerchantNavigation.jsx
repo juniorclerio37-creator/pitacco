@@ -1,6 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {LayoutDashboard,ShoppingBag,Utensils,Bike,Users,Gift,Wallet,Plug,Settings,Headphones,ChevronDown,ChevronRight,ChevronsUpDown,PanelLeftClose,PanelLeftOpen,Search,Star,Store,Menu,LogOut,UserCircle,Sun,Moon,RefreshCw} from 'lucide-react';
 import {invoke} from './printBridge.mjs';
+import {startWindowsUpdatePolling} from './windowsAutoUpdate.mjs';
 import {groups,overview,support,resolveMenuRoute,menuAllowed,searchMenu} from './merchantNavigation.mjs';
 import './merchant-navigation.css';
 import OperationalShortcuts from './OperationalShortcuts.jsx';
@@ -12,6 +13,7 @@ export function MerchantNavigation({routeId,onNavigate,allowed,manager,active,ad
  const [logoFailed,setLogoFailed]=useState(false);
  const [updateCheck,setUpdateCheck]=useState({state:'idle',message:''});
  const updateLock=useRef(false);
+ useEffect(()=>startWindowsUpdatePolling({native,call:invoke,onAvailable:version=>{if(!updateLock.current)setUpdateCheck({state:'available',message:'Versão '+version+' disponível. Será instalada na próxima inicialização segura.'})}}),[native]);
  async function checkForUpdates(){
   if(!native||updateLock.current)return;
   updateLock.current=true;setUpdateCheck({state:'checking',message:'Consultando atualizações assinadas…'});
