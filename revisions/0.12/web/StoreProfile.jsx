@@ -221,6 +221,21 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
 
 export default function StoreProfile({client,store,manager,onSaved,onAppearance,storeLogoUrl=''}){
  const [draft,setDraft]=useState({}),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[loaded,setLoaded]=useState(false),[loadError,setLoadError]=useState(''),[revision,refresh]=useState(0);
+ const [logoUpdate,setLogoUpdate]=useState(null),[logoBusy,setLogoBusy]=useState(false),[logoMessage,setLogoMessage]=useState('');
+ const logoUrl=logoUpdate?.storeId===store.id?mediaUrl(client,logoUpdate.path):(storeLogoUrl||mediaUrl(client,store.logo_path));
+ async function changeLogo(file){
+  if(!file||!manager||logoBusy)return;
+  setLogoBusy(true);setLogoMessage('');
+  try{
+   const path=await uploadStoreImage(client,store.id,file,'stores');
+   const {data,error}=await client.rpc('pitacco_save_store_logo',{p_store:store.id,p_logo_path:path});
+   if(error||!data?.saved)throw error||Error('A alteração do logotipo não foi confirmada.');
+   setLogoUpdate({storeId:store.id,path:data.logo_path});
+   setLogoMessage('Logotipo atualizado em toda a loja.');
+   window.dispatchEvent(new Event('pitacco:store-identity'));
+   onSaved?.();
+  }catch(err){setLogoMessage(err.message||String(err))}finally{setLogoBusy(false)}
+ }
  useEffect(()=>{let active=true;setLoaded(false);setLoadError('');setMessage('');setDraft({});client.rpc('pitacco_store_registration',{p_store:store.id}).then(({data,error})=>{if(!active)return;if(error||!data){setLoadError('Não foi possível consultar os dados da loja.');return}setDraft(data);setLoaded(true)}).catch(()=>{if(active)setLoadError('Não foi possível consultar os dados da loja.')});return()=>{active=false}},[client,store.id,revision]);
  async function save(e){
   e.preventDefault();if(!manager)return;setBusy(true);setMessage('');
@@ -251,11 +266,13 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
    <section className="identity-section">
     <h4>Marca do estabelecimento</h4>
     <div className="identity-brand">
-     <div className="identity-avatar">{(storeLogoUrl||store.logo_path)?
-      <img src={storeLogoUrl||mediaUrl(client,store.logo_path)} alt="Logotipo da loja"/>
+     <div className="identity-avatar">{logoUrl?
+      <img src={logoUrl} alt="Logotipo da loja"/>
       :<strong>{(store.name||'L').slice(0,1).toUpperCase()}</strong>}</div>
      <div><strong>{store.name}</strong><small>Logotipo utilizado na identificação da loja</small>
-      <button type="button" className="secondary identity-file" disabled={!manager||!onAppearance} onClick={onAppearance}>Alterar logotipo no Estúdio de Cardápio</button><small>A imagem publicada será usada no cardápio, Windows, acompanhamento e impressão habilitada.</small>
+      <label className="identity-file">{logoBusy?'Enviando logotipo…':logoUrl?'Alterar logotipo':'Enviar logotipo'}<input aria-label="Enviar ou alterar logotipo da loja" type="file" accept="image/jpeg,image/png,image/webp" disabled={!manager||logoBusy} onChange={e=>{const file=e.target.files?.[0];e.target.value='';changeLogo(file)}}/></label>
+      <small>JPG, PNG ou WebP, até 5 MB. A marca é compartilhada pelo ecossistema Pitacco.</small>
+      {logoMessage&&<p role="status">{logoMessage}</p>}
      </div>
     </div>
     <div className="identity-grid">{input('name','Nome da loja')}<div className="identity-wide">{input('description','Descrição do estabelecimento',false)}</div></div>
