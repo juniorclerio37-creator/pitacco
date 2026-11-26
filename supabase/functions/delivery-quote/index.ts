@@ -413,6 +413,7 @@ Deno.serve(async request=>{
   const mode=rules.coverage_type||'road';
   let to:Point,meters:number,fee:number;
   let regionName:string|null=null;
+  let verifiedAddress=false;
   let eta:any=null;
   if(mode==='circle'||mode==='polygon'||mode==='polygons'){
    // Customer confirms drop-off coordinates on the same map the store
@@ -426,7 +427,24 @@ Deno.serve(async request=>{
     // Selecting a saved or freshly typed address quotes automatically if a
     // configured provider resolves its exact house. No fallback to centroids.
     try{
-     const location=await customerDeliveryLocation(address,geoapifyKey||undefined,key||undefined);
+     const cached=await db.rpc('pitacco_service_verified_delivery_address',{p_store:menu.store_id,p_address:address});
+     const saved=cached.error?null:cached.data;
+     const validSaved=saved&&typeof saved.latitude==='number'&&typeof saved.longitude==='number'&&finiteBrazil(saved.latitude,saved.longitude);
+     let location:CustomerLocation|null=null;
+     if(validSaved&&saved.exact===true){location={point:[saved.latitude,saved.longitude],precise:true};verifiedAddress=true;}
+     else {
+      location=await customerDeliveryLocation(address,geoapifyKey||undefined,key||undefined);
+      // Exact cached homes are never returned as suggestions to anonymous callers.
+      // For a different number, only a verified store manager may see a street reference.
+      if(!location?.precise&&validSaved&&saved.exact===false&&(nativeOrigins.has(origin)||origin==='https://app.pitacco.com.br')){
+       const token=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
+       if(token){const identity=await db.auth.getUser(token);
+        if(!identity.error&&identity.data.user){const permission=await db.rpc('pitacco_can_manage_courier_store',{p_actor:identity.data.user.id,p_store:menu.store_id});
+         if(!permission.error&&permission.data===true)location={point:[saved.latitude,saved.longitude],precise:false,label:'Referência de rua já verificada pela loja'};
+        }
+       }
+      }
+     }
      if(!location?.precise)return response(422,{error:location?'Encontramos uma localização aproximada. Confirme o ponto exato no mapa para calcular a taxa.':'Não foi possível localizar o número com precisão. Marque o endereço do cliente no mapa.',...(location?{suggested_point:location.point,suggested_label:location.label}:{}),requires_confirmation:true},origin);
      to=location.point;
     }catch(error){return problem(422,error instanceof Error?error.message:'Confirme o ponto de entrega no mapa.',origin);}
@@ -514,7 +532,7 @@ Deno.serve(async request=>{
   }).select('id').single();
   if(insertError)return problem(409,'Esta solicitação já possui cotação. Recomece o cálculo do frete.',origin);
   return response(200,{quote_id:quote.id,request_id:requestId,distance_m:meters,
-   distance_type:mode==='road'?'road':'straight',fee,region_name:regionName,expires_at:expiresAt,delivery_min_minutes:validEta?min:null,delivery_max_minutes:validEta?max:null,delivery_service:service,delivery_options:options},origin);
+   distance_type:mode==='road'?'road':'straight',fee,verified_address:verifiedAddress,region_name:regionName,expires_at:expiresAt,delivery_min_minutes:validEta?min:null,delivery_max_minutes:validEta?max:null,delivery_service:service,delivery_options:options},origin);
  }catch(error){
   const message=error instanceof Error?error.message:'Falha ao calcular a entrega.';
   const status=message.includes('impreciso')||message.includes('localizado')?422:503;

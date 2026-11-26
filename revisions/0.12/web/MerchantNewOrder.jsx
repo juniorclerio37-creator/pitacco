@@ -14,7 +14,7 @@ export default function MerchantNewOrder({client,storeId,onNavigate}){
  const [name,setName]=useState(''),[phone,setPhone]=useState(''),[search,setSearch]=useState(''),[customers,setCustomers]=useState([]),[type,setType]=useState('balcao'),[payment,setPayment]=useState(''),[notes,setNotes]=useState(''),[change,setChange]=useState(''),[coupon,setCoupon]=useState(''),[credit,setCredit]=useState(''),[cart,setCart]=useState([]),[product,setProduct]=useState(null),[chosen,setChosen]=useState([]),[quantity,setQuantity]=useState(1),[quote,setQuote]=useState(null),[quoting,setQuoting]=useState(false);
  const [manualDiscount,setManualDiscount]=useState(''),[pdvMethods,setPdvMethods]=useState([]),[received,setReceived]=useState(false);
  const [pdvPriceRules,setPdvPriceRules]=useState({}),[pricePreview,setPricePreview]=useState(null),[previewError,setPreviewError]=useState('');
- const [fields,setFields]=useState(emptyAddress),[point,setPoint]=useState(null),[mapOpen,setMapOpen]=useState(false),[mapError,setMapError]=useState(''),[suggestion,setSuggestion]=useState(null),[quoteError,setQuoteError]=useState(''),[attempt,setAttempt]=useState(0),[expired,setExpired]=useState(false),[cepBusy,setCepBusy]=useState(false),[cepNote,setCepNote]=useState('');
+ const [fields,setFields]=useState(emptyAddress),[point,setPoint]=useState(null),[mapOpen,setMapOpen]=useState(false),[mapError,setMapError]=useState(''),[suggestion,setSuggestion]=useState(null),[locationSaved,setLocationSaved]=useState(''),[locationSaving,setLocationSaving]=useState(false),[quoteError,setQuoteError]=useState(''),[attempt,setAttempt]=useState(0),[expired,setExpired]=useState(false),[cepBusy,setCepBusy]=useState(false),[cepNote,setCepNote]=useState('');
  const address=composeAddress(fields),mapNode=useRef(null),mapApi=useRef(null),editVersion=useRef(0);
  const request=useRef(id()),lock=useRef(false);
  async function rpc(n,args){const r=await client.rpc(n,args);if(r.error)throw r.error;if(r.data?.error)throw Error(r.data.error);return r.data}
@@ -106,6 +106,13 @@ export default function MerchantNewOrder({client,storeId,onNavigate}){
   }catch(e){if(live)setQuoteError(e.message||'Não foi possível calcular o frete.')}finally{if(live)setQuoting(false)}},900);
   return()=>{live=false;clearTimeout(timer)};
  },[client,quoteSlug,delivery,address,point,attempt]);
+ useEffect(()=>{setLocationSaved('')},[quote?.quote_id]);
+ async function saveVerifiedLocation(){
+  if(!quoteCurrent||!point||locationSaving)return;
+  if(!window.confirm('Confirma que este é o ponto exato do número informado? Ele será reutilizado em futuros pedidos deste endereço.'))return;
+  setLocationSaving(true);setLocationSaved('');
+  try{const r=await rpc('pitacco_save_verified_delivery_address',{p_store:storeId,p_quote:quote.quote_id});if(r?.saved!==true)throw Error('Localização não confirmada pelo servidor');setLocationSaved('Localização salva para os próximos pedidos.');}catch(e){setLocationSaved(e.message||'Não foi possível salvar a localização.')}finally{setLocationSaving(false)}
+ }
  useEffect(()=>{if(!quote)return;const timer=setTimeout(()=>setExpired(true),Math.max(0,Date.parse(quote.expires_at)-Date.now()));return()=>clearTimeout(timer)},[quote]);
  async function submit(e){e.preventDefault();if(lock.current||!cart.length||!payment||waitingPrice)return;
  if(delivery&&(!quoteCurrent||!currentQuote(quote,address,point))){setError('É necessário recalcular o frete antes de confirmar.');return}
@@ -152,8 +159,9 @@ export default function MerchantNewOrder({client,storeId,onNavigate}){
  <div className="mn-pos-address-pair"><label>Número<input required value={fields.number} onChange={e=>editAddress('number',e.target.value)}/></label><label>Bairro<input required value={fields.neighborhood} onChange={e=>editAddress('neighborhood',e.target.value)}/></label></div>
  <div className="mn-pos-address-pair"><label>Cidade<input required value={fields.city} onChange={e=>editAddress('city',e.target.value)}/></label><label>UF<input required minLength={2} maxLength={2} value={fields.state} onChange={e=>editAddress('state',e.target.value.toUpperCase())}/></label></div>
  <label>Complemento / referência (opcional)<input value={fields.extra} onChange={e=>editAddress('extra',e.target.value)}/></label>
- <div className="mn-pos-quote" role="status">{quoting?'Calculando frete…':quoteCurrent?<><strong>Taxa de entrega: {money(quote.fee)}</strong><small>{quote.region_name||'Área atendida'}{Number.isInteger(quote.delivery_min_minutes)&&Number.isInteger(quote.delivery_max_minutes)?' · '+quote.delivery_min_minutes+'–'+quote.delivery_max_minutes+' min':''}</small></>:expired?'Cotação vencida. Recalcule antes de finalizar.':quoteError?'Frete não confirmado.':'Preencha o endereço para calcular automaticamente.'}</div>
+ <div className="mn-pos-quote" role="status">{quoting?'Calculando frete…':quoteCurrent?<><strong>Taxa de entrega: {money(quote.fee)}</strong>{quote.verified_address&&<small>Endereço verificado pela loja.</small>}<small>{quote.region_name||'Área atendida'}{Number.isInteger(quote.delivery_min_minutes)&&Number.isInteger(quote.delivery_max_minutes)?' · '+quote.delivery_min_minutes+'–'+quote.delivery_max_minutes+' min':''}</small></>:expired?'Cotação vencida. Recalcule antes de finalizar.':quoteError?'Frete não confirmado.':'Preencha o endereço para calcular automaticamente.'}</div>
  {quoteError&&<p role="alert" className="mn-pos-quote-error">{quoteError}</p>}
+ {quoteCurrent&&point&&<><button type="button" className="secondary" disabled={locationSaving} onClick={saveVerifiedLocation}>{locationSaving?'Salvando…':'Salvar localização verificada'}</button>{locationSaved&&<small role="status">{locationSaved}</small>}</>}
  <div className="mn-pos-address-actions"><button type="button" className="secondary" disabled={!address||quoting} onClick={()=>setAttempt(v=>v+1)}><RefreshCw size={16}/> Recalcular frete</button>{areaMode!=='road'&&<button type="button" className="secondary" aria-expanded={mapOpen} onClick={()=>setMapOpen(v=>!v)}><MapPin size={16}/> {mapOpen?'Fechar mapa':'Marcar no mapa'}</button>}</div>
  {mapOpen&&areaMode!=='road'&&<>{suggestion&&!point&&<p role="status"><strong>Localização aproximada encontrada:</strong> {suggestion.label}. Confira e marque o ponto exato antes de calcular.</p>}<small>Confirme com o cliente o ponto exato da entrega e toque nele no mapa, mesmo se a rua tiver outro nome.</small><div ref={mapNode} className="mn-pos-address-map" aria-label="Mapa para escolher o local da entrega"/>{mapError&&<p role="alert">{mapError}</p>}{point&&<small>Local marcado. A taxa é calculada pelas regiões da loja.</small>}</>}
  </section>}
