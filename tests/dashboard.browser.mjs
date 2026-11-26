@@ -351,8 +351,8 @@ try {
         return route.fulfill({headers,json:{pix_cnpj:'',pix_recipient:''}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_commercial_invoices'){
-        assert.equal(origin,realApi);
-        assert.equal(adminMode,true);
+        if(origin===api)assert.equal(route.request().postDataJSON().p_store,store.id,'Lojista consulta somente as próprias faturas');
+        else{assert.equal(origin,realApi);assert.equal(adminMode,true);}
         return route.fulfill({headers,json:{rows:[],has_more:false}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_owner_finance_report'){
