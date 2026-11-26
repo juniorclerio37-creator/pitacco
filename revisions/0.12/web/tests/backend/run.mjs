@@ -11,7 +11,9 @@ create function auth.uid() returns uuid language sql stable as $authuid$ select 
 -- Supabase defines auth.jwt() in production. Stub only in isolated migration tests.
 create function auth.jwt() returns jsonb language sql stable as $authjwt$ select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb $authjwt$;
 grant usage on schema public,auth,storage to anon,authenticated,service_role;
+create function auth.role() returns text language sql stable as $authrole$ select coalesce(nullif(current_setting('request.jwt.claim.role',true),''),auth.jwt()->>'role',current_user::text) $authrole$;
 grant execute on function auth.uid(),auth.jwt() to anon,authenticated,service_role;
+grant execute on function auth.role() to anon,authenticated,service_role;
 alter default privileges in schema public grant all on tables to anon,authenticated,service_role;
 alter default privileges in schema public grant all on sequences to anon,authenticated,service_role;
 create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
