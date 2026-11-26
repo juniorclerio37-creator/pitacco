@@ -962,6 +962,12 @@ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-ic
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=pix_manual] .v2-payment-icon,
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=pix] .v2-payment-icon{background:#e8faf5;color:#03a888}
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=dinheiro] .v2-payment-icon{background:#eaf9e9;color:#16833a}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-cards h4{margin:8px 2px 0;font-size:.9rem;font-weight:800;line-height:1.35;color:#4c3458}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-icon.v2-voucher-label{font-size:.78rem;font-weight:850;width:69px;background:#f4f4f6;color:#343342;overflow-wrap:anywhere;text-align:center;padding:4px;box-sizing:border-box}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=voucher_alelo] .v2-voucher-label{color:#015a43;background:#e7f4e0}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=voucher_pluxee] .v2-voucher-label{color:#07462e;background:#e0f9e9}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=voucher_vr] .v2-voucher-label{color:#034d2e;background:#e5f7e9}
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=voucher_ticket] .v2-voucher-label{color:#a91e31;background:#fce9e9}
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice strong{display:block;font-size:1.03rem;color:#25102f;font-weight:860}
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice small{display:block;font-size:.78rem;line-height:1.32;color:#716479}
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice .v2-radio-mark{margin-left:auto;color:#7e118d;font-size:1.55rem}
@@ -3057,7 +3063,7 @@ function initOptions(){
  const enabledMethods=[...new Set((shop.payment_methods||[]).flatMap(v=>v==='cartao_entrega'?['cartao_credito','cartao_debito']:[v]))];
  for(const method of enabledMethods){
   if(method==='fiado')continue; // Fiado depende da autorização deste telefone.
-  const groupLabel=['pix_online','cartao_online','pix','credito_online','debito_online'].includes(method)?'Pagamento online':method==='pix_manual'?'Transferência Pix':'Pagamento no recebimento';
+  const groupLabel=['pix_online','cartao_online','pix','credito_online','debito_online'].includes(method)?'Pagamento online':method==='pix_manual'?'Transferência Pix':method.startsWith('voucher_')?'Vale-refeição — na maquininha':'Pagamento no recebimento';
   let group=[...$('payment').querySelectorAll('optgroup')].find(g=>g.label===groupLabel);if(!group){group=document.createElement('optgroup');group.label=groupLabel;$('payment').append(group)}group.append(new Option(labels[method]||method,method));
  }
  // A verificação ocorre quando o cliente informa o telefone e altera o carrinho.
@@ -3604,6 +3610,7 @@ function v2RenderPaymentCards(){
   b.dataset.kind=option.value;b.dataset.selected=String($('payment').value===option.value);
   b.disabled=option.disabled;b.setAttribute('role','radio');b.setAttribute('aria-checked',b.dataset.selected);
   const icon=el('span',symbol,'v2-payment-icon');
+  if(option.value.startsWith('voucher_'))icon.classList.add('v2-voucher-label');
   const content=el('span');content.append(el('strong',title));
   content.append(el('small',option.disabled&&option.value==='fiado'?
    'Fiado indisponível para este pedido. Escolha outra forma de pagamento ou fale com a loja.':description));
