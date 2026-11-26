@@ -87,7 +87,7 @@ test('primeira exibição estável: Fideliza+ e destaques antes do cardápio vis
  assert.match(html,/MENU_STARTUP_RPC_LIMIT_MS=3400/);
  assert.match(html,/Promise\.all\(\[\s*menuStartupRpc\('pitacco_loyalty_program'/);
  assert.match(html,/menuStartupRpc\('pitacco_public_top_sellers'/);
- assert.match(html,/menuStartupRpc\('pitacco_public_store_region'/);
+ assert.doesNotMatch(html,/pitacco_public_store_region|v2HeroLocation/);
  assert.match(html,/const \[prepared\]=await Promise\.all\(\[prepareMenuStartup\(\),warmMenuStartupImages\(\)\]\)/);
  assert.match(html,/applyMenuStartupData\(prepared\)/);
  assert.match(html,/await waitForMenuIdentityPaint\(\)/);
@@ -219,4 +219,10 @@ test('merchant logo crop applies to the original image and preview',()=>{
  assert.match(html,/applyLogoFrame\(d\?\.logo_frame\)/);
  assert.match(html,/img\.style\.objectFit=frame\.fit==='cover'\?'cover':'contain'/);
  assert.match(html,/img\.style\.transform='translate\('/);
+});
+
+test('home does not overlap navigation or duplicate categories',()=>{
+ assert.match(html,/#v2Home\{display:block;margin:0;position:relative;z-index:1\}/);
+ assert.doesNotMatch(html,/#v2Home\{[^}]*margin(?:-top)?:-/);
+ assert.match(html,/root\.hidden=categories\.length<2\|\|\(document\.body\.dataset\.menuTemplate==='pitacco-v2'&&v2Page==='inicio'\)/);
 });

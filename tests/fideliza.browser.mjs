@@ -104,6 +104,18 @@ try{
   }else{
    assert.equal(await page.locator('#v2HomeLoyalty .v2-progress-card').isVisible(),true,'Other templates keep their existing loyalty design');
   }
+  assert.equal(await page.locator('#v2HeroLocation').count(),0,'Store location is not displayed under availability');
+  assert.equal(await page.locator('#hero').getByText('Localidade de teste com nome comprido · Nova Iguaçu',{exact:false}).count(),0);
+  assert.equal(await page.locator('#categories').isVisible(),false,'No duplicate category navigation on home');
+  assert.equal(await page.locator('#v2HomeCategories').isVisible(),true,'Keep category icons on home');
+  const separation=await page.evaluate(()=>{
+   const nav=document.getElementById('v2StoreNav'),card=document.getElementById('v2HomeLoyalty');
+   const gap=card.getBoundingClientRect().top-nav.getBoundingClientRect().bottom;
+   const visible=[...nav.querySelectorAll('button:not([hidden])')];
+   const clickable=visible.every(b=>{const r=b.getBoundingClientRect();return b.contains(document.elementFromPoint(r.left+r.width/2,r.top+r.height*.8));});
+   return {gap,clickable};
+  });
+  assert.ok(separation.gap>=8&&separation.clickable,'Fideliza+ stays below navigation and leaves all visible tabs clickable: '+JSON.stringify(separation));
   const firstCategoriesTop=await page.locator('#v2HomeCategories').evaluate(e=>e.getBoundingClientRect().top);
   await page.waitForTimeout(240);
   const finalCategoriesTop=await page.locator('#v2HomeCategories').evaluate(e=>e.getBoundingClientRect().top);
@@ -124,7 +136,7 @@ try{
    assert.ok(hero.size>=146&&hero.square&&hero.radius==='50%'&&hero.centered&&hero.below&&!hero.overflow,'Approved centered logo medallion and name below: '+JSON.stringify(hero));
   }
   if(template==='urbano')assert.equal(await page.locator('#v2HeroImage').evaluate(img=>img.getBoundingClientRect().left>=document.querySelector('.store-mark').getBoundingClientRect().right),true,'Foto decorativa não cobre o logotipo');
-  if(template==='urbano')assert.equal(await page.evaluate(()=>{const photo=document.getElementById('v2HeroImage').getBoundingClientRect();return ['v2DeliveryText','v2HeroLocation'].every(id=>document.getElementById(id).getBoundingClientRect().right<photo.left);}),true,'Prazo e localização legíveis ao lado da foto decorativa');
+  if(template==='urbano')assert.equal(await page.evaluate(()=>{const photo=document.getElementById('v2HeroImage').getBoundingClientRect();return document.getElementById('v2DeliveryText').getBoundingClientRect().right<photo.left;}),true,'Prazo legível ao lado da foto decorativa');
   assert.equal(await page.locator('body').getAttribute('data-menu-skin'),template==='pitacco-v2'?'principal':template);
   await mkdir('artifacts',{recursive:true});
   await page.screenshot({path:`artifacts/menu-${template}-${width}.png`,fullPage:true});
