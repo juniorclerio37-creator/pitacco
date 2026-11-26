@@ -21,3 +21,5 @@ test('external test creation binds the merchant and coordinates to the quote',()
  assert.throws(()=>buildShippingRequest('create_order',{...input,merchantId:order}));
  assert.throws(()=>buildShippingRequest('create_order',{...input,address:{...input.address,coordinates:{latitude:0,longitude:0}}}));
 });
+
+test('driver cancellation uses only the logistics endpoint, never the order cancellation endpoint',()=>{const r=buildShippingRequest('cancel_driver',{orderId:order});assert.equal(r.method,'POST');assert.equal(r.path,'/shipping/v1.0/orders/'+order+'/cancelRequestDriver');assert.equal(r.body,undefined);assert.throws(()=>buildShippingRequest('cancel_driver',{orderId:'invalid'}));});

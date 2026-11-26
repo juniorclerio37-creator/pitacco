@@ -226,7 +226,7 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
      {stage(o)==='ready'&&o.source==='proprio'&&o.receipt?.logistics==='retirada'&&<span role="status" className="pickup-ready-note">Disponível para retirada</span>}
      {stage(o)==='ready'&&o.source==='proprio'&&o.receipt?.logistics==='retirada'&&<button type="button" className="primary pedidos-step-button pedidos-pickup-finish" disabled={busy||!onPickup} onClick={()=>onPickup?.(o.id)}>Finalizar</button>}
      {stage(o)==='ready'&&canDispatch(o,delivery,dispatchMode)&&<button type="button" className="primary pedidos-step-button" title="Despachar entrega" disabled={busy} onClick={()=>onAssign(o)}>Selecionar entregador</button>}
-     {stage(o)==='ready'&&delivery&&(delivery.courier_id||shippingReserved(delivery))&&<button type="button" className="secondary pedidos-step-button" disabled={busy} onClick={()=>onDetail(o)}>Gerenciar entrega</button>}
+     {stage(o)==='ready'&&delivery&&(delivery.courier_id||shippingReserved(delivery)||(o.source==='ifood'&&o.receipt?.ifood_test===true&&o.receipt?.ifood_shipping_state==='allocated'))&&<button type="button" className="secondary pedidos-step-button" disabled={busy} onClick={()=>onDetail(o)}>Gerenciar entrega</button>}
      {stage(o)==='ready'&&canAssign(o,delivery)&&isAutomaticDispatch(dispatchMode)&&!delivery.manual_dispatch_hold&&<span role="status">Atribuição automática ativa · seleção manual também disponível</span>}
      {stage(o)==='ready'&&delivery?.courier_id&&<span role="status">Entregador selecionado · aguardando saída</span>}
      {stage(o)==='ready'&&delivery?.logistics_provider==='marketplace'&&<span role="status">Aguardando coleta pelo parceiro</span>}
