@@ -228,7 +228,7 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
   setLogoBusy(true);setLogoMessage('');
   try{
    const path=await uploadStoreImage(client,store.id,file,'stores');
-   const {data,error}=await client.rpc('pitacco_save_store_logo',{p_store:store.id,p_logo_path:path});
+   const {data,error}=await client.rpc('pitacco_save_store_logo',{p_store:store.id,p_path:path});
    if(error||!data?.saved)throw error||Error('A alteração do logotipo não foi confirmada.');
    setLogoUpdate({storeId:store.id,path:data.logo_path});
    setLogoMessage('Logotipo atualizado em toda a loja.');
