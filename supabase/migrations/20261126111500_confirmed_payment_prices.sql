@@ -67,6 +67,17 @@ begin
  execute replace(d,'''payment_methods'',cfg.payment_methods','''payment_methods'',cfg.payment_methods,''payment_price_rules'',public.pitacco_public_payment_price_rules(cfg.slug)');
 end $menu$;
 
+-- Merchant rules are private and isolated by store and channel.
+create or replace function public.pitacco_merchant_payment_price_rules(p_store uuid)
+returns jsonb language plpgsql stable security definer set search_path='' as $rules$
+begin
+ if auth.uid() is null or not public.is_store_manager(p_store) then raise exception 'Sem permissão' using errcode='42501';end if;
+ return coalesce((select jsonb_object_agg(d.method,jsonb_build_object('adjustment_bps',d.active_adjustment_bps,'revision',d.active_revision))
+ from pitacco_private.payment_pricing_drafts d where d.store_id=p_store and d.channel='balcao' and d.active_adjustment_bps<>0),'{}'::jsonb);
+end $rules$;
+revoke all on function public.pitacco_merchant_payment_price_rules(uuid) from public,anon,authenticated;
+grant execute on function public.pitacco_merchant_payment_price_rules(uuid) to authenticated;
+
 -- The existing checkout endpoints remain available for unadjusted methods.
 -- A new entry point binds the selected price to the same store/request/method,
 -- forwards to the existing validated checkout and never creates a second order.

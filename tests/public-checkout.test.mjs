@@ -7,7 +7,9 @@ test('checkout uses a stable idempotency request key and backend RPC',()=>{
  assert.match(html,/p_request:routeMode\?deliveryQuote\.requestId:crypto\.randomUUID\(\)/);
  assert.match(html,/if\(!pendingRequest\)/);
  assert.match(html,/pitacco_checkout_geocoded_order/);
- assert.match(html,/client\.rpc\(endpoint,payload\)/);
+ assert.match(html,/client\.rpc\(priced\?'pitacco_confirm_priced_public_checkout':endpoint,priced\?/);
+ assert.match(html,/pendingRequest\.p_expected_cents=Math\.round\(v2TotalToPay\(\)\*100\)/);
+ assert.match(html,/pendingRequest\.p_price_revision=rule\.revision/);
  assert.match(html,/p_payment==='fiado'\?'pitacco_checkout_fiado'/);
 });
 test('checkout blocks concurrent submissions even if cart rerenders',()=>{

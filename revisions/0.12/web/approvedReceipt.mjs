@@ -157,6 +157,8 @@ export function approvedReceipt(job,width=80,opts={}){
  if(r.delivery_fee!=null)pair('Valor da entrega:',cash(r.delivery_fee));
  if(r.service_fee!=null)pair('Taxa de servico:',cash(r.service_fee));
  if(r.discount!=null)pair('Desconto:','-'+cash(Math.abs(amount(r.discount))));
+ const adjustment=Number(r.payment_price?.adjustment_cents);
+ if(Number.isFinite(adjustment)&&adjustment!==0)pair(adjustment>0?'Acréscimo pagamento:':'Desconto pagamento:',(adjustment<0?'-':'+')+cash(Math.abs(adjustment)/100));
  const total=amount(r.total??r.total_amount);
  lines.push(doubleRule);
  pair('TOTAL:',cash(total));

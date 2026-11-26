@@ -10,7 +10,8 @@ const receipt=file('revisions/0.12/web/approvedReceipt.mjs');
 
 test('troco considera o total incluindo entrega e descontos, não o subtotal',()=>{
  assert.match(menu,/function v2TotalToPay\(\)/);
- assert.match(menu,/subtotal\+fee-loyaltyDiscount\(\)/);
+ assert.match(menu,/subtotal\+fee-benefit\+paymentPriceAdjustment\(/);
+ assert.match(menu,/const benefit=loyaltyDiscount\(\)/);
  assert.match(menu,/Number\(input\)\*100\)<Math\.round\(v2TotalToPay\(\)\*100\)/);
  assert.doesNotMatch(menu,/valor informado para troco precisa cobrir pelo menos os produtos/);
  assert.match(menu,/Cliente pagará com:/);
