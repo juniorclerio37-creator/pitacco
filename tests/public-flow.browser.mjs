@@ -82,7 +82,7 @@ try {
         return route.fulfill({ json: {
           store: { appearance:{template,primary:'#217c5a'}, primary_color:'#e04020', name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true,
             delivery_fee: 0, route_pricing:{enabled:true,mode:'circle',max_radius_km:3},
-            delivery_area:area, payment_methods: width===1440?['pix_manual','dinheiro','cartao_entrega']:['pix_manual'],
+            delivery_area:area, payment_methods: width===1440?['pix_manual','dinheiro','cartao_entrega','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket']:['pix_manual'],
             opening_hours:{open:true,reason:'open',next_open_at:null} },
           products: [{ id: 'acai', name: 'Açaí', category: 'Açaís', price: 20, option_groups: [{
             id: 'adicionais', name: 'Adicionais', min: 1, max: 1,
@@ -216,7 +216,7 @@ try {
       await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
       await page.locator('#payment').selectOption('pix_manual');
       if(width===1440){
-        for(const method of ['dinheiro','cartao_entrega','pix_manual']){
+        for(const method of ['dinheiro','cartao_credito','cartao_debito','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket','pix_manual']){
           await page.locator('#payment').selectOption(method);
           assert.equal(await page.locator('#payment').inputValue(),method);
         }
@@ -424,7 +424,7 @@ try {
       const pixCard=page.locator('#v2PaymentCards [data-kind="pix_manual"]');
       assert.equal(await pixCard.isVisible(),true,'Pix manual cadastrado aparece em card');
       if(width===1440){
-        for(const method of ['dinheiro','cartao_entrega']){
+        for(const method of ['dinheiro','cartao_credito','cartao_debito','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket']){
           await page.locator('#v2PaymentCards [data-kind="'+method+'"]').click();
           assert.equal(await page.locator('#payment').inputValue(),method,'Pagamento habilitado pela loja pode ser selecionado');
         }
