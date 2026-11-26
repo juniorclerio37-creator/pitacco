@@ -132,3 +132,12 @@ test("manager controls customers, partial receipts, manager approvals and POS se
  assert.match(ledger,/approved_at is null/);
  assert.match(ledger,/due_at=now\(\)\+make_interval\(days=>a\.due_days\)/);
 });
+
+test('public Fiado navigation is hidden by default and follows store-specific phone eligibility',()=>{
+ assert.match(shop,/id="v2FiadoNav" data-v2-nav="fiado" hidden/);
+ assert.match(shop,/if\(page==='fiado'&&!canOpenFiadoNavigation\(\)\)return/);
+ assert.match(shop,/setFiadoNavigation\(phone,data\?\.visible===true\)/);
+ assert.match(shop,/function clearFiadoAccess\(\)\{\s*setFiadoNavigation\('',false\)/);
+ assert.match(shop,/customerSessionDisplay\(false\);\s*clearFiadoAccess\(\)/);
+ assert.match(shop,/phone===fiadoNavPhone&&v2Page==='fiado'/);
+});

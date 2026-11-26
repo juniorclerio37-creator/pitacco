@@ -1417,10 +1417,49 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#store
  <button type="button" class="v2-nav-button" data-v2-nav="promocoes"><span class="v2-nav-icon" aria-hidden="true">🔥</span>Promoções</button>
  <button type="button" id="loyaltyOpen" class="v2-nav-button" aria-label="Meu Fideliza+" data-v2-nav="fideliza" hidden><span class="v2-nav-icon" aria-hidden="true">☆</span>Fideliza+</button>
  <button type="button" class="v2-nav-button" data-v2-nav="sobre"><span class="v2-nav-icon" aria-hidden="true">ⓘ</span>Sobre</button>
- <button type="button" class="v2-nav-button" data-v2-nav="fiado"><span class="v2-nav-icon" aria-hidden="true">▣</span>Fiado</button>
+ <button type="button" class="v2-nav-button" id="v2FiadoNav" data-v2-nav="fiado" hidden><span class="v2-nav-icon" aria-hidden="true">▣</span>Fiado</button>
 </nav>
 
 <style>
+/* Principal V2: a single, compact Fideliza+ entry point; the wallet remains on its own page. */
+.v2-loyalty-compact-copy,.v2-loyalty-outline-star{display:none}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty{
+ display:block;margin:0 0 12px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--brand) 25%,var(--paper,#fff));outline:0;border-radius:14px;
+ background:color-mix(in srgb,var(--brand) 6%,var(--paper,#fff));box-shadow:none;color:var(--ink,#261033)
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-top{
+ display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;gap:8px;align-items:center
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-top>div{display:contents}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty :is(.v2-loyalty-gift,.v2-loyalty-full-copy,.v2-progress-card){display:none}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-outline-star{display:block;width:23px;height:23px;color:var(--ink,#261033);flex:none}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-brand{font-size:1rem;white-space:nowrap;color:var(--ink,#261033);letter-spacing:-.025em}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-brand em{color:inherit}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-compact-copy{
+ display:block;min-width:0;margin:0;padding-left:9px;border-left:1px solid color-mix(in srgb,var(--brand) 25%,transparent);font-size:.78rem;line-height:1.3;color:var(--ink,#261033);overflow-wrap:anywhere
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyaltyGo{
+ margin:0;min-height:44px;padding:7px 12px;border:1px solid var(--brand);border-radius:999px;background:var(--paper,#fff);color:var(--ink,#261033);font-size:.8rem;font-weight:800;white-space:nowrap;box-shadow:none
+}
+@media(max-width:600px){
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty{padding:6px 8px;margin-bottom:10px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-top{gap:5px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-outline-star{width:18px;height:18px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-brand{font-size:.85rem}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-compact-copy{padding-left:6px;font-size:.69rem}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyaltyGo{padding:6px 8px;font-size:.72rem}
+}
+/* About contains only the shop's actual weekly hours, payment methods and scheduling. */
+body[data-menu-template="pitacco-v2"] .v2-about-block{border-top:1px solid var(--line,#eae3e7);padding:16px 0 0;margin-top:16px}
+body[data-menu-template="pitacco-v2"] .v2-about-block h3{font-size:1rem;margin:0 0 10px;color:var(--ink)}
+body[data-menu-template="pitacco-v2"] #v2AboutHours{display:grid;gap:0}
+body[data-menu-template="pitacco-v2"] .v2-about-day{display:grid;grid-template-columns:minmax(95px,1fr) minmax(0,1.6fr);align-items:start;gap:8px;padding:9px 0;border-bottom:1px solid var(--line,#eae3e7);font-size:.86rem;color:var(--ink)}
+body[data-menu-template="pitacco-v2"] .v2-about-day:last-child{border-bottom:0}
+body[data-menu-template="pitacco-v2"] .v2-about-day span{text-align:right;overflow-wrap:anywhere}
+body[data-menu-template="pitacco-v2"] .v2-about-day[data-closed=true] span{color:var(--muted)}
+body[data-menu-template="pitacco-v2"] .v2-about-payments{display:flex;gap:7px;flex-wrap:wrap;list-style:none;padding:0;margin:0}
+body[data-menu-template="pitacco-v2"] .v2-about-payments li{border:1px solid var(--line,#eae3e7);padding:7px 10px;border-radius:10px;font-size:.82rem;color:var(--ink);background:var(--paper,#fff)}
+body[data-menu-template="pitacco-v2"] #v2AboutSchedulingText{margin:0;font-size:.87rem}
 /* Account actions are part of the hero, never a separate greeting card. */
 #hero #customerSessionBar{position:relative;z-index:5;display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin:0 auto 12px;padding:0;min-width:0;color:inherit}
 #hero:has(#storeSocialLinks:not([hidden])) #customerSessionBar{padding-right:90px}
@@ -1449,8 +1488,8 @@ body[data-menu-template=classic] #hero:has(#customerSessionBar:not([hidden])) .h
 
 <section id="v2Home" class="v2-home" aria-label="Início do cardápio" hidden>
  <div id="v2HomeLoyalty" class="v2-home-loyalty" hidden>
-  <div class="v2-loyalty-top"><span class="v2-loyalty-gift" aria-hidden="true">🎁</span><div>
-  <strong class="v2-loyalty-brand">Fideliza<em>+</em></strong><p>Compre, acumule pontos e resgate recompensas incríveis!</p></div>
+  <div class="v2-loyalty-top"><span class="v2-loyalty-gift" aria-hidden="true">🎁</span><svg class="v2-loyalty-outline-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 3.1 6.5 7.2 1-5.2 5 1.2 7.1-6.3-3.3-6.3 3.3 1.2-7.1-5.2-5 7.2-1z"/></svg><div>
+  <strong class="v2-loyalty-brand">Fideliza<em>+</em></strong><p class="v2-loyalty-full-copy">Compre, acumule pontos e resgate recompensas incríveis!</p><p class="v2-loyalty-compact-copy">Peça, acumule pontos e troque por benefícios.</p></div>
   <button type="button" id="v2HomeLoyaltyGo">Ver benefícios ›</button></div>
   <div class="v2-progress-card"><div class="v2-points-box"><span class="v2-star">⭐</span><div>Seus pontos<strong id="v2HomePoints">—</strong></div></div>
   <div class="v2-progress-detail"><p id="v2HomeProgressText">Informe o telefone no pedido para consultar seus pontos.</p>
@@ -1487,7 +1526,11 @@ body[data-menu-template=classic] #hero:has(#customerSessionBar:not([hidden])) .h
  </div>
 </section>
 <section id="v2AboutPage" class="v2-section-page" aria-label="Sobre a loja" hidden>
- <div class="v2-about"><h2 id="v2AboutTitle">Sobre a loja</h2><p id="v2AboutIntro">Informações da loja e serviços disponíveis.</p><div id="v2AboutServices"></div></div>
+ <div class="v2-about"><h2>Sobre a loja</h2>
+ <section class="v2-about-block" aria-labelledby="v2AboutHoursTitle"><h3 id="v2AboutHoursTitle">Horários de atendimento</h3><div id="v2AboutHours"></div></section>
+ <section class="v2-about-block" aria-labelledby="v2AboutPaymentsTitle"><h3 id="v2AboutPaymentsTitle">Formas de pagamento aceitas</h3><ul id="v2AboutPayments" class="v2-about-payments"></ul><p id="v2AboutNoPayments" hidden>Formas de pagamento ainda não informadas.</p></section>
+ <section id="v2AboutScheduling" class="v2-about-block" aria-label="Pedidos agendados" hidden><h3>Pedidos agendados</h3><p id="v2AboutSchedulingText"></p></section>
+ </div>
 </section>
 <section id="v2FiadoPage" class="v2-section-page" aria-label="Meu Fiado" hidden>
  <div class="v2-page-hero v2-fiado-hero"><h2>▣ Meu Fiado</h2><p>Acompanhe seus pedidos fiados e pagamentos.</p></div>
@@ -1685,7 +1728,7 @@ if(studioPreviewActive){
 }
 
 let menu,cart=[],pendingRequest=null,submitting=false,checkoutPreparing=false,scheduleRequest=0;
-let fiadoEligiblePhone='',fiadoLookupCounter=0,fiadoLookupTimer=null,fiadoLookupFingerprint='';
+let fiadoEligiblePhone='',fiadoLookupCounter=0,fiadoLookupTimer=null,fiadoLookupFingerprint='',fiadoNavPhone='',fiadoNavRevision=0;
 let storeOpening=null;
 const schedulingAvailable=()=>storeOpening?.scheduling_available===true&&storeOpening?.paused!==true;
 const storefrontCanOrder=()=>storeOpening?.open===true||schedulingAvailable();
@@ -2342,8 +2385,30 @@ function v2Feature(){
  if(heroProduct){setProductPhotoFit($('v2HeroImage'));$('v2HeroImage').src=heroProduct.image_url;}
 }
 
+function renderStoreAbout(){
+ if(!menu)return;
+ const hours=$('v2AboutHours'),payments=$('v2AboutPayments');hours.replaceChildren();payments.replaceChildren();
+ const weekly=storeOpening?.weekly_periods;
+ const days=['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado','Domingo'];
+ const fmt=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+ if(!Array.isArray(weekly))hours.append(el('p','Horários de atendimento não disponíveis no momento.'));
+ else days.forEach((day,index)=>{
+  const periods=weekly.filter(p=>p.weekday===index+1&&Number.isInteger(p.opens_minute)&&Number.isInteger(p.closes_minute)&&p.opens_minute>=0&&p.opens_minute<1440&&p.closes_minute>=0&&p.closes_minute<=1440&&p.opens_minute!==p.closes_minute).sort((a,b)=>a.opens_minute-b.opens_minute);
+  const row=el('div',undefined,'v2-about-day');row.dataset.closed=String(!periods.length);
+  const label=periods.length?periods.map(p=>p.opens_minute===0&&p.closes_minute===1440?'24 horas':fmt(p.opens_minute)+' às '+fmt(p.closes_minute)+(p.closes_minute<p.opens_minute?' (dia seguinte)':'')).join(' · '):'Fechado';
+  row.append(el('strong',day),el('span',label));hours.append(row);
+ });
+ const methods=[...$('payment').options].filter(o=>o.value&&o.value!=='fiado');
+ for(const option of methods){const [,title]=v2PaymentMetadata(option.value,option.textContent);payments.append(el('li',title));}
+ if(canOpenFiadoNavigation())payments.append(el('li','Fiado autorizado'));
+ $('v2AboutNoPayments').hidden=payments.children.length>0;
+ const accepts=storeOpening?.accepts_scheduled===true;
+ $('v2AboutScheduling').hidden=!accepts;
+ $('v2AboutSchedulingText').textContent=accepts?(schedulingAvailable()?'Esta loja aceita pedidos agendados.':'Pedidos agendados temporariamente indisponíveis.'):'';
+}
 function v2Go(page,initial=false){
  if(document.body.dataset.menuTemplate!=='pitacco-v2')return;
+ if(page==='fiado'&&!canOpenFiadoNavigation())return;
  v2Page=page;document.body.dataset.v2Page=page;v2FavoritesOnly=page==='favoritos';
  $('v2Home').hidden=page!=='inicio';
  $('v2LoyaltyPage').hidden=page!=='fideliza';
@@ -2361,19 +2426,13 @@ function v2Go(page,initial=false){
   $('v2CatalogTitle').textContent=names[page]||'Cardápio';
   renderCategories();renderProducts();if(page==='inicio')v2Feature();
  }
- if(page==='fiado'){$('v2FiadoPhone').value=$('phone').value;$('v2FiadoNotice').textContent='';$('v2FiadoStatement').hidden=true;$('v2FiadoLogin').hidden=false;}
+ if(page==='fiado'){$('v2FiadoPhone').value=fiadoNavPhone;$('v2FiadoPhone').readOnly=true;$('v2FiadoPin').value='';$('v2FiadoNotice').textContent='';$('v2FiadoStatement').hidden=true;$('v2FiadoLogin').hidden=false;}
  if(page==='fideliza'){
   $('v2LoyaltyPhone').value=$('phone').value;
   v2RenderWallet();
   if(menu)void refreshLoyaltyWallet();
  }
- if(page==='sobre'&&menu){
-  $('v2AboutTitle').textContent=menu.store.name;
-  $('v2AboutIntro').textContent=menu.store.appearance?.slogan||'Conheça os serviços disponíveis nesta loja.';
-  const area=$('v2AboutServices');area.replaceChildren();
-  for(const item of $('storeServices').children){if(item.tagName==='A'){const contact=item.cloneNode(true);contact.classList.add('v2-about-chip');area.append(contact)}else area.append(el('p',item.textContent,'v2-about-chip'));}
-  area.append(el('p','Horários de atendimento e disponibilidade de pedidos definidos pela loja.','v2-about-chip'));
- }
+ if(page==='sobre'&&menu)renderStoreAbout();
  if(!initial)window.scrollTo({top:0,behavior:'smooth'});
 }
 for(const b of $('v2StoreNav').querySelectorAll('[data-v2-nav]')){
@@ -2924,6 +2983,7 @@ const brazilTime=new Intl.DateTimeFormat('pt-BR',{
 });
 function showStoreOpening(opening){
  storeOpening=opening&&typeof opening.open==='boolean'?opening:{open:false,reason:'unavailable'};
+ if(v2Page==='sobre')renderStoreAbout();
  const status=$('storeOpenStatus');
  const isOpen=storeOpening.open;
  const available=schedulingAvailable();
@@ -2975,7 +3035,38 @@ function removeFiadoOption(){
  const opt=$('payment').querySelector('option[value="fiado"]');
  if(opt){if($('payment').value==='fiado')$('payment').value='';opt.remove();}
 }
+function canOpenFiadoNavigation(){
+ return Boolean(fiadoNavPhone&&fiadoNavPhone===fiadoPhoneDigits($('phone').value)&&!$('v2FiadoNav').hidden);
+}
+function setFiadoNavigation(phone,visible){
+ fiadoNavRevision++;
+ fiadoNavPhone=visible===true&&phone===fiadoPhoneDigits($('phone').value)&&/^[0-9]{10,11}$/.test(phone)?phone:'';
+ $('v2FiadoNav').hidden=!fiadoNavPhone;
+ if(v2Page==='sobre')renderStoreAbout();
+ if(!fiadoNavPhone){
+  $('v2FiadoPhone').value='';$('v2FiadoPin').value='';$('v2FiadoStatement').hidden=true;
+  $('v2FiadoNotice').textContent='';$('v2FiadoCharges').replaceChildren();$('v2FiadoPayments').replaceChildren();
+  $('v2FiadoPayInstructions').hidden=true;$('v2FiadoPayInstructions').textContent='';
+  v2FiadoPixInstructions=null;
+  if(v2Page==='fiado')v2Go('inicio',true);
+ }
+}
+async function refreshFiadoNavigation(){
+ if(!menu||studioPreviewActive||pagbankPreviewMode||document.hidden)return;
+ const phone=fiadoPhoneDigits($('phone').value);
+ if(!/^[0-9]{10,11}$/.test(phone))return;
+ const revision=++fiadoNavRevision,checkoutRequest=fiadoLookupCounter;
+ try{
+  const {data,error}=await client.rpc('pitacco_fiado_checkout_status',{p_slug:slug,p_phone:phone,p_order_total:0});
+  if(revision!==fiadoNavRevision||checkoutRequest!==fiadoLookupCounter||phone!==fiadoPhoneDigits($('phone').value))return;
+  setFiadoNavigation(phone,!error&&data?.visible===true);
+ }catch{
+  if(revision===fiadoNavRevision&&checkoutRequest===fiadoLookupCounter)setFiadoNavigation(phone,false);
+ }
+}
+window.addEventListener('focus',()=>void refreshFiadoNavigation());
 function clearFiadoAccess(){
+ setFiadoNavigation('',false);
  fiadoLookupCounter++;
  fiadoLookupFingerprint='';
  fiadoEligiblePhone='';
@@ -2989,7 +3080,8 @@ function clearFiadoAccess(){
 function scheduleFiadoStatusCheck(total){
  if(!menu||submitting||pendingRequest)return;
  const phone=fiadoPhoneDigits($('phone').value);
- if(!/^[0-9]{10,11}$/.test(phone)){if(fiadoLookupFingerprint)clearFiadoAccess();return;}
+ if(!/^[0-9]{10,11}$/.test(phone)){if(fiadoLookupFingerprint||fiadoNavPhone)clearFiadoAccess();return;}
+ if(fiadoNavPhone&&fiadoNavPhone!==phone)setFiadoNavigation('',false);
  const rounded=Math.round(Math.max(0,total||0)*100)/100;
  const fingerprint=JSON.stringify([slug,phone,rounded]);
  if(fingerprint===fiadoLookupFingerprint)return;
@@ -3009,6 +3101,7 @@ async function refreshFiadoEligibility(phone,amount,request){
   const {data,error}=await client.rpc('pitacco_fiado_checkout_status',{p_slug:slug,p_phone:phone,p_order_total:amount});
   if(request!==fiadoLookupCounter||phone!==fiadoPhoneDigits($('phone').value))return;
   if(error)throw error;
+  setFiadoNavigation(phone,data?.visible===true);
   if(data?.visible!==true){removeFiadoOption();$('fiadoUnavailable').hidden=true;return;}
   let option=$('payment').querySelector('option[value="fiado"]');
   if(!option){option=new Option('Fiado — pagar depois','fiado');$('payment').add(option);}
@@ -3022,6 +3115,7 @@ async function refreshFiadoEligibility(phone,amount,request){
   renderCart();
  }catch{
   if(request!==fiadoLookupCounter)return;
+  setFiadoNavigation('',false);
   fiadoEligiblePhone='';
   removeFiadoOption();
   $('fiadoUnavailable').hidden=true;
@@ -3388,7 +3482,6 @@ function renderPublicStoreIdentity(){
  social.hidden=!social.children.length;
  const digits=String(shop.whatsapp||'').replace(/\D/g,'');
  if(/^\d{10,11}$/.test(digits)||/^55\d{10,11}$/.test(digits)){const contact=el('a','WhatsApp da loja');contact.href='https://wa.me/'+(digits.length<=11?'55'+digits:digits);contact.target='_blank';contact.rel='noopener noreferrer';$('storeServices').append(contact);}
- $('v2AboutTitle').textContent=shop.name;
  $('storeInitial').textContent=shop.name.trim().slice(0,1).toUpperCase();
  document.title='Cardápio | '+shop.name;
 
@@ -3768,6 +3861,7 @@ function customerSessionDisplay(active,name='',expiry=0){
 function discardCustomerCredential(){
  try{localStorage.removeItem(customerDeviceKey);localStorage.removeItem(customerLinksKey)}catch{}
  customerSessionDisplay(false);
+ clearFiadoAccess();
 }
 function pendingDeviceLinks(device){
  try{const d=JSON.parse(localStorage.getItem(customerLinksKey)||'null');return d?.device===device&&Array.isArray(d.tokens)?d.tokens.filter(t=>/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(t)).slice(0,50):[]}catch{return []}
@@ -4205,6 +4299,7 @@ function v2RenderFiadoStatement(data){
 }
 $('v2FiadoCheck').onclick=async()=>{
  const button=$('v2FiadoCheck'),phone=loyaltyPhoneDigits($('v2FiadoPhone').value),pin=$('v2FiadoPin').value;
+ if(!canOpenFiadoNavigation()||phone!==fiadoNavPhone)return;
  if(!/^[0-9]{10,11}$/.test(phone)||!/^[0-9]{6}$/.test(pin)){
   $('v2FiadoNotice').textContent='Informe telefone com DDD e PIN pessoal de seis dígitos.';return;
  }
@@ -4217,8 +4312,8 @@ $('v2FiadoCheck').onclick=async()=>{
   if(vErr||!verified?.verified||!verified?.token)throw Error('Não foi possível validar seus dados. Verifique com a loja.');
   const {data,error}=await client.rpc('pitacco_v2_fiado_statement',{p_slug:slug,p_token:verified.token});
   if(error||data?.error)throw Error(error?.message||data?.error||'Não foi possível carregar o extrato.');
-  v2RenderFiadoStatement(data);
- }catch(e){$('v2FiadoNotice').textContent=e.message||'Não foi possível consultar o Fiado.';}
+  if(canOpenFiadoNavigation()&&phone===fiadoNavPhone&&v2Page==='fiado')v2RenderFiadoStatement(data);
+ }catch(e){if(canOpenFiadoNavigation()&&phone===fiadoNavPhone&&v2Page==='fiado')$('v2FiadoNotice').textContent=e.message||'Não foi possível consultar o Fiado.';}
  finally{button.disabled=false;}
 };
 $('v2FiadoPay').onclick=()=>{

@@ -42,6 +42,8 @@ begin
  assert first->>'revision'='1';
  state:=public.pitacco_test_hours_at('d2000000-0000-0000-0000-000000000001','2026-11-16 12:00:00-03');
  assert state->>'open'='true','Monday at opening should accept orders';
+ assert jsonb_array_length(public.pitacco_public_store_open('horarios-loja')->'weekly_periods')=4;
+ assert (public.pitacco_public_store_open('horarios-loja')->'weekly_periods'->2->>'closes_minute')::integer=120;
  state:=public.pitacco_test_hours_at('d2000000-0000-0000-0000-000000000001','2026-11-16 14:00:00-03');
  assert state->>'open'='false','At closing boundary should stop orders';
  state:=public.pitacco_test_hours_at('d2000000-0000-0000-0000-000000000001','2026-11-16 18:00:00-03');
@@ -89,6 +91,8 @@ begin
  menu:=public.get_public_menu('horarios-loja');
  assert menu->'store'->'opening_hours'->>'open'='true';
  assert public.pitacco_public_store_open('horarios-loja')->>'open'='true';
+ assert jsonb_array_length(menu->'store'->'opening_hours'->'weekly_periods')=7;
+ assert menu->'store'->'opening_hours'->'weekly_periods'=public.pitacco_public_store_open('horarios-loja')->'weekly_periods';
  result:=public.checkout_public_order('horarios-loja',key,'Cliente','21999999999','',payload,'pickup','dinheiro','');
  assert (result->>'total')::numeric=20;
  perform set_config('test.hours_order',result::text,true);
