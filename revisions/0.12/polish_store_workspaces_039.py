@@ -68,5 +68,5 @@ if s.count(needle)==1:
 else:
     # Later web revisions already use the scoped identity RPC. Preserve the
     # address's interactive map marker instead of failing the restore pipeline.
-    assert "client.rpc('pitacco_update_store_identity'" in s
+    assert "client.rpc('pitacco_save_store_registration'" in s or "client.rpc('pitacco_update_store_identity'" in s
 p.write_text(s,encoding='utf-8')

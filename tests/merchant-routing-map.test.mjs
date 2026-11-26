@@ -40,7 +40,7 @@ test('store address form provides a draggable shop pin without coordinate fields
  assert.match(form,/\{picked&&<button type="button"/);
  assert.match(form,/locateStoreByAddress\(client,store.id\)/);
  assert.match(read('revisions/0.12/web/mapOrigin.mjs'),/action:'store-origin'/);
- assert.match(form,/rpc\('pitacco_update_store_identity'/);
+ assert.match(form,/rpc\('pitacco_save_store_registration'/);
  assert.match(form,/addressDirty/);
  assert.match(map,/export async function mountStorePointPicker/);
  assert.match(map,/draggable:true/);

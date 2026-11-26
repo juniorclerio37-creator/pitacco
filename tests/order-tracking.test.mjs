@@ -71,3 +71,5 @@ test('customer tracking exposes actual merchant-configured delivery PIN of 4 to 
 
 test('group tracking shows only approximate position and confirmed other arrival',()=>{assert.match(html,/position\?\.another_arrived/);assert.match(html,/approximate_radius_m:group\?1500:140/);assert.match(mapModule,/uncertainty.setRadius\(radius\)/);assert.match(html,/if\(!group\)link.href/);});
 test('WhatsApp message is prepared from the token-scoped order',()=>{assert.match(html,/d\.customer_name/);assert.match(html,/d\.public_number/);assert.match(html,/encodeURIComponent\(text\)/);assert.match(html,/d\.store\?\.whatsapp/);});
+
+test('storefront displays only configured social links',()=>{const menu=readFileSync(new URL('../marketing/cardapio.html',import.meta.url),'utf8');assert.match(menu,/shop\.instagram_url/);assert.match(menu,/shop\.facebook_url/);assert.match(menu,/social\.hidden=!social\.children\.length/);});
