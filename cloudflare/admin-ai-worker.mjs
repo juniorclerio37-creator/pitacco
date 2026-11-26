@@ -1,3 +1,4 @@
+import {handleSalesCoach} from './sales-coach.mjs';
 // Pitacco Intelligence v1: respostas consultivas, sem operações que modifiquem o negócio.
 // O Worker usa a mesma sessão Supabase do Super Admin e a permissão validada no banco.
 // NÃO adicionar service_role, credenciais de marketplace ou execução de código aqui.
@@ -295,6 +296,7 @@ async function handleAnalyze(request, env) {
 export default {
   async fetch(request, env) {
     const path = new URL(request.url).pathname;
+    if (path === '/api/intelligence/sales') return handleSalesCoach(request, env);
     if (path === '/api/intelligence/analyze') return handleAnalyze(request, env);
     if (path.startsWith('/api/intelligence/')) return asJson({ error: 'Rota desconhecida.' }, 404);
     return env.ASSETS.fetch(request);

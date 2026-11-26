@@ -34,6 +34,14 @@
         "limit": 4,
         "period": 60
       }
+    },
+    {
+      "name": "SALES_COACH_LIMIT",
+      "namespace_id": "250820",
+      "simple": {
+        "limit": 4,
+        "period": 60
+      }
     }
   ]
 }

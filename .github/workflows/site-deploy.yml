@@ -17,6 +17,7 @@ on:
       - 'entregador/*.css'
       - 'entregador/*.svg'
       - 'cloudflare/storefront.mjs'
+      - 'cloudflare/sales-coach.mjs'
       - 'wrangler.jsonc'
       - '.github/workflows/site-deploy.yml'
 
