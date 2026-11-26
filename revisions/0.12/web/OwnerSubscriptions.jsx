@@ -1,8 +1,10 @@
 import {OwnerPlanRequests} from './PlanChange.jsx';
+import {commercialPlanLabel} from './controlCenter.mjs';
 import React,{useEffect,useMemo,useState} from 'react';
 const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const dates=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short'});
-const statuses={active:'Ativa',trial:'Em teste',overdue:'Vencida',legacy:'Anterior à cobrança',courtesy:'Cortesia',suspended:'Suspensa'};
+const statuses={active:'Ativa',trial:'Em teste',overdue:'Vencida',legacy:'Cadastro sem situação comercial definida',courtesy:'Cortesia',suspended:'Suspensa'};
+const billingLabel=r=>r.plan==='free'?(r.commission_basis_points==null?'Comissão não consultada':(Number(r.commission_basis_points)/100).toLocaleString('pt-BR')+'% de comissão'):r.plan==='complete'&&r.monthly_amount!=null?money.format(Number(r.monthly_amount))+'/mês':'—';
 const date=value=>value?dates.format(new Date(value)):'—';
 export default function OwnerSubscriptions({client}){
  const [rows,setRows]=useState([]),[busy,setBusy]=useState(true),[error,setError]=useState('');
@@ -32,25 +34,25 @@ export default function OwnerSubscriptions({client}){
    <dl><div className="line"><dt>Ativas</dt><dd>{count('active')}</dd></div>
    <div className="line"><dt>Em teste</dt><dd>{count('trial')}</dd></div>
    <div className="line"><dt>Suspensas</dt><dd>{count("suspended")}</dd></div><div className="line"><dt>Cortesia</dt><dd>{count("courtesy")}</dd></div><div className="line"><dt>Vencidas</dt><dd>{count('overdue')}</dd></div>
-   <div className="line"><dt>Receita recorrente estimada (ativas)</dt><dd>{money.format(rows.filter(r=>r.status==='active').reduce((n,r)=>n+Number(r.monthly_amount||0),0))}</dd></div></dl>
+   <div className="line"><dt>Receita mensal contratada · Fixo ativo</dt><dd>{money.format(rows.filter(r=>r.status==='active'&&r.plan==='complete').reduce((n,r)=>n+Number(r.monthly_amount||0),0))}</dd></div></dl>
    <div className="line">
     <label>Buscar loja <input type="search" value={search} onChange={e=>setSearch(e.target.value)} /></label>
     <label>Situação <select value={filter} onChange={e=>setFilter(e.target.value)}>
-     <option value="all">Todas</option><option value="active">Ativas</option><option value="trial">Em teste</option><option value="overdue">Vencidas</option><option value="legacy">Anteriores à cobrança</option><option value="courtesy">Cortesia</option><option value="suspended">Suspensas</option>
+     <option value="all">Todas</option><option value="active">Ativas</option><option value="trial">Em teste</option><option value="overdue">Vencidas</option><option value="legacy">Sem situação comercial definida</option><option value="courtesy">Cortesia</option><option value="suspended">Suspensas</option>
     </select></label>
     <button type="button" className="secondary" disabled={busy} onClick={()=>setReload(n=>n+1)}>Atualizar</button>
    </div>
    {busy&&<p role="status">Consultando assinaturas…</p>}
    {error&&<p role="alert">{error}</p>}
    {!busy&&!error&&visible.length===0&&<p>Nenhuma assinatura encontrada.</p>}
-   <div style={{overflowX:'auto'}}><table><thead><tr><th>Loja</th><th>Situação</th><th>Valor</th><th>Cobertura / teste</th><th>Detalhes</th></tr></thead>
-   <tbody>{visible.map(r=><tr key={r.id}><td>{r.name}</td><td>{statuses[r.status]||r.status}</td>
-    <td>{money.format(Number(r.monthly_amount??59.90))}</td><td>{date(r.paid_until||r.trial_ends_at)}</td>
+   <div style={{overflowX:'auto'}}><table><thead><tr><th>Loja</th><th>Plano</th><th>Situação</th><th>Cobrança</th><th>Cobertura / teste</th><th>Detalhes</th></tr></thead>
+   <tbody>{visible.map(r=><tr key={r.id}><td>{r.name}</td><td>{commercialPlanLabel(r.plan)}</td><td>{statuses[r.status]||r.status}</td>
+    <td>{billingLabel(r)}</td><td>{date(r.paid_until||r.trial_ends_at)}</td>
     <td><button type="button" className="secondary" onClick={()=>setSelected(r.id)}>Ver ficha</button></td></tr>)}</tbody></table></div>
   </div>
   {current&&<section className="panel" aria-label={'Assinatura de '+current.name}>
    <div className="line"><h3>{current.name}</h3><button type="button" className="secondary" onClick={()=>setSelected(null)}>Fechar</button></div>
-   <dl>{[['Situação',statuses[current.status]||current.status],['Plano',current.plan],['Mensalidade',money.format(Number(current.monthly_amount??59.90))],['Cadastro',date(current.created_at)],['Fim do teste',date(current.trial_ends_at)],['Cobertura paga até',date(current.paid_until)],['Vencimento cadastrado',current.due_date?date(current.due_date):'—'],['Vencimento administrativo',current.admin_due_date?date(current.admin_due_date):'—'],['Cortesia até',date(current.courtesy_until)],['Telefone',current.phone||'—'],['Pedidos registrados',current.orders_count],['Último pedido',date(current.last_order_at)]].map(([label,value])=><div className="line" key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+   <dl>{[['Situação',statuses[current.status]||current.status],['Plano',commercialPlanLabel(current.plan)],['Cobrança contratada',billingLabel(current)],['Cadastro',date(current.created_at)],['Fim do teste',date(current.trial_ends_at)],['Cobertura paga até',date(current.paid_until)],['Vencimento cadastrado',current.due_date?date(current.due_date):'—'],['Vencimento administrativo',current.admin_due_date?date(current.admin_due_date):'—'],['Cortesia até',date(current.courtesy_until)],['Telefone',current.phone||'—'],['Pedidos registrados',current.orders_count],['Último pedido',date(current.last_order_at)]].map(([label,value])=><div className="line" key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
    <h4>Pagamentos confirmados no Pitacco</h4>
    {!current.payments?.length?<p>Nenhum pagamento confirmado registrado.</p>:<div style={{overflowX:'auto'}}><table><thead><tr><th>Data</th><th>Provedor</th><th>Valor</th><th>Cobertura até</th><th>Referência</th></tr></thead><tbody>{current.payments.map(p=><tr key={p.provider+':'+p.payment_id}><td>{date(p.confirmed_at)}</td><td>{p.provider}</td><td>{money.format(Number(p.amount))}</td><td>{date(p.paid_until)}</td><td>{p.payment_id}</td></tr>)}</tbody></table></div>}
    <h4>Ações administrativas</h4>
