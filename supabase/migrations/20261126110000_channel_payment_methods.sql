@@ -37,9 +37,12 @@ begin
  next_def:=replace(replace(d,'cardinality(p_payment_methods) not between 1 and 3','cardinality(p_payment_methods) not between 1 and 10'),
  'array[''dinheiro'',''cartao_entrega'',''pix_manual'']::text[]','array[''dinheiro'',''cartao_entrega'',''cartao_credito'',''cartao_debito'',''pix_manual'',''pix_maquininha'',''voucher_alelo'',''voucher_pluxee'',''voucher_vr'',''voucher_ticket'']::text[]');
  if next_def=d then raise exception 'Menu settings anchor missing';end if;execute next_def;
+ -- Legacy onboarding is absent from clean installations; update it only when present.
+ if to_regprocedure('public.pitacco_configure_store(uuid,text,text,text,integer,text,numeric,text[],boolean,boolean)') is not null then
  d:=pg_get_functiondef('public.pitacco_configure_store(uuid,text,text,text,integer,text,numeric,text[],boolean,boolean)'::regprocedure);
  next_def:=replace(d,'array[''dinheiro'',''cartao_entrega'',''pix_manual'']::text[]','array[''dinheiro'',''cartao_entrega'',''cartao_credito'',''cartao_debito'',''pix_manual'',''pix_maquininha'',''voucher_alelo'',''voucher_pluxee'',''voucher_vr'',''voucher_ticket'']::text[]');
  if next_def=d then raise exception 'Onboarding payment anchor missing';end if;execute next_def;
+ end if;
  d:=pg_get_functiondef('public.confirm_manual_payment(uuid,uuid,numeric,text)'::regprocedure);
  next_def:=replace(d,'''dinheiro'',''cartao_entrega'',''pix_manual'',''pix'',''cartao''','''dinheiro'',''cartao_entrega'',''pix_manual'',''pix'',''cartao'',''cartao_credito'',''cartao_debito'',''pix_maquininha'',''voucher_alelo'',''voucher_pluxee'',''voucher_vr'',''voucher_ticket''');
  if next_def=d then raise exception 'Manual payment anchor missing';end if;execute next_def;

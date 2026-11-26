@@ -36,7 +36,9 @@ test('fees are configured exclusively inside delivery area, not Payment or onboa
  const settings=read('revisions/0.12/web/StorefrontSettings.jsx');
  const setup=read('marketing/configuracao.html');
  assert.doesNotMatch(settings,/<label>Taxa de entrega \(R\$\)/);
- assert.match(settings,/p_delivery_fee:0/);
+ const channelMigration=read('supabase/migrations/20261126110000_channel_payment_methods.sql');
+ assert.match(settings,/pitacco_save_channel_payments/);
+ assert.match(channelMigration,/perform public\.save_public_menu_settings\(p_store,p_slug,p_enabled,p_delivery_enabled,p_pickup_enabled,0,p_public,p_pix_instructions\)/);
  assert.match(settings,/pitacco_save_delivery_zone/);
  assert.match(settings,/mode==='circle'/);
  assert.match(settings,/mode==='polygon'/);
