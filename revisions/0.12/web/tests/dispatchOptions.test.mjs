@@ -25,3 +25,15 @@ test('nearby destinations are not labeled identical, and third distant stop requ
  assert.equal(routeDestinationSummary([a,undefined]),'check');
  assert.doesNotMatch(routeDestinationMessage('check'),/oposta|contrária/);
 });
+
+test('manual dispatch allows a full pre-departure route while automation still blocks it',()=>{
+ const now=Date.now(),store={max_orders_per_trip:1};
+ const couriers=[{id:'c',name:'Courier',fleet_type:'propria',active:true,available:true}];
+ const positions=[{courier_id:'c',latitude:-22.7,longitude:-43.45,observed_at:new Date(now).toISOString()}];
+ const stops=[{courier_id:'c',status:'aceita'}];
+ const data={couriers,positions,stops,store,now};
+ assert.equal(dispatchOptions(data)[0].blocked,true);
+ assert.equal(dispatchOptions({...data,manual:true})[0].blocked,false);
+ assert.equal(dispatchOptions({...data,manual:true})[0].full,true);
+ assert.equal(dispatchOptions({...data,manual:true,stops:[{courier_id:'c',status:'retirada'}]})[0].blocked,true);
+});
