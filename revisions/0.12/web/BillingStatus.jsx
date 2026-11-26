@@ -34,7 +34,7 @@ function CommercialPayments({client,storeId,onPaid}){
  useEffect(()=>{let live=true;setRows([]);setManual(null);setReference('');setProof(null);setPix(null);setSelected(null);setResult(null);setDoc('');setError('');client.rpc('pitacco_commercial_invoices',{p_store:storeId,p_page:0}).then(({data,error})=>{if(!live)return;if(error)setError('Não foi possível consultar as cobranças.');else setRows(Array.isArray(data?.rows)?data.rows:[])});client.rpc('pitacco_merchant_commercial_billing_state',{p_store:storeId}).then(({data,error})=>{if(live&&!error)setPix(data)});return()=>{live=false}},[client,storeId,revision]);
  async function pay(){if(busy||!selected)return;setBusy(true);setError('');setResult(null);try{const {data,error}=await client.functions.invoke('pitacco-asaas-commercial-pix',{body:{invoice_id:selected.id,document:doc.replace(/\D/g,''),method}});if(error||data?.error)throw Error(data?.error||'Não foi possível gerar ou consultar a cobrança. Confira o documento cadastrado ou fale com o suporte.');if(['processed','duplicate'].includes(data?.status)){setSelected(null);setDoc('');reload(n=>n+1);onPaid?.();return;}const url=new URL(data.invoice_url);if(url.protocol!=='https:'||!(url.hostname==='asaas.com'||url.hostname.endsWith('.asaas.com'))||url.username||url.password)throw Error('Endereço de pagamento inválido');setResult({...data,invoice_url:url.href});setDoc('');}catch(e){setError(e.message||'Pagamento indisponível.')}finally{setBusy(false)}}
  async function submitProof(){if(busy||!manual||!proof||reference.trim().length<5)return;setBusy(true);setError('');try{if(proof.size>2097152||!['application/pdf','image/jpeg','image/png'].includes(proof.type))throw Error('Envie PDF, JPG ou PNG de até 2 MB.');const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(proof)});const {error}=await client.rpc('pitacco_submit_commercial_payment',{p_invoice:manual.id,p_reference:reference.trim(),p_mime:proof.type,p_proof:String(dataUrl).split(',')[1]});if(error)throw error;setNotice('Comprovante enviado. Aguarde a aprovação do Super Admin.');setManual(null);setProof(null);setReference('');reload(n=>n+1)}catch(e){setError(e.message||'Não foi possível enviar o comprovante.')}finally{setBusy(false)}}
- return <section className="panel" aria-label="Cobranças e pagamentos"><h3>Cobranças e pagamentos</h3><p>Pix e cartão de crédito na página segura do Asaas. O valor é definido pelo Pitacco. Nenhum dado de cartão é armazenado aqui.</p>
+ return <section id="pitacco-commercial-payments" className="panel" aria-label="Cobranças e pagamentos"><h3>Cobranças e pagamentos</h3><p>Pix e cartão de crédito na página segura do Asaas. O valor é definido pelo Pitacco. Nenhum dado de cartão é armazenado aqui.</p>
  {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
  <button type="button" className="secondary" disabled={busy} onClick={()=>reload(n=>n+1)}>Atualizar cobranças</button>
  {!rows.length&&<p>Nenhuma cobrança disponível neste momento.</p>}
@@ -56,6 +56,7 @@ function CommercialPayments({client,storeId,onPaid}){
 
 export default function BillingStatus({client,storeId}){
  const {result,error,busy,refresh}=useBilling(client,'pitacco_merchant_subscription_details',{p_store:storeId});
+ const [planRevision,setPlanRevision]=useState(0),[paymentRevision,setPaymentRevision]=useState(0);
  const deadline=result?.paid_until||result?.trial_ends_at;
  const stage=result?.first_payment_stage;
  const graceUntil=result?.first_payment_grace_until;
@@ -78,8 +79,8 @@ export default function BillingStatus({client,storeId}){
    {result.payments?.length?<div style={{overflowX:'auto'}}><table><thead><tr><th>Pagamento</th><th>Provedor</th><th>Valor</th><th>Cobertura até</th></tr></thead><tbody>{result.payments.map((p,i)=><tr key={i}><td>{date.format(new Date(p.confirmed_at))}</td><td>{p.provider}</td><td>{money.format(Number(p.amount))}</td><td>{date.format(new Date(p.paid_until))}</td></tr>)}</tbody></table></div>:<p>Nenhum pagamento confirmado registrado.</p>}
   </>}
   <button type="button" className="secondary" disabled={busy} onClick={refresh}>Atualizar situação</button>
-  <CommercialPayments key={'payments-'+storeId} client={client} storeId={storeId} onPaid={refresh}/>
-  <MerchantPlanChange key={storeId} client={client} storeId={storeId}/>
+  <MerchantPlanChange key={storeId+':'+planRevision} client={client} storeId={storeId} currentPlan={result?.plan_code} onChanged={()=>{refresh();setPaymentRevision(n=>n+1)}} onPay={()=>document.getElementById('pitacco-commercial-payments')?.scrollIntoView({behavior:'smooth',block:'start'})}/>
+  <CommercialPayments key={'payments-'+storeId+':'+paymentRevision} client={client} storeId={storeId} onPaid={()=>{refresh();setPlanRevision(n=>n+1)}}/>
  </section>;
 }
 
