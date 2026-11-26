@@ -319,6 +319,15 @@ try {
         assert.equal(route.request().postDataJSON().p_store,store.id);
         return route.fulfill({headers,json:menuSettings});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_store_delivery_code_length'){
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:6});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_save_store_delivery_code_length'){
+        const args=route.request().postDataJSON();
+        assert.deepEqual(args,{p_store:store.id,p_digits:5});
+        return route.fulfill({headers,json:5});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_payment_pricing_release_status'){
         return route.fulfill({headers,json:false});
       }
@@ -1016,6 +1025,10 @@ try {
       assert.equal(await page.getByRole('region',{name:'Chamados de suporte'}).count(),0);
       assert.equal(await page.getByRole('heading',{name:'Localização de saída'}).count(),0);
       await merchantNavigate('Entregas','Área de entrega');
+      const codeSettings=page.getByRole('region',{name:'Configuração do código de confirmação de entrega'});
+      await codeSettings.getByRole('combobox',{name:'Quantidade de dígitos do código da loja'}).selectOption('5');
+      await codeSettings.getByRole('button',{name:'Salvar regra do código'}).click();
+      await codeSettings.getByText('Quantidade de dígitos salva para os próximos pedidos da loja.').waitFor();
       await page.getByRole('slider',{name:/Raio de atendimento/}).press('ArrowLeft');
       for(let km=1;km<=4;km++){
         const region=page.locator('.delivery-region-editor').filter({has:page.getByText('Até '+km+' km',{exact:true})});
@@ -1026,6 +1039,7 @@ try {
       await page.getByRole('button',{name:'Salvar e ativar círculo de entrega'}).click();
       await page.getByText(/Taxas do círculo por quilômetro salvas/).waitFor();
       await merchantNavigate('Integrações','Meios de pagamento');
+      assert.equal(await page.getByRole('region',{name:'Configuração do código de confirmação de entrega'}).count(),0);
       const publication=page.getByRole('region',{name:'Publicação e atendimento'});
       const paymentPanel=page.getByRole('region',{name:'Formas de pagamento',exact:true});
       await publication.getByRole('checkbox',{name:'Aceitar retirada'}).check();

@@ -164,7 +164,6 @@ export function StorefrontPayments({client,storeId,resource}){
   </section>}
   <PaymentProviders client={client} storeId={storeId}/>
   {menu&&<PaymentPricingDrafts key={storeId} client={client} storeId={storeId} menu={menu}/>}
-  <DeliveryCodeSettings client={client} storeId={storeId}/>
  </div>;
 }
 
@@ -175,6 +174,12 @@ const deliveryRegionColors=['#ea580c','#2563eb','#059669','#9333ea','#d97706',
  '#db2777','#0e7490','#be123c','#64748b','#0d9488','#7c3aed','#ca8a04'];
 
 export function StoreDeliveryArea({client,store}){
+ return <div className="modern-workspace" aria-label="Configurações de entrega">
+  <DeliveryCodeSettings key={store.id} client={client} storeId={store.id}/>
+  <DeliveryAreaPricing key={store.id} client={client} store={store}/>
+ </div>;
+}
+function DeliveryAreaPricing({client,store}){
  const [automaticPoint,setAutomaticPoint]=useState(null);
  const [locationState,setLocationState]=useState('idle');
  const [locationRetry,setLocationRetry]=useState(0);

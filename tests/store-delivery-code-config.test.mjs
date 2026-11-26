@@ -20,7 +20,10 @@ test("store owner can set 4 to 8 digits for future own deliveries, default remai
  for(const length of [4,5,6,7,8])assert.match(ui,new RegExp("\\b"+length+"\\b"));
  assert.match(ui,/pitacco_save_store_delivery_code_length/);
  assert.match(ui,/pitacco_store_delivery_code_length/);
- assert.match(web,/DeliveryCodeSettings client=\{client\} storeId=\{storeId\}/);
+ const payments=web.slice(web.indexOf('export function StorefrontPayments('),web.indexOf('const MAX_DELIVERY_POLYGONS'));
+ assert.doesNotMatch(payments,/<DeliveryCodeSettings/,'Payment settings must not include delivery confirmation');
+ assert.match(web,/export function StoreDeliveryArea\(\{client,store\}\)\{[\s\S]*?<DeliveryCodeSettings key=\{store\.id\} client=\{client\} storeId=\{store\.id\}/);
+ assert.equal((web.match(/<DeliveryCodeSettings\b/g)||[]).length,1,'One merchant location for the delivery code');
  assert.match(merchant,/DeliveryCodeSettings client=\{client\} storeId=\{storeId\}/);
 });
 test("no PIN leaks to courier; original PIN length remains valid on existing orders",()=>{
