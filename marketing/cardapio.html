@@ -1287,6 +1287,13 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
 </section>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
+ <section id="customerSessionBar" class="shell" aria-label="Minha conta" hidden>
+  <strong id="customerSessionGreeting"></strong>
+  <div id="customerSessionActions">
+   <button type="button" id="customerSessionOrders" class="secondary" aria-expanded="false" aria-controls="customerSessionHistory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>Meus pedidos</button>
+   <button type="button" id="customerSessionLogout" class="secondary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H5v16h5M13 8l4 4-4 4m-5-4h12"/></svg>Sair da conta</button>
+  </div>
+ </section>
  <div class="shell hero-content"><div class="identity"><div class="store-mark" aria-hidden="true"><span id="storeInitial">🍧</span><img id="storeLogo" alt="" hidden></div>
  <div><h1 id="storeName"></h1><p id="storeSlogan">Cardápio digital</p></div></div><div id="storeServices" class="services"></div></div>
  <div class="shell v2-hero-info"><span id="v2OpenPill" class="v2-open-pill">Consultando</span><span id="v2DeliveryText" class="v2-delivery-text"></span>
@@ -1402,20 +1409,28 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#store
 </nav>
 
 <style>
-#customerSessionBar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;margin-block:12px;background:var(--paper,#fff);color:var(--ink,#24202b);border:1px solid color-mix(in srgb,var(--brand,#801095) 22%,transparent);border-radius:16px}
+/* Account actions are part of the hero, never a separate greeting card. */
+#hero #customerSessionBar{position:relative;z-index:5;display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin:0 auto 12px;padding:0;min-width:0;color:inherit}
+#hero:has(#storeSocialLinks:not([hidden])) #customerSessionBar{padding-right:90px}
 #customerSessionBar[hidden],#customerSessionChange[hidden],#customerSessionHistory[hidden]{display:none!important}
-#customerSessionBar strong,#customerSessionBar small{display:block;overflow-wrap:anywhere}
-#customerSessionActions,.customer-order-actions{display:flex;gap:8px;flex-wrap:wrap}
-#customerSessionHistory{width:100%;min-width:0;display:grid;gap:12px}
+#customerSessionGreeting{font-size:.85rem;line-height:1.2;max-width:100%;overflow-wrap:anywhere;text-shadow:0 1px 3px #0004}
+#customerSessionActions,.customer-order-actions{display:flex;gap:6px;flex-wrap:wrap;max-width:100%}
+#hero #customerSessionActions button{display:inline-flex;align-items:center;gap:5px;justify-content:center;min-height:36px;padding:6px 10px;border-radius:999px;background:#20162d80;color:#fff;border:1px solid #ffffff66;font-size:.76rem;font-weight:720;white-space:nowrap;max-width:100%;backdrop-filter:blur(5px)}
+#customerSessionActions svg{width:16px;height:16px;flex:none}
+body[data-menu-skin=essencial] #hero #customerSessionActions button{background:var(--paper,#fff);color:var(--ink,#173a2d);border-color:var(--line,#dfebe3)}
+body[data-menu-skin=essencial] #customerSessionGreeting{color:var(--ink,#173a2d);text-shadow:none}
+body[data-menu-template="pitacco-v2"]:not([data-menu-skin=editorial]) #hero:has(#customerSessionBar:not([hidden])) .hero-content{padding-top:0}
+body[data-menu-template=classic] #hero:has(#customerSessionBar:not([hidden])) .hero-content{padding-top:0}
+#customerSessionHistory{min-width:0;display:grid;gap:12px;margin-block:14px;padding:16px;background:var(--paper,#fff);color:var(--ink,#24202b);border:1px solid var(--line,#ddd);border-radius:16px;scroll-margin-top:16px}
+#customerSessionHistory h3,#customerSessionHistory>p{margin:0}
 .customer-order-card{padding:14px;border:1px solid #ddd;border-radius:12px;display:grid;gap:8px;overflow-wrap:anywhere}
 .customer-order-card p{margin:0}.customer-order-card a{color:var(--brand,#801095);font-weight:700}
-#customerSessionBar button{max-width:100%;white-space:normal}
+@media(max-width:600px){
+ #hero:has(#storeSocialLinks:not([hidden])) #customerSessionBar{padding-right:78px}
+ #hero #customerSessionActions button{padding:6px 8px;font-size:.74rem}
+}
 </style>
-<section id="customerSessionBar" class="shell" aria-label="Minha conta neste aparelho" hidden>
- <div><strong id="customerSessionGreeting"></strong><small>Cadastro lembrado neste aparelho</small></div>
- <div id="customerSessionActions"><button type="button" id="customerSessionOrders" class="secondary" aria-expanded="false">Meus pedidos</button><button type="button" id="customerSessionLogout" class="secondary">Sair da conta</button></div>
- <div id="customerSessionHistory" aria-live="polite" hidden></div>
-</section>
+<section id="customerSessionHistory" class="shell" aria-label="Histórico de pedidos" aria-live="polite" hidden></section>
 <section id="storeOpenStatus" class="shell store-open-status" role="status" aria-live="polite" hidden></section>
 <section id="pitaccoPromos" class="shell pitacco-promos" aria-label="Destaques da loja" hidden></section>
 <main class="shell catalog"><section id="cartDraftNotice" class="cart-draft-notice" role="status" hidden><p id="cartDraftText"></p><button type="button" id="checkPendingCart" class="secondary" hidden>Conferir envio anterior</button><a id="recoveredOrderLink" hidden>Acompanhar pedido confirmado</a></section>
@@ -3758,7 +3773,7 @@ async function showCustomerOrders(){
  const root=$('customerSessionHistory'),toggle=$('customerSessionOrders');
  if(!root.hidden){root.hidden=true;toggle.setAttribute('aria-expanded','false');return}
  const device=rememberedDevice();if(!device||!customerSessionActive)return;
- root.hidden=false;toggle.setAttribute('aria-expanded','true');root.replaceChildren(el('p','Carregando seus pedidos…'));
+ root.hidden=false;toggle.setAttribute('aria-expanded','true');root.replaceChildren(el('p','Carregando seus pedidos…'));root.scrollIntoView({behavior:'smooth',block:'start'});
  try{
   await flushDeviceLinks();
   const {data,error}=await client.rpc('pitacco_customer_device_orders',{p_slug:slug,p_device:device,p_action:'list'});

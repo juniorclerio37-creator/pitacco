@@ -37,3 +37,15 @@ test('saved address restores the confirmed coordinates before requesting a fresh
  assert.match(html,/address\.quote_id=deliveryQuote\.id/);
  assert.match(html,/const savedPoint=Boolean\(v2SelectedAddress&&!v2AddressEditing&&deliveryPoint\)/);
 });
+
+test('account shortcuts stay in the hero and history opens outside the banner',()=>{
+ const hero=html.slice(html.indexOf('<header class="hero"'),html.indexOf('</header>'));
+ assert.match(hero,/id="customerSessionBar"[^>]*hidden/);
+ assert.match(hero,/id="customerSessionOrders"[^>]*aria-controls="customerSessionHistory"/);
+ assert.match(hero,/id="customerSessionLogout"/);
+ assert.doesNotMatch(hero,/id="customerSessionHistory"/);
+ assert.match(html,/<section id="customerSessionHistory"[^>]*hidden/);
+ assert.doesNotMatch(html,/Cadastro lembrado neste aparelho/);
+ assert.match(html,/\$\('customerSessionBar'\)\.hidden=!active/);
+ assert.match(html,/\$\('customerSessionLogout'\)\.onclick=\$\('customerSessionChange'\)\.onclick=\(\)=>void customerLogout\(\)/);
+});
