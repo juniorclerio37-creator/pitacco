@@ -19,12 +19,14 @@ function createHarness(providerStatus=200,providerBody={valid:true},scoped=true,
   fetcher:async (target,options={})=>{
    const path=new URL(target).pathname;
    calls.push({path,body:options.body,headers:options.headers});
-   if(path.endsWith('/pitacco_driver_ifood_dispatch_claim')){
+   if(path.endsWith('/pitacco_driver_ifood_dispatch_claim_v2')){
     assert.equal(options.headers.authorization,'Bearer courier-test-session');
-    return scoped?reply({status:'claimed',lease:'00000000-0000-4000-8000-000000000093',
+    const claim=JSON.parse(options.body);assert.equal(claim.p_delivery,delivery);assert.match(claim.p_request,/^[a-f0-9-]{36}$/i);
+    return scoped?reply({status:'claimed',lease:claim.p_request,
       merchant_id:merchant,external_order_id:external,ready_on_ifood:true}):
       reply({error:'only merchant courier'},403);
    }
+   if(path.endsWith('/pitacco_ifood_dispatch_begin')){assert.equal(options.headers.authorization,'Bearer private');const claim=JSON.parse(calls.find(x=>x.path.endsWith('/pitacco_driver_ifood_dispatch_claim_v2')).body);assert.deepEqual(JSON.parse(options.body),{p_delivery:delivery,p_lease:claim.p_request});return reply(true);}
    if(path.endsWith('/pitacco_ifood_dispatch_result'))return reply(true);
    if(path.endsWith('/dispatch'))return reply({},202);
    if(path.endsWith('/readyToPickup'))return reply({},202);
@@ -117,9 +119,10 @@ test('merchant courier departure calls /dispatch with deliveredBy MERCHANT after
  const response=await call('dispatch');
  assert.equal(response.status,202);
  assert.equal((await response.json()).provider_state,'submitted');
- const claim=calls.find(x=>x.path.endsWith('/pitacco_driver_ifood_dispatch_claim'));
+ const claim=calls.find(x=>x.path.endsWith('/pitacco_driver_ifood_dispatch_claim_v2'));
  const sent=calls.find(x=>x.path.endsWith('/dispatch'));
  assert.ok(claim&&sent);
+ const begin=calls.find(x=>x.path.endsWith('/pitacco_ifood_dispatch_begin'));assert.ok(begin);assert.ok(calls.indexOf(claim)<calls.indexOf(begin)&&calls.indexOf(begin)<calls.indexOf(sent));
  assert.equal(sent.path,'/order/v1.0/orders/'+external+'/dispatch');
  assert.deepEqual(JSON.parse(sent.body),{deliveredBy:'MERCHANT'});
  assert.equal(calls.filter(x=>x.path.endsWith('/pitacco_ifood_dispatch_result')).length,1);
@@ -130,6 +133,7 @@ test('partner-delivery or unscoped courier is rejected before any iFood dispatch
  const response=await call('dispatch');
  assert.equal(response.status,403);
  assert.equal(calls.some(x=>x.path.endsWith('/dispatch')),false);
+ assert.equal(calls.some(x=>x.path.endsWith('/pitacco_ifood_dispatch_begin')),false);
 });
 
 test('coleta não envia DISPATCHED; sair para entrega dispara o envio próprio',()=>{
