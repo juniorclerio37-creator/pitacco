@@ -1593,6 +1593,7 @@ try {
       assert.equal(await page.getByRole('button',{name:'Importar cardápio',exact:true}).count(),1);
       await merchantNavigate('Entregas','Cadastro de motoboys');
       await page.locator('.courier-registration-only').waitFor();
+      assert.equal(await page.getByRole('navigation',{name:'Menu principal'}).getByRole('button',{name:'Cardápio',exact:true}).getAttribute('aria-expanded'),'false');
       assert.equal(await page.getByRole('navigation',{name:'Seções de motoboys'}).count(),0);
       assert.equal(await page.locator('.courier-side-cards').count(),0);
       await merchantNavigate('Entregas','Histórico de entregas');
@@ -1605,11 +1606,11 @@ try {
       await merchantNavigate('Financeiro','Conciliação de repasses');
       await page.getByRole('region',{name:'Conciliação de repasses'}).waitFor();
       await merchantNavigate('Configurações','Configurar impressão e visualizar nota');
-      await page.getByRole('heading',{name:'Computador de impressão',exact:true}).waitFor();
+      await page.getByRole('heading',{name:'Computador responsável pela impressão',exact:true}).waitFor();
       assert.equal(await page.locator('[aria-label="Seções de configuração"]').isVisible(),false);
       await merchantNavigate('Configurações','Alertas e sons');
       await page.getByRole('heading',{name:'Preferências do aplicativo',exact:true}).waitFor();
-      assert.equal(await page.getByRole('heading',{name:'Computador de impressão',exact:true}).count(),0);
+      assert.equal(await page.getByRole('heading',{name:'Computador responsável pela impressão',exact:true}).count(),0);
       assert.equal(await page.getByRole('button',{name:'Verificar atualização',exact:true}).count(),1);
       assert.equal(await page.getByRole('button',{name:'Outras funções',exact:true}).count(),0);
       assert.equal(await page.locator('.mn-favorites').count(),0);
