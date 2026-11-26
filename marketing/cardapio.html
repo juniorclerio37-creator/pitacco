@@ -1714,6 +1714,8 @@ function quoteNotice(text,state='info'){$('routeQuoteStatus').textContent=text;$
 function updateDeliveryMapAction(){
  const open=!$('deliveryMapPanel').hidden;
  const state=$('routeQuoteStatus').dataset.state;
+ const savedPoint=Boolean(v2SelectedAddress&&!v2AddressEditing&&deliveryPoint);
+ $('locateDelivery').hidden=$('deliveryPoint').hidden||savedPoint;
  $('showDeliveryMap').hidden=!open&&(!v2QuoteAddressReady()||(state==='success'&&!deliveryPoint));
  if(!open)$('showDeliveryMap').textContent=deliveryPoint?'Alterar ponto no mapa':'Escolher outro ponto no mapa';
 }
@@ -1833,7 +1835,7 @@ function v2AutoQuoteError(errorText){
   return 'Ainda não entregamos neste endereço. Não atendemos essa região no momento.';
  }
  if(/localizar.*precis[aã]o|impreciso|marque.*mapa|localiza[cç][aã]o.*mapa/i.test(errorText)){
-  return 'Confirme o local da entrega em Ajustar localização no mapa ou use sua localização atual.';
+  return 'Confirme o local da entrega apenas se este endereço ainda não tiver uma localização precisa salva.';
  }
  return errorText;
 }
@@ -3276,7 +3278,7 @@ function initOptions(){
   $('deliveryPoint').hidden=$('addressBlock').hidden||!shop.delivery_area||
     (shop.route_pricing?.mode==='road');
   $('routeQuoteControls').hidden=$('addressBlock').hidden;
-  $('locateDelivery').hidden=$('deliveryPoint').hidden;
+  updateDeliveryMapAction();
   if(!$('deliveryPoint').hidden&&!$('deliveryMapPanel').hidden)deliveryMap?.resize();
   if($('deliveryPoint').hidden)closeDeliveryMap();
   quoteGeneration++;v2ScheduleDeliveryQuote(true);
@@ -3734,7 +3736,7 @@ async function v2SaveProfile(){
   if(error||data?.error)throw Error(error?.message||data?.error||'Falha ao salvar');
   if(phone!==loyaltyPhoneDigits($('phone').value)||device!==rememberedDevice())return;
   if(data?.session_active===true)customerSessionDisplay(true,name,Date.now()+90*86400000);
-  if(Array.isArray(data?.addresses))v2Profile.addresses=data.addresses;
+  if(Array.isArray(data?.addresses)){v2Profile.addresses=data.addresses;v2RenderSavedAddresses();}
   v2Profile.name=name;v2ProfilePhone=phone;
   $('v2ProfileStatus').textContent='✓ Dados salvos para suas próximas compras neste aparelho.';
  }catch{
@@ -3751,6 +3753,13 @@ function v2FillAddress(data){
  for(const [field,id] of Object.entries(v2AddressFields))$(id).value=String(data[field]||'');
  $('v2AddressLabel').value=['Casa','Trabalho','Outro'].includes(data.label)?data.label:'Outro';
  composeDeliveryAddress();
+ // Restore only server-validated points, after the address input resets them.
+ const point=[data.location?.latitude,data.location?.longitude];
+ if(validDeliveryMapPoint(point)&&point[0]>=-34&&point[0]<=6&&point[1]>=-75&&point[1]<=-32){
+  selectDeliveryPoint(point);
+  $('deliveryPointStatus').textContent='✓ Localização salva. Não é necessário confirmar novamente.';
+ }
+ updateDeliveryMapAction();
 }
 function v2SelectSavedAddress(address,render=true){
  v2SelectedAddress=address.id;v2AddressEditing=false;
@@ -3792,8 +3801,10 @@ $('v2AddAddress').onclick=()=>{
  $('v2AddressEditor').scrollIntoView({block:'nearest',behavior:'smooth'});
 };
 function v2SaveCurrentAddress(){
- if($('fulfillment').value!=='delivery'||!v2AddressEditing)return;
+ if($('fulfillment').value!=='delivery'||!v2QuoteCurrent())return;
  const address=v2CurrentAddress();
+ // Save a quote reference rather than arbitrary coordinates; update existing pins too.
+ address.quote_id=deliveryQuote.id;
  v2Profile.addresses=v2Profile.addresses.filter(a=>a.id!==address.id).map(a=>({...a,is_default:false})).concat(address).slice(-8);
  v2SelectedAddress=address.id;v2AddressEditing=false;
  v2RenderSavedAddresses();
