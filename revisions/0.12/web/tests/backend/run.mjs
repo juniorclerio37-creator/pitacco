@@ -80,6 +80,10 @@ await db.exec(`
  create or replace function auth.jwt() returns jsonb language sql stable as $fixture$ select jsonb_build_object('session_id',auth.uid(),'aal','aal2')||coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb $fixture$;
  select set_config('request.jwt.claims','{"aal":"aal2"}',false);
 `);
+// Legacy SQL fixtures intentionally insert raw stores and test their original subscription rules.
+// This switch is only used in the isolated test database, never in production.
+// The mandatory-plan integration test below explicitly enables the production default and verifies all channels.
+await db.exec('update pitacco_private.commercial_billing_control set require_selected_plan=false where singleton');
 for (const file of ['checkout-variants.test.sql','fideliza-runtime.test.sql','fiado-credit.test.sql','store-trial.test.sql','inventory.test.sql','inventory-options.test.sql','cancelled-beverage-returns.test.sql','order-decisions.test.sql','active-order-cancellation.test.sql','incident-whatsapp.test.sql','financial-report.test.sql','scheduled-orders.test.sql','operational-alerts.test.sql','subscription-entitlement.test.sql','asaas-subscription.test.sql','delivery-tracking.test.sql','marketplace-settlements.test.sql','admin-homologation.test.sql','platform-owner.test.sql','storefront-settings.test.sql','payment-pricing-drafts.test.sql','confirmed-payment-prices.test.sql','delivery-pricing.test.sql','verified-delivery-addresses.test.sql','support-center.test.sql','incident-monitor.test.sql','storefront-design.test.sql','menu-category-icons.test.sql','store-opening-hours.test.sql','onboarding-preflight.test.sql','windows-presence.test.sql','windows-paper-confirmation.test.sql','ifood-events.test.sql','ifood-arrival-dispatch-gate.test.sql','owner-platform-dashboard.test.sql','commercial-plans.test.sql','flex-fixo-cutover.test.sql','asaas-recovery.test.sql','app-releases.test.sql','courier-push.test.sql','delivery-reassignment.test.sql','checkout-priority-recovery.test.sql','self-service-plan.test.sql','asaas-store-isolation.test.sql','manual-proof-identity.test.sql','legacy-payer-registration.test.sql','unified-store-registration.test.sql','store-profile-logo.test.sql','owner-copy-catalog.test.sql','business-insights.test.sql','control-center.test.sql']) {
  try {
   await db.exec(await fs.readFile(new URL(file,fixtureDirectory),'utf8'));
@@ -89,4 +93,7 @@ for (const file of ['checkout-variants.test.sql','fideliza-runtime.test.sql','fi
  }
  console.log('PASS SQL regression',file);
 }
+await db.exec('update pitacco_private.commercial_billing_control set require_selected_plan=true where singleton');
+await db.exec(await fs.readFile(new URL('mandatory-plan.test.sql',fixtureDirectory),'utf8'));
+console.log('PASS SQL regression mandatory-plan.test.sql');
 await db.close();
