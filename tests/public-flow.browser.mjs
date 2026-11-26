@@ -367,7 +367,7 @@ try {
     if(template==='essencial'){const order=await productCard.evaluate(card=>({photo:card.querySelector('.product-visual').getBoundingClientRect().left,text:card.querySelector('.product-text').getBoundingClientRect().left}));assert.ok(order.photo<order.text,'Fotos do catálogo Essencial à esquerda');}
     assert.equal(await page.locator('#layout #products .product').count(),3,'Todos os itens aparecem no catálogo abaixo dos destaques');
     await page.getByRole('heading',{name:'Todo o cardápio',exact:true}).waitFor();
-    await page.locator('#v2HeaderAbout').click();
+    await page.locator('#v2StoreNav [data-v2-nav="sobre"]').click();
     await page.locator('#v2AboutPage').waitFor();
     assert.equal(await page.locator('#v2AboutPage').isVisible(),true);
     await page.getByRole('button',{name:'Cardápio',exact:true}).click();

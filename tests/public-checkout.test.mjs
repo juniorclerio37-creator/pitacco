@@ -183,3 +183,10 @@ test('all storefront skins use the same checkout stages and premium loyalty card
  assert.match(html,/id="storeSocialLinks"[^>]*>[^<]*<\/div>\s*<\/header>/);
  assert.match(html,/link\.setAttribute\('aria-label',label\)/);
 });
+
+test('clean banner has no redundant navigation and gives the store logo prominence',()=>{
+ assert.doesNotMatch(html,/id="v2Header(?:Back|Search|About|Cart)"/);
+ assert.match(html,/#hero \.store-mark\{width:clamp\(94px,10vw,124px\)/);
+ assert.match(html,/id="storeSocialLinks"/);
+ assert.match(html,/id="openCart"/);
+});

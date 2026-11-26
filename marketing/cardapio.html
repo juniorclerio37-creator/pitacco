@@ -1287,10 +1287,6 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
 </section>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
- <button type="button" id="v2HeaderBack" class="v2-header-control v2-header-back" aria-label="Voltar">‹</button>
- <div class="v2-header-actions"><button type="button" id="v2HeaderSearch" class="v2-header-control" aria-label="Buscar produtos">⌕</button>
- <button type="button" id="v2HeaderAbout" class="v2-header-control" aria-label="Informações da loja">ⓘ</button>
- <button type="button" id="v2HeaderCart" class="v2-header-control" aria-label="Ver meu pedido">🛒<span id="v2HeaderCount" class="v2-header-count" hidden>0</span></button></div>
  <div class="shell hero-content"><div class="identity"><div class="store-mark" aria-hidden="true"><span id="storeInitial">🍧</span><img id="storeLogo" alt="" hidden></div>
  <div><h1 id="storeName"></h1><p id="storeSlogan">Cardápio digital</p></div></div><div id="storeServices" class="services"></div></div>
  <div class="shell v2-hero-info"><span id="v2OpenPill" class="v2-open-pill">Consultando</span><span id="v2DeliveryText" class="v2-delivery-text"></span>
@@ -1299,14 +1295,37 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
  <div id="storeSocialLinks" aria-label="Redes sociais da loja" hidden></div>
 </header>
 <style>
-#hero #storeSocialLinks{position:absolute;top:82px;right:18px;z-index:5;display:flex;gap:7px;align-items:center}
+#hero #storeSocialLinks{position:absolute;top:14px;right:18px;z-index:5;display:flex;gap:7px;align-items:center}
 #storeSocialLinks a{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:#21182c80;color:#fff;text-decoration:none;border:1px solid #ffffff40;backdrop-filter:blur(8px);box-shadow:0 2px 8px #0002}
 #storeSocialLinks a svg{display:block;width:20px;height:20px}
 #storeSocialLinks a:focus-visible{outline:2px solid #fff;outline-offset:2px}
 #storeSocialLinks[hidden]{display:none!important}
-body[data-menu-template=classic] #hero #storeSocialLinks{top:12px;right:16px}
-body[data-menu-skin=essencial] #hero #storeSocialLinks{top:56px;right:12px}
-@media(max-width:590px){#hero #storeSocialLinks{top:69px;right:11px}#storeSocialLinks a{width:34px;height:34px}body[data-menu-skin=essencial] #hero #storeSocialLinks{top:53px}}
+/* Brand-first banner: social icons are the only upper controls. */
+#hero .identity{min-width:0;gap:14px}
+#hero .identity>div:last-child{min-width:0}
+#hero .store-mark{width:clamp(94px,10vw,124px);height:clamp(94px,10vw,124px);flex:none}
+#hero .store-mark img{object-fit:contain}
+body[data-menu-template="pitacco-v2"] #hero .hero-content{padding:16px 0 0;min-height:130px}
+body[data-menu-template="pitacco-v2"] #hero:has(#storeSocialLinks:not([hidden])) .hero-content{padding-top:42px}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#storeBanner:not([hidden])) .hero-content{justify-content:center;align-items:center}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .hero h1{max-width:none}
+body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] #hero .store-mark{width:clamp(80px,9vw,108px);height:clamp(80px,9vw,108px)}
+body[data-menu-template="pitacco-v2"][data-menu-skin=editorial] #hero .hero-content{padding:17px 15px 0;min-height:110px}
+body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #hero .hero-content{padding-right:30%}
+body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #hero .store-mark{width:clamp(76px,8vw,106px);height:clamp(76px,8vw,106px)}
+body[data-menu-template=classic] #hero:has(#storeSocialLinks:not([hidden])) .hero-content{padding-top:24px}
+@media(max-width:590px){
+ #hero #storeSocialLinks{top:12px;right:12px}
+ #storeSocialLinks a{width:34px;height:34px}
+ #hero .identity{gap:10px}
+ #hero .store-mark{width:88px;height:88px}
+ body[data-menu-template="pitacco-v2"] #hero .hero-content{padding:12px 0 0;min-height:110px}
+ body[data-menu-template="pitacco-v2"] #hero:has(#storeSocialLinks:not([hidden])) .hero-content{padding-top:36px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=editorial] #hero .hero-content{padding:14px 12px 0;min-height:100px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #hero .hero-content{padding-right:25%}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #hero .store-mark{width:76px;height:76px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#storeBanner:not([hidden])) .hero-content{flex-direction:row;justify-content:center}
+}
 </style>
 <nav id="v2StoreNav" class="shell v2-store-nav" aria-label="Seções do cardápio">
  <button type="button" class="v2-nav-button" data-v2-nav="inicio" aria-current="page"><span class="v2-nav-icon" aria-hidden="true">⌂</span>Início</button>
@@ -2274,10 +2293,6 @@ for(const b of $('v2StoreNav').querySelectorAll('[data-v2-nav]')){
 $('v2HomeLoyaltyGo').onclick=()=>v2Go('fideliza');
 $('v2FavoritesNav').onclick=()=>v2Go('favoritos');
 
-$('v2HeaderBack').onclick=()=>{if(v2Page!=='inicio')v2Go('inicio');else if(history.length>1)history.back();};
-$('v2HeaderSearch').onclick=()=>{v2Go('cardapio');$('search').focus();$('layout').scrollIntoView({behavior:'smooth'});};
-$('v2HeaderAbout').onclick=()=>v2Go('sobre');
-$('v2HeaderCart').onclick=()=>$('openCart').click();
 $('v2AllProductsButton').onclick=()=>{$('layout').scrollIntoView({behavior:'smooth',block:'start'});};
 
 $('v2ClassicLoyalty').onclick=()=>{if(!$('loyaltyOpen').hidden)$('loyaltyOpen').click()};
@@ -2694,7 +2709,6 @@ function renderCart(){
  $('cartCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0);
  $('cartValue').textContent=money(subtotal);
  $('v2DockCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0)+' itens · ';
- const n=cart.reduce((sum,item)=>sum+item.quantity,0);$('v2HeaderCount').textContent=String(n);$('v2HeaderCount').hidden=n===0;
  $('continueCheckout').disabled=Boolean(cartRecoveryId)||(!storefrontCanOrder()&&!pendingRequest)||!cart.length||(!v2Only()&&(!$('fulfillment').value||!$('payment').value));
  $('cart').inert=Boolean(cartRecoveryId)||Boolean(pendingRequest);
  $('send').disabled=Boolean(cartRecoveryId)||(!timingValid()&&!pendingRequest)||submitting||!cart.length||!$('fulfillment').value||!$('payment').value||

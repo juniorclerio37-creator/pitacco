@@ -62,20 +62,7 @@ begin
    saved_text:=concat_ws(', ',v_street,v_number,v_neighborhood,v_city,v_state,
     case when v_postal<>'' then 'CEP '||v_postal end,nullif(v_extra,''));
    saved_point:=null;
-   if coalesce(address_item->>'quote_id','') ~ '^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}
-  end loop;
- end if;
- insert into public.pitacco_v2_customer_profiles(store_id,phone,device_hash,name,addresses)
- values(sid,normalized,digest,v_name,clean_addresses)
- on conflict(store_id,phone,device_hash)
- do update set name=excluded.name,addresses=excluded.addresses,updated_at=now()
- returning * into customer;
- insert into pitacco_private.customer_device_sessions(store_id,device_hash,phone,expires_at)
- values(sid,digest,normalized,now()+interval '90 days')
- on conflict(store_id,device_hash) do update set expires_at=excluded.expires_at,updated_at=now();
- return jsonb_build_object('found',true,'name',customer.name,'addresses',customer.addresses,'session_active',true);
-end $function$
-; then
+   if coalesce(address_item->>'quote_id','') ~ '^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$' then
     select * into q from public.pitacco_delivery_route_quotes r
      where r.id=(address_item->>'quote_id')::uuid and r.store_id=sid
       and r.destination_address=saved_text and r.expires_at>now()
