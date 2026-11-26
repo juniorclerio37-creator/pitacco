@@ -86,7 +86,17 @@ export default function MerchantNewOrder({client,storeId,onNavigate}){
  const data=isCredit&&type==='balcao'?await rpc('pitacco_fiado_balcao_discount',{p_store:storeId,p_customer:credit,p_request:request.current,p_items:items,p_note:notes.trim(),p_discount:discount}):await rpc(activeRule?'pitacco_confirm_priced_merchant_checkout':'pitacco_merchant_channel_checkout',{p_store:storeId,p_request:request.current,p_sale_mode:type,p_customer:isCredit?'':name.trim(),p_phone:isCredit?'':phone,p_address:delivery?address.trim():'',p_items:items,p_payment:payment,p_notes:isCredit?notes.trim():note,p_coupon:isCredit?'':coupon.trim(),p_quote:delivery?quote.quote_id:null,p_fiado_customer:isCredit?credit:null,p_received_amount:!delivery&&externalPayment&&received?Math.round(amount*100)/100:null,...(activeRule?{p_expected_cents:Math.round(amount*100),p_price_revision:activeRule.revision}:{})});
  if(!data?.order_id)throw Error('Pedido não confirmado pelo servidor. Verifique antes de repetir.');
  setResult(data);
- }catch(e){setError(e.message||String(e))}finally{lock.current=false;setBusy(false)}}
+ }catch(e){
+ if(/Preço por pagamento atualizado/.test(e.message||'')){
+  setReceived(false);
+  try{
+   const [publicRules,localRules]=await Promise.all([rpc('pitacco_public_payment_price_rules',{p_slug:menu.store.slug}),rpc('pitacco_merchant_payment_price_rules',{p_store:storeId})]);
+   setMenu(old=>({...old,store:{...old.store,payment_price_rules:publicRules}}));
+   setPdvPriceRules(localRules);
+   setError('O percentual foi alterado. Confira o novo valor e confirme a venda novamente.');
+  }catch{setError('Não foi possível atualizar o percentual. Reabra o Novo Pedido antes de confirmar.')}
+ }else setError(e.message||String(e))
+ }finally{lock.current=false;setBusy(false)}}
  if(loading)return <section className="panel">Carregando cardápio da loja…</section>;
  if(!menu)return <section className="panel"><h3>Novo Pedido</h3><p role="alert">{error}</p><button onClick={()=>onNavigate('Cozinha e expedição')}>Ir ao lançamento manual existente</button></section>;
  if(result)return <section className="panel" role="status"><h3>Pedido registrado</h3><p>#{result.order_id.slice(0,8)} · {money(result.total)}</p><p>Acompanhe o aceite, preparo e pagamento em Pedidos.</p><button onClick={()=>onNavigate('Pedidos')}>Abrir pedidos</button></section>;

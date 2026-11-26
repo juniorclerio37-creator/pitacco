@@ -2765,6 +2765,7 @@ $('payment').addEventListener('change',()=>{
  $('fiadoAuth').hidden=!isFiado;
  $('fiadoPin').required=isFiado;
  if(!isFiado)$('fiadoPin').value='';
+ if(menu&&!v2Only())renderCart();
 });
 // A carteira é identificada pelo telefone digitado no pedido, sem chaves ou SMS.
 let loyaltyProgram=null,loyaltyWallet=null,loyaltyPhone='',loyaltyPreview=null,loyaltyStamp='',loyaltyBusy=false,loyaltyPhoneRequest=0,loyaltyPhoneTimer=null;
@@ -3309,6 +3310,22 @@ $('checkout').onsubmit=async event=>{
   msg('');
   $('cartBody').scrollTop=0;
  }catch(error){
+  if(!pendingRequest&&/Preço por pagamento atualizado/.test(error.message||'')){
+   // This is a definitive server rejection, not a lost response. Keep the
+   // cart, refresh the rules and require a new confirmation; never retry
+   // a changed amount automatically.
+   let refreshed=false;
+   try{
+    const result=await client.rpc('pitacco_public_payment_price_rules',{p_slug:slug});
+    if(result.error||!result.data||typeof result.data!=='object'||Array.isArray(result.data))throw Error('Regras indisponíveis');
+    menu.store.payment_price_rules=result.data;refreshed=true;
+   }catch{}
+   submitting=false;lockCheckout(false);$('send').textContent='Confirmar pedido';
+   renderCart();
+   if(v2Only())v2ShowCheckoutStage('payment');
+   msg(refreshed?'O preço para esta forma de pagamento mudou. Confira o novo total e confirme novamente.':'Não foi possível atualizar o preço. Recarregue o cardápio antes de confirmar.');
+   return;
+  }
   if(/Loja fechada no momento/.test(error.message||'')){
    clearPendingCart();
    await refreshStoreOpening().catch(()=>showStoreOpening({open:false,reason:'outside_hours'}));

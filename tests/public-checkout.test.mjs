@@ -120,3 +120,12 @@ test('address interface has optional map, automatic freight and shared CEP looku
  assert.match(html,/Editar endereço/);
  assert.match(html,/pitacco_v2_customer_profile/);
 });
+
+test('changed payment price requires explicit customer reconfirmation and updates all templates',()=>{
+ assert.match(html,/if\(menu&&!v2Only\(\)\)renderCart\(\)/);
+ assert.match(html,/if\(!pendingRequest&&\/Preço por pagamento atualizado\//);
+ assert.match(html,/client\.rpc\('pitacco_public_payment_price_rules',\{p_slug:slug\}\)/);
+ assert.match(html,/menu\.store\.payment_price_rules=result\.data/);
+ assert.match(html,/if\(v2Only\(\)\)v2ShowCheckoutStage\('payment'\)/);
+ assert.match(html,/Confira o novo total e confirme novamente/);
+});
