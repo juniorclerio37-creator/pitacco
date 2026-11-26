@@ -1,4 +1,4 @@
-import React,{useEffect,useMemo,useState} from 'react';
+import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {Layers,Package,Search,Image,Link2,Settings2,Plus,Pencil,ChevronDown} from 'lucide-react';
 import './complement-workspace.css';
 import ProductComplements from './ProductComplements.jsx';
@@ -16,6 +16,7 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
  const [selected,setSelected]=useState(null),[draft,setDraft]=useState(fresh),[files,setFiles]=useState({}),[fileUrls,setFileUrls]=useState({});
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [editingProduct,setEditingProduct]=useState(null),[showExisting,setShowExisting]=useState(false);
+ const loadToken=useRef(0);
  const productName=new Map(products.map(p=>[p.id,p.name]));
  const assignedIds=useMemo(()=>new Set(existing.filter(g=>g.library_template_id===draft.id&&g.enabled!==false).map(g=>g.product_id)),[existing,draft.id]);
  const totalAssigned=existing.filter(g=>g.library_template_id&&g.enabled!==false).length;
@@ -32,18 +33,20 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
   throw Error('A lista de complementos excede o limite de consulta. Consulte o suporte.');
  }
  async function load(){
+  const token=++loadToken.current;
   setLoading(true);setError('');
   try{
    const [t,g,o]=await Promise.all([
     readPages('pitacco_complement_templates','*','sort_order'),
     readPages('product_option_groups','id,product_id,name,min_select,max_select,enabled,library_template_id,sort_order','sort_order'),
-    readPages('product_options','id,group_id,name,additional_price,available,image_url','sort_order')
+    readPages('product_options','id,group_id,name,additional_price,available,image_url,library_option_id','sort_order')
    ]);
+   if(token!==loadToken.current)return;
    setTemplates([...t].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)||a.name.localeCompare(b.name,'pt-BR')));setExisting(g);setExistingOptions(o);
-  }catch(e){setError('Falha ao carregar grupos: '+(e.message||String(e)));}
-  finally{setLoading(false);}
+  }catch(e){if(token===loadToken.current)setError('Falha ao carregar grupos: '+(e.message||String(e)));}
+  finally{if(token===loadToken.current)setLoading(false);}
  }
- useEffect(()=>{setSelected(null);setDraft(fresh());setEditingProduct(null);load()},[client,storeId]);
+ useEffect(()=>{setTemplates([]);setExisting([]);setExistingOptions([]);setSelected(null);setDraft(fresh());setEditingProduct(null);setLibraryView('individual');load();return()=>{loadToken.current++}},[client,storeId]);
  useEffect(()=>()=>Object.values(fileUrls).forEach(url=>URL.revokeObjectURL(url)),[fileUrls]);
  function openTemplate(t){
   setSelected(t?.id||null);setDetailTab(t?'items':'settings');setOptionSearch('');setProductSearch('');setExpandedOption(null);setPickExisting('');setFiles({});setFileUrls({});setError('');setNotice('');
@@ -125,8 +128,8 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
  const namedOptions=Array.from(new Map([...templates.flatMap(t=>t.options||[]),...existingOptions.map(o=>({name:o.name,price:o.additional_price,available:o.available,image_url:o.image_url}))].map(o=>[normalized(o.name),o])).values()).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
  function addExisting(){const o=namedOptions.find(x=>normalized(x.name)===pickExisting);if(!o||draft.options.length>=100)return;const id=crypto.randomUUID();edit('options',[...draft.options,{...o,id,price:0,available:o.available!==false}]);setExpandedOption(id);setPickExisting('');setOptionSearch('');}
  function addNew(){const o=optionNew();edit('options',[...draft.options,o]);setExpandedOption(o.id);setOptionSearch('');}
- const viewTabs=<div className="catalog-actions complement-view-tabs" role="group" aria-label="Visualização da biblioteca"><button type="button" className={libraryView==='groups'?'':'secondary'} aria-pressed={libraryView==='groups'} onClick={()=>{setLibraryView('groups');load()}}><Layers size={17}/> Grupos de complementos</button><button type="button" className={libraryView==='individual'?'':'secondary'} aria-pressed={libraryView==='individual'} onClick={()=>setLibraryView('individual')}><Package size={17}/> Biblioteca de complementos</button></div>;
- if(libraryView==='individual')return <section className="complement-workspace">{viewTabs}<IndividualComplementLibrary key={storeId} client={client} storeId={storeId} onChanged={onChanged} products={products} groups={existing} options={existingOptions} templates={templates}/></section>;
+ const viewTabs=<div className="catalog-actions complement-view-tabs" role="group" aria-label="Visualização da biblioteca"><button type="button" className={libraryView==='groups'?'':'secondary'} aria-pressed={libraryView==='groups'} onClick={()=>{setLibraryView('groups');setDraft(fresh());setSelected(null);setDetailTab('settings');load()}}><Layers size={17}/> Grupos de complementos</button><button type="button" className={libraryView==='individual'?'':'secondary'} aria-pressed={libraryView==='individual'} onClick={()=>{if(draft.id||draft.name||draft.options.length){if(!window.confirm('Voltar à biblioteca? Alterações ainda não salvas neste grupo serão descartadas.'))return;}setDraft(fresh());setSelected(null);setLibraryView('individual')}}><Package size={17}/> Biblioteca de complementos</button></div>;
+ if(libraryView==='individual')return <section className="complement-workspace">{viewTabs}<IndividualComplementLibrary key={storeId} client={client} storeId={storeId} onChanged={()=>{load();onChanged?.()}} products={products} groups={existing} options={existingOptions} templates={templates}/></section>;
  return <section className="catalog-hub complement-workspace" aria-label="Biblioteca de complementos">
   {viewTabs}
   <header className="catalog-hub-header"><div><span className="eyebrow">GESTÃO CENTRALIZADA</span><h3>Grupos de complementos</h3>
@@ -160,7 +163,7 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
     <h4>Grupos ({templates.length})</h4><label className="complement-search"><Search size={17}/><input aria-label="Buscar grupo" value={groupSearch} onChange={e=>setGroupSearch(e.target.value)} placeholder="Buscar grupo..."/></label>
     {templates.map((t,index)=>{
      if(!normalized(t.name).includes(normalized(groupSearch)))return null;
-     const variants=templates.filter(group=>normalized(group.name)===normalized(t.name));
+     const variants=templates.filter(group=>group.name===t.name);
      const variantNumber=variants.findIndex(group=>group.id===t.id)+1;
      const linkedProducts=existing.filter(group=>group.library_template_id===t.id&&group.enabled!==false).length;
      return <div className="catalog-template-sort-row" key={t.id}>
