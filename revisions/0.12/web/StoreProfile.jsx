@@ -1,4 +1,5 @@
 import React,{useEffect,useRef,useState} from 'react';
+import {Store,UserRound,Building2,MapPin,ShieldCheck,MessageCircle} from 'lucide-react';
 import {mountStorePointPicker,currentDeviceLocation} from './deliveryMap.mjs';
 import {locateStoreByAddress} from './mapOrigin.mjs';
 import {StoreReadiness} from './StoreReadiness.jsx';
@@ -219,37 +220,32 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
 }
 
 export default function StoreProfile({client,store,manager,onSaved,onAppearance,storeLogoUrl=''}){
- const [draft,setDraft]=useState({}),[logo,setLogo]=useState(null),[preview,setPreview]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
- useEffect(()=>{setDraft(Object.fromEntries(keys.map(([k])=>[k,store?.[k]||''])));setLogo(null)},[store?.id]);
- useEffect(()=>{if(!logo){setPreview('');return}const url=URL.createObjectURL(logo);setPreview(url);return()=>URL.revokeObjectURL(url)},[logo]);
+ const [draft,setDraft]=useState({}),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[loaded,setLoaded]=useState(false),[loadError,setLoadError]=useState(''),[revision,refresh]=useState(0);
+ useEffect(()=>{let active=true;setLoaded(false);setLoadError('');setMessage('');setDraft({});client.rpc('pitacco_store_registration',{p_store:store.id}).then(({data,error})=>{if(!active)return;if(error||!data){setLoadError('Não foi possível consultar os dados da loja.');return}setDraft(data);setLoaded(true)}).catch(()=>{if(active)setLoadError('Não foi possível consultar os dados da loja.')});return()=>{active=false}},[client,store.id,revision]);
  async function save(e){
   e.preventDefault();if(!manager)return;setBusy(true);setMessage('');
   try{
    if(!draft.name?.trim())throw Error('Informe o nome da loja.');
-   const row={...draft,name:draft.name.trim(),updated_at:new Date().toISOString()};
-
-   // Authorized for both store managers and platform administrators; direct
-   // stores UPDATE is restricted by RLS for normal merchant accounts.
-   const {error}=await client.rpc('pitacco_update_store_identity',{
-    p_store_id:store.id,p_data:row,
-   });
-   if(error)throw error;
-   setLogo(null);setMessage('Dados da sua loja atualizados.');onSaved?.();
+   const {document,person_type,legal_name,responsible_name,administrative_phone,administrative_email,whatsapp,name,description,address,address_number,address_complement,neighborhood,city,state,postal_code}=draft;
+   const {data,error}=await client.rpc('pitacco_save_store_registration',{p_store:store.id,p_data:{document,person_type,legal_name,responsible_name,administrative_phone,administrative_email,whatsapp,name,description,address,address_number,address_complement,neighborhood,city,state,postal_code}});
+   if(error||!data?.saved)throw error||Error('A gravação não foi confirmada.');
+   setMessage('Dados da sua loja atualizados.');onSaved?.();
   }catch(err){setMessage(err.message||String(err))}finally{setBusy(false)}
  }
  const addressDirty=storeAddressFields.some(key=>String(draft[key]||'').trim()!==String(store?.[key]||'').trim());
  const change=(key,value)=>setDraft(p=>({...p,[key]:value}));
- const input=(key,label)=><label key={key} className="identity-field">{label}
-  {key==='description'?<textarea maxLength={1500} rows={3} value={draft[key]||''} disabled={!manager}
+ const input=(key,label,required=true,type='text')=><label key={key} className="identity-field"><span>{label}{required&&<span className="identity-required"> *</span>}</span>
+  {key==='description'?<textarea maxLength={1500} rows={3} value={draft[key]||''} disabled={!manager||busy}
     onChange={e=>change(key,e.target.value)} placeholder="Conte aos clientes sobre seu estabelecimento"/>
-   :<input value={draft[key]||''} required={key==='name'} maxLength={key==='name'?100:180}
-     disabled={!manager} onChange={e=>change(key,e.target.value)}/>}
+   :<input type={type} value={draft[key]||''} required={required} maxLength={key==='name'?100:key==='document'?18:180}
+     disabled={!manager||busy} autoComplete={key==='document'?'off':undefined} readOnly={key==='document'&&Boolean(draft.payer_registered&&draft.document)} onChange={e=>change(key,e.target.value)}/>}
  </label>;
+ if(!loaded)return <section className="identity-modern" aria-label="Dados e identidade da loja"><h3>Dados da loja</h3>{loadError?<><p role="alert">{loadError}</p><button type="button" onClick={()=>refresh(n=>n+1)}>Tentar novamente</button></>:<p role="status">Consultando cadastro…</p>}</section>;
  return <><section className="identity-modern" aria-label="Dados e identidade da loja">
   <div className="identity-head">
-   <div><span className="eyebrow">ADMINISTRAR LOJA</span><h3>Dados e identidade</h3>
-    <p>Informações oficiais do estabelecimento. A aparência do cardápio fica no Estúdio de Cardápio.</p></div>
-   <button type="button" className="secondary" onClick={onAppearance}>Abrir Estúdio de Cardápio</button>
+   <div><span className="eyebrow">ADMINISTRAR LOJA</span><h3>Dados da loja</h3>
+    <p>Cadastro único do estabelecimento, utilizado nas entregas, pagamentos, cardápio e demais serviços do Pitacco.</p></div>
+   {onAppearance&&<button type="button" className="secondary" onClick={onAppearance}>Abrir Estúdio de Cardápio</button>}
   </div>
   <form onSubmit={save} className="identity-form">
    <section className="identity-section">
@@ -262,18 +258,24 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
       <button type="button" className="secondary identity-file" disabled={!manager||!onAppearance} onClick={onAppearance}>Alterar logotipo no Estúdio de Cardápio</button><small>A imagem publicada será usada no cardápio, Windows, acompanhamento e impressão habilitada.</small>
      </div>
     </div>
-    <div className="identity-grid">{input('name','Nome da loja')}{input('phone','Telefone / WhatsApp')}
-     <div className="identity-wide">{input('description','Descrição do estabelecimento')}</div></div>
+    <div className="identity-grid">{input('name','Nome da loja')}<div className="identity-wide">{input('description','Descrição do estabelecimento',false)}</div></div>
    </section>
-   <section className="identity-section">
-    <h4>Endereço e ponto de partida</h4>
-    <p>O endereço aqui cadastrado é a referência de saída para as entregas e para a área de atendimento. Não é necessário digitar coordenadas.</p>
-    <div className="identity-grid">{input('address','Rua / avenida')}{input('address_number','Número')}
-      {input('neighborhood','Bairro')}{input('city','Cidade')}{input('state','Estado')}{input('postal_code','CEP')}</div>
+   <section className="identity-section"><h4><UserRound size={21}/> Tipo de cadastro</h4>
+    <div className="identity-types">{[['cpf','Pessoa Física (CPF)',UserRound],['cnpj','Pessoa Jurídica (CNPJ)',Building2]].map(([kind,label,Icon])=><label key={kind} className={draft.person_type===kind?'selected':''}><input type="radio" name="person_type" required checked={draft.person_type===kind} disabled={!manager||busy||Boolean(draft.document&&draft.payer_registered)} onChange={()=>{change('person_type',kind);change('document','')}}/><Icon size={20}/>{label}</label>)}</div>
+   </section>
+   <section className="identity-section"><h4><Building2 size={21}/> {draft.person_type==='cnpj'?'Dados da empresa':'Dados do titular'}</h4>
+    <div className="identity-grid">{draft.person_type==='cnpj'&&input('legal_name','Razão social')}{input('document',draft.person_type==='cnpj'?'CNPJ':'CPF')}{input('responsible_name',draft.person_type==='cnpj'?'Nome do responsável da loja':'Nome completo')}{input('administrative_phone','Telefone administrativo',true,'tel')}{input('administrative_email','E-mail administrativo',true,'email')}{input('whatsapp','WhatsApp para clientes',true,'tel')}</div>
+    <p><MessageCircle size={16}/> O WhatsApp para clientes é público. O telefone e e-mail administrativos são utilizados no cadastro e nas cobranças.</p>
+   </section>
+   <section className="identity-section identity-address">
+    <h4><MapPin size={21}/> Endereço da Loja</h4>
+    <p>Este é o endereço único usado no mapa do entregador, cálculo de frete, pagamentos e demais serviços.</p>
+    <div className="identity-grid">{input('postal_code','CEP')}{input('address','Rua / avenida')}{input('address_number','Número')}{input('address_complement','Complemento',false)}
+      {input('neighborhood','Bairro')}{input('city','Cidade')}{input('state','Estado')}</div>
     <StorePointPicker client={client} store={store} manager={manager} addressDirty={addressDirty} onSaved={onSaved}/>
    </section>
    <div className="identity-save">{message&&<p role="status" className="notice">{message}</p>}
-    <button type="submit" disabled={busy||!manager}>{busy?'Salvando…':'Salvar dados da loja'}</button></div>
+    <small><ShieldCheck size={18}/> Os dados privados não aparecem no cardápio público.</small><button type="submit" disabled={busy||!manager}>{busy?'Salvando…':'Salvar dados da loja'}</button></div>
   </form>
  </section><StoreReadiness client={client} storeId={store.id}/></>;
 }

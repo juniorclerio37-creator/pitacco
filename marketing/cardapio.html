@@ -2118,7 +2118,7 @@ function v2Go(page,initial=false){
   $('v2AboutTitle').textContent=menu.store.name;
   $('v2AboutIntro').textContent=menu.store.appearance?.slogan||'Conheça os serviços disponíveis nesta loja.';
   const area=$('v2AboutServices');area.replaceChildren();
-  for(const item of $('storeServices').children)area.append(el('p',item.textContent,'v2-about-chip'));
+  for(const item of $('storeServices').children){if(item.tagName==='A'){const contact=item.cloneNode(true);contact.classList.add('v2-about-chip');area.append(contact)}else area.append(el('p',item.textContent,'v2-about-chip'));}
   area.append(el('p','Horários de atendimento e disponibilidade de pedidos definidos pela loja.','v2-about-chip'));
  }
  if(!initial)window.scrollTo({top:0,behavior:'smooth'});
@@ -3019,6 +3019,8 @@ function initOptions(){
  setMenuTemplate(shop);
  applyStudioDesign(shop);
  $('storeName').textContent=shop.name;
+ const digits=String(shop.whatsapp||'').replace(/\D/g,'');
+ if(/^\d{10,11}$/.test(digits)||/^55\d{10,11}$/.test(digits)){const contact=el('a','WhatsApp da loja');contact.href='https://wa.me/'+(digits.length<=11?'55'+digits:digits);contact.target='_blank';contact.rel='noopener noreferrer';$('storeServices').append(contact);}
  $('v2AboutTitle').textContent=shop.name;
  $('v2DeliveryText').textContent=shop.delivery_enabled?'· Entrega disponível':shop.pickup_enabled?'· Retirada disponível':'';
  $('v2FavoritesNav').hidden=document.body.dataset.menuTemplate!=='pitacco-v2';

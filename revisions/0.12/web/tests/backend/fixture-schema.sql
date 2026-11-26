@@ -108,3 +108,6 @@ $$;
 -- Contact fields are present in the live store/courier schema.
 alter table public.stores add column if not exists phone text;
 alter table public.couriers add column if not exists phone text;
+
+-- Supabase auth fields used by the unified registration function.
+alter table auth.users add column if not exists raw_user_meta_data jsonb;

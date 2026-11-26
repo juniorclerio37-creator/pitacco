@@ -1,0 +1,20 @@
+begin;
+do $test$ declare u uuid:=gen_random_uuid(); s uuid; v jsonb; own uuid; begin
+ insert into auth.users(id,email) values(u,u::text||'@example.invalid');
+ insert into public.stores(name) values('Fixture cadastro') returning id into s;
+ insert into public.store_members(store_id,user_id,role) values(s,u,'gestor');
+ perform set_config('request.jwt.claim.sub',u::text,true);
+ v:=public.pitacco_save_store_registration(s,jsonb_build_object('person_type','cpf','document','52998224725','name','Fixture cadastro','responsible_name','Titular teste','administrative_phone','21900000001','administrative_email','fixture@example.invalid','whatsapp','21900000002','address','Rua Teste','address_number','12','address_complement','Loja A','neighborhood','Centro','city','Nova Iguaçu','state','RJ','postal_code','26000000'));
+ assert v->>'saved'='true';
+ v:=public.pitacco_store_registration(s);
+ assert v->>'document'='52998224725' and v->>'whatsapp'='21900000002' and v->>'administrative_phone'='21900000001';
+ assert (select phone='21900000002' and address='Rua Teste' from public.stores where id=s);
+ assert public.pitacco_asaas_registered_payer(u,s,null)->>'document'='52998224725';
+ assert not has_function_privilege('authenticated','public.pitacco_asaas_registered_payer(uuid,uuid,uuid)','execute');
+ assert not has_function_privilege('anon','public.pitacco_store_registration(uuid)','execute');
+ perform set_config('request.jwt.claim.sub',gen_random_uuid()::text,true);
+ begin perform public.pitacco_store_registration(s);raise exception 'TEST unauthorized';exception when insufficient_privilege then null;end;
+ select user_id into own from pitacco_private.platform_owner limit 1;
+ if own is not null then perform set_config('request.jwt.claim.sub',own::text,true);assert public.pitacco_store_registration(s)->>'whatsapp'='21900000002';end if;
+end $test$;
+rollback;

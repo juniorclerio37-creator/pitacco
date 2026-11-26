@@ -351,10 +351,14 @@ try {
         assert.equal(adminMode,true);
         return route.fulfill({headers,json:{pix_cnpj:'',pix_recipient:''}});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_store_registration'){
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:{...store,person_type:'cpf',document:'52998224725',responsible_name:'Titular de teste',administrative_phone:'21900000001',administrative_email:'fixture@example.invalid',whatsapp:'21900000002',payer_registered:false}});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_commercial_invoices'){
         if(origin===api)assert.equal(route.request().postDataJSON().p_store,store.id,'Lojista consulta somente as próprias faturas');
         else{assert.equal(origin,realApi);assert.equal(adminMode,true);}
-        return route.fulfill({headers,json:{rows:origin===api?[{id:'89000000-0000-0000-0000-000000000001',kind:'monthly',amount_cents:5990,due_at:new Date().toISOString(),status:'open',asaas_customer_linked:true,asaas_reserved:false}]:[],has_more:false}});
+        return route.fulfill({headers,json:{rows:origin===api?[{id:'89000000-0000-0000-0000-000000000001',kind:'monthly',amount_cents:5990,due_at:new Date().toISOString(),status:'open',asaas_customer_linked:false,payer_document_ready:true,asaas_reserved:false}]:[],has_more:false}});
       }
       if(pathname==='/functions/v1/pitacco-asaas-commercial-pix'){
         const input=route.request().postDataJSON();
@@ -931,6 +935,13 @@ try {
     await merchantNavigate('Configurações','Dados da loja');
     const menuLink=page.getByRole('link',{name:'https://pitacco.com.br/loja-teste',exact:true});
     await menuLink.waitFor();
+    const registration=page.getByRole('region',{name:'Dados e identidade da loja'});
+    await registration.getByLabel('WhatsApp para clientes').waitFor();
+    assert.equal(await registration.getByLabel('WhatsApp para clientes').inputValue(),'21900000002');
+    assert.equal(await registration.getByLabel('Telefone administrativo').inputValue(),'21900000001');
+    await registration.getByRole('radio',{name:'Pessoa Jurídica (CNPJ)'}).check();
+    await registration.getByLabel('Razão social').waitFor();
+    await registration.getByRole('radio',{name:'Pessoa Física (CPF)'}).check();
     assert.equal(await menuLink.getAttribute('href'),'https://pitacco.com.br/loja-teste');
     if(width<=800){
       await page.getByRole('button',{name:'Área de entrega',exact:true}).click();
@@ -1157,6 +1168,8 @@ try {
       await platformDashboard.getByRole('button',{name:'Buscar',exact:true}).click();
       await platformDashboard.getByRole('button',{name:'Abrir configuração de '+store.name}).click();
       await page.getByRole('region',{name:'Configuração do estabelecimento'}).waitFor();
+      await page.getByLabel('WhatsApp para clientes').waitFor();
+      assert.equal(await page.getByLabel('WhatsApp para clientes').inputValue(),'21900000002');
     }
     if(width===1440){
       await adminNavigate('Central de Aplicativos');

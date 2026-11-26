@@ -21,10 +21,14 @@ Deno.serve(async req=>{
   if(!user.ok)return reply(401,{error:"Sessão inválida"});
   const actor=(await user.json()).id;
   const raw=await req.text();if(raw.length>4096)return reply(413,{error:"Requisição inválida"});
-  const input=JSON.parse(raw),invoice=input.invoice_id,document=String(input.document||"").replace(/\D/g,""),ownerEnroll=input.action==="register_owner_customer",enroll=ownerEnroll||input.action==="register_customer";
+  const input=JSON.parse(raw),invoice=input.invoice_id,ownerEnroll=input.action==="register_owner_customer",enroll=ownerEnroll||input.action==="register_customer";
+  let document=String(input.document||"").replace(/\D/g,"");
   if(!(enroll?uuid.test(input.store_id):uuid.test(invoice))||document.length>14)return reply(400,{error:"Dados inválidos"});
   const method=input.method==="CREDIT_CARD"?"CREDIT_CARD":"PIX";
   if(!enroll&&input.method!=null&&!["PIX","CREDIT_CARD"].includes(input.method))return reply(400,{error:"Forma de pagamento indisponível"});
+  // Read the document only on the server, after identifying the authorized store.
+  const payer=await rpc("pitacco_asaas_registered_payer",{p_actor:actor,p_store:enroll?input.store_id:null,p_invoice:enroll?null:invoice});
+  if(payer?.document){if(document&&document!==payer.document)return reply(409,{error:"Documento diverge do cadastro da loja"});document=payer.document;}
   const ctx=enroll?await rpc(ownerEnroll?"pitacco_asaas_prepare_owner_customer":"pitacco_asaas_prepare_store_customer",{p_actor:actor,p_store:input.store_id,p_document:document}):await rpc("pitacco_asaas_prepare_customer",{p_actor:actor,p_invoice:invoice,p_document:document});
   let customer=ctx.customer_id;
   if(!customer){
@@ -33,7 +37,7 @@ Deno.serve(async req=>{
    const hits=(list.data||[]).filter((x:any)=>x.externalReference===ref&&!x.deleted);
    if(list.hasMore||hits.length>1)return reply(409,{error:"Cadastro exige conciliação"});
    let item=hits[0];
-   if(!item&&ctx.allow_create)item=await asaas("/customers","POST",{name:ctx.name,cpfCnpj:document,externalReference:ref,notificationDisabled:true});
+   if(!item&&ctx.allow_create)item=await asaas("/customers","POST",{name:payer?.name||ctx.name,cpfCnpj:document,externalReference:ref,notificationDisabled:true,...Object.fromEntries(["email","phone","address","addressNumber","complement","province","postalCode"].filter(k=>typeof payer?.[k]==="string"&&payer[k]).map(k=>[k,payer[k]]))});
    if(!item||item.externalReference!==ref||String(item.cpfCnpj||"").replace(/\D/g,"")!==document||!/^cus_[A-Za-z0-9_-]{1,100}$/.test(item.id))return reply(409,{error:"Cadastro exige conciliação"});
    customer=item.id;
    await rpc("pitacco_asaas_bind_customer",{p_store:ctx.store_id,p_customer:customer});
