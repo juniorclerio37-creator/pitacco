@@ -30,3 +30,13 @@ test('referral attribution survives return and does not cross stores',()=>{
  assert.equal(open('b',''),'');
  assert.equal(open('b','?indicacao=%3Cscript%3E'),'');
 });
+
+test('checkout only offers usable rewards and limits cashback to the cart',()=>{
+ const helper=html.slice(html.indexOf('function checkoutAvailableLoyaltyRewards('),html.indexOf('function setLoyaltyCardExpanded('));
+ vm.runInContext(helper,context);
+ context.wallet={rules,points:100,orders:10,cashback_cents:800};
+ let out=vm.runInContext('checkoutAvailableLoyaltyRewards(wallet,600)',context);
+ assert.deepEqual(Array.from(out,r=>[r.value,r.cents]),[['orders',500],['cashback',300]]);
+ context.wallet={rules,points:99,orders:9,cashback_cents:0};
+ assert.equal(vm.runInContext('checkoutAvailableLoyaltyRewards(wallet,5000).length',context),0);
+});

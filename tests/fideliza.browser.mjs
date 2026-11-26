@@ -73,10 +73,8 @@ try{
    await page.locator('#loyaltyReward option[value="cashback"]').waitFor({state:'attached'});
    assert.equal(await page.locator('#loyaltyReward option').count(),4);
    assert.equal(await page.locator('#loyaltyCardContent').isVisible(),false);
-   await page.locator('#loyaltyCardToggle').click();
-   if(width!==1440)await page.locator('#loyaltyReward').selectOption(width===375?'points':'cashback');
-   else await page.locator('#loyaltyCoupon').fill('SEMANA5');
-   await page.locator('#loyaltyApply').click();
+   if(width!==1440)await page.locator('.loyalty-redeem-button[data-reward="'+(width===375?'points':'cashback')+'"]').click();
+   else await page.locator('.loyalty-redeem-button[data-coupon="SEMANA5"]').click();
    await page.locator('#total').getByText('Desconto Fideliza+',{exact:true}).waitFor({state:'attached'});
    await page.locator('#v2CheckoutNext').click();
    await page.locator('#send').click();
@@ -107,7 +105,9 @@ try{
   await page.evaluate(()=>{for(const image of document.images)if(image.src.includes('fixtures.pitacco.test'))image.loading='eager';});
   await page.waitForFunction(()=>[...document.images].filter(i=>i.src.includes('fixtures.pitacco.test')).every(i=>i.complete&&i.naturalWidth>0),null,{timeout:10000});
   assert.equal(await page.locator('.product').first().evaluate(card=>{const photo=card.querySelector('.product-visual').getBoundingClientRect(),image=card.querySelector('.product-visual img').getBoundingClientRect();return image.bottom<=photo.bottom+1&&image.height<=photo.height+1;}),true,'Foto real limitada à área visual sem cobrir texto');
-  if(['pitacco-v2','urbano'].includes(template))assert.equal(await page.locator('#v2HeroImage').evaluate(img=>img.getBoundingClientRect().left>document.getElementById('v2HeaderBack').getBoundingClientRect().right),true,'Foto decorativa à direita sem sobrepor o controle de voltar');
+  assert.equal(await page.locator('#v2HeaderBack,#v2HeaderSearch,#v2HeaderAbout,#v2HeaderCart').count(),0,'No redundant banner controls');
+  assert.ok(await page.locator('.store-mark').evaluate(e=>e.getBoundingClientRect().width>=76),'Larger storefront logo');
+  if(['pitacco-v2','urbano'].includes(template))assert.equal(await page.locator('#v2HeroImage').evaluate(img=>img.getBoundingClientRect().left>=document.querySelector('.store-mark').getBoundingClientRect().right),true,'Foto decorativa não cobre o logotipo');
   if(template==='urbano')assert.equal(await page.evaluate(()=>{const photo=document.getElementById('v2HeroImage').getBoundingClientRect();return ['v2DeliveryText','v2HeroLocation'].every(id=>document.getElementById(id).getBoundingClientRect().right<photo.left);}),true,'Prazo e localização legíveis ao lado da foto decorativa');
   assert.equal(await page.locator('body').getAttribute('data-menu-skin'),template==='pitacco-v2'?'principal':template);
   await mkdir('artifacts',{recursive:true});
@@ -148,17 +148,16 @@ try{
     assert.equal(await page.locator('#payment').inputValue(),'pix_manual');
   }else await page.locator('#customer').fill('Cliente');
   assert.equal(await page.locator('#loyaltyCardContent').isVisible(),false,'Card starts collapsed');
-  assert.match(await page.locator('#loyaltyCardSummary').innerText(),/120 pontos/);
-  await page.locator('#loyaltyCardToggle').click();
-  assert.equal(await page.locator('#loyaltyCardToggle').getAttribute('aria-expanded'),'true');
-  if(width!==1440)await page.locator('#loyaltyReward').selectOption(width===375?'points':'cashback');
-  else await page.getByRole('button',{name:'Usar SEMANA5',exact:true}).click();
-  await page.locator('#loyaltyApply').click();await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).waitFor({state:'attached'});
+  await page.locator('.loyalty-redeem-button[data-reward="orders"]').waitFor();
+  assert.equal(await page.locator('#loyaltyTerms').isVisible(),false);
+  assert.equal(await page.locator('#loyaltyMember').isVisible(),false);
+  assert.match(await page.locator('.loyalty-redeem-row').filter({hasText:'Recompensa por compras'}).innerText(),/5,00/);
+  assert.match(await page.locator('.loyalty-redeem-row').filter({hasText:'Cashback disponível'}).innerText(),/5,00/);
+  if(width!==1440)await page.locator('.loyalty-redeem-button[data-reward="'+(width===375?'points':'cashback')+'"]').click();
+  else await page.locator('.loyalty-redeem-button[data-coupon="SEMANA5"]').click();
+  await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).waitFor({state:'attached'});
   assert.match(await page.locator('#loyaltyCardSummary').innerText(),/desconto aplicado/);
-  await page.locator('#loyaltyCardToggle').click();
-  assert.equal(await page.locator('#loyaltyCardContent').isVisible(),false);
-  await page.locator('#loyaltyCardToggle').click();
-  assert.equal(await page.locator('#loyaltyCardContent').isVisible(),true);
+  assert.equal(await page.locator('#loyaltyCompactRemove').isVisible(),true);
   if(principal){
     for(const stage of ['address','customer','identify']){
      await page.locator('#v2CheckoutBack').click();
@@ -177,7 +176,8 @@ try{
     }
     await page.locator('#v2PaymentCards [data-kind="pix_manual"]').click();
   }
-  await page.locator('#loyaltyApply').click();
+  if(width!==1440)await page.locator('.loyalty-redeem-button[data-reward="'+(width===375?'points':'cashback')+'"]').click();
+  else await page.locator('.loyalty-redeem-button[data-coupon="SEMANA5"]').click();
   await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).waitFor({state:'attached'});
   if(principal)await page.locator('#v2CheckoutNext').click();
   await page.locator('#send').click();await page.getByRole('button',{name:'Tentar novamente',exact:true}).waitFor();

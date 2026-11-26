@@ -30,3 +30,10 @@ test('storefront module parses',()=>{
  const r=spawnSync(process.execPath,['--input-type=module','--check'],{input:code,encoding:'utf8'});
  assert.equal(r.status,0,r.stderr);
 });
+
+test('saved address restores the confirmed coordinates before requesting a fresh price',()=>{
+ const fill=html.slice(html.indexOf('function v2FillAddress('),html.indexOf('function v2SelectSavedAddress('));
+ assert.match(fill,/composeDeliveryAddress\(\);[\s\S]*data\.location\?\.latitude[\s\S]*selectDeliveryPoint\(point\)/);
+ assert.match(html,/address\.quote_id=deliveryQuote\.id/);
+ assert.match(html,/const savedPoint=Boolean\(v2SelectedAddress&&!v2AddressEditing&&deliveryPoint\)/);
+});

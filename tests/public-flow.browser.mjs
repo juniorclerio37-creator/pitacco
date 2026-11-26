@@ -123,7 +123,7 @@ try {
         assert.match(data.p_device,/^[0-9a-f-]{36}$/);
         if(data.p_action==='load')return route.fulfill({json:savedProfile?{found:true,...savedProfile}:{found:false,addresses:[]}});
         assert.equal(data.p_action,'save');
-        savedProfile={name:data.p_name,addresses:data.p_addresses||[]};
+        savedProfile={name:data.p_name,addresses:(data.p_addresses||[]).map(a=>{const {quote_id,...address}=a;return quote_id?{...address,location:{latitude:-22.71,longitude:-43.4}}:address;})};
         return route.fulfill({json:{found:true,...savedProfile}});
       }
       if(pathname.endsWith('/pitacco_public_checkout_recovery'))return route.fulfill({json:recoveryConfirmed?{confirmed:true,order_id:orderId,tracking_token:token,total:74}:{confirmed:false}});
@@ -367,7 +367,7 @@ try {
     if(template==='essencial'){const order=await productCard.evaluate(card=>({photo:card.querySelector('.product-visual').getBoundingClientRect().left,text:card.querySelector('.product-text').getBoundingClientRect().left}));assert.ok(order.photo<order.text,'Fotos do catálogo Essencial à esquerda');}
     assert.equal(await page.locator('#layout #products .product').count(),3,'Todos os itens aparecem no catálogo abaixo dos destaques');
     await page.getByRole('heading',{name:'Todo o cardápio',exact:true}).waitFor();
-    await page.locator('#v2HeaderAbout').click();
+    await page.locator('#v2StoreNav [data-v2-nav="sobre"]').click();
     await page.locator('#v2AboutPage').waitFor();
     assert.equal(await page.locator('#v2AboutPage').isVisible(),true);
     await page.getByRole('button',{name:'Cardápio',exact:true}).click();
@@ -532,6 +532,20 @@ try {
     }else{
       assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Fiado oculto para telefone não autorizado');
     }
+      if(width===375){
+        await page.locator('#v2CheckoutBack').click();
+        await page.locator('#cartDialog[data-v2-stage="address"]').waitFor();
+        const savedAddress=page.locator('#v2AddressList .v2-saved-address').first();
+        const restoredQuote=page.waitForRequest(r=>r.url().includes('/delivery-quote')&&r.postDataJSON()?.latitude===-22.71);
+        await savedAddress.click();
+        const restoredRequest=await restoredQuote;
+        assert.equal(restoredRequest.postDataJSON().longitude,-43.4);
+        assert.equal(await page.locator('#locateDelivery').isVisible(),false,'Known address needs no new GPS permission');
+        await page.locator('#routeQuoteStatus[data-state="success"]').waitFor();
+        assert.match(await savedAddress.innerText(),/Entrega disponível/);
+        await page.locator('#v2CheckoutNext').click();
+        await page.locator('#cartDialog[data-v2-stage="payment"]').waitFor();
+      }
       const pixCard=page.locator('#v2PaymentCards [data-kind="pix_manual"]');
       assert.equal(await pixCard.isVisible(),true,'Pix manual cadastrado aparece em card');
       if(width===1440){

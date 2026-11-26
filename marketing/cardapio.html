@@ -545,7 +545,7 @@ body:not([data-menu-template="pitacco-v2"]) .v2-header-back,
 body:not([data-menu-template="pitacco-v2"]) .v2-header-actions,
 body:not([data-menu-template="pitacco-v2"]) .v2-hero-info,
 body:not([data-menu-template="pitacco-v2"]) .v2-hero-visual{display:none!important}
-body[data-menu-template="pitacco-v2"][data-v2-page=inicio] #v2StoreNav{display:none!important}
+/* Navigation remains available on the home page after removing duplicate header shortcuts. */
 body[data-menu-template="pitacco-v2"] .hero{min-height:260px;padding:23px 0 64px;background:hsl(var(--template-hue,290.37) calc(85.26% * var(--template-chroma,1)) 18.63%);border:0;overflow:hidden}
 body[data-menu-template="pitacco-v2"] .hero::after{background:linear-gradient(95deg,hsl(var(--template-hue,288.65) calc(88.10% * var(--template-chroma,1)) 16.47%) 0%,hsl(var(--template-hue,287.29) calc(80.95% * var(--template-chroma,1)) 20.59% / 0.9098) 68%,hsl(var(--template-hue,293.25) calc(78.43% * var(--template-chroma,1)) 20.00% / 0.6196) 100%)}
 body[data-menu-template="pitacco-v2"] .hero>img#storeBanner{opacity:.44}
@@ -1245,6 +1245,24 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
 #checkout #loyaltyApply:disabled{opacity:.55}
 #checkout #loyaltyClear{width:100%;font-size:.8rem;background:transparent;color:var(--brand);border:0}
 #checkout #loyaltyBox [hidden]{display:none!important}
+#checkout:not(.loyalty-only) #loyaltyTerms,#checkout:not(.loyalty-only) #loyaltyCampaigns,#checkout:not(.loyalty-only) #loyaltyAnonymous,#checkout:not(.loyalty-only) #loyaltyMember,#checkout:not(.loyalty-only) #loyaltyRewardBlock,#checkout:not(.loyalty-only) #loyaltyClear,#checkout:not(.loyalty-only) #loyaltyStatus{display:none!important}
+#checkout:not(.loyalty-only) #loyaltyCardToggle{padding:11px 14px 17px;grid-template-columns:36px 1fr 20px;cursor:default}
+#checkout:not(.loyalty-only) .loyalty-card-icon{width:36px;height:36px}
+#checkout:not(.loyalty-only) .loyalty-card-copy small{display:none}
+#checkout:not(.loyalty-only) .loyalty-card-copy strong{font-size:1.06rem}
+#checkout:not(.loyalty-only) .loyalty-card-chevron{display:none}
+#checkout #loyaltyCardMetrics{display:grid;gap:7px}
+#checkout .loyalty-redeem-row{display:flex;align-items:center;gap:9px;padding:9px 10px;background:color-mix(in srgb,var(--brand) 5%,var(--paper));border:1px solid color-mix(in srgb,var(--brand) 12%,var(--line));border-radius:12px}
+#checkout .loyalty-redeem-copy{display:grid;gap:2px;min-width:0;flex:1}
+#checkout .loyalty-redeem-copy strong{font-size:.83rem;color:var(--ink)}
+#checkout .loyalty-redeem-amount{font-size:1.05rem;font-weight:850;color:var(--brand)}
+#checkout .loyalty-redeem-copy small{font-size:.7rem;color:var(--muted)}
+#checkout .loyalty-redeem-button{border:0;border-radius:10px;padding:9px 13px;color:#fff;background:var(--brand);font-size:.8rem;font-weight:800;white-space:nowrap}
+#checkout .loyalty-redeem-button:disabled{opacity:.7}
+#checkout #loyaltyCompactRemove{width:100%;border:0;background:none;color:var(--brand);font-size:.76rem;padding:7px}
+#checkout #loyaltyCompactStatus{font-size:.8rem;color:#9a3412;margin:7px 0}
+#checkout #loyaltyDetailsToggle{font-size:.78rem;padding:7px 0}
+#checkout:not(.loyalty-only) #loyaltyCardContent{padding-top:4px}
 /* Same checkout structure, preserving the selected palette of each storefront. */
 #cartDialog #checkout .v2-checkout-panel{margin:0 0 12px;padding:12px 0;background:transparent;border:0;box-shadow:none}
 #cartDialog #checkout .v2-checkout-panel label{color:var(--ink);font-weight:700}
@@ -1269,10 +1287,6 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
 </section>
 <header class="hero" id="hero" hidden>
  <img id="storeBanner" alt="" hidden>
- <button type="button" id="v2HeaderBack" class="v2-header-control v2-header-back" aria-label="Voltar">‹</button>
- <div class="v2-header-actions"><button type="button" id="v2HeaderSearch" class="v2-header-control" aria-label="Buscar produtos">⌕</button>
- <button type="button" id="v2HeaderAbout" class="v2-header-control" aria-label="Informações da loja">ⓘ</button>
- <button type="button" id="v2HeaderCart" class="v2-header-control" aria-label="Ver meu pedido">🛒<span id="v2HeaderCount" class="v2-header-count" hidden>0</span></button></div>
  <div class="shell hero-content"><div class="identity"><div class="store-mark" aria-hidden="true"><span id="storeInitial">🍧</span><img id="storeLogo" alt="" hidden></div>
  <div><h1 id="storeName"></h1><p id="storeSlogan">Cardápio digital</p></div></div><div id="storeServices" class="services"></div></div>
  <div class="shell v2-hero-info"><span id="v2OpenPill" class="v2-open-pill">Consultando</span><span id="v2DeliveryText" class="v2-delivery-text"></span>
@@ -1281,14 +1295,37 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
  <div id="storeSocialLinks" aria-label="Redes sociais da loja" hidden></div>
 </header>
 <style>
-#hero #storeSocialLinks{position:absolute;top:82px;right:18px;z-index:5;display:flex;gap:7px;align-items:center}
+#hero #storeSocialLinks{position:absolute;top:14px;right:18px;z-index:5;display:flex;gap:7px;align-items:center}
 #storeSocialLinks a{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:#21182c80;color:#fff;text-decoration:none;border:1px solid #ffffff40;backdrop-filter:blur(8px);box-shadow:0 2px 8px #0002}
 #storeSocialLinks a svg{display:block;width:20px;height:20px}
 #storeSocialLinks a:focus-visible{outline:2px solid #fff;outline-offset:2px}
 #storeSocialLinks[hidden]{display:none!important}
-body[data-menu-template=classic] #hero #storeSocialLinks{top:12px;right:16px}
-body[data-menu-skin=essencial] #hero #storeSocialLinks{top:56px;right:12px}
-@media(max-width:590px){#hero #storeSocialLinks{top:69px;right:11px}#storeSocialLinks a{width:34px;height:34px}body[data-menu-skin=essencial] #hero #storeSocialLinks{top:53px}}
+/* Brand-first banner: social icons are the only upper controls. */
+#hero .identity{min-width:0;gap:14px}
+#hero .identity>div:last-child{min-width:0}
+#hero .store-mark{width:clamp(94px,10vw,124px);height:clamp(94px,10vw,124px);flex:none}
+#hero .store-mark img{object-fit:contain}
+body[data-menu-template="pitacco-v2"] #hero .hero-content{padding:16px 0 0;min-height:130px}
+body[data-menu-template="pitacco-v2"] #hero:has(#storeSocialLinks:not([hidden])) .hero-content{padding-top:42px}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#storeBanner:not([hidden])) .hero-content{justify-content:center;align-items:center}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero h1{max-width:none}
+body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] #hero .store-mark{width:clamp(80px,9vw,108px);height:clamp(80px,9vw,108px)}
+body[data-menu-template="pitacco-v2"][data-menu-skin=editorial] #hero .hero-content{padding:17px 15px 0;min-height:110px}
+body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #hero .hero-content{padding-right:30%}
+body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #hero .store-mark{width:clamp(76px,8vw,106px);height:clamp(76px,8vw,106px)}
+body[data-menu-template=classic] #hero:has(#storeSocialLinks:not([hidden])) .hero-content{padding-top:24px}
+@media(max-width:590px){
+ #hero #storeSocialLinks{top:12px;right:12px}
+ #storeSocialLinks a{width:34px;height:34px}
+ #hero .identity{gap:10px}
+ #hero .store-mark{width:88px;height:88px}
+ body[data-menu-template="pitacco-v2"] #hero .hero-content{padding:12px 0 0;min-height:110px}
+ body[data-menu-template="pitacco-v2"] #hero:has(#storeSocialLinks:not([hidden])) .hero-content{padding-top:36px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=editorial] #hero .hero-content{padding:14px 12px 0;min-height:100px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #hero .hero-content{padding-right:25%}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #hero .store-mark{width:76px;height:76px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#storeBanner:not([hidden])) .hero-content{flex-direction:row;justify-content:center}
+}
 </style>
 <nav id="v2StoreNav" class="shell v2-store-nav" aria-label="Seções do cardápio">
  <button type="button" class="v2-nav-button" data-v2-nav="inicio" aria-current="page"><span class="v2-nav-icon" aria-hidden="true">⌂</span>Início</button>
@@ -1431,11 +1468,11 @@ body[data-menu-skin=essencial] #hero #storeSocialLinks{top:56px;right:12px}
  <div id="v2ChangeBlock" class="v2-change-block" hidden><label for="v2CashChange">Vai pagar com quanto? (para calcular o troco)</label><input id="v2CashChange" inputmode="decimal" autocomplete="off" placeholder="Ex.: 50,00"><small>Informe quanto entregará ao motoboy. O troco considera produtos, descontos e taxa de entrega.</small></div>
 <section id="loyaltyBox" class="fiado-access" aria-label="Fideliza+ do cliente" hidden>
  <button type="button" id="loyaltyCardToggle" class="loyalty-card-toggle" aria-expanded="false" aria-controls="loyaltyCardContent"><span class="loyalty-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 7 4.5 4L12 3l4.5 8L21 7l-2 11H5L3 7Z"/><path d="M5 21h14"/></svg></span><span class="loyalty-card-copy"><strong>Fideliza+</strong><small>Seus benefícios nesta compra</small></span><span class="loyalty-card-chevron" aria-hidden="true">⌄</span></button>
- <div class="loyalty-card-overview"><p id="loyaltyCardSummary" role="status" aria-live="polite">Cupons, pontos e benefícios</p><div class="loyalty-card-metrics" id="loyaltyCardMetrics" hidden>
- <div id="loyaltyMetricPoints" class="loyalty-metric" hidden><span aria-hidden="true">☆</span><strong id="loyaltyMetricPointsValue">—</strong><small>Pontos</small></div>
- <div id="loyaltyMetricCredit" class="loyalty-metric" hidden><span aria-hidden="true">◉</span><strong id="loyaltyMetricCreditValue">—</strong><small>Em créditos</small></div>
- <div id="loyaltyMetricCoupon" class="loyalty-metric" hidden><span aria-hidden="true">◇</span><strong id="loyaltyMetricCouponValue">—</strong><small>Cupons e ofertas</small></div>
- </div><button type="button" id="loyaltyDetailsToggle" aria-controls="loyaltyCardContent" aria-expanded="false">Ver benefícios ⌄</button></div>
+ <div class="loyalty-card-overview"><p id="loyaltyCardSummary" role="status" aria-live="polite" hidden></p>
+ <div id="loyaltyCardMetrics" class="loyalty-available-list"></div>
+ <p id="loyaltyCompactStatus" role="status" aria-live="polite" hidden></p>
+ <button type="button" id="loyaltyCompactRemove" hidden>Remover desconto</button>
+ <button type="button" id="loyaltyDetailsToggle" aria-controls="loyaltyCardContent" aria-expanded="false">Tenho um cupom ⌄</button></div>
  <div id="loyaltyCardContent" hidden><p id="loyaltyTerms"></p><div id="loyaltyCampaigns"></div>
  <div id="loyaltyAnonymous"><p>Seu número de celular com DDD é seu acesso ao Fideliza+. Ao digitar o telefone do pedido, seus pontos e créditos aparecem automaticamente. Na primeira compra, o cadastro da carteira é automático.</p>
  </div>
@@ -1714,6 +1751,8 @@ function quoteNotice(text,state='info'){$('routeQuoteStatus').textContent=text;$
 function updateDeliveryMapAction(){
  const open=!$('deliveryMapPanel').hidden;
  const state=$('routeQuoteStatus').dataset.state;
+ const savedPoint=Boolean(v2SelectedAddress&&!v2AddressEditing&&deliveryPoint);
+ $('locateDelivery').hidden=$('deliveryPoint').hidden||savedPoint;
  $('showDeliveryMap').hidden=!open&&(!v2QuoteAddressReady()||(state==='success'&&!deliveryPoint));
  if(!open)$('showDeliveryMap').textContent=deliveryPoint?'Alterar ponto no mapa':'Escolher outro ponto no mapa';
 }
@@ -1833,7 +1872,7 @@ function v2AutoQuoteError(errorText){
   return 'Ainda não entregamos neste endereço. Não atendemos essa região no momento.';
  }
  if(/localizar.*precis[aã]o|impreciso|marque.*mapa|localiza[cç][aã]o.*mapa/i.test(errorText)){
-  return 'Confirme o local da entrega em Ajustar localização no mapa ou use sua localização atual.';
+  return 'Confirme o local da entrega apenas se este endereço ainda não tiver uma localização precisa salva.';
  }
  return errorText;
 }
@@ -2254,10 +2293,6 @@ for(const b of $('v2StoreNav').querySelectorAll('[data-v2-nav]')){
 $('v2HomeLoyaltyGo').onclick=()=>v2Go('fideliza');
 $('v2FavoritesNav').onclick=()=>v2Go('favoritos');
 
-$('v2HeaderBack').onclick=()=>{if(v2Page!=='inicio')v2Go('inicio');else if(history.length>1)history.back();};
-$('v2HeaderSearch').onclick=()=>{v2Go('cardapio');$('search').focus();$('layout').scrollIntoView({behavior:'smooth'});};
-$('v2HeaderAbout').onclick=()=>v2Go('sobre');
-$('v2HeaderCart').onclick=()=>$('openCart').click();
 $('v2AllProductsButton').onclick=()=>{$('layout').scrollIntoView({behavior:'smooth',block:'start'});};
 
 $('v2ClassicLoyalty').onclick=()=>{if(!$('loyaltyOpen').hidden)$('loyaltyOpen').click()};
@@ -2674,7 +2709,6 @@ function renderCart(){
  $('cartCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0);
  $('cartValue').textContent=money(subtotal);
  $('v2DockCount').textContent=cart.reduce((sum,item)=>sum+item.quantity,0)+' itens · ';
- const n=cart.reduce((sum,item)=>sum+item.quantity,0);$('v2HeaderCount').textContent=String(n);$('v2HeaderCount').hidden=n===0;
  $('continueCheckout').disabled=Boolean(cartRecoveryId)||(!storefrontCanOrder()&&!pendingRequest)||!cart.length||(!v2Only()&&(!$('fulfillment').value||!$('payment').value));
  $('cart').inert=Boolean(cartRecoveryId)||Boolean(pendingRequest);
  $('send').disabled=Boolean(cartRecoveryId)||(!timingValid()&&!pendingRequest)||submitting||!cart.length||!$('fulfillment').value||!$('payment').value||
@@ -2932,28 +2966,70 @@ function availableLoyaltyRewards(wallet){
 }
 const loyaltyFingerprint=()=>JSON.stringify([loyaltyItems(),loyaltyPhone,$('loyaltyCoupon').value.trim().toUpperCase(),$('loyaltyReward').value]);
 const loyaltyDiscount=()=>loyaltyPreview&&loyaltyStamp===loyaltyFingerprint()?Number(loyaltyPreview.discount_cents)/100:0;
+// The cart lists only benefits that can actually be redeemed for its products.
+function checkoutAvailableLoyaltyRewards(wallet,subtotal){
+ if(!Number.isInteger(subtotal)||subtotal<=0)return [];
+ const rule=wallet?.rules||{};
+ return availableLoyaltyRewards(wallet).map(reward=>{
+  const cents=reward.value==='points'?Number(rule.points_reward_cents):reward.value==='orders'?Number(rule.orders_reward_cents):
+   Math.min(Number(wallet.cashback_cents),Math.floor(subtotal*Number(rule.cashback_max_redeem_percent)/100),subtotal-1);
+  return {...reward,cents,title:reward.value==='points'?'Recompensa por pontos':reward.value==='orders'?'Recompensa por compras':'Cashback disponível'};
+ }).filter(reward=>Number.isInteger(reward.cents)&&reward.cents>0&&reward.cents<subtotal);
+}
 function setLoyaltyCardExpanded(expanded){
  $('loyaltyCardContent').hidden=!expanded;
  $('loyaltyCardToggle').setAttribute('aria-expanded',String(expanded));
- $('loyaltyDetailsToggle').setAttribute('aria-expanded',String(expanded));$('loyaltyDetailsToggle').textContent=expanded?'Ocultar detalhes ⌃':'Ver benefícios ⌄';
+ $('loyaltyDetailsToggle').setAttribute('aria-expanded',String(expanded));$('loyaltyDetailsToggle').textContent=expanded?'Ocultar cupom ⌃':'Tenho um cupom ⌄';
 }
 $('loyaltyCardToggle').onclick=$('loyaltyDetailsToggle').onclick=()=>setLoyaltyCardExpanded($('loyaltyCardContent').hidden);
 function updateLoyaltyCard(discount=loyaltyDiscount()){
  const rule=loyaltyWallet?.rules||loyaltyProgram?.rules||{};
- const fiado=$('payment').value==='fiado',summary=$('loyaltyCardSummary'),parts=[];
- if(loyaltyWallet){
-  if(rule.points_enabled)parts.push(Number(loyaltyWallet.points||0)+' pontos');
-  if(rule.orders_enabled)parts.push(Number(loyaltyWallet.orders||0)+' pedidos');
-  if(rule.cashback_enabled||rule.referrals_enabled)parts.push(money(Number(loyaltyWallet.cashback_cents||0)/100)+' em créditos');
- }
- const offerCount=new Set([...(loyaltyProgram?.campaigns||[]),...(loyaltyWallet?.offers||[])].map(o=>o.code).filter(Boolean)).size;
- const metrics=[['Points',Boolean(loyaltyWallet&&rule.points_enabled),String(Number(loyaltyWallet?.points||0))],['Credit',Boolean(loyaltyWallet&&(rule.cashback_enabled||rule.referrals_enabled)),money(Number(loyaltyWallet?.cashback_cents||0)/100)],['Coupon',Boolean(rule.coupons_enabled||rule.campaigns_enabled),offerCount?String(offerCount):'Consultar']];
- for(const [kind,visible,value] of metrics){$('loyaltyMetric'+kind).hidden=!visible;$('loyaltyMetric'+kind+'Value').textContent=value;}
- $('loyaltyCardMetrics').hidden=!metrics.some(m=>m[1])||fiado;
+ const fiado=$('payment').value==='fiado',summary=$('loyaltyCardSummary');
  const selected=Boolean($('loyaltyCoupon').value.trim()||$('loyaltyReward').value);
+ const subtotal=Math.round(cart.reduce((sum,item)=>sum+item.unit*item.quantity,0)*100);
+ const rewards=checkoutAvailableLoyaltyRewards(loyaltyWallet,subtotal);
+ const offers=[...new Map([...(loyaltyProgram?.campaigns||[]),...(loyaltyWallet?.offers||[])].filter(o=>o.code&&(!o.expires_at||Date.parse(o.expires_at)>Date.now())&&(!o.starts_at||Date.parse(o.starts_at)<=Date.now())&&subtotal>=Number(o.minimum_order_cents||0)).map(o=>[o.code,o])).values()];
+ const walletOnly=$('checkout').classList.contains('loyalty-only');
+ const canCoupon=Boolean(rule.coupons_enabled||rule.campaigns_enabled);
  $('loyaltyBox').dataset.applied=String(!fiado&&discount>0);
- summary.textContent=fiado?(selected?'Remova o benefício para pagar no Fiado.':'Benefícios não disponíveis no Fiado.'):discount>0?'✓ '+money(discount)+' de desconto aplicado':parts.length?parts.join(' · '):'Consultar cupons, pontos e benefícios';
+ summary.hidden=!(fiado&&selected||discount>0);
+ summary.textContent=fiado?(selected?'Remova o benefício para pagar no Fiado.':''):discount>0?'✓ '+money(discount)+' de desconto aplicado':'';
  $('loyaltyApply').disabled=fiado||loyaltyBusy;
+ $('loyaltyCompactRemove').hidden=!selected;
+ $('loyaltyCompactRemove').disabled=loyaltyBusy;
+ $('loyaltyDetailsToggle').hidden=fiado||!canCoupon;
+ $('loyaltyCardToggle').disabled=fiado||!canCoupon;
+ if(!fiado&&discount>0)summary.textContent+=' · Total '+money(v2TotalToPay());
+ const root=$('loyaltyCardMetrics');root.replaceChildren();
+ const add=(kind,value,title,amount,detail)=>{
+  const row=el('div',undefined,'loyalty-redeem-row');
+  const copy=el('div',undefined,'loyalty-redeem-copy');copy.append(el('strong',title),el('span',amount,'loyalty-redeem-amount'));
+  if(detail)copy.append(el('small',detail));
+  const active=discount>0&&(kind==='reward'?$('loyaltyReward').value===value:$('loyaltyCoupon').value.trim().toUpperCase()===value.toUpperCase());
+  const use=button(active?'Aplicado ✓':'Usar','loyalty-redeem-button');
+  use.dataset.reward=kind==='reward'?value:'';use.dataset.coupon=kind==='coupon'?value:'';
+  use.setAttribute('aria-label',(active?'Aplicado: ':'Usar ')+title);use.disabled=loyaltyBusy||active;
+  use.onclick=()=>{if(loyaltyBusy||pendingRequest)return;
+   $('loyaltyReward').value=kind==='reward'?value:'';
+   $('loyaltyCoupon').value=kind==='coupon'?value:'';
+   $('loyaltyCoupon').disabled=kind==='reward';
+   invalidateLoyalty();$('loyaltyApply').click();
+  };
+  row.append(copy,use);root.append(row);
+ };
+ if(!fiado&&!walletOnly){
+  for(const r of rewards){
+   const detail=r.value==='orders'?Number(rule.orders_required)+' compras concluídas':r.value==='points'?Number(rule.min_points_to_redeem)+' pontos':r.cents<Number(loyaltyWallet.cashback_cents)?'Saldo: '+money(loyaltyWallet.cashback_cents/100):'';
+   add('reward',r.value,r.title,money(r.cents/100),detail);
+  }
+  for(const offer of offers){
+   const cents=offer.discount_type==='percent'?Math.round(subtotal*Number(offer.discount_value)/100):Math.min(subtotal,Math.round(Number(offer.discount_value)*100));
+   if(cents>0)add('coupon',offer.code,offer.title||offer.code,money(cents/100),'');
+  }
+ }
+ root.hidden=!root.children.length;
+ // No locked rewards, long explanations, or zero balances in checkout.
+ $('loyaltyBox').hidden=!(loyaltyProgram&&(walletOnly||selected||(!fiado&&(root.children.length||canCoupon))));
 }
 function loyaltyNotice(text){$('loyaltyStatus').textContent=text||'';updateLoyaltyCard();}
 function invalidateLoyalty(){loyaltyPreview=null;loyaltyStamp='';if(menu)renderCart();}
@@ -3034,7 +3110,7 @@ $('loyaltyOpen').onclick=()=>{
  $('cartDialog').showModal();
  $('checkout').hidden=false;$('checkout').classList.add('loyalty-only');$('cartTitle').textContent='Meu Fideliza+';
  delete $('cartDialog').dataset.v2Stage;$('cartReview').hidden=true;$('cartFooter').hidden=true;
- setLoyaltyCardExpanded(true);$('loyaltyBox').scrollIntoView({block:'start'});void refreshLoyaltyWallet();
+ updateLoyaltyCard();setLoyaltyCardExpanded(true);$('loyaltyBox').scrollIntoView({block:'start'});void refreshLoyaltyWallet();
 };
 $('loyaltyCopyShare').onclick=async()=>{
  try{await navigator.clipboard.writeText($('loyaltyShare').value);loyaltyNotice('Indicação copiada.');}
@@ -3044,15 +3120,15 @@ $('loyaltyReward').onchange=()=>{
  if($('loyaltyReward').value)$('loyaltyCoupon').value='';$('loyaltyCoupon').disabled=!!$('loyaltyReward').value;invalidateLoyalty();loyaltyNotice('Toque em Aplicar benefício para conferir o valor.');
 };
 $('loyaltyCoupon').oninput=()=>{invalidateLoyalty();};
-$('loyaltyClear').onclick=()=>{$('loyaltyCoupon').value='';$('loyaltyReward').value='';$('loyaltyCoupon').disabled=false;invalidateLoyalty();loyaltyNotice('Sem desconto selecionado. Você continua acumulando conforme as regras da loja.');};
+$('loyaltyClear').onclick=$('loyaltyCompactRemove').onclick=()=>{$('loyaltyCoupon').value='';$('loyaltyReward').value='';$('loyaltyCoupon').disabled=false;$('loyaltyCompactStatus').hidden=true;invalidateLoyalty();loyaltyNotice('');};
 $('loyaltyApply').onclick=async()=>{
- if(loyaltyBusy||pendingRequest)return;if($('payment').value==='fiado'){loyaltyNotice('Pedidos fiados não utilizam benefícios do Fideliza+.');return;}loyaltyBusy=true;$('loyaltyApply').disabled=true;const fingerprint=loyaltyFingerprint();
+ if(loyaltyBusy||pendingRequest)return;if($('payment').value==='fiado'){loyaltyNotice('Pedidos fiados não utilizam benefícios do Fideliza+.');return;}loyaltyBusy=true;$('loyaltyApply').disabled=true;$('loyaltyCompactStatus').hidden=true;updateLoyaltyCard();const fingerprint=loyaltyFingerprint();
  try{
   const {data,error}=await client.rpc('pitacco_loyalty_preview',{p_slug:slug,p_items:loyaltyItems(),p_key:loyaltyPhone,p_coupon:$('loyaltyCoupon').value.trim().toUpperCase(),p_reward:$('loyaltyReward').value});
   if(error)throw error;if(data?.error)throw Error(data.error);if(!Number.isInteger(data?.discount_cents))throw Error('Desconto não confirmado.');
-  if(fingerprint!==loyaltyFingerprint())throw Error('A sacola mudou. Confira novamente o benefício.');
-  loyaltyPreview=data;loyaltyStamp=fingerprint;renderCart();loyaltyNotice('Desconto conferido: '+money(data.discount_cents/100)+'. A disponibilidade será confirmada ao enviar o pedido.');
- }catch(error){invalidateLoyalty();loyaltyNotice(error.message||'Não foi possível aplicar o benefício.');}finally{loyaltyBusy=false;updateLoyaltyCard();}
+  if(fingerprint!==loyaltyFingerprint()||$('payment').value==='fiado')throw Error('Confira novamente o benefício.');
+  loyaltyPreview=data;loyaltyStamp=fingerprint;renderCart();loyaltyNotice('Desconto aplicado: '+money(data.discount_cents/100)+'.');
+ }catch(error){invalidateLoyalty();const message=error.message||'Não foi possível aplicar o benefício.';loyaltyNotice(message);$('loyaltyCompactStatus').textContent=message;$('loyaltyCompactStatus').hidden=false;}finally{loyaltyBusy=false;updateLoyaltyCard();}
 };
 // Referral attribution comes only from the store-scoped link, never a checkout input.
 
@@ -3276,7 +3352,7 @@ function initOptions(){
   $('deliveryPoint').hidden=$('addressBlock').hidden||!shop.delivery_area||
     (shop.route_pricing?.mode==='road');
   $('routeQuoteControls').hidden=$('addressBlock').hidden;
-  $('locateDelivery').hidden=$('deliveryPoint').hidden;
+  updateDeliveryMapAction();
   if(!$('deliveryPoint').hidden&&!$('deliveryMapPanel').hidden)deliveryMap?.resize();
   if($('deliveryPoint').hidden)closeDeliveryMap();
   quoteGeneration++;v2ScheduleDeliveryQuote(true);
@@ -3734,7 +3810,7 @@ async function v2SaveProfile(){
   if(error||data?.error)throw Error(error?.message||data?.error||'Falha ao salvar');
   if(phone!==loyaltyPhoneDigits($('phone').value)||device!==rememberedDevice())return;
   if(data?.session_active===true)customerSessionDisplay(true,name,Date.now()+90*86400000);
-  if(Array.isArray(data?.addresses))v2Profile.addresses=data.addresses;
+  if(Array.isArray(data?.addresses)){v2Profile.addresses=data.addresses;v2RenderSavedAddresses();}
   v2Profile.name=name;v2ProfilePhone=phone;
   $('v2ProfileStatus').textContent='✓ Dados salvos para suas próximas compras neste aparelho.';
  }catch{
@@ -3751,6 +3827,13 @@ function v2FillAddress(data){
  for(const [field,id] of Object.entries(v2AddressFields))$(id).value=String(data[field]||'');
  $('v2AddressLabel').value=['Casa','Trabalho','Outro'].includes(data.label)?data.label:'Outro';
  composeDeliveryAddress();
+ // Restore only server-validated points, after the address input resets them.
+ const point=[data.location?.latitude,data.location?.longitude];
+ if(validDeliveryMapPoint(point)&&point[0]>=-34&&point[0]<=6&&point[1]>=-75&&point[1]<=-32){
+  selectDeliveryPoint(point);
+  $('deliveryPointStatus').textContent='✓ Localização salva. Não é necessário confirmar novamente.';
+ }
+ updateDeliveryMapAction();
 }
 function v2SelectSavedAddress(address,render=true){
  v2SelectedAddress=address.id;v2AddressEditing=false;
@@ -3792,8 +3875,10 @@ $('v2AddAddress').onclick=()=>{
  $('v2AddressEditor').scrollIntoView({block:'nearest',behavior:'smooth'});
 };
 function v2SaveCurrentAddress(){
- if($('fulfillment').value!=='delivery'||!v2AddressEditing)return;
+ if($('fulfillment').value!=='delivery'||!v2QuoteCurrent())return;
  const address=v2CurrentAddress();
+ // Save a quote reference rather than arbitrary coordinates; update existing pins too.
+ address.quote_id=deliveryQuote.id;
  v2Profile.addresses=v2Profile.addresses.filter(a=>a.id!==address.id).map(a=>({...a,is_default:false})).concat(address).slice(-8);
  v2SelectedAddress=address.id;v2AddressEditing=false;
  v2RenderSavedAddresses();
