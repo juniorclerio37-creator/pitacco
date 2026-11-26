@@ -63,8 +63,13 @@ try{
    await page.locator('#cart input').dispatchEvent('change');
    await page.locator('#continueCheckout').click();
    linkGenerated=true; // Existing eligible customer, shared wallet fixture.
-   await page.locator('#customer').fill('Cliente');
    await page.locator('#phone').fill('21999990001');
+   await page.locator('#v2CheckoutNext').click();
+   await page.locator('#customer').fill('Cliente');
+   await page.locator('#v2CheckoutNext').click();
+   await page.locator('#v2CheckoutNext').click();
+   await page.locator('#cartDialog[data-v2-stage="payment"]').waitFor();
+   await page.locator('#v2PaymentCards [data-kind="pix_manual"]').click();
    await page.locator('#loyaltyReward option[value="cashback"]').waitFor({state:'attached'});
    assert.equal(await page.locator('#loyaltyReward option').count(),4);
    assert.equal(await page.locator('#loyaltyCardContent').isVisible(),false);
@@ -73,11 +78,12 @@ try{
    else await page.locator('#loyaltyCoupon').fill('SEMANA5');
    await page.locator('#loyaltyApply').click();
    await page.locator('#total').getByText('Desconto Fideliza+',{exact:true}).waitFor({state:'attached'});
+   await page.locator('#v2CheckoutNext').click();
    await page.locator('#send').click();
    await page.getByRole('button',{name:'Tentar novamente',exact:true}).waitFor();
    assert.equal(await page.locator('#loyaltyBox').evaluate(e=>e.inert),true);
    await page.locator('#send').click();
-   await page.getByRole('heading',{name:'Pedido recebido!',exact:true}).waitFor();
+   await page.getByRole('heading',{name:'✓ Pedido confirmado!',exact:true}).waitFor();
    assert.equal(sent.length,2);
    assert.deepEqual(sent[0],sent[1]);
    assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-cart:loyalty-test')),null);
@@ -129,7 +135,7 @@ try{
   await page.getByRole('button',{name:'Personalizar Açaí',exact:true}).click();
   await page.getByRole('button',{name:/Adicionar à sacola/}).click();
   await page.locator('#openCart').click();await page.locator('#continueCheckout').click();
-  const principal=template==='pitacco-v2';
+  const principal=true; // Shared checkout.
   if(principal){
     await page.locator('#v2CheckoutNext').click();
     await page.locator('#cartDialog[data-v2-stage="customer"]').waitFor();

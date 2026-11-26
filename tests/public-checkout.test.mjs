@@ -174,3 +174,12 @@ test('Fideliza checkout uses a collapsible independent benefit card',()=>{
  assert.match(html,/\$\('loyaltyApply'\)\.disabled=fiado\|\|loyaltyBusy/);
  assert.match(html,/setLoyaltyCardExpanded\(true\);\$\('loyaltyBox'\)\.scrollIntoView/);
 });
+
+test('all storefront skins use the same checkout stages and premium loyalty card',()=>{
+ assert.match(html,/const v2Only=\(\)=>\['classic','pitacco-v2'\]\.includes/);
+ assert.match(html,/#cartDialog\[data-v2-stage=payment\] \.v2-checkout-panel--delivery/);
+ assert.match(html,/id="loyaltyCardMetrics"/);
+ assert.match(html,/id="loyaltyDetailsToggle"/);
+ assert.match(html,/id="storeSocialLinks"[^>]*>[^<]*<\/div>\s*<\/header>/);
+ assert.match(html,/link\.setAttribute\('aria-label',label\)/);
+});
