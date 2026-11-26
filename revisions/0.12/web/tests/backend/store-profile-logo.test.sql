@@ -36,7 +36,7 @@ begin
  begin
   perform public.pitacco_save_store_logo(s,'stores/95000000-0000-0000-0000-000000000012/new.png');
   raise exception 'Caminho de outra loja aceito';
- exception when invalid_parameter_value then null;end;
+ exception when raise_exception then if sqlerrm<>'Caminho de imagem inválido' then raise;end if;end;
 end $test$;
 select set_config('request.jwt.claim.sub','94000000-0000-0000-0000-000000000012',true);
 do $test$
