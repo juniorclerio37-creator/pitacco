@@ -20,7 +20,7 @@ do Windows. Ela é indispensável para atualizações automáticas seguras.
    a usar HTTPS no endpoint de update e a gerar a assinatura do instalador.
    O workflow publica `latest.json` e `Pitacco-Windows-Setup.exe.sig` no
    GitHub Releases junto ao EXE.
-4. Dentro do Pitacco Windows, use **Configurações → Verificar atualizações**.
+4. Dentro do Pitacco Windows, use **menu lateral → Verificar atualização**.
    O Tauri verifica a assinatura do pacote antes da instalação. Não atualiza
    enquanto há trabalhos `queued` ou `printing` na fila local.
 
@@ -45,3 +45,7 @@ podem ser instaladas pela função de atualização interna.
 - Não alterar pedidos em andamento, estabelecimento ativo ou dados financeiros.
 - Publicar a nova versão somente após CI Windows, banco isolado, navegador e
   teste real de atualização Windows aprovados.
+
+## Atualização automática a partir de 0.12.44
+
+Na inicialização a interface aguarda a consulta assinada antes de iniciar a operação. Se existir nova versão, a instalação é automática apenas sem loja ativa e sem impressões em fila. O aplicativo continua normalmente se a consulta falhar, a fila estiver ocupada ou o download exceder o tempo previsto. A cada 30 minutos o menu consulta a disponibilidade sem baixar nem instalar durante o atendimento. O lojista pode usar o botão existente ou deixar a instalação para a próxima inicialização. O mecanismo não altera arquivos de configuração, sessão, banco SQLite, impressoras ou pedidos; o instalador mantém o identificador existente. Um teste real Windows de atualização de 0.12.43 para 0.12.44 continua obrigatório antes de declarar a instalação comprovada.

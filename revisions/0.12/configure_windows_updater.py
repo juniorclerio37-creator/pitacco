@@ -25,24 +25,4 @@ if public_key and private_key:
 else:
     print('Atualizador Tauri indisponivel: instale a versao sobre a anterior sem desinstalar.')
 
-# Keep the durable local print queue safe while updating.
-main=Path('web/src-tauri/src/main.rs')
-content=main.read_text(encoding='utf-8')
-needle='#[tauri::command]async fn check_update(app:tauri::AppHandle)->Result<String,String>{'
-assert content.count(needle)==1
-guard="""#[tauri::command]async fn check_update(app:tauri::AppHandle)->Result<String,String>{
- {
-  // Do not stop the app while a spooler job can still be submitted.
-  let state=app.state::<State>();
-  let db=database(&state)?;
-  let queued:i64=db.query_row(
-   "SELECT count(*) FROM jobs WHERE state IN ('queued','printing')",
-   [],|row|row.get(0)
-  ).map_err(|e|e.to_string())?;
-  if queued>0{
-   return Err("Há impressões em andamento. Aguarde a fila terminar para atualizar.".into());
-  }
- }
-"""
-content=content.replace(needle,guard,1)
-main.write_text(content,encoding='utf-8')
+# The update lease and both queue guards are applied by safe_windows_auto_update.py during source restoration.
