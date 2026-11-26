@@ -1,4 +1,6 @@
 import React,{useEffect,useMemo,useState} from 'react';
+import {Layers,Package,Search,Image,Link2,Settings2,Plus,Pencil,ChevronDown} from 'lucide-react';
+import './complement-workspace.css';
 import ProductComplements from './ProductComplements.jsx';
 import IndividualComplementLibrary from './IndividualComplementLibrary.jsx';
 import {uploadStoreImage,mediaUrl} from './StoreProfile.jsx';
@@ -8,11 +10,12 @@ const fresh=()=>({id:null,name:'',min:0,max:1,options:[],assigned:[]});
 const currency=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const optionNew=()=>({id:crypto.randomUUID(),name:'',price:0,available:true,image_url:''});
 export default function CentralComplementLibrary({client,storeId,products,onChanged}){
- const [libraryView,setLibraryView]=useState('groups');
+ const [libraryView,setLibraryView]=useState('individual');
+ const [groupSearch,setGroupSearch]=useState(''),[optionSearch,setOptionSearch]=useState(''),[productSearch,setProductSearch]=useState(''),[detailTab,setDetailTab]=useState('items'),[expandedOption,setExpandedOption]=useState(null),[pickExisting,setPickExisting]=useState('');
  const [templates,setTemplates]=useState([]),[existing,setExisting]=useState([]),[existingOptions,setExistingOptions]=useState([]);
  const [selected,setSelected]=useState(null),[draft,setDraft]=useState(fresh),[files,setFiles]=useState({}),[fileUrls,setFileUrls]=useState({});
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
- const [editingProduct,setEditingProduct]=useState(null),[showExisting,setShowExisting]=useState(true);
+ const [editingProduct,setEditingProduct]=useState(null),[showExisting,setShowExisting]=useState(false);
  const productName=new Map(products.map(p=>[p.id,p.name]));
  const assignedIds=useMemo(()=>new Set(existing.filter(g=>g.library_template_id===draft.id&&g.enabled!==false).map(g=>g.product_id)),[existing,draft.id]);
  const totalAssigned=existing.filter(g=>g.library_template_id&&g.enabled!==false).length;
@@ -43,7 +46,7 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
  useEffect(()=>{setSelected(null);setDraft(fresh());setEditingProduct(null);load()},[client,storeId]);
  useEffect(()=>()=>Object.values(fileUrls).forEach(url=>URL.revokeObjectURL(url)),[fileUrls]);
  function openTemplate(t){
-  setSelected(t?.id||null);setFiles({});setFileUrls({});setError('');setNotice('');
+  setSelected(t?.id||null);setDetailTab(t?'items':'settings');setOptionSearch('');setProductSearch('');setExpandedOption(null);setPickExisting('');setFiles({});setFileUrls({});setError('');setNotice('');
   if(!t){setDraft(fresh());return;}
   const attached=existing.filter(g=>g.library_template_id===t.id&&g.enabled!==false).map(g=>g.product_id);
   setDraft({id:t.id,name:t.name,min:t.min_select,max:t.max_select,options:(t.options||[]).map(o=>({...o})),assigned:attached});
@@ -52,7 +55,7 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
   const opts=existingOptions.filter(o=>o.group_id===g.id).map(o=>({
    id:crypto.randomUUID(),name:o.name,price:Number(o.additional_price),available:o.available,image_url:o.image_url||''
   }));
-  setSelected(null);setFiles({});setFileUrls({});setDraft({id:null,name:g.name,min:g.min_select,max:g.max_select,options:opts,assigned:[]});
+  setSelected(null);setDetailTab('settings');setFiles({});setFileUrls({});setDraft({id:null,name:g.name,min:g.min_select,max:g.max_select,options:opts,assigned:[]});
   setError('');setNotice('Modelo criado com os dados de '+(productName.get(g.product_id)||'produto')+'. Selecione os produtos que receberão uma cópia compartilhada antes de salvar.');
   setShowExisting(false);
  }
@@ -112,26 +115,28 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
    setFiles({});setFileUrls({});setSelected(data.id);
    setNotice('Grupo salvo e aplicado a '+data.assigned_products+' produto(s). As alterações já estão disponíveis no cardápio.');
    await load();onChanged?.();
-   setDraft({...draft,id:data.id,options:data.options,assigned:draft.assigned});
+   setDraft({...draft,id:data.id,options:data.options,assigned:draft.assigned});setExpandedOption(null);
   }catch(e){setError('Não foi possível salvar: '+(e.message||String(e)))}
   finally{setBusy(false)}
  }
  const uniqueExisting=existing.filter(g=>!g.library_template_id&&g.enabled!==false);
  const productForEditing=products.find(p=>p.id===editingProduct);
- const viewTabs=<div className="catalog-actions" role="group" aria-label="Visualização da biblioteca"><button type="button" className={libraryView==='groups'?'':'secondary'} aria-pressed={libraryView==='groups'} onClick={()=>{setLibraryView('groups');load()}}>Grupos compartilhados</button><button type="button" className={libraryView==='individual'?'':'secondary'} aria-pressed={libraryView==='individual'} onClick={()=>setLibraryView('individual')}>Complementos individuais</button></div>;
- if(libraryView==='individual')return <>{viewTabs}<IndividualComplementLibrary key={storeId} client={client} storeId={storeId} onChanged={onChanged}/></>;
- return <section className="catalog-hub" aria-label="Biblioteca de complementos">
+ const normalized=v=>String(v??'').trim().toLocaleLowerCase('pt-BR').replace(/\s+/g,' ');
+ const namedOptions=Array.from(new Map([...templates.flatMap(t=>t.options||[]),...existingOptions.map(o=>({name:o.name,price:o.additional_price,available:o.available,image_url:o.image_url}))].map(o=>[normalized(o.name),o])).values()).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+ function addExisting(){const o=namedOptions.find(x=>normalized(x.name)===pickExisting);if(!o||draft.options.length>=100)return;const id=crypto.randomUUID();edit('options',[...draft.options,{...o,id,price:0,available:o.available!==false}]);setExpandedOption(id);setPickExisting('');setOptionSearch('');}
+ function addNew(){const o=optionNew();edit('options',[...draft.options,o]);setExpandedOption(o.id);setOptionSearch('');}
+ const viewTabs=<div className="catalog-actions complement-view-tabs" role="group" aria-label="Visualização da biblioteca"><button type="button" className={libraryView==='groups'?'':'secondary'} aria-pressed={libraryView==='groups'} onClick={()=>{setLibraryView('groups');load()}}><Layers size={17}/> Grupos de complementos</button><button type="button" className={libraryView==='individual'?'':'secondary'} aria-pressed={libraryView==='individual'} onClick={()=>setLibraryView('individual')}><Package size={17}/> Biblioteca de complementos</button></div>;
+ if(libraryView==='individual')return <section className="complement-workspace">{viewTabs}<IndividualComplementLibrary key={storeId} client={client} storeId={storeId} onChanged={onChanged} products={products} groups={existing} options={existingOptions} templates={templates}/></section>;
+ return <section className="catalog-hub complement-workspace" aria-label="Biblioteca de complementos">
   {viewTabs}
-  <header className="catalog-hub-header"><div><span className="eyebrow">GESTÃO CENTRALIZADA</span><h3>Grupos e complementos</h3>
+  <header className="catalog-hub-header"><div><span className="eyebrow">GESTÃO CENTRALIZADA</span><h3>Grupos de complementos</h3>
    <p>Crie grupos independentes, adicione fotos aos itens e vincule um mesmo grupo a diferentes produtos.</p></div>
-   <button type="button" onClick={()=>openTemplate(null)}>+ Novo grupo</button></header>
+   <button type="button" disabled={busy} onClick={()=>openTemplate(null)}><Plus size={17}/> Novo grupo</button></header>
   {error&&<p className="catalog-error" role="alert">{error}</p>}
   {notice&&<p className="catalog-notice" role="status">{notice}</p>}
-  <div className="catalog-stat-row"><span><strong>{templates.length}</strong> grupos compartilhados</span>
-   <span><strong>{totalAssigned}</strong> vínculos a produtos</span>
-   <span><strong>{uniqueExisting.length}</strong> grupos já cadastrados em produtos</span></div>
+  <div className="catalog-stat-row complement-metrics"><span><Layers size={20}/><strong>{templates.length}</strong> grupos compartilhados</span><span><Package size={20}/><strong>{namedOptions.length}</strong> complementos individuais</span><span><Link2 size={20}/><strong>{totalAssigned}</strong> vínculos de grupos</span><span><Package size={20}/><strong>{new Set(existing.filter(g=>g.enabled!==false).map(g=>g.product_id)).size}</strong> produtos vinculados</span></div>
   {loading&&<p role="status">Carregando complementos…</p>}
-  <div className="catalog-existing"><div className="catalog-line-title">
+  {(uniqueExisting.length>0||editingProduct)&&<div className="catalog-existing"><div className="catalog-line-title">
    <div><h4>Complementos já cadastrados nos produtos</h4><p>Inclui os grupos importados anteriormente. Você pode editá-los aqui, sem precisar voltar à aba Produtos.</p></div>
    <button type="button" className="secondary" onClick={()=>setShowExisting(p=>!p)}>{showExisting?'Ocultar grupos':'Ver grupos existentes ('+uniqueExisting.length+')'}</button>
   </div>
@@ -149,18 +154,18 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
    <ProductComplements key={editingProduct} client={client} storeId={storeId} product={productForEditing}
     onGroupsChange={()=>{}}/>
   </div>}
-  </div>
-  <div className="catalog-library-grid">
+  </div>}
+  <div className="catalog-library-grid complement-group-grid">
    <aside className="catalog-library-list" aria-label="Grupos compartilhados">
-    <h4>Biblioteca da loja</h4>
-    <button className={!draft.id?'catalog-group-active':''} onClick={()=>openTemplate(null)} type="button">＋ Criar um grupo independente</button>
+    <h4>Grupos ({templates.length})</h4><label className="complement-search"><Search size={17}/><input aria-label="Buscar grupo" value={groupSearch} onChange={e=>setGroupSearch(e.target.value)} placeholder="Buscar grupo..."/></label>
     {templates.map((t,index)=>{
-     const variants=templates.filter(group=>group.name===t.name);
+     if(!normalized(t.name).includes(normalized(groupSearch)))return null;
+     const variants=templates.filter(group=>normalized(group.name)===normalized(t.name));
      const variantNumber=variants.findIndex(group=>group.id===t.id)+1;
      const linkedProducts=existing.filter(group=>group.library_template_id===t.id&&group.enabled!==false).length;
      return <div className="catalog-template-sort-row" key={t.id}>
      <button onClick={()=>openTemplate(t)} type="button" className={draft.id===t.id?'catalog-group-active':''}>
-      <b>{t.name}{variants.length>1?' · Variação '+variantNumber:''}</b>
+      <b className="complement-group-title"><Layers size={18}/>{t.name}{variants.length>1?' · Variação '+variantNumber:''}</b>
       <small>{(t.options||[]).length} complemento(s) · {t.min_select} a {t.max_select} escolhas · {linkedProducts} produto(s)</small>
       <small>{(t.options||[]).slice(0,3).map(option=>option.name+(Number(option.price)>0?' ('+currency(option.price)+')':'')).join(' · ')}</small>
      </button>
@@ -171,18 +176,20 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
     </div>})}
     {!templates.length&&!loading&&<p>Crie seu primeiro grupo para vinculá-lo a produtos.</p>}
    </aside>
-   <div className="catalog-library-editor" key={draft.id||'new'}>
-    <h4>{draft.id?'Editar grupo compartilhado':'Novo grupo de complementos'}</h4>
+   <div className="catalog-library-editor complement-group-editor" key={draft.id||'new'}>
+    <div className="complement-detail-heading"><div className="complement-group-icon"><Layers size={27}/></div><div><h3>{draft.name||'Novo grupo de complementos'}</h3><p>{draft.options.length} complementos · {draft.assigned.length} produtos vinculados · {draft.min} a {draft.max} escolhas</p></div><button className="secondary" type="button" onClick={()=>setDetailTab('settings')}><Pencil size={15}/> Editar</button></div>
+    <div className="complement-detail-tabs" role="tablist" aria-label="Detalhes do grupo">{[['items','Complementos'],['products','Produtos vinculados'],['settings','Configurações']].map(([id,label])=><button role="tab" type="button" key={id} aria-selected={detailTab===id} className={detailTab===id?'':'secondary'} onClick={()=>setDetailTab(id)}>{label}</button>)}</div>
     {draft.id&&templates.filter(t=>t.name===draft.name).length>1&&
       <p className="catalog-hint">Esta configuração é uma variação do grupo “{draft.name}”. As alterações serão aplicadas somente aos produtos marcados abaixo, sem modificar outras variações.</p>}
-    <label>Nome do grupo<input value={draft.name} maxLength={100} onChange={e=>edit('name',e.target.value)} placeholder="Ex.: Frutas, Cremes, Coberturas"/></label>
+    <div hidden={detailTab!=='settings'} className="complement-settings"><label>Nome do grupo<input value={draft.name} maxLength={100} onChange={e=>edit('name',e.target.value)} placeholder="Ex.: Frutas, Cremes, Coberturas"/></label>
     <div className="catalog-inline-fields">
      <label>Mínimo de escolhas<input type="number" min="0" max="100" value={draft.min} onChange={e=>edit('min',Number(e.target.value))}/></label>
      <label>Máximo de escolhas<input type="number" min="1" max="100" value={draft.max} onChange={e=>edit('max',Number(e.target.value))}/></label>
-    </div>
-    <div className="catalog-line-title"><h4>Itens do grupo</h4>
-     <button type="button" className="secondary" disabled={busy||draft.options.length>=100} onClick={()=>edit('options',[...draft.options,optionNew()])}>+ Adicionar complemento</button></div>
-    {draft.options.map((o,index)=><div className="catalog-option-edit" key={o.id}>
+    </div></div>
+    <div hidden={detailTab!=='items'} className="complement-item-panel"><div className="catalog-line-title"><h4>Itens do grupo</h4>
+     <button type="button" className="secondary" disabled={busy||draft.options.length>=100} onClick={addNew}>+ Novo complemento</button></div>
+    <div className="complement-tools"><label className="complement-search"><Search size={17}/><input aria-label="Buscar complemento no grupo" placeholder="Buscar complemento..." value={optionSearch} onChange={e=>setOptionSearch(e.target.value)}/></label><select aria-label="Escolher complemento da biblioteca" value={pickExisting} onChange={e=>setPickExisting(e.target.value)}><option value="">Selecionar da biblioteca</option>{namedOptions.filter(o=>!draft.options.some(x=>normalized(x.name)===normalized(o.name))).map(o=><option key={normalized(o.name)} value={normalized(o.name)}>{o.name}</option>)}</select><button type="button" className="secondary" disabled={busy||!pickExisting||draft.options.length>=100} onClick={addExisting}>Adicionar</button></div>
+    {draft.options.map((o,index)=>normalized(o.name).includes(normalized(optionSearch))||expandedOption===o.id?<div className="complement-option-wrap" key={o.id}><div className="complement-option-row"><div className="complement-thumb">{fileUrls[o.id]||o.image_url?<img src={fileUrls[o.id]||o.image_url} alt=""/>:<Image size={20}/>}</div><b>{o.name||'Novo complemento'}</b><span>{currency(o.price)}</span><label className="complement-switch"><input type="checkbox" aria-label={'Disponibilidade de '+o.name+' neste grupo'} checked={o.available!==false} onChange={e=>editOption(o.id,'available',e.target.checked)}/><span>{o.available!==false?'Disponível':'Indisponível'}</span></label><div className="catalog-actions"><button className="secondary" type="button" aria-label={'Editar '+o.name} onClick={()=>setExpandedOption(expandedOption===o.id?null:o.id)}><Pencil size={15}/></button><button className="secondary catalog-sort-arrow" type="button" disabled={busy||index===0} aria-label={'Subir complemento '+o.name} onClick={()=>moveDraftOption(index,-1)}>↑</button><button className="secondary catalog-sort-arrow" type="button" disabled={busy||index===draft.options.length-1} aria-label={'Descer complemento '+o.name} onClick={()=>moveDraftOption(index,1)}>↓</button></div></div><div hidden={expandedOption!==o.id} className="catalog-option-edit">
      <div className="catalog-sort-tools catalog-draft-sort">
       <button type="button" className="secondary catalog-sort-arrow" disabled={busy||index===0}
        aria-label={'Subir complemento '+(o.name||'sem nome')} onClick={()=>moveDraftOption(index,-1)}>↑</button>
@@ -196,15 +203,15 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
      <label>Foto<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>fileOption(o.id,e.target.files?.[0])}/></label>
      <label className="catalog-checkbox"><input type="checkbox" checked={o.available!==false} onChange={e=>editOption(o.id,'available',e.target.checked)}/>Disponível</label>
      <button type="button" className="secondary" onClick={()=>edit('options',draft.options.filter(x=>x.id!==o.id))}>Retirar do grupo</button>
-    </div>)}
+    </div></div>:null)}
     {!draft.options.length&&<p className="catalog-hint">Você pode criar o grupo agora e adicionar os complementos depois.</p>}
-    <h4>Produtos que usam este grupo</h4>
+    </div><div hidden={detailTab!=='products'} className="complement-settings"><h4>Produtos que usam este grupo</h4>
     <p className="catalog-hint">Marque os produtos desejados. Alterações neste grupo serão sincronizadas a todos os produtos vinculados, preservando os históricos dos pedidos.</p>
-    <div className="catalog-product-selector">{products.map(p=><label key={p.id}>
+    <label className="complement-search"><Search size={17}/><input value={productSearch} onChange={e=>setProductSearch(e.target.value)} placeholder="Buscar produto..." aria-label="Buscar produto para vincular"/></label><div className="catalog-product-selector complement-products">{products.filter(p=>normalized(p.name).includes(normalized(productSearch))).map(p=><label key={p.id}>
      <input type="checkbox" checked={draft.assigned.includes(p.id)} onChange={()=>toggleProduct(p.id)}/>
      {p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.name}</span>
-    </label>)}</div>
-    <div className="catalog-actions"><button type="button" onClick={save} disabled={busy}>{busy?'Salvando…':'Salvar grupo e vínculos'}</button>
+    </label>)}</div></div>
+    <div className="catalog-actions complement-save-bar"><button type="button" onClick={save} disabled={busy}>{busy?'Salvando…':'Salvar grupo e vínculos'}</button>
      <button type="button" className="secondary" onClick={()=>openTemplate(null)} disabled={busy}>Limpar edição</button></div>
    </div>
   </div>
