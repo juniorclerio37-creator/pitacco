@@ -52,9 +52,16 @@ function OwnerCopyStore({client,store,stores,onCopied}){
   event.preventDefault();if(busy||result)return;
   const destination=stores.find(s=>s.id===target);
   if(mode==='catalog'&&!destination)return;
-  if(!window.confirm(mode==='duplicate'?'Criar um novo estabelecimento com o catálogo de '+store.name+'?':'Copiar o cardápio de '+store.name+' para '+destination.name+'? Os produtos existentes serão preservados.'))return;
+  if(!window.confirm(mode==='duplicate'?'Criar um novo estabelecimento com o catálogo de '+store.name+'?':'Copiar o cardápio de '+store.name+' para '+destination.name+'? O destino deve ter catálogo vazio. A identidade e os pagamentos serão preservados.'))return;
   setBusy(true);setError('');
   try{
+   const manifest=await client.rpc('pitacco_owner_copy_media_manifest',{p_source:store.id,p_target:mode==='catalog'?target:null,p_request:request});
+   if(manifest.error)throw manifest.error;
+   for(const file of manifest.data||[]){
+    if(file.exists)continue;
+    const copied=await client.storage.from('pitacco-media').copy(file.source,file.target);
+    if(copied.error)throw copied.error;
+   }
    const {data,error}=await client.rpc('pitacco_owner_copy_catalog',{p_source:store.id,p_target:mode==='catalog'?target:null,p_new_name:mode==='duplicate'?name.trim():null,p_request:request});
    if(error)throw error;
    if(!data?.store_id)throw Error('O servidor não confirmou a cópia.');
@@ -69,12 +76,12 @@ function OwnerCopyStore({client,store,stores,onCopied}){
    <label><input type="radio" name="copy-mode" checked={mode==='duplicate'} disabled={busy} onChange={()=>{setMode('duplicate');reset();}}/> Duplicar loja</label>
    <label><input type="radio" name="copy-mode" checked={mode==='catalog'} disabled={busy} onChange={()=>{setMode('catalog');reset();}}/> Clonar cardápio para outra loja</label>
    {mode==='duplicate'?<label>Nome da nova loja<input required minLength={3} maxLength={100} value={name} disabled={busy} onChange={e=>{setName(e.target.value);reset();}}/></label>:<label>Loja de destino<select required value={target} disabled={busy} onChange={e=>{setTarget(e.target.value);reset();}}><option value="">Selecione a loja de destino</option>{stores.filter(s=>s.id!==store.id).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>}
-   <p>Produtos, preços, fotos por referência, categorias, complementos e pizzas publicadas serão copiados como itens ocultos para revisão. Custos e estoque não são copiados. Nenhum produto existente será excluído; nomes repetidos na mesma categoria impedem a operação.</p>
+   <p>Copia produtos, preços, categorias, complementos, pizzas, combos, aparência e banners, mantendo a disponibilidade original. O destino precisa ter catálogo vazio. Identidade, pagamentos, contatos e redes sociais do destino são preservados. Revise imagens e textos promocionais que possam mencionar a loja original. Custos e estoque não são copiados.</p>
    {mode==='duplicate'&&<p>A nova loja terá endereço, titularidade, usuários, assinatura e integrações próprios, a configurar posteriormente. O cardápio ficará desativado.</p>}
    <button disabled={busy||!!result||(mode==='catalog'&&!target)}>{busy?'Copiando…':mode==='duplicate'?'Duplicar estabelecimento':'Clonar cardápio'}</button>
   </form>
   {error&&<p role="alert">{error}</p>}
-  {result&&<div role="status"><strong>Cópia concluída.</strong><p>{result.products} produtos, {result.groups} grupos, {result.options} complementos e {result.pizzas} pizzas.</p><button type="button" onClick={()=>onCopied(result.store_id)}>Abrir loja de destino</button></div>}
+  {result&&<div role="status"><strong>Cópia concluída.</strong><p>{result.products} produtos, {result.groups} grupos, {result.options} complementos e {result.pizzas} pizzas e {result.combos||0} combos.</p><button type="button" onClick={()=>onCopied(result.store_id)}>Abrir loja de destino</button></div>}
  </section>;
 }
 
