@@ -231,10 +231,16 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
    if(input.action==='dispatch'){
     // Only the authenticated courier who already collected a READY order
     // can claim this operation. iFood partner-delivery never passes the RPC.
-    const claimed=await fetcher(new URL('/rest/v1/rpc/pitacco_driver_ifood_dispatch_claim',supabaseUrl),{
+    const requestId=crypto.randomUUID();
+    const claimRequest=()=>fetcher(new URL('/rest/v1/rpc/pitacco_driver_ifood_dispatch_claim_v2',supabaseUrl),{
      method:'POST',headers:{apikey:publicKey,authorization,'content-type':'application/json'},
-     body:JSON.stringify({p_delivery:input.delivery}),signal:AbortSignal.timeout(12000),redirect:'error'
+     body:JSON.stringify({p_delivery:input.delivery,p_request:requestId}),signal:AbortSignal.timeout(10000),redirect:'error'
     });
+    let claimed;
+    try{claimed=await claimRequest()}catch(error){
+     logger.warn('iFood dispatch claim response lost; recovering same lease',safeProviderError(error));
+     claimed=await claimRequest();
+    }
     if(!claimed.ok)return reply(claimed.status===401?401:claimed.status===403?403:409,{
      error:'Apenas o motoboy responsável pode despachar um pedido pronto de entrega própria após confirmar a coleta.'
     });
@@ -259,6 +265,10 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
       return reply(503,{provider_state:'rejected',
        error:'Integração iFood indisponível. A coleta foi registrada somente no Pitacco.'});
      }
+     // Atomically establish provider-contact intent before any external mutation.
+     // If the lease was replaced, or official completion arrived, do not send.
+     if(await rpc('pitacco_ifood_dispatch_begin',{p_delivery:input.delivery,p_lease:claim.lease},12000)!==true)
+      return reply(409,{provider_state:'pending',error:'O despacho mudou de estado. Atualize os pedidos.'});
      const url=origin+'/order/v1.0/orders/'+claim.external_order_id;
      const headers={authorization:'Bearer '+access,'content-type':'application/json'};
      if(claim.ready_on_ifood!==true){
@@ -267,7 +277,9 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
        method:'POST',headers,signal:AbortSignal.timeout(9000),redirect:'error'
       });
       if(ready.status!==202){
-       const state=[400,403,404,409,412,422].includes(ready.status)?'rejected':'uncertain';
+       if([401,403].includes(ready.status))invalidateCentral(access);
+       logger.warn('iFood ready provider HTTP',ready.status);
+       const state=[400,401,403,404,409,412,422].includes(ready.status)?'rejected':'uncertain';
        await finish(state,ready.status);
        return reply(state==='uncertain'?503:409,{provider_state:state,
         error:'O iFood ainda não aceitou o status Pronto. Despacho não enviado.'});
@@ -281,7 +293,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
      logger.warn('iFood dispatch provider HTTP',dispatched.status);
      if([401,403].includes(dispatched.status))invalidateCentral(access);
      const state=dispatched.status===202?'submitted':
-       [400,403,404,409,412,422].includes(dispatched.status)?'rejected':'uncertain';
+       [400,401,403,404,409,412,422].includes(dispatched.status)?'rejected':'uncertain';
      if(!await finish(state,dispatched.status))return reply(503,{provider_state:'uncertain',
       error:'O iFood respondeu, mas não foi possível registrar a resposta. Consulte a plataforma.'});
      if(state!=='submitted')return reply(state==='uncertain'?503:409,{provider_state:state,
