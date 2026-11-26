@@ -1,6 +1,6 @@
 import React,{useEffect,useRef} from 'react';
 import {Clock3,CreditCard,MapPin,Navigation,Phone,ShoppingBag,X} from 'lucide-react';
-import {orderAddress} from './orderDisplay.mjs';
+import {orderAddress,historyCustomer} from './orderDisplay.mjs';
 import {scheduleInfo} from './scheduleInfo.mjs';
 
 const money=value=>Number(value??0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -29,7 +29,8 @@ export default function OrderDetails({order,delivery,number,stage,stageLabel,pla
  },[decisionOpen]);
  const receipt=order.receipt??{};
  const address=orderAddress(delivery?.address)||orderAddress(receipt.address||receipt.delivery_address);
- const phone=text(receipt.phone)||text(receipt.customer_phone)||(historyMode?text(delivery?.customer_phone):'');
+ const historicalCustomer=historyMode?historyCustomer(order,delivery):null;
+ const phone=historicalCustomer?historicalCustomer.phone:text(receipt.phone)||text(receipt.customer_phone);
  const dial=phone.replace(/[^+0-9]/g,'');
  const time=Date.parse(order.created_at);
  const schedule=scheduleInfo(order);
@@ -69,8 +70,9 @@ export default function OrderDetails({order,delivery,number,stage,stageLabel,pla
    </header>
    <div className="order-detail-body">
     <section className="order-detail-customer" aria-label="Cliente">
-     <div><p className="order-detail-label">Cliente</p><strong>{receipt.customer||(historyMode?delivery?.customer_name:null)||'Não informado'}</strong>
+     <div><p className="order-detail-label">Cliente</p><strong>{historicalCustomer?historicalCustomer.name:receipt.customer||'Não informado'}</strong>
       {localizer&&<p className="order-detail-meta">Localizador: <b>{localizer}</b></p>}
+      {historicalCustomer&&!phone&&<p className="order-detail-meta">{historicalCustomer.phoneLabel}</p>}
      </div>
      {phone&&(dial.replace(/\D/g,'').length>=8?
       <a className="order-detail-link" href={'tel:'+dial}><Phone size={15} aria-hidden="true"/>{phone}</a>:

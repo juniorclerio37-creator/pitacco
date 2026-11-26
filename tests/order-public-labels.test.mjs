@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {publicOrderNumber,validLocalizer} from '../revisions/0.12/web/orderDisplay.mjs';
+import {publicOrderNumber,validLocalizer,historyCustomer} from '../revisions/0.12/web/orderDisplay.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
 test('D-/B- own orders show their assigned public number',()=>{
@@ -70,4 +70,12 @@ test('iFood importer saves phone locator privately without copying contact field
  assert.match(sql,/p_order-'merchant_id'-'created_at'-'contact_phone'-'contact_localizer'-'contact_expires_at'/);
  assert.match(sql,/d\.logistics_provider='loja'/);
  assert.match(sql,/d\.source='ifood'/);
+});
+
+test('order history retains own customer contacts and labels unavailable marketplace data',()=>{
+ assert.deepEqual(historyCustomer({source:'proprio',receipt:{customer:'Cliente Exemplo',phone:'21900000000'}}),{name:'Cliente Exemplo',phone:'21900000000',phoneLabel:'21900000000'});
+ assert.equal(historyCustomer({source:'ifood',receipt:{customer:'********',phone:'08007053040'}}).name,'Nome não disponível');
+ assert.equal(historyCustomer({source:'ifood',receipt:{customer:'********',phone:'08007053040'}}).phone,'');
+ assert.equal(historyCustomer({source:'ifood',receipt:{customer:'Cliente Exemplo'}}).name,'Cliente Exemplo');
+ assert.equal(historyCustomer({source:'99food',receipt:{customer:'Cliente Exemplo',phone:'21****0000'}}).phone,'');
 });

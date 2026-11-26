@@ -34,3 +34,12 @@ export function orderAddress(value) {
   return [address,value.complement||value.complemento||value.line2,district,city]
     .filter(part=>typeof part==='string'&&part.trim()).join(' · ');
 }
+
+// A masked source value is not a customer name or a usable phone number.
+// Historical marketplace contacts must not be recovered from restricted contact storage.
+export function historyCustomer(order,delivery){
+ const receipt=order?.receipt??{};
+ const name=[receipt.customer,receipt.customer_name,delivery?.customer_name].map(v=>typeof v==='string'?v.trim():'').find(v=>v&&!/^[*•\s]+$/.test(v));
+ const phone=order?.source==='ifood'?'':[receipt.phone,receipt.customer_phone,delivery?.customer_phone].map(v=>typeof v==='string'?v.trim():'').find(v=>v&&!/[*•]/.test(v)&&v.replace(/\D/g,'').length>=8)||'';
+ return {name:name||'Nome não disponível',phone,phoneLabel:phone||(order?.source==='ifood'?'Contato indisponível no histórico do iFood':'Telefone não informado')};
+}
