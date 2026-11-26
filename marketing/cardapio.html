@@ -1206,6 +1206,35 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
 #addressBlock #deliveryMap{border-radius:10px}
 #addressBlock #confirmDeliveryMap{width:100%;margin:0}
 #addressBlock #routeQuoteStatus{font-weight:650;padding:13px;border-radius:13px}
+#addressBlock #deliveryServices{border:0;padding:0;margin:16px 0 0;min-width:0;display:grid;gap:9px}
+#addressBlock #deliveryServices legend{font-size:1rem;font-weight:750;margin:0 0 9px;padding:0}
+#addressBlock #deliveryServices .delivery-service-card{display:flex;align-items:center;gap:12px;margin:0;padding:12px 14px;border:1px solid color-mix(in srgb,var(--brand) 16%,#ddd);border-radius:13px;background:var(--paper,#fff);cursor:pointer}
+#addressBlock #deliveryServices .delivery-service-info{display:grid;gap:3px;min-width:0}
+#addressBlock #deliveryServices .delivery-service-info strong{font-size:.95rem;line-height:1.35}
+#addressBlock #deliveryServices .delivery-service-info small{font-size:.82rem;color:var(--muted,#665c6c);font-weight:500}
+#addressBlock #deliveryServices input[type=radio]{appearance:auto;flex:0 0 19px;width:19px;height:19px;min-width:19px;min-height:0;max-height:19px;padding:0;margin:0;border:0;border-radius:50%;box-shadow:none;background:transparent;accent-color:var(--brand);outline:none}
+#addressBlock #deliveryServices input[type=radio]:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+#addressBlock #deliveryServices input[type=radio]:focus:not(:focus-visible){outline:none}
+#addressBlock #deliveryServices .delivery-service-card:has(input:checked){background:color-mix(in srgb,var(--brand) 6%,var(--paper,#fff))}
+#addressBlock .checkout-address-actions .address-action{margin:0}
+#addressBlock .address-map-toggle{font-size:.82rem;padding:8px 0}
+#addressBlock #deliveryPointStatus:empty{display:none}
+#checkout #v2PaymentCards #v2ChangeBlock{margin-top:-7px;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--brand) 5%,var(--paper,#fff));border:1px solid color-mix(in srgb,var(--brand) 16%,#ddd)}
+#checkout #v2ChangeBlock small{display:block;margin-top:6px;font-size:.78rem;color:var(--muted,#665c6c)}
+#checkout #loyaltyBox{padding:0;border:1px solid color-mix(in srgb,var(--brand) 18%,#ddd);border-radius:14px;background:var(--paper,#fff);overflow:hidden;margin:14px 0}
+#checkout #loyaltyCardToggle{display:grid;grid-template-columns:40px minmax(0,1fr) 22px;align-items:center;gap:11px;width:100%;margin:0;padding:13px 14px;text-align:left;border:0;border-radius:13px;background:transparent;color:var(--ink,#29232f);cursor:pointer}
+#checkout #loyaltyCardToggle:focus-visible{outline:2px solid var(--brand);outline-offset:-3px}
+#checkout .loyalty-card-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--brand) 11%,#fff);color:var(--brand);font-size:1.5rem}
+#checkout .loyalty-card-copy{display:grid;gap:4px;min-width:0}
+#checkout .loyalty-card-copy strong{font-size:1rem;line-height:1.3}
+#checkout .loyalty-card-copy small{font-size:.8rem;line-height:1.4;color:var(--muted,#665c6c)}
+#checkout .loyalty-card-chevron{font-size:1.25rem;color:var(--brand);text-align:center;transition:transform .18s}
+#checkout #loyaltyCardToggle[aria-expanded=true] .loyalty-card-chevron{transform:rotate(180deg)}
+#checkout #loyaltyCardContent{padding:0 14px 14px;border-top:1px solid color-mix(in srgb,var(--brand) 12%,#eee)}
+#checkout #loyaltyCardContent #loyaltyTerms{margin:12px 0}
+#checkout #loyaltyCardContent #loyaltyStatus:empty{display:none}
+#checkout #loyaltyBox[data-applied=true] #loyaltyCardSummary{color:#187642;font-weight:700}
+@media(prefers-reduced-motion:reduce){#checkout .loyalty-card-chevron{transition:none}}
 
 </style><style>.schedule-store-action{flex-basis:100%;padding:12px;border:0;border-radius:9px;background:var(--brand,#df5a20);color:#fff;font-weight:800}.schedule-choices{display:grid;gap:9px;margin-top:9px;padding:12px;background:var(--paper,#fff);border:1px solid #dedede;border-radius:10px}.schedule-times{display:flex;gap:7px;flex-wrap:wrap}.schedule-time{border:1px solid #d3d3d3;border-radius:8px;padding:9px 14px;background:var(--paper,#fff);color:var(--ink,#24211e)}.schedule-time[aria-pressed="true"]{background:var(--brand,#df5a20);color:white;border-color:var(--brand,#df5a20)}</style></head><body>
 <section id="menuStartup" class="menu-startup" role="status" aria-label="Carregando o cardápio">
@@ -1356,19 +1385,20 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
 </section>
 <section class="v2-checkout-panel v2-checkout-panel--delivery"><h3>📍 Entrega ou retirada</h3><p>Escolha como deseja receber seu pedido.</p><label for="fulfillment">Como deseja receber?</label><select id="fulfillment"></select><div id="scheduleBlock" hidden><label for="schedule">Quando deseja receber?</label><select id="schedule"><option value="">Assim que possível</option></select><div id="scheduleChoices" class="schedule-choices" hidden></div><small>Horários de Brasília. Para entrega, o horário é uma previsão.</small></div><div id="addressBlock">
  <div id="v2AddressBook" class="v2-address-book" hidden>
-  <h3>Onde vamos entregar?</h3><p id="savedAddressHint">Escolha um endereço salvo ou cadastre um novo.</p><div class="checkout-address-actions"><button id="locateDelivery" type="button" class="address-action"><span aria-hidden="true">◎</span><span><strong>Usar minha localização</strong><small>Use quando estiver no endereço de entrega</small></span><span aria-hidden="true">›</span></button></div><h4 id="savedAddressesTitle" hidden>Meus endereços</h4>
+  <h3>Onde vamos entregar?</h3><p id="savedAddressHint">Escolha um endereço salvo ou cadastre um novo.</p><h4 id="savedAddressesTitle" hidden>Meus endereços</h4>
   <div id="v2AddressList" class="v2-address-list"></div>
   <button type="button" id="v2AddAddress" class="v2-add-address">＋ Adicionar novo endereço</button>
  </div>
  <div id="v2AddressEditor"><div class="address-editor-heading"><h3>Novo endereço</h3><p>Informe o endereço. A taxa aparece automaticamente.</p></div><div class="address-cep"><label for="addressPostal">Buscar pelo CEP (opcional)</label><div><input id="addressPostal" autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000"><button id="lookupAddressCep" type="button" class="secondary">Buscar</button></div><small id="addressCepStatus" role="status"></small></div><div class="v2-address-title"><label for="v2AddressLabel">Salvar endereço como</label>
   <select id="v2AddressLabel"><option value="Casa">⌂ Casa</option><option value="Trabalho">▤ Trabalho</option><option value="Outro">♡ Outro</option></select></div>
  <fieldset id="addressFields" class="address-fields"><legend class="address-sr-only">Dados do endereço</legend>
-<div class="address-grid"><label>Rua ou avenida<input id="addressStreet" autocomplete="address-line1" maxlength="100" placeholder="Ex.: Rua Guaraná" required></label><label>Número<input id="addressNumber" autocomplete="off" maxlength="20" placeholder="Ex.: 5 ou s/n" required></label><label>Bairro<input id="addressNeighborhood" autocomplete="address-level3" maxlength="60" required></label><label>Cidade<input id="addressCity" autocomplete="address-level2" maxlength="60" required></label><label>Estado<select id="addressState" autocomplete="address-level1" required><option value="">Selecione</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></label><label class="address-wide">Complemento e referência (opcional)<input id="addressExtra" autocomplete="address-line2" maxlength="100" placeholder="Casa, bloco, apartamento ou ponto de referência"></label></div></fieldset></div><textarea id="address" rows="2" maxlength="500" readonly hidden aria-label="Endereço completo"></textarea><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço. A taxa de entrega aparecerá automaticamente.</p><fieldset id="deliveryServices" hidden><legend>Tipo de entrega</legend><label><input type="radio" name="deliveryService" value="standard" checked> <span id="standardServiceLabel">Entrega padrão</span></label><label id="priorityServiceOption" hidden><input type="radio" name="deliveryService" value="priority"> <span id="priorityServiceLabel">⚡ Entrega prioritária</span></label></fieldset></div><fieldset id="deliveryPoint" hidden><legend class="address-sr-only">Ajustar localização</legend><button id="showDeliveryMap" type="button" class="address-map-toggle" aria-expanded="false" aria-controls="deliveryMapPanel">⌖ Ajustar localização no mapa</button><p id="deliveryPointStatus" role="status"></p><div id="deliveryMapPanel" hidden><h4>Confirme o local da entrega</h4><p>Toque na entrada do imóvel ou arraste o marcador até o ponto correto.</p><div id="deliveryMap" aria-label="Mapa para confirmar o endereço" hidden style="height:260px;margin:12px 0;z-index:0"></div><button id="confirmDeliveryMap" type="button" class="primary" disabled>Confirmar localização</button></div></fieldset></div></section><section class="v2-checkout-panel v2-checkout-panel--payment">
+<div class="address-grid"><label>Rua ou avenida<input id="addressStreet" autocomplete="address-line1" maxlength="100" placeholder="Ex.: Rua Guaraná" required></label><label>Número<input id="addressNumber" autocomplete="off" maxlength="20" placeholder="Ex.: 5 ou s/n" required></label><label>Bairro<input id="addressNeighborhood" autocomplete="address-level3" maxlength="60" required></label><label>Cidade<input id="addressCity" autocomplete="address-level2" maxlength="60" required></label><label>Estado<select id="addressState" autocomplete="address-level1" required><option value="">Selecione</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></label><label class="address-wide">Complemento e referência (opcional)<input id="addressExtra" autocomplete="address-line2" maxlength="100" placeholder="Casa, bloco, apartamento ou ponto de referência"></label></div></fieldset></div><textarea id="address" rows="2" maxlength="500" readonly hidden aria-label="Endereço completo"></textarea><fieldset id="deliveryPoint" hidden><legend class="address-sr-only">Localização da entrega</legend><div class="checkout-address-actions"><button id="locateDelivery" type="button" class="address-action"><span aria-hidden="true">◎</span><span><strong>Usar minha localização</strong><small>Use quando estiver no endereço de entrega</small></span><span aria-hidden="true">›</span></button></div><button id="showDeliveryMap" hidden type="button" class="address-map-toggle" aria-expanded="false" aria-controls="deliveryMapPanel">Escolher outro ponto no mapa</button><p id="deliveryPointStatus" role="status"></p><div id="deliveryMapPanel" hidden><h4>Confirme o local da entrega</h4><p>Toque na entrada do imóvel ou arraste o marcador até o ponto correto.</p><div id="deliveryMap" aria-label="Mapa para confirmar o endereço" hidden style="height:260px;margin:12px 0;z-index:0"></div><button id="confirmDeliveryMap" type="button" class="primary" disabled>Confirmar localização</button></div></fieldset><div id="routeQuoteControls" hidden><button type="button" id="quoteDelivery" class="secondary">Calcular taxa de entrega</button><p id="routeQuoteStatus" role="status">Informe o endereço. A taxa de entrega aparecerá automaticamente.</p><fieldset id="deliveryServices" hidden><legend>Tipo de entrega</legend><label class="delivery-service-card"><input type="radio" name="deliveryService" value="standard" checked><span class="delivery-service-info"><strong>Entrega padrão</strong><small id="standardServiceLabel"></small></span></label><label class="delivery-service-card" id="priorityServiceOption" hidden><input type="radio" name="deliveryService" value="priority"><span class="delivery-service-info"><strong>⚡ Entrega prioritária</strong><small id="priorityServiceLabel"></small></span></label></fieldset></div></div></section><section class="v2-checkout-panel v2-checkout-panel--payment">
 <h3>▣ Forma de pagamento</h3><p>Escolha como deseja pagar o seu pedido.</p><label for="payment" class="v2-payment-native-label">Forma de pagamento</label><select id="payment" required></select>
  <div id="v2PaymentCards" class="v2-payment-cards" role="radiogroup" aria-label="Formas de pagamento configuradas pela loja"></div>
  <div id="v2ChangeBlock" class="v2-change-block" hidden><label for="v2CashChange">Vai pagar com quanto? (para calcular o troco)</label><input id="v2CashChange" inputmode="decimal" autocomplete="off" placeholder="Ex.: 50,00"><small>Informe quanto entregará ao motoboy. O troco considera produtos, descontos e taxa de entrega.</small></div>
 <section id="loyaltyBox" class="fiado-access" aria-label="Fideliza+ do cliente" hidden>
- <h3>Fideliza+ · Benefícios desta loja</h3><p id="loyaltyTerms"></p><div id="loyaltyCampaigns"></div>
+ <button type="button" id="loyaltyCardToggle" class="loyalty-card-toggle" aria-expanded="false" aria-controls="loyaltyCardContent"><span class="loyalty-card-icon" aria-hidden="true">✦</span><span class="loyalty-card-copy"><strong>Fideliza+</strong><small id="loyaltyCardSummary">Cupons, pontos e benefícios</small></span><span class="loyalty-card-chevron" aria-hidden="true">⌄</span></button>
+ <div id="loyaltyCardContent" hidden><p id="loyaltyTerms"></p><div id="loyaltyCampaigns"></div>
  <div id="loyaltyAnonymous"><p>Seu número de celular com DDD é seu acesso ao Fideliza+. Ao digitar o telefone do pedido, seus pontos e créditos aparecem automaticamente. Na primeira compra, o cadastro da carteira é automático.</p>
  </div>
  <div id="loyaltyMember" hidden><p id="loyaltyBalance"></p>
@@ -1376,7 +1406,7 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
  <div id="loyaltyCouponBlock"><label for="loyaltyCoupon">Cupom ou código da campanha</label><input id="loyaltyCoupon" maxlength="32" autocomplete="off" placeholder="Código da oferta"></div>
  <div id="loyaltyRewardBlock" hidden><label for="loyaltyReward">Resgatar benefício</label><select id="loyaltyReward"><option value="">Não usar saldo nesta compra</option></select></div>
  <button type="button" id="loyaltyApply" class="secondary">Aplicar benefício</button><button type="button" id="loyaltyClear" class="secondary">Remover desconto</button>
- <p id="loyaltyStatus" role="status" aria-live="polite"></p>
+ <p id="loyaltyStatus" role="status" aria-live="polite"></p></div>
 </section>
 <p id="fiadoUnavailable" class="fiado-unavailable" role="status" aria-live="polite" hidden></p>
 <div id="fiadoAuth" class="fiado-payment-confirmation" hidden>
@@ -1505,7 +1535,7 @@ function renderDeliveryServices(options){
  $('priorityServiceOption').hidden=!known?.priority&&deliveryService!=='priority';
  for(const key of ['standard','priority']){
   const o=known?.[key];
-  $(key+'ServiceLabel').textContent=(key==='priority'?'⚡ Entrega prioritária':'Entrega padrão')+(o?' · '+money(o.fee)+(Number.isInteger(o.min_minutes)&&Number.isInteger(o.max_minutes)?' · '+o.min_minutes+'–'+o.max_minutes+' min':''):'');
+  $(key+'ServiceLabel').textContent=o?money(o.fee)+(Number.isInteger(o.min_minutes)&&Number.isInteger(o.max_minutes)?' · '+o.min_minutes+'–'+o.max_minutes+' min':''):'';
   root.querySelector('[value='+key+']').checked=deliveryService===key;
  }
 }
@@ -1642,7 +1672,13 @@ function completeDeliveryAddress(){
  for(const id of addressInputs){if(!$(id).checkValidity()){$(id).reportValidity();$(id).focus();return false;}}
  return true;
 }
-function quoteNotice(text,state='info'){$('routeQuoteStatus').textContent=text;$('routeQuoteStatus').dataset.state=state;$('routeQuoteStatus').setAttribute('role',state==='error'?'alert':'status');v2UpdateSelectedAddressQuote();}
+function quoteNotice(text,state='info'){$('routeQuoteStatus').textContent=text;$('routeQuoteStatus').dataset.state=state;$('routeQuoteStatus').setAttribute('role',state==='error'?'alert':'status');updateDeliveryMapAction();v2UpdateSelectedAddressQuote();}
+function updateDeliveryMapAction(){
+ const open=!$('deliveryMapPanel').hidden;
+ const state=$('routeQuoteStatus').dataset.state;
+ $('showDeliveryMap').hidden=!open&&(!v2QuoteAddressReady()||(state==='success'&&!deliveryPoint));
+ if(!open)$('showDeliveryMap').textContent=deliveryPoint?'Alterar ponto no mapa':'Escolher outro ponto no mapa';
+}
 async function quoteFailureMessage(error){
  let detail='';
  try{const body=await error?.context?.clone().json();if(typeof body?.error==='string')detail=body.error;else if(typeof body?.message==='string')detail=body.message;}catch{}
@@ -1653,30 +1689,30 @@ async function quoteFailureMessage(error){
 }
 
 function selectDeliveryPoint(point){
- deliveryPoint=point;suggestedDeliveryPoint=null;
+ deliveryPoint=point;suggestedDeliveryPoint=null;suggestedStreetCenter=null;
  deliveryQuote=null;renderDeliveryServices(null);
  deliveryMap?.setPoint(point);
- $('deliveryPointStatus').textContent='Localização confirmada. A taxa será atualizada automaticamente e o endereço poderá ser reutilizado após a entrega.';
+ $('deliveryPointStatus').textContent='✓ Localização confirmada.';
  quoteGeneration++;v2ScheduleDeliveryQuote(true);
  if(menu)renderCart();
 }
 $('address').addEventListener('input',event=>{
  deliveryQuote=null;
  const keepPoint=Boolean(event.detail?.keepPoint);
- if(!keepPoint){$('addressCepStatus').textContent='';suggestedDeliveryPoint=null;pendingMapPoint=null;$('confirmDeliveryMap').disabled=true;deliveryMap?.clearPoint();deliveryService='standard';renderDeliveryServices(null);}
+ if(!keepPoint){$('addressCepStatus').textContent='';suggestedDeliveryPoint=null;suggestedStreetCenter=null;pendingMapPoint=null;$('confirmDeliveryMap').disabled=true;deliveryMap?.clearPoint();deliveryService='standard';renderDeliveryServices(null);}
  if(deliveryPoint&&!keepPoint){
   deliveryPoint=null;deliveryMap?.clearPoint();
-  $('deliveryPointStatus').textContent='Confirme novamente a localização do endereço.';
+  $('deliveryPointStatus').textContent='';
  }
  quoteGeneration++;
  v2ScheduleDeliveryQuote();
  if(menu)renderCart();
 });
-let pendingMapPoint=null,suggestedDeliveryPoint=null;
+let pendingMapPoint=null,suggestedDeliveryPoint=null,suggestedStreetCenter=null;
 function validDeliveryMapPoint(point){return Array.isArray(point)&&point.length===2&&point.every(v=>typeof v==='number'&&Number.isFinite(v))&&Math.abs(point[0])<=90&&Math.abs(point[1])<=180;}
 function closeDeliveryMap(){
  $('deliveryMapPanel').hidden=true;$('showDeliveryMap').setAttribute('aria-expanded','false');
- $('showDeliveryMap').textContent='⌖ Ajustar localização no mapa';pendingMapPoint=null;
+ pendingMapPoint=null;updateDeliveryMapAction();
 }
 $('showDeliveryMap').onclick=async()=>{
  const button=$('showDeliveryMap'),container=$('deliveryMap'),panel=$('deliveryMapPanel');
@@ -1695,7 +1731,7 @@ $('showDeliveryMap').onclick=async()=>{
    });
   }
   if(pendingMapPoint){deliveryMap?.showPoint(pendingMapPoint);deliveryMap?.focus?.(pendingMapPoint,17);}
-  else deliveryMap?.clearPoint();
+  else {deliveryMap?.clearPoint();if(suggestedStreetCenter)deliveryMap?.focus?.(suggestedStreetCenter,16);}
   deliveryMap?.resize();
  }catch(error){deliveryMap?.remove();deliveryMap=null;closeDeliveryMap();$('deliveryPointStatus').textContent='Não foi possível abrir o mapa. Tente novamente ou use sua localização atual.';}
  finally{button.disabled=false;}
@@ -1801,6 +1837,11 @@ async function requestDeliveryQuote(auto=false){
       pendingMapPoint=[...suggestedDeliveryPoint];deliveryMap.showPoint(pendingMapPoint);deliveryMap.focus?.(pendingMapPoint,17);$('confirmDeliveryMap').disabled=false;
      }
      $('deliveryPointStatus').textContent='Encontramos uma localização aproximada. Confira o marcador no mapa e confirme a entrada do imóvel.';
+    }
+    if(token===quoteGeneration&&$('address').value.trim()===address&&details?.requires_confirmation===true&&validDeliveryMapPoint(details.suggested_center)&&!deliveryPoint&&!suggestedDeliveryPoint){
+     suggestedStreetCenter=[...details.suggested_center];
+     if(!$('deliveryMapPanel').hidden&&deliveryMap&&!pendingMapPoint){deliveryMap.clearPoint();deliveryMap.focus?.(suggestedStreetCenter,16);$('confirmDeliveryMap').disabled=true;}
+     $('deliveryPointStatus').textContent='Já conhecemos uma referência desta rua. Toque no local exato do seu imóvel no mapa.';
     }
     throw Error(await quoteFailureMessage(error));
    }
@@ -2199,7 +2240,7 @@ function v2BenefitPurchase(type,value){
  invalidateLoyalty();
  if(!cart.length){v2Go('cardapio');return;}
  $('cartDialog').showModal();cartStep(true);
- $('loyaltyBox').scrollIntoView({block:'start'});
+ setLoyaltyCardExpanded(true);$('loyaltyBox').scrollIntoView({block:'start'});
  loyaltyNotice('Toque em Aplicar benefício para conferir o desconto.');
 }
 function v2RenderWallet(){
@@ -2589,6 +2630,7 @@ function renderCart(){
   else $('total').append(totalLine('Taxa de entrega',fee));
  }
  const benefit=loyaltyDiscount();
+ updateLoyaltyCard(benefit);
  if(benefit>0)$('total').append(totalLine('Desconto Fideliza+',-benefit));
  const priceAdjustment=paymentPriceAdjustment($('payment').value,subtotal,benefit);
  if(priceAdjustment)$('total').append(totalLine(priceAdjustment>0?'Acréscimo no pagamento':'Desconto no pagamento',priceAdjustment));
@@ -2855,11 +2897,29 @@ function availableLoyaltyRewards(wallet){
 }
 const loyaltyFingerprint=()=>JSON.stringify([loyaltyItems(),loyaltyPhone,$('loyaltyCoupon').value.trim().toUpperCase(),$('loyaltyReward').value]);
 const loyaltyDiscount=()=>loyaltyPreview&&loyaltyStamp===loyaltyFingerprint()?Number(loyaltyPreview.discount_cents)/100:0;
-function loyaltyNotice(text){$('loyaltyStatus').textContent=text||'';}
+function setLoyaltyCardExpanded(expanded){
+ $('loyaltyCardContent').hidden=!expanded;
+ $('loyaltyCardToggle').setAttribute('aria-expanded',String(expanded));
+}
+$('loyaltyCardToggle').onclick=()=>setLoyaltyCardExpanded($('loyaltyCardContent').hidden);
+function updateLoyaltyCard(discount=loyaltyDiscount()){
+ const rule=loyaltyWallet?.rules||loyaltyProgram?.rules||{};
+ const fiado=$('payment').value==='fiado',summary=$('loyaltyCardSummary'),parts=[];
+ if(loyaltyWallet){
+  if(rule.points_enabled)parts.push(Number(loyaltyWallet.points||0)+' pontos');
+  if(rule.orders_enabled)parts.push(Number(loyaltyWallet.orders||0)+' pedidos');
+  if(rule.cashback_enabled||rule.referrals_enabled)parts.push(money(Number(loyaltyWallet.cashback_cents||0)/100)+' em créditos');
+ }
+ const selected=Boolean($('loyaltyCoupon').value.trim()||$('loyaltyReward').value);
+ $('loyaltyBox').dataset.applied=String(!fiado&&discount>0);
+ summary.textContent=fiado?(selected?'Remova o benefício para pagar no Fiado.':'Benefícios não disponíveis no Fiado.'):discount>0?'✓ '+money(discount)+' de desconto aplicado':parts.length?parts.join(' · '):'Consultar cupons, pontos e benefícios';
+ $('loyaltyApply').disabled=fiado||loyaltyBusy;
+}
+function loyaltyNotice(text){$('loyaltyStatus').textContent=text||'';updateLoyaltyCard();}
 function invalidateLoyalty(){loyaltyPreview=null;loyaltyStamp='';if(menu)renderCart();}
 function renderLoyalty(){
  const rules=loyaltyWallet?.rules||loyaltyProgram?.rules||{};
- $('loyaltyAnonymous').hidden=false;$('loyaltyMember').hidden=!loyaltyWallet;
+ $('loyaltyAnonymous').hidden=Boolean(loyaltyWallet);$('loyaltyMember').hidden=!loyaltyWallet;
  $('loyaltyCouponBlock').hidden=!(rules.coupons_enabled||rules.campaigns_enabled);
  const select=$('loyaltyReward'),chosen=select.value;
  select.replaceChildren(new Option('Não usar saldo nesta compra',''));
@@ -2886,6 +2946,7 @@ function renderLoyalty(){
   const use=button('Usar '+campaign.code,'secondary');use.onclick=()=>{$('loyaltyReward').value='';$('loyaltyCoupon').disabled=false;$('loyaltyCoupon').value=campaign.code;invalidateLoyalty();loyaltyNotice('Toque em Aplicar benefício para conferir o desconto.');};
   row.append(use);offers.append(row);
  }
+ updateLoyaltyCard();
 }
 
 async function refreshLoyaltyWallet(){
@@ -2933,7 +2994,7 @@ $('loyaltyOpen').onclick=()=>{
  $('cartDialog').showModal();
  if(completed){$('checkout').hidden=false;$('checkout').classList.add('loyalty-only');$('cartTitle').textContent='Meu Fideliza+';}
  else cartStep(true);
- $('loyaltyBox').scrollIntoView({block:'start'});void refreshLoyaltyWallet();
+ setLoyaltyCardExpanded(true);$('loyaltyBox').scrollIntoView({block:'start'});void refreshLoyaltyWallet();
 };
 $('loyaltyCopyShare').onclick=async()=>{
  try{await navigator.clipboard.writeText($('loyaltyShare').value);loyaltyNotice('Indicação copiada.');}
@@ -2945,13 +3006,13 @@ $('loyaltyReward').onchange=()=>{
 $('loyaltyCoupon').oninput=()=>{invalidateLoyalty();};
 $('loyaltyClear').onclick=()=>{$('loyaltyCoupon').value='';$('loyaltyReward').value='';$('loyaltyCoupon').disabled=false;invalidateLoyalty();loyaltyNotice('Sem desconto selecionado. Você continua acumulando conforme as regras da loja.');};
 $('loyaltyApply').onclick=async()=>{
- if(loyaltyBusy||pendingRequest)return;loyaltyBusy=true;$('loyaltyApply').disabled=true;const fingerprint=loyaltyFingerprint();
+ if(loyaltyBusy||pendingRequest)return;if($('payment').value==='fiado'){loyaltyNotice('Pedidos fiados não utilizam benefícios do Fideliza+.');return;}loyaltyBusy=true;$('loyaltyApply').disabled=true;const fingerprint=loyaltyFingerprint();
  try{
   const {data,error}=await client.rpc('pitacco_loyalty_preview',{p_slug:slug,p_items:loyaltyItems(),p_key:loyaltyPhone,p_coupon:$('loyaltyCoupon').value.trim().toUpperCase(),p_reward:$('loyaltyReward').value});
   if(error)throw error;if(data?.error)throw Error(data.error);if(!Number.isInteger(data?.discount_cents))throw Error('Desconto não confirmado.');
   if(fingerprint!==loyaltyFingerprint())throw Error('A sacola mudou. Confira novamente o benefício.');
   loyaltyPreview=data;loyaltyStamp=fingerprint;renderCart();loyaltyNotice('Desconto conferido: '+money(data.discount_cents/100)+'. A disponibilidade será confirmada ao enviar o pedido.');
- }catch(error){invalidateLoyalty();loyaltyNotice(error.message||'Não foi possível aplicar o benefício.');}finally{loyaltyBusy=false;$('loyaltyApply').disabled=false;}
+ }catch(error){invalidateLoyalty();loyaltyNotice(error.message||'Não foi possível aplicar o benefício.');}finally{loyaltyBusy=false;updateLoyaltyCard();}
 };
 // Referral attribution comes only from the store-scoped link, never a checkout input.
 
@@ -3721,7 +3782,9 @@ function v2PaymentMetadata(method,label){
 }
 function v2RenderPaymentCards(){
  if(!v2Only())return;
- const list=$('v2PaymentCards');list.replaceChildren();
+ const list=$('v2PaymentCards'),change=$('v2ChangeBlock'),cash=$('v2CashChange');
+ const restoreFocus=document.activeElement===cash,selection=restoreFocus?[cash.selectionStart,cash.selectionEnd]:null;
+ change.remove();list.replaceChildren();
  for(const option of $('payment').options){
   if(!option.value)continue;
   const [symbol,title,description]=v2PaymentMetadata(option.value,option.textContent);
@@ -3744,10 +3807,13 @@ function v2RenderPaymentCards(){
   };
   const groupLabel=option.parentElement?.label||'Outras formas de pagamento';
   if(list.lastElementChild?.dataset?.paymentGroup!==groupLabel){const heading=el('h4',groupLabel);heading.dataset.paymentGroup=groupLabel;list.append(heading)}b.dataset.paymentGroup=groupLabel;list.append(b);
+  if(option.value==='dinheiro'){b.setAttribute('aria-controls','v2ChangeBlock');change.dataset.paymentGroup=groupLabel;list.append(change);}
  }
- $('v2ChangeBlock').hidden=$('payment').value!=='dinheiro';
+ if(!change.isConnected)list.append(change);
+ change.hidden=$('payment').value!=='dinheiro';
+ if(restoreFocus&&!change.hidden){cash.focus({preventScroll:true});if(selection)cash.setSelectionRange(...selection);}
 }
-$('payment').addEventListener('change',()=>{if(v2Only())v2RenderPaymentCards();});
+$('payment').addEventListener('change',()=>{if(v2Only())v2RenderPaymentCards();updateLoyaltyCard();});
 new MutationObserver(()=>{if(v2Only())v2RenderPaymentCards();}).observe($('payment'),{childList:true,subtree:true,attributes:true,attributeFilter:['disabled']});
 function v2TotalToPay(){
  const subtotal=cart.reduce((sum,item)=>sum+Number(item.unit||0)*Number(item.quantity||0),0);

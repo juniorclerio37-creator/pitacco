@@ -46,3 +46,10 @@ export function withinPolygon(p,v){
  }
  return inside;
 }
+
+// A previous delivery on the street may center the customer's map, never
+// disclose the actual previous house pin or become a destination by itself.
+export function approximateStreetCenter(lat,lng){
+ if(!finiteBrazil(lat,lng))return null;
+ return [Math.round(lat*1000)/1000,Math.round(lng*1000)/1000];
+}

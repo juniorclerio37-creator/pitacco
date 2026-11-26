@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {directDistance,finiteBrazil,polygonValid,withinPolygon} from '../supabase/functions/delivery-quote/coverage-geometry.mjs';
+import {directDistance,finiteBrazil,polygonValid,withinPolygon,approximateStreetCenter} from '../supabase/functions/delivery-quote/coverage-geometry.mjs';
 
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const square=[
@@ -146,4 +146,15 @@ test('structured address lookup returns approximate matches only for explicit ma
  assert.match(pos,/setSuggestion\(\{point:p,label:/);
  assert.match(pos,/mapApi.current\?\.focus\(suggestion.point\)/);
  assert.doesNotMatch(pos,/setPoint\(suggestion.point\)/);
+});
+
+test('a different house uses only a rounded street center, never a confirmed destination',()=>{
+ assert.deepEqual(approximateStreetCenter(-22.712345,-43.412345),[-22.712,-43.412]);
+ assert.equal(approximateStreetCenter(48,2),null);
+ const edge=read('supabase/functions/delivery-quote/index.ts'),menu=read('marketing/cardapio.html');
+ assert.match(edge,/!location&&validSaved&&saved.exact===false\?approximateStreetCenter/);
+ assert.match(edge,/suggested_center:streetCenter/);
+ assert.match(menu,/deliveryMap\.focus\?\.\(suggestedStreetCenter,16\);\$\('confirmDeliveryMap'\)\.disabled=true/);
+ assert.doesNotMatch(menu,/pendingMapPoint=\[\.\.\.suggestedStreetCenter\]/);
+ assert.doesNotMatch(menu,/selectDeliveryPoint\(suggestedStreetCenter\)/);
 });
