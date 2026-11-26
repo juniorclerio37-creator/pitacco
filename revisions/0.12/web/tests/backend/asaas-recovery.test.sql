@@ -2,7 +2,8 @@ begin;
 do $test$
 declare s uuid;c uuid;i uuid;actor uuid:=gen_random_uuid();u uuid:=gen_random_uuid();offer jsonb;cust text:='cus_test_'||replace(gen_random_uuid()::text,'-','');pay text:='pay_test_'||replace(gen_random_uuid()::text,'-','');cov timestamptz;claim uuid;result jsonb;
 begin
- insert into auth.users(id,email) values(u,u::text||'@example.invalid');
+ insert into auth.users(id,email) values(u,u::text||'@example.invalid'),(actor,actor::text||'@example.invalid');
+ insert into pitacco_private.platform_owner(user_id,login_name_hash) values(actor,sha256(convert_to(actor::text,'UTF8'))) on conflict(singleton) do update set user_id=excluded.user_id;
  insert into public.stores(name) values('VALIDACAO RECUPERACAO TEMPORARIA') returning id into s;
  insert into public.store_members(store_id,user_id,role) values(s,u,'gestor');
  update pitacco_private.subscription_control set asaas_environment='production';
@@ -26,6 +27,9 @@ begin
  result:=public.pitacco_commercial_invoices(s,0);
  assert result->'rows'->0->>'status'='recovery_due';
  assert (result->'rows'->0->>'recovery_amount_cents')::bigint=1250;
+ perform set_config('request.jwt.claim.sub',actor::text,true);
+ assert public.pitacco_control_rows('charges',s)->'rows'->0->>'status'='recovery_due','Control Center must preserve Asaas recovery status';
+ perform set_config('request.jwt.claim.sub',u::text,true);
  claim:=public.pitacco_submit_commercial_payment(i,'TEST-RECOVERY-123','application/pdf',encode(convert_to('%PDF-TEST','UTF8'),'base64'));
  assert (select recovery_amount_cents=1250 from pitacco_private.commercial_payment_claims where id=claim),'proof bound to amount';
  begin
@@ -38,5 +42,7 @@ begin
  assert pitacco_private.asaas_current_resolution(i)='recovery_paid';
  assert public.pitacco_asaas_record_commercial_incident(i,pay,cust,'PAYMENT_PARTIALLY_REFUNDED','REFUNDED')='review_required';
  assert pitacco_private.asaas_current_resolution(i)='recovery_paid','replay does not reopen';
+ perform set_config('request.jwt.claim.sub',actor::text,true);
+ assert public.pitacco_control_rows('charges',s)->'rows'->0->>'status'='recovery_paid','Control Center must preserve recovered payment status';
 end $test$;
 rollback;
