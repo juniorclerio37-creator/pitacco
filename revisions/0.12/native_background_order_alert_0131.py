@@ -225,7 +225,7 @@ watch=r'''
    live=false;
    window.removeEventListener('focus',renew);
    void invoke('stop_background_order_watch',{storeId}).catch(()=>{});
-   void client.rpc('pitacco_windows_watch_stop',{p_store:storeId}).catch(()=>{});
+   void Promise.resolve(client.rpc('pitacco_windows_watch_stop',{p_store:storeId})).catch(()=>{});
   };
  },[client,desktop,manager,storeId]);
  useEffect(()=>{
