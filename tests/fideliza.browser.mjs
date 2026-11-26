@@ -73,10 +73,8 @@ try{
    await page.locator('#loyaltyReward option[value="cashback"]').waitFor({state:'attached'});
    assert.equal(await page.locator('#loyaltyReward option').count(),4);
    assert.equal(await page.locator('#loyaltyCardContent').isVisible(),false);
-   await page.locator('#loyaltyCardToggle').click();
-   if(width!==1440)await page.locator('#loyaltyReward').selectOption(width===375?'points':'cashback');
-   else await page.locator('#loyaltyCoupon').fill('SEMANA5');
-   await page.locator('#loyaltyApply').click();
+   if(width!==1440)await page.locator('.loyalty-redeem-button[data-reward="'+(width===375?'points':'cashback')+'"]').click();
+   else await page.locator('.loyalty-redeem-button[data-coupon="SEMANA5"]').click();
    await page.locator('#total').getByText('Desconto Fideliza+',{exact:true}).waitFor({state:'attached'});
    await page.locator('#v2CheckoutNext').click();
    await page.locator('#send').click();
@@ -148,17 +146,16 @@ try{
     assert.equal(await page.locator('#payment').inputValue(),'pix_manual');
   }else await page.locator('#customer').fill('Cliente');
   assert.equal(await page.locator('#loyaltyCardContent').isVisible(),false,'Card starts collapsed');
-  assert.match(await page.locator('#loyaltyCardSummary').innerText(),/120 pontos/);
-  await page.locator('#loyaltyCardToggle').click();
-  assert.equal(await page.locator('#loyaltyCardToggle').getAttribute('aria-expanded'),'true');
-  if(width!==1440)await page.locator('#loyaltyReward').selectOption(width===375?'points':'cashback');
-  else await page.getByRole('button',{name:'Usar SEMANA5',exact:true}).click();
-  await page.locator('#loyaltyApply').click();await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).waitFor({state:'attached'});
+  await page.locator('.loyalty-redeem-button[data-reward="orders"]').waitFor();
+  assert.equal(await page.locator('#loyaltyTerms').isVisible(),false);
+  assert.equal(await page.locator('#loyaltyMember').isVisible(),false);
+  assert.match(await page.locator('.loyalty-redeem-row').filter({hasText:'Recompensa por compras'}).innerText(),/5,00/);
+  assert.match(await page.locator('.loyalty-redeem-row').filter({hasText:'Cashback disponível'}).innerText(),/5,00/);
+  if(width!==1440)await page.locator('.loyalty-redeem-button[data-reward="'+(width===375?'points':'cashback')+'"]').click();
+  else await page.locator('.loyalty-redeem-button[data-coupon="SEMANA5"]').click();
+  await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).waitFor({state:'attached'});
   assert.match(await page.locator('#loyaltyCardSummary').innerText(),/desconto aplicado/);
-  await page.locator('#loyaltyCardToggle').click();
-  assert.equal(await page.locator('#loyaltyCardContent').isVisible(),false);
-  await page.locator('#loyaltyCardToggle').click();
-  assert.equal(await page.locator('#loyaltyCardContent').isVisible(),true);
+  assert.equal(await page.locator('#loyaltyCompactRemove').isVisible(),true);
   if(principal){
     for(const stage of ['address','customer','identify']){
      await page.locator('#v2CheckoutBack').click();
@@ -177,7 +174,8 @@ try{
     }
     await page.locator('#v2PaymentCards [data-kind="pix_manual"]').click();
   }
-  await page.locator('#loyaltyApply').click();
+  if(width!==1440)await page.locator('.loyalty-redeem-button[data-reward="'+(width===375?'points':'cashback')+'"]').click();
+  else await page.locator('.loyalty-redeem-button[data-coupon="SEMANA5"]').click();
   await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).waitFor({state:'attached'});
   if(principal)await page.locator('#v2CheckoutNext').click();
   await page.locator('#send').click();await page.getByRole('button',{name:'Tentar novamente',exact:true}).waitFor();
