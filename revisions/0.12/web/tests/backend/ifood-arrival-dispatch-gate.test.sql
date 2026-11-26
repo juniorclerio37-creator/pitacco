@@ -26,12 +26,12 @@ values ('40000000-0000-0000-0000-000000000071',
  '20000000-0000-0000-0000-000000000071','iFood',20.00,'accepted','ready','ifood',
  '{"ifood_status":"READY_TO_PICKUP","logistics":"loja","customer":"Teste"}'::jsonb);
 insert into public.deliveries(id,store_id,order_id,courier_id,customer_name,address,
- status,source,logistics_provider,collected_at,arrived_at)
+ status,source,logistics_provider,collected_at,arrived_at,arrival_provider_state)
 values ('50000000-0000-0000-0000-000000000071',
  '20000000-0000-0000-0000-000000000071',
  '40000000-0000-0000-0000-000000000071',
  '30000000-0000-0000-0000-000000000071',
- 'Teste iFood','Endereço de teste, não enviar', 'retirada','ifood','loja',now(),now());
+ 'Teste iFood','Endereço de teste, não enviar', 'retirada','ifood','loja',now(),now(),'none');
 insert into pitacco_private.ifood_merchants(merchant_id,store_id,test_only,enabled)
 values ('60000000-0000-0000-0000-000000000071',
  '20000000-0000-0000-0000-000000000071',true,true);
