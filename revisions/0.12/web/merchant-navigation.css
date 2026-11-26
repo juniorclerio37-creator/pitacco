@@ -289,3 +289,19 @@
 @media(max-width:850px){.mn-pos-v2 .mn-pos-grid{grid-template-columns:1fr}.mn-pos-v2 .mn-pos-summary{position:static}.mn-pos-v2 .mn-pos-mobile-cart{position:sticky;bottom:80px;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:7px;background:#fff;color:#64168c;border:1px solid #64168c;border-radius:11px;padding:10px;box-shadow:0 3px 10px #0002}.mn-pos-hero-art{display:none}.mn-pos-v2 .mn-pos-hero{padding:15px;gap:12px}.mn-pos-hero-icon{width:50px;height:50px}.mn-pos-modes{grid-template-columns:repeat(2,minmax(0,1fr))}.mn-pos-v2 .mn-pos-products{grid-template-columns:repeat(2,minmax(0,1fr))}.mn-pos-customer-fields{grid-template-columns:1fr}}
 @media(min-width:851px) and (max-width:1100px){.mn-pos-v2 .mn-pos-products{grid-template-columns:repeat(2,minmax(0,1fr))}}
 [data-theme="dark"] .mn-pos-v2{--pos-surface:#20212d;--pos-text:#f4f4f6;--pos-border:#414150}
+
+.mn-pos-payment-confirm{border:1px solid var(--pos-border);border-radius:12px;padding:12px;display:grid;gap:10px}
+.mn-pos-payment-value{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mn-pos-payment-choices{display:grid;gap:8px}
+.mn-pos-v2 button.mn-pos-pay-option{display:flex;align-items:center;gap:10px;text-align:left;min-height:54px;padding:10px;border-radius:10px;border:1px solid var(--pos-border);background:var(--pos-surface);color:var(--pos-text);box-shadow:none}
+.mn-pos-pay-option>span{display:grid;gap:3px}.mn-pos-pay-option small{font-size:.75rem;font-weight:400}
+.mn-pos-v2 button.mn-pos-pay-option.pending.chosen{border-color:#d48a15;background:#fff5df;color:#884c08}
+.mn-pos-v2 button.mn-pos-pay-option.paid.chosen{border-color:#19844a;background:#e6f7eb;color:#17663a}
+.mn-pos-payment-confirm p{font-size:.77rem;margin:0}
+.mn-pos-address-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.mn-pos-cep{display:flex;gap:8px;align-items:center;min-width:0}.mn-pos-cep input{flex:1}.mn-pos-cep button{flex:none}
+.mn-pos-quote{display:grid;gap:4px;border:1px solid var(--pos-border);border-radius:9px;padding:10px;font-size:.85rem}
+.mn-pos-quote-error{color:#b42318;font-size:.85rem;margin:0}.mn-pos-address-actions{display:flex;gap:8px;flex-wrap:wrap}
+.mn-pos-address-actions button{display:flex;align-items:center;gap:6px;flex:1 1 130px;justify-content:center}
+.mn-pos-address-map{height:280px;width:100%;border-radius:10px;overflow:hidden;isolation:isolate;z-index:0}
+.mn-pos-v2 .mn-pos-totals .line{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
