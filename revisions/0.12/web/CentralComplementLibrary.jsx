@@ -1,5 +1,6 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import ProductComplements from './ProductComplements.jsx';
+import IndividualComplementLibrary from './IndividualComplementLibrary.jsx';
 import {uploadStoreImage,mediaUrl} from './StoreProfile.jsx';
 import './catalog-studio-modern.css';
 
@@ -7,6 +8,7 @@ const fresh=()=>({id:null,name:'',min:0,max:1,options:[],assigned:[]});
 const currency=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const optionNew=()=>({id:crypto.randomUUID(),name:'',price:0,available:true,image_url:''});
 export default function CentralComplementLibrary({client,storeId,products,onChanged}){
+ const [libraryView,setLibraryView]=useState('groups');
  const [templates,setTemplates]=useState([]),[existing,setExisting]=useState([]),[existingOptions,setExistingOptions]=useState([]);
  const [selected,setSelected]=useState(null),[draft,setDraft]=useState(fresh),[files,setFiles]=useState({}),[fileUrls,setFileUrls]=useState({});
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
@@ -116,7 +118,10 @@ export default function CentralComplementLibrary({client,storeId,products,onChan
  }
  const uniqueExisting=existing.filter(g=>!g.library_template_id&&g.enabled!==false);
  const productForEditing=products.find(p=>p.id===editingProduct);
+ const viewTabs=<div className="catalog-actions" role="group" aria-label="Visualização da biblioteca"><button type="button" className={libraryView==='groups'?'':'secondary'} aria-pressed={libraryView==='groups'} onClick={()=>{setLibraryView('groups');load()}}>Grupos compartilhados</button><button type="button" className={libraryView==='individual'?'':'secondary'} aria-pressed={libraryView==='individual'} onClick={()=>setLibraryView('individual')}>Complementos individuais</button></div>;
+ if(libraryView==='individual')return <>{viewTabs}<IndividualComplementLibrary key={storeId} client={client} storeId={storeId} onChanged={onChanged}/></>;
  return <section className="catalog-hub" aria-label="Biblioteca de complementos">
+  {viewTabs}
   <header className="catalog-hub-header"><div><span className="eyebrow">GESTÃO CENTRALIZADA</span><h3>Grupos e complementos</h3>
    <p>Crie grupos independentes, adicione fotos aos itens e vincule um mesmo grupo a diferentes produtos.</p></div>
    <button type="button" onClick={()=>openTemplate(null)}>+ Novo grupo</button></header>
