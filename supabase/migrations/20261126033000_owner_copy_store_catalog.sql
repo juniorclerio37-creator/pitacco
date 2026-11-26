@@ -7,12 +7,12 @@ alter table pitacco_private.owner_catalog_copy_requests enable row level securit
 revoke all on pitacco_private.owner_catalog_copy_requests from public,anon,authenticated;
 -- Deterministic destination paths allow a safe retry after an interrupted upload.
 create function pitacco_private.owner_copy_media_path(p_dest uuid,p_request uuid,p_path text)
-returns text language sql immutable set search_path='' as $
+returns text language sql immutable set search_path='' as $$
  select 'stores/'||p_dest||'/'||(md5(p_request::text||p_path)::uuid)::text||'.'||split_part(p_path,'.',2)
-$;
+$$;
 revoke all on function pitacco_private.owner_copy_media_path(uuid,uuid,text) from public,anon,authenticated;
 create function public.pitacco_owner_copy_media_manifest(p_source uuid,p_target uuid,p_request uuid)
-returns jsonb language plpgsql stable security definer set search_path='' as $
+returns jsonb language plpgsql stable security definer set search_path='' as $$
 declare dest uuid:=coalesce(p_target,p_request); d jsonb;
 begin
  if auth.uid() is null or not public.pitacco_is_platform_owner() then raise exception 'Acesso exclusivo do Super Admin' using errcode='42501';end if;
@@ -20,7 +20,7 @@ begin
  if p_target is not null and exists(select 1 from public.products where store_id=dest) and not exists(select 1 from pitacco_private.owner_catalog_copy_requests where request_id=p_request and actor=auth.uid() and source_id=p_source and target_id=dest) then raise exception 'O destino precisa ter catálogo vazio';end if;
  select published into d from public.pitacco_storefront_designs where store_id=p_source;
  return coalesce((select jsonb_agg(jsonb_build_object('source',path,'target',pitacco_private.owner_copy_media_path(dest,p_request,path),'exists',exists(select 1 from storage.objects where bucket_id='pitacco-media' and name=pitacco_private.owner_copy_media_path(dest,p_request,path)))) from (select d->>'cover_path' as path union select value->>'image_path' from jsonb_array_elements(coalesce(d->'banners','[]'))) m where coalesce(path,'')<>''),'[]');
-end $;
+end $$;
 revoke all on function public.pitacco_owner_copy_media_manifest(uuid,uuid,uuid) from public,anon,authenticated;
 grant execute on function public.pitacco_owner_copy_media_manifest(uuid,uuid,uuid) to authenticated;
 create function public.pitacco_owner_copy_catalog(p_source uuid,p_target uuid,p_new_name text,p_request uuid)
