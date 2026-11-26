@@ -25,6 +25,7 @@ try {
     const windowsPings=[];
     let ifoodOrder=null;
     let logisticsOrders=[],logisticsDeliveries=[];
+    let flowGpsFresh=false;
     const flowOrder={id:'30000000-0000-0000-0000-000000000050',store_id:store.id,source:'proprio',
       status:'pending',gross:28,created_at:new Date().toISOString(),
       receipt:{display_number:'D-FLUXO',customer:'Cliente do fluxo',logistics:'loja',
@@ -43,11 +44,11 @@ try {
     const menuSettings={slug:'loja-teste',enabled:false,delivery_enabled:true,pickup_enabled:false,delivery_fee:5,
       payment_methods:['dinheiro'],pix_instructions:'',preparation_minutes:30};
     const launchRuns=[];
-    let storeHoursVersion=0,storeHoursPaused=false;
+    let storeHoursVersion=0,storeHoursPaused=false,storeAcceptsScheduled=false;
     let storeHoursRows=Array.from({length:7},(_,i)=>({weekday:i+1,slot:1,opens_minute:0,closes_minute:1440}));
     const hoursState=()=>({periods:storeHoursRows,paused:storeHoursPaused,revision:storeHoursVersion,
       manager_configured:storeHoursVersion>0,
-      current:{open:!storeHoursPaused,paused:storeHoursPaused,reason:storeHoursPaused?'paused':'open',timezone:'America/Sao_Paulo'}});
+      current:{open:!storeHoursPaused,paused:storeHoursPaused,manager_configured:storeHoursVersion>0,accepts_scheduled:storeAcceptsScheduled,scheduling_available:storeAcceptsScheduled&&!storeHoursPaused,reason:storeHoursPaused?'paused':'open',timezone:'America/Sao_Paulo'}});
     const diagnostic=()=>({run_type:'read_only_diagnostic',checked_at:new Date().toISOString(),store_id:store.id,
       configured:true,basic_ready:false,fully_homologated:false,catalog_url:'https://pitacco.com.br/loja-teste',
       checks:{identity:'ok',address:'ok',products:'ok',payments:'ok',fulfillment:'ok',delivery_rules:'ok',
@@ -185,14 +186,13 @@ try {
       if(pathname==='/rest/v1/pitacco_delivery_pricing'){
         return route.fulfill({headers,json:[]});
       }
-      if(pathname==='/rest/v1/rpc/pitacco_save_delivery_zone'){
+      if(pathname==='/rest/v1/rpc/pitacco_save_delivery_zone_times'){
         const input=route.request().postDataJSON();
         assert.equal(input.p_store,store.id);
-        assert.equal(input.p_mode,'circle');
         assert.equal(input.p_radius,4);
         assert.equal(input.p_distance[0],4.5);
-        assert.deepEqual(input.p_polygon,[]);
-        assert.equal(input.p_polygon_fee,0);
+        assert.equal(input.p_times.length,10);
+        assert.ok(input.p_times.slice(0,4).every(v=>v.min_minutes===30&&v.max_minutes===50));
         return route.fulfill({headers,json:{saved:true,enabled:true,mode:'circle'}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_support_list'){
@@ -267,13 +267,15 @@ try {
         assert.equal(route.request().postDataJSON().p_store,store.id);
         return route.fulfill({headers,json:hoursState()});
       }
-      if(pathname==='/rest/v1/rpc/pitacco_store_hours_save'){
+      if(pathname==='/rest/v1/rpc/pitacco_store_hours_save_v2'){
         const args=route.request().postDataJSON();
         assert.equal(args.p_store,store.id);
         assert.equal(args.p_expected_revision,storeHoursVersion);
         assert.ok(Array.isArray(args.p_periods));
         storeHoursRows=args.p_periods;
         storeHoursPaused=args.p_paused;
+        assert.equal(typeof args.p_accepts_scheduled,'boolean');
+        storeAcceptsScheduled=args.p_accepts_scheduled;
         storeHoursVersion++;
         return route.fulfill({headers,json:{saved:true,revision:storeHoursVersion,current:hoursState().current}});
       }
@@ -336,17 +338,23 @@ try {
         }
         return route.fulfill({headers,json:s===store.id});
       }
-      if(pathname==='/rest/v1/rpc/pitacco_owner_commercial_plans'){
+      if(pathname==='/rest/v1/rpc/pitacco_owner_plan_catalog'){
         assert.equal(origin,realApi);
         assert.equal(adminMode,true);
-        return route.fulfill({headers,json:[{code:'pitacco',monthly_cents:3990,sales_threshold_cents:200000,above_threshold_monthly_cents:5990}]});
+        return route.fulfill({headers,json:{terms_version:'fixture',plans:[
+          {code:'free',name:'Grátis para sempre',monthly_cents:0,commission_basis_points:500,billing_cycle:'weekly',trial_days:0,grace_hours:48},
+          {code:'complete',name:'Completo',monthly_cents:5990,commission_basis_points:0,billing_cycle:'monthly',trial_days:30,grace_hours:48}
+        ]}});
       }
-      if(pathname==='/rest/v1/rpc/pitacco_owner_monthly_plan_estimate'){
+      if(pathname==='/rest/v1/rpc/pitacco_owner_commercial_billing_control'){
         assert.equal(origin,realApi);
         assert.equal(adminMode,true);
-        const {p_store,p_month}=route.request().postDataJSON();
-        assert.equal(p_store,store.id);
-        return route.fulfill({headers,json:{month:p_month,monthly_cents:5990,sales_cents:200001,channels:[{source:'ifood',sales_cents:200001}]}});
+        return route.fulfill({headers,json:{pix_cnpj:'',pix_recipient:''}});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_commercial_invoices'){
+        if(origin===api)assert.equal(route.request().postDataJSON().p_store,store.id,'Lojista consulta somente as próprias faturas');
+        else{assert.equal(origin,realApi);assert.equal(adminMode,true);}
+        return route.fulfill({headers,json:{rows:[],has_more:false}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_owner_finance_report'){
         assert.equal(origin,realApi);
@@ -453,6 +461,11 @@ try {
       }
       if (pathname === '/rest/v1/profiles') return route.fulfill({ headers, json: { ...user, role:adminMode||width===375?'admin':'gestor' } });
       if (pathname === '/rest/v1/store_members') return route.fulfill({headers,json:[]});
+      if(pathname==='/rest/v1/rpc/pitacco_daily_operational_orders'){
+        assert.deepEqual(route.request().postDataJSON(),{p_store:store.id});
+        const orders=width===375?[pendingOrder]:[pendingOrder,appointment];
+        return route.fulfill({headers,json:[...orders,...logisticsOrders,...(ifoodOrder?[ifoodOrder]:[])]});
+      }
       if (pathname === '/rest/v1/orders') {
         const filters = new URL(route.request().url()).searchParams;
         if(width===375 && filters.has('scheduled_release_at')){
@@ -581,6 +594,11 @@ try {
       }
       if (pathname==='/rest/v1/rpc/pitacco_store_couriers'&&logisticsOrders.includes(flowOrder)){
         return route.fulfill({headers,json:[flowCourier]});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_store_courier_positions'&&logisticsOrders.includes(flowOrder)){
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:[{courier_id:flowCourier.id,latitude:-22.711,longitude:-43.4,
+          observed_at:new Date(Date.now()-(flowGpsFresh?1000:120000)).toISOString()}]});
       }
       if (pathname==='/rest/v1/rpc/assign_order_courier'&&logisticsOrders.includes(flowOrder)){
         assert.deepEqual(route.request().postDataJSON(),{p_delivery:flowDelivery.id,p_courier:flowCourier.id,p_confirm_deviation:false});
@@ -743,19 +761,19 @@ try {
     if (width <= 800) await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
     await merchantNavigate('Operação','Pedidos');
     if(width===375){
-      await page.getByRole('button',{name:'Agendados (0)',exact:true}).waitFor();
+      await page.getByRole('article',{name:'Card do pedido D-180',exact:true}).waitFor();
       await page.getByRole('region',{name:'Central de pedidos',exact:true})
         .locator('.connection-bar').filter({hasText:'Conectado · sincronização ativa'}).waitFor();
     }else{
-      await page.getByRole('button', { name:'Agendados (1)', exact:true }).click();
       const scheduledCard=page.getByRole('article',{name:'Card do pedido D-181',exact:true});
+      assert.equal(await scheduledCard.locator('xpath=ancestor::section[@data-stage]').getAttribute('data-stage'),'analysis','Agendados aguardam aceite na coluna Em análise');
       await scheduledCard.locator('.pedidos-card-select').click();
       const scheduledDetails=page.getByRole('dialog',{name:'Pedido #D-181'});
-      await scheduledDetails.getByText(/Aceite liberado às/).waitFor();
+      await scheduledDetails.getByText('Este pedido depende de aceite manual da loja e não entra no aceite automático.').waitFor();
+      assert.equal(await scheduledDetails.getByRole('button',{name:'Aceitar pedido',exact:true}).isEnabled(),true,'A loja pode aceitar antes do horário de preparo');
       assert.equal(await scheduledDetails.getByRole('button',{name:'Aceitar e iniciar preparo',exact:true}).count(),0);
       await scheduledDetails.getByRole('button',{name:'Fechar detalhes do pedido'}).click();
     }
-    await page.getByRole('button', { name:'Em análise (1)', exact:true }).click();
     const pendingCard=page.getByRole('article',{name:'Card do pedido D-180',exact:true});
     await pendingCard.locator('.pedidos-card-select').click();
     const pendingDetails=page.getByRole('dialog',{name:'Pedido #D-180'});
@@ -779,7 +797,7 @@ try {
     await pendingDetails.getByRole('button', { name:'Confirmar recusa', exact:true }).click();
     await pendingDetails.getByText('Recusados',{exact:true}).waitFor();
     await pendingDetails.getByRole('button',{name:'Fechar detalhes do pedido'}).click();
-    await page.getByRole('button', { name:'Recusados (1)', exact:true }).click();
+    await page.getByRole('button', { name:'Cancelados (1)', exact:true }).click();
     await page.locator('.pedidos-card').getByText('Cliente do pedido').waitFor();
     if(width===1440){
       await page.waitForURL(url=>url.searchParams.get('aba')==='Pedidos');
@@ -788,7 +806,9 @@ try {
       await ordersRegion.waitFor();
       logisticsOrders=[flowOrder];
       const card=ordersRegion.getByRole('article',{name:'Card do pedido D-FLUXO',exact:true});
-      const expectStage=label=>card.getByText(label,{exact:true}).waitFor({timeout:12000});
+      const expectStage=label=>label==='Concluído'
+        ?card.getByText(label,{exact:true}).waitFor({timeout:12000})
+        :ordersRegion.locator('.pedidos-stage-column[data-stage="'+({'Em análise':'analysis','Em preparo':'preparing','Pronto':'ready','Em entrega':'delivery'}[label])+'"]').getByRole('article',{name:'Card do pedido D-FLUXO',exact:true}).waitFor({timeout:12000});
       await expectStage('Em análise');
       await card.getByRole('img',{name:'Plataforma Loja'}).waitFor();
       await card.getByText('1 × Açaí do fluxo',{exact:true}).waitFor();
@@ -804,11 +824,15 @@ try {
       await details.getByRole('button',{name:'Fechar detalhes do pedido'}).click();
       await card.getByRole('button',{name:'Aceitar',exact:true}).click();
       await expectStage('Em preparo');
-      await card.getByRole('button',{name:'Marcar pedido pronto',exact:true}).click();
+      await card.getByRole('button',{name:'Marcar pronto',exact:true}).click();
       await expectStage('Pronto');
       await card.getByRole('button',{name:'Selecionar entregador',exact:true}).click();
       const dispatch=page.locator('dialog.dispatch-only');
       await dispatch.getByText('Rua do Teste, 50',{exact:true}).waitFor();
+      await dispatch.getByText('GPS desatualizado',{exact:true}).waitFor();
+      assert.equal(await dispatch.getByRole('radio',{name:/Motoboy de teste/}).isDisabled(),true);
+      flowGpsFresh=true;
+      await dispatch.getByRole('button',{name:'Atualizar',exact:true}).click();
       await dispatch.getByRole('radio',{name:/Motoboy de teste/}).check();
       await dispatch.getByRole('button',{name:'Confirmar despacho',exact:true}).click();
       await dispatch.getByText(/Despacho registrado/).waitFor();
@@ -817,9 +841,9 @@ try {
       await expectStage('Pronto');
       flowDelivery.status='retirada';
       await expectStage('Em entrega');
-      assert.equal(await ordersRegion.getByRole('button',{name:'Concluído (0)',exact:true}).count(),1);
+      assert.equal(await ordersRegion.getByRole('button',{name:'Concluídos (0)',exact:true}).count(),1);
       flowDelivery.status='entregue';
-      await ordersRegion.getByRole('button',{name:'Concluído (1)',exact:true}).click();
+      await ordersRegion.getByRole('button',{name:'Concluídos (1)',exact:true}).click();
       await expectStage('Concluído');
       logisticsOrders=[];logisticsDeliveries=[];
       await card.waitFor({state:'hidden',timeout:12000});
@@ -827,7 +851,7 @@ try {
     }
     if(width===768){
       appointment.scheduled_release_at=new Date(Date.now()-1_000).toISOString();
-      await page.getByRole('button',{name:'Em análise (1)',exact:true}).click();
+      await page.locator('.pedidos-tabs').getByRole('button',{name:'Pedidos',exact:true}).click();
       const releasedCard=page.getByRole('article',{name:'Card do pedido D-181',exact:true});
       await releasedCard.getByRole('button',{name:'Aceitar',exact:true}).waitFor();
     }
@@ -898,13 +922,24 @@ try {
       assert.equal(await page.getByRole('heading',{name:'Localização de saída'}).count(),0);
       await merchantNavigate('Entregas','Área de entrega');
       await page.getByRole('slider',{name:/Raio de atendimento/}).press('ArrowLeft');
-      await page.getByLabel('Até 1 km (R$)').fill('4.50');
+      for(let km=1;km<=4;km++){
+        const region=page.locator('.delivery-region-editor').filter({has:page.getByText('Até '+km+' km',{exact:true})});
+        if(km===1)await region.getByLabel('Frete (R$)',{exact:true}).fill('4.50');
+        await region.getByLabel('Prazo mínimo (min)',{exact:true}).fill('30');
+        await region.getByLabel('Prazo máximo (min)',{exact:true}).fill('50');
+      }
       await page.getByRole('button',{name:'Salvar e ativar círculo de entrega'}).click();
       await page.getByText(/Taxas do círculo por quilômetro salvas/).waitFor();
       await merchantNavigate('Integrações','Meios de pagamento');
-      await page.getByRole('checkbox',{name:'InfinitePay'}).check();
-      await page.getByRole('button',{name:'Salvar preferências de integração'}).click();
-      await page.getByText('Preferências de integração salvas.').waitFor();
+      const providers=page.getByRole('region',{name:'Integrações de pagamento'});
+      await providers.getByRole('button',{name:/InfinitePay/}).click();
+      const providerSettings=page.locator('dialog.modern-dialog');
+      await providerSettings.getByRole('checkbox',{name:'Solicitar recebimento online'}).check();
+      await providerSettings.getByText(/Preferência não ativa pagamentos/).waitFor();
+      await providerSettings.getByRole('button',{name:'Salvar preferências de integração'}).click();
+      await providerSettings.getByText('Preferências de integração salvas. A ativação depende da homologação.').waitFor();
+      await providerSettings.getByRole('button',{name:'Fechar janela',exact:true}).click();
+      await providers.getByRole('button',{name:/InfinitePay.*Solicitado/}).waitFor();
       await merchantNavigate('Cardápio','Aparência do cardápio');
       const studio=page.getByRole('region',{name:'Estúdio de Cardápio Pitacco'});
       await studio.getByRole('heading',{name:'Estúdio de Cardápio'}).waitFor();
@@ -961,10 +996,17 @@ try {
       assert.equal(storeHoursPaused,false);
     }
     await page.getByRole('button', { name:'Agendamento', exact:true }).click();
-    const schedule = page.getByRole('region', {name:'Horários de agendamento'});
-    await schedule.getByRole('group',{name:'Segunda-feira',exact:true}).getByRole('checkbox').check();
-    await schedule.getByRole('button',{name:'Salvar horários'}).click();
-    await schedule.getByText('Horários de agendamento salvos.').waitFor();
+    const schedule = page.getByRole('region', {name:'Horário de funcionamento da loja'});
+    await schedule.getByRole('switch',{name:'Aceitar pedidos agendados'}).check();
+    if(width<=800){
+      const save=schedule.getByRole('button',{name:'Salvar horário de funcionamento'});
+      await save.scrollIntoViewIfNeeded();
+      const button=await save.boundingBox(),bar=await page.locator('.mn-mobile-bar').boundingBox();
+      assert.ok(button&&bar&&button.y+button.height<=bar.y,'Salvar permanece acima da navegação fixa do celular');
+    }
+    await schedule.getByRole('button',{name:'Salvar horário de funcionamento'}).click();
+    await schedule.getByText('Horários salvos! O cardápio aceita agendamentos para os períodos configurados.').waitFor();
+    assert.equal(storeAcceptsScheduled,true,'Agendamento edits the same published opening configuration');
     if(width===1440){
       await page.getByRole('button',{name:'Impressão e aceite',exact:true}).click();
       const manual=page.getByRole('region',{name:'Impressão manual no navegador'});
@@ -1065,13 +1107,13 @@ try {
     assert.equal(await page.locator('.super-admin.pitacco-theme-dark').count(),1);
     await page.getByRole('button',{name:'Ativar modo claro'}).click();
     await adminNavigate('Plano Pitacco');
-    const plan=page.getByRole('region',{name:'Assinatura por faturamento'});
-    const tiers=plan.getByRole('table',{name:'Faixas da assinatura'});
-    await tiers.getByRole('cell',{name:/39,90/}).waitFor();
-    await tiers.getByRole('cell',{name:/59,90/}).waitFor();
-    await plan.getByLabel('Loja',{exact:true}).selectOption(store.id);
-    await plan.getByRole('button',{name:'Calcular faixa',exact:true}).click();
-    await plan.getByRole('status').getByText(/iFood/).waitFor();
+    const plan=page.getByRole('region',{name:'Planos comerciais'});
+    await plan.getByRole('heading',{name:'Grátis para sempre',exact:true}).waitFor();
+    await plan.getByRole('heading',{name:'Completo',exact:true}).waitFor();
+    assert.equal(await plan.getByRole('article').count(),2);
+    await plan.getByText(/59,90.*mês/).waitFor();
+    await plan.getByText('Comissão: 5%',{exact:true}).waitFor();
+    await plan.getByText('Comissão: 0%',{exact:true}).waitFor();
     await adminNavigate('Financeiro do Pitacco');
     const finance=page.getByRole('region',{name:'Financeiro do Pitacco'});
     const daily=finance.getByRole('table',{name:'Valores por dia'});
@@ -1153,10 +1195,11 @@ try {
     await checkout.getByRole('button',{name:'Salvar tempo de preparo',exact:true}).click();
     await checkout.getByText('Tempo de preparo salvo.').waitFor();
     await storeTabs.getByRole('button',{name:'Agendamento',exact:true}).click();
-    const adminSchedule=page.getByRole('region',{name:'Horários de agendamento'});
-    await adminSchedule.getByRole('group',{name:'Segunda-feira',exact:true}).getByRole('checkbox').check();
-    await adminSchedule.getByRole('button',{name:'Salvar horários',exact:true}).click();
-    await adminSchedule.getByText('Horários de agendamento salvos.').waitFor();
+    const adminSchedule=page.getByRole('region',{name:'Horário de funcionamento da loja'});
+    await adminSchedule.getByRole('switch',{name:'Aceitar pedidos agendados'}).uncheck();
+    await adminSchedule.getByRole('button',{name:'Salvar horário de funcionamento',exact:true}).click();
+    await adminSchedule.getByText('Horários salvos! Pedidos imediatos somente nos intervalos definidos.').waitFor();
+    assert.equal(storeAcceptsScheduled,false,'Super Admin edits the same scheduling switch');
     await adminNavigate('Módulos do lojista');
     const modules=page.getByRole('region',{name:'Módulos do painel do lojista'});
     await modules.getByLabel('Aplicar a').selectOption(store.id);
@@ -1223,7 +1266,10 @@ try {
       await ownCard.getByText('Entrega própria',{exact:true}).waitFor();
       await ownCard.getByRole('img',{name:'Plataforma 99Food'}).waitFor();
       await ownCard.getByText('2 × Açaí de teste',{exact:true}).waitFor();
-      await ownCard.getByText('Rua de Teste, 23 · Centro',{exact:true}).waitFor();
+      await ownCard.locator('.pedidos-card-select').click();
+      const ownDetails=page.getByRole('dialog',{name:'Pedido #LOJA-23'});
+      await ownDetails.getByText('Rua de Teste, 23 · Centro',{exact:true}).waitFor();
+      await ownDetails.getByRole('button',{name:'Fechar detalhes do pedido'}).click();
       await page.evaluate(()=>{
         window.__browserComandas=[];
         window.__browserPrints=0;

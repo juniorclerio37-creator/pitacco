@@ -38,3 +38,21 @@ try{
  assert.equal(total.rows[0].n,1,'Simultaneous retries do not duplicate the debit');
  console.log('PASS PostgreSQL Fideliza concurrent redemption and idempotent retry');
 }finally{await Promise.all(loyaltyClients.map(c=>c.end()));await loyaltyAdmin.end()}
+
+// Two tabs retrying the same lost confirmation must produce exactly one sale.
+const checkoutAdmin=new Client({connectionString:process.env.DATABASE_URL});await checkoutAdmin.connect();
+const checkoutClients=await Promise.all([0,1].map(async()=>{const c=new Client({connectionString:process.env.DATABASE_URL});await c.connect();await c.query('set role anon');return c}));
+try{
+ const s='93000000-0000-0000-0000-000000000001',p='93000000-0000-0000-0000-000000000002',r='93000000-0000-0000-0000-000000000003';
+ await checkoutAdmin.query(`insert into public.stores(id,name,dispatch_mode) values($1,'Checkout race fixture','manual')`,[s]);
+ await checkoutAdmin.query(`insert into public.public_menu_settings(store_id,slug,enabled,pickup_enabled,delivery_enabled,payment_methods,pix_instructions) values($1,'checkout-race-fixture',true,true,false,array['pix_manual'],'Fixture Pix') on conflict(store_id) do update set slug=excluded.slug,enabled=true,pickup_enabled=true,delivery_enabled=false,payment_methods=excluded.payment_methods,pix_instructions=excluded.pix_instructions`,[s]);
+ await checkoutAdmin.query(`insert into public.products(id,store_id,name,price,cost,menu_active) values($1,$2,'Fixture',25,8,true)`,[p,s]);
+ const items=JSON.stringify([{product_id:p,quantity:2,options:[]}]);
+ const sql=`select public.checkout_public_order('checkout-race-fixture',$1,'Cliente','21999990001','',$2::jsonb,'pickup','pix_manual','Preservar observação') as result`;
+ const receipts=await Promise.all(checkoutClients.map(c=>c.query(sql,[r,items])));
+ assert.deepEqual(receipts[0].rows[0].result,receipts[1].rows[0].result,'Concurrent replays return the same order and tracking token');
+ assert.equal((await checkoutAdmin.query('select count(*)::int n from public.orders where store_id=$1 and request_id=$2',[s,r])).rows[0].n,1);
+ assert.equal((await checkoutAdmin.query('select count(*)::int n from public.public_checkouts where store_id=$1 and request_id=$2',[s,r])).rows[0].n,1);
+ await assert.rejects(()=>checkoutClients[0].query(sql,[r,JSON.stringify([{product_id:p,quantity:1,options:[]}])]),/Chave reutilizada com dados diferentes/);
+ console.log('PASS PostgreSQL simultaneous public checkout retry, one sale, one tracking token and immutable payload');
+}finally{await Promise.all(checkoutClients.map(c=>c.end()));await checkoutAdmin.end()}

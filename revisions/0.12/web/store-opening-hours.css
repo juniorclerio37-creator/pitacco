@@ -29,6 +29,7 @@
 .opening-window .opening-remove{margin-left:auto;font-size:.75rem}
 .opening-add{justify-self:start;font-size:.8rem}
 .opening-save{position:sticky;bottom:10px;z-index:2;box-shadow:0 6px 16px #42240e15}
+@media(max-width:800px){.app.pitacco-mobile-workspace .opening-save{bottom:calc(86px + env(safe-area-inset-bottom))}}
 .opening-save p{flex:1;min-width:190px}
 .opening-settings :is(button,select,input):focus-visible{outline:2px solid #df762e;outline-offset:3px}
 @media(max-width:620px){.opening-top,.opening-day{padding:13px}.opening-window{padding:10px;gap:8px}.opening-window .opening-remove{margin-left:0}.opening-pause,.opening-hours-head,.opening-save{padding:13px}.opening-save button{width:100%}}

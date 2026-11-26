@@ -1480,7 +1480,7 @@ if(studioPreviewActive){
  },true);
 }
 
-let menu,cart=[],pendingRequest=null,submitting=false,scheduleRequest=0;
+let menu,cart=[],pendingRequest=null,submitting=false,checkoutPreparing=false,scheduleRequest=0;
 let fiadoEligiblePhone='',fiadoLookupCounter=0,fiadoLookupTimer=null,fiadoLookupFingerprint='';
 let storeOpening=null;
 const schedulingAvailable=()=>storeOpening?.scheduling_available===true&&storeOpening?.paused!==true;
@@ -1569,7 +1569,7 @@ async function checkPendingCart(){
    // History is optional; it must never block recovery of a confirmed checkout.
    void rememberConfirmedOrder(data).catch(()=>{});
    cart=[];cartRecoveryId=null;persistCartDraft();renderCart();button.hidden=true;
-   cartDraftNotice('Seu pedido anterior foi confirmado. A sacola está pronta para uma nova compra.');
+   cartDraftNotice('Seu envio anterior foi localizado. Acompanhe o pedido para conferir o aceite da loja. A sacola está pronta para uma nova compra.');
    const link=$('recoveredOrderLink');link.href='/acompanhar/?token='+encodeURIComponent(data.tracking_token);link.hidden=false;
   }else cartDraftNotice('O envio anterior ainda não tem confirmação. Confira novamente ou consulte a loja antes de reenviar.');
  }catch{cartDraftNotice('Não foi possível conferir o envio anterior. Sua sacola está preservada. Tente conferir novamente antes de reenviar.');}
@@ -3114,7 +3114,11 @@ $('checkout').onsubmit=async event=>{
  event.preventDefault();
  if(pagbankPreviewMode){openPagBankPreview();return;}
  if(completed)return;
- if(submitting||cartRecoveryId||!cart.length)return;
+ if(submitting||checkoutPreparing||cartRecoveryId||!cart.length)return;
+ // Reserve the submit before the first asynchronous check. Two rapid submits
+ // must not create independent request IDs while opening hours are loading.
+ checkoutPreparing=true;
+ try{
  if(!pendingRequest){
   try{
    const currentOpening=await refreshStoreOpening();
@@ -3193,6 +3197,7 @@ $('checkout').onsubmit=async event=>{
   if($('schedule').value&&deliveryService==='priority'&&fulfillment==='delivery'){pendingRequest=null;msg('Entrega prioritária disponível apenas para pedidos imediatos. Selecione entrega padrão para agendar.');return;}
   if($('schedule').value)pendingRequest.p_scheduled_for=$('schedule').value;
  }
+ }finally{checkoutPreparing=false;}
  persistCartDraft();
  submitting=true;
  $('closeCart').disabled=true;
