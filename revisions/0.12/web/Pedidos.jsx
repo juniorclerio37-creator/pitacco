@@ -315,6 +315,5 @@ export default function Pedidos({client,storeId,orders=[],deliveries=[],couriers
  <button type="button" disabled={busy} className="secondary" onClick={()=>setDecision(null)}>Voltar</button>
  </form>}
   </OrderDetails>}
-  <small>Pedidos de hoje e pendências anteriores. Consulte o Histórico de pedidos para datas anteriores.</small>
  </div>
 }
