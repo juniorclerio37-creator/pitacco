@@ -976,6 +976,12 @@ try {
     await page.getByRole('button', { name:'Agendamento', exact:true }).click();
     const schedule = page.getByRole('region', {name:'Horário de funcionamento da loja'});
     await schedule.getByRole('switch',{name:'Aceitar pedidos agendados'}).check();
+    if(width<=800){
+      const save=schedule.getByRole('button',{name:'Salvar horário de funcionamento'});
+      await save.scrollIntoViewIfNeeded();
+      const button=await save.boundingBox(),bar=await page.locator('.mn-mobile-bar').boundingBox();
+      assert.ok(button&&bar&&button.y+button.height<=bar.y,'Salvar permanece acima da navegação fixa do celular');
+    }
     await schedule.getByRole('button',{name:'Salvar horário de funcionamento'}).click();
     await schedule.getByText('Horários salvos! O cardápio aceita agendamentos para os períodos configurados.').waitFor();
     assert.equal(storeAcceptsScheduled,true,'Agendamento edits the same published opening configuration');
