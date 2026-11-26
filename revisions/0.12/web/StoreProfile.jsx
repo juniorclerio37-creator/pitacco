@@ -28,7 +28,7 @@ const pointFromStore=store=>{
  return Number.isFinite(lat)&&Number.isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180
   ? [lat,lng] : null;
 };
-function StorePointPicker({client,store,manager,addressDirty,onSaved}){
+function StorePointPicker({client,store,manager,addressDirty,registrationBusy,onSaved}){
  const initial=pointFromStore(store);
  const [point,setPoint]=useState(initial),[picked,setPicked]=useState(initial);
  const [suggestedPoint,setSuggestedPoint]=useState(null);
@@ -167,11 +167,11 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
    if(lowPrecision){
     setMessage('Localização aproximada deste dispositivo'+
       (accuracyMeters!=null?' (margem informada de '+accuracyMeters+' m)':'')+
-      '. A posição é apenas uma sugestão. Clique ou arraste o marcador até a entrada real antes de salvar.');
+      '. A posição é apenas uma sugestão. Se estiver correta, confirme e salve; caso contrário, ajuste o marcador.');
    }else{
     setMessage('Localização do dispositivo encontrada'+
       (accuracyMeters!=null?' (precisão estimada de '+accuracyMeters+' m)':'')+
-      '. Clique ou arraste o marcador até a entrada real antes de salvar. A precisão informada não garante que o dispositivo esteja na loja.');
+      '. Se o marcador estiver na entrada real da loja, confirme e salve sem precisar movê-lo. Caso contrário, ajuste o marcador.');
    }
   }catch(err){
    if(mounted.current&&request===deviceRequest.current)setError('Não foi possível obter o GPS: '+(err.message||String(err))+
@@ -183,7 +183,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
   try{
    if(addressDirty||!savedAddress)throw Error('Complete e salve primeiro o endereço da loja.');
    if(!picked||picked.some(x=>!Number.isFinite(x)))throw Error('Selecione o ponto da loja no mapa.');
-   if(needsDeviceAdjustment)throw Error('Confirme a posição sugerida clicando ou arrastando a lojinha até a entrada real e tente salvar novamente.');
+   // Clicking the explicitly labeled confirmation button is the merchant's confirmation; no artificial map movement is required.
    const {data,error}=await client.functions.invoke('delivery-quote',{
     body:{action:'store-point',store_id:store.id,latitude:picked[0],longitude:picked[1]}
    });
@@ -200,7 +200,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
  return <div className="store-point-editor">
   <div className="store-point-editor-title"><strong>Posição exata da loja no mapa</strong>
    <small>Confirme a entrada do estabelecimento para centralizar entregas e motoboys.</small></div>
-  {(addressDirty||!savedAddress)&&<p role="status" className="store-point-warning">Você pode usar o GPS ou ajustar o marcador agora. Complete e salve o endereço acima antes de salvar o ponto da loja.</p>}
+  {(addressDirty||!savedAddress)&&<div className="store-point-warning"><p role="status">Complete e salve o endereço acima para liberar a gravação do ponto. A posição selecionada será mantida.</p>{manager&&<button type="submit" className="secondary" disabled={registrationBusy||busy||deviceBusy}>Salvar dados da loja e liberar ponto</button>}</div>}
   <div ref={mapEl} className="store-point-map" aria-label="Mapa para marcar a entrada da loja"/>
   {!point&&<p className="store-point-warning">
     {busy?'Localizando a loja automaticamente pelo endereço cadastrado…':
@@ -217,8 +217,8 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
      automaticLookup.current=null;void locate();}}>
     Tentar localizar novamente
    </button>}
-   {picked&&<button type="button" disabled={!manager||busy||deviceBusy||addressDirty||!savedAddress||needsDeviceAdjustment||!changed} onClick={savePoint}>
-     Salvar ponto da loja
+   {picked&&<button type="button" disabled={!manager||busy||deviceBusy||registrationBusy||addressDirty||!savedAddress||(!changed&&!needsDeviceAdjustment)} onClick={savePoint}>
+     {needsDeviceAdjustment?'Confirmar e salvar ponto da loja':'Salvar ponto da loja'}
    </button>}
   </div>
   <small>O endereço é pesquisado automaticamente. Se o resultado não for exato, use a localização do celular ou computador e confirme a entrada da loja no mapa. A localização do computador pode corresponder à rede de internet, e não à loja. Prefira o GPS do celular na entrada ou marque o ponto no mapa.</small>
@@ -339,7 +339,7 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
     <p>Este é o endereço único usado no mapa do entregador, cálculo de frete, pagamentos e demais serviços.</p>
     <div className="identity-grid identity-address-grid"><div className="identity-cep-field">{input('postal_code','CEP')}<button type="button" className="secondary" disabled={!manager||busy||cepState==='loading'||postalDigits(draft.postal_code).length!==8} onClick={()=>{draftDirty.current=true;scheduleCep(draft.postal_code,draft,true)}}>{cepState==='loading'?'Consultando CEP…':'Buscar endereço'}</button>{cepNotice&&<small role={cepState==='error'?'alert':'status'}>{cepNotice}</small>}</div>{input('address','Rua / avenida')}{input('address_number','Número')}{input('address_complement','Complemento',false)}
       {input('neighborhood','Bairro')}{input('city','Cidade')}{input('state','Estado')}</div>
-    <StorePointPicker key={store.id} client={client} store={mapStore} manager={manager} addressDirty={addressDirty} onSaved={onSaved}/>
+    <StorePointPicker key={store.id} client={client} store={mapStore} manager={manager} addressDirty={addressDirty} registrationBusy={busy||cepState==='loading'} onSaved={onSaved}/>
    </section>
    <div className="identity-save">{message&&<p role="status" className="notice">{message}</p>}
     <small><ShieldCheck size={18}/> Os dados privados não aparecem no cardápio público.</small><button type="submit" disabled={busy||!manager||cepState==='loading'}>{busy?'Salvando…':'Salvar dados da loja'}</button></div>
