@@ -201,3 +201,15 @@ test('principal hero uses the approved centered medallion without replacing stor
  assert.match(html,/const value=studioAsset\(shop\.profile_logo_path\)\|\|shop\.logo_url/);
  assert.match(html,/#hero \.store-mark img\{\s*width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain/);
 });
+
+test('store-branded loading and bounded transient retry never expose raw database failures',()=>{
+ assert.match(html,/id="menuStartupLogo"/);
+ assert.match(html,/pitacco-public-brand:/);
+ assert.match(html,/client\.rpc\('pitacco_public_menu_identity'/);
+ assert.match(html,/attempt<3/);
+ assert.match(html,/error\.code==='57014'/);
+ assert.match(html,/id="menuStartupRetry"/);
+ assert.doesNotMatch(html,/msg\('Cardápio indisponível: '\+\(err/);
+ const refresh=html.slice(html.indexOf('async function refreshPublicStoreIdentity()'),html.indexOf('async function fetchPublicMenuWithRetry()'));
+ assert.doesNotMatch(refresh,/client\.rpc\('get_public_menu'/);
+});
