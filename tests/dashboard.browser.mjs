@@ -115,6 +115,7 @@ try {
       }
     }, { api,storeId:store.id,width,dashboard });
 
+    let supportTicket=null,supportMessages=[];
     let mapTilesOffline=false;
     let externalMapScriptRequests=0;
     await page.route('**/*', async route => {
@@ -227,14 +228,28 @@ try {
       if(pathname==='/rest/v1/rpc/pitacco_support_list'){
         const input=route.request().postDataJSON();
         assert.equal(input.p_store,store.id);
-        return route.fulfill({headers,json:{rows:[],has_more:false}});
+        const ticket=supportTicket&&(!input.p_status||supportTicket.status===input.p_status)?supportTicket:null;
+        return route.fulfill({headers,json:{rows:ticket?[ticket]:[],has_more:false}});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_support_details'){
+        assert.equal(route.request().postDataJSON().p_ticket,supportTicket.id);
+        return route.fulfill({headers,json:{ticket:supportTicket,messages:supportMessages}});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_support_reply'){
+        const input=route.request().postDataJSON();
+        assert.equal(input.p_ticket,supportTicket.id);
+        supportMessages.push({id:'reply-'+supportMessages.length,event_type:'message',body:input.p_message,created_at:new Date().toISOString(),from_admin:false});
+        supportTicket.messages=supportMessages.length;
+        return route.fulfill({headers,json:{sent:true}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_support_create'){
         const input=route.request().postDataJSON();
         assert.equal(input.p_store,store.id);
         assert.equal(input.p_category,'entregas');
         assert.equal(input.p_subject,'Configuração das entregas');
-        return route.fulfill({headers,json:'98000000-0000-0000-0000-000000000001'});
+        supportTicket={id:'98000000-0000-0000-0000-000000000001',store_id:store.id,store_name:store.name,category:input.p_category,subject:input.p_subject,status:'open',created_at:new Date().toISOString(),updated_at:new Date().toISOString(),messages:1};
+        supportMessages=[{id:'initial',event_type:'message',body:input.p_description,created_at:supportTicket.created_at,from_admin:false}];
+        return route.fulfill({headers,json:supportTicket.id});
       }
       if(pathname==='/rest/v1/rpc/set_dispatch_policy'){
         const input=route.request().postDataJSON();
@@ -1279,12 +1294,25 @@ try {
       const help=page.getByRole('region',{name:'Central de ajuda'});
       await help.getByText('Como publico o cardápio?').waitFor();
       const support=page.getByRole('region',{name:'Chamados de suporte'});
-      await support.getByRole('button',{name:'Abrir chamado'}).waitFor();
+      await help.getByRole('textbox',{name:'Buscar dúvidas e orientações'}).fill('impressão');
+       await help.getByText('Como ativar a impressão automática?',{exact:true}).waitFor();
+       assert.equal(await help.getByText('Como publico o cardápio?',{exact:true}).count(),0);
+       await help.getByRole('textbox',{name:'Buscar dúvidas e orientações'}).fill('');
+       await support.getByRole('button',{name:'Novo chamado',exact:true}).click();
+       assert.equal(await support.getByRole('button',{name:'Abrir chamado',exact:true}).isEnabled(),false);
       await support.getByLabel('Assunto').fill('Configuração das entregas');
       await support.getByLabel('Tipo de solicitação').selectOption('entregas');
       await support.getByLabel('Descrição').fill('Preciso revisar as configurações da distribuição automática.');
       await support.getByRole('button',{name:'Abrir chamado'}).click();
       await support.getByText('Chamado criado.',{exact:false}).waitFor();
+       const thread=support.getByRole('region',{name:'Histórico do chamado'});
+       await thread.getByText('Preciso revisar as configurações da distribuição automática.',{exact:true}).waitFor();
+       await thread.getByLabel('Responder').fill('Complemento do chamado de teste.');
+       await thread.getByRole('button',{name:'Enviar resposta'}).click();
+       await thread.getByText('Complemento do chamado de teste.',{exact:true}).waitFor();
+       await thread.getByRole('button',{name:'Fechar histórico'}).click();
+       await support.getByRole('button',{name:'Resolvido',exact:true}).click();
+       await support.getByText('Nenhum chamado encontrado.',{exact:true}).waitFor();
     }
     if (width <= 800) await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
     await merchantNavigate('Operação','Alertas');

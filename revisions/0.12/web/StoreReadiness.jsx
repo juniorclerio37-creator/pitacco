@@ -1,5 +1,7 @@
 import React,{useEffect,useState} from 'react';
 import SupportCenter from './SupportCenter.jsx';
+import {Search,BookOpen,Headphones,ChevronDown} from 'lucide-react';
+import './support-center-modern.css';
 
 const checklist=[
  ['identity','Identificação da loja','Informe o nome do estabelecimento em Dados da loja.'],
@@ -43,17 +45,28 @@ export function StoreReadiness({client,storeId}){
  </section>;
 }
 
+const articles=[
+ ['Cardápio','Como publico o cardápio?','Cadastre os produtos, configure os pagamentos e a modalidade de atendimento, e ative a publicação em Pagamentos da loja. Confira o link público antes de compartilhar.'],
+ ['Entregas','Como configuro as entregas?','Em Dados da loja informe o endereço completo. Em Área de entrega cadastre as regiões, taxas e prazos. Confirme o ponto da loja no mapa. As tarifas por trajeto dependem de homologação.'],
+ ['Pedidos','Como recebo e aceito pedidos?','Abra Pedidos no painel. O aceite e as notificações disponíveis dependem da origem do pedido e das integrações homologadas.'],
+ ['Financeiro','Como vejo o lucro por pedido?','Acesse Financeiro e o relatório Resultado por pedido. Cadastre os custos diretos para visualizar a estimativa corretamente.'],
+ ['Impressão','Como faço para imprimir no navegador?','Em Pedidos, depois de aceitar o pedido, use Imprimir no navegador e escolha a impressora. A impressão pelo navegador é manual por pedido.'],
+ ['Impressão','Como ativar a impressão automática?','No Pitacco Windows, faça login, vincule o computador e configure as impressoras por setor. O teste físico de impressão é feito no Windows.'],
+ ['Pedidos','O que fazer se pedidos ou impressões falharem?','Abra Alertas e verifique o diagnóstico. No Windows, confira a impressora e a fila do spooler antes de reimprimir. Não reenvie pedidos indiscriminadamente.'],
+ ['Integrações','Como acompanho o andamento das integrações?','Na área de Integrações consulte a situação da conexão. Os serviços de parceiros dependem de credenciais e homologação oficiais.'],
+ ['Cadastro','Como cadastro meu endereço e o CEP?','Em Dados da loja, informe o CEP, confira rua, bairro, cidade e estado, complete o número e salve. Confirme a entrada da loja no mapa.'],
+ ['Aplicativo','Como atualizo o Pitacco Windows?','Use Verificar atualização no menu lateral do aplicativo. Aguarde as impressões pendentes antes de instalar uma atualização assinada.']
+];
+const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 export function StoreHelp({client,storeId,canContact=true}){
- return <><section className="panel" aria-label="Central de ajuda">
-  <h3>Ajuda e orientações</h3>
-  <p>Respostas rápidas para configurar e operar o Pitacco.</p>
-  <details><summary>Como publico o cardápio?</summary><p>Cadastre os produtos, configure os pagamentos e a modalidade de atendimento, e ative a publicação em Pagamentos da loja. Confira o link público antes de compartilhar.</p></details>
-  <details><summary>Como configuro as entregas?</summary><p>Em Dados da loja informe o endereço completo. Em Área de entrega cadastre o raio e as taxas. As novas tarifas por trajeto só serão ativadas depois da homologação do serviço de rotas.</p></details>
-  <details><summary>Como recebo e aceito pedidos?</summary><p>Abra Pedidos no painel. O aceite e as notificações disponíveis dependem da origem do pedido e das integrações homologadas.</p></details>
-  <details><summary>Como vejo o lucro por pedido?</summary><p>Acesse Financeiro e o relatório Resultado por pedido. Cadastre os custos diretos para visualizar a estimativa corretamente.</p></details>
-  <details><summary>Como faço para imprimir no navegador?</summary><p>Em Pedidos, depois de aceitar o pedido, clique no ícone Imprimir no navegador. O navegador abre sua janela de impressão para selecionar uma impressora disponível no computador. É uma ação manual por pedido, não uma impressão automática nem um teste da impressora.</p></details>
-  <details><summary>Como ativar a impressão automática?</summary><p>Instale o Pitacco Windows pela área Aplicativos e Downloads, faça login na conta da loja, vincule o computador e configure as impressoras por setor no próprio aplicativo. O teste físico de impressão só é feito no Windows. O site mostra a conexão recente do aplicativo, mas não identifica uma instalação que esteja fechada ou desconectada.</p></details>
-  <details><summary>O que fazer se pedidos ou impressões falharem?</summary><p>Abra Alertas e verifique o diagnóstico. No aplicativo Windows, confira a impressora e a fila do spooler antes de reimprimir. No navegador, a impressão é manual. Não reenvie pedidos indiscriminadamente.</p></details>
-  <details><summary>Como acompanho o andamento das integrações?</summary><p>Na área de Integrações consulte a situação da conexão. Os serviços de parceiros dependem de credenciais e homologação oficiais.</p></details>
- </section>{canContact?<SupportCenter client={client} storeId={storeId}/>:<section className="panel"><p>Para abrir chamados, solicite acesso de gestor ao estabelecimento.</p></section>}</>;
+ const [search,setSearch]=useState(''),[topic,setTopic]=useState('');
+ const topics=[...new Set(articles.map(a=>a[0]))];
+ const visible=articles.filter(a=>(!topic||a[0]===topic)&&normalize(a.join(' ')).includes(normalize(search.trim())));
+ return <div className="psc-help"><section className="psc" aria-label="Central de ajuda">
+  <div className="psc-hero"><span className="psc-eyebrow">CENTRAL DE AJUDA</span><h3>Como podemos ajudar você?</h3><p>Encontre orientações para usar o Pitacco ou converse com nossa equipe.</p><label className="psc-search"><Search size={20}/><input aria-label="Buscar dúvidas e orientações" placeholder="Ex.: impressão, cardápio, entregas…" value={search} onChange={e=>setSearch(e.target.value)}/></label><button type="button" className="secondary psc-help-link" onClick={()=>document.getElementById('pitacco-support-'+storeId)?.scrollIntoView({behavior:'smooth',block:'start'})}><Headphones size={18}/> Falar com o suporte</button></div>
+  <div className="psc-card"><div className="psc-section-head"><div><h4><BookOpen size={19}/> Dúvidas frequentes</h4><p>Orientações rápidas para sua operação.</p></div><small>{visible.length} {visible.length===1?'artigo':'artigos'}</small></div>
+   <div className="psc-filter-row" role="group" aria-label="Categorias de ajuda">{['',...topics].map(t=><button type="button" key={t||'all'} aria-pressed={topic===t} onClick={()=>setTopic(t)}>{t||'Todas'}</button>)}</div>
+   {visible.length?visible.map(([type,title,answer])=><details className="psc-faq" key={title}><summary><span><small>{type}</small><strong>{title}</strong></span><ChevronDown size={18}/></summary><p>{answer}</p></details>):<div className="psc-empty"><Search size={30}/><strong>Nenhuma orientação encontrada.</strong><p>Tente outro termo ou abra um chamado.</p><button type="button" className="secondary" onClick={()=>{setSearch('');setTopic('')}}>Limpar busca</button></div>}
+  </div>
+ </section><div id={'pitacco-support-'+storeId}>{canContact?<SupportCenter key={storeId} client={client} storeId={storeId}/>:<section className="psc-card"><p>Para abrir chamados, solicite acesso de gestor ao estabelecimento.</p></section>}</div></div>;
 }
