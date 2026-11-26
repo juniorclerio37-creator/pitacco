@@ -32,6 +32,7 @@ import {ControlBrand,ControlSearch} from './ControlChrome.jsx';
 import ControlDashboard from './ControlDashboard.jsx';
 import ControlAppCatalog from './ControlAppCatalog.jsx';
 import ControlDirectory from './ControlDirectory.jsx';
+import ControlStoreBlocking from './ControlStoreBlocking.jsx';
 import ControlAlerts from './ControlAlerts.jsx';
 import {ControlData,ControlSecurity,ControlFeatureRollout,ControlUpdatePolicy} from './ControlWorkspaces.jsx';
 
@@ -192,6 +193,7 @@ function AdminApp(){
   if(row)setStores(current=>current.some(s=>s.id===target)?current:[...current,row]);
   setStoreId(target);setStoreTab('Visão geral');setPage('Estabelecimentos');
  }
+ function openBlocking(row){if(!verified.owner)return;openStore(row);setStoreTab('Bloqueio e liberação');}
  function openCopy(row,mode){if(!verified.owner)return;openStore(row);setCopyMode(mode);setStoreTab('Duplicação e clonagem');}
  function changePage(next,nextContext={}){
   const entry=controlGroups.flatMap(([,items])=>items).find(r=>r[0]===next);
@@ -244,16 +246,17 @@ function AdminApp(){
    </>}
    {page==='Minha segurança'&&<ControlSecurity client={client} access={verified} onVerified={()=>recheckAccess(n=>n+1)}/>}
    {({'Usuários':'users','Cobranças e inadimplência':'charges','Custos e despesas':'costs','Mapa de operações':'map','Saúde da plataforma':'health','Configurações gerais':'settings','Administradores e permissões':'admins'})[page]&&<><ControlData key={page} client={client} view={({ 'Usuários':'users','Cobranças e inadimplência':'charges','Custos e despesas':'costs','Mapa de operações':'map','Saúde da plataforma':'health','Configurações gerais':'settings','Administradores e permissões':'admins'})[page]} stores={stores} access={verified} onNavigate={changePage}/>{page==='Administradores e permissões'&&<ControlSecurity client={client} access={verified} onVerified={()=>recheckAccess(n=>n+1)}/>}</>}
-   {page==='Estabelecimentos'&&!store&&<ControlDirectory key={(context.status||'all')+(context.plan||'all')} client={client} stores={stores} initialStatus={context.status} initialPlan={context.plan} onOpen={openStore} onCopy={verified.owner?openCopy:undefined}/>}
+   {page==='Estabelecimentos'&&!store&&<ControlDirectory key={(context.status||'all')+(context.plan||'all')} client={client} stores={stores} initialStatus={context.status} initialPlan={context.plan} onOpen={openStore} onCopy={verified.owner?openCopy:undefined} onBlocking={verified.owner?openBlocking:undefined}/>}
    {page==='Estabelecimentos'&&store&&<section className="panel" aria-label="Configuração do estabelecimento">
-    <div className="cc-store-detail-heading"><button type="button" className="cc-text-action" onClick={()=>setStoreId('')}><ArrowLeft size={17}/> Todos os estabelecimentos</button><span className="cc-kicker">Ficha do estabelecimento</span><h1>{store?.name}</h1><small>{store?.id}</small>{verified.owner&&<div className="cc-actions"><button type="button" className="secondary" onClick={()=>openCopy(store,'duplicate')}>Duplicar loja</button><button type="button" className="secondary" onClick={()=>openCopy(store,'catalog')}>Duplicar cardápio</button></div>}</div>
+    <div className="cc-store-detail-heading"><button type="button" className="cc-text-action" onClick={()=>setStoreId('')}><ArrowLeft size={17}/> Todos os estabelecimentos</button><span className="cc-kicker">Ficha do estabelecimento</span><h1>{store?.name}</h1><small>{store?.id}</small>{verified.owner&&<div className="cc-actions"><button type="button" className="secondary" onClick={()=>openBlocking(store)}>Bloqueio e liberação</button><button type="button" className="secondary" onClick={()=>openCopy(store,'duplicate')}>Duplicar loja</button><button type="button" className="secondary" onClick={()=>openCopy(store,'catalog')}>Duplicar cardápio</button></div>}</div>
     {store&&<>
      <nav className="pitacco-local-tabs" aria-label="Seções do estabelecimento">
-      {(verified.owner?['Visão geral','Identidade','Usuários e permissões','Pedidos','Financeiro','Assinatura e pagamentos','Módulos','Integrações','Entregadores','Dispositivos e versões','Configurações','Diagnósticos','Histórico e auditoria','Assistência','Catálogo','Duplicação e clonagem','Checkout','Agendamento']:['Visão geral',...(verified.modules?.includes('users')?['Usuários e permissões']:[]),...(verified.modules?.includes('health')?['Dispositivos e versões']:[]),...(verified.modules?.includes('finance')?['Financeiro']:[]),...(verified.modules?.includes('assistance')?['Assistência']:[])]).map(tab=><button key={tab} type="button" aria-pressed={storeTab===tab}
+      {(verified.owner?['Visão geral','Bloqueio e liberação','Identidade','Usuários e permissões','Pedidos','Financeiro','Assinatura e pagamentos','Módulos','Integrações','Entregadores','Dispositivos e versões','Configurações','Diagnósticos','Histórico e auditoria','Assistência','Catálogo','Duplicação e clonagem','Checkout','Agendamento']:['Visão geral',...(verified.modules?.includes('users')?['Usuários e permissões']:[]),...(verified.modules?.includes('health')?['Dispositivos e versões']:[]),...(verified.modules?.includes('finance')?['Financeiro']:[]),...(verified.modules?.includes('assistance')?['Assistência']:[])]).map(tab=><button key={tab} type="button" aria-pressed={storeTab===tab}
        className={storeTab===tab?'active':'secondary'} onClick={()=>setStoreTab(tab)}>{tab}</button>)}
      </nav>
      {storeTab==='Visão geral'&&<div className="cc-card"><h2>Operação e cadastro</h2><p>{[store.address,store.address_number,store.city,store.state].filter(Boolean).join(', ')||'Endereço a completar no cadastro central.'}</p><p>Identificação única: {store.id}</p><p>As demais seções consultam esta mesma loja, com permissões verificadas no servidor.</p></div>}
      {({'Usuários e permissões':'users','Financeiro':'charges','Dispositivos e versões':'devices','Histórico e auditoria':'audit','Assistência':'assistance'})[storeTab]&&<ControlData key={store.id+storeTab} client={client} view={({ 'Usuários e permissões':'users','Financeiro':'charges','Dispositivos e versões':'devices','Histórico e auditoria':'audit','Assistência':'assistance'})[storeTab]} storeId={store.id} stores={stores} access={verified} onNavigate={changePage}/>}
+     {storeTab==='Bloqueio e liberação'&&verified.owner&&<ControlStoreBlocking key={store.id} client={client} store={store} access={verified} onChanged={()=>loadStores().catch(err=>setError(err.message))}/>}
      {storeTab==='Assinatura e pagamentos'&&<OwnerCommercialFinance client={client} stores={[store]} initialStore={store.id}/>}
      {storeTab==='Módulos'&&<OwnerFeatures key={store.id} client={client} stores={[store]} initialStore={store.id}/>}
      {storeTab==='Integrações'&&<OwnerIfood client={client} stores={[store]} initialStore={store.id}/>}
