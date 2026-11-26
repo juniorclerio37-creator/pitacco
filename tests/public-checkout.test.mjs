@@ -132,3 +132,30 @@ test('changed payment price requires explicit customer reconfirmation and update
  assert.match(html,/if\(v2Only\(\)\)v2ShowCheckoutStage\('payment'\)/);
  assert.match(html,/Confira o novo total e confirme novamente/);
 });
+
+test('option group navigation triggers only when maximum is newly reached',()=>{
+ assert.match(html,/previousCount>=Number\(row.group.max\)\|\|row.selectedCount!==Number\(row.group.max\)/);
+ assert.match(html,/groups\[groups.indexOf\(row\)\+1\]/);
+ assert.match(html,/if\(!next\|\|!\$\('productDialog'\)\.open\)return/);
+ assert.match(html,/if\(option&&input.checked\)advanceCompletedOptionGroup\(row,previousCount\)/);
+ assert.match(html,/body.scrollTo\(\{top,behavior:reducedMotion\?'instant':'smooth'\}\)/);
+});
+
+test('public maps are bundled with Leaflet and the checkout keeps suggestions unconfirmed',()=>{
+ const build=readFileSync(new URL('../scripts/build-cloudflare.sh',import.meta.url),'utf8');
+ assert.match(build,/esbuild web\/deliveryMap\.mjs --bundle --format=esm/);
+ assert.doesNotMatch(build,/cp web\/deliveryMap\.mjs/);
+ assert.match(html,/href="\/assets\/delivery-map\.css"/);
+ assert.match(html,/details\?\.requires_confirmation===true&&validDeliveryMapPoint\(details.suggested_point\)/);
+ assert.match(html,/suggestedDeliveryPoint=\[\.\.\.details.suggested_point\]/);
+ assert.match(html,/selectDeliveryPoint\(pendingMapPoint\);closeDeliveryMap\(\)/);
+});
+
+test('delivery service switching retains server options and ignores stale quote responses',()=>{
+ assert.match(html,/if\(options!==undefined\)availableDeliveryServices=options/);
+ assert.match(html,/deliveryQuote\.service===deliveryService/);
+ assert.match(html,/v2QuotePendingGeneration===quoteGeneration/);
+ assert.match(html,/selectedService!==deliveryService/);
+ assert.match(html,/renderDeliveryServices\(\);renderCart\(\);\s*v2ScheduleDeliveryQuote\(true\)/);
+ assert.match(html,/if\(token!==quoteGeneration\|\|selectedService!==deliveryService\)return false;\s*renderDeliveryServices\(\)/);
+});

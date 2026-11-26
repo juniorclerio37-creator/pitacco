@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cardápio</title><style>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cardápio</title><link rel="stylesheet" href="/assets/delivery-map.css"><style>
 :root{--ink:#281e29;--muted:#685e68;--line:#eae3e7;--paper:#fff;--surface:#f8f5f6;--hero:#30202e;--brand:#ca4936;--on-brand:#fff;--radius:22px;color-scheme:light}
 [hidden]{display:none!important}*{box-sizing:border-box}
 body{margin:0;background:var(--surface);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
@@ -1497,8 +1497,26 @@ const schedulingAvailable=()=>storeOpening?.scheduling_available===true&&storeOp
 const storefrontCanOrder=()=>storeOpening?.open===true||schedulingAvailable();
 const timingValid=()=>storeOpening?.open===true||Boolean(schedulingAvailable()&&$('schedule').value);
 let deliveryPoint=null,deliveryMap,deliveryQuote=null,deliveryService='standard';
-function renderDeliveryServices(options){const root=$('deliveryServices');root.hidden=!options?.priority&&deliveryService==='standard';$('priorityServiceOption').hidden=!options?.priority&&deliveryService!=='priority';for(const key of ['standard','priority']){const o=options?.[key];$(key+'ServiceLabel').textContent=(key==='priority'?'⚡ Entrega prioritária':'Entrega padrão')+(o?' · '+money(o.fee)+(Number.isInteger(o.min_minutes)&&Number.isInteger(o.max_minutes)?' · '+o.min_minutes+'–'+o.max_minutes+' min':''):'');root.querySelector('[value='+key+']').checked=deliveryService===key;}}
-$('deliveryServices').addEventListener('change',e=>{if(!['standard','priority'].includes(e.target.value)||pendingRequest||submitting)return;deliveryService=e.target.value;deliveryQuote=null;quoteGeneration++;renderDeliveryServices(null);void requestDeliveryQuote(true);});
+let availableDeliveryServices=null;
+function renderDeliveryServices(options){
+ if(options!==undefined)availableDeliveryServices=options;
+ const known=availableDeliveryServices,root=$('deliveryServices');
+ root.hidden=!known?.priority&&deliveryService==='standard';
+ $('priorityServiceOption').hidden=!known?.priority&&deliveryService!=='priority';
+ for(const key of ['standard','priority']){
+  const o=known?.[key];
+  $(key+'ServiceLabel').textContent=(key==='priority'?'⚡ Entrega prioritária':'Entrega padrão')+(o?' · '+money(o.fee)+(Number.isInteger(o.min_minutes)&&Number.isInteger(o.max_minutes)?' · '+o.min_minutes+'–'+o.max_minutes+' min':''):'');
+  root.querySelector('[value='+key+']').checked=deliveryService===key;
+ }
+}
+$('deliveryServices').addEventListener('change',e=>{
+ const service=e.target.value;
+ if(!['standard','priority'].includes(service)||pendingRequest||submitting){renderDeliveryServices();return;}
+ if(service===deliveryService)return;
+ deliveryService=service;deliveryQuote=null;quoteGeneration++;
+ renderDeliveryServices();renderCart();
+ v2ScheduleDeliveryQuote(true);
+});
 // Persist product choices only. Prices, names and option rules always come from
 // the current catalog; payment, identity, PIN and freight authorization never do.
 const cartStorageKey='pitacco-cart:'+slug;
@@ -1635,8 +1653,8 @@ async function quoteFailureMessage(error){
 }
 
 function selectDeliveryPoint(point){
- deliveryPoint=point;
- deliveryQuote=null;
+ deliveryPoint=point;suggestedDeliveryPoint=null;
+ deliveryQuote=null;renderDeliveryServices(null);
  deliveryMap?.setPoint(point);
  $('deliveryPointStatus').textContent='Localização confirmada. A taxa será atualizada automaticamente e o endereço poderá ser reutilizado após a entrega.';
  quoteGeneration++;v2ScheduleDeliveryQuote(true);
@@ -1645,7 +1663,7 @@ function selectDeliveryPoint(point){
 $('address').addEventListener('input',event=>{
  deliveryQuote=null;
  const keepPoint=Boolean(event.detail?.keepPoint);
- if(!keepPoint){$('addressCepStatus').textContent='';}
+ if(!keepPoint){$('addressCepStatus').textContent='';suggestedDeliveryPoint=null;pendingMapPoint=null;$('confirmDeliveryMap').disabled=true;deliveryMap?.clearPoint();deliveryService='standard';renderDeliveryServices(null);}
  if(deliveryPoint&&!keepPoint){
   deliveryPoint=null;deliveryMap?.clearPoint();
   $('deliveryPointStatus').textContent='Confirme novamente a localização do endereço.';
@@ -1654,7 +1672,8 @@ $('address').addEventListener('input',event=>{
  v2ScheduleDeliveryQuote();
  if(menu)renderCart();
 });
-let pendingMapPoint=null;
+let pendingMapPoint=null,suggestedDeliveryPoint=null;
+function validDeliveryMapPoint(point){return Array.isArray(point)&&point.length===2&&point.every(v=>typeof v==='number'&&Number.isFinite(v))&&Math.abs(point[0])<=90&&Math.abs(point[1])<=180;}
 function closeDeliveryMap(){
  $('deliveryMapPanel').hidden=true;$('showDeliveryMap').setAttribute('aria-expanded','false');
  $('showDeliveryMap').textContent='⌖ Ajustar localização no mapa';pendingMapPoint=null;
@@ -1665,7 +1684,7 @@ $('showDeliveryMap').onclick=async()=>{
  const area=menu?.store?.delivery_area;
  if(!area)return;
  panel.hidden=false;container.hidden=false;button.disabled=true;button.setAttribute('aria-expanded','true');
- button.textContent='⌖ Recolher mapa';pendingMapPoint=deliveryPoint?[...deliveryPoint]:null;
+ button.textContent='⌖ Recolher mapa';pendingMapPoint=deliveryPoint?[...deliveryPoint]:suggestedDeliveryPoint?[...suggestedDeliveryPoint]:null;
  $('confirmDeliveryMap').disabled=!pendingMapPoint;
  try{
   if(!deliveryMap){
@@ -1675,9 +1694,10 @@ $('showDeliveryMap').onclick=async()=>{
     onSelect:point=>{pendingMapPoint=point;deliveryMap?.setPoint(point);$('confirmDeliveryMap').disabled=false;}
    });
   }
-  if(pendingMapPoint)deliveryMap?.showPoint(pendingMapPoint);else deliveryMap?.clearPoint();
+  if(pendingMapPoint){deliveryMap?.showPoint(pendingMapPoint);deliveryMap?.focus?.(pendingMapPoint,17);}
+  else deliveryMap?.clearPoint();
   deliveryMap?.resize();
- }catch(error){closeDeliveryMap();$('deliveryPointStatus').textContent=error.message;}
+ }catch(error){deliveryMap?.remove();deliveryMap=null;closeDeliveryMap();$('deliveryPointStatus').textContent='Não foi possível abrir o mapa. Tente novamente ou use sua localização atual.';}
  finally{button.disabled=false;}
 };
 $('confirmDeliveryMap').onclick=()=>{
@@ -1688,8 +1708,16 @@ $('locateDelivery').onclick=async()=>{
  const button=$('locateDelivery');button.disabled=true;
  $('deliveryPointStatus').textContent='Localizando…';
  try{
-  const {currentLocation}=await import('/assets/delivery-map.mjs');
-  selectDeliveryPoint(await currentLocation());
+  // GPS must remain usable even if loading the visual map fails.
+  const point=await new Promise((resolve,reject)=>{
+   if(!navigator.geolocation)return reject(Error('Seu navegador não oferece localização.'));
+   navigator.geolocation.getCurrentPosition(({coords})=>{
+    const position=[Number(coords.latitude.toFixed(6)),Number(coords.longitude.toFixed(6))];
+    if(!validDeliveryMapPoint(position))return reject(Error('Localização inválida. Tente novamente.'));
+    resolve(position);
+   },error=>reject(Error(error?.code===1?'Permita o acesso à localização no navegador e tente novamente.':error?.code===3?'A localização demorou demais. Tente novamente.':'Não foi possível obter sua localização.')), {enableHighAccuracy:true,timeout:15000,maximumAge:0});
+  });
+  selectDeliveryPoint(point);
   deliveryMap?.showPoint(deliveryPoint);closeDeliveryMap();
   if(!v2QuoteAddressReady())$('deliveryPointStatus').textContent='Localização encontrada. Complete rua, número, bairro e cidade para confirmar a entrega.';
  }catch(error){$('deliveryPointStatus').textContent=error.message;}
@@ -1697,12 +1725,12 @@ $('locateDelivery').onclick=async()=>{
 };
 
 let v2QuoteTimer=null,v2QuoteRefreshTimer=null,quoteGeneration=0;
-let v2QuotePending=null,v2QuotePendingKey='';
+let v2QuotePending=null,v2QuotePendingKey='',v2QuotePendingGeneration=-1;
 function v2QuoteAddressReady(){
  return addressInputs.every(id=>$(id).value.trim()&&$(id).checkValidity())&&$('address').value.trim().length>=12;
 }
 function v2QuoteCurrent(){
- return deliveryQuote&&deliveryQuote.address===$('address').value.trim()&&
+ return deliveryQuote&&deliveryQuote.service===deliveryService&&deliveryQuote.address===$('address').value.trim()&&
   Date.parse(deliveryQuote.expiresAt)>Date.now()+3000&&
   (!deliveryQuote.point||(deliveryPoint&&
     deliveryQuote.point[0]===deliveryPoint[0]&&deliveryQuote.point[1]===deliveryPoint[1]));
@@ -1752,7 +1780,7 @@ async function requestDeliveryQuote(auto=false){
  const quotePoint=needsPoint&&deliveryPoint?[...deliveryPoint]:null;
  const selectedService=deliveryService;
  const key=address+'|'+(quotePoint?.join(',')||'auto')+'|'+selectedService;
- if(v2QuotePending&&v2QuotePendingKey===key)return v2QuotePending;
+ if(v2QuotePending&&v2QuotePendingKey===key&&v2QuotePendingGeneration===quoteGeneration)return v2QuotePending;
  const token=++quoteGeneration;
  const button=$('quoteDelivery');button.disabled=true;
  deliveryQuote=null;renderCart();
@@ -1764,10 +1792,21 @@ async function requestDeliveryQuote(auto=false){
     body:{slug,address,request_id:requestId,delivery_service:selectedService,
      ...(quotePoint?{latitude:quotePoint[0],longitude:quotePoint[1]}:{})}
    });
-   if(error)throw Error(await quoteFailureMessage(error));
+   if(error){
+    // An approximate geocoder response is a suggestion, never a confirmed coordinate.
+    let details;try{details=await error.context?.clone().json();}catch{}
+    if(token===quoteGeneration&&$('address').value.trim()===address&&details?.requires_confirmation===true&&validDeliveryMapPoint(details.suggested_point)&&!deliveryPoint){
+     suggestedDeliveryPoint=[...details.suggested_point];
+     if(!$('deliveryMapPanel').hidden&&deliveryMap&&!pendingMapPoint){
+      pendingMapPoint=[...suggestedDeliveryPoint];deliveryMap.showPoint(pendingMapPoint);deliveryMap.focus?.(pendingMapPoint,17);$('confirmDeliveryMap').disabled=false;
+     }
+     $('deliveryPointStatus').textContent='Encontramos uma localização aproximada. Confira o marcador no mapa e confirme a entrada do imóvel.';
+    }
+    throw Error(await quoteFailureMessage(error));
+   }
    if(!data?.quote_id||data.request_id!==requestId||!Number.isFinite(Number(data.fee)))
     throw Error(data?.error||'Não foi possível confirmar o frete.');
-   if(token!==quoteGeneration||$('address').value.trim()!==address||
+   if(token!==quoteGeneration||selectedService!==deliveryService||$('fulfillment').value!=='delivery'||$('address').value.trim()!==address||
     (quotePoint&&(!deliveryPoint||deliveryPoint[0]!==quotePoint[0]||deliveryPoint[1]!==quotePoint[1])))return false;
    if((data.delivery_service||'standard')!==selectedService)throw Error('Modalidade não confirmada.');
    renderDeliveryServices(data.delivery_options);
@@ -1788,14 +1827,15 @@ async function requestDeliveryQuote(auto=false){
   }catch(error){
    if(token!==quoteGeneration)return false;
    const message=await quoteFailureMessage(error);
-   renderDeliveryServices(null);
+   if(token!==quoteGeneration||selectedService!==deliveryService)return false;
+   renderDeliveryServices();
    quoteNotice(auto?v2AutoQuoteError(message):message,'error');
    return false;
   }finally{
    if(token===quoteGeneration){button.disabled=false;renderCart();}
   }
  })();
- v2QuotePending=work;v2QuotePendingKey=key;
+ v2QuotePending=work;v2QuotePendingKey=key;v2QuotePendingGeneration=token;
  try{return await work;}finally{if(v2QuotePending===work){v2QuotePending=null;v2QuotePendingKey='';}}
 }
 $('quoteDelivery').onclick=()=>void requestDeliveryQuote(false);
@@ -2349,6 +2389,18 @@ function openProduct(product,item=null){
  }else renderOptionFields(product.option_groups||[],item,$('productBody'));
  $('productError').hidden=true;updateProduct();$('productDialog').showModal();$('productBody').scrollTop=0;
 }
+// Advance only on a new selection that reaches this group's maximum.
+function advanceCompletedOptionGroup(row,previousCount){
+ if(!row||previousCount>=Number(row.group.max)||row.selectedCount!==Number(row.group.max))return;
+ const next=groups[groups.indexOf(row)+1];
+ if(!next||!$('productDialog').open)return;
+ const body=$('productBody');
+ const target=body.scrollTop+next.field.getBoundingClientRect().top-body.getBoundingClientRect().top-12;
+ const top=Math.max(0,Math.min(target,body.scrollHeight-body.clientHeight));
+ if(Math.abs(body.scrollTop-top)<2)return;
+ const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ body.scrollTo({top,behavior:reducedMotion?'instant':'smooth'});
+}
 function renderOptionFields(optionGroups,item,container){
  for(const [index,group] of optionGroups.entries()){
   if(group.max===0||(!group.options.length&&!group.min))continue;
@@ -2366,7 +2418,10 @@ function renderOptionFields(optionGroups,item,container){
    input.checked=option?Boolean(item?.options.includes(option.id)):
     !group.options.some(choice=>item?.options.includes(choice.id));
    input.addEventListener('change',()=>{
+    const row=groups.find(entry=>entry.field===field);
+    const previousCount=row?.selectedCount??0;
     field.removeAttribute('data-invalid');$('productError').hidden=true;updateProduct();
+    if(option&&input.checked)advanceCompletedOptionGroup(row,previousCount);
    });
    label.append(input);
    if(option?.image_url&&imageUrl(option.image_url)){
@@ -2391,6 +2446,7 @@ function updateProduct(){
  for(const row of groups){
   const options=getChoices(row);
   extra+=options.reduce((sum,option)=>sum+Number(option.price),0);
+  row.selectedCount=options.length;
   row.count.textContent=options.length+' de '+row.group.max;
   row.count.dataset.ready=String(row.group.min>0&&options.length>=row.group.min);
   if(options.length<row.group.min)pendingGroups++;

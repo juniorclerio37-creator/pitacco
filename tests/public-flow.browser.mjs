@@ -23,10 +23,29 @@ const mapFixture = `
  }`;
 const browser = await chromium.launch({ executablePath: process.env.PITACCO_CHROMIUM });
 const origin = 'http://localhost:4179';
+// Exercise the real production build, not only the fixture that masks bare imports.
+const bundledMap=await readFile(new URL('../web/dist/assets/delivery-map.mjs',import.meta.url),'utf8');
+const bundledMapCss=await readFile(new URL('../web/dist/assets/delivery-map.css',import.meta.url),'utf8');
 const orderId = '10000000-0000-0000-0000-000000000001';
 const token = '20000000-0000-0000-0000-000000000001';
 
 try {
+  const mapPage=await browser.newPage({viewport:{width:375,height:800}});
+  await mapPage.route('**/*',async route=>{
+   const url=new URL(route.request().url());
+   if(url.origin===origin&&url.pathname==='/map-smoke')return route.fulfill({contentType:'text/html',body:'<link rel="stylesheet" href="/assets/delivery-map.css"><div id="map" style="width:340px;height:260px"></div><script type="module">import {mountDeliveryMap} from "/assets/delivery-map.mjs";const map=await mountDeliveryMap(document.getElementById("map"),{center:[-22.71,-43.4],showCoverage:false,onSelect:p=>window.selected=p});map.showPoint([-22.71,-43.4]);window.mapReady=true;</script>'});
+   if(url.origin===origin&&url.pathname==='/assets/delivery-map.mjs')return route.fulfill({contentType:'text/javascript',body:bundledMap});
+   if(url.origin===origin&&url.pathname==='/assets/delivery-map.css')return route.fulfill({contentType:'text/css',body:bundledMapCss});
+   if(url.hostname==='tile.openstreetmap.org')return route.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jE1sAAAAASUVORK5CYII=','base64')});
+   return route.abort();
+  });
+  await mapPage.goto(origin+'/map-smoke');
+  await mapPage.waitForFunction(()=>window.mapReady===true);
+  await mapPage.locator('.leaflet-container .pitacco-delivery-address-pin').waitFor({state:'visible'});
+  await mapPage.locator('#map').click({position:{x:90,y:100}});
+  await mapPage.waitForFunction(()=>Array.isArray(window.selected));
+  await mapPage.close();
+  console.log('PASS real bundled public Leaflet map and click selection');
   for(const template of ['pitacco-v2','essencial','editorial','urbano','classic']) for (const width of [375, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     page.setDefaultTimeout(30000);
@@ -44,6 +63,7 @@ try {
     await page.context().setGeolocation({latitude:-22.71,longitude:-43.4});
     let identityName='Loja de teste';
     let publicBlocked=template==='pitacco-v2'&&width===375;
+    let rejectPriorityOnce=false;
     const openingFixture=()=>publicBlocked?{open:false,reason:'paused',paused:true,next_open_at:null,scheduling_available:false}:{open:true,reason:'open',next_open_at:null,timezone:'America/Sao_Paulo',scheduling_available:Boolean(scheduled),paused:false};
     let polls=0,quoteAttempts=0,recoveryConfirmed=false;
     let savedProfile=null;
@@ -140,6 +160,7 @@ try {
           assert.deepEqual([payload.latitude,payload.longitude],[-22.71,-43.4]);
         else
           assert.equal(payload.latitude,undefined,'Endereço completo cota sem ponto obrigatório em todos os templates');
+        if(payload.delivery_service==='priority'&&rejectPriorityOnce){rejectPriorityOnce=false;return route.fulfill({status:409,json:{error:'Entrega prioritária indisponível nesta região. Selecione a entrega padrão.'}});}
         quotes.set(payload.request_id,{fee:payload.delivery_service==='priority'?9:5,service:payload.delivery_service});
         return route.fulfill({json:{quote_id:'30000000-0000-0000-0000-000000000011',
           request_id:payload.request_id,fee:payload.delivery_service==='priority'?9:5,distance_m:1112,distance_type:'straight',
@@ -193,13 +214,27 @@ try {
     }
     const productCard=page.getByRole('button',{name:'Personalizar Açaí',exact:true});
     await productCard.waitFor();
+    // Inspect product-only scrolling without introducing animation races in the tests.
+    await page.evaluate(()=>{
+      const body=document.getElementById('productBody');
+      const nativeScroll=body.scrollTo.bind(body);
+      window.productAutoScroll=[];
+      body.style.maxHeight='140px';
+      body.scrollTo=options=>{
+        window.productAutoScroll.push({top:options.top,behavior:options.behavior});
+        nativeScroll({...options,behavior:'instant'});
+      };
+    });
     // Pizza uses the same dialog, cart persistence and option payload in every template.
     const pizzaCard=page.getByRole('button',{name:'Personalizar Pizza Teste',exact:true});
     await pizzaCard.click();
     const pizza=page.getByRole('dialog',{name:'Pizza Teste'});
     await pizza.locator('select').selectOption('g');
     await pizza.getByRole('checkbox',{name:/Calabresa/}).check();
+    assert.equal(await page.evaluate(()=>window.productAutoScroll.length),0,'Partial flavor selection must not advance');
     await pizza.getByRole('checkbox',{name:/Frango/}).check();
+    const pizzaScroll=await page.evaluate(()=>window.productAutoScroll.slice());
+    assert.equal(pizzaScroll.length,1,'Reaching maximum flavors advances to the optional border');
     await pizza.getByRole('radio',{name:/Catupiry/}).check();
     assert.match(await pizza.locator('#productTotal').innerText(),/59,95/);
     await pizza.getByRole('button',{name:/Adicionar à sacola/}).click();
@@ -218,6 +253,34 @@ try {
     await pizza.getByRole('button',{name:'Salvar alterações'}).click();
     await pizzaCart.getByRole('button',{name:'Remover Pizza Teste'}).click();
     await page.locator('#closeCart').click();
+    // Verify the shared açaí dialog before diverging into template-specific checkout paths.
+    await productCard.click();
+    const advanceDialog=page.getByRole('dialog',{name:'Açaí'});
+    await page.evaluate(()=>{
+      window.productAutoScroll=[];
+      const body=document.getElementById('productBody');
+      const nativeScroll=body.scrollTo.bind(body);
+      // Reload creates a new element; reinstall the scroll observer.
+      body.style.maxHeight='140px';
+      body.scrollTo=options=>{
+        window.productAutoScroll.push({top:options.top,behavior:options.behavior});
+        nativeScroll({...options,behavior:'instant'});
+      };
+    });
+    await advanceDialog.getByRole('radio',{name:/Morango/}).check();
+    const advanceCalls=await page.evaluate(()=>window.productAutoScroll.slice());
+    assert.equal(advanceCalls.length,1,'Maximum of one advances to Extras');
+    assert.ok(advanceCalls[0].top>0);
+    await advanceDialog.getByRole('radio',{name:/Leite em pó/}).check();
+    assert.equal(await page.evaluate(()=>window.productAutoScroll.length),1,'Changing a full radio group does not jump');
+    await advanceDialog.getByRole('checkbox',{name:/Granola/}).check();
+    await advanceDialog.getByRole('checkbox',{name:/Banana/}).check();
+    assert.equal(await page.evaluate(()=>window.productAutoScroll.length),1,'Last group must not auto-submit or scroll');
+    await advanceDialog.getByRole('checkbox',{name:/Banana/}).uncheck();
+    assert.equal(await page.evaluate(()=>window.productAutoScroll.length),1,'Removing an option does not jump');
+    assert.equal(await advanceDialog.isVisible(),true);
+    await page.locator('#closeProduct').click();
+    await page.evaluate(()=>document.getElementById('productBody').style.removeProperty('max-height'));
     if(template==='classic'){
       // Classic has different navigation from V2. Test its real checkout path
       // without asserting V2-only hero, favourites and product cards.
@@ -308,7 +371,7 @@ try {
     assert.equal(await productCard.count(),1,'Favoritos locais mantêm produto escolhido');
     await page.getByRole('button',{name:'Cardápio',exact:true}).click();
     await page.getByRole('heading',{name:'Açaís',exact:true}).waitFor();
-    assert.equal(await page.getByText('Leite em pó',{exact:true}).count(),0);
+    assert.equal(await page.getByText('Leite em pó',{exact:true}).isVisible(),false,'Complements stay hidden outside the product dialog');
     await page.getByRole('button',{name:'Bebidas',exact:true}).click();
     await page.getByRole('button',{name:'Personalizar Água',exact:true}).waitFor();
     assert.equal(await productCard.count(),0);
@@ -435,6 +498,14 @@ try {
     assert.match(await page.locator('#total').innerText(),/74,00/);
     if(width===375){await mkdir('artifacts',{recursive:true});await page.locator('#addressBlock').screenshot({path:`artifacts/menu-address-${template}.png`});}
     assert.doesNotMatch(await page.locator('#routeQuoteStatus').innerText(),/non-2xx/);
+    // Failure of priority must never remove the standard choice or its known price.
+    rejectPriorityOnce=true;
+    await page.locator('#deliveryServices input[value="priority"]').check();
+    await page.locator('#routeQuoteStatus').filter({hasText:'Entrega prioritária indisponível'}).waitFor();
+    assert.match(await page.locator('#standardServiceLabel').innerText(),/5,00/);
+    assert.equal(await page.locator('#deliveryServices input[value="standard"]').isVisible(),true);
+    await page.locator('#deliveryServices input[value="standard"]').check();
+    await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00.*40–60 min/}).waitFor();
     await page.locator('#deliveryServices input[value="priority"]').check();
     await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*9,00.*20–30 min/}).waitFor();
     assert.match(await page.locator('#total').innerText(),/78,00/);

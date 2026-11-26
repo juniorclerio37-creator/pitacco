@@ -40,7 +40,10 @@ if [[ -d marketing/assets/brendi-acai-do-linho ]]; then
   mkdir -p "$dist_dir"/assets/brendi-acai-do-linho
   cp marketing/assets/brendi-acai-do-linho/*.webp "$dist_dir"/assets/brendi-acai-do-linho/
 fi
-cp web/deliveryMap.mjs "$dist_dir"/assets/delivery-map.mjs
+# Public HTML is not a Vite entrypoint: bundle Leaflet and its CSS explicitly.
+# Do not ship raw bare npm imports to the browser.
+./web/node_modules/.bin/esbuild web/deliveryMap.mjs --bundle --format=esm --platform=browser --target=es2022 --loader:.png=dataurl --outfile="$dist_dir/assets/delivery-map.mjs"
+test -s "$dist_dir/assets/delivery-map.css"
 cp marketing/pedidos.html "$dist_dir"/pedidos/index.html
 cp marketing/aceite.html "$dist_dir"/aceite/index.html
 cp marketing/acompanhar.html "$dist_dir"/acompanhar/index.html
