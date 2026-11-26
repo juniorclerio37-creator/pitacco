@@ -1221,6 +1221,20 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
 #addressBlock #deliveryPointStatus:empty{display:none}
 #checkout #v2PaymentCards #v2ChangeBlock{margin-top:-7px;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--brand) 5%,var(--paper,#fff));border:1px solid color-mix(in srgb,var(--brand) 16%,#ddd)}
 #checkout #v2ChangeBlock small{display:block;margin-top:6px;font-size:.78rem;color:var(--muted,#665c6c)}
+#checkout #loyaltyBox{padding:0;border:1px solid color-mix(in srgb,var(--brand) 18%,#ddd);border-radius:14px;background:var(--paper,#fff);overflow:hidden;margin:14px 0}
+#checkout #loyaltyCardToggle{display:grid;grid-template-columns:40px minmax(0,1fr) 22px;align-items:center;gap:11px;width:100%;margin:0;padding:13px 14px;text-align:left;border:0;border-radius:13px;background:transparent;color:var(--ink,#29232f);cursor:pointer}
+#checkout #loyaltyCardToggle:focus-visible{outline:2px solid var(--brand);outline-offset:-3px}
+#checkout .loyalty-card-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--brand) 11%,#fff);color:var(--brand);font-size:1.5rem}
+#checkout .loyalty-card-copy{display:grid;gap:4px;min-width:0}
+#checkout .loyalty-card-copy strong{font-size:1rem;line-height:1.3}
+#checkout .loyalty-card-copy small{font-size:.8rem;line-height:1.4;color:var(--muted,#665c6c)}
+#checkout .loyalty-card-chevron{font-size:1.25rem;color:var(--brand);text-align:center;transition:transform .18s}
+#checkout #loyaltyCardToggle[aria-expanded=true] .loyalty-card-chevron{transform:rotate(180deg)}
+#checkout #loyaltyCardContent{padding:0 14px 14px;border-top:1px solid color-mix(in srgb,var(--brand) 12%,#eee)}
+#checkout #loyaltyCardContent #loyaltyTerms{margin:12px 0}
+#checkout #loyaltyCardContent #loyaltyStatus:empty{display:none}
+#checkout #loyaltyBox[data-applied=true] #loyaltyCardSummary{color:#187642;font-weight:700}
+@media(prefers-reduced-motion:reduce){#checkout .loyalty-card-chevron{transition:none}}
 
 </style><style>.schedule-store-action{flex-basis:100%;padding:12px;border:0;border-radius:9px;background:var(--brand,#df5a20);color:#fff;font-weight:800}.schedule-choices{display:grid;gap:9px;margin-top:9px;padding:12px;background:var(--paper,#fff);border:1px solid #dedede;border-radius:10px}.schedule-times{display:flex;gap:7px;flex-wrap:wrap}.schedule-time{border:1px solid #d3d3d3;border-radius:8px;padding:9px 14px;background:var(--paper,#fff);color:var(--ink,#24211e)}.schedule-time[aria-pressed="true"]{background:var(--brand,#df5a20);color:white;border-color:var(--brand,#df5a20)}</style></head><body>
 <section id="menuStartup" class="menu-startup" role="status" aria-label="Carregando o cardápio">
@@ -1383,7 +1397,8 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
  <div id="v2PaymentCards" class="v2-payment-cards" role="radiogroup" aria-label="Formas de pagamento configuradas pela loja"></div>
  <div id="v2ChangeBlock" class="v2-change-block" hidden><label for="v2CashChange">Vai pagar com quanto? (para calcular o troco)</label><input id="v2CashChange" inputmode="decimal" autocomplete="off" placeholder="Ex.: 50,00"><small>Informe quanto entregará ao motoboy. O troco considera produtos, descontos e taxa de entrega.</small></div>
 <section id="loyaltyBox" class="fiado-access" aria-label="Fideliza+ do cliente" hidden>
- <h3>Fideliza+ · Benefícios desta loja</h3><p id="loyaltyTerms"></p><div id="loyaltyCampaigns"></div>
+ <button type="button" id="loyaltyCardToggle" class="loyalty-card-toggle" aria-expanded="false" aria-controls="loyaltyCardContent"><span class="loyalty-card-icon" aria-hidden="true">✦</span><span class="loyalty-card-copy"><strong>Fideliza+</strong><small id="loyaltyCardSummary">Cupons, pontos e benefícios</small></span><span class="loyalty-card-chevron" aria-hidden="true">⌄</span></button>
+ <div id="loyaltyCardContent" hidden><p id="loyaltyTerms"></p><div id="loyaltyCampaigns"></div>
  <div id="loyaltyAnonymous"><p>Seu número de celular com DDD é seu acesso ao Fideliza+. Ao digitar o telefone do pedido, seus pontos e créditos aparecem automaticamente. Na primeira compra, o cadastro da carteira é automático.</p>
  </div>
  <div id="loyaltyMember" hidden><p id="loyaltyBalance"></p>
@@ -1391,7 +1406,7 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
  <div id="loyaltyCouponBlock"><label for="loyaltyCoupon">Cupom ou código da campanha</label><input id="loyaltyCoupon" maxlength="32" autocomplete="off" placeholder="Código da oferta"></div>
  <div id="loyaltyRewardBlock" hidden><label for="loyaltyReward">Resgatar benefício</label><select id="loyaltyReward"><option value="">Não usar saldo nesta compra</option></select></div>
  <button type="button" id="loyaltyApply" class="secondary">Aplicar benefício</button><button type="button" id="loyaltyClear" class="secondary">Remover desconto</button>
- <p id="loyaltyStatus" role="status" aria-live="polite"></p>
+ <p id="loyaltyStatus" role="status" aria-live="polite"></p></div>
 </section>
 <p id="fiadoUnavailable" class="fiado-unavailable" role="status" aria-live="polite" hidden></p>
 <div id="fiadoAuth" class="fiado-payment-confirmation" hidden>
@@ -2220,7 +2235,7 @@ function v2BenefitPurchase(type,value){
  invalidateLoyalty();
  if(!cart.length){v2Go('cardapio');return;}
  $('cartDialog').showModal();cartStep(true);
- $('loyaltyBox').scrollIntoView({block:'start'});
+ setLoyaltyCardExpanded(true);$('loyaltyBox').scrollIntoView({block:'start'});
  loyaltyNotice('Toque em Aplicar benefício para conferir o desconto.');
 }
 function v2RenderWallet(){
@@ -2610,6 +2625,7 @@ function renderCart(){
   else $('total').append(totalLine('Taxa de entrega',fee));
  }
  const benefit=loyaltyDiscount();
+ updateLoyaltyCard(benefit);
  if(benefit>0)$('total').append(totalLine('Desconto Fideliza+',-benefit));
  const priceAdjustment=paymentPriceAdjustment($('payment').value,subtotal,benefit);
  if(priceAdjustment)$('total').append(totalLine(priceAdjustment>0?'Acréscimo no pagamento':'Desconto no pagamento',priceAdjustment));
@@ -2876,11 +2892,29 @@ function availableLoyaltyRewards(wallet){
 }
 const loyaltyFingerprint=()=>JSON.stringify([loyaltyItems(),loyaltyPhone,$('loyaltyCoupon').value.trim().toUpperCase(),$('loyaltyReward').value]);
 const loyaltyDiscount=()=>loyaltyPreview&&loyaltyStamp===loyaltyFingerprint()?Number(loyaltyPreview.discount_cents)/100:0;
-function loyaltyNotice(text){$('loyaltyStatus').textContent=text||'';}
+function setLoyaltyCardExpanded(expanded){
+ $('loyaltyCardContent').hidden=!expanded;
+ $('loyaltyCardToggle').setAttribute('aria-expanded',String(expanded));
+}
+$('loyaltyCardToggle').onclick=()=>setLoyaltyCardExpanded($('loyaltyCardContent').hidden);
+function updateLoyaltyCard(discount=loyaltyDiscount()){
+ const rule=loyaltyWallet?.rules||loyaltyProgram?.rules||{};
+ const fiado=$('payment').value==='fiado',summary=$('loyaltyCardSummary'),parts=[];
+ if(loyaltyWallet){
+  if(rule.points_enabled)parts.push(Number(loyaltyWallet.points||0)+' pontos');
+  if(rule.orders_enabled)parts.push(Number(loyaltyWallet.orders||0)+' pedidos');
+  if(rule.cashback_enabled||rule.referrals_enabled)parts.push(money(Number(loyaltyWallet.cashback_cents||0)/100)+' em créditos');
+ }
+ const selected=Boolean($('loyaltyCoupon').value.trim()||$('loyaltyReward').value);
+ $('loyaltyBox').dataset.applied=String(!fiado&&discount>0);
+ summary.textContent=fiado?(selected?'Remova o benefício para pagar no Fiado.':'Benefícios não disponíveis no Fiado.'):discount>0?'✓ '+money(discount)+' de desconto aplicado':parts.length?parts.join(' · '):'Consultar cupons, pontos e benefícios';
+ $('loyaltyApply').disabled=fiado||loyaltyBusy;
+}
+function loyaltyNotice(text){$('loyaltyStatus').textContent=text||'';updateLoyaltyCard();}
 function invalidateLoyalty(){loyaltyPreview=null;loyaltyStamp='';if(menu)renderCart();}
 function renderLoyalty(){
  const rules=loyaltyWallet?.rules||loyaltyProgram?.rules||{};
- $('loyaltyAnonymous').hidden=false;$('loyaltyMember').hidden=!loyaltyWallet;
+ $('loyaltyAnonymous').hidden=Boolean(loyaltyWallet);$('loyaltyMember').hidden=!loyaltyWallet;
  $('loyaltyCouponBlock').hidden=!(rules.coupons_enabled||rules.campaigns_enabled);
  const select=$('loyaltyReward'),chosen=select.value;
  select.replaceChildren(new Option('Não usar saldo nesta compra',''));
@@ -2907,6 +2941,7 @@ function renderLoyalty(){
   const use=button('Usar '+campaign.code,'secondary');use.onclick=()=>{$('loyaltyReward').value='';$('loyaltyCoupon').disabled=false;$('loyaltyCoupon').value=campaign.code;invalidateLoyalty();loyaltyNotice('Toque em Aplicar benefício para conferir o desconto.');};
   row.append(use);offers.append(row);
  }
+ updateLoyaltyCard();
 }
 
 async function refreshLoyaltyWallet(){
@@ -2954,7 +2989,7 @@ $('loyaltyOpen').onclick=()=>{
  $('cartDialog').showModal();
  if(completed){$('checkout').hidden=false;$('checkout').classList.add('loyalty-only');$('cartTitle').textContent='Meu Fideliza+';}
  else cartStep(true);
- $('loyaltyBox').scrollIntoView({block:'start'});void refreshLoyaltyWallet();
+ setLoyaltyCardExpanded(true);$('loyaltyBox').scrollIntoView({block:'start'});void refreshLoyaltyWallet();
 };
 $('loyaltyCopyShare').onclick=async()=>{
  try{await navigator.clipboard.writeText($('loyaltyShare').value);loyaltyNotice('Indicação copiada.');}
@@ -2966,13 +3001,13 @@ $('loyaltyReward').onchange=()=>{
 $('loyaltyCoupon').oninput=()=>{invalidateLoyalty();};
 $('loyaltyClear').onclick=()=>{$('loyaltyCoupon').value='';$('loyaltyReward').value='';$('loyaltyCoupon').disabled=false;invalidateLoyalty();loyaltyNotice('Sem desconto selecionado. Você continua acumulando conforme as regras da loja.');};
 $('loyaltyApply').onclick=async()=>{
- if(loyaltyBusy||pendingRequest)return;loyaltyBusy=true;$('loyaltyApply').disabled=true;const fingerprint=loyaltyFingerprint();
+ if(loyaltyBusy||pendingRequest)return;if($('payment').value==='fiado'){loyaltyNotice('Pedidos fiados não utilizam benefícios do Fideliza+.');return;}loyaltyBusy=true;$('loyaltyApply').disabled=true;const fingerprint=loyaltyFingerprint();
  try{
   const {data,error}=await client.rpc('pitacco_loyalty_preview',{p_slug:slug,p_items:loyaltyItems(),p_key:loyaltyPhone,p_coupon:$('loyaltyCoupon').value.trim().toUpperCase(),p_reward:$('loyaltyReward').value});
   if(error)throw error;if(data?.error)throw Error(data.error);if(!Number.isInteger(data?.discount_cents))throw Error('Desconto não confirmado.');
   if(fingerprint!==loyaltyFingerprint())throw Error('A sacola mudou. Confira novamente o benefício.');
   loyaltyPreview=data;loyaltyStamp=fingerprint;renderCart();loyaltyNotice('Desconto conferido: '+money(data.discount_cents/100)+'. A disponibilidade será confirmada ao enviar o pedido.');
- }catch(error){invalidateLoyalty();loyaltyNotice(error.message||'Não foi possível aplicar o benefício.');}finally{loyaltyBusy=false;$('loyaltyApply').disabled=false;}
+ }catch(error){invalidateLoyalty();loyaltyNotice(error.message||'Não foi possível aplicar o benefício.');}finally{loyaltyBusy=false;updateLoyaltyCard();}
 };
 // Referral attribution comes only from the store-scoped link, never a checkout input.
 
@@ -3773,7 +3808,7 @@ function v2RenderPaymentCards(){
  change.hidden=$('payment').value!=='dinheiro';
  if(restoreFocus&&!change.hidden){cash.focus({preventScroll:true});if(selection)cash.setSelectionRange(...selection);}
 }
-$('payment').addEventListener('change',()=>{if(v2Only())v2RenderPaymentCards();});
+$('payment').addEventListener('change',()=>{if(v2Only())v2RenderPaymentCards();updateLoyaltyCard();});
 new MutationObserver(()=>{if(v2Only())v2RenderPaymentCards();}).observe($('payment'),{childList:true,subtree:true,attributes:true,attributeFilter:['disabled']});
 function v2TotalToPay(){
  const subtotal=cart.reduce((sum,item)=>sum+Number(item.unit||0)*Number(item.quantity||0),0);

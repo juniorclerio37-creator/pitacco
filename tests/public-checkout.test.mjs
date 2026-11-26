@@ -166,3 +166,11 @@ test('checkout places GPS after address fields, uses compact delivery radios and
  assert.match(html,/#addressBlock #deliveryServices input\[type=radio\]\{[^}]*width:19px[^}]*box-shadow:none/);
  assert.match(html,/if\(option.value==='dinheiro'\)\{b.setAttribute\('aria-controls','v2ChangeBlock'\);change.dataset.paymentGroup=groupLabel;list.append\(change\)/);
 });
+
+test('Fideliza checkout uses a collapsible independent benefit card',()=>{
+ assert.match(html,/id="loyaltyCardToggle"[^>]*aria-expanded="false"[^>]*aria-controls="loyaltyCardContent"/);
+ assert.match(html,/id="loyaltyCardContent" hidden/);
+ assert.match(html,/updateLoyaltyCard\(benefit\)/);
+ assert.match(html,/\$\('loyaltyApply'\)\.disabled=fiado\|\|loyaltyBusy/);
+ assert.match(html,/setLoyaltyCardExpanded\(true\);\$\('loyaltyBox'\)\.scrollIntoView/);
+});
