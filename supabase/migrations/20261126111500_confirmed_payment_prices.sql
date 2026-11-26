@@ -36,10 +36,10 @@ begin
   d:=pg_get_functiondef(f.oid);
   discount_expr:=case when f.proname like '%coupon' then 'v_discount' else '0' end;
   amount_anchor:=case when f.proname like '%coupon' then 'total:=subtotal+fee-v_discount;' else 'total:=subtotal+fee;' end;
-  if strpos(d,amount_anchor)=0 or strpos(d,'subtotal numeric:=0;')=0 or strpos(d,'''total'',total,''discount'',')=0 then raise exception 'Checkout price integration anchor missing: %',f.proname;end if;
+  if strpos(d,amount_anchor)=0 or strpos(d,'subtotal numeric:=0;')=0 or strpos(d,'''delivery_fee_original'',fee,''total'',total,''discount'',')=0 then raise exception 'Checkout price integration anchor missing: %',f.proname;end if;
   v:=replace(d,'subtotal numeric:=0;','subtotal numeric:=0; v_payment_price jsonb;');
   v:=replace(v,amount_anchor,amount_anchor||'v_payment_price:=pitacco_private.checkout_payment_price(cfg.store_id,p_request,p_payment,subtotal,'||discount_expr||',fee); if v_payment_price is not null then total:=(v_payment_price->>''total_cents'')::numeric/100; end if;');
-  v:=replace(v,'''total'',total,''discount'',','''total'',total,''payment_price'',v_payment_price,''discount'',');
+  v:=replace(v,'''delivery_fee_original'',fee,''total'',total,''discount'',','''delivery_fee_original'',fee,''total'',total,''payment_price'',v_payment_price,''discount'',');
   execute v;n:=n+1;
  end loop;
  if n<>4 then raise exception 'Expected four checkout price integrations';end if;
