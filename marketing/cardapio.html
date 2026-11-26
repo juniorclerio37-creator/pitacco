@@ -545,7 +545,7 @@ body:not([data-menu-template="pitacco-v2"]) .v2-header-back,
 body:not([data-menu-template="pitacco-v2"]) .v2-header-actions,
 body:not([data-menu-template="pitacco-v2"]) .v2-hero-info,
 body:not([data-menu-template="pitacco-v2"]) .v2-hero-visual{display:none!important}
-body[data-menu-template="pitacco-v2"][data-v2-page=inicio] #v2StoreNav{display:none!important}
+/* Navigation remains available on the home page after removing duplicate header shortcuts. */
 body[data-menu-template="pitacco-v2"] .hero{min-height:260px;padding:23px 0 64px;background:hsl(var(--template-hue,290.37) calc(85.26% * var(--template-chroma,1)) 18.63%);border:0;overflow:hidden}
 body[data-menu-template="pitacco-v2"] .hero::after{background:linear-gradient(95deg,hsl(var(--template-hue,288.65) calc(88.10% * var(--template-chroma,1)) 16.47%) 0%,hsl(var(--template-hue,287.29) calc(80.95% * var(--template-chroma,1)) 20.59% / 0.9098) 68%,hsl(var(--template-hue,293.25) calc(78.43% * var(--template-chroma,1)) 20.00% / 0.6196) 100%)}
 body[data-menu-template="pitacco-v2"] .hero>img#storeBanner{opacity:.44}
@@ -1308,7 +1308,7 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
 body[data-menu-template="pitacco-v2"] #hero .hero-content{padding:16px 0 0;min-height:130px}
 body[data-menu-template="pitacco-v2"] #hero:has(#storeSocialLinks:not([hidden])) .hero-content{padding-top:42px}
 body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#storeBanner:not([hidden])) .hero-content{justify-content:center;align-items:center}
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .hero h1{max-width:none}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero h1{max-width:none}
 body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] #hero .store-mark{width:clamp(80px,9vw,108px);height:clamp(80px,9vw,108px)}
 body[data-menu-template="pitacco-v2"][data-menu-skin=editorial] #hero .hero-content{padding:17px 15px 0;min-height:110px}
 body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #hero .hero-content{padding-right:30%}

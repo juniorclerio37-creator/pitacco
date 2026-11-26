@@ -190,3 +190,7 @@ test('clean banner has no redundant navigation and gives the store logo prominen
  assert.match(html,/id="storeSocialLinks"/);
  assert.match(html,/id="openCart"/);
 });
+
+test('storefront section navigation stays visible on the home page',()=>{
+ assert.doesNotMatch(html,/\[data-v2-page=inicio\]\s*#v2StoreNav\s*\{\s*display:none/);
+});
