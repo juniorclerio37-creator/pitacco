@@ -1121,41 +1121,42 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] .hero:has(> #sto
  }
 }
 /* Piloto fotográfico Açaí do Linho - Loja de Testes. Somente V2 principal. */
-body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data-menu-skin="principal"] :is(.product-visual,.v2-top-photo){
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] :is(.product-visual,.v2-top-photo){
  background:radial-gradient(ellipse at 50% 36%,#fffdfd 0%,#faf4fb 66%,#f0e5f2 100%);
  overflow:hidden;
 }
-body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data-menu-skin="principal"] .category-grid .product-visual{
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .category-grid .product-visual{
  width:100%;height:clamp(176px,21vw,270px);aspect-ratio:auto;border-radius:0;min-height:0;
 }
-body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-top-photo{
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-top-photo{
  width:100%;height:clamp(190px,24vw,300px);aspect-ratio:auto;min-height:0;
 }
-body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data-menu-skin="principal"] :is(.product-visual,.v2-top-photo)>img{
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] :is(.product-visual,.v2-top-photo)>img{
  display:block;position:absolute;inset:0;width:100%;height:100%;
  min-width:0;min-height:0;border-radius:0;
  object-fit:contain;object-position:center;box-sizing:border-box;
  padding:clamp(7px,1.2vw,14px);
 }
-body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data-menu-skin="principal"] :is(.product-visual,.v2-top-photo)>img[data-photo-fit="cover"]{
- object-fit:cover;padding:0;
-}
-body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data-menu-skin="principal"] .product-intro{
+
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .product-intro{
  background:#faf4fb;
 }
-body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data-menu-skin="principal"] .product-intro>img{
+body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .product-intro>img{
  display:block;width:100%;height:min(72vw,350px);max-height:none;
  object-fit:contain;object-position:center;border-radius:0;
  box-sizing:border-box;padding:clamp(12px,2.2vw,22px);
  background:radial-gradient(ellipse at center,#fff 0%,#f8eff9 100%);
 }
 @media(max-width:600px){
- body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data-menu-skin="principal"] .category-grid .product-visual,
- body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-top-photo{
+ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .category-grid .product-visual,
+ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-top-photo{
   width:100%;height:auto;aspect-ratio:1 / 1;
  }
- body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data-menu-skin="principal"] :is(.product-visual,.v2-top-photo)>img{padding:7px}
- body[data-menu-photo-pilot="brendi-linho"][data-menu-template="pitacco-v2"][data-menu-skin="principal"] :is(.product-visual,.v2-top-photo)>img[data-photo-fit="cover"]{padding:0}
+ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] :is(.product-visual,.v2-top-photo)>img{padding:7px}
+}
+/* Full source image for every store, template, skin and viewport. Banners are separate. */
+body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,body #v2HeroImage,body .pitacco-promo img{
+ object-fit:contain!important;object-position:center!important;
 }
 /* Nunca apresentar blocos intermediários antes de estabilizar o carregamento inicial. */
 .menu-startup{position:fixed;inset:0;z-index:50;background:var(--surface);display:grid;place-items:center;padding:24px;color:var(--ink)}
@@ -1436,7 +1437,7 @@ const slug=segments[0]==='cardapio'
  ? new URLSearchParams(location.search).get('loja')||segments[1]||''
  : segments[0]||'';
 // O piloto de fotos aplica-se exclusivamente ao cardápio público da loja teste.
-if(slug==='acai-do-linho-demo')document.body.dataset.menuPhotoPilot='brendi-linho';
+
 // PITACCO_PAGBANK_PREVIEW_V1
 // A test link is never a live checkout. The opaque capability is scoped to one
 // sandbox seller and one payment; the marker remains even if the link expires.
@@ -2095,7 +2096,7 @@ function v2Feature(){
  v2RenderHomeLoyaltyProgress();
  const heroProduct=selected.find(p=>imageUrl(p.image_url));
  $('v2HeroImage').hidden=!heroProduct;
- if(heroProduct)$('v2HeroImage').src=heroProduct.image_url;
+ if(heroProduct){setProductPhotoFit($('v2HeroImage'));$('v2HeroImage').src=heroProduct.image_url;}
 }
 
 function v2Go(page,initial=false){
@@ -2246,14 +2247,11 @@ function msg(text){
 }
 function el(tag,txt,cls){const node=document.createElement(tag);if(txt!==undefined)node.textContent=txt;if(cls)node.className=cls;return node}
 function setProductPhotoFit(photo){
- if(slug!=='acai-do-linho-demo')return;
- const decide=()=>{
-  const ratio=photo.naturalWidth/Math.max(1,photo.naturalHeight);
-  // Quadradas preenchem a área; imagens verticais/horizontais não são cortadas.
-  photo.dataset.photoFit=ratio>=.96&&ratio<=1.04?'cover':'contain';
- };
- if(photo.complete&&photo.naturalWidth)decide();
- else photo.addEventListener('load',decide,{once:true});
+ // Never guess a crop from the store slug or the image aspect ratio.
+ // A merchant-approved crop is a new saved source image, also displayed in full.
+ photo.dataset.photoFit='contain';
+ photo.style.setProperty('object-fit','contain','important');
+ photo.style.setProperty('object-position','center','important');
 }
 function addPhoto(container,url){
  if(!imageUrl(url))return;
@@ -2484,7 +2482,7 @@ function renderCart(){
    const matching=menu.products.find(p=>p.id===item.product_id);
    if(imageUrl(matching?.image_url)){
     const picture=el('img',undefined,'v2-cart-thumb');
-    picture.src=matching.image_url;picture.loading='lazy';picture.alt='';
+    setProductPhotoFit(picture);picture.src=matching.image_url;picture.loading='lazy';picture.alt='';
     line.append(picture);
    }
   }

@@ -213,3 +213,9 @@ subprocess.run([sys.executable,'revisions/0.12/mount_control_center.py'],check=T
 
 # Isolate tenant transitions after all merchant and native overlays.
 subprocess.run([sys.executable,'revisions/0.12/windows_store_switch_0136.py'],check=True)
+
+# Preserve immutable saved print receipts across updates and repeated cloud claims.
+subprocess.run([sys.executable,'revisions/0.12/print_replay_0137.py'],check=True)
+
+# Bundle pinned Leaflet instead of injecting external CDN scripts at runtime.
+subprocess.run([sys.executable,'revisions/0.12/bundle_leaflet_0138.py'],check=True)

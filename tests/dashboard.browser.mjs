@@ -115,8 +115,16 @@ try {
       }
     }, { api,storeId:store.id,width,dashboard });
 
+    let mapTilesOffline=false;
+    let externalMapScriptRequests=0;
     await page.route('**/*', async route => {
       const { pathname, origin, searchParams } = new URL(route.request().url());
+      if(origin==='https://unpkg.com'){externalMapScriptRequests++;return route.abort();}
+      if(origin==='https://tile.openstreetmap.org'){
+        if(mapTilesOffline)return route.abort();
+        // Deterministic one-pixel PNG stands in for the real network tile.
+        return route.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGNgAAAAAgABSK+kcQAAAABJRU5ErkJggg==','base64')});
+      }
       if(origin==='https://api.github.com' && pathname==='/repos/juniorclerio37-creator/pitacco/releases'){
         return route.fulfill({headers:{'access-control-allow-origin':'*'},json:[{
           tag_name:'pitacco-windows-123abc456def',draft:false,prerelease:false,
@@ -1065,6 +1073,20 @@ try {
       await assertAreaWidth();
       await area.getByRole('radio',{name:'Polígonos por região'}).check();
       await assertAreaWidth();
+      const zoneMap=area.locator('.delivery-zone-map');
+      await zoneMap.locator('.leaflet-tile-loaded').first().waitFor();
+      assert.equal(externalMapScriptRequests,0,'The editor loads its own bundled map runtime');
+      await area.getByRole('button',{name:'Adicionar região'}).click();
+      await zoneMap.scrollIntoViewIfNeeded();
+      const size=await zoneMap.boundingBox();
+      for(const [x,y] of [[.32,.34],[.68,.34],[.60,.68]]){
+        await zoneMap.click({position:{x:Math.round(size.width*x),y:Math.round(size.height*y)}});
+      }
+      await area.getByText('3 de 30 pontos nesta região',{exact:true}).waitFor();
+      assert.equal(await zoneMap.locator('.pitacco-polygon-handle').count(),3);
+      await area.getByRole('button',{name:'Desfazer último ponto'}).click();
+      await area.getByText('2 de 30 pontos nesta região',{exact:true}).waitFor();
+
       await merchantNavigate('Configurações','Dados da loja');
     }
     if(width===1440){
