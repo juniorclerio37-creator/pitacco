@@ -107,7 +107,14 @@ try{
   assert.equal(await page.locator('.product').first().evaluate(card=>{const photo=card.querySelector('.product-visual').getBoundingClientRect(),image=card.querySelector('.product-visual img').getBoundingClientRect();return image.bottom<=photo.bottom+1&&image.height<=photo.height+1;}),true,'Foto real limitada à área visual sem cobrir texto');
   assert.equal(await page.locator('#v2HeaderBack,#v2HeaderSearch,#v2HeaderAbout,#v2HeaderCart').count(),0,'No redundant banner controls');
   assert.ok(await page.locator('.store-mark').evaluate(e=>e.getBoundingClientRect().width>=76),'Larger storefront logo');
-  if(['pitacco-v2','urbano'].includes(template))assert.equal(await page.locator('#v2HeroImage').evaluate(img=>img.getBoundingClientRect().left>=document.querySelector('.store-mark').getBoundingClientRect().right),true,'Foto decorativa não cobre o logotipo');
+  if(template==='pitacco-v2'){
+   const hero=await page.locator('#hero').evaluate(e=>{
+    const mark=e.querySelector('.store-mark'),m=mark.getBoundingClientRect(),name=e.querySelector('#storeName').getBoundingClientRect(),bounds=e.getBoundingClientRect();
+    return {size:m.width,square:Math.abs(m.width-m.height)<1,radius:getComputedStyle(mark).borderRadius,centered:Math.abs((m.left+m.right-bounds.left-bounds.right)/2)<2,below:name.top>=m.bottom,heroWidth:bounds.width,overflow:e.scrollWidth>bounds.width+1};
+   });
+   assert.ok(hero.size>=146&&hero.square&&hero.radius==='50%'&&hero.centered&&hero.below&&!hero.overflow,'Approved centered logo medallion and name below: '+JSON.stringify(hero));
+  }
+  if(template==='urbano')assert.equal(await page.locator('#v2HeroImage').evaluate(img=>img.getBoundingClientRect().left>=document.querySelector('.store-mark').getBoundingClientRect().right),true,'Foto decorativa não cobre o logotipo');
   if(template==='urbano')assert.equal(await page.evaluate(()=>{const photo=document.getElementById('v2HeroImage').getBoundingClientRect();return ['v2DeliveryText','v2HeroLocation'].every(id=>document.getElementById(id).getBoundingClientRect().right<photo.left);}),true,'Prazo e localização legíveis ao lado da foto decorativa');
   assert.equal(await page.locator('body').getAttribute('data-menu-skin'),template==='pitacco-v2'?'principal':template);
   await mkdir('artifacts',{recursive:true});
