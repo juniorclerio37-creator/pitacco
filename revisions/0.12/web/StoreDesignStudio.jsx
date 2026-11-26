@@ -82,7 +82,7 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
   setLoading(true);setError('');setNotice('');
   loadStudioState(client,store.id).then(data=>{
    if(!alive)return;
-   const next={...defaultDesign,...data.draft,banners:data.draft?.banners||[]};
+   const next={...defaultDesign,...data.draft,logo_path:store.logo_path||data.draft?.logo_path||'',banners:data.draft?.banners||[]};
    setSaved(next);setDesign(structuredClone(next));setVersion(data.draft_version);
    setPublishedVersion(data.published_version);setPublishedDesign(data.published||null);setHistory(data.history||[]);
    setPublishedAt(data.published_at);
@@ -142,8 +142,7 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
    for(const [key,file] of Object.entries(files)){
     phase='enviar imagem da loja';
     const path=await uploadStoreImage(client,store.id,file,'stores');
-    if(key==='logo')next.logo_path=path;
-    else if(key==='cover')next.cover_path=path;
+    if(key==='cover')next.cover_path=path;
     else if(key.startsWith('banner-')){
      const index=Number(key.slice(7));
      if(next.banners[index])next.banners[index].image_path=path;
@@ -237,9 +236,6 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
       <p className="design-tip">O sistema escolhe automaticamente a cor do texto dos botões para melhorar a leitura.</p>
      </section>
      <section className="design-control-card"><h4>Imagens e informações</h4>
-      <label className="design-field">Logotipo (até 5 MB)<input disabled={!manager||working} type="file" accept="image/jpeg,image/png,image/webp"
-       onChange={e=>pickFile('logo',e.target.files?.[0])}/></label>
-      <div className="design-media-preview"><BannerImage url={imageFor('logo',design.logo_path)} style={{width:116,height:116,objectFit:'contain',borderRadius:12}}/><small>{files.logo?'Novo logotipo selecionado — publicar para aplicar.':'Logotipo único da loja: usado no cardápio, Windows, acompanhamento e impressão.'}</small></div>
       <label className="design-field">Imagem de capa (até 5 MB)<input disabled={!manager||working} type="file" accept="image/jpeg,image/png,image/webp"
        onChange={e=>pickFile('cover',e.target.files?.[0])}/></label>
       <div className="design-media-preview"><BannerImage url={imageFor('cover',design.cover_path)} style={{width:'100%',maxHeight:160,objectFit:'cover',borderRadius:12}}/><small>{files.cover?'Nova capa selecionada — publicar para aplicar.':'Capa atual da loja, preservada até ser substituída.'}</small></div>
