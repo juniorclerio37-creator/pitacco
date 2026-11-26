@@ -198,6 +198,7 @@ try {
       const body=document.getElementById('productBody');
       const nativeScroll=body.scrollTo.bind(body);
       window.productAutoScroll=[];
+      body.style.maxHeight='140px';
       body.scrollTo=options=>{
         window.productAutoScroll.push({top:options.top,behavior:options.behavior});
         nativeScroll({...options,behavior:'instant'});
@@ -212,7 +213,7 @@ try {
     assert.equal(await page.evaluate(()=>window.productAutoScroll.length),0,'Partial flavor selection must not advance');
     await pizza.getByRole('checkbox',{name:/Frango/}).check();
     const pizzaScroll=await page.evaluate(()=>window.productAutoScroll.slice());
-    if(width===375)assert.equal(pizzaScroll.length,1,'Reaching maximum flavors advances to the optional border');
+    assert.equal(pizzaScroll.length,1,'Reaching maximum flavors advances to the optional border');
     await pizza.getByRole('radio',{name:/Catupiry/}).check();
     assert.match(await pizza.locator('#productTotal').innerText(),/59,95/);
     await pizza.getByRole('button',{name:/Adicionar à sacola/}).click();
@@ -237,8 +238,13 @@ try {
     await page.evaluate(()=>{
       window.productAutoScroll=[];
       const body=document.getElementById('productBody');
-      // Force enough overflow to exercise advancement at every viewport, even on desktop.
+      const nativeScroll=body.scrollTo.bind(body);
+      // Reload creates a new element; reinstall the scroll observer.
       body.style.maxHeight='140px';
+      body.scrollTo=options=>{
+        window.productAutoScroll.push({top:options.top,behavior:options.behavior});
+        nativeScroll({...options,behavior:'instant'});
+      };
     });
     await advanceDialog.getByRole('radio',{name:/Morango/}).check();
     const advanceCalls=await page.evaluate(()=>window.productAutoScroll.slice());
