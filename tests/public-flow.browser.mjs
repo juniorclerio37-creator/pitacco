@@ -441,7 +441,7 @@ try {
     await page.getByRole('link', { name: 'Acompanhar meu pedido' }).click();
     await page.locator('#currentStatus').filter({hasText: tracking.label}).waitFor();
     if(scheduled){
-      await page.locator('#scheduledFor').filter({hasText:'Agendado para'}).waitFor();
+      await page.locator('#scheduledFor').filter({hasText:'Entrega agendada para'}).waitFor();
       const map=page.getByRole('link',{name:'Abrir localização aproximada no mapa'});
       await map.waitFor();
       const inlineMap=page.locator('#courierLiveMap');
