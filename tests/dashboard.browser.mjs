@@ -1039,7 +1039,7 @@ try {
       }
       await page.getByRole('button',{name:'Salvar e ativar círculo de entrega'}).click();
       await page.getByText(/Taxas do círculo por quilômetro salvas/).waitFor();
-      await merchantNavigate('Integrações','Meios de pagamento');
+      await merchantNavigate('Configurações','Formas de pagamento');
       assert.equal(await page.getByRole('region',{name:'Configuração do código de confirmação de entrega'}).count(),0);
       const publication=page.getByRole('region',{name:'Publicação e atendimento'});
       const paymentPanel=page.getByRole('region',{name:'Formas de pagamento',exact:true});

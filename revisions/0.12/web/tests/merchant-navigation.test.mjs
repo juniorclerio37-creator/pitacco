@@ -65,7 +65,17 @@ test('merchant header highlights the selected establishment instead of Pitacco b
 test('configuration routes stay in one canonical menu without the legacy settings toolbar',()=>{
  const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
  assert.doesNotMatch(source,/className="store-settings-tabs"/);
- for(const [id,group] of [['Área de entrega','Entregas'],['Pagamentos da loja','Integrações'],['Aparência do cardápio','Cardápio'],['Minha Loja','Configurações'],['Horário de funcionamento','Configurações']]){
+ for(const [id,group] of [['Área de entrega','Entregas'],['Pagamentos da loja','Configurações'],['Aparência do cardápio','Cardápio'],['Minha Loja','Configurações'],['Horário de funcionamento','Configurações']]){
   assert.deepEqual(groups.filter(g=>g.items.some(i=>i.id===id)).map(g=>g.name),[group]);
  }
+});
+
+test('payment methods are listed only in Settings while legacy route remains stable',()=>{
+ const route=resolveMenuRoute('Pagamentos da loja');
+ assert.equal(route.label,'Formas de pagamento');
+ assert.equal(route.tab,'Pagamentos da loja');
+ assert.equal(route.manager,true);
+ assert.equal(menuAllowed(route,{allowed:()=>true,manager:false,active:true}),false);
+ assert.equal(menuAllowed(route,{allowed:()=>true,manager:true,active:true}),true);
+ assert.equal(groups.find(g=>g.name==='Integrações').items.some(i=>i.id==='Pagamentos da loja'),false);
 });
