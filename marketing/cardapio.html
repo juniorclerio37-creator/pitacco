@@ -1480,7 +1480,7 @@ if(studioPreviewActive){
  },true);
 }
 
-let menu,cart=[],pendingRequest=null,submitting=false,scheduleRequest=0;
+let menu,cart=[],pendingRequest=null,submitting=false,checkoutPreparing=false,scheduleRequest=0;
 let fiadoEligiblePhone='',fiadoLookupCounter=0,fiadoLookupTimer=null,fiadoLookupFingerprint='';
 let storeOpening=null;
 const schedulingAvailable=()=>storeOpening?.scheduling_available===true&&storeOpening?.paused!==true;
@@ -3114,7 +3114,11 @@ $('checkout').onsubmit=async event=>{
  event.preventDefault();
  if(pagbankPreviewMode){openPagBankPreview();return;}
  if(completed)return;
- if(submitting||cartRecoveryId||!cart.length)return;
+ if(submitting||checkoutPreparing||cartRecoveryId||!cart.length)return;
+ // Reserve the submit before the first asynchronous check. Two rapid submits
+ // must not create independent request IDs while opening hours are loading.
+ checkoutPreparing=true;
+ try{
  if(!pendingRequest){
   try{
    const currentOpening=await refreshStoreOpening();
@@ -3193,6 +3197,7 @@ $('checkout').onsubmit=async event=>{
   if($('schedule').value&&deliveryService==='priority'&&fulfillment==='delivery'){pendingRequest=null;msg('Entrega prioritária disponível apenas para pedidos imediatos. Selecione entrega padrão para agendar.');return;}
   if($('schedule').value)pendingRequest.p_scheduled_for=$('schedule').value;
  }
+ }finally{checkoutPreparing=false;}
  persistCartDraft();
  submitting=true;
  $('closeCart').disabled=true;

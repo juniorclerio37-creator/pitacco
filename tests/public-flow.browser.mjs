@@ -46,6 +46,7 @@ try {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     const requests = [];
+    const recordedOrders = new Map();
     let releaseResponse;
     const responseGate = new Promise(resolve => { releaseResponse = resolve; });
     await page.route('**/*', async route => {
@@ -140,11 +141,15 @@ try {
       if (pathname.endsWith('/pitacco_checkout_quoted_delivery')) {
         assert.equal(route.request().postDataJSON().p_quote,'30000000-0000-0000-0000-000000000011');
         requests.push(route.request().postDataJSON());
+        const payload=route.request().postDataJSON();
+        const saved=recordedOrders.get(payload.p_request);
+        if(saved)assert.deepEqual(payload,saved.payload,'Server replay uses the original request and full checkout snapshot');
+        else recordedOrders.set(payload.p_request,{payload,receipt:{order_id:orderId,tracking_token:token,total:template==='classic'?27:74,payment_status:'pending'}});
         if (requests.length === 1) {
           await responseGate;
           return route.fulfill({ status: 503, json: { message: 'Resposta indisponível' } });
         }
-        return route.fulfill({ json: { order_id: orderId, tracking_token: token, total: 74, payment_status: 'pending' } });
+        return route.fulfill({ json: recordedOrders.get(payload.p_request).receipt });
       }
       if (pathname.endsWith('/pitacco_track_public_order')) {
         assert.equal(route.request().postDataJSON().p_token, token);
@@ -210,6 +215,23 @@ try {
       await page.locator('#addressStreet').fill('Rua Teste');
       await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
       assert.equal(await page.locator('#send').isDisabled(),false);
+      if(scheduled)await page.getByLabel('Quando deseja receber?').selectOption(scheduled);
+      await page.getByRole('button',{name:'Confirmar pedido',exact:true}).click();
+      await page.getByRole('button',{name:'Enviando…',exact:true}).waitFor();
+      await page.locator('#checkout').evaluate(form=>form.requestSubmit());
+      releaseResponse();
+      await page.getByRole('button',{name:'Tentar novamente',exact:true}).click();
+      await page.getByRole('heading',{name:scheduled?'✓ Pedido agendado enviado com sucesso':'Pedido recebido!',exact:true}).waitFor();
+      if(scheduled)assert.match(await page.locator('#success').innerText(),/A loja ainda precisa aceitar manualmente/);
+      assert.equal(requests.length,2);
+      assert.equal(recordedOrders.size,1,'Lost confirmation and retry create one sale');
+      assert.deepEqual(requests[0],requests[1]);
+      assert.equal(requests[0].p_scheduled_for,scheduled||undefined);
+      assert.equal(requests[0].p_payment,'pix_manual');
+      assert.match(requests[0].p_address,/Rua Teste, 123, Centro/);
+      assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-cart:loja-teste')),null);
+      await page.getByRole('link',{name:'Acompanhar meu pedido'}).click();
+      await page.locator('#currentStatus').filter({hasText:tracking.label}).waitFor();
       assert.deepEqual(errors,[]);
       await page.close();
       console.log('PASS classic automatic quote at '+width+'px');
@@ -396,10 +418,17 @@ try {
     await page.locator('#checkout').evaluate(form => form.requestSubmit());
     releaseResponse();
     await page.getByRole('button', { name: 'Tentar novamente' }).click();
-    await page.getByRole('heading', { name: principal?'✓ Pedido confirmado!':'Pedido recebido!' }).waitFor();
+    await page.getByRole('heading', { name: scheduled?'✓ Pedido agendado enviado com sucesso':principal?'✓ Pedido confirmado!':'Pedido recebido!', exact:true }).waitFor();
+    if(scheduled){
+      assert.match(await page.locator('#success').innerText(),/A loja ainda precisa aceitar manualmente/);
+      assert.equal(await page.getByRole('heading',{name:'✓ Pedido confirmado!',exact:true}).count(),0);
+    }
     assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-cart:loja-teste')),null,'Confirmed order clears saved cart');
     assert.equal(requests.length, 2);
+    assert.equal(recordedOrders.size,1,'Lost confirmation and retry create one sale');
     assert.deepEqual(requests[0], requests[1]);
+    assert.equal(requests[0].p_payment,'pix_manual');
+    assert.match(requests[0].p_address,/Rua Teste, 123, Centro/);
     assert.equal(requests[0].p_scheduled_for,scheduled||undefined);
     assert.equal(requests[0].p_quote,'30000000-0000-0000-0000-000000000011');
     assert.equal(Object.hasOwn(requests[0],'p_latitude'),false);

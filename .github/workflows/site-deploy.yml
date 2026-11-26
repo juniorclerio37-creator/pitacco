@@ -9,6 +9,7 @@ on:
       - 'revisions/0.12/*.py'
       - 'scripts/build-cloudflare.sh'
       - 'marketing/**'
+      - 'tests/**'
       # Publicar o site do entregador quando a UI de Ajustes, downloads ou alertas mudar.
       # Mudanças exclusivamente nativas em android-app não disparam deploy desnecessário.
       - 'entregador/*.html'
@@ -68,6 +69,18 @@ jobs:
     timeout-minutes: 25
     env:
       PITACCO_WEB_ONLY: '1'
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: isolated-ci-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -95,10 +108,22 @@ jobs:
           npm test --prefix web
           npm ci --prefix web/tests/backend
           npm test --prefix web/tests/backend
-      - name: Validar a landing page no Chromium em oito larguras
+          node tests/driver-arrival-postgres.mjs
+      - name: Validar PostgreSQL 17 e concorrência antes de publicar
+        env:
+          DATABASE_URL: postgres://postgres:isolated-ci-password@localhost:5432/postgres
+        run: |
+          npm install --prefix web/tests/backend --no-save --package-lock=false pg@8.16.3
+          node web/tests/backend/run.mjs
+          node web/tests/backend/concurrency.mjs
+      - name: Validar checkout, acompanhamento, benefícios e painel no Chromium
         run: |
           npm install --prefix web --no-save --package-lock=false playwright@1.58.2
           (cd web && npx playwright install --with-deps chromium)
+          node tests/public-flow.browser.mjs
+          node tests/photo-fit.browser.mjs
+          node tests/fideliza.browser.mjs
+          node tests/dashboard.browser.mjs
           node tests/landing-page.browser.mjs
       - name: Publicar somente o Worker existente e seus arquivos
         shell: bash
