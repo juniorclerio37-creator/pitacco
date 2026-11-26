@@ -21,11 +21,11 @@ Deno.serve(async req=>{
   if(!user.ok)return reply(401,{error:"Sessão inválida"});
   const actor=(await user.json()).id;
   const raw=await req.text();if(raw.length>4096)return reply(413,{error:"Requisição inválida"});
-  const input=JSON.parse(raw),invoice=input.invoice_id,document=String(input.document||"").replace(/\D/g,""),enroll=input.action==="register_customer";
+  const input=JSON.parse(raw),invoice=input.invoice_id,document=String(input.document||"").replace(/\D/g,""),ownerEnroll=input.action==="register_owner_customer",enroll=ownerEnroll||input.action==="register_customer";
   if(!(enroll?uuid.test(input.store_id):uuid.test(invoice))||document.length>14)return reply(400,{error:"Dados inválidos"});
   const method=input.method==="CREDIT_CARD"?"CREDIT_CARD":"PIX";
   if(!enroll&&input.method!=null&&!["PIX","CREDIT_CARD"].includes(input.method))return reply(400,{error:"Forma de pagamento indisponível"});
-  const ctx=enroll?await rpc("pitacco_asaas_prepare_store_customer",{p_actor:actor,p_store:input.store_id,p_document:document}):await rpc("pitacco_asaas_prepare_customer",{p_actor:actor,p_invoice:invoice,p_document:document});
+  const ctx=enroll?await rpc(ownerEnroll?"pitacco_asaas_prepare_owner_customer":"pitacco_asaas_prepare_store_customer",{p_actor:actor,p_store:input.store_id,p_document:document}):await rpc("pitacco_asaas_prepare_customer",{p_actor:actor,p_invoice:invoice,p_document:document});
   let customer=ctx.customer_id;
   if(!customer){
    const ref="pitacco:store:"+ctx.store_id;
