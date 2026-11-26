@@ -44,7 +44,8 @@ test('store address is geocoded on opening and again after a saved address chang
  const edge=read('supabase/functions/delivery-quote/index.ts');
  const fleet=read('revisions/0.12/web/FleetTracking.jsx');
  assert.match(form,/void locate\(\{automatic:true\}\)/);
- assert.match(form,/\[store\?\.id,addressSignature,point,manager,savedAddress,addressDirty,retryAttempt\]/);
+ assert.match(form,/\[store\?\.id,addressSignature,point,manager,savedAddress,addressDirty,retryAttempt,deviceBusy\]/);
+ assert.match(form,/manualProposal\.current\|\|deviceBusy\)return/);
  assert.match(form,/automaticLookup\.current/);
  assert.match(form,/retryTimer\.current=setTimeout/);
  assert.match(form,/75_000/);
