@@ -3035,10 +3035,10 @@ function openPagBankPreview(){
 $('pagbankPreviewClose').onclick=()=>{if(!pagbankPreviewBusy)$('pagbankPreviewDialog').close()};
 $('pagbankPreviewDialog').addEventListener('cancel',e=>{if(pagbankPreviewBusy)e.preventDefault()});
 $('pagbankPreviewDialog').addEventListener('close',()=>clearTimeout(pagbankPreviewTimer));
-function initOptions(){
+function renderPublicStoreIdentity(){
  const shop=menu.store;
- setMenuTemplate(shop);
- applyStudioDesign(shop);
+ // Replace only the contact link, preserving delivery and pickup service labels.
+ $('storeServices').querySelectorAll('a').forEach(link=>link.remove());
  $('storeName').textContent=shop.name;
  const social=$('storeSocialLinks');social.replaceChildren();
  for(const [kind,label,raw,pattern,shape] of [
@@ -3049,10 +3049,42 @@ function initOptions(){
  const digits=String(shop.whatsapp||'').replace(/\D/g,'');
  if(/^\d{10,11}$/.test(digits)||/^55\d{10,11}$/.test(digits)){const contact=el('a','WhatsApp da loja');contact.href='https://wa.me/'+(digits.length<=11?'55'+digits:digits);contact.target='_blank';contact.rel='noopener noreferrer';$('storeServices').append(contact);}
  $('v2AboutTitle').textContent=shop.name;
- $('v2DeliveryText').textContent=shop.delivery_enabled?'· Entrega disponível':shop.pickup_enabled?'· Retirada disponível':'';
- $('v2FavoritesNav').hidden=document.body.dataset.menuTemplate!=='pitacco-v2';
  $('storeInitial').textContent=shop.name.trim().slice(0,1).toUpperCase();
  document.title='Cardápio | '+shop.name;
+
+ const value=studioAsset(shop.profile_logo_path)||shop.logo_url;
+ const logo=$('storeLogo');
+ if(imageUrl(value)){
+  if(logo.getAttribute('src')!==value){
+   logo.hidden=true;$('storeInitial').hidden=false;
+   logo.onload=()=>{logo.hidden=false;$('storeInitial').hidden=true};
+   logo.onerror=()=>{logo.hidden=true;$('storeInitial').hidden=false};
+   logo.src=value;
+  }
+ }else{logo.removeAttribute('src');logo.hidden=true;$('storeInitial').hidden=false;}
+}
+let identityRefreshRunning=false;
+async function refreshPublicStoreIdentity(){
+ if(!menu||identityRefreshRunning||studioPreviewActive||pagbankPreviewMode||document.visibilityState!=='visible')return;
+ identityRefreshRunning=true;
+ try{
+  const {data,error}=await client.rpc('get_public_menu',{p_slug:slug});
+  if(error||!data?.store||typeof data.store.name!=='string')return;
+  // Preserve cart, price rules and checkout fields. The server validates each sale.
+  for(const key of ['name','whatsapp','instagram_url','facebook_url','profile_logo_path','logo_url'])menu.store[key]=data.store[key];
+  renderPublicStoreIdentity();
+ }catch{}finally{identityRefreshRunning=false}
+}
+setInterval(()=>void refreshPublicStoreIdentity(),30000);
+window.addEventListener('focus',()=>void refreshPublicStoreIdentity());
+
+function initOptions(){
+ const shop=menu.store;
+ setMenuTemplate(shop);
+ applyStudioDesign(shop);
+ renderPublicStoreIdentity();
+ $('v2DeliveryText').textContent=shop.delivery_enabled?'· Entrega disponível':shop.pickup_enabled?'· Retirada disponível':'';
+ $('v2FavoritesNav').hidden=document.body.dataset.menuTemplate!=='pitacco-v2';
  const displayPrimary=/^#[0-9a-fA-F]{6}$/.test(shop.appearance?.primary||'')?shop.appearance.primary:shop.primary_color;
  if(/^#[0-9a-fA-F]{6}$/.test(displayPrimary||'')){
   const contrast=[1,3,5].map(pos=>parseInt(displayPrimary.slice(pos,pos+2),16)/255)

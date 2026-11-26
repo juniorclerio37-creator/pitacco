@@ -42,6 +42,7 @@ try {
     const area = {latitude:-22.7,longitude:-43.4,radius_m:3000,coverage_type:'circle',polygon:[]};
     await page.context().grantPermissions(['geolocation']);
     await page.context().setGeolocation({latitude:-22.71,longitude:-43.4});
+    let identityName='Loja de teste';
     let polls=0,quoteAttempts=0,recoveryConfirmed=false;
     let savedProfile=null;
     const errors = [];
@@ -81,7 +82,7 @@ try {
       if (pathname.endsWith('/get_public_menu')) {
         assert.equal(route.request().postDataJSON().p_slug,'loja-teste');
         return route.fulfill({ json: {
-          store: { appearance:{template,primary:'#217c5a'}, primary_color:'#e04020', name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true,
+          store: { appearance:{template,primary:'#217c5a'}, primary_color:'#e04020', name: identityName, delivery_enabled: true, pickup_enabled: true,
             delivery_fee: 0, route_pricing:{enabled:true,mode:'circle',max_radius_km:3},
             delivery_area:area, payment_methods: width===1440?['pix_manual','dinheiro','cartao_entrega','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket']:['pix_manual'],
             payment_price_rules:width===1440?{cartao_credito:{adjustment_bps:300,revision:1},pix_maquininha:{adjustment_bps:-500,revision:1},...(pricedScenario?{pix_manual:{adjustment_bps:-500,revision:2}}:{})}:{},
@@ -186,6 +187,10 @@ try {
     await pizza.getByRole('radio',{name:/Catupiry/}).check();
     assert.match(await pizza.locator('#productTotal').innerText(),/59,95/);
     await pizza.getByRole('button',{name:/Adicionar à sacola/}).click();
+    identityName='Loja com cadastro atualizado';
+    await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+    await page.locator('#storeName').filter({hasText:identityName}).waitFor({state:'attached'});
+    identityName='Loja de teste';
     await page.reload();
     await productCard.waitFor();
     await page.locator('#openCart').click();

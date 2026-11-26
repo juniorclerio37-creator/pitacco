@@ -1015,6 +1015,12 @@ try {
     assert.equal(await registration.getByLabel('Enviar ou alterar logotipo da loja').isEnabled(),true,'O gestor altera a marca nos Dados da loja');
     assert.equal(await registration.getByLabel('WhatsApp para clientes').inputValue(),'21900000002');
     assert.equal(await registration.getByLabel('Telefone administrativo').inputValue(),'21900000001');
+    const registrationName=registration.getByLabel('Nome da loja',{exact:false});
+    await registrationName.fill('Rascunho ainda não salvo');
+    await page.evaluate(()=>window.dispatchEvent(new Event('pitacco:store-identity')));
+    await page.locator('.store-identity-copy').getByText(store.name,{exact:true}).waitFor({state:'attached'});
+    assert.equal(await registrationName.inputValue(),'Rascunho ainda não salvo','A sincronização não apaga a edição em andamento');
+    await registrationName.fill(store.name);
     await registration.getByRole('radio',{name:'Pessoa Jurídica (CNPJ)'}).check();
     await registration.getByLabel('Razão social').waitFor();
     await registration.getByRole('radio',{name:'Pessoa Física (CPF)'}).check();

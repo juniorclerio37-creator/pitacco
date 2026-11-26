@@ -1,3 +1,4 @@
+import {operationRequestId} from './operationRequestId.mjs';
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import PizzaBuilder from './PizzaBuilder.jsx';
 import {mountDeliveryMap} from './deliveryMap.mjs';
@@ -8,7 +9,7 @@ import {quotePizzaSelection} from './pizzaPricing.mjs';
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const methods={dinheiro:'Dinheiro',cartao_credito:'Cartão de crédito',cartao_debito:'Cartão de débito',pix_maquininha:'Pix na maquininha',pix_manual:'Pix manual',voucher_alelo:'Alelo',voucher_pluxee:'Pluxee (Sodexo)',voucher_vr:'VR Benefícios',voucher_ticket:'Ticket',pix:'Pix',cartao:'Cartão',cartao_entrega:'Cartão',cartao_na_entrega:'Cartão',credit_card:'Cartão de crédito',debit_card:'Cartão de débito'};
 const expandPaymentMethods=values=>[...new Set((values||[]).flatMap(v=>v==='cartao_entrega'?['cartao_credito','cartao_debito']:[v]))];
-const id=()=>crypto.randomUUID();
+const id=operationRequestId;
 export default function MerchantNewOrder({client,storeId,onNavigate}){
  const [menu,setMenu]=useState(null),[loyalty,setLoyalty]=useState(false),[fiado,setFiado]=useState([]),[error,setError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[result,setResult]=useState(null);
  const [name,setName]=useState(''),[phone,setPhone]=useState(''),[search,setSearch]=useState(''),[customers,setCustomers]=useState([]),[type,setType]=useState('balcao'),[payment,setPayment]=useState(''),[notes,setNotes]=useState(''),[change,setChange]=useState(''),[coupon,setCoupon]=useState(''),[credit,setCredit]=useState(''),[cart,setCart]=useState([]),[product,setProduct]=useState(null),[chosen,setChosen]=useState([]),[quantity,setQuantity]=useState(1),[quote,setQuote]=useState(null),[quoting,setQuoting]=useState(false);

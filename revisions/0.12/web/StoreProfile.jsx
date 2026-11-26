@@ -220,6 +220,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
 }
 
 export default function StoreProfile({client,store,manager,onSaved,onAppearance,storeLogoUrl=''}){
+ const draftDirty=useRef(false);
  const [draft,setDraft]=useState({}),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[loaded,setLoaded]=useState(false),[loadError,setLoadError]=useState(''),[revision,refresh]=useState(0);
  const [logoUpdate,setLogoUpdate]=useState(null),[logoBusy,setLogoBusy]=useState(false),[logoMessage,setLogoMessage]=useState('');
  const logoUrl=logoUpdate?.storeId===store.id?mediaUrl(client,logoUpdate.path):(storeLogoUrl||mediaUrl(client,store.logo_path));
@@ -236,7 +237,25 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
    onSaved?.();
   }catch(err){setLogoMessage(err.message||String(err))}finally{setLogoBusy(false)}
  }
- useEffect(()=>{let active=true;setLoaded(false);setLoadError('');setMessage('');setDraft({});client.rpc('pitacco_store_registration',{p_store:store.id}).then(({data,error})=>{if(!active)return;if(error||!data){setLoadError('Não foi possível consultar os dados da loja.');return}setDraft(data);setLoaded(true)}).catch(()=>{if(active)setLoadError('Não foi possível consultar os dados da loja.')});return()=>{active=false}},[client,store.id,revision]);
+ useEffect(()=>{
+  let active=true,running=false,initialized=false;
+  draftDirty.current=false;setLoaded(false);setLoadError('');setMessage('');setDraft({});
+  async function refreshRegistration(){
+   if(running||draftDirty.current)return;running=true;
+   try{
+    const {data,error}=await client.rpc('pitacco_store_registration',{p_store:store.id});
+    if(!active||draftDirty.current)return;
+    if(error||!data)throw Error('Não foi possível consultar os dados da loja.');
+    setDraft(data);setLoaded(true);setLoadError('');initialized=true;
+   }catch{if(active&&!initialized)setLoadError('Não foi possível consultar os dados da loja.')}
+   finally{running=false}
+  }
+  const refreshVisible=()=>{if(document.visibilityState==='visible')void refreshRegistration()};
+  void refreshRegistration();const timer=setInterval(refreshVisible,15000);
+  window.addEventListener('focus',refreshVisible);
+  window.addEventListener('pitacco:store-identity',refreshVisible);
+  return()=>{active=false;clearInterval(timer);window.removeEventListener('focus',refreshVisible);window.removeEventListener('pitacco:store-identity',refreshVisible)};
+ },[client,store.id,revision]);
  async function save(e){
   e.preventDefault();if(!manager)return;setBusy(true);setMessage('');
   try{
@@ -244,11 +263,11 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
    const {document,person_type,legal_name,responsible_name,administrative_phone,administrative_email,whatsapp,name,description,address,address_number,address_complement,neighborhood,city,state,postal_code,instagram_url,facebook_url}=draft;
    const {data,error}=await client.rpc('pitacco_save_store_registration',{p_store:store.id,p_data:{document,person_type,legal_name,responsible_name,administrative_phone,administrative_email,whatsapp,name,description,address,address_number,address_complement,neighborhood,city,state,postal_code,instagram_url,facebook_url}});
    if(error||!data?.saved)throw error||Error('A gravação não foi confirmada.');
-   setMessage('Dados da sua loja atualizados.');onSaved?.();
+   draftDirty.current=false;setMessage('Dados da sua loja atualizados.');window.dispatchEvent(new Event('pitacco:store-identity'));onSaved?.();
   }catch(err){setMessage(err.message||String(err))}finally{setBusy(false)}
  }
  const addressDirty=storeAddressFields.some(key=>String(draft[key]||'').trim()!==String(store?.[key]||'').trim());
- const change=(key,value)=>setDraft(p=>({...p,[key]:value}));
+ const change=(key,value)=>{draftDirty.current=true;setDraft(p=>({...p,[key]:value}))};
  const input=(key,label,required=true,type='text')=><label key={key} className="identity-field"><span>{label}{required&&<span className="identity-required"> *</span>}</span>
   {key==='description'?<textarea maxLength={1500} rows={3} value={draft[key]||''} disabled={!manager||busy}
     onChange={e=>change(key,e.target.value)} placeholder="Conte aos clientes sobre seu estabelecimento"/>

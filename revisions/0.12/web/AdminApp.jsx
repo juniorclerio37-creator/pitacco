@@ -108,7 +108,7 @@ function AdminApp(){
   return()=>{live=false;};
  },[session]);
  const authorized=!!session&&verified?.id===session.user.id&&verified.allowed;
- async function loadStores(){
+ async function loadStores(isCurrent=()=>true){
   const all=[];
   for(let page=0;;page++){
    const {data,error}=await client.from('stores').select('*').order('name').order('id').range(page*100,page*100+99);
@@ -116,13 +116,22 @@ function AdminApp(){
    all.push(...data);
    if(data.length<100)break;
   }
+  if(!isCurrent())return;
   setStores(all);
   setStoreId(old=>all.some(store=>store.id===old)?old:all[0]?.id||'');
  }
  useEffect(()=>{
-  if(authorized)loadStores().catch(failure=>setError(failure.message));
-  else {setStores([]);setStoreId('');}
- },[authorized]);
+  let live=true,running=false;
+  if(!authorized){setStores([]);setStoreId('');return;}
+  async function refreshStores(){
+   if(running)return;running=true;
+   try{await loadStores(()=>live)}catch(failure){if(live)setError(failure.message)}finally{running=false}
+  }
+  const refreshVisible=()=>{if(document.visibilityState==='visible')void refreshStores()};
+  void refreshStores();const timer=setInterval(refreshVisible,15000);
+  window.addEventListener('focus',refreshVisible);window.addEventListener('pitacco:store-identity',refreshVisible);
+  return()=>{live=false;clearInterval(timer);window.removeEventListener('focus',refreshVisible);window.removeEventListener('pitacco:store-identity',refreshVisible)};
+ },[authorized,session?.user?.id]);
 
  async function signIn(event){
   event.preventDefault();
