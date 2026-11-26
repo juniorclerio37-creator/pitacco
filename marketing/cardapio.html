@@ -1336,6 +1336,16 @@ body[data-menu-template=classic] #hero:has(#storeSocialLinks:not([hidden])) .her
  body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#storeBanner:not([hidden])) .hero-content{flex-direction:row;justify-content:center}
 }
 
+/* The optional merchant framing is relative to the individual template's base size. */
+#hero .store-mark{--logo-frame-base:clamp(94px,10vw,124px);--logo-frame-max:42vw}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .store-mark{--logo-frame-base:clamp(146px,17vw,190px);--logo-frame-max:62vw}
+body[data-menu-template="pitacco-v2"][data-menu-skin=essencial] #hero .store-mark{--logo-frame-base:clamp(80px,9vw,108px)}
+body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #hero .store-mark{--logo-frame-base:clamp(76px,8vw,106px)}
+@media(max-width:600px){
+ #hero .store-mark{--logo-frame-base:88px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero .store-mark{--logo-frame-base:150px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=urbano] #hero .store-mark{--logo-frame-base:76px}
+}
 /* Approved V2 hero: original shop artwork in a centered medallion.
    Other skins keep their individual composition and typography. */
 body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero{
@@ -2826,8 +2836,27 @@ const studioAsset=path=>{
  if(typeof path!=='string'||!/^stores\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(png|jpg|webp)$/.test(path))return '';
  return client.storage.from('pitacco-media').getPublicUrl(path).data.publicUrl;
 };
+function applyLogoFrame(frame){
+ const mark=$('storeLogo').parentElement,img=$('storeLogo');
+ for(const prop of ['width','height','padding','border-radius'])mark.style.removeProperty(prop);
+ for(const prop of ['object-fit','transform','transform-origin'])img.style.removeProperty(prop);
+ if(!frame||typeof frame!=='object')return;
+ const bounded=(v,min,max,fallback)=>typeof v==='number'&&Number.isFinite(v)?Math.min(max,Math.max(min,v)):fallback;
+ const size=bounded(frame.size,80,140,100)/100,zoom=bounded(frame.zoom,100,250,100)/100;
+ const x=bounded(frame.x,-50,50,0),y=bounded(frame.y,-50,50,0),padding=bounded(frame.padding,0,20,5);
+ mark.style.width='min(calc(var(--logo-frame-base, 100px) * '+size+'),var(--logo-frame-max, 42vw))';
+ mark.style.height=mark.style.width;
+ // Percentage padding on a flex child would resolve against the parent; use the frame's computed size.
+ mark.style.padding='min(calc(var(--logo-frame-base, 100px) * '+(size*padding/100)+'),calc(var(--logo-frame-max, 42vw) * '+(padding/100)+'))';
+ if(frame.shape==='circle')mark.style.borderRadius='50%';
+ else if(frame.shape==='rounded')mark.style.borderRadius='24%';
+ img.style.objectFit=frame.fit==='cover'?'cover':'contain';
+ img.style.transformOrigin='center';
+ img.style.transform='translate('+x+'%,'+y+'%) scale('+zoom+')';
+}
 function applyStudioDesign(shop){
  const d=shop.appearance;
+ applyLogoFrame(d?.logo_frame);
  if(!d||typeof d!=='object')return;
  const root=document.documentElement;
  const palette={primary:'--brand',secondary:'--muted',background:'--surface',paper:'--paper',foreground:'--ink',hero:'--hero',highlight:'--highlight'};

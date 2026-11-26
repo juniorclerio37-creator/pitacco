@@ -213,3 +213,10 @@ test('store-branded loading and bounded transient retry never expose raw databas
  const refresh=html.slice(html.indexOf('async function refreshPublicStoreIdentity()'),html.indexOf('async function fetchPublicMenuWithRetry()'));
  assert.doesNotMatch(refresh,/client\.rpc\('get_public_menu'/);
 });
+
+test('merchant logo crop applies to the original image and preview',()=>{
+ assert.match(html,/function applyLogoFrame\(frame\)/);
+ assert.match(html,/applyLogoFrame\(d\?\.logo_frame\)/);
+ assert.match(html,/img\.style\.objectFit=frame\.fit==='cover'\?'cover':'contain'/);
+ assert.match(html,/img\.style\.transform='translate\('/);
+});
