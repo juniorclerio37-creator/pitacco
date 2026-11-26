@@ -36,6 +36,21 @@ from (values
 insert into public.pitacco_order_costs(order_id,store_id,merchant_discount,goods_cost,processing_fees,delivery_cost,other_cost) values
  ('30000000-0000-0000-0000-000000000081','20000000-0000-0000-0000-000000000081',0,22,3,8,2),
  ('30000000-0000-0000-0000-000000000082','20000000-0000-0000-0000-000000000081',0,25,1,2,0);
+
+insert into public.products(id,store_id,name,category,price,cost,menu_active) values
+ ('40000000-0000-0000-0000-000000000081','20000000-0000-0000-0000-000000000081','Açaí','Açaí',20,8,true),
+ ('40000000-0000-0000-0000-000000000082','20000000-0000-0000-0000-000000000081','Bebida','Bebidas',6,2,true),
+ ('40000000-0000-0000-0000-000000000083','20000000-0000-0000-0000-000000000081','Produto indisponível','Bebidas',8,2,true),
+ ('40000000-0000-0000-0000-000000000084','20000000-0000-0000-0000-000000000082','Outra loja','Bebidas',8,2,true);
+insert into public.pitacco_finished_product_stock(store_id,product_id,enabled,balance) values
+ ('20000000-0000-0000-0000-000000000081','40000000-0000-0000-0000-000000000083',true,0);
+update public.orders set receipt=jsonb_build_object('items',jsonb_build_array(
+ jsonb_build_object('product_id','40000000-0000-0000-0000-000000000081','quantity',1),
+ jsonb_build_object('product_id','40000000-0000-0000-0000-000000000081','quantity',1),
+ jsonb_build_object('product_id','40000000-0000-0000-0000-000000000082','quantity',1),
+ jsonb_build_object('product_id','40000000-0000-0000-0000-000000000083','quantity',1),
+ jsonb_build_object('product_id','40000000-0000-0000-0000-000000000084','quantity',1)
+ )) where id in ('30000000-0000-0000-0000-000000000081','30000000-0000-0000-0000-000000000082','30000000-0000-0000-0000-000000000083');
 set local role authenticated;
 do $test$
 declare d jsonb;
@@ -47,6 +62,11 @@ begin
  assert (d#>>'{sales,negative_orders}')::int=1;
  assert (d#>>'{sales,known_contribution}')::numeric=45;
  assert (select sum((v->>'orders')::int)=3 from jsonb_array_elements(d->'weekdays') v);
+ assert jsonb_array_length(d->'catalog')=2;
+ assert jsonb_array_length(d->'combo_candidates')=1;
+ assert (d#>>'{combo_candidates,0,together_orders}')::int=3;
+ assert (d#>>'{identified_orders}')::int=3;
+ assert (d#>>'{catalog,0,orders}')::int=3;
 end $test$;
 reset role;
 rollback;
