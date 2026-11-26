@@ -294,8 +294,10 @@ try {
       const cart=page.getByRole('dialog',{name:'Sua sacola'});
       assert.match(await cart.locator('#total').innerText(),/valor da entrega.*automaticamente/i);
       await cart.getByRole('button',{name:'Continuar para entrega e pagamento'}).click();
-      await page.locator('#customer').fill('Cliente Teste');
       await page.locator('#phone').fill('21999999999');
+      await page.locator('#v2CheckoutNext').click();
+      await page.locator('#customer').fill('Cliente Teste');
+      await page.locator('#v2CheckoutNext').click();
       for(const [id,value] of [['addressStreet','Rua Teste'],['addressNumber','123'],['addressNeighborhood','Centro'],['addressCity','Nova Iguaçu']])
         await page.locator('#'+id).fill(value);
       await page.locator('#addressState').selectOption('RJ');
@@ -303,21 +305,14 @@ try {
       await page.locator('#routeQuoteStatus').filter({hasText:'A loja precisa revisar'}).waitFor();
       await page.getByRole('button',{name:'Usar minha localização'}).click();
       await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
-      await page.locator('#payment').selectOption('pix_manual');
-      if(width===1440){
-        for(const method of ['dinheiro','cartao_credito','cartao_debito','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket','pix_manual']){
-          await page.locator('#payment').selectOption(method);
-          assert.equal(await page.locator('#payment').inputValue(),method);
-        }
-      }
       assert.match(await page.locator('#total').innerText(),/Taxa de entrega/);
-      assert.equal(await page.locator('#send').isDisabled(),false,'Classic pode confirmar apenas com cotação válida');
+      assert.equal(await page.locator('#routeQuoteStatus').getAttribute('data-state'),'success');
       await page.locator('#addressStreet').fill('Rua Fora Entrega');
       await page.locator('#routeQuoteStatus').filter({hasText:'Não atendemos essa região'}).waitFor();
       assert.equal(await page.locator('#send').isDisabled(),true,'Classic bloqueia pedidos fora da cobertura');
       await page.locator('#addressStreet').fill('Rua Teste');
       await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
-      assert.equal(await page.locator('#send').isDisabled(),false);
+      assert.equal(await page.locator('#routeQuoteStatus').getAttribute('data-state'),'success');
       await page.locator('#deliveryServices input[value="priority"]').check();
       await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*9,00.*20–30 min/}).waitFor();
       assert.match(await page.locator('#total').innerText(),/31,00/);
@@ -326,12 +321,23 @@ try {
         await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00.*40–60 min/}).waitFor();
       }
       if(scheduled)await page.getByLabel('Quando deseja receber?').selectOption(scheduled);
-      await page.getByRole('button',{name:'Confirmar pedido',exact:true}).click();
+      await page.locator('#v2CheckoutNext').click();
+      await page.locator('#cartDialog[data-v2-stage="payment"]').waitFor();
+      await page.locator('#v2PaymentCards [data-kind="pix_manual"]').click();
+      if(width===1440){
+        for(const method of ['dinheiro','cartao_credito','cartao_debito','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket','pix_manual']){
+          await page.locator('#v2PaymentCards [data-kind="'+method+'"]').click();
+          assert.equal(await page.locator('#payment').inputValue(),method);
+        }
+      }
+      await page.locator('#v2CheckoutNext').click();
+      await page.locator('#cartDialog[data-v2-stage="review"]').waitFor();
+      await page.getByRole('button',{name:'Finalizar pedido →',exact:true}).click();
       await page.getByRole('button',{name:'Enviando…',exact:true}).waitFor();
       await page.locator('#checkout').evaluate(form=>form.requestSubmit());
       releaseResponse();
       await page.getByRole('button',{name:'Tentar novamente',exact:true}).click();
-      await page.getByRole('heading',{name:scheduled?'✓ Pedido agendado enviado com sucesso':'Pedido recebido!',exact:true}).waitFor();
+      await page.getByRole('heading',{name:scheduled?'✓ Pedido agendado enviado com sucesso':'✓ Pedido confirmado!',exact:true}).waitFor();
       if(scheduled)assert.match(await page.locator('#success').innerText(),/A loja ainda precisa aceitar manualmente/);
       assert.equal(requests.length,2);
       assert.equal(recordedOrders.size,1,'Lost confirmation and retry create one sale');
@@ -421,7 +427,7 @@ try {
     await product.getByRole('button',{name:'Fechar produto',exact:true}).click();
     await firstLine.getByText(/Morango · Granola/).waitFor();
     await page.getByRole('button',{name:'Continuar para entrega e pagamento'}).click();
-    const principal=template==='pitacco-v2';
+    const principal=true; // The staged checkout is now shared by every skin.
     const fiadoChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
     if(principal){
       await page.locator('#cartDialog[data-v2-stage="identify"]').waitFor();
@@ -440,41 +446,6 @@ try {
     await page.locator('#addressState').selectOption('RJ');
     await fiadoChecked;
     assert.equal(await page.getByRole('button',{name:'Tenho fiado autorizado pela loja'}).count(),0);
-    if(!principal){
-    assert.equal(await page.getByRole('button',{name:'Tenho fiado autorizado pela loja'}).count(),0);
-    assert.equal(await page.locator('#fiadoAuth').isVisible(),false);
-    if(width===375){
-      await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
-      await page.locator('#payment').selectOption('fiado');
-      assert.equal(await page.locator('#fiadoAuth').isVisible(),true,'PIN solicitado somente ao selecionar Fiado');
-      assert.equal(await page.locator('#fiadoPin').count(),1,'Campo de PIN disponível');
-      assert.equal(await page.locator('#fiadoPin').getAttribute('type'),'password','O PIN fica mascarado');
-      assert.equal(await page.locator('#fiadoPin').getAttribute('required'),'','PIN é obrigatório no Fiado');
-      await page.locator('#fiadoPin').fill('438216');
-      await page.locator('#payment').selectOption('pix_manual');
-      assert.equal(await page.locator('#fiadoAuth').isVisible(),false);
-      assert.equal(await page.locator('#fiadoPin').getAttribute('required'),null,'Outros pagamentos não exigem PIN');
-      assert.equal(await page.locator('#fiadoPin').inputValue(),'','PIN deve ser apagado ao trocar pagamento');
-      const disableFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
-      await page.locator('#phone').fill('21999999998');
-      await disableFiado;
-      await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
-      assert.equal(await page.locator('#payment option[value="fiado"]').isDisabled(),true,'Autorizado, mas sem crédito para este pedido');
-      assert.match(await page.locator('#fiadoUnavailable').innerText(),/Fiado indisponível para este pedido/);
-      assert.doesNotMatch(await page.locator('#fiadoUnavailable').innerText(),/R\$|saldo disponível|limite de crédito/i);
-      const hideFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
-      await page.locator('#phone').fill('21999999997');
-      await hideFiado;
-      assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Telefone não autorizado não vê Fiado');
-      const showFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
-      await page.locator('#phone').fill('21999999999');
-      await showFiado;
-      await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
-      assert.equal(await page.locator('#payment option[value="fiado"]').isDisabled(),false);
-    }else{
-      assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Fiado oculto para telefone não autorizado');
-    }
-    }
     const pricingChecked=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
     assert.equal(await page.locator('#quoteDelivery').isVisible(),false,'Nenhum template mostra botão manual de frete');
     assert.equal(await page.locator('#deliveryMapPanel').isVisible(),false,'Mapa opcional começa recolhido');
@@ -528,6 +499,39 @@ try {
     if(principal){
       await page.locator('#v2CheckoutNext').click();
       await page.locator('#cartDialog[data-v2-stage="payment"]').waitFor();
+    assert.equal(await page.getByRole('button',{name:'Tenho fiado autorizado pela loja'}).count(),0);
+    assert.equal(await page.locator('#fiadoAuth').isVisible(),false);
+    if(width===375){
+      await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
+      await page.locator('#v2PaymentCards [data-kind="fiado"]').click();
+      assert.equal(await page.locator('#fiadoAuth').isVisible(),true,'PIN solicitado somente ao selecionar Fiado');
+      assert.equal(await page.locator('#fiadoPin').count(),1,'Campo de PIN disponível');
+      assert.equal(await page.locator('#fiadoPin').getAttribute('type'),'password','O PIN fica mascarado');
+      assert.equal(await page.locator('#fiadoPin').getAttribute('required'),'','PIN é obrigatório no Fiado');
+      await page.locator('#fiadoPin').fill('438216');
+      await page.locator('#v2PaymentCards [data-kind="pix_manual"]').click();
+      assert.equal(await page.locator('#fiadoAuth').isVisible(),false);
+      assert.equal(await page.locator('#fiadoPin').getAttribute('required'),null,'Outros pagamentos não exigem PIN');
+      assert.equal(await page.locator('#fiadoPin').inputValue(),'','PIN deve ser apagado ao trocar pagamento');
+      const disableFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
+      await page.locator('#phone').evaluate((el,value)=>{el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));},'21999999998');
+      await disableFiado;
+      await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
+      assert.equal(await page.locator('#payment option[value="fiado"]').isDisabled(),true,'Autorizado, mas sem crédito para este pedido');
+      assert.match(await page.locator('#fiadoUnavailable').innerText(),/Fiado indisponível para este pedido/);
+      assert.doesNotMatch(await page.locator('#fiadoUnavailable').innerText(),/R\$|saldo disponível|limite de crédito/i);
+      const hideFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
+      await page.locator('#phone').evaluate((el,value)=>{el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));},'21999999997');
+      await hideFiado;
+      assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Telefone não autorizado não vê Fiado');
+      const showFiado=page.waitForResponse(response=>response.url().endsWith('/fixture/pitacco_fiado_checkout_status')).catch(()=>null);
+      await page.locator('#phone').evaluate((el,value)=>{el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));},'21999999999');
+      await showFiado;
+      await page.locator('#payment option[value="fiado"]').waitFor({state:'attached'});
+      assert.equal(await page.locator('#payment option[value="fiado"]').isDisabled(),false);
+    }else{
+      assert.equal(await page.locator('#payment option[value="fiado"]').count(),0,'Fiado oculto para telefone não autorizado');
+    }
       const pixCard=page.locator('#v2PaymentCards [data-kind="pix_manual"]');
       assert.equal(await pixCard.isVisible(),true,'Pix manual cadastrado aparece em card');
       if(width===1440){

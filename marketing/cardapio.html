@@ -845,9 +845,6 @@ body[data-menu-template="pitacco-v2"]:is([data-menu-skin=essencial],[data-menu-s
 
 
 /* V2 aprovado: todas as regras abaixo são isoladas ao template pitacco-v2. */
-body:not([data-menu-template="pitacco-v2"]) .v2-payment-cards,
-body:not([data-menu-template="pitacco-v2"]) .v2-change-block,
-body:not([data-menu-template="pitacco-v2"]) .v2-address-title{display:none!important}
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog,
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #productDialog{background:#faf6ff;border:1px solid #ead4f2}
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog{width:min(540px,100% - 18px);max-height:96dvh;border-radius:24px}
@@ -943,54 +940,54 @@ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-address-ti
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-address-title select{width:180px}
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .address-fields{padding:0;border:0;margin:10px 0 16px}
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .address-fields legend{font-weight:860;color:#55076c}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-native-label,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #payment{
+#cartDialog .v2-payment-native-label,
+#cartDialog #payment{
  position:absolute!important;width:1px!important;height:1px!important;padding:0!important;
  margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important
 }
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-cards{display:grid;gap:11px;margin:16px 0}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice{
+#cartDialog .v2-payment-cards{display:grid;gap:11px;margin:16px 0}
+#cartDialog .v2-payment-choice{
  display:flex;align-items:center;gap:12px;min-height:83px;padding:12px;border-radius:17px;border:1px solid #ddd4e0;
  background:#fff;color:#1c1024;width:100%;text-align:left;box-shadow:0 3px 9px #29053d0a
 }
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-selected=true]{
- border:2px solid #981bb5;background:#faebff;padding:11px
+#cartDialog .v2-payment-choice[data-selected=true]{
+ border:2px solid var(--brand);background:color-mix(in srgb,var(--brand) 8%,var(--paper));padding:11px
 }
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice:disabled{background:#eeedf1;color:#77737e;opacity:1}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-icon{
- font-size:1.63rem;width:59px;height:57px;display:grid;place-items:center;background:#f3e3ff;color:#7f12b5;border-radius:14px;flex:none
+#cartDialog .v2-payment-choice:disabled{background:#eeedf1;color:#77737e;opacity:1}
+#cartDialog .v2-payment-icon{
+ font-size:1.63rem;width:59px;height:57px;display:grid;place-items:center;background:color-mix(in srgb,var(--brand) 10%,var(--paper));color:var(--brand);border-radius:14px;flex:none
 }
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=pix_manual] .v2-payment-icon,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=pix] .v2-payment-icon{background:#e8faf5;color:#03a888}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=dinheiro] .v2-payment-icon{background:#eaf9e9;color:#16833a}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-cards h4{margin:8px 2px 0;font-size:.9rem;font-weight:800;line-height:1.35;color:#4c3458}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-icon.v2-voucher-label{font-size:.78rem;font-weight:850;width:69px;background:#f4f4f6;color:#343342;overflow-wrap:anywhere;text-align:center;padding:4px;box-sizing:border-box}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=voucher_alelo] .v2-voucher-label{color:#015a43;background:#e7f4e0}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=voucher_pluxee] .v2-voucher-label{color:#07462e;background:#e0f9e9}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=voucher_vr] .v2-voucher-label{color:#034d2e;background:#e5f7e9}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice[data-kind=voucher_ticket] .v2-voucher-label{color:#a91e31;background:#fce9e9}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice strong{display:block;font-size:1.03rem;color:#25102f;font-weight:860}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice small{display:block;font-size:.78rem;line-height:1.32;color:#716479}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice .v2-radio-mark{margin-left:auto;color:#7e118d;font-size:1.55rem}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice:disabled strong,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-payment-choice:disabled .v2-radio-mark{color:#88838e}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #fiadoAuth{background:#f8ebff;border:1px solid #d7b8e9;border-radius:16px}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #fiadoUnavailable{background:#f0eff2;border:1px solid #ded9e0;color:#605767}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-change-block{padding:11px 13px;background:#fff6e8;border:1px solid #f2dfb9;border-radius:15px}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #loyaltyBox{margin-top:18px}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-confirm{
+#cartDialog .v2-payment-choice[data-kind=pix_manual] .v2-payment-icon,
+#cartDialog .v2-payment-choice[data-kind=pix] .v2-payment-icon{background:#e8faf5;color:#03a888}
+#cartDialog .v2-payment-choice[data-kind=dinheiro] .v2-payment-icon{background:#eaf9e9;color:#16833a}
+#cartDialog .v2-payment-cards h4{margin:8px 2px 0;font-size:.9rem;font-weight:800;line-height:1.35;color:var(--ink)}
+#cartDialog .v2-payment-icon.v2-voucher-label{font-size:.78rem;font-weight:850;width:69px;background:#f4f4f6;color:#343342;overflow-wrap:anywhere;text-align:center;padding:4px;box-sizing:border-box}
+#cartDialog .v2-payment-choice[data-kind=voucher_alelo] .v2-voucher-label{color:#015a43;background:#e7f4e0}
+#cartDialog .v2-payment-choice[data-kind=voucher_pluxee] .v2-voucher-label{color:#07462e;background:#e0f9e9}
+#cartDialog .v2-payment-choice[data-kind=voucher_vr] .v2-voucher-label{color:#034d2e;background:#e5f7e9}
+#cartDialog .v2-payment-choice[data-kind=voucher_ticket] .v2-voucher-label{color:#a91e31;background:#fce9e9}
+#cartDialog .v2-payment-choice strong{display:block;font-size:1.03rem;color:var(--ink);font-weight:860}
+#cartDialog .v2-payment-choice small{display:block;font-size:.78rem;line-height:1.32;color:var(--muted)}
+#cartDialog .v2-payment-choice .v2-radio-mark{margin-left:auto;color:var(--brand);font-size:1.55rem}
+#cartDialog .v2-payment-choice:disabled strong,
+#cartDialog .v2-payment-choice:disabled .v2-radio-mark{color:#88838e}
+#cartDialog #fiadoAuth{background:#f8ebff;border:1px solid #d7b8e9;border-radius:16px}
+#cartDialog #fiadoUnavailable{background:#f0eff2;border:1px solid #ded9e0;color:#605767}
+#cartDialog .v2-change-block{padding:11px 13px;background:#fff6e8;border:1px solid #f2dfb9;border-radius:15px}
+#cartDialog #loyaltyBox{margin-top:18px}
+#cartDialog .v2-checkout-confirm{
  background:transparent;border:none;padding:0;margin:6px 0 15px
 }
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-confirm h3{font-size:1.5rem;color:#330740}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-review-summary{display:grid;gap:14px}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-review-group{
+#cartDialog .v2-checkout-confirm h3{font-size:1.5rem;color:var(--ink)}
+#cartDialog .v2-review-summary{display:grid;gap:14px}
+#cartDialog .v2-review-group{
  background:white;padding:15px;border:1px solid #e7dbed;border-radius:16px
 }
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-review-group h4{color:#710b91;margin:0 0 10px;font-size:.92rem}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-review-line{display:flex;justify-content:space-between;gap:8px;padding:5px 0}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-review-line strong{color:#45045c;white-space:nowrap}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-review-total{background:#f8e7ff;color:#49035e;padding:11px;border-radius:12px;font-size:1.03rem;font-weight:850}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-checkout-confirm .primary{background:linear-gradient(130deg,#a518cc,#670989);border:0;border-radius:17px;min-height:55px}
+#cartDialog .v2-review-group h4{color:var(--brand);margin:0 0 10px;font-size:.92rem}
+#cartDialog .v2-review-line{display:flex;justify-content:space-between;gap:8px;padding:5px 0}
+#cartDialog .v2-review-line strong{color:var(--ink);white-space:nowrap}
+#cartDialog .v2-review-total{background:color-mix(in srgb,var(--brand) 9%,var(--paper));color:var(--ink);padding:11px;border-radius:12px;font-size:1.03rem;font-weight:850}
+#cartDialog .v2-checkout-confirm .primary{background:linear-gradient(130deg,var(--brand),color-mix(in srgb,var(--brand) 75%,#222));border:0;border-radius:17px;min-height:55px}
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-fiado-hero::after{content:"▣"}
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-login-card{padding:12px 0}
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-login-card label{display:block;color:#502c65;font-weight:800;margin:13px 0 5px}
@@ -1010,24 +1007,24 @@ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-finance-en
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-finance-entry em[data-paid=true]{background:#e4f8e9;color:#287343}
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] .v2-message{color:#654b73;line-height:1.5;font-size:.86rem}
 body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #v2FiadoPay{width:100%;background:linear-gradient(120deg,#ff9b0b,#ff6403);border-radius:16px;min-height:52px}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=identify] .v2-checkout-panel--delivery,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=identify] .v2-checkout-panel--payment,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=identify] .v2-checkout-confirm,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=customer] .v2-checkout-panel--delivery,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=customer] .v2-checkout-panel--payment,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=customer] .v2-checkout-confirm,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=address] .v2-checkout-panel--customer,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=address] .v2-checkout-panel--payment,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=address] .v2-checkout-confirm,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=payment] .v2-checkout-panel--customer,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=payment] .v2-checkout-panel--delivery,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=payment] .v2-checkout-confirm,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=review] .v2-checkout-panel{display:none!important}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=review] .v2-checkout-confirm{display:block}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=payment] #notes{margin-bottom:13px}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=payment] #loyaltyBox{margin-top:11px}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=identify] #v2NameFields,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage=customer] #v2PhoneFields{display:none!important}
+#cartDialog[data-v2-stage=identify] .v2-checkout-panel--delivery,
+#cartDialog[data-v2-stage=identify] .v2-checkout-panel--payment,
+#cartDialog[data-v2-stage=identify] .v2-checkout-confirm,
+#cartDialog[data-v2-stage=customer] .v2-checkout-panel--delivery,
+#cartDialog[data-v2-stage=customer] .v2-checkout-panel--payment,
+#cartDialog[data-v2-stage=customer] .v2-checkout-confirm,
+#cartDialog[data-v2-stage=address] .v2-checkout-panel--customer,
+#cartDialog[data-v2-stage=address] .v2-checkout-panel--payment,
+#cartDialog[data-v2-stage=address] .v2-checkout-confirm,
+#cartDialog[data-v2-stage=payment] .v2-checkout-panel--customer,
+#cartDialog[data-v2-stage=payment] .v2-checkout-panel--delivery,
+#cartDialog[data-v2-stage=payment] .v2-checkout-confirm,
+#cartDialog[data-v2-stage=review] .v2-checkout-panel{display:none!important}
+#cartDialog[data-v2-stage=review] .v2-checkout-confirm{display:block}
+#cartDialog[data-v2-stage=payment] #notes{margin-bottom:13px}
+#cartDialog[data-v2-stage=payment] #loyaltyBox{margin-top:11px}
+#cartDialog[data-v2-stage=identify] #v2NameFields,
+#cartDialog[data-v2-stage=customer] #v2PhoneFields{display:none!important}
 @media(max-width:600px){
  body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog,
  body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #productDialog{
@@ -1045,18 +1042,11 @@ body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[da
  body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog .v2-checkout-panel h3{font-size:1.27rem}
 }
 
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage] #cartReview{display:none!important}
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage] #continueCheckout,
-body[data-menu-template="pitacco-v2"][data-menu-skin="principal"] #cartDialog[data-v2-stage] #backToCart{display:none!important}
+#cartDialog[data-v2-stage] #cartReview{display:none!important}
+#cartDialog[data-v2-stage] #continueCheckout,
+#cartDialog[data-v2-stage] #backToCart{display:none!important}
 body:not([data-menu-skin="principal"]) #v2FiadoPage,
-body:not([data-menu-skin="principal"]) [data-v2-nav="fiado"],
-body:not([data-menu-skin="principal"]) .v2-identity-art,
-body:not([data-menu-skin="principal"]) #v2PhoneFields>h3,
-body:not([data-menu-skin="principal"]) #v2PhoneFields>p,
-body:not([data-menu-skin="principal"]) #v2NameFields>h3,
-body:not([data-menu-skin="principal"]) #v2NameFields>p,
-body:not([data-menu-skin="principal"]) .v2-checkout-confirm>h3,
-body:not([data-menu-skin="principal"]) #v2OrderSummary{display:none!important}
+body:not([data-menu-skin="principal"]) [data-v2-nav="fiado"]{display:none!important}
 #quoteDelivery{display:none!important}
 #routeQuoteControls{margin:13px 0 6px}
 #routeQuoteStatus{
@@ -1233,7 +1223,41 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
 #checkout #loyaltyCardContent{padding:0 14px 14px;border-top:1px solid color-mix(in srgb,var(--brand) 12%,#eee)}
 #checkout #loyaltyCardContent #loyaltyTerms{margin:12px 0}
 #checkout #loyaltyCardContent #loyaltyStatus:empty{display:none}
-#checkout #loyaltyBox[data-applied=true] #loyaltyCardSummary{color:#187642;font-weight:700}
+#checkout #loyaltyBox[data-applied=true] #loyaltyCardSummary{color:#187642;font-weight:750;background:#e7f7ed;padding:10px 8px;border-radius:10px}
+#checkout #loyaltyBox{border-radius:20px;box-shadow:0 5px 16px color-mix(in srgb,var(--brand) 12%,transparent)}
+#checkout #loyaltyCardToggle{padding:17px 15px 21px;grid-template-columns:47px minmax(0,1fr) 22px;border-radius:0;background:radial-gradient(ellipse at 100% 100%,#ffffff28,transparent 60%),linear-gradient(120deg,color-mix(in srgb,var(--brand) 62%,#20122d),var(--brand));color:white}
+#checkout #loyaltyCardToggle .loyalty-card-copy strong{font-size:1.24rem;color:white;letter-spacing:-.03em}
+#checkout #loyaltyCardToggle .loyalty-card-copy small,#checkout #loyaltyCardToggle .loyalty-card-chevron{color:#fff}
+#checkout .loyalty-card-icon{width:47px;height:47px;background:#ffffff24;color:#fff;border:1px solid #ffffff42;box-shadow:0 3px 10px #0002}
+#checkout .loyalty-card-icon svg{width:27px;height:27px}
+#checkout .loyalty-card-overview{padding:12px 14px 5px;background:var(--paper);border-radius:18px 18px 0 0;position:relative;margin-top:-7px}
+#checkout #loyaltyCardSummary{font-size:.84rem;line-height:1.4;text-align:center;margin:0 0 10px;color:var(--muted)}
+#checkout .loyalty-card-metrics{display:flex;justify-content:center;gap:0;align-items:stretch}
+#checkout .loyalty-metric{flex:1;min-width:0;text-align:center;display:grid;gap:4px;align-content:start;padding:5px 4px}
+#checkout .loyalty-metric:not([hidden])~.loyalty-metric:not([hidden]){border-left:1px solid var(--line)}
+#checkout .loyalty-metric span{font-size:1.25rem;color:var(--brand);line-height:1}
+#checkout .loyalty-metric strong{font-size:.9rem;color:var(--ink);overflow-wrap:anywhere}
+#checkout .loyalty-metric small{font-size:.7rem;color:var(--muted)}
+#checkout #loyaltyDetailsToggle{width:100%;padding:10px 4px;background:transparent;border:0;color:var(--brand);font-weight:800;font-size:.85rem}
+#checkout #loyaltyCardContent{padding:12px 14px 15px}
+#checkout #loyaltyMember,#checkout .loyalty-offer{border:1px solid color-mix(in srgb,var(--brand) 13%,var(--line));border-radius:13px;background:color-mix(in srgb,var(--brand) 5%,var(--paper));padding:12px}
+#checkout #loyaltyApply{width:100%;padding:13px;background:linear-gradient(120deg,var(--brand),color-mix(in srgb,var(--brand) 76%,#20122d));color:#fff;border:0;border-radius:12px;font-weight:800}
+#checkout #loyaltyApply:disabled{opacity:.55}
+#checkout #loyaltyClear{width:100%;font-size:.8rem;background:transparent;color:var(--brand);border:0}
+#checkout #loyaltyBox [hidden]{display:none!important}
+/* Same checkout structure, preserving the selected palette of each storefront. */
+#cartDialog #checkout .v2-checkout-panel{margin:0 0 12px;padding:12px 0;background:transparent;border:0;box-shadow:none}
+#cartDialog #checkout .v2-checkout-panel label{color:var(--ink);font-weight:700}
+#cartDialog #checkout .v2-checkout-panel h3{color:var(--ink)}
+#cartDialog #checkout .v2-checkout-panel input:not([type=radio]),#cartDialog #checkout select,#cartDialog #checkout textarea{border-color:var(--line);border-radius:12px;min-height:45px;background:var(--paper);color:var(--ink)}
+#cartDialog #checkout .v2-review-group{background:var(--paper);border-color:var(--line)}
+#cartDialog #checkout .v2-checkout-progress{display:flex;justify-content:space-around;gap:5px;padding:9px 0 27px;background:transparent;border:0}
+#cartDialog #checkout .v2-checkout-progress span{display:flex;position:relative;align-items:center;justify-content:center;width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:color-mix(in srgb,var(--muted) 40%,var(--paper));color:white;font-weight:800}
+#cartDialog #checkout .v2-checkout-progress span[data-status=done],#cartDialog #checkout .v2-checkout-progress span[data-status=active]{background:var(--brand)}
+#cartDialog #checkout .v2-checkout-progress span small{position:absolute;top:39px;white-space:nowrap;font-size:.67rem;color:var(--ink)}
+#cartDialog #checkout .v2-identity-art{display:flex;justify-content:center;align-items:center;gap:12px;min-height:105px;background:color-mix(in srgb,var(--brand) 8%,var(--paper));border-radius:16px;font-size:2.2rem;margin:8px 0 14px}
+#cartDialog #checkout #v2OrderSummary{display:grid;gap:12px}
+#cartDialog #checkout [hidden]{display:none!important}
 @media(prefers-reduced-motion:reduce){#checkout .loyalty-card-chevron{transition:none}}
 
 </style><style>.schedule-store-action{flex-basis:100%;padding:12px;border:0;border-radius:9px;background:var(--brand,#df5a20);color:#fff;font-weight:800}.schedule-choices{display:grid;gap:9px;margin-top:9px;padding:12px;background:var(--paper,#fff);border:1px solid #dedede;border-radius:10px}.schedule-times{display:flex;gap:7px;flex-wrap:wrap}.schedule-time{border:1px solid #d3d3d3;border-radius:8px;padding:9px 14px;background:var(--paper,#fff);color:var(--ink,#24211e)}.schedule-time[aria-pressed="true"]{background:var(--brand,#df5a20);color:white;border-color:var(--brand,#df5a20)}</style></head><body>
@@ -1254,9 +1278,18 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
  <div class="shell v2-hero-info"><span id="v2OpenPill" class="v2-open-pill">Consultando</span><span id="v2DeliveryText" class="v2-delivery-text"></span>
  <span id="v2HeroLocation" class="v2-hero-location" hidden></span></div>
  <img id="v2HeroImage" class="v2-hero-visual" alt="" hidden>
+ <div id="storeSocialLinks" aria-label="Redes sociais da loja" hidden></div>
 </header>
-<div id="storeSocialLinks" class="shell" aria-label="Redes sociais da loja" hidden style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:10px 12px"></div>
-<style>#storeSocialLinks a{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;padding:10px 16px;color:white;font-weight:750;text-decoration:none;font-size:.9rem;min-height:42px}#storeSocialLinks a svg{width:20px;height:20px;flex:none}#storeSocialLinks .instagram{background:linear-gradient(115deg,#b92c82,#7637c7)}#storeSocialLinks .facebook{background:#1767d4}#storeSocialLinks[hidden]{display:none!important}</style>
+<style>
+#hero #storeSocialLinks{position:absolute;top:82px;right:18px;z-index:5;display:flex;gap:7px;align-items:center}
+#storeSocialLinks a{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:#21182c80;color:#fff;text-decoration:none;border:1px solid #ffffff40;backdrop-filter:blur(8px);box-shadow:0 2px 8px #0002}
+#storeSocialLinks a svg{display:block;width:20px;height:20px}
+#storeSocialLinks a:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#storeSocialLinks[hidden]{display:none!important}
+body[data-menu-template=classic] #hero #storeSocialLinks{top:12px;right:16px}
+body[data-menu-skin=essencial] #hero #storeSocialLinks{top:56px;right:12px}
+@media(max-width:590px){#hero #storeSocialLinks{top:69px;right:11px}#storeSocialLinks a{width:34px;height:34px}body[data-menu-skin=essencial] #hero #storeSocialLinks{top:53px}}
+</style>
 <nav id="v2StoreNav" class="shell v2-store-nav" aria-label="Seções do cardápio">
  <button type="button" class="v2-nav-button" data-v2-nav="inicio" aria-current="page"><span class="v2-nav-icon" aria-hidden="true">⌂</span>Início</button>
  <button type="button" class="v2-nav-button" data-v2-nav="cardapio"><span class="v2-nav-icon" aria-hidden="true">🍽</span>Cardápio</button>
@@ -1397,7 +1430,12 @@ body :is(.product-visual,.v2-top-photo,.product-intro)>img,body .v2-cart-thumb,b
  <div id="v2PaymentCards" class="v2-payment-cards" role="radiogroup" aria-label="Formas de pagamento configuradas pela loja"></div>
  <div id="v2ChangeBlock" class="v2-change-block" hidden><label for="v2CashChange">Vai pagar com quanto? (para calcular o troco)</label><input id="v2CashChange" inputmode="decimal" autocomplete="off" placeholder="Ex.: 50,00"><small>Informe quanto entregará ao motoboy. O troco considera produtos, descontos e taxa de entrega.</small></div>
 <section id="loyaltyBox" class="fiado-access" aria-label="Fideliza+ do cliente" hidden>
- <button type="button" id="loyaltyCardToggle" class="loyalty-card-toggle" aria-expanded="false" aria-controls="loyaltyCardContent"><span class="loyalty-card-icon" aria-hidden="true">✦</span><span class="loyalty-card-copy"><strong>Fideliza+</strong><small id="loyaltyCardSummary">Cupons, pontos e benefícios</small></span><span class="loyalty-card-chevron" aria-hidden="true">⌄</span></button>
+ <button type="button" id="loyaltyCardToggle" class="loyalty-card-toggle" aria-expanded="false" aria-controls="loyaltyCardContent"><span class="loyalty-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 7 4.5 4L12 3l4.5 8L21 7l-2 11H5L3 7Z"/><path d="M5 21h14"/></svg></span><span class="loyalty-card-copy"><strong>Fideliza+</strong><small>Seus benefícios nesta compra</small></span><span class="loyalty-card-chevron" aria-hidden="true">⌄</span></button>
+ <div class="loyalty-card-overview"><p id="loyaltyCardSummary" role="status" aria-live="polite">Cupons, pontos e benefícios</p><div class="loyalty-card-metrics" id="loyaltyCardMetrics" hidden>
+ <div id="loyaltyMetricPoints" class="loyalty-metric" hidden><span aria-hidden="true">☆</span><strong id="loyaltyMetricPointsValue">—</strong><small>Pontos</small></div>
+ <div id="loyaltyMetricCredit" class="loyalty-metric" hidden><span aria-hidden="true">◉</span><strong id="loyaltyMetricCreditValue">—</strong><small>Em créditos</small></div>
+ <div id="loyaltyMetricCoupon" class="loyalty-metric" hidden><span aria-hidden="true">◇</span><strong id="loyaltyMetricCouponValue">—</strong><small>Cupons e ofertas</small></div>
+ </div><button type="button" id="loyaltyDetailsToggle" aria-controls="loyaltyCardContent" aria-expanded="false">Ver benefícios ⌄</button></div>
  <div id="loyaltyCardContent" hidden><p id="loyaltyTerms"></p><div id="loyaltyCampaigns"></div>
  <div id="loyaltyAnonymous"><p>Seu número de celular com DDD é seu acesso ao Fideliza+. Ao digitar o telefone do pedido, seus pontos e créditos aparecem automaticamente. Na primeira compra, o cadastro da carteira é automático.</p>
  </div>
@@ -1898,13 +1936,9 @@ function setMenuTemplate(shop){
  document.body.dataset.menuSkin=['essencial','editorial','urbano'].includes(preference)?preference:'principal';
  $('v2StoreNav').hidden=classic;
  $('v2ClassicLoyalty').hidden=true;
- $('v2NameFields').hidden=!classic&&document.body.dataset.menuSkin==='principal';
+ $('v2NameFields').hidden=true;
  $('v2PhoneFields').hidden=false;
- $('send').textContent=!classic&&document.body.dataset.menuSkin==='principal'?'Finalizar pedido →':'Confirmar pedido';
- if(classic||document.body.dataset.menuSkin!=='principal'){
-  const customer=$('v2NameFields').parentElement;
-  customer.insertBefore($('v2NameFields'),$('v2PhoneFields'));
- }
+ $('send').textContent='Finalizar pedido →';
 }
 function v2SaveFavorite(id){
  if(v2Favorites.has(id))v2Favorites.delete(id);else v2Favorites.add(id);
@@ -2653,6 +2687,7 @@ function renderCart(){
 }
 
 function cartStep(checkout){
+ if($('checkout').classList.contains('loyalty-only')){$('checkout').classList.remove('loyalty-only');$('cartReview').hidden=false;$('cartFooter').hidden=false;}
  if(pagbankPreviewMode&&checkout){openPagBankPreview();return;}
  $('checkout').hidden=!checkout;
  $('cart').hidden=checkout;
@@ -2900,8 +2935,9 @@ const loyaltyDiscount=()=>loyaltyPreview&&loyaltyStamp===loyaltyFingerprint()?Nu
 function setLoyaltyCardExpanded(expanded){
  $('loyaltyCardContent').hidden=!expanded;
  $('loyaltyCardToggle').setAttribute('aria-expanded',String(expanded));
+ $('loyaltyDetailsToggle').setAttribute('aria-expanded',String(expanded));$('loyaltyDetailsToggle').textContent=expanded?'Ocultar detalhes ⌃':'Ver benefícios ⌄';
 }
-$('loyaltyCardToggle').onclick=()=>setLoyaltyCardExpanded($('loyaltyCardContent').hidden);
+$('loyaltyCardToggle').onclick=$('loyaltyDetailsToggle').onclick=()=>setLoyaltyCardExpanded($('loyaltyCardContent').hidden);
 function updateLoyaltyCard(discount=loyaltyDiscount()){
  const rule=loyaltyWallet?.rules||loyaltyProgram?.rules||{};
  const fiado=$('payment').value==='fiado',summary=$('loyaltyCardSummary'),parts=[];
@@ -2910,6 +2946,10 @@ function updateLoyaltyCard(discount=loyaltyDiscount()){
   if(rule.orders_enabled)parts.push(Number(loyaltyWallet.orders||0)+' pedidos');
   if(rule.cashback_enabled||rule.referrals_enabled)parts.push(money(Number(loyaltyWallet.cashback_cents||0)/100)+' em créditos');
  }
+ const offerCount=new Set([...(loyaltyProgram?.campaigns||[]),...(loyaltyWallet?.offers||[])].map(o=>o.code).filter(Boolean)).size;
+ const metrics=[['Points',Boolean(loyaltyWallet&&rule.points_enabled),String(Number(loyaltyWallet?.points||0))],['Credit',Boolean(loyaltyWallet&&(rule.cashback_enabled||rule.referrals_enabled)),money(Number(loyaltyWallet?.cashback_cents||0)/100)],['Coupon',Boolean(rule.coupons_enabled||rule.campaigns_enabled),offerCount?String(offerCount):'Consultar']];
+ for(const [kind,visible,value] of metrics){$('loyaltyMetric'+kind).hidden=!visible;$('loyaltyMetric'+kind+'Value').textContent=value;}
+ $('loyaltyCardMetrics').hidden=!metrics.some(m=>m[1])||fiado;
  const selected=Boolean($('loyaltyCoupon').value.trim()||$('loyaltyReward').value);
  $('loyaltyBox').dataset.applied=String(!fiado&&discount>0);
  summary.textContent=fiado?(selected?'Remova o benefício para pagar no Fiado.':'Benefícios não disponíveis no Fiado.'):discount>0?'✓ '+money(discount)+' de desconto aplicado':parts.length?parts.join(' · '):'Consultar cupons, pontos e benefícios';
@@ -2992,8 +3032,8 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&$('cartDi
 $('loyaltyOpen').onclick=()=>{
  if(document.body.dataset.menuTemplate==='pitacco-v2'){v2Go('fideliza');return;}
  $('cartDialog').showModal();
- if(completed){$('checkout').hidden=false;$('checkout').classList.add('loyalty-only');$('cartTitle').textContent='Meu Fideliza+';}
- else cartStep(true);
+ $('checkout').hidden=false;$('checkout').classList.add('loyalty-only');$('cartTitle').textContent='Meu Fideliza+';
+ delete $('cartDialog').dataset.v2Stage;$('cartReview').hidden=true;$('cartFooter').hidden=true;
  setLoyaltyCardExpanded(true);$('loyaltyBox').scrollIntoView({block:'start'});void refreshLoyaltyWallet();
 };
 $('loyaltyCopyShare').onclick=async()=>{
@@ -3160,7 +3200,7 @@ function renderPublicStoreIdentity(){
  for(const [kind,label,raw,pattern,shape] of [
   ['instagram','Instagram',shop.instagram_url,/^https:\/\/(?:www\.)?instagram\.com\/[a-z0-9_.]+\/?$/i,'<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".7"/>'],
   ['facebook','Facebook',shop.facebook_url,/^https:\/\/(?:www\.)?facebook\.com\/[a-z0-9._/-]+\/?$/i,'<path d="M14 21v-8h3l.5-4H14V7c0-1 .5-2 2-2h2V2h-3c-3 0-5 2-5 5v2H7v4h3v8"/>']
- ]){if(typeof raw!=='string'||!pattern.test(raw))continue;const link=el('a',label,kind);link.href=raw;link.target='_blank';link.rel='noopener noreferrer';const icon=document.createElement('span');icon.setAttribute('aria-hidden','true');icon.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+shape+'</svg>';link.prepend(icon);social.append(link);}
+ ]){if(typeof raw!=='string'||!pattern.test(raw))continue;const link=el('a',undefined,kind);link.setAttribute('aria-label',label);link.title=label;link.href=raw;link.target='_blank';link.rel='noopener noreferrer';const icon=document.createElement('span');icon.setAttribute('aria-hidden','true');icon.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+shape+'</svg>';link.prepend(icon);social.append(link);}
  social.hidden=!social.children.length;
  const digits=String(shop.whatsapp||'').replace(/\D/g,'');
  if(/^\d{10,11}$/.test(digits)||/^55\d{10,11}$/.test(digits)){const contact=el('a','WhatsApp da loja');contact.href='https://wa.me/'+(digits.length<=11?'55'+digits:digits);contact.target='_blank';contact.rel='noopener noreferrer';$('storeServices').append(contact);}
@@ -3600,7 +3640,7 @@ $('customerSessionLogout').onclick=$('customerSessionChange').onclick=()=>void c
 window.addEventListener('storage',e=>{if(e.key===customerDeviceKey&&customerSessionActive&&e.oldValue!==e.newValue)location.reload()});
 window.addEventListener('pageshow',e=>{if(e.persisted&&!pagbankPreviewMode&&!studioPreviewActive&&customerSessionActive)location.reload()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&customerSessionActive&&Date.now()>=customerSessionExpiry)location.reload()});
-const v2Only=()=>document.body.dataset.menuTemplate==='pitacco-v2'&&document.body.dataset.menuSkin==='principal';
+const v2Only=()=>['classic','pitacco-v2'].includes(document.body.dataset.menuTemplate);
 function v2DeviceCredential(){
  try{
   const key='pitacco-v2-customer-device:'+slug;
