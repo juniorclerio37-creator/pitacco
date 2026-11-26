@@ -42,6 +42,8 @@ test('ambiguous checkout survives reload and only read-only confirmation clears 
  f.context.client.rpc=async()=>({data:{confirmed:true,order_id:'order',tracking_token:'token'}});
  await f.run('checkPendingCart()');assert.equal(linked,1);assert.equal(f.context.cart.length,0);assert.equal(f.storage.size,0);assert.equal(calls,1);
  assert.equal(f.elements.get('recoveredOrderLink').href,'/acompanhar/?token=token');
+ assert.match(f.elements.get('cartDraftText').textContent,/conferir o aceite da loja/);
+ assert.doesNotMatch(f.elements.get('cartDraftText').textContent,/pedido.*aceito/i);
 });
 test('freight reads the domain error from the Edge HTTP response',async()=>{
  const source=html.slice(html.indexOf('async function quoteFailureMessage('),html.indexOf('\nfunction selectDeliveryPoint'));

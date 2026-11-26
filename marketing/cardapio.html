@@ -1569,7 +1569,7 @@ async function checkPendingCart(){
    // History is optional; it must never block recovery of a confirmed checkout.
    void rememberConfirmedOrder(data).catch(()=>{});
    cart=[];cartRecoveryId=null;persistCartDraft();renderCart();button.hidden=true;
-   cartDraftNotice('Seu pedido anterior foi confirmado. A sacola está pronta para uma nova compra.');
+   cartDraftNotice('Seu envio anterior foi localizado. Acompanhe o pedido para conferir o aceite da loja. A sacola está pronta para uma nova compra.');
    const link=$('recoveredOrderLink');link.href='/acompanhar/?token='+encodeURIComponent(data.tracking_token);link.hidden=false;
   }else cartDraftNotice('O envio anterior ainda não tem confirmação. Confira novamente ou consulte a loja antes de reenviar.');
  }catch{cartDraftNotice('Não foi possível conferir o envio anterior. Sua sacola está preservada. Tente conferir novamente antes de reenviar.');}
