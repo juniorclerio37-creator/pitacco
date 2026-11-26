@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - 'revisions/0.12/web/AdminApp.jsx'
+      - 'revisions/0.12/web/StoreProfile.jsx'
+      - 'revisions/0.12/restore.py'
+      - 'supabase/migrations/**'
       - 'revisions/0.12/web/ScheduleSettings.jsx'
       - 'revisions/0.12/web/StoreOpeningHours.jsx'
       - 'revisions/0.12/web/store-opening-hours.css'
