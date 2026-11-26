@@ -120,6 +120,11 @@ try {
     await page.route('**/*', async route => {
       const { pathname, origin, searchParams } = new URL(route.request().url());
       if(origin==='https://unpkg.com'){externalMapScriptRequests++;return route.abort();}
+      if(origin==='https://viacep.com.br'){
+        const headers={'access-control-allow-origin':'*'};
+        if(pathname==='/ws/26070293/json/')return route.fulfill({headers,json:{cep:'26070-293',logradouro:'Rua do CEP simulado',bairro:'Bairro simulado',localidade:'Nova Iguaçu',uf:'RJ'}});
+        return route.fulfill({headers,json:{erro:true}});
+      }
       if(origin==='https://tile.openstreetmap.org'){
         if(mapTilesOffline)return route.abort();
         // Deterministic one-pixel PNG stands in for the real network tile.
@@ -1055,6 +1060,18 @@ try {
     await registration.getByRole('radio',{name:'Pessoa Jurídica (CNPJ)'}).check();
     await registration.getByLabel('Razão social').waitFor();
     await registration.getByRole('radio',{name:'Pessoa Física (CPF)'}).check();
+    const postal=registration.getByLabel('CEP',{exact:false});
+    await postal.fill('26070293');
+    await registration.getByText('Endereço localizado. Confira os dados e informe o número.',{exact:true}).waitFor();
+    assert.equal(await postal.inputValue(),'26070-293');
+    assert.equal(await registration.getByLabel('Rua / avenida',{exact:false}).inputValue(),'Rua do CEP simulado');
+    assert.equal(await registration.getByLabel('Bairro',{exact:false}).inputValue(),'Bairro simulado');
+    assert.equal(await registration.getByLabel('Cidade',{exact:false}).inputValue(),'Nova Iguaçu');
+    assert.equal(await registration.getByLabel('Estado',{exact:false}).inputValue(),'RJ');
+    await registration.getByLabel('Rua / avenida',{exact:false}).fill('Rua corrigida pelo lojista');
+    await postal.fill('00000000');
+    await registration.getByText('CEP não encontrado. Preencha o endereço manualmente ou tente novamente.',{exact:true}).waitFor();
+    assert.equal(await registration.getByLabel('Rua / avenida',{exact:false}).inputValue(),'Rua corrigida pelo lojista');
     if(width<=800){
       await merchantNavigate('Entregas','Área de entrega');
       const area=page.getByRole('region',{name:'Área de entrega',exact:true});
