@@ -110,3 +110,36 @@
  .design-preview-device.desktop .design-preview-iframe{min-width:600px}
  .design-preview-device.desktop{overflow:auto}
 }
+
+/* Keep the real menu preview independent of the global sidebar geometry.
+   Container width matters even when the merchant sidebar is visible. */
+.design-studio{container:menu-studio / inline-size;min-width:0;width:100%;grid-template-columns:minmax(0,1fr)}
+.design-studio-grid{width:100%;grid-template-columns:minmax(0,.94fr) minmax(0,1.06fr)}
+.design-studio .design-studio-preview{width:100%;max-width:100%;height:auto;min-height:0;overflow:visible;align-content:start;align-items:start;justify-self:stretch;grid-template-columns:minmax(0,1fr);grid-auto-rows:max-content}
+.design-studio .design-preview-header{min-width:0;justify-content:space-between}
+.design-studio .design-preview-switch,.design-studio .design-preview-steps{min-width:0;align-items:center}
+.design-studio :is(.design-preview-switch,.design-preview-steps) button{flex:0 1 auto;min-width:0;width:auto;height:auto;min-height:38px;max-width:100%;line-height:1.3;white-space:normal;margin:0}
+.design-studio .design-preview-device{min-width:0;min-height:0;margin:0 auto;align-self:start}
+.design-studio .design-preview-device.mobile{width:100%;max-width:390px}
+.design-studio .design-preview-device.desktop{width:100%;max-width:100%;overflow-x:auto}
+.design-studio .design-preview-device.desktop .design-preview-iframe{min-width:600px}
+.design-studio .design-preview-device.mobile .design-preview-iframe{min-width:0;width:100%}
+@media(max-width:1000px){
+ .design-studio-grid{grid-template-columns:minmax(0,1fr)}
+}
+@container menu-studio (max-width:740px){
+ .design-studio-grid{grid-template-columns:minmax(0,1fr)}
+ .design-studio .design-studio-preview{position:static;order:-1;padding:12px}
+ .design-studio .design-preview-header{justify-content:center}
+ .design-studio .design-preview-header>strong{width:100%;text-align:center}
+ .design-studio .design-preview-switch{justify-content:center}
+ .design-studio .design-preview-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ .design-studio .design-preview-steps button{width:100%;padding:8px 4px}
+}
+@container menu-studio (max-width:420px){
+ .design-studio .design-studio-preview{padding:8px}
+ .design-studio .design-preview-device.mobile{border-width:4px;border-radius:18px}
+ .design-studio .design-preview-iframe{height:clamp(520px,72vh,690px)}
+ .design-studio .design-template-options,.design-studio .design-color-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .design-studio .design-color span{flex-wrap:wrap}
+}

@@ -943,6 +943,24 @@ try {
       await merchantNavigate('Cardápio','Aparência do cardápio');
       const studio=page.getByRole('region',{name:'Estúdio de Cardápio Pitacco'});
       await studio.getByRole('heading',{name:'Estúdio de Cardápio'}).waitFor();
+      // The preview is not a sidebar; its geometry must follow the actual
+      // available workspace, including desktop-mode browsers on phones.
+      const preview=studio.getByRole('complementary',{name:'Prévia do cardápio em tempo real'});
+      for(const narrow of [false,true]){
+        if(narrow)await page.setViewportSize({width:768,height:900});
+        const layout=await preview.evaluate(node=>{
+          const rect=node.getBoundingClientRect(),grid=node.parentElement.getBoundingClientRect();
+          const device=node.querySelector('.design-preview-device').getBoundingClientRect();
+          const buttons=[...node.querySelectorAll('.design-preview-steps button,.design-preview-switch button')].map(b=>b.getBoundingClientRect().height);
+          return {tag:node.tagName,width:rect.width,gridWidth:grid.width,deviceWidth:device.width,buttons,gap:device.top-node.querySelector('.design-preview-steps').getBoundingClientRect().bottom};
+        });
+        assert.equal(layout.tag,'DIV','Preview must not inherit sidebar styles');
+        if(layout.gridWidth<=740)assert.ok(layout.width>=layout.gridWidth-2,'Preview fills narrow workspace');
+        assert.ok(layout.deviceWidth>=Math.min(390,layout.width-50),'Phone preview uses available width');
+        assert.ok(layout.buttons.every(h=>h<=64),'Preview buttons have natural heights');
+        assert.ok(layout.gap<=24,'No large blank space above preview');
+      }
+      await page.setViewportSize({width,height:900});
       await studio.getByRole('button',{name:/Urbano Blocos/}).click();
       await studio.getByLabel('Cor Principal').fill('#b43e24');
       await studio.getByLabel('Slogan').fill('O melhor da cidade');

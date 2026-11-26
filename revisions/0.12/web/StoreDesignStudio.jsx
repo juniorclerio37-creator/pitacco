@@ -302,7 +302,7 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
       {mode==='editar'?'Ver prévia':'Voltar à aparência'}</button>}
     </div>
    </div>
-   <aside className="design-studio-preview" aria-label="Prévia do cardápio em tempo real">
+   <div role="complementary" className="design-studio-preview" aria-label="Prévia do cardápio em tempo real">
     <div className="design-preview-header"><strong>Prévia em tempo real</strong>
      <div className="design-preview-switch"><button type="button" className={viewport==='celular'?'active':''} onClick={()=>setViewport('celular')}>Celular</button>
       <button type="button" className={viewport==='desktop'?'active':''} onClick={()=>setViewport('desktop')}>Computador</button></div>
@@ -313,7 +313,7 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
      <StorefrontLivePreview client={client} store={store} design={design} step={previewStep} viewport={viewport} files={files}/>
     </div>
     <small>Visualização real do cardápio, com o rascunho aplicado temporariamente. Nenhum pedido pode ser enviado pela prévia.</small>
-   </aside>
+   </div>
   </div>
  </section>;
 }
