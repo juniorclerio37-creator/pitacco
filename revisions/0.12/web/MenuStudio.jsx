@@ -6,6 +6,7 @@ import PizzaComboEditor from './PizzaComboEditor.jsx';
 import {normalizePizzaConfig} from './normalizePizzaConfig.mjs';
 import ProductComplements from './ProductComplements.jsx';
 import CentralComplementLibrary from './CentralComplementLibrary.jsx';
+import ProductPhotoCrop from './ProductPhotoCrop.jsx';
 import CatalogFinishedStock from './CatalogFinishedStock.jsx';
 import Inventory from './Inventory.jsx';
 import StoreDesignStudio from './StoreDesignStudio.jsx';
@@ -228,6 +229,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  <label style={field}>Tipo de produto<select disabled={busy||Boolean(editing)} value={pizzaPreview?"pizza":"traditional"} onChange={e=>setPizzaPreview(e.target.value==="pizza")}><option value="traditional">Produto tradicional</option><option value="pizza">Pizza (montagem personalizada)</option></select></label>
  {pizzaPreview&&<><p role="status">Configure a pizza e escolha salvar o rascunho ou publicar no cardápio.</p><label style={field}>Cadastros de pizzas<select disabled={busy||Boolean(editing)} value={pizzaDraftId||''} onChange={e=>{const p=pizzaDrafts.find(x=>x.id===e.target.value);setPizzaDraftId(p?.id||null);setPizzaDraft(p?.config||emptyPizza());setDraft({...empty(),...p?.config?.metadata,name:p?.name||''});setPhoto(null);}}><option value=''>Novo rascunho</option>{pizzaDrafts.map(p=><option key={p.id} value={p.id}>{p.name}{pizzaPublications.find(x=>x.draft_id===p.id)?.active?' · Publicada':''}</option>)}</select></label><PizzaEditor value={pizzaDraft} onChange={setPizzaDraft} disabled={busy} flavorLibrary={flavorLibrary} onSaveFlavor={saveLibraryFlavor} onUpload={async file=>mediaUrl(client,await uploadStoreImage(client,storeId,file,'products'))}/></>}
  <label style={field}>Foto do produto (JPG, PNG, WebP)<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f&&f.size>5*1024*1024){setNotice('Imagem maior que 5 MB.');return}setPhoto(f||null)}}/></label>
+ <ProductPhotoCrop source={previewUrl||draft.image_url} disabled={busy} onApply={setPhoto}/>
  <label style={field}>Nome<input required maxLength={180} value={draft.name} onChange={e=>change('name',e.target.value)}/></label>
  <label style={field}>Descrição<textarea maxLength={1200} rows={3} value={draft.description} onChange={e=>change('description',e.target.value)}/></label>
  <label style={field}>Categoria<input value={draft.category} onChange={e=>change('category',e.target.value)} list="catalog-categories"/><datalist id="catalog-categories">{categories.filter(x=>x!=='Todas').map(x=><option key={x} value={x}/>)}</datalist></label>
