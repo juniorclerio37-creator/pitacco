@@ -187,3 +187,43 @@ test('production webhook uses its own signature, merchant scope and token',async
  assert.ok(calls.some(x=>x.endsWith('/pitacco_ifood_complete')));
  assert.ok(!calls.some(x=>x.includes('shipping_test')));
 });
+
+
+test('courier recovers the same unstarted dispatch lease after a lost response, and never resends an uncertain dispatch',async()=>{
+ const paths=[];const requests=[];let first=true,claimStatus='claimed',begin=true,providerStatus=202;
+ const handler=createIfoodOrders({...config,clientId:'central-id',clientSecret:'central-secret',publicKey:'publishable',
+  fetcher:async(url,opts)=>{
+   const p=new URL(url).pathname;paths.push(p);
+   if(p.endsWith('/pitacco_driver_ifood_dispatch_claim_v2')){
+    const payload=JSON.parse(opts.body);requests.push(payload.p_request);
+    if(first){first=false;throw Object.assign(Error('lost claim response'),{name:'TimeoutError'})}
+    return json({status:claimStatus,lease:payload.p_request,external_order_id:id.order,merchant_id:id.merchant,ready_on_ifood:true});
+   }
+   if(p.endsWith('/pitacco_ifood_poll_credential'))return json(null);
+   if(p.endsWith('/oauth/token'))return json({accessToken:'central-access',expiresIn:3600});
+   if(p.endsWith('/pitacco_ifood_dispatch_begin'))return json(begin);
+   if(p.endsWith('/orders/'+id.order+'/dispatch')){assert.equal(JSON.parse(opts.body).deliveredBy,'MERCHANT');return new Response(null,{status:providerStatus})}
+   if(p.endsWith('/pitacco_ifood_dispatch_result'))return json(true);
+   throw Error('unexpected '+p);
+  }
+ });
+ const send=()=>handler(new Request(endpoint+'/driver-action',{method:'POST',headers:{origin:'https://entregador.pitacco.com.br',authorization:'Bearer driver-session'},body:JSON.stringify({action:'dispatch',delivery:id.store})}));
+ assert.equal((await send()).status,202);
+ assert.equal(requests.length,2);assert.equal(requests[0],requests[1]);
+ assert.equal(paths.filter(p=>p.endsWith('/dispatch')).length,1);
+ assert.ok(paths.findIndex(p=>p.endsWith('/pitacco_ifood_dispatch_begin'))<paths.findIndex(p=>p.endsWith('/dispatch')));
+ paths.length=0;begin=false;assert.equal((await send()).status,409);assert.equal(paths.some(p=>p.endsWith('/dispatch')),false);
+ paths.length=0;begin=true;claimStatus='uncertain';assert.equal((await send()).status,409);assert.equal(paths.some(p=>p.endsWith('/dispatch')),false);
+});
+test('webhook retries one transient durable enqueue failure without acknowledging lost data',async()=>{
+ const body=JSON.stringify(event),key='fixture-central';let attempts=0,background;
+ const handler=createIfoodOrders({...config,clientId:'central-id',clientSecret:key,runInBackground:p=>{background=p},fetcher:async(url)=>{
+  const p=new URL(url).pathname;
+  if(p.endsWith('/pitacco_ifood_enqueue')){attempts++;return attempts===1?json({},503):json(true)}
+  if(p.endsWith('/pitacco_ifood_claim')||p.endsWith('/pitacco_ifood_claim_auto_confirm'))return json([]);
+  throw Error('unexpected '+p);
+ }});
+ const signature=createHmac('sha256',key).update(body).digest('hex');
+ assert.equal((await handler(new Request(endpoint,{method:'POST',body,headers:{'x-ifood-signature':signature}}))).status,202);
+ await background;assert.equal(attempts,2);
+});
