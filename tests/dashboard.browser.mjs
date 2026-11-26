@@ -142,6 +142,19 @@ try {
         'access-control-allow-methods': 'GET,POST,OPTIONS'
       };
       if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
+      if(windowsSwitchFixture&&pathname.startsWith('/rest/v1/rpc/')&&route.request().method()==='POST'){
+        const payload=route.request().postDataJSON();
+        if(payload?.p_store===desktopSecondStore.id||payload?.s===desktopSecondStore.id){
+          if(pathname.endsWith('/is_store_manager'))return route.fulfill({headers,json:true});
+          if(pathname.endsWith('/pitacco_daily_operational_orders'))return route.fulfill({headers,json:[secondOrder]});
+          if(pathname.endsWith('/pitacco_store_identity'))return route.fulfill({headers,json:{store_id:desktopSecondStore.id,logo_path:null,legacy_logo_url:null}});
+          if(pathname.endsWith('/pitacco_windows_ping')){assert.equal(payload.p_device,'fixture-device');windowsPings.push(payload);return route.fulfill({headers,json:{received:true}})}
+          if(pathname.endsWith('/pitacco_windows_watch_start'))return route.fulfill({headers,json:'a'.repeat(64)});
+          if(pathname.endsWith('/pitacco_windows_connection'))return route.fulfill({headers,json:{status:'connected'}});
+          if(pathname.endsWith('/pitacco_auto_print_status'))return route.fulfill({headers,json:false});
+          return route.fulfill({headers,json:[]});
+        }
+      }
       if(pathname==='/functions/v1/platform-owner-login'){
         assert.equal(origin,realApi);
         const {username,password}=route.request().postDataJSON();
@@ -375,19 +388,6 @@ try {
       }
       if(pathname==='/rest/v1/rpc/is_admin')throw new Error('O painel do proprietário consultou a permissão legada');
       if(pathname==='/rest/v1/rpc/pitacco_my_merchant_stores')return route.fulfill({headers,json:windowsSwitchFixture?[store,desktopSecondStore]:width===1440?[store,readOnlyStore]:[store]});
-      if(windowsSwitchFixture&&pathname.startsWith('/rest/v1/rpc/')&&route.request().method()==='POST'){
-        const payload=route.request().postDataJSON();
-        if(payload?.p_store===desktopSecondStore.id||payload?.s===desktopSecondStore.id){
-          if(pathname.endsWith('/is_store_manager'))return route.fulfill({headers,json:true});
-          if(pathname.endsWith('/pitacco_daily_operational_orders'))return route.fulfill({headers,json:[secondOrder]});
-          if(pathname.endsWith('/pitacco_store_identity'))return route.fulfill({headers,json:{store_id:desktopSecondStore.id,logo_path:null,legacy_logo_url:null}});
-          if(pathname.endsWith('/pitacco_windows_ping')){windowsPings.push(payload);return route.fulfill({headers,json:{received:true}})}
-          if(pathname.endsWith('/pitacco_windows_watch_start'))return route.fulfill({headers,json:'a'.repeat(64)});
-          if(pathname.endsWith('/pitacco_windows_connection'))return route.fulfill({headers,json:{status:'connected'}});
-          if(pathname.endsWith('/pitacco_auto_print_status'))return route.fulfill({headers,json:false});
-          return route.fulfill({headers,json:[]});
-        }
-      }
       if(pathname==='/rest/v1/rpc/is_store_manager'){
         assert.equal(origin,api);
         const {s}=route.request().postDataJSON();
