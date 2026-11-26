@@ -15,9 +15,9 @@ import {CategoryIcon,CATEGORY_ICON_GROUPS,CATEGORY_ICON_KEYS,inferCategoryIcon} 
 const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const empty=()=>({name:'',description:'',category:'',price:'',cost:'',menu_active:true,image_url:''});
 const field={display:'grid',gap:5,marginBottom:13};
-export default function MenuStudio({client,storeId,products=[],store=null,manager=true,onRefresh,onImport,initialSection='Produtos',navigationKey}){
- const [draft,setDraft]=useState(empty),[editing,setEditing]=useState(null),[groups,setGroups]=useState([]),[photo,setPhoto]=useState(null),[previewUrl,setPreviewUrl]=useState(''),[filter,setFilter]=useState(''),[selectedCategory,setSelectedCategory]=useState('Todas'),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[section,setSection]=useState(initialSection==='Categorias'?'Produtos':initialSection),[showEditor,setShowEditor]=useState(false);
- useEffect(()=>{setSection(initialSection==='Categorias'?'Produtos':initialSection);setShowEditor(false);if(initialSection==='Categorias')requestAnimationFrame(()=>document.getElementById('catalog-category-navigation')?.scrollIntoView({block:'nearest'}))},[initialSection,navigationKey]);
+export default function MenuStudio({client,storeId,products=[],store=null,manager=true,onRefresh,onImport,initialSection='Produtos',navigationKey,sidebarOnly=false}){
+ const [draft,setDraft]=useState(empty),[editing,setEditing]=useState(null),[groups,setGroups]=useState([]),[photo,setPhoto]=useState(null),[previewUrl,setPreviewUrl]=useState(''),[filter,setFilter]=useState(''),[selectedCategory,setSelectedCategory]=useState('Todas'),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[section,setSection]=useState(!sidebarOnly&&initialSection==='Categorias'?'Produtos':initialSection),[showEditor,setShowEditor]=useState(false);
+ useEffect(()=>{setSection(!sidebarOnly&&initialSection==='Categorias'?'Produtos':initialSection);setShowEditor(false);if(!sidebarOnly&&initialSection==='Categorias')requestAnimationFrame(()=>document.getElementById('catalog-category-navigation')?.scrollIntoView({block:'nearest'}))},[initialSection,navigationKey]);
  const [categoryIcons,setCategoryIcons]=useState({}),[configuringCategory,setConfiguringCategory]=useState(null),[iconBusy,setIconBusy]=useState(false);
  const [categoryRanks,setCategoryRanks]=useState({});
  const [newGroups,setNewGroups]=useState([]);
@@ -150,11 +150,11 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
  async function toggle(p){setBusy(true);const {error}=await client.from('products').update({menu_active:!p.menu_active}).eq('id',p.id).eq('store_id',storeId);setBusy(false);setNotice(error?.message||'Disponibilidade atualizada.');if(!error){setPizzaPublications(old=>old.map(x=>x.product_id===p.id?{...x,active:!p.menu_active}:x));onRefresh?.()}}
 
  return <section className="menu-studio">
- <div className="page-intro"><div><span className="eyebrow">MEU CARDÁPIO</span><h3>Editor de cardápio</h3><p>Gerencie produtos e veja as alterações no cardápio do cliente enquanto edita.</p></div><button type="button" className="secondary" onClick={onImport}>Importar cardápio</button></div>
- <div className="catalog-studio-tabs" role="tablist" aria-label="Gestão do cardápio">
+ <div className="page-intro"><div><span className="eyebrow">MEU CARDÁPIO</span><h3>{sidebarOnly?section:'Editor de cardápio'}</h3><p>{sidebarOnly?'Gerencie esta seção do cardápio.':'Gerencie produtos e veja as alterações no cardápio do cliente enquanto edita.'}</p></div>{!sidebarOnly&&<button type="button" className="secondary" onClick={onImport}>Importar cardápio</button>}</div>
+ {!sidebarOnly&&<div className="catalog-studio-tabs" role="tablist" aria-label="Gestão do cardápio">
  {(manager?['Produtos','Complementos','Combos','Banners','Estoque','Insumos']:['Produtos','Complementos','Banners','Estoque','Insumos']).map(t=><button role="tab" aria-selected={section===t}
   type="button" key={t} className={section===t?'active':'secondary'} onClick={()=>{setSection(t);setComboTarget(null);setShowEditor(false);setNotice('')}}>{t}</button>)}
- </div>
+ </div>}
  {notice&&!showEditor&&<p className="notice" role="status">{notice}</p>}
  {section==='Combos'&&manager&&<PizzaComboEditor key={storeId+':'+(comboTarget||'new')} client={client} storeId={storeId} initialDraftId={comboTarget} onChanged={()=>{refreshCombos();onRefresh?.()}}/>}
  {section==='Complementos'&&<CentralComplementLibrary client={client} storeId={storeId} products={products} onChanged={onRefresh}/>}
@@ -162,20 +162,20 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
   products={products} focus="banners"/>:<p role="alert">Não foi possível identificar a loja para abrir os banners.</p>)}
  {section==='Estoque'&&<>
    <CatalogFinishedStock client={client} storeId={storeId} products={products} manager={manager}/>
-   <div className="catalog-inventory-wrap"><h3>Movimentações e insumos vinculados</h3>
+   {!sidebarOnly&&<div className="catalog-inventory-wrap"><h3>Movimentações e insumos vinculados</h3>
     <Inventory client={client} storeId={storeId} manager={manager} products={products} initialView="Movimentações"/>
-   </div>
+   </div>}
  </>}
  {section==='Insumos'&&<div className="catalog-inventory-wrap">
   <Inventory client={client} storeId={storeId} manager={manager} products={products} initialView="Insumos"/>
  </div>}
- {section==='Produtos'&&<><div className="menu-studio-list">
- <div className="panel" id="catalog-category-navigation"><h3>Categorias</h3><p className="hint">Organize as categorias pelas setas: a mesma ordem será usada no cardápio dos clientes. Para mudar o ícone, toque na engrenagem.</p>
+ {(section==='Produtos'||section==='Categorias')&&<><div className={sidebarOnly&&section==='Categorias'?'menu-studio-list catalog-categories-only':'menu-studio-list'}>
+ <div className="panel" id="catalog-category-navigation"><h3>{sidebarOnly&&section==='Produtos'?'Filtrar por categoria':'Categorias'}</h3>{(!sidebarOnly||section==='Categorias')&&<p className="hint">Organize as categorias pelas setas: a mesma ordem será usada no cardápio dos clientes. Para mudar o ícone, toque na engrenagem.</p>}
  {categories.map(c=><div key={c} style={{display:'flex',gap:6,alignItems:'center',marginBottom:7}}>
   <button type="button" className={selectedCategory===c?'active':'secondary'} style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:7,textAlign:'left'}} onClick={()=>setSelectedCategory(c)}>
    <CategoryIcon icon={c==='Todas'?'more':iconFor(c)} size={22}/>{c}
   </button>
-  {c!=='Todas'&&<>
+  {c!=='Todas'&&(!sidebarOnly||section==='Categorias')&&<>
    <button type="button" className="secondary catalog-sort-arrow" disabled={busy||orderedCategories.indexOf(c)===0}
     aria-label={'Mover categoria '+c+' para cima'} title="Subir categoria" onClick={()=>moveCategory(c,-1)}>↑</button>
    <button type="button" className="secondary catalog-sort-arrow" disabled={busy||orderedCategories.indexOf(c)===orderedCategories.length-1}
@@ -184,7 +184,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
     title={'Configurar ícone de '+c} onClick={()=>setConfiguringCategory(prev=>prev===c?null:c)}>⚙</button>
   </>}
  </div>)}
- {configuringCategory&&categories.includes(configuringCategory)&&<div className="pitacco-category-settings">
+ {(!sidebarOnly||section==='Categorias')&&configuringCategory&&categories.includes(configuringCategory)&&<div className="pitacco-category-settings">
   <h4>Ícone da categoria: {configuringCategory}</h4>
   <p>Escolha a imagem que aparecerá no cardápio dos clientes. A mudança é exclusiva desta loja.</p>
   {CATEGORY_ICON_GROUPS.map(group=><section key={group.name} aria-label={group.name}>
@@ -198,7 +198,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
   </section>)}
  </div>}
  </div>
- <div className="panel catalog-product-panel"><div className="line"><h3>Produtos</h3><button type="button" onClick={()=>begin(null)}>+ Novo produto</button></div>
+ {section==='Produtos'&&<div className="panel catalog-product-panel"><div className="line"><h3>Produtos</h3><button type="button" onClick={()=>begin(null)}>+ Novo produto</button></div>
  <p className="hint">Use ↑ e ↓ para colocar os produtos na ordem desejada dentro de cada categoria. Ex.: Açaí 400 ml pode ficar primeiro, independente do nome.</p>
  <input aria-label="Buscar produto" placeholder="Buscar produtos..." value={filter} onChange={e=>setFilter(e.target.value)}/>
  <div className="catalog-card-grid">
@@ -217,7 +217,7 @@ export default function MenuStudio({client,storeId,products=[],store=null,manage
    <button type="button" className="secondary" disabled={busy} onClick={()=>comboPublications.some(x=>x.product_id===p.id)?begin(p):toggle(p)}>{comboPublications.some(x=>x.product_id===p.id)?'Gerenciar combo':p.menu_active===false?'Ativar':'Desativar'}</button>
   </div>
  </article>)}
- </div>{!filtered.length&&<p>Nenhum produto nesta categoria.</p>}</div>
+ </div>{!filtered.length&&<p>Nenhum produto nesta categoria.</p>}</div>}
  </div>
  {showEditor&&<div style={{position:'fixed',inset:0,zIndex:90,background:'rgba(0,0,0,.5)',display:'flex',justifyContent:'flex-end'}}>
  <div style={{background:'var(--background,#fff)',color:'var(--foreground,#222)',height:'100%',width:'min(1100px,100%)',overflowY:'auto',padding:22,boxSizing:'border-box'}}>
