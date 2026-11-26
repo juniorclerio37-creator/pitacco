@@ -1497,8 +1497,26 @@ const schedulingAvailable=()=>storeOpening?.scheduling_available===true&&storeOp
 const storefrontCanOrder=()=>storeOpening?.open===true||schedulingAvailable();
 const timingValid=()=>storeOpening?.open===true||Boolean(schedulingAvailable()&&$('schedule').value);
 let deliveryPoint=null,deliveryMap,deliveryQuote=null,deliveryService='standard';
-function renderDeliveryServices(options){const root=$('deliveryServices');root.hidden=!options?.priority&&deliveryService==='standard';$('priorityServiceOption').hidden=!options?.priority&&deliveryService!=='priority';for(const key of ['standard','priority']){const o=options?.[key];$(key+'ServiceLabel').textContent=(key==='priority'?'⚡ Entrega prioritária':'Entrega padrão')+(o?' · '+money(o.fee)+(Number.isInteger(o.min_minutes)&&Number.isInteger(o.max_minutes)?' · '+o.min_minutes+'–'+o.max_minutes+' min':''):'');root.querySelector('[value='+key+']').checked=deliveryService===key;}}
-$('deliveryServices').addEventListener('change',e=>{if(!['standard','priority'].includes(e.target.value)||pendingRequest||submitting)return;deliveryService=e.target.value;deliveryQuote=null;quoteGeneration++;renderDeliveryServices(null);void requestDeliveryQuote(true);});
+let availableDeliveryServices=null;
+function renderDeliveryServices(options){
+ if(options!==undefined)availableDeliveryServices=options;
+ const known=availableDeliveryServices,root=$('deliveryServices');
+ root.hidden=!known?.priority&&deliveryService==='standard';
+ $('priorityServiceOption').hidden=!known?.priority&&deliveryService!=='priority';
+ for(const key of ['standard','priority']){
+  const o=known?.[key];
+  $(key+'ServiceLabel').textContent=(key==='priority'?'⚡ Entrega prioritária':'Entrega padrão')+(o?' · '+money(o.fee)+(Number.isInteger(o.min_minutes)&&Number.isInteger(o.max_minutes)?' · '+o.min_minutes+'–'+o.max_minutes+' min':''):'');
+  root.querySelector('[value='+key+']').checked=deliveryService===key;
+ }
+}
+$('deliveryServices').addEventListener('change',e=>{
+ const service=e.target.value;
+ if(!['standard','priority'].includes(service)||pendingRequest||submitting){renderDeliveryServices();return;}
+ if(service===deliveryService)return;
+ deliveryService=service;deliveryQuote=null;quoteGeneration++;
+ renderDeliveryServices();renderCart();
+ v2ScheduleDeliveryQuote(true);
+});
 // Persist product choices only. Prices, names and option rules always come from
 // the current catalog; payment, identity, PIN and freight authorization never do.
 const cartStorageKey='pitacco-cart:'+slug;
@@ -1636,7 +1654,7 @@ async function quoteFailureMessage(error){
 
 function selectDeliveryPoint(point){
  deliveryPoint=point;suggestedDeliveryPoint=null;
- deliveryQuote=null;
+ deliveryQuote=null;renderDeliveryServices(null);
  deliveryMap?.setPoint(point);
  $('deliveryPointStatus').textContent='Localização confirmada. A taxa será atualizada automaticamente e o endereço poderá ser reutilizado após a entrega.';
  quoteGeneration++;v2ScheduleDeliveryQuote(true);
@@ -1645,7 +1663,7 @@ function selectDeliveryPoint(point){
 $('address').addEventListener('input',event=>{
  deliveryQuote=null;
  const keepPoint=Boolean(event.detail?.keepPoint);
- if(!keepPoint){$('addressCepStatus').textContent='';suggestedDeliveryPoint=null;pendingMapPoint=null;$('confirmDeliveryMap').disabled=true;deliveryMap?.clearPoint();}
+ if(!keepPoint){$('addressCepStatus').textContent='';suggestedDeliveryPoint=null;pendingMapPoint=null;$('confirmDeliveryMap').disabled=true;deliveryMap?.clearPoint();deliveryService='standard';renderDeliveryServices(null);}
  if(deliveryPoint&&!keepPoint){
   deliveryPoint=null;deliveryMap?.clearPoint();
   $('deliveryPointStatus').textContent='Confirme novamente a localização do endereço.';
@@ -1707,12 +1725,12 @@ $('locateDelivery').onclick=async()=>{
 };
 
 let v2QuoteTimer=null,v2QuoteRefreshTimer=null,quoteGeneration=0;
-let v2QuotePending=null,v2QuotePendingKey='';
+let v2QuotePending=null,v2QuotePendingKey='',v2QuotePendingGeneration=-1;
 function v2QuoteAddressReady(){
  return addressInputs.every(id=>$(id).value.trim()&&$(id).checkValidity())&&$('address').value.trim().length>=12;
 }
 function v2QuoteCurrent(){
- return deliveryQuote&&deliveryQuote.address===$('address').value.trim()&&
+ return deliveryQuote&&deliveryQuote.service===deliveryService&&deliveryQuote.address===$('address').value.trim()&&
   Date.parse(deliveryQuote.expiresAt)>Date.now()+3000&&
   (!deliveryQuote.point||(deliveryPoint&&
     deliveryQuote.point[0]===deliveryPoint[0]&&deliveryQuote.point[1]===deliveryPoint[1]));
@@ -1762,7 +1780,7 @@ async function requestDeliveryQuote(auto=false){
  const quotePoint=needsPoint&&deliveryPoint?[...deliveryPoint]:null;
  const selectedService=deliveryService;
  const key=address+'|'+(quotePoint?.join(',')||'auto')+'|'+selectedService;
- if(v2QuotePending&&v2QuotePendingKey===key)return v2QuotePending;
+ if(v2QuotePending&&v2QuotePendingKey===key&&v2QuotePendingGeneration===quoteGeneration)return v2QuotePending;
  const token=++quoteGeneration;
  const button=$('quoteDelivery');button.disabled=true;
  deliveryQuote=null;renderCart();
@@ -1788,7 +1806,7 @@ async function requestDeliveryQuote(auto=false){
    }
    if(!data?.quote_id||data.request_id!==requestId||!Number.isFinite(Number(data.fee)))
     throw Error(data?.error||'Não foi possível confirmar o frete.');
-   if(token!==quoteGeneration||$('address').value.trim()!==address||
+   if(token!==quoteGeneration||selectedService!==deliveryService||$('fulfillment').value!=='delivery'||$('address').value.trim()!==address||
     (quotePoint&&(!deliveryPoint||deliveryPoint[0]!==quotePoint[0]||deliveryPoint[1]!==quotePoint[1])))return false;
    if((data.delivery_service||'standard')!==selectedService)throw Error('Modalidade não confirmada.');
    renderDeliveryServices(data.delivery_options);
@@ -1809,14 +1827,15 @@ async function requestDeliveryQuote(auto=false){
   }catch(error){
    if(token!==quoteGeneration)return false;
    const message=await quoteFailureMessage(error);
-   renderDeliveryServices(null);
+   if(token!==quoteGeneration||selectedService!==deliveryService)return false;
+   renderDeliveryServices();
    quoteNotice(auto?v2AutoQuoteError(message):message,'error');
    return false;
   }finally{
    if(token===quoteGeneration){button.disabled=false;renderCart();}
   }
  })();
- v2QuotePending=work;v2QuotePendingKey=key;
+ v2QuotePending=work;v2QuotePendingKey=key;v2QuotePendingGeneration=token;
  try{return await work;}finally{if(v2QuotePending===work){v2QuotePending=null;v2QuotePendingKey='';}}
 }
 $('quoteDelivery').onclick=()=>void requestDeliveryQuote(false);

@@ -63,6 +63,7 @@ try {
     await page.context().setGeolocation({latitude:-22.71,longitude:-43.4});
     let identityName='Loja de teste';
     let publicBlocked=template==='pitacco-v2'&&width===375;
+    let rejectPriorityOnce=false;
     const openingFixture=()=>publicBlocked?{open:false,reason:'paused',paused:true,next_open_at:null,scheduling_available:false}:{open:true,reason:'open',next_open_at:null,timezone:'America/Sao_Paulo',scheduling_available:Boolean(scheduled),paused:false};
     let polls=0,quoteAttempts=0,recoveryConfirmed=false;
     let savedProfile=null;
@@ -159,6 +160,7 @@ try {
           assert.deepEqual([payload.latitude,payload.longitude],[-22.71,-43.4]);
         else
           assert.equal(payload.latitude,undefined,'Endereço completo cota sem ponto obrigatório em todos os templates');
+        if(payload.delivery_service==='priority'&&rejectPriorityOnce){rejectPriorityOnce=false;return route.fulfill({status:409,json:{error:'Entrega prioritária indisponível nesta região. Selecione a entrega padrão.'}});}
         quotes.set(payload.request_id,{fee:payload.delivery_service==='priority'?9:5,service:payload.delivery_service});
         return route.fulfill({json:{quote_id:'30000000-0000-0000-0000-000000000011',
           request_id:payload.request_id,fee:payload.delivery_service==='priority'?9:5,distance_m:1112,distance_type:'straight',
@@ -496,6 +498,14 @@ try {
     assert.match(await page.locator('#total').innerText(),/74,00/);
     if(width===375){await mkdir('artifacts',{recursive:true});await page.locator('#addressBlock').screenshot({path:`artifacts/menu-address-${template}.png`});}
     assert.doesNotMatch(await page.locator('#routeQuoteStatus').innerText(),/non-2xx/);
+    // Failure of priority must never remove the standard choice or its known price.
+    rejectPriorityOnce=true;
+    await page.locator('#deliveryServices input[value="priority"]').check();
+    await page.locator('#routeQuoteStatus').filter({hasText:'Entrega prioritária indisponível'}).waitFor();
+    assert.match(await page.locator('#standardServiceLabel').innerText(),/5,00/);
+    assert.equal(await page.locator('#deliveryServices input[value="standard"]').isVisible(),true);
+    await page.locator('#deliveryServices input[value="standard"]').check();
+    await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00.*40–60 min/}).waitFor();
     await page.locator('#deliveryServices input[value="priority"]').check();
     await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*9,00.*20–30 min/}).waitFor();
     assert.match(await page.locator('#total').innerText(),/78,00/);

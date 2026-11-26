@@ -150,3 +150,12 @@ test('public maps are bundled with Leaflet and the checkout keeps suggestions un
  assert.match(html,/suggestedDeliveryPoint=\[\.\.\.details.suggested_point\]/);
  assert.match(html,/selectDeliveryPoint\(pendingMapPoint\);closeDeliveryMap\(\)/);
 });
+
+test('delivery service switching retains server options and ignores stale quote responses',()=>{
+ assert.match(html,/if\(options!==undefined\)availableDeliveryServices=options/);
+ assert.match(html,/deliveryQuote\.service===deliveryService/);
+ assert.match(html,/v2QuotePendingGeneration===quoteGeneration/);
+ assert.match(html,/selectedService!==deliveryService/);
+ assert.match(html,/renderDeliveryServices\(\);renderCart\(\);\s*v2ScheduleDeliveryQuote\(true\)/);
+ assert.match(html,/if\(token!==quoteGeneration\|\|selectedService!==deliveryService\)return false;\s*renderDeliveryServices\(\)/);
+});
