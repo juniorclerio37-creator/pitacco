@@ -84,14 +84,16 @@ test('V2 principal integra banner ao cabeçalho e recupera carrinho sem aviso na
 
 test('primeira exibição estável: Fideliza+ e destaques antes do cardápio visível',()=>{
  assert.match(html,/id="menuStartup"/);
- assert.match(html,/MENU_STARTUP_RPC_LIMIT_MS=3400/);
+ assert.match(html,/MENU_STARTUP_RPC_LIMIT_MS=1000/);
  assert.match(html,/Promise\.all\(\[\s*menuStartupRpc\('pitacco_loyalty_program'/);
  assert.match(html,/menuStartupRpc\('pitacco_public_top_sellers'/);
  assert.doesNotMatch(html,/pitacco_public_store_region|v2HeroLocation/);
- assert.match(html,/const \[prepared\]=await Promise\.all\(\[prepareMenuStartup\(\),warmMenuStartupImages\(\)\]\)/);
+ assert.match(html,/const startupData=prepareMenuStartup\(\);\s*const data=await fetchPublicMenuWithRetry\(\)/);
+ assert.match(html,/const prepared=await startupData/);
  assert.match(html,/applyMenuStartupData\(prepared\)/);
- assert.match(html,/await waitForMenuIdentityPaint\(\)/);
- assert.match(html,/initOptions\(\);\s*await waitForMenuIdentityPaint\(\)/);
+ assert.match(html,/initOptions\(\);\s*void warmMenuStartupImages\(\)/);
+ assert.match(html,/await menuStartupDeadline\(waitForMenuIdentityPaint\(\),120\)/);
+ assert.match(html,/await menuStartupDeadline\(restoring,MENU_STARTUP_SESSION_LIMIT_MS\)/);
  assert.match(html,/\$\('menuStartup'\)\.hidden=true/);
  assert.doesNotMatch(html,/renderCategories\(\);renderProducts\(\);void loadLoyalty\(\)/);
  assert.match(html,/cartRestoreWarning/);

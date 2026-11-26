@@ -9,7 +9,7 @@ test('persistent session is server checked and isolated from sandbox and editor'
  assert.match(html,/p_action:'logout'/);
  assert.match(html,/device!==rememberedDevice\(\)/);
  assert.match(html,/customerSessionActive&&Date\.now\(\)<customerSessionExpiry\?'address':'identify'/);
- assert.match(html,/await restoreCustomerSession\(\)/);
+ assert.match(html,/const restoring=restoreCustomerSession\(\);\s*await menuStartupDeadline\(restoring,MENU_STARTUP_SESSION_LIMIT_MS\)/);
 });
 test('history requires device and confirmed order tracking proof',()=>{
  assert.match(html,/p_action:'link',p_tracking:token/);
