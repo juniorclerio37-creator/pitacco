@@ -14,7 +14,7 @@ export default function MerchantNewOrder({client,storeId,onNavigate}){
  const [name,setName]=useState(''),[phone,setPhone]=useState(''),[search,setSearch]=useState(''),[customers,setCustomers]=useState([]),[type,setType]=useState('balcao'),[payment,setPayment]=useState(''),[notes,setNotes]=useState(''),[change,setChange]=useState(''),[coupon,setCoupon]=useState(''),[credit,setCredit]=useState(''),[cart,setCart]=useState([]),[product,setProduct]=useState(null),[chosen,setChosen]=useState([]),[quantity,setQuantity]=useState(1),[quote,setQuote]=useState(null),[quoting,setQuoting]=useState(false);
  const [manualDiscount,setManualDiscount]=useState(''),[pdvMethods,setPdvMethods]=useState([]),[received,setReceived]=useState(false);
  const [pdvPriceRules,setPdvPriceRules]=useState({}),[pricePreview,setPricePreview]=useState(null),[previewError,setPreviewError]=useState('');
- const [fields,setFields]=useState(emptyAddress),[point,setPoint]=useState(null),[mapOpen,setMapOpen]=useState(false),[mapError,setMapError]=useState(''),[quoteError,setQuoteError]=useState(''),[attempt,setAttempt]=useState(0),[expired,setExpired]=useState(false),[cepBusy,setCepBusy]=useState(false),[cepNote,setCepNote]=useState('');
+ const [fields,setFields]=useState(emptyAddress),[point,setPoint]=useState(null),[mapOpen,setMapOpen]=useState(false),[mapError,setMapError]=useState(''),[suggestion,setSuggestion]=useState(null),[quoteError,setQuoteError]=useState(''),[attempt,setAttempt]=useState(0),[expired,setExpired]=useState(false),[cepBusy,setCepBusy]=useState(false),[cepNote,setCepNote]=useState('');
  const address=composeAddress(fields),mapNode=useRef(null),mapApi=useRef(null),editVersion=useRef(0);
  const request=useRef(id()),lock=useRef(false);
  async function rpc(n,args){const r=await client.rpc(n,args);if(r.error)throw r.error;if(r.data?.error)throw Error(r.data.error);return r.data}
@@ -32,22 +32,23 @@ export default function MerchantNewOrder({client,storeId,onNavigate}){
  const quoteCurrent=delivery&&!expired&&currentQuote(quote,address,point);
  const quoteSlug=menu?.store?.slug,area=menu?.store?.delivery_area;
  const areaMode=area?.coverage_type||menu?.store?.route_pricing?.mode||'circle';
- function editAddress(field,value){editVersion.current++;setFields(old=>({...old,[field]:value}));setPoint(null);setQuote(null);setQuoteError('');setCepNote('')}
+ function editAddress(field,value){editVersion.current++;setFields(old=>({...old,[field]:value}));setPoint(null);setQuote(null);setSuggestion(null);setQuoteError('');setCepNote('')}
  async function lookupCep(){
   const cep=fields.postal.replace(/\D/g,'');if(cep.length!==8||cepBusy)return;
   const version=editVersion.current;setCepBusy(true);setCepNote('Buscando CEP…');
   try{const response=await fetch('https://viacep.com.br/ws/'+cep+'/json/',{signal:AbortSignal.timeout(6000)});if(!response.ok)throw Error('CEP indisponível');const a=await response.json();if(a.erro)throw Error('CEP não encontrado');if(version!==editVersion.current)return;
-   editVersion.current++;setFields(old=>({...old,street:a.logradouro||old.street,neighborhood:a.bairro||old.neighborhood,city:a.localidade||old.city,state:a.uf||old.state}));setPoint(null);setQuote(null);setQuoteError('');setCepNote('Confira os dados e informe o número.');
+   editVersion.current++;setFields(old=>({...old,street:a.logradouro||old.street,neighborhood:a.bairro||old.neighborhood,city:a.localidade||old.city,state:a.uf||old.state}));setPoint(null);setQuote(null);setSuggestion(null);setQuoteError('');setCepNote('Confira os dados e informe o número.');
   }catch{if(version===editVersion.current)setCepNote('CEP não localizado. Preencha manualmente.')}finally{setCepBusy(false)}
  }
  useEffect(()=>{
   if(!delivery||!mapOpen||!mapNode.current||areaMode==='road')return;
   let live=true;setMapError('');
   const center=area?.latitude!=null&&area?.longitude!=null?[Number(area.latitude),Number(area.longitude)]:undefined;
-  mountDeliveryMap(mapNode.current,{center,radius:area?.radius_m,mode:areaMode,showCoverage:false,onSelect:p=>{if(live){setPoint(p);setQuote(null);setQuoteError('');mapApi.current?.setPoint(p)}}}).then(map=>{if(!live){map?.remove();return}mapApi.current=map;if(point)map?.showPoint(point);map?.resize()}).catch(e=>{if(live)setMapError(e.message||'Não foi possível abrir o mapa.')});
+  mountDeliveryMap(mapNode.current,{center,radius:area?.radius_m,mode:areaMode,showCoverage:false,onSelect:p=>{if(live){setPoint(p);setQuote(null);setQuoteError('');mapApi.current?.setPoint(p)}}}).then(map=>{if(!live){map?.remove();return}mapApi.current=map;if(point)map?.showPoint(point);else if(suggestion)map?.focus(suggestion.point);map?.resize()}).catch(e=>{if(live)setMapError(e.message||'Não foi possível abrir o mapa.')});
   return()=>{live=false;mapApi.current?.remove();mapApi.current=null};
  },[delivery,mapOpen,areaMode,area?.latitude,area?.longitude]);
  useEffect(()=>{if(!point)mapApi.current?.clearPoint()},[point]);
+ useEffect(()=>{if(suggestion&&!point)mapApi.current?.focus(suggestion.point)},[suggestion,point]);
  const availablePayments=delivery?expandPaymentMethods(menu?.store?.payment_methods):pdvMethods;
  const externalPayment=['dinheiro','cartao_credito','cartao_debito','pix_maquininha','pix_manual','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket'].includes(payment);
  useEffect(()=>{setReceived(false)},[cart,payment,type,coupon,manualDiscount]);
@@ -99,7 +100,7 @@ export default function MerchantNewOrder({client,storeId,onNavigate}){
   let live=true;const requestId=id(),pointKey=JSON.stringify(point??null);
   const timer=setTimeout(async()=>{if(!live)return;setQuoting(true);try{
    const r=await client.functions.invoke('delivery-quote',{body:{slug:quoteSlug,address,request_id:requestId,delivery_service:'standard',...(point?{latitude:point[0],longitude:point[1]}:{})}});
-   if(r.error){let detail;try{detail=await r.error.context?.json()}catch{}throw Error(detail?.error||r.error.message||'Frete indisponível')}
+   if(r.error){let detail;try{detail=await r.error.context?.json()}catch{}const p=detail?.suggested_point;if(live&&!point&&Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)&&p[0]>=-34&&p[0]<=6&&p[1]>=-75&&p[1]<=-32){setSuggestion({point:p,label:detail.suggested_label||'Localização aproximada'});setMapOpen(true)}throw Error(detail?.error||r.error.message||'Frete indisponível')}
    if(r.data?.error||r.data?.request_id!==requestId||!currentQuote({...r.data,address,pointKey},address,point))throw Error(r.data?.error||'Cotação inválida. Tente novamente.');
    if(live){request.current=requestId;setQuote({...r.data,address,pointKey})}
   }catch(e){if(live)setQuoteError(e.message||'Não foi possível calcular o frete.')}finally{if(live)setQuoting(false)}},900);
@@ -140,7 +141,7 @@ export default function MerchantNewOrder({client,storeId,onNavigate}){
  <section className="mn-pos-service" aria-label="Tipo de atendimento"><h3><Store size={19}/> Tipo de atendimento</h3><div className="mn-pos-modes">{[['balcao','Balcão',Store,menu.store.pickup_enabled],['entrega','Entrega',Bike,menu.store.delivery_enabled],['retirada','Retirada',ShoppingBag,menu.store.pickup_enabled]].map(([value,label,Icon,enabled])=><button key={value} type="button" className={'mn-pos-mode '+(type===value?'selected':'')} aria-pressed={type===value} disabled={!enabled} onClick={()=>selectType(value)}><Icon size={22}/>{label}</button>)}<button type="button" className="mn-pos-mode" disabled title="Agendamento de venda direta ainda indisponível"><CalendarDays size={22}/>Agendado <small>Indisponível</small></button></div></section>
  <div className="mn-pos-grid"><div className="mn-pos-main">
  <section className="mn-pos-card mn-pos-customer" aria-label="Cliente do pedido"><div className="mn-pos-customer-bar"><h3><UserRound size={22}/> Cliente</h3><div className="mn-pos-search"><Search size={18}/><input aria-label="Buscar cliente" placeholder="Buscar por nome ou telefone" value={search} onChange={e=>setSearch(e.target.value)}/></div><button type="button" className="secondary mn-pos-icon-button" aria-label="Cadastrar ou editar cliente" aria-expanded={customerOpen} onClick={()=>setCustomerOpen(v=>!v)}><UserRoundPlus size={20}/></button></div>
- {customers.filter(c=>c.phone).map(c=><button key={c.customer_key} type="button" className="secondary mn-pos-customer-result" onClick={()=>{setName(c.name);setPhone(c.phone);editVersion.current++;setFields(emptyAddress());setPoint(null);setQuote(null);setSearch('');setCustomers([]);setCustomerOpen(false)}}>{c.name} · {c.phone}</button>)}
+ {customers.filter(c=>c.phone).map(c=><button key={c.customer_key} type="button" className="secondary mn-pos-customer-result" onClick={()=>{setName(c.name);setPhone(c.phone);editVersion.current++;setFields(emptyAddress());setPoint(null);setQuote(null);setSuggestion(null);setSearch('');setCustomers([]);setCustomerOpen(false)}}>{c.name} · {c.phone}</button>)}
  {!isCredit&&(customerOpen?<div className="mn-pos-customer-fields"><label>Nome<input autoComplete="off" required value={name} onChange={e=>setName(e.target.value)}/></label><label>Telefone com DDD<input required type="tel" autoComplete="off" value={phone} onChange={e=>setPhone(e.target.value)}/></label></div>:<p className="mn-pos-client-caption">{name?name+' · '+phone:'Nenhum cliente selecionado'}</p>)}
  </section>
  {delivery&&<section className="mn-pos-card mn-pos-customer mn-pos-address" aria-label="Endereço e taxa de entrega">
@@ -154,7 +155,7 @@ export default function MerchantNewOrder({client,storeId,onNavigate}){
  <div className="mn-pos-quote" role="status">{quoting?'Calculando frete…':quoteCurrent?<><strong>Taxa de entrega: {money(quote.fee)}</strong><small>{quote.region_name||'Área atendida'}{Number.isInteger(quote.delivery_min_minutes)&&Number.isInteger(quote.delivery_max_minutes)?' · '+quote.delivery_min_minutes+'–'+quote.delivery_max_minutes+' min':''}</small></>:expired?'Cotação vencida. Recalcule antes de finalizar.':quoteError?'Frete não confirmado.':'Preencha o endereço para calcular automaticamente.'}</div>
  {quoteError&&<p role="alert" className="mn-pos-quote-error">{quoteError}</p>}
  <div className="mn-pos-address-actions"><button type="button" className="secondary" disabled={!address||quoting} onClick={()=>setAttempt(v=>v+1)}><RefreshCw size={16}/> Recalcular frete</button>{areaMode!=='road'&&<button type="button" className="secondary" aria-expanded={mapOpen} onClick={()=>setMapOpen(v=>!v)}><MapPin size={16}/> {mapOpen?'Fechar mapa':'Marcar no mapa'}</button>}</div>
- {mapOpen&&areaMode!=='road'&&<><small>Confirme com o cliente o ponto exato da entrega e toque nele no mapa, mesmo se a rua tiver outro nome.</small><div ref={mapNode} className="mn-pos-address-map" aria-label="Mapa para escolher o local da entrega"/>{mapError&&<p role="alert">{mapError}</p>}{point&&<small>Local marcado. A taxa é calculada pelas regiões da loja.</small>}</>}
+ {mapOpen&&areaMode!=='road'&&<>{suggestion&&!point&&<p role="status"><strong>Localização aproximada encontrada:</strong> {suggestion.label}. Confira e marque o ponto exato antes de calcular.</p>}<small>Confirme com o cliente o ponto exato da entrega e toque nele no mapa, mesmo se a rua tiver outro nome.</small><div ref={mapNode} className="mn-pos-address-map" aria-label="Mapa para escolher o local da entrega"/>{mapError&&<p role="alert">{mapError}</p>}{point&&<small>Local marcado. A taxa é calculada pelas regiões da loja.</small>}</>}
  </section>}
  <section className="mn-pos-card mn-pos-catalog" aria-label="Produtos do cardápio"><h3><Layers size={21}/> Produtos do cardápio</h3><div className="mn-pos-categories" aria-label="Categorias"><button type="button" className={!category?'selected':''} aria-pressed={!category} onClick={()=>setCategory('')}><LayoutGrid size={24}/>Todos</button>{categories.map(c=><button key={c} type="button" className={category===c?'selected':''} aria-pressed={category===c} onClick={()=>setCategory(c)}><CategoryIcon icon={inferCategoryIcon(c)} size={25}/>{c}</button>)}</div>
  <div className="mn-pos-search"><Search size={19}/><input aria-label="Buscar produto ou categoria" placeholder="Buscar produto ou categoria" value={searchProduct} onChange={e=>setSearchProduct(e.target.value)}/></div>

@@ -134,3 +134,16 @@ test('merchant can add, rename, reorder and price regions independently',()=>{
  assert.match(map,/mode==='polygons'/);
   assert.match(checkout,/showCoverage:false/);
 });
+
+test('structured address lookup returns approximate matches only for explicit map confirmation',()=>{
+ const edge=read('supabase/functions/delivery-quote/index.ts');
+ const pos=read('revisions/0.12/web/MerchantNewOrder.jsx');
+ assert.match(edge,/lookup\(\{street,housenumber:number,city,state,postcode:postal,country:'Brazil'\}\)/);
+ assert.match(edge,/roadMatch&&String\(found.housenumber/);
+ assert.match(edge,/suggestion=\{point,precise:false/);
+ assert.match(edge,/if\(!location\?\.precise\)return response\(422/);
+ assert.match(edge,/to=location.point/);
+ assert.match(pos,/setSuggestion\(\{point:p,label:/);
+ assert.match(pos,/mapApi.current\?\.focus\(suggestion.point\)/);
+ assert.doesNotMatch(pos,/setPoint\(suggestion.point\)/);
+});

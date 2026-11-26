@@ -140,6 +140,7 @@ export async function mountDeliveryMap(container, { center, radius, onSelect, mo
     setArea, setPoint,
     clearPoint() { marker?.remove(); },
     showPoint(point) { setPoint(point); map.panTo(point); },
+    focus(point,zoom=17) { map.setView(point,zoom); },
     resize() { map.invalidateSize(); },
     remove() { map.remove(); },
   };

@@ -187,47 +187,64 @@ async function approximateStoreAddress(store:any,db:any):Promise<Geo & {approxim
  * insufficient the client must confirm the point on its visual map.
  * Coordinates are used for an authoritative server-side quote only.
  */
-async function customerDeliveryLocation(address:string,geoapifyKey?:string,googleKey?:string):Promise<Point>{
+// A street/CEP result is a map suggestion, never an authoritative delivery point.
+type CustomerLocation={point:Point;precise:boolean;label?:string};
+async function customerDeliveryLocation(address:string,geoapifyKey?:string,googleKey?:string):Promise<CustomerLocation|null>{
  const parts=address.split(',').map(p=>p.trim());
- const street=parts[0]||'',number=parts[1]||'',city=parts[3]||'';
+ const street=parts[0]||'',number=parts[1]||'',district=parts[2]||'',city=parts[3]||'',state=parts[4]||'';
  const postal=(address.match(/\bCEP\s*([0-9]{5}-?[0-9]{3})\b/i)?.[1]||'').replace(/\D/g,'');
  if(street.length<3||!number||!city)throw Error('Preencha rua, número, bairro e cidade para calcular o frete.');
+ let suggestion:CustomerLocation|null=null;
  if(geoapifyKey){
-  try{
+  const lookup=async(fields:Record<string,string>)=>{
    const url=new URL('https://api.geoapify.com/v1/geocode/search');
-   url.searchParams.set('text',address+', Brasil');
+   for(const [name,value] of Object.entries(fields))if(value)url.searchParams.set(name,value);
    url.searchParams.set('filter','countrycode:br');
    url.searchParams.set('format','json');url.searchParams.set('limit','5');
    url.searchParams.set('apiKey',geoapifyKey);
-   const res=await fetch(url,{signal:AbortSignal.timeout(7000)});
-   if(res.ok){
-    const data=await res.json();
-    for(const found of Array.isArray(data.results)?data.results:[]){
-     if(String(found.country_code||'').toLowerCase()!=='br')continue;
-     if(!finiteBrazil(Number(found.lat),Number(found.lon)))continue;
-     if(!sameRoad(found.street,street))continue;
-     if(String(found.housenumber||'').trim()!==number)continue;
-     if(![found.city,found.municipality,found.county].some((v:any)=>normalize(String(v||''))===normalize(city)))continue;
-     if(postal&&found.postcode&&!samePostal(postal,found.postcode))continue;
-     if(!['building','amenity','house'].includes(String(found.result_type||'').toLowerCase()))continue;
-     if(Number(found.rank?.confidence||0)<0.80)continue;
-     return [Number(found.lat),Number(found.lon)];
-    }
+   const res=await fetch(url,{signal:AbortSignal.timeout(6000)});
+   if(!res.ok)return [];
+   const data=await res.json();return Array.isArray(data.results)?data.results:[];
+  };
+  const evaluate=(results:any[])=>{
+   for(const found of results){
+    if(String(found.country_code||'').toLowerCase()!=='br'||found.lat==null||found.lon==null||!finiteBrazil(Number(found.lat),Number(found.lon)))continue;
+    if(![found.city,found.municipality,found.county].some((v:any)=>normalize(String(v||''))===normalize(city)))continue;
+    if(state&&found.state_code&&normalize(String(found.state_code))!==normalize(state))continue;
+    const roadMatch=sameRoad(found.street,street),postalMatch=Boolean(postal&&samePostal(found.postcode,postal));
+    if(postal&&found.postcode&&!postalMatch)continue;
+    const districtMatch=Boolean(district)&&[found.suburb,found.district,found.neighbourhood,found.city_district].some((v:any)=>normalize(String(v||''))===normalize(district));
+    const type=String(found.result_type||'').toLowerCase(),confidence=Number(found.rank?.confidence||0);
+    const point:Point=[Number(found.lat),Number(found.lon)];
+    // A differently named street never silently becomes a confirmed destination.
+    if(roadMatch&&String(found.housenumber||'').trim()===number&&['building','amenity','house'].includes(type)&&confidence>=0.80)return {point,precise:true};
+    if(!suggestion&&(postalMatch||(roadMatch&&districtMatch))&&['building','amenity','house','street','postcode'].includes(type)&&confidence>=0.60)
+     suggestion={point,precise:false,label:String(found.formatted||found.street||'Localização aproximada').slice(0,240)};
    }
-  }catch{ /* The exact pin can always be supplied by the customer. */ }
+   return null;
+  };
+  try{
+   const exact=evaluate(await lookup({street,housenumber:number,city,state,postcode:postal,country:'Brazil'}));
+   if(exact)return exact;
+   if(!suggestion){
+    const fallback=postal?{postcode:postal,city,state,country:'Brazil'}:{street,city,state,country:'Brazil'};
+    const next=evaluate(await lookup(fallback));if(next)return next;
+   }
+  }catch{/* Keep the already validated suggestion, if any. */}
  }
  if(googleKey){
   try{
-   const found=await geocode(address+', Brasil',googleKey);
+   // Omit complement/reference text from provider lookup.
+   const found=await geocode([street,number,district,city,state,postal,'Brasil'].filter(Boolean).join(', '),googleKey);
    if(found.country==='BR'&&finiteBrazil(found.lat,found.lng)
      &&sameRoad(found.street,street)&&String(found.houseNumber||'').trim()===number
      &&normalize(found.city)===normalize(city)
      &&(!postal||!found.postalCode||samePostal(postal,found.postalCode))){
-    return [found.lat,found.lng];
+    return {point:[found.lat,found.lng],precise:true};
    }
   }catch{ /* A map pin remains the safe fallback. */ }
  }
- throw Error('Não foi possível localizar este endereço com precisão. Marque a entrega no mapa ou use sua localização atual.');
+ return suggestion;
 }
 async function roadDistance(origin:Geo,destination:Geo,key:string):Promise<number>{
  const res=await fetch('https://routes.googleapis.com/directions/v2:computeRoutes',{
@@ -408,8 +425,11 @@ Deno.serve(async request=>{
    }else{
     // Selecting a saved or freshly typed address quotes automatically if a
     // configured provider resolves its exact house. No fallback to centroids.
-    try{to=await customerDeliveryLocation(address,geoapifyKey||undefined,key||undefined);}
-    catch(error){return problem(422,error instanceof Error?error.message:'Confirme o ponto de entrega no mapa.',origin);}
+    try{
+     const location=await customerDeliveryLocation(address,geoapifyKey||undefined,key||undefined);
+     if(!location?.precise)return response(422,{error:location?'Encontramos uma localização aproximada. Confirme o ponto exato no mapa para calcular a taxa.':'Não foi possível localizar o número com precisão. Marque o endereço do cliente no mapa.',...(location?{suggested_point:location.point,suggested_label:location.label}:{}),requires_confirmation:true},origin);
+     to=location.point;
+    }catch(error){return problem(422,error instanceof Error?error.message:'Confirme o ponto de entrega no mapa.',origin);}
    }
    meters=directDistance(from,to);
    if(mode==='circle'){
