@@ -20,4 +20,34 @@ begin
  begin perform public.pitacco_business_insights('20000000-0000-0000-0000-000000000082');raise exception 'Cross-store access accepted';exception when insufficient_privilege then null;end;
 end $test$;
 reset role;
+
+-- Exercise nonempty reports, cost coverage, exclusions and Brazilian calendar boundaries.
+insert into public.orders(id,store_id,channel,gross,fees,created_at,source,status)
+select id::uuid,store_id::uuid,'iFood',gross,fees,((now() at time zone 'America/Sao_Paulo')::date + day_offset)::timestamp at time zone 'America/Sao_Paulo','ifood',status
+from (values
+ ('30000000-0000-0000-0000-000000000081','20000000-0000-0000-0000-000000000081',100,10,-1,'accepted'),
+ ('30000000-0000-0000-0000-000000000082','20000000-0000-0000-0000-000000000081',20,2,-2,'accepted'),
+ ('30000000-0000-0000-0000-000000000083','20000000-0000-0000-0000-000000000081',50,0,-28,'historical'),
+ ('30000000-0000-0000-0000-000000000084','20000000-0000-0000-0000-000000000081',900,0,-29,'accepted'),
+ ('30000000-0000-0000-0000-000000000085','20000000-0000-0000-0000-000000000081',900,0,0,'accepted'),
+ ('30000000-0000-0000-0000-000000000086','20000000-0000-0000-0000-000000000081',900,0,-1,'rejected'),
+ ('30000000-0000-0000-0000-000000000087','20000000-0000-0000-0000-000000000082',900,0,-1,'accepted')
+) as v(id,store_id,gross,fees,day_offset,status);
+insert into public.pitacco_order_costs(order_id,store_id,merchant_discount,goods_cost,processing_fees,delivery_cost,other_cost) values
+ ('30000000-0000-0000-0000-000000000081','20000000-0000-0000-0000-000000000081',0,22,3,8,2),
+ ('30000000-0000-0000-0000-000000000082','20000000-0000-0000-0000-000000000081',0,25,1,2,0);
+set local role authenticated;
+do $test$
+declare d jsonb;
+begin
+ d:=public.pitacco_business_insights('20000000-0000-0000-0000-000000000081');
+ assert (d#>>'{sales,orders}')::int=3;
+ assert (d#>>'{sales,gross}')::numeric=170;
+ assert (d#>>'{sales,complete_costs}')::int=2;
+ assert (d#>>'{sales,negative_orders}')::int=1;
+ assert (d#>>'{sales,known_contribution}')::numeric=45;
+ assert (select sum((v->>'orders')::int)=3 from jsonb_array_elements(d->'weekdays') v);
+end $test$;
+reset role;
 rollback;
+
