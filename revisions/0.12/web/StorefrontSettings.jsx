@@ -7,7 +7,7 @@ import {storefrontLink} from './storefrontLink.mjs';
 import DeliveryCodeSettings from './DeliveryCodeSettings.jsx';
 import {ModernModal,IntegrationRow,BrandTile} from './MerchantModern.jsx';
 import PaymentHomologation from './PaymentHomologation.jsx';
-import {ShoppingBag,Truck,Store,Wallet,CreditCard,ScanLine,Banknote,Smartphone,Utensils,KeyRound,Link2} from 'lucide-react';
+import {ShoppingBag,Truck,Store,Wallet,CreditCard,ScanLine,Banknote,Smartphone,Utensils,KeyRound,Link2,Monitor,Percent,PlusCircle,MinusCircle,CheckCircle2,Calculator,Info,ChevronDown,ChevronUp,Save,Equal,Clock} from 'lucide-react';
 
 const origin=import.meta.env.VITE_PITACCO_HOMOLOGACAO==='1'
  ? import.meta.env.VITE_PITACCO_HOMOLOG_SITE_ORIGIN || window.location.origin
@@ -79,7 +79,7 @@ function PaymentPricingDrafts({client,storeId,menu}){
  useEffect(()=>{setReleaseOpen(false);if(!open)return;let live=true;client.rpc('pitacco_payment_pricing_release_status',{p_store:storeId}).then(r=>{if(live&&!r.error)setReleaseOpen(r.data===true)}).catch(()=>{});return()=>{live=false}},[open,client,storeId,refresh]);
  useEffect(()=>{setMode(adjustment<0?'discount':adjustment>0?'increase':'none');setPercent(String(Math.abs(adjustment)/100))},[channel,selected,adjustment,current?.revision]);
  const bp=mode==='none'?0:Math.round(Number(percent)*100)*(mode==='discount'?-1:1);
- const valid=Number.isFinite(bp)&&bp>=-9999&&bp<=10000&&Number(percent)>=0;
+ const valid=mode==='none'||(percent.trim()!==''&&Number.isFinite(bp)&&bp>=-9999&&bp<=10000&&Number(percent)>=0&&Math.abs(Number(percent)*100-Math.round(Number(percent)*100))<0.00001);
  const preview=valid?100+Math.round(bp)/100:100;
  async function save(e){e.preventDefault();if(!rows||!selected||!valid||saving)return;setSaving(true);setError('');setMessage('');
  try{const {data,error}=await client.rpc('pitacco_save_payment_pricing_draft',{p_store:storeId,p_channel:channel,p_method:selected,p_adjustment_bps:bp,p_processing_cost_bps:current?.processing_cost_bps||0,p_expected_revision:current?.revision||0});if(error)throw error;
@@ -92,21 +92,50 @@ function PaymentPricingDrafts({client,storeId,menu}){
  try{const {data,error}=await client.rpc('pitacco_publish_payment_price',{p_store:storeId,p_channel:channel,p_method:selected,p_expected_revision:current.revision});if(error)throw error;
  setRows(old=>[...old.filter(r=>r.channel!==channel||r.method!==selected),data]);setMessage('Regra publicada para os próximos pedidos.');
  }catch(e){setError(e.message||'Não foi possível publicar.')}finally{setSaving(false)}}
- return <section className="panel" aria-label="Preços por forma de pagamento"><h3>Preços por forma de pagamento</h3><p>Prepare acréscimos e descontos por canal. Vouchers e Fiado permanecem sem ajuste.</p>
- <button type="button" className="secondary" aria-expanded={open} onClick={()=>setOpen(v=>!v)}>{open?'Ocultar regras de preço':'Preparar regras de preço'}</button>
- {open&&<><p role="note">{releaseOpen?'Salvar um rascunho não modifica os pedidos. Publique apenas após conferir o valor.':'Em preparação — novas publicações ainda não liberadas.'}</p>{error&&<p role="alert">{error} <button type="button" disabled={saving} onClick={()=>setRefresh(v=>v+1)}>Recarregar regras</button></p>}
+ const signedPercent=value=>(value>0?'+':'')+(value/100).toLocaleString('pt-BR',{maximumFractionDigits:2})+'%';
+ const currency=value=>value.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+ return <section className="panel ps-panel ps-pricing" aria-label="Preços por forma de pagamento">
+ <PaymentSectionTitle icon={Percent} description="Configure acréscimos e descontos por canal de venda.">Preços por forma de pagamento</PaymentSectionTitle>
+ {!open?<button type="button" className="secondary ps-price-expand" aria-expanded={false} onClick={()=>setOpen(true)}>Preparar regras de preço <ChevronDown size={17}/></button>:<>
+ <div className="ps-price-notice" role="note"><Clock size={19}/><div><strong>{releaseOpen?'Configuração disponível':'Em preparação'}</strong><span>{releaseOpen?'Salve o rascunho e publique após conferir o valor.':'Novas publicações ainda não liberadas.'}</span></div></div>
+ {error&&<div className="ps-price-error" role="alert">{error} <button type="button" className="secondary" disabled={saving} onClick={()=>setRefresh(v=>v+1)}>Recarregar regras</button></div>}
  {rows===null&&!error&&<p role="status">Carregando regras…</p>}
- {rows&&<form onSubmit={save}><fieldset disabled={saving}><legend>Configuração por canal</legend>
- <label>Canal de venda<select value={channel} onChange={e=>{setChannel(e.target.value);setMessage('')}}><option value="cardapio">Cardápio digital</option><option value="balcao">Balcão e PDV</option></select></label>
- <label>Forma de pagamento para ajuste<select value={selected} onChange={e=>{setMethod(e.target.value);setMessage('')}}>{applicable.map(m=><option key={m} value={m}>{methods[m]}</option>)}</select></label>
- {!selected?<p>Habilite uma forma elegível nas configurações de pagamento.</p>:<>
- <label>Tipo de ajuste<select value={mode} onChange={e=>{setMode(e.target.value);setMessage('')}}><option value="none">Sem alteração</option><option value="increase">Acréscimo</option><option value="discount">Desconto</option></select></label>
- {mode!=='none'&&<label>Percentual (%)<input required type="number" min="0" max={mode==='discount'?99.99:100} step="0.01" value={percent} onChange={e=>{setPercent(e.target.value);setMessage('')}}/></label>}
- <p>Simulação em R$ 100,00 de produtos: <strong>{preview.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong></p>
- <p>Percentual em vigor: <strong>{activeAdjustment>0?'+':''}{(activeAdjustment/100).toLocaleString('pt-BR')}%</strong></p>
- <button type="submit" disabled={!valid||saving}>{saving?'Salvando…':'Salvar rascunho de preço'}</button>
- {canPublish&&<button type="button" className="modern-primary" disabled={saving} onClick={publish}>{adjustment===0?'Publicar preço normal':'Publicar regra de preço'}</button>}</>}
- </fieldset></form>}{message&&<p role="status">{message}</p>}</>}
+ {rows&&<form className="ps-price-form" onSubmit={save}><fieldset className="ps-price-fields" disabled={saving}>
+ <div className="ps-price-block">
+ <h4>Canal de venda</h4>
+ <div className="ps-price-channels" role="group" aria-label="Canal de venda">
+ {[[Store,'cardapio','Cardápio digital','Pedidos pelo link da loja'],[Monitor,'balcao','Balcão e PDV','Pedidos feitos no painel da loja']].map(([Icon,value,label,description])=><button type="button" key={value} className="ps-price-choice ps-price-channel" aria-pressed={channel===value} onClick={()=>{setChannel(value);setMessage('');setError('')}}><span className="ps-price-icon"><Icon size={22}/></span><span className="ps-price-choice-copy"><strong>{label}</strong><small>{description}</small></span><span className="ps-price-radio" aria-hidden="true">{channel===value&&<CheckCircle2 size={20}/>}</span></button>)}
+ </div></div>
+ <div className="ps-price-block">
+ <h4>Forma de pagamento</h4>
+ {applicable.length?<div className="ps-price-methods" role="group" aria-label="Forma de pagamento para ajuste">
+ {applicable.map(m=>{const Icon=paymentIcons[m]||CreditCard;const rule=rows.find(r=>r.channel===channel&&r.method===m);const active=Number(rule?.active_adjustment_bps||0);return <button type="button" key={m} data-method={m} className="ps-price-choice ps-price-method" aria-pressed={selected===m} aria-label={methods[m]} onClick={()=>{setMethod(m);setMessage('');setError('')}}><Icon size={22}/><span className="ps-price-choice-copy"><strong>{methods[m]}</strong><small>Em vigor: {signedPercent(active)}</small></span><span className="ps-price-radio" aria-hidden="true">{selected===m&&<CheckCircle2 size={18}/>}</span></button>})}
+ </div>:<p className="modern-empty">Habilite uma forma elegível nas configurações de pagamento.</p>}
+ </div>
+ {selected&&<>
+ <div className="ps-price-editor">
+ <div className="ps-price-block ps-price-adjustment"><h4>Qual ajuste deseja aplicar?</h4><p className="ps-price-context">{methods[selected]} · {channel==='balcao'?'Balcão e PDV':'Cardápio digital'}</p>
+ <div className="ps-price-types" role="group" aria-label="Tipo de ajuste">
+ {[[Equal,'none','Sem ajuste'],[PlusCircle,'increase','Acréscimo'],[MinusCircle,'discount','Desconto']].map(([Icon,value,label])=><button type="button" key={value} className={'ps-price-choice ps-price-type '+value} aria-pressed={mode===value} onClick={()=>{setMode(value);setMessage('');setError('')}}><Icon size={19}/><span>{label}</span></button>)}
+ </div>
+ {mode!=='none'&&<label className="ps-price-percent">Percentual (%)<span className="ps-price-input"><input required type="number" min="0" max={mode==='discount'?99.99:100} step="0.01" inputMode="decimal" value={percent} onChange={e=>{setPercent(e.target.value);setMessage('')}}/><span aria-hidden="true">%</span></span></label>}
+ </div>
+ <div className="ps-price-block ps-price-simulation"><h4><Calculator size={19}/> Simulação</h4><small>Em R$ 100,00 de produtos</small><strong>{valid?currency(preview):'—'}</strong><span>{!valid?'Informe um percentual válido.':bp>0?currency(bp/100)+' de acréscimo':bp<0?currency(Math.abs(bp)/100)+' de desconto':'Sem alteração no preço'}</span></div>
+ </div>
+ <div className="ps-price-summary">
+ <div><small>Percentual em vigor</small><strong>{signedPercent(activeAdjustment)}</strong></div>
+ <div><small>Rascunho salvo</small><strong>{signedPercent(adjustment)}</strong></div>
+ {valid&&bp!==adjustment&&<div className="ps-price-unsaved"><small>Novo ajuste</small><strong>{signedPercent(bp)}</strong></div>}
+ </div>
+ <div className="ps-price-footnote"><Info size={17}/><span>Vouchers e Fiado não recebem ajuste. O ajuste incide apenas sobre os produtos após descontos, sem incluir a entrega.</span></div>
+ <div className="ps-price-actions"><button type="button" className="secondary ps-price-collapse" aria-expanded={true} onClick={()=>setOpen(false)}><ChevronUp size={17}/> Ocultar regras de preço</button><button type="submit" className="ps-save" disabled={!valid||saving}><Save size={18}/> {saving?'Salvando…':'Salvar rascunho de preço'}</button>
+ {canPublish&&<button type="button" className="modern-primary ps-price-publish" disabled={saving} onClick={publish}><CheckCircle2 size={18}/> {adjustment===0?'Publicar preço normal':'Publicar regra de preço'}</button>}</div>
+ </>}
+ {!selected&&<button type="button" className="secondary ps-price-collapse" aria-expanded={true} onClick={()=>setOpen(false)}><ChevronUp size={17}/> Ocultar regras de preço</button>}
+ </fieldset></form>}
+ {rows===null&&<button type="button" className="secondary ps-price-collapse" aria-expanded={true} onClick={()=>setOpen(false)}>Ocultar regras de preço</button>}
+ {message&&<p className="ps-price-success" role="status">{message}</p>}
+ </>}
  </section>;
 }
 
