@@ -35,7 +35,7 @@ try {
     const tracking = {
       375: { status: 'accepted', delivery_status: 'cancelada', fulfillment: 'delivery', label: 'Pedido cancelado' },
       768: { status: 'accepted', delivery_status: 'retirada', preparation_status: 'ready', fulfillment: 'delivery', label: 'Saiu para entrega' },
-      1440: { status: 'accepted', preparation_status: 'completed', fulfillment: 'pickup', label: 'Retirado' }
+      1440: { status: 'accepted', delivery_status: 'entregue', preparation_status: 'completed', fulfillment: 'delivery', label: 'Entregue' }
     }[width];
     const scheduled = width === 768 ? new Date(Date.now()+3*3600000).toISOString() : null;
     const area = {latitude:-22.7,longitude:-43.4,radius_m:3000,coverage_type:'circle',polygon:[]};
@@ -47,6 +47,7 @@ try {
     page.on('pageerror', error => errors.push(error.message));
     const requests = [];
     const recordedOrders = new Map();
+    const quotes = new Map();
     let releaseResponse;
     const responseGate = new Promise(resolve => { releaseResponse = resolve; });
     await page.route('**/*', async route => {
@@ -134,17 +135,24 @@ try {
           assert.deepEqual([payload.latitude,payload.longitude],[-22.71,-43.4]);
         else
           assert.equal(payload.latitude,undefined,'Endereço completo cota sem ponto obrigatório em todos os templates');
+        quotes.set(payload.request_id,{fee:payload.delivery_service==='priority'?9:5,service:payload.delivery_service});
         return route.fulfill({json:{quote_id:'30000000-0000-0000-0000-000000000011',
-          request_id:payload.request_id,fee:5,distance_m:1112,distance_type:'straight',
+          request_id:payload.request_id,fee:payload.delivery_service==='priority'?9:5,distance_m:1112,distance_type:'straight',
+          delivery_service:payload.delivery_service,delivery_min_minutes:payload.delivery_service==='priority'?20:40,
+          delivery_max_minutes:payload.delivery_service==='priority'?30:60,
+          delivery_options:{standard:{fee:5,min_minutes:40,max_minutes:60},priority:{fee:9,min_minutes:20,max_minutes:30}},
           expires_at:new Date(Date.now()+5*60*1000).toISOString()}});
       }
       if (pathname.endsWith('/pitacco_checkout_quoted_delivery')) {
         assert.equal(route.request().postDataJSON().p_quote,'30000000-0000-0000-0000-000000000011');
         requests.push(route.request().postDataJSON());
         const payload=route.request().postDataJSON();
+        const quote=quotes.get(payload.p_request);
+        assert.ok(quote,'Checkout uses the original quote request');
+        assert.equal(quote.service,width===1440?'priority':'standard');
         const saved=recordedOrders.get(payload.p_request);
         if(saved)assert.deepEqual(payload,saved.payload,'Server replay uses the original request and full checkout snapshot');
-        else recordedOrders.set(payload.p_request,{payload,receipt:{order_id:orderId,tracking_token:token,total:template==='classic'?27:74,payment_status:'pending'}});
+        else recordedOrders.set(payload.p_request,{payload,receipt:{order_id:orderId,tracking_token:token,total:(template==='classic'?22:69)+quote.fee,payment_status:'pending'}});
         if (requests.length === 1) {
           await responseGate;
           return route.fulfill({ status: 503, json: { message: 'Resposta indisponível' } });
@@ -156,7 +164,7 @@ try {
         const courier_position=scheduled
           ? (++polls===1?{state:'available',latitude:-22.851,longitude:-43.453,observed_at:new Date().toISOString()}:{state:'multiple_stops'})
           : null;
-        return route.fulfill({ json: { order_id: orderId, total: 74, scheduled_for:scheduled, courier_position, ...tracking } });
+        return route.fulfill({ json: { order_id: orderId, total:[...recordedOrders.values()][0]?.receipt.total, scheduled_for:scheduled, delivery_service:width===1440?'priority':'standard', courier_position, ...tracking } });
       }
       return route.abort();
     });
@@ -215,6 +223,13 @@ try {
       await page.locator('#addressStreet').fill('Rua Teste');
       await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
       assert.equal(await page.locator('#send').isDisabled(),false);
+      await page.locator('#deliveryServices input[value="priority"]').check();
+      await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*9,00.*20–30 min/}).waitFor();
+      assert.match(await page.locator('#total').innerText(),/31,00/);
+      if(width!==1440){
+        await page.locator('#deliveryServices input[value="standard"]').check();
+        await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00.*40–60 min/}).waitFor();
+      }
       if(scheduled)await page.getByLabel('Quando deseja receber?').selectOption(scheduled);
       await page.getByRole('button',{name:'Confirmar pedido',exact:true}).click();
       await page.getByRole('button',{name:'Enviando…',exact:true}).waitFor();
@@ -389,6 +404,13 @@ try {
     assert.match(await page.locator('#total').innerText(),/74,00/);
     if(width===375){await mkdir('artifacts',{recursive:true});await page.locator('#addressBlock').screenshot({path:`artifacts/menu-address-${template}.png`});}
     assert.doesNotMatch(await page.locator('#routeQuoteStatus').innerText(),/non-2xx/);
+    await page.locator('#deliveryServices input[value="priority"]').check();
+    await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*9,00.*20–30 min/}).waitFor();
+    assert.match(await page.locator('#total').innerText(),/78,00/);
+    if(width!==1440){
+      await page.locator('#deliveryServices input[value="standard"]').check();
+      await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00.*40–60 min/}).waitFor();
+    }
     if(scheduled)await page.getByLabel('Quando deseja receber?').selectOption(scheduled);
     if(principal){
       await page.locator('#v2CheckoutNext').click();
