@@ -45,6 +45,39 @@ function initialTheme(){
  catch{return 'light';}
 }
 
+function OwnerCopyStore({client,store,stores,onCopied}){
+ const [mode,setMode]=useState('duplicate'),[name,setName]=useState(store.name+' — cópia'),[target,setTarget]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[result,setResult]=useState(null),[request,setRequest]=useState(()=>crypto.randomUUID());
+ const reset=()=>{setRequest(crypto.randomUUID());setResult(null);setError('');};
+ async function copy(event){
+  event.preventDefault();if(busy||result)return;
+  const destination=stores.find(s=>s.id===target);
+  if(mode==='catalog'&&!destination)return;
+  if(!window.confirm(mode==='duplicate'?'Criar um novo estabelecimento com o catálogo de '+store.name+'?':'Copiar o cardápio de '+store.name+' para '+destination.name+'? Os produtos existentes serão preservados.'))return;
+  setBusy(true);setError('');
+  try{
+   const {data,error}=await client.rpc('pitacco_owner_copy_catalog',{p_source:store.id,p_target:mode==='catalog'?target:null,p_new_name:mode==='duplicate'?name.trim():null,p_request:request});
+   if(error)throw error;
+   if(!data?.store_id)throw Error('O servidor não confirmou a cópia.');
+   setResult(data);
+  }catch(err){setError(err?.message||'Não foi possível concluir a cópia.');}
+  finally{setBusy(false);}
+ }
+ return <section className="panel" aria-label="Duplicar loja ou clonar cardápio">
+  <h3>Duplicação e clonagem</h3>
+  <p>Loja de origem: <strong>{store.name}</strong></p>
+  <form onSubmit={copy}>
+   <label><input type="radio" name="copy-mode" checked={mode==='duplicate'} disabled={busy} onChange={()=>{setMode('duplicate');reset();}}/> Duplicar loja</label>
+   <label><input type="radio" name="copy-mode" checked={mode==='catalog'} disabled={busy} onChange={()=>{setMode('catalog');reset();}}/> Clonar cardápio para outra loja</label>
+   {mode==='duplicate'?<label>Nome da nova loja<input required minLength={3} maxLength={100} value={name} disabled={busy} onChange={e=>{setName(e.target.value);reset();}}/></label>:<label>Loja de destino<select required value={target} disabled={busy} onChange={e=>{setTarget(e.target.value);reset();}}><option value="">Selecione a loja de destino</option>{stores.filter(s=>s.id!==store.id).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>}
+   <p>Produtos, preços, fotos por referência, categorias, complementos e pizzas publicadas serão copiados como itens ocultos para revisão. Custos e estoque não são copiados. Nenhum produto existente será excluído; nomes repetidos na mesma categoria impedem a operação.</p>
+   {mode==='duplicate'&&<p>A nova loja terá endereço, titularidade, usuários, assinatura e integrações próprios, a configurar posteriormente. O cardápio ficará desativado.</p>}
+   <button disabled={busy||!!result||(mode==='catalog'&&!target)}>{busy?'Copiando…':mode==='duplicate'?'Duplicar estabelecimento':'Clonar cardápio'}</button>
+  </form>
+  {error&&<p role="alert">{error}</p>}
+  {result&&<div role="status"><strong>Cópia concluída.</strong><p>{result.products} produtos, {result.groups} grupos, {result.options} complementos e {result.pizzas} pizzas.</p><button type="button" onClick={()=>onCopied(result.store_id)}>Abrir loja de destino</button></div>}
+ </section>;
+}
+
 function AdminApp(){
  const [session,setSession]=useState(undefined),[verified,setVerified]=useState(null);
  const [stores,setStores]=useState([]),[storeId,setStoreId]=useState(''),[page,setPage]=useState('Painel geral');
@@ -191,12 +224,13 @@ function AdminApp(){
     </select>
     {store&&<>
      <nav className="pitacco-local-tabs" aria-label="Seções do estabelecimento">
-      {['Identidade','Catálogo','Checkout','Agendamento','Pedidos','Entregadores','Auditoria'].map(tab=><button key={tab} type="button" aria-pressed={storeTab===tab}
+      {['Identidade','Catálogo','Duplicação e clonagem','Checkout','Agendamento','Pedidos','Entregadores','Auditoria'].map(tab=><button key={tab} type="button" aria-pressed={storeTab===tab}
        className={storeTab===tab?'active':'secondary'} onClick={()=>setStoreTab(tab)}>{tab}</button>)}
      </nav>
      {operations[storeTab]&&<OwnerOperations key={store.id+storeTab} client={client} storeId={store.id} kind={operations[storeTab]}/>}
      {storeTab==='Identidade'&&<StoreProfile key={store.id} client={client} store={store} manager onSaved={()=>loadStores().catch(failure=>setError(failure.message))}/>}
      {storeTab==='Catálogo'&&<OwnerCatalog key={store.id} client={client} storeId={store.id}/>}
+     {storeTab==='Duplicação e clonagem'&&<OwnerCopyStore key={store.id} client={client} store={store} stores={stores} onCopied={async id=>{try{await loadStores();openStore(id);setStoreTab('Catálogo');}catch(err){setError(err.message);}}}/>}
      {storeTab==='Checkout'&&<OwnerMenuSettings key={store.id} client={client} storeId={store.id} storefrontOrigin={storefrontOrigin}/>}
      {storeTab==='Agendamento'&&<ScheduleSettings key={store.id} client={client} storeId={store.id}/>}
     </>}
