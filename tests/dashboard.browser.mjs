@@ -743,19 +743,19 @@ try {
     if (width <= 800) await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
     await merchantNavigate('Operação','Pedidos');
     if(width===375){
-      await page.getByRole('button',{name:'Agendados (0)',exact:true}).waitFor();
+      await page.getByRole('article',{name:'Card do pedido D-180',exact:true}).waitFor();
       await page.getByRole('region',{name:'Central de pedidos',exact:true})
         .locator('.connection-bar').filter({hasText:'Conectado · sincronização ativa'}).waitFor();
     }else{
-      await page.getByRole('button', { name:'Agendados (1)', exact:true }).click();
       const scheduledCard=page.getByRole('article',{name:'Card do pedido D-181',exact:true});
+      assert.equal(await scheduledCard.locator('xpath=ancestor::section[@data-stage]').getAttribute('data-stage'),'analysis','Agendados aguardam aceite na coluna Em análise');
       await scheduledCard.locator('.pedidos-card-select').click();
       const scheduledDetails=page.getByRole('dialog',{name:'Pedido #D-181'});
-      await scheduledDetails.getByText(/Aceite liberado às/).waitFor();
+      await scheduledDetails.getByText('Este pedido depende de aceite manual da loja e não entra no aceite automático.').waitFor();
+      assert.equal(await scheduledDetails.getByRole('button',{name:'Aceitar pedido',exact:true}).isEnabled(),true,'A loja pode aceitar antes do horário de preparo');
       assert.equal(await scheduledDetails.getByRole('button',{name:'Aceitar e iniciar preparo',exact:true}).count(),0);
       await scheduledDetails.getByRole('button',{name:'Fechar detalhes do pedido'}).click();
     }
-    await page.getByRole('button', { name:'Em análise (1)', exact:true }).click();
     const pendingCard=page.getByRole('article',{name:'Card do pedido D-180',exact:true});
     await pendingCard.locator('.pedidos-card-select').click();
     const pendingDetails=page.getByRole('dialog',{name:'Pedido #D-180'});
@@ -779,7 +779,7 @@ try {
     await pendingDetails.getByRole('button', { name:'Confirmar recusa', exact:true }).click();
     await pendingDetails.getByText('Recusados',{exact:true}).waitFor();
     await pendingDetails.getByRole('button',{name:'Fechar detalhes do pedido'}).click();
-    await page.getByRole('button', { name:'Recusados (1)', exact:true }).click();
+    await page.getByRole('button', { name:'Cancelados (1)', exact:true }).click();
     await page.locator('.pedidos-card').getByText('Cliente do pedido').waitFor();
     if(width===1440){
       await page.waitForURL(url=>url.searchParams.get('aba')==='Pedidos');
@@ -817,9 +817,9 @@ try {
       await expectStage('Pronto');
       flowDelivery.status='retirada';
       await expectStage('Em entrega');
-      assert.equal(await ordersRegion.getByRole('button',{name:'Concluído (0)',exact:true}).count(),1);
+      assert.equal(await ordersRegion.getByRole('button',{name:'Concluídos (0)',exact:true}).count(),1);
       flowDelivery.status='entregue';
-      await ordersRegion.getByRole('button',{name:'Concluído (1)',exact:true}).click();
+      await ordersRegion.getByRole('button',{name:'Concluídos (1)',exact:true}).click();
       await expectStage('Concluído');
       logisticsOrders=[];logisticsDeliveries=[];
       await card.waitFor({state:'hidden',timeout:12000});
@@ -827,7 +827,7 @@ try {
     }
     if(width===768){
       appointment.scheduled_release_at=new Date(Date.now()-1_000).toISOString();
-      await page.getByRole('button',{name:'Em análise (1)',exact:true}).click();
+      await page.locator('.pedidos-tabs').getByRole('button',{name:'Pedidos',exact:true}).click();
       const releasedCard=page.getByRole('article',{name:'Card do pedido D-181',exact:true});
       await releasedCard.getByRole('button',{name:'Aceitar',exact:true}).waitFor();
     }
