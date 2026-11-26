@@ -56,4 +56,26 @@ begin
  assert (public.pitacco_service_verified_delivery_address(s,'Rua Exemplo, 39, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000')->>'latitude')::numeric=-22.7,'Customer cannot overwrite merchant-confirmed address';
  assert (select count(*) from pitacco_private.delivery_address_observations)=0;
 end $test$;
+-- A second and third house on the same street must accumulate independently,
+-- rather than overwriting the first verified house or inheriting its position.
+insert into public.pitacco_delivery_route_quotes(id,store_id,request_id,destination_address,distance_m,fee,pricing_updated_at,expires_at,destination_latitude,destination_longitude,address_point_selected) values
+('90000000-0000-0000-0000-000000000076','90000000-0000-0000-0000-000000000062','90000000-0000-0000-0000-000000000077','Rua Exemplo, 45, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000',600,6,now(),now()+interval '5 minutes',-22.701,-43.401,true),
+('90000000-0000-0000-0000-000000000078','90000000-0000-0000-0000-000000000062','90000000-0000-0000-0000-000000000079','Rua Exemplo, 102, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000',900,7,now(),now()+interval '5 minutes',-22.705,-43.405,true);
+insert into public.orders(id,store_id,request_id,channel,gross,fees,source,status,preparation_status,receipt) values
+('90000000-0000-0000-0000-000000000080','90000000-0000-0000-0000-000000000062','90000000-0000-0000-0000-000000000077','Delivery próprio',25,0,'proprio','accepted','preparing','{"address":"Rua Exemplo, 45, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000","customer":"Cliente A"}'),
+('90000000-0000-0000-0000-000000000081','90000000-0000-0000-0000-000000000062','90000000-0000-0000-0000-000000000079','Delivery próprio',25,0,'proprio','accepted','preparing','{"address":"Rua Exemplo, 102, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000","customer":"Cliente B"}');
+update public.orders set preparation_status='completed' where id in ('90000000-0000-0000-0000-000000000080','90000000-0000-0000-0000-000000000081');
+do $test$
+declare s uuid:='90000000-0000-0000-0000-000000000062'; r jsonb;
+begin
+ assert (select count(*) from pitacco_private.verified_delivery_addresses where store_id=s and street_key='exemplo')=3;
+ r:=public.pitacco_service_verified_delivery_address(s,'Rua Exemplo, 39, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000');
+ assert r->>'exact'='true' and (r->>'latitude')::numeric=-22.7;
+ r:=public.pitacco_service_verified_delivery_address(s,'Rua Exemplo, 45, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000');
+ assert r->>'exact'='true' and (r->>'latitude')::numeric=-22.701;
+ r:=public.pitacco_service_verified_delivery_address(s,'Rua Exemplo, 102, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000');
+ assert r->>'exact'='true' and (r->>'latitude')::numeric=-22.705;
+ r:=public.pitacco_service_verified_delivery_address(s,'Rua Exemplo, 48, Bairro Teste, Nova Iguaçu, RJ, CEP 26000000');
+ assert r->>'exact'='false' and (r->>'latitude')::numeric=-22.701,'Nearby number is only a reference';
+end $test$;
 rollback;

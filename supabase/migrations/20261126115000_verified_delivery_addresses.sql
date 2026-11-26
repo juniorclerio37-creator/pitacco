@@ -61,7 +61,11 @@ begin
  if found then return jsonb_build_object('exact',true,'latitude',a.latitude,'longitude',a.longitude);end if;
  select * into a from pitacco_private.verified_delivery_addresses
  where store_id=p_store and street_key=k[1] and district_key=k[3] and city_key=k[4] and state_key=k[5] and (k[6]='' or postal_key=k[6]) and verified_at>now()-interval '365 days'
- order by verified_at desc,house_key limit 1;
+ -- Prefer the numerically closest known building as a map reference only.
+ -- Numbering may be irregular: this is never a verified point for another house.
+ order by case when k[2]~'^[0-9]{1,9}$' and house_key~'^[0-9]{1,9}$'
+  then abs(house_key::bigint-k[2]::bigint) else null end nulls last,
+  verified_at desc,house_key limit 1;
  if found then return jsonb_build_object('exact',false,'latitude',a.latitude,'longitude',a.longitude);end if;
  return null;
 end $lookup$;
