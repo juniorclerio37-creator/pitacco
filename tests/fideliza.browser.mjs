@@ -95,6 +95,15 @@ try{
   await page.locator('#menuStartup').waitFor({state:'hidden'});
   assert.equal(await page.locator('#v2HomeLoyalty').isVisible(),true,
     'Fideliza+ deve estar presente desde a primeira exibição, sem empurrar categorias');
+  if(template==='pitacco-v2'){
+   const compact=await page.locator('#v2HomeLoyalty').evaluate(card=>{
+    const r=card.getBoundingClientRect(),button=card.querySelector('#v2HomeLoyaltyGo').getBoundingClientRect(),brand=card.querySelector('.v2-loyalty-brand').getBoundingClientRect(),copy=card.querySelector('.v2-loyalty-compact-copy').getBoundingClientRect();
+    return {height:r.height,overflow:card.scrollWidth>card.clientWidth+1,progress:getComputedStyle(card.querySelector('.v2-progress-card')).display,buttonHeight:button.height,inline:brand.right<=copy.left&&copy.right<=button.left&&button.right<=r.right+1};
+   });
+   assert.ok(compact.height<=84&&!compact.overflow&&compact.progress==='none'&&compact.buttonHeight>=44&&compact.inline,'Compact Fideliza+ row: '+JSON.stringify(compact));
+  }else{
+   assert.equal(await page.locator('#v2HomeLoyalty .v2-progress-card').isVisible(),true,'Other templates keep their existing loyalty design');
+  }
   const firstCategoriesTop=await page.locator('#v2HomeCategories').evaluate(e=>e.getBoundingClientRect().top);
   await page.waitForTimeout(240);
   const finalCategoriesTop=await page.locator('#v2HomeCategories').evaluate(e=>e.getBoundingClientRect().top);

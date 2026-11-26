@@ -1421,6 +1421,34 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #hero:has(#store
 </nav>
 
 <style>
+/* Principal V2: a single, compact Fideliza+ entry point; the wallet remains on its own page. */
+.v2-loyalty-compact-copy,.v2-loyalty-outline-star{display:none}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty{
+ display:block;margin:0 0 12px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--brand) 25%,var(--paper,#fff));outline:0;border-radius:14px;
+ background:color-mix(in srgb,var(--brand) 6%,var(--paper,#fff));box-shadow:none;color:var(--ink,#261033)
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-top{
+ display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;gap:8px;align-items:center
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-top>div{display:contents}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty :is(.v2-loyalty-gift,.v2-loyalty-full-copy,.v2-progress-card){display:none}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-outline-star{display:block;width:23px;height:23px;color:var(--ink,#261033);flex:none}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-brand{font-size:1rem;white-space:nowrap;color:var(--ink,#261033);letter-spacing:-.025em}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-brand em{color:inherit}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-compact-copy{
+ display:block;min-width:0;margin:0;padding-left:9px;border-left:1px solid color-mix(in srgb,var(--brand) 25%,transparent);font-size:.78rem;line-height:1.3;color:var(--ink,#261033);overflow-wrap:anywhere
+}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyaltyGo{
+ margin:0;min-height:44px;padding:7px 12px;border:1px solid var(--brand);border-radius:999px;background:var(--paper,#fff);color:var(--ink,#261033);font-size:.8rem;font-weight:800;white-space:nowrap;box-shadow:none
+}
+@media(max-width:600px){
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty{padding:6px 8px;margin-bottom:10px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-top{gap:5px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-outline-star{width:18px;height:18px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-brand{font-size:.85rem}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-compact-copy{padding-left:6px;font-size:.69rem}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyaltyGo{padding:6px 8px;font-size:.72rem}
+}
 /* Account actions are part of the hero, never a separate greeting card. */
 #hero #customerSessionBar{position:relative;z-index:5;display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin:0 auto 12px;padding:0;min-width:0;color:inherit}
 #hero:has(#storeSocialLinks:not([hidden])) #customerSessionBar{padding-right:90px}
@@ -1449,8 +1477,8 @@ body[data-menu-template=classic] #hero:has(#customerSessionBar:not([hidden])) .h
 
 <section id="v2Home" class="v2-home" aria-label="Início do cardápio" hidden>
  <div id="v2HomeLoyalty" class="v2-home-loyalty" hidden>
-  <div class="v2-loyalty-top"><span class="v2-loyalty-gift" aria-hidden="true">🎁</span><div>
-  <strong class="v2-loyalty-brand">Fideliza<em>+</em></strong><p>Compre, acumule pontos e resgate recompensas incríveis!</p></div>
+  <div class="v2-loyalty-top"><span class="v2-loyalty-gift" aria-hidden="true">🎁</span><svg class="v2-loyalty-outline-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 3.1 6.5 7.2 1-5.2 5 1.2 7.1-6.3-3.3-6.3 3.3 1.2-7.1-5.2-5 7.2-1z"/></svg><div>
+  <strong class="v2-loyalty-brand">Fideliza<em>+</em></strong><p class="v2-loyalty-full-copy">Compre, acumule pontos e resgate recompensas incríveis!</p><p class="v2-loyalty-compact-copy">Peça, acumule pontos e troque por benefícios.</p></div>
   <button type="button" id="v2HomeLoyaltyGo">Ver benefícios ›</button></div>
   <div class="v2-progress-card"><div class="v2-points-box"><span class="v2-star">⭐</span><div>Seus pontos<strong id="v2HomePoints">—</strong></div></div>
   <div class="v2-progress-detail"><p id="v2HomeProgressText">Informe o telefone no pedido para consultar seus pontos.</p>
