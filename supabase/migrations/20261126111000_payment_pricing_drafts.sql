@@ -9,8 +9,8 @@ create table if not exists pitacco_private.payment_pricing_drafts (
  revision bigint not null default 1 check(revision>0),
  updated_at timestamptz not null default now(),
  primary key(store_id,channel,method),
- check(method not like 'voucher_%' or adjustment_bps=0),
- check(adjustment_bps<=0 or method in ('cartao_credito','cartao_debito','credito_online','debito_online'))
+ check(method not like 'voucher_%' or adjustment_bps=0)
+
 );
 alter table pitacco_private.payment_pricing_drafts enable row level security;
 revoke all on pitacco_private.payment_pricing_drafts from public,anon,authenticated;
@@ -26,7 +26,6 @@ begin
  p_adjustment_bps not between -9999 and 10000 or p_processing_cost_bps not between 0 and 10000 then raise exception 'Valores da política de pagamento inválidos';end if;
  if p_method not in ('dinheiro','cartao_credito','cartao_debito','pix_manual','pix_maquininha','pix_online','credito_online','debito_online','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket','fiado') then raise exception 'Forma de pagamento inválida';end if;
  if (p_method like 'voucher_%' or p_method='fiado') and p_adjustment_bps<>0 then raise exception 'Ajuste de preço não permitido para esta forma';end if;
- if p_adjustment_bps>0 and p_method not in ('cartao_credito','cartao_debito','credito_online','debito_online') then raise exception 'Acréscimo não permitido para esta forma';end if;
  base:=p_subtotal_cents-p_discount_cents;
  adjustment:=round(base::numeric*p_adjustment_bps/10000)::bigint;
  total:=base+adjustment+p_delivery_cents;

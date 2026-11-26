@@ -319,6 +319,19 @@ try {
         assert.equal(route.request().postDataJSON().p_store,store.id);
         return route.fulfill({headers,json:menuSettings});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_payment_pricing_drafts'){
+        assert.equal(route.request().postDataJSON().p_store,store.id);
+        return route.fulfill({headers,json:[]});
+      }
+      if(pathname==='/rest/v1/rpc/pitacco_save_payment_pricing_draft'){
+        const input=route.request().postDataJSON();
+        assert.equal(input.p_store,store.id);
+        assert.equal(input.p_channel,'balcao');
+        assert.equal(input.p_method,'dinheiro');
+        assert.equal(input.p_adjustment_bps,250);
+        assert.equal(input.p_expected_revision,0);
+        return route.fulfill({headers,json:{channel:input.p_channel,method:input.p_method,adjustment_bps:input.p_adjustment_bps,processing_cost_bps:0,revision:1}});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_save_channel_payments'){
         const input=route.request().postDataJSON();
         assert.equal(input.p_store,store.id);
@@ -1000,6 +1013,16 @@ try {
       await page.getByRole('button',{name:'Salvar e ativar círculo de entrega'}).click();
       await page.getByText(/Taxas do círculo por quilômetro salvas/).waitFor();
       await merchantNavigate('Integrações','Meios de pagamento');
+      const pricing=page.getByRole('region',{name:'Preços por forma de pagamento'});
+      await pricing.getByRole('button',{name:'Preparar regras de preço'}).click();
+      await pricing.getByLabel('Canal de venda').selectOption('balcao');
+      await pricing.getByLabel('Forma de pagamento para ajuste').selectOption('dinheiro');
+      await pricing.getByLabel('Tipo de ajuste').selectOption('increase');
+      await pricing.getByLabel('Percentual (%)').fill('2.50');
+      await pricing.getByText(/102,50/).waitFor();
+      await pricing.getByRole('button',{name:'Salvar rascunho de preço'}).click();
+      await pricing.getByText(/Rascunho salvo/).waitFor();
+      assert.equal(await pricing.locator('option[value^="voucher_"]').count(),0);
       const providers=page.getByRole('region',{name:'Integrações de pagamento'});
       await providers.getByRole('button',{name:/InfinitePay/}).click();
       const providerSettings=page.locator('dialog.modern-dialog');
