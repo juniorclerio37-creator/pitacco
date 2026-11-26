@@ -1520,6 +1520,7 @@ try {
       ifoodOrder=newOrder('81');
       await liveOrders.locator('.pedidos-card').filter({hasText:'#IF-81'}).waitFor();
       await page.waitForFunction(()=>window.orderTones===6);
+      assert.equal(await page.getByRole('button',{name:'Verificar atualização',exact:true}).count(),0,'Updater is native-only');
       windowsSwitchFixture=true;
       // Mock the native alert and printer-context commands while exercising store selection.
       await page.addInitScript(origin=>{
@@ -1527,6 +1528,7 @@ try {
         window.nativeNotices=[];
         window.nativeOrderSounds=0;
         window.activeStoreCommands=[];
+        window.nativeUpdateChecks=0;
         window.activeNativeStore=null;
         window.__TAURI__={core:{invoke:async (command,args)=>{
           if(command==='set_active_store'){
@@ -1535,6 +1537,7 @@ try {
             window.activeStoreCommands.push(args.storeId);
             return null;
           }
+          if(command==='check_update'){window.nativeUpdateChecks++;return 'O Pitacco já está atualizado.';}
           if(command==='device_id')return 'fixture-device';
           if(command==='list_printers'||command==='list_jobs')return [];
           if(command==='get_autostart')return false;
@@ -1547,6 +1550,14 @@ try {
       const windowsStore=page.getByRole('combobox',{name:'Trocar estabelecimento',exact:true});
       await windowsStore.getByRole('option',{name:'Selecione a loja deste computador'}).waitFor({state:'attached'});
       assert.equal(await windowsStore.inputValue(),'');
+      const updater=page.getByRole('region',{name:'Atualizações do Windows'});
+      const installed=JSON.parse(await readFile(new URL('../web/package.json',import.meta.url),'utf8')).version;
+      await updater.getByText('Versão instalada: Pitacco Windows v'+installed,{exact:true}).waitFor();
+      await updater.getByRole('button',{name:'Verificar atualização',exact:true}).click();
+      await updater.getByRole('status').filter({hasText:'O Pitacco já está atualizado.'}).waitFor();
+      assert.equal(await page.evaluate(()=>window.nativeUpdateChecks),1);
+      assert.equal(await page.getByRole('button',{name:'Verificar atualização',exact:true}).count(),1);
+      console.log('PASS Windows updater in sidebar shows installed package version before store selection');
       await windowsStore.selectOption(store.id);
       const desktopOrders=page.getByRole('region',{name:'Central de pedidos',exact:true});
       await desktopOrders.locator('.pedidos-card').filter({hasText:'#IF-81'}).waitFor();
