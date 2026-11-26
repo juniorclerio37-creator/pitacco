@@ -199,3 +199,40 @@ begin
  assert not has_table_privilege('authenticated','pitacco_private.ifood_suppressed_orders','SELECT');
 end $test$;
 rollback;
+
+-- Manual grouping overrides automated targets, never departed routes.
+begin;
+do $test$
+declare s uuid; u uuid:=gen_random_uuid(); c uuid; o uuid; d uuid; ids uuid[]:='{}'; r uuid; i integer;
+begin
+ insert into public.stores(name,delivery_mode,dispatch_mode,max_orders_per_trip,latitude,longitude) values('Fixture rota manual', 'propria','automatico',1,-22.7,-43.45) returning id into s;
+ insert into auth.users(id,email) values(u,'fixture-'||u||'@example.invalid');
+ insert into public.profiles(id,email,role) values(u,'fixture-'||u||'@example.invalid','gestor') on conflict(id) do update set role='gestor';
+ insert into public.store_members(store_id,user_id,role) values(s,u,'gestor');
+ insert into public.couriers(user_id,name,fleet_type,store_id,active,available) values(u,'Fixture courier','propria',s,true,true) returning id into c;
+ insert into public.courier_positions(courier_id,latitude,longitude,accuracy_m,observed_at) values(c,-22.7,-43.45,10,now());
+ perform set_config('request.jwt.claim.sub',u::text,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);
+ for i in 1..4 loop
+   insert into public.orders(store_id,channel,gross,status,source,preparation_status,receipt) values(s,'Delivery próprio',20,'accepted','proprio','ready','{}') returning id into o;
+   insert into public.deliveries(store_id,order_id,customer_name,address,source,logistics_provider,status,deliver_by,latitude,longitude) values(s,o,'Fixture','Rua Exemplo, 97, Centro, Nova Iguaçu/RJ','proprio','loja','pendente',case when i=2 then now()-interval '1 minute' else now()+interval '1 hour' end,case when i=2 then -22.69 else -22.71 end,-43.45) returning id into d;
+   ids:=array_append(ids,d);
+ end loop;
+ r:=public.dg_assign_route(ids[1],c,true,true);
+ begin
+   perform public.dg_assign_route(ids[2],c,true,true);
+   raise exception 'automatic incorrectly bypassed restrictions';
+ exception when raise_exception then
+   if sqlerrm not like 'Pedido prioritário%' and sqlerrm not like 'Limite de pedidos%' then raise;end if;
+ end;
+ assert public.assign_delivery_batch(s,c,array[ids[2],ids[3]])=r;
+ assert (select count(*)=3 from public.deliveries where batch_id=r);
+ update public.delivery_batches set departed_at=now() where id=r;
+ begin
+   perform public.dg_assign_route(ids[4],c,true,false);
+   raise exception 'departed route incorrectly accepted extra order';
+ exception when raise_exception then if sqlerrm not like 'Entregador ocupado%' then raise;end if;end;
+ assert (select status='pendente' and courier_id is null from public.deliveries where id=ids[4]);
+end $test$;
+select 'PASS auto constraints preserved; manual batch exceeds automatic capacity and accepts opposite/overdue destinations; departed route protected' as result;
+rollback;
