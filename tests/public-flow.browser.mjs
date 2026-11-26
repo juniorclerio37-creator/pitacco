@@ -82,7 +82,7 @@ try {
         return route.fulfill({ json: {
           store: { appearance:{template,primary:'#217c5a'}, primary_color:'#e04020', name: 'Loja de teste', delivery_enabled: true, pickup_enabled: true,
             delivery_fee: 0, route_pricing:{enabled:true,mode:'circle',max_radius_km:3},
-            delivery_area:area, payment_methods: ['pix_manual'],
+            delivery_area:area, payment_methods: width===1440?['pix_manual','dinheiro','cartao_entrega']:['pix_manual'],
             opening_hours:{open:true,reason:'open',next_open_at:null} },
           products: [{ id: 'acai', name: 'Açaí', category: 'Açaís', price: 20, option_groups: [{
             id: 'adicionais', name: 'Adicionais', min: 1, max: 1,
@@ -215,6 +215,12 @@ try {
       await page.getByRole('button',{name:'Usar minha localização'}).click();
       await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
       await page.locator('#payment').selectOption('pix_manual');
+      if(width===1440){
+        for(const method of ['dinheiro','cartao_entrega','pix_manual']){
+          await page.locator('#payment').selectOption(method);
+          assert.equal(await page.locator('#payment').inputValue(),method);
+        }
+      }
       assert.match(await page.locator('#total').innerText(),/Taxa de entrega/);
       assert.equal(await page.locator('#send').isDisabled(),false,'Classic pode confirmar apenas com cotação válida');
       await page.locator('#addressStreet').fill('Rua Fora Entrega');
@@ -417,10 +423,16 @@ try {
       await page.locator('#cartDialog[data-v2-stage="payment"]').waitFor();
       const pixCard=page.locator('#v2PaymentCards [data-kind="pix_manual"]');
       assert.equal(await pixCard.isVisible(),true,'Pix manual cadastrado aparece em card');
-      assert.equal(await page.locator('#v2PaymentCards [data-kind="dinheiro"]').count(),0,'Método não cadastrado não aparece');
+      if(width===1440){
+        for(const method of ['dinheiro','cartao_entrega']){
+          await page.locator('#v2PaymentCards [data-kind="'+method+'"]').click();
+          assert.equal(await page.locator('#payment').inputValue(),method,'Pagamento habilitado pela loja pode ser selecionado');
+        }
+      }else assert.equal(await page.locator('#v2PaymentCards [data-kind="dinheiro"]').count(),0,'Método não cadastrado não aparece');
       if(width===375){
         const fiadoCard=page.locator('#v2PaymentCards [data-kind="fiado"]');
         await fiadoCard.waitFor();
+        await page.locator('#v2PaymentCards [data-kind="fiado"]:not([disabled])').waitFor();
         assert.equal(await fiadoCard.isDisabled(),false,'Fiado elegível aparece habilitado');
         await fiadoCard.click();
         assert.equal(await page.locator('#fiadoPin').isVisible(),true);

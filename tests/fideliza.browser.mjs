@@ -14,7 +14,7 @@ const templatePalettes={
 };
 const rules={points_enabled:true,points_per_real:1,min_points_to_redeem:100,points_reward_cents:1000,orders_enabled:true,orders_required:3,orders_reward_cents:500,coupons_enabled:true,campaigns_enabled:true,cashback_enabled:true,cashback_percent:5,cashback_max_redeem_percent:50,referrals_enabled:true,referral_reward_cents:300,referral_welcome_cents:200,minimum_order_cents:0};
 try{
- for(const template of ['pitacco-v2','essencial','editorial','urbano']) for(const width of [375,1440]){
+ for(const template of ['pitacco-v2','essencial','editorial','urbano','classic']) for(const width of [375,768,1440]){
   const page=await browser.newPage({viewport:{width,height:1000}}),errors=[],sent=[];
   let linkGenerated=false;
   page.on('pageerror',e=>errors.push(e.stack||e.message));page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(30000);
@@ -46,7 +46,7 @@ try{
    }
    if(name==='pitacco_loyalty_checkout'){
     sent.push(p);assert.equal(p.p_key,'INDICADOR');assert.equal(p.p_items[0].quantity,2);assert.equal(p.p_payment,'pix_manual');
-    assert.equal(p.p_reward,width===375?'points':'');assert.equal(p.p_coupon,width===375?'':'SEMANA5');
+    assert.equal(p.p_reward,width===375?'points':width===768?'cashback':'');assert.equal(p.p_coupon,width===1440?'SEMANA5':'');
     if(sent.length===1)return route.fulfill({status:503,json:{message:'Conexão interrompida'}});
     assert.deepEqual(sent[0],sent[1],'retry preserves request and reserved benefit');
     return route.fulfill({json:{order_id:'order-confirmed',total:width===375?90:95,payment_status:'pending'}});
@@ -54,6 +54,36 @@ try{
    return route.fulfill({status:404,json:{message:'Unexpected '+name}});
   });
   await page.goto(origin+'/loyalty-test?indicacao=INDICADOR');
+
+  if(template==='classic'){
+   await page.getByRole('button',{name:'Personalizar Açaí',exact:true}).click();
+   await page.getByRole('button',{name:/Adicionar à sacola/}).click();
+   await page.locator('#openCart').click();
+   await page.locator('#cart input').fill('2');
+   await page.locator('#cart input').dispatchEvent('change');
+   await page.locator('#continueCheckout').click();
+   linkGenerated=true; // Existing eligible customer, shared wallet fixture.
+   await page.locator('#customer').fill('Cliente');
+   await page.locator('#phone').fill('21999990001');
+   await page.locator('#loyaltyReward option[value="cashback"]').waitFor({state:'attached'});
+   assert.equal(await page.locator('#loyaltyReward option').count(),4);
+   if(width!==1440)await page.locator('#loyaltyReward').selectOption(width===375?'points':'cashback');
+   else await page.locator('#loyaltyCoupon').fill('SEMANA5');
+   await page.locator('#loyaltyApply').click();
+   await page.locator('#total').getByText('Desconto Fideliza+',{exact:true}).waitFor({state:'attached'});
+   await page.locator('#send').click();
+   await page.getByRole('button',{name:'Tentar novamente',exact:true}).waitFor();
+   assert.equal(await page.locator('#loyaltyBox').evaluate(e=>e.inert),true);
+   await page.locator('#send').click();
+   await page.getByRole('heading',{name:'Pedido recebido!',exact:true}).waitFor();
+   assert.equal(sent.length,2);
+   assert.deepEqual(sent[0],sent[1]);
+   assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-cart:loyalty-test')),null);
+   assert.deepEqual(errors,[]);
+   console.log('PASS Classic pickup, benefits and immutable retry',width);
+   await page.close();
+   continue;
+  }
 
   await page.waitForFunction(()=>document.body.dataset.menuSkin);
   await page.locator('#menuStartup').waitFor({state:'hidden'});
@@ -109,7 +139,7 @@ try{
     await page.locator('#v2PaymentCards [data-kind="pix_manual"]').click();
     assert.equal(await page.locator('#payment').inputValue(),'pix_manual');
   }else await page.locator('#customer').fill('Cliente');
-  if(width===375)await page.locator('#loyaltyReward').selectOption('points');
+  if(width!==1440)await page.locator('#loyaltyReward').selectOption(width===375?'points':'cashback');
   else await page.getByRole('button',{name:'Usar SEMANA5',exact:true}).click();
   await page.locator('#loyaltyApply').click();await page.locator('#total').getByText('Desconto Fideliza+', {exact:true}).waitFor({state:'attached'});
   if(principal){
