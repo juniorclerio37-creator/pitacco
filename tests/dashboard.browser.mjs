@@ -319,6 +319,12 @@ try {
         assert.equal(route.request().postDataJSON().p_store,store.id);
         return route.fulfill({headers,json:menuSettings});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_save_channel_payments'){
+        const input=route.request().postDataJSON();
+        assert.equal(input.p_store,store.id);
+        assert.ok(Array.isArray(input.p_public)&&Array.isArray(input.p_pdv));
+        return route.fulfill({headers,json:null});
+      }
       if(pathname==='/rest/v1/rpc/save_public_menu_settings'){
         const input=route.request().postDataJSON();
         assert.equal(input.p_store,store.id);

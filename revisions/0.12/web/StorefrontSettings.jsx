@@ -67,7 +67,7 @@ export function StorefrontShare({menu,native}){
 
 export function StorefrontPayments({client,storeId,resource}){
  const {menu,error,reload,update}=resource;
- const [draft,setDraft]=useState(menu),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[failure,setFailure]=useState('');
+ const [draft,setDraft]=useState(()=>menu?{...menu,payment_methods:expandPaymentMethods(menu.payment_methods),pdv_payment_methods:expandPaymentMethods(menu.pdv_payment_methods??menu.payment_methods)}:menu),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[failure,setFailure]=useState('');
  useEffect(()=>setDraft(menu?{...menu,payment_methods:expandPaymentMethods(menu.payment_methods),pdv_payment_methods:expandPaymentMethods(menu.pdv_payment_methods??menu.payment_methods)}:menu),[menu]);
  const change=(name,value)=>setDraft(previous=>({...previous,[name]:value}));
  async function save(event){
