@@ -1,3 +1,4 @@
+import {readFileSync} from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {resolvePostalAddress} from '../supabase/functions/store-postal-lookup/postal-provider.mjs';
@@ -34,4 +35,13 @@ test('GPS cannot displace a verified store pin with another city or invalid coor
  assert.equal(deviceProposalAllowed([-22.90,-43.20],[-22.75,-43.47]),false);
  assert.equal(deviceProposalAllowed([40,-73],null),false);
  assert.equal(deviceProposalAllowed([-22.75,-43.47],null),true);
+});
+
+test('GPS can be explicitly confirmed without marker movement; an unsaved address remains protected',()=>{
+ const form=readFileSync(new URL('../revisions/0.12/web/StoreProfile.jsx',import.meta.url),'utf8');
+ assert.match(form,/Confirmar e salvar ponto da loja/);
+ assert.match(form,/\(!changed&&!needsDeviceAdjustment\)/);
+ assert.match(form,/addressDirty\|\|!savedAddress\|\|\(!changed/);
+ assert.match(form,/Salvar dados da loja e liberar ponto/);
+ assert.doesNotMatch(form,/if\(needsDeviceAdjustment\)throw/);
 });

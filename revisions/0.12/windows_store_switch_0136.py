@@ -64,17 +64,41 @@ s=s.replace(anchor,"let activeStoreCommand=Promise.resolve();\nfunction queueAct
 old="""  invoke('set_active_store',{storeId:manager?storeId:null}).catch(e=>setError(String(e)));
   return()=>{invoke('set_active_store',{storeId:null}).catch(()=>{})};"""
 new="""  let live=true;
-  queueActiveStore(manager?storeId:null).catch(e=>{if(live)setError(String(e))});
-  return()=>{live=false;void queueActiveStore(null).catch(()=>{})};"""
+  const activation={storeId:manager?storeId:null,ready:queueActiveStore(manager?storeId:null)};
+  nativePrintScope.current=activation;
+  activation.ready.catch(e=>{if(live)setError(String(e))});
+  return()=>{live=false;if(nativePrintScope.current===activation)nativePrintScope.current=null;void queueActiveStore(null).catch(()=>{})};"""
 assert s.count(old)==1, 'Native printer context anchor changed'
 s=s.replace(old,new,1)
+# Wait for native activation independently of the React tenant selection.
+anchor="  const activation={storeId:manager?storeId:null,ready:queueActiveStore(manager?storeId:null)};"
+assert s.count(anchor)==1, 'Native scope ref anchor changed'
+# Insert the hook at the component entry, before any effect runs.
+import re
+entry=r"(export default function Operations\([^\n]*\)\{)"
+assert len(re.findall(entry,s))==1, 'Operations component entry changed'
+s=re.sub(entry,lambda m:m.group(0)+"""
+ const nativePrintScope=useRef(null);
+ async function waitForNativePrintStore(){
+  const scope=nativePrintScope.current;
+  if(!manager||!storeId||scope?.storeId!==storeId)return false;
+  try{await scope.ready}catch{return false}
+  return nativePrintScope.current===scope;
+ }
+""",s,count=1)
+anchor="   try{const local=await invoke('list_jobs');if(stopped)return;"
+assert s.count(anchor)==1, 'Local print queue polling anchor changed'
+s=s.replace(anchor,"   try{if(!await waitForNativePrintStore()||stopped)return;const local=await invoke('list_jobs');if(stopped)return;",1)
+anchor="    if(desktop&&device){"
+assert s.count(anchor)==1, 'Remote print queue polling anchor changed'
+s=s.replace(anchor,"    if(desktop&&device&&await waitForNativePrintStore()&&!stopped){",1)
 p.write_text(s,encoding='utf-8')
 # Supersede every previously used version number, including the 0.12.39 overlay.
 for relative in ['package.json','package-lock.json','src-tauri/tauri.conf.json','src-tauri/Cargo.toml','src-tauri/Cargo.lock']:
  p=Path('web')/relative
  source=p.read_text(encoding='utf-8')
  assert '0.12.35' in source or '0.12.39' in source, relative
- p.write_text(source.replace('0.12.35','0.12.44').replace('0.12.39','0.12.44'),encoding='utf-8')
+ p.write_text(source.replace('0.12.35','0.12.45').replace('0.12.39','0.12.45'),encoding='utf-8')
 
 # The Windows installer, not the terminating process, owns the restart.
 p=Path('web/src-tauri/src/main.rs')

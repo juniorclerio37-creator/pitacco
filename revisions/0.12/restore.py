@@ -219,3 +219,17 @@ subprocess.run([sys.executable,'revisions/0.12/print_replay_0137.py'],check=True
 
 # Bundle pinned Leaflet instead of injecting external CDN scripts at runtime.
 subprocess.run([sys.executable,'revisions/0.12/bundle_leaflet_0138.py'],check=True)
+
+# Keep only the official Pitacco thermal receipt. Remove obsolete merchant
+# HTML editor and historical failure-summary panel after all older overlays.
+printing=pathlib.Path('web/Operations.jsx')
+content=printing.read_text(encoding='utf-8')
+editor=r"\{manager&&<PrinterPanelBoundary><ReceiptEditor\b[^>]*?/></PrinterPanelBoundary>\}"
+attention=r"\{desktop&&jobs\.some\(j=>\['error','uncertain'\]\.includes\(j\.state\)\)&&<div className=\"panel\"><h3>Atenção à impressão</h3>[\s\S]*?</div>\}"
+for pattern in [editor,attention]:
+ content,count=re.subn(pattern,'',content)
+ assert count==1, f'Unexpected legacy printing panel: {pattern} ({count})'
+for name in ['ReceiptEditor','PrinterPanelBoundary']:
+ content,count=re.subn(r"^import "+name+r" from ['\"]\./"+name+r"\.jsx['\"];\r?\n",'',content,flags=re.M)
+ assert count==1, f'Unexpected legacy printing import: {name}'
+printing.write_text(content,encoding='utf-8')

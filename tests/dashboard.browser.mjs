@@ -115,6 +115,7 @@ try {
       }
     }, { api,storeId:store.id,width,dashboard });
 
+    let storePointWrites=0;
     let mapTilesOffline=false;
     let externalMapScriptRequests=0;
     await page.route('**/*', async route => {
@@ -420,6 +421,12 @@ try {
         return route.fulfill({headers,json:{pix_cnpj:'',pix_recipient:''}});
       }
       if(pathname==='/rest/v1/rpc/pitacco_store_identity')return route.fulfill({headers,json:{store_id:store.id,logo_path:null,legacy_logo_url:null}});
+      if(pathname==='/functions/v1/delivery-quote'&&route.request().postDataJSON()?.action==='store-point'){
+        const args=route.request().postDataJSON();
+        assert.deepEqual(args,{action:'store-point',store_id:store.id,latitude:-22.7105,longitude:-43.4005});
+        storePointWrites++;
+        return route.fulfill({headers,json:{saved:true}});
+      }
       if(pathname==='/functions/v1/store-postal-lookup'){
         const args=route.request().postDataJSON();
         assert.equal(args.store_id,store.id);
@@ -1054,6 +1061,17 @@ try {
     assert.equal(await registration.getByLabel('Enviar ou alterar logotipo da loja').isEnabled(),true,'O gestor altera a marca nos Dados da loja');
     assert.equal(await registration.getByLabel('WhatsApp para clientes').inputValue(),'21900000002');
     assert.equal(await registration.getByLabel('Telefone administrativo').inputValue(),'21900000001');
+    if(width===1440){
+      await page.evaluate(()=>{Object.defineProperty(navigator.geolocation,'getCurrentPosition',{configurable:true,value:success=>success({coords:{latitude:-22.7105,longitude:-43.4005,accuracy:136}})});});
+      await registration.getByRole('button',{name:'Usar localização do celular ou computador'}).click();
+      await registration.getByText(/precisão estimada de 136 m/).waitFor();
+      const confirmPoint=registration.getByRole('button',{name:'Confirmar e salvar ponto da loja',exact:true});
+      assert.equal(await confirmPoint.isEnabled(),true,'GPS can be explicitly confirmed without moving the marker');
+      assert.equal(storePointWrites,0,'GPS must not implicitly persist coordinates');
+      await confirmPoint.click();
+      await registration.getByText(/Ponto exato da loja salvo/).waitFor();
+      assert.equal(storePointWrites,1);
+    }
     const registrationName=registration.getByLabel('Nome da loja',{exact:false});
     await registrationName.fill('Rascunho ainda não salvo');
     await page.evaluate(()=>window.dispatchEvent(new Event('pitacco:store-identity')));
@@ -1077,6 +1095,8 @@ try {
     assert.equal(await registration.getByLabel('Bairro',{exact:false}).inputValue(),'Bairro simulado');
     assert.equal(await registration.getByLabel('Cidade',{exact:false}).inputValue(),'Nova Iguaçu');
     assert.equal(await registration.getByLabel('Estado',{exact:false}).inputValue(),'RJ');
+    await registration.getByRole('button',{name:'Salvar dados da loja e liberar ponto',exact:true}).waitFor();
+    assert.equal(await registration.getByRole('button',{name:'Salvar dados da loja e liberar ponto',exact:true}).isEnabled(),true);
     await registration.getByLabel('Rua / avenida',{exact:false}).fill('Rua corrigida pelo lojista');
     await postal.fill('00000000');
     await registration.getByText('CEP não encontrado. Preencha o endereço manualmente ou tente novamente.',{exact:true}).waitFor();
@@ -1578,16 +1598,23 @@ try {
         window.activeStoreCommands=[];
         window.nativeUpdateChecks=0;
         window.activeNativeStore=null;
+        window.prematureLocalQueueReads=0;
+        window.localQueueReads=0;
         window.__TAURI__={core:{invoke:async (command,args)=>{
           if(command==='set_active_store'){
-            if(args.storeId===null)await new Promise(resolve=>setTimeout(resolve,100));
+            await new Promise(resolve=>setTimeout(resolve,args.storeId===null?100:350));
             window.activeNativeStore=args.storeId;
             window.activeStoreCommands.push(args.storeId);
             return null;
           }
           if(command==='check_update'){window.nativeUpdateChecks++;return 'O Pitacco já está atualizado.';}
           if(command==='device_id')return 'fixture-device';
-          if(command==='list_printers'||command==='list_jobs')return [];
+          if(command==='list_printers')return [];
+          if(command==='list_jobs'){
+            if(!window.activeNativeStore){window.prematureLocalQueueReads++;throw Error('Selecione uma loja autenticada.');}
+            window.localQueueReads++;
+            return [];
+          }
           if(command==='get_autostart')return false;
           if(command==='notify_new_order')window.nativeNotices.push(args.message);
           if(command==='play_order_alert'||command==='play_order_alert_combo')window.nativeOrderSounds++;
@@ -1655,9 +1682,15 @@ try {
       await page.getByRole('region',{name:'Conciliação de repasses'}).waitFor();
       await merchantNavigate('Configurações','Configurar impressão e visualizar nota');
       await page.getByRole('heading',{name:'Computador responsável pela impressão',exact:true}).waitFor();
+      assert.equal(await page.getByRole('heading',{name:'Modelos HTML de impressão',exact:true}).count(),0);
+      assert.equal(await page.getByRole('heading',{name:'Atenção à impressão',exact:true}).count(),0);
+      await page.getByRole('heading',{name:'Impressoras por setor',exact:true}).waitFor();
       assert.equal(await page.locator('[aria-label="Seções de configuração"]').isVisible(),false);
       await merchantNavigate('Configurações','Alertas e sons');
       await page.getByRole('heading',{name:'Preferências do aplicativo',exact:true}).waitFor();
+      await page.waitForFunction(()=>window.localQueueReads>0);
+      assert.equal(await page.evaluate(()=>window.prematureLocalQueueReads),0,'Local queue must wait for native store activation');
+      assert.equal(await page.getByText(/Fila local:.*Selecione uma loja autenticada/).count(),0);
       assert.equal(await page.getByRole('heading',{name:'Computador responsável pela impressão',exact:true}).count(),0);
       assert.equal(await page.getByRole('button',{name:'Verificar atualização',exact:true}).count(),1);
       assert.equal(await page.getByRole('button',{name:'Outras funções',exact:true}).count(),0);

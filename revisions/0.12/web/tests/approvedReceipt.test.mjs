@@ -78,3 +78,11 @@ test('combo prints every component and nested pizza flavor fraction without char
  const receipt={source:'proprio',items:[{name:'Combo pizza + bebida',quantity:2,unit_total:59.90,modifiers:[{group:'Combo',name:'Pizza Grande',quantity:1,options:[{group:'Tamanho',name:'Grande'},{group:'Sabor',name:'Calabresa',numerator:1,denominator:2},{group:'Sabor',name:'Frango',numerator:1,denominator:2}]},{group:'Combo',name:'Refrigerante',quantity:1,options:[]}]}],total:119.80,payment:'Pix'};
  for(const width of [58,80]){const s=approvedReceipt({receipt},width);assert.match(s,/1x Pizza Grande/);assert.match(s,/Sabor 1\/2: Calabresa/);assert.match(s,/Sabor 1\/2: Frango/);assert.match(s,/1x Refrigerante/);assert.match(s,/119,80/);assert.ok(s.split('\n').every(line=>line.length<=(width===58?30:44)));}
 });
+
+test('iFood phone and localizer print on both paper widths and expired contact is omitted',()=>{
+ for(const width of [58,80]){
+ const job={receipt:{source:'ifood',display_number:'5392',customer:{name:'Cliente',phone:{number:'08001234567',localizer:'123456',localizerExpiration:'2099-01-01T00:00:00Z'}},items:[]}};
+ const text=approvedReceipt(job,width);assert.match(text,/Telefone: 08001234567/);assert.match(text,/Localizador: 123456/);assert.doesNotMatch(text,/\[object Object\]/);
+ job.receipt.customer.phone.localizerExpiration='2000-01-01T00:00:00Z';assert.doesNotMatch(approvedReceipt(job,width),/08001234567|123456/);
+ }
+});
