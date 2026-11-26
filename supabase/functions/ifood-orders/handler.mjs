@@ -185,6 +185,30 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
   const results=await Promise.allSettled(requests.map(submitConfirm));
   if(results.some(result=>result.status==='rejected'))logger.warn('A fila de aceite iFood será retomada.');
  }
+ // Notify readiness without dispatching or synthesizing provider events.
+ async function submitReady(row){
+  let state='retry',status=null;
+  try{
+   const access=row.uses_store_token?await distributed.accessFor(row.merchant_id):await centralToken(row.merchant_id);
+   if(access){
+    const response=await fetcher(origin+'/order/v1.0/orders/'+row.external_order_id+'/readyToPickup',{
+     method:'POST',headers:{authorization:'Bearer '+access,'content-type':'application/json'},
+     signal:AbortSignal.timeout(5000),redirect:'error',
+    });
+    status=response.status;
+    if(status===401||status===403){if(access===cachedToken)cachedToken=null;if(access===prodToken)prodToken=null;}
+    state=status===202?'submitted':[401,429].includes(status)?'retry':status===409||status===408||status>=500?'uncertain':'rejected';
+   }
+  }catch{state='uncertain';}
+  await rpc('pitacco_ifood_finish_ready',{p_order:row.order_id,p_lease:row.lease,p_state:state,p_http_status:status});
+ }
+ async function syncReady(){
+  try{
+   const rows=await rpc('pitacco_ifood_claim_ready',{});
+   const settled=await Promise.allSettled(rows.map(submitReady));
+   if(settled.some(r=>r.status==='rejected'))logger.warn('Fila de pedidos prontos requer reconciliação.');
+  }catch{logger.warn('Fila de pedidos prontos temporariamente indisponível.');}
+ }
  async function process(eventId=null){
   const events=await rpc('pitacco_ifood_claim',{p_event:eventId});
   for(let i=0;i<events.length;i+=4){
@@ -368,6 +392,7 @@ export function createIfoodOrders({clientId,clientSecret,supabaseUrl,serviceKey,
     if(shipping&&clientId&&clientSecret)await shipping.poll();
     await distributed.poll(enqueue);
     const processed=await process();
+    await syncReady();
     await autoConfirm();
     return reply(200,{processed});
    }
