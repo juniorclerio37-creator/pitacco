@@ -56,7 +56,27 @@ export function WindowsConnectionStatus({client,storeId,compact=false,onNavigate
   catch(error){setDownloadError(error.message||'Falha ao obter o instalador.')}
   finally{setDownloading(false)}
  }
- return <section className={'windows-link-card '+(compact?'compact':'')} aria-label="Conexão do aplicativo Windows">
+ if(compact){
+  const state=fault?'error':checking?'checking':status?.status||'checking';
+  const title=state==='connected'?'Aplicativo Windows conectado':state==='offline'?'Aplicativo Windows desconectado':state==='not_detected'?'Aplicativo Windows não detectado':state==='error'?'Não foi possível verificar a conexão':'Verificando conexão…';
+  return <section className="windows-link-card compact" aria-label="Conexão do aplicativo Windows">
+   <div>
+    <span className="eyebrow">PITACCO WINDOWS</span>
+    <h4 className={'windows-compact-status '+state} aria-live="polite">{title}</h4>
+   </div>
+   <p>Sincroniza pedidos e permite impressão automática com a impressora configurada.</p>
+   {status?.last_seen_at&&<small>Última atividade: {freshness(status.last_seen_at)}</small>}
+   {fault&&<p role="alert">{fault}</p>}
+   <div className="windows-link-actions">
+    <button type="button" onClick={()=>void getInstaller()} disabled={downloading}>
+     {downloading?'Preparando download…':release||publicWindows?'Baixar Pitacco Windows':'Ver versões e downloads'}
+    </button>
+    <button type="button" className="secondary" onClick={()=>refresh(v=>v+1)}>Atualizar conexão</button>
+   </div>
+   {downloadError&&<p role="alert">{downloadError}</p>}
+  </section>;
+ }
+ return <section className="windows-link-card" aria-label="Conexão do aplicativo Windows">
   <div className="windows-link-head">
    <div>
     <span className="eyebrow">PITACCO WINDOWS</span>

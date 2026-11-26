@@ -260,7 +260,8 @@ try {
         return route.fulfill({headers,json:{
           status:'connected',app_logged_in_now:true,printer_computer_bound:true,
           bound_computer_connected:true,installation_confirmed:false,automatic_print_tested:false,
-          last_seen_at:new Date().toISOString()
+          last_seen_at:new Date().toISOString(),
+          last_printer_test:{outcome:'printed',printer_name:'POS-80',paper_width:80,confirmed_at:new Date().toISOString()}
         }});
       }
       if(pathname==='/rest/v1/rpc/pitacco_store_hours_state'){
@@ -784,6 +785,13 @@ try {
     await inventory.getByText(/250 g/).waitFor();
     if (width <= 800) await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
     await merchantNavigate('Operação','Pedidos');
+    const compactWindows=page.locator('.windows-link-card.compact');
+    await compactWindows.getByRole('heading',{name:'Aplicativo Windows conectado'}).waitFor();
+    assert.equal(await compactWindows.locator('.windows-last-print-check').count(),0);
+    await compactWindows.getByText('Última atividade:',{exact:false}).waitFor();
+    await compactWindows.getByRole('button',{name:'Atualizar conexão'}).click();
+    await compactWindows.getByRole('heading',{name:'Aplicativo Windows conectado'}).waitFor();
+    assert.equal(await compactWindows.getByRole('button').count(),2);
     if(width===375){
       await page.getByRole('article',{name:'Card do pedido D-180',exact:true}).waitFor();
       await page.getByRole('region',{name:'Central de pedidos',exact:true})

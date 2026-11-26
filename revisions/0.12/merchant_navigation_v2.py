@@ -53,6 +53,8 @@ p.write_text(s,encoding='utf-8')
 p=Path('web/Operations.jsx')
 s=p.read_text(encoding='utf-8')
 change("storeLogoPath=''})","storeLogoPath='',navigationSection='',navigationKey})")
+# The compact Windows information strip is only for the live browser order board.
+change("{manager&&!desktop&&view==='Pedidos'&&<WindowsConnectionStatus","{manager&&!desktop&&view==='Pedidos'&&navigationSection!=='history'&&<WindowsConnectionStatus")
 # Do not remount Operations or reset orders, print jobs, subscriptions or sound on navigation.
 needle=" const [orderBadges,setOrderBadges]"
 assert s.count(needle)==1
