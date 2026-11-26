@@ -49,3 +49,15 @@ test('incident center is a visible delivery shortcut and precedes the other work
  assert.ok(src.includes('storeLogoUrl&&!logoFailed'));
  assert.ok(src.includes('onError={()=>setLogoFailed(true)}'));
  });
+
+test('merchant header highlights the selected establishment instead of Pitacco brand',()=>{
+ const src=readFileSync(new URL('../MerchantNavigation.jsx',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../merchant-navigation.css',import.meta.url),'utf8');
+ assert.doesNotMatch(src,/pitacco-brand-013\.svg/);
+ assert.match(src,/const selectedStore=stores\.find\(s=>s\.id===selected\)/);
+ assert.match(src,/className="mn-store-name"\>\{storeName\}/);
+ assert.match(src,/aria-label="Trocar estabelecimento"/);
+ assert.match(src,/Powered by Pitacco/);
+ assert.match(css,/\.mn-store-logo\{[^}]*object-fit:contain/s);
+ assert.match(css,/\.mn-store-name\{[^}]*overflow-wrap:anywhere/s);
+});

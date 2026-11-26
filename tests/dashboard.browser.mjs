@@ -693,6 +693,14 @@ try {
       await page.getByRole('navigation',{name:'Atalhos do celular'}).getByRole('button',{name:'Mais',exact:true}).click();
       await navigation.waitFor({ state:'visible' });
     }
+    const identity=navigation.getByRole('group',{name:'Identidade do estabelecimento'});
+    await identity.waitFor({state:'visible'});
+    assert.equal(await identity.locator('.mn-store-name').innerText(),store.name);
+    assert.equal(await navigation.locator('.mn-logo').count(),0);
+    assert.equal(await identity.getByRole('combobox',{name:'Trocar estabelecimento'}).count(),1);
+    assert.equal(await navigation.getByText('Powered by Pitacco',{exact:true}).count(),1);
+    const avatar=await identity.locator('.mn-store-avatar').boundingBox();
+    assert.ok(avatar&&avatar.width>=75&&avatar.height>=75&&Math.abs(avatar.width-avatar.height)<2,'Store logo has a prominent square frame');
     if(width===1440){
       const search=navigation.getByRole('searchbox',{name:'Buscar funcionalidades'});
       await search.fill('fiado');
@@ -702,7 +710,10 @@ try {
       await navigation.getByRole('button',{name:'Remover favorito: Fiado / Caderneta',exact:true}).first().waitFor();
       await navigation.getByRole('button',{name:'Remover favorito: Fiado / Caderneta',exact:true}).first().click();
       await navigation.getByRole('button',{name:'Recolher menu',exact:true}).click();
+      assert.equal(await identity.locator('.mn-store-avatar').isVisible(),true,'Store identity remains in collapsed navigation');
+      assert.equal(await identity.locator('.mn-store-name').isVisible(),false);
       await navigation.getByRole('button',{name:'Expandir menu',exact:true}).click();
+      assert.equal(await identity.locator('.mn-store-name').isVisible(),true);
       const prompt=page.getByRole('region',{name:'Preparar o Pitacco para operar'});
       await prompt.getByRole('button',{name:'Iniciar configuração'}).click();
       const wizard=page.getByRole('region',{name:'Assistente de configuração inicial'});

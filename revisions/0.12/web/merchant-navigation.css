@@ -170,3 +170,52 @@
 .mn-plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:14px 0}.mn-plan{border:1px solid #8884;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px}.mn-plan h4,.mn-plan p{margin:0}.mn-plan strong{font-size:1.65rem;color:#e76e27}.mn-plan button{margin-top:auto}
 
 .merchant-nav .mn-store-logo{width:38px;height:38px;object-fit:contain;border-radius:9px;flex:none;background:#fff;border:1px solid #e8e8e8}.merchant-nav .mn-store:has(.mn-store-logo){min-height:56px}
+
+/* Merchant identity: one prominent store logo, full name, native accessible selector.
+   Applies only to the shared merchant sidebar (web and Windows). */
+#pitacco-store-navigation .mn-compact .mn-top{justify-content:flex-end;min-height:30px;margin:0}
+#pitacco-store-navigation .mn-compact .mn-store{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ gap:8px;padding:12px 8px;margin:0 0 9px;background:transparent;
+ border:0;border-radius:12px;min-height:0;text-align:center;flex-shrink:0
+}
+#pitacco-store-navigation .mn-compact .mn-store .mn-store-avatar{
+ flex:none;display:grid;place-items:center;width:88px;height:88px;max-width:100%;
+ border:1px solid #ffffff30;border-radius:18px;background:#ffffff0d;color:#b7c4d6;overflow:hidden
+}
+#pitacco-store-navigation .mn-compact .mn-store .mn-store-logo{
+ display:block;width:100%;height:100%;max-width:100%;object-fit:contain;
+ background:#fff;border:0;border-radius:0
+}
+#pitacco-store-navigation .mn-compact .mn-store-name{
+ display:block;width:100%;min-width:0;color:#fff;font-size:14px;line-height:1.35;
+ font-weight:700;white-space:normal;overflow-wrap:anywhere;text-align:center
+}
+#pitacco-store-navigation .mn-compact .mn-store-switch{
+ position:relative;display:flex;align-items:center;justify-content:center;
+ gap:6px;width:100%;min-width:0;min-height:34px;padding:7px 6px;
+ border:1px solid #ffffff25;border-radius:8px;color:#d9e1ee;background:#ffffff0b;cursor:pointer
+}
+#pitacco-store-navigation .mn-compact .mn-store-switch span{font-size:11px;color:inherit;line-height:1.3;overflow-wrap:anywhere}
+#pitacco-store-navigation .mn-compact .mn-store-switch svg{flex:none}
+#pitacco-store-navigation .mn-compact .mn-store-switch select{
+ position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer
+}
+#pitacco-store-navigation .mn-compact .mn-store-switch:focus-within{outline:2px solid #ffac74;outline-offset:2px}
+#pitacco-store-navigation .mn-compact .mn-provider-credit{
+ display:block;text-align:center;font-size:10px;line-height:1.4;color:#b7c4d6;
+ padding:12px 2px 3px;margin-top:auto;flex-shrink:0
+}
+@media(min-width:801px){
+ #pitacco-store-navigation .mn-compact.mn-collapsed .mn-top{justify-content:center}
+ #pitacco-store-navigation .mn-compact.mn-collapsed .mn-store{display:flex;padding:2px 0;margin:0 0 8px}
+ #pitacco-store-navigation .mn-compact.mn-collapsed .mn-store-avatar{width:42px;height:42px;border-radius:10px}
+ #pitacco-store-navigation .mn-compact.mn-collapsed .mn-store-avatar svg{width:22px;height:22px}
+ #pitacco-store-navigation .mn-compact.mn-collapsed :is(.mn-store-name,.mn-store-switch,.mn-provider-credit){display:none}
+}
+@media(max-width:800px){
+ #pitacco-store-navigation .mn-compact .mn-top{display:none}
+ #pitacco-store-navigation .mn-compact .mn-store{padding-top:10px}
+ #pitacco-store-navigation .mn-compact .mn-store-avatar{width:80px;height:80px}
+ #pitacco-store-navigation .mn-compact .mn-store-switch{min-height:44px}
+}
