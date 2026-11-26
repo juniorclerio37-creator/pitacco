@@ -16,6 +16,9 @@ insert into public.product_options(id,store_id,group_id,name,additional_price,av
  ('50000000-0000-0000-0000-000000000091','20000000-0000-0000-0000-000000000091','40000000-0000-0000-0000-000000000091','Banana',2,true);
 update public.stores set instagram_url='https://www.instagram.com/destino/',facebook_url='https://www.facebook.com/destino',phone='21900000000' where id='20000000-0000-0000-0000-000000000092';
 update public.public_menu_settings set payment_methods=array['dinheiro'],pix_instructions='PIX exclusivo destino' where store_id='20000000-0000-0000-0000-000000000092';
+insert into public.pitacco_storefront_designs(store_id,draft,published,draft_version,published_version)
+select id,design,design,1,1 from (select s.id,pitacco_private.storefront_design_default(s.id)||jsonb_build_object('slogan',case when s.id='20000000-0000-0000-0000-000000000091' then 'Slogan origem' else 'Slogan destino' end,'primary',case when s.id='20000000-0000-0000-0000-000000000091' then '#ff0000' else '#224488' end,'layout',case when s.id='20000000-0000-0000-0000-000000000091' then 'grade' else 'lista' end) design from public.stores s where s.id in ('20000000-0000-0000-0000-000000000091','20000000-0000-0000-0000-000000000092')) q
+on conflict(store_id) do update set draft=excluded.draft,published=excluded.published,draft_version=1,published_version=1;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000092',true);
 do $test$ begin
@@ -28,6 +31,9 @@ begin
  res:=public.pitacco_owner_copy_catalog(src,dst,null,req);
  assert (select instagram_url='https://www.instagram.com/destino/' and phone='21900000000' from public.stores where id=dst);
  assert (select payment_methods=array['dinheiro'] and pix_instructions='PIX exclusivo destino' from public.public_menu_settings where store_id=dst);
+ assert public.pitacco_storefront_studio_state(dst)#>>'{published,layout}'='grade';
+ assert public.pitacco_storefront_studio_state(dst)#>>'{published,primary}'='#224488';
+ assert public.pitacco_storefront_studio_state(dst)#>>'{published,slogan}'='Slogan destino';
  assert res->>'products'='1' and res->>'groups'='1' and res->>'options'='1';
  assert public.pitacco_owner_copy_catalog(src,dst,null,req)=res,'Retry must not duplicate rows';
  select id into pid from public.products where store_id=dst and name='Açaí clone';
