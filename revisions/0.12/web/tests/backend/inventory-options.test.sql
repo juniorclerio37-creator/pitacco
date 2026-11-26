@@ -185,3 +185,54 @@ begin
  end;
 end $test$;
 rollback;
+
+-- A central complement name is store-local; existing price variations and IDs are retained.
+begin;
+do $test$
+declare s uuid; other uuid; u uuid:=gen_random_uuid(); v uuid:=gen_random_uuid(); p1 uuid; p2 uuid; p3 uuid; g1 uuid; g2 uuid; g3 uuid; t uuid; key1 uuid:=gen_random_uuid(); o1 uuid; o2 uuid; o3 uuid; o4 uuid; result jsonb;
+begin
+ insert into auth.users(id,email) values(u,'central-'||u||'@example.invalid'),(v,'central-'||v||'@example.invalid');
+ insert into public.stores(name) values('Fixture central A') returning id into s;
+ insert into public.stores(name) values('Fixture central B') returning id into other;
+ insert into public.store_members(store_id,user_id,role) values(s,u,'gestor'),(other,v,'gestor');
+ insert into public.products(store_id,name,price,cost,menu_active) values(s,'Açaí A',20,0,true) returning id into p1;
+ insert into public.products(store_id,name,price,cost,menu_active) values(s,'Açaí B',22,0,true) returning id into p2;
+ insert into public.products(store_id,name,price,cost,menu_active) values(other,'Açaí C',25,0,true) returning id into p3;
+ insert into public.pitacco_complement_templates(store_id,name,min_select,max_select,options) values(s,'Grátis',0,2,jsonb_build_array(jsonb_build_object('id',key1,'name','Leite em pó','price',0,'available',true,'image_url',''))) returning id into t;
+ insert into public.product_option_groups(store_id,product_id,name,min_select,max_select,library_template_id) values(s,p1,'Grátis',0,2,t) returning id into g1;
+ insert into public.product_option_groups(store_id,product_id,name,min_select,max_select) values(s,p2,'Adicionais',0,2) returning id into g2;
+ insert into public.product_option_groups(store_id,product_id,name,min_select,max_select) values(other,p3,'Adicionais',0,2) returning id into g3;
+ insert into public.product_options(store_id,group_id,name,additional_price,library_option_id) values(s,g1,'Leite em pó',0,key1) returning id into o1;
+ insert into public.product_options(store_id,group_id,name,additional_price) values(s,g2,'LEITE  EM PÓ',3.50) returning id into o2;
+ insert into public.product_options(store_id,group_id,name,additional_price) values(other,g3,'Leite em pó',4) returning id into o3;
+ perform set_config('request.jwt.claim.sub',u::text,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);
+ result:=public.pitacco_central_complement_list(s);
+ assert jsonb_array_length(result)=1 and result#>>'{0,links}'='2';
+ assert result#>>'{0,state}'='available';
+ assert jsonb_array_length(result#>'{0,prices}')=2;
+ assert (public.pitacco_central_complement_availability(s,'leite em pó',false)->>'saved')::boolean;
+ assert not exists(select 1 from public.product_options where id in(o1,o2) and available);
+ assert (select available from public.product_options where id=o3);
+ assert (select options#>>'{0,available}'='false' from public.pitacco_complement_templates where id=t);
+ update public.product_options set available=true where id=o2;
+ assert not (select available from public.product_options where id=o2);
+ insert into public.product_options(store_id,group_id,name,additional_price,available) values(s,g2,'leite em pó',5,true) returning id into o4;
+ assert not (select available from public.product_options where id=o4);
+ assert (public.pitacco_central_complement_availability(s,'leite em pó',true)->>'saved')::boolean;
+ assert (select count(*)=3 from public.product_options where id in(o1,o2,o4) and available);
+ assert (select additional_price=0 from public.product_options where id=o1);
+ assert (select additional_price=3.50 from public.product_options where id=o2);
+ assert (select additional_price=5 from public.product_options where id=o4);
+ begin
+  perform public.pitacco_central_complement_availability(other,'leite em pó',false);
+  raise exception 'Cross-store modification must fail';
+ exception when insufficient_privilege then null; end;
+ begin
+  perform public.pitacco_central_complement_list(other);
+  raise exception 'Cross-store read must fail';
+ exception when insufficient_privilege then null; end;
+ assert not has_function_privilege('anon','public.pitacco_central_complement_availability(uuid,text,boolean)','EXECUTE');
+ assert not has_table_privilege('authenticated','pitacco_private.complement_registry','SELECT');
+end $test$;
+rollback;
