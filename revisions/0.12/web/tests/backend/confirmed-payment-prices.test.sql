@@ -38,5 +38,40 @@ begin
  assert (r->>'total')::numeric=95 and r->>'payment_status'='paid_manual';
  assert (select (receipt->'payment_price'->>'adjustment_cents')::integer=-500 and (receipt->'payment_price'->>'loyalty_eligible_cents')::integer=9500 from public.orders where request_id=req);
 end $test$;
+do $release$
+declare s uuid:='20000000-0000-0000-0000-000000000097';
+begin
+ assert not public.pitacco_payment_pricing_release_status(s);
+ begin
+  perform public.pitacco_publish_payment_price(s,'cardapio','dinheiro',1);
+  raise exception 'Expected release gate';
+ exception when raise_exception then if sqlerrm<>'Publicação de preços ainda não liberada' then raise;end if;end;
+ assert not has_function_privilege('anon','public.pitacco_publish_payment_price(uuid,text,text,bigint)','execute');
+end $release$;
+reset role;
+update pitacco_private.payment_pricing_release set publication_enabled=true where singleton;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000097',true);
+do $release$
+declare s uuid:='20000000-0000-0000-0000-000000000097'; r jsonb;
+begin
+ assert public.pitacco_payment_pricing_release_status(s);
+ r:=public.pitacco_publish_payment_price(s,'cardapio','dinheiro',1);
+ assert (r->>'active_adjustment_bps')::int=-800;
+ assert (public.pitacco_public_payment_price_rules('priced-checkout')->'dinheiro'->>'adjustment_bps')::int=-800;
+ r:=public.pitacco_save_payment_pricing_draft(s,'cardapio','dinheiro',0,0,1);
+ assert (r->>'active_adjustment_bps')::int=-800,'Saving does not change active price';
+ begin
+  perform public.pitacco_publish_payment_price(s,'cardapio','dinheiro',1);
+  raise exception 'Expected stale publish rejection';
+ exception when raise_exception then if sqlerrm not like 'Configuração alterada%' then raise;end if;end;
+ r:=public.pitacco_publish_payment_price(s,'cardapio','dinheiro',2);
+ assert (r->>'active_adjustment_bps')::int=0;
+ assert not (public.pitacco_public_payment_price_rules('priced-checkout')?'dinheiro');
+ begin
+  perform public.pitacco_publish_payment_price(s,'balcao','voucher_vr',1);
+  raise exception 'Expected voucher rejection';
+ exception when raise_exception then if sqlerrm<>'Forma de pagamento não elegível para publicação' then raise;end if;end;
+end $release$;
 reset role;
 rollback;

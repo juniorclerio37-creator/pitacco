@@ -319,6 +319,9 @@ try {
         assert.equal(route.request().postDataJSON().p_store,store.id);
         return route.fulfill({headers,json:menuSettings});
       }
+      if(pathname==='/rest/v1/rpc/pitacco_payment_pricing_release_status'){
+        return route.fulfill({headers,json:false});
+      }
       if(pathname==='/rest/v1/rpc/pitacco_payment_pricing_drafts'){
         assert.equal(route.request().postDataJSON().p_store,store.id);
         return route.fulfill({headers,json:[]});
