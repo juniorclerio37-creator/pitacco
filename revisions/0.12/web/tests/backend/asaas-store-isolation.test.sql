@@ -10,7 +10,7 @@ begin
  insert into public.stores(name) values('Fixture Flex') returning id into b;
  insert into public.store_members(store_id,user_id,role) values(a,ua,'gestor'),(b,ub,'gestor');
  update pitacco_private.subscription_control set asaas_environment='production';
- update pitacco_private.commercial_billing_control set enforce_own_orders=true where singleton;
+ update pitacco_private.commercial_billing_control set enforce_own_orders=true,payment_instructions='Teste isolado de cobrança',pix_cnpj='00000000000000',pix_recipient='Fixture de teste' where singleton;
  select revision into rev from public.pitacco_plan_catalog_signal where singleton;
  select x into offer from pitacco_private.plan_catalog_versions v cross join lateral jsonb_array_elements(v.plans) x where v.revision=rev and x->>'code'='complete';
  insert into pitacco_private.commercial_contracts(store_id,revision,plan_code,effective_from,terms,assigned_by) values(a,rev,'complete',today,offer||jsonb_build_object('trial_days',0,'prepaid',true),ua) returning id into ca;
