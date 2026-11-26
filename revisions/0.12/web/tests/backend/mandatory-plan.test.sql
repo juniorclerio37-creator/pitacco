@@ -40,3 +40,24 @@ begin
  assert not has_function_privilege('anon','pitacco_private.commercial_plan_access(uuid)','EXECUTE');
 end $test$;
 rollback;
+-- Every future store gets a central library on import; equivalent configurations
+-- share one template, while equal names with different prices stay distinct.
+begin;
+do $test$
+declare s uuid; u uuid:=gen_random_uuid();
+begin
+ insert into auth.users(id,email) values(u,u::text||'@example.invalid');
+ insert into public.stores(name) values('Fixture import groups') returning id into s;
+ insert into public.store_members(store_id,user_id,role) values(s,u,'gestor');
+ perform set_config('request.jwt.claim.sub',u::text,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);
+ perform public.pitacco_menu_import_apply(s,'[{"name":"Copo 1","category":"Açaí","price":20,"groups":[{"name":"Complementos","min":0,"max":2,"options":[{"name":"Leite","price":0},{"name":"Granola","price":1}]},{"name":"Complementos","min":0,"max":2,"options":[{"name":"Leite","price":0},{"name":"Granola","price":1}]}]},{"name":"Copo 2","category":"Açaí","price":22,"groups":[{"name":"Complementos","min":0,"max":2,"options":[{"name":"Leite","price":0},{"name":"Granola","price":1}]},{"name":"Complementos","min":0,"max":2,"options":[{"name":"Leite","price":2},{"name":"Granola","price":1}]}]}]'::jsonb,'add','fixture');
+ assert (select count(*)=4 and count(library_template_id)=4 from public.product_option_groups where store_id=s);
+ assert (select count(*)=3 from public.pitacco_complement_templates where store_id=s);
+ assert (select count(*)=8 and count(library_option_id)=8 from public.product_options where store_id=s);
+ assert (select count(*)=2 from pitacco_private.complement_registry where store_id=s);
+ assert (select count(*)=1 from public.product_options where store_id=s and name='Leite' and additional_price=2);
+ assert not exists(select 1 from public.product_option_groups where store_id=s group by product_id,library_template_id having count(*)>1);
+ assert pitacco_private.centralize_unlinked_import_groups(s)=0;
+end $test$;
+rollback;
