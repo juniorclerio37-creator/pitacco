@@ -7,8 +7,8 @@ const delivery={store:'Loja',marketplace:'Parceira',pickup:'Retirada',unknown:'N
 const headings={orders:['Pedido','Loja','Origem','Situação','Entrega','Valor','Recebido em'],couriers:['Entregador','Loja ou frota','Vínculo','Conexão','Em andamento','Concluídas'],audit:['Loja','Ação registrada','Data']};
 const titles={orders:'Pedidos globais',couriers:'Entregadores',audit:'Auditoria operacional'};
 const formatDate=value=>day.format(new Date(value));
-export default function OwnerOperations({client,stores,kind,storeId}){
- const [filters,setFilters]=useState({}),[page,setPage]=useState(0);
+export default function OwnerOperations({client,stores,kind,storeId,initialFilters={}}){
+ const [filters,setFilters]=useState(initialFilters),[page,setPage]=useState(0);
  const [result,setResult]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(true);
  const [revision,retry]=useState(0);
  useEffect(()=>{

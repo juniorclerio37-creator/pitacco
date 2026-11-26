@@ -1,3 +1,4 @@
+import {handleControlReleases} from './control-releases.mjs';
 import {handleSalesCoach} from './sales-coach.mjs';
 // Pitacco Intelligence v1: respostas consultivas, sem operações que modifiquem o negócio.
 // O Worker usa a mesma sessão Supabase do Super Admin e a permissão validada no banco.
@@ -293,9 +294,23 @@ async function handleAnalyze(request, env) {
     return asJson({ error: 'Serviço temporariamente indisponível. Tente novamente mais tarde.' }, 503);
   }
 }
+export async function handleControlHealth(request,env){
+ if(request.method!=='POST')return asJson({error:'Método não permitido.'},405);
+ const origin=request.headers.get('origin');if(origin&&origin!==new URL(request.url).origin)return asJson({error:'Origem não autorizada.'},403);
+ const token=/^Bearer\s+([^\s]+)$/i.exec(request.headers.get('authorization')||'')?.[1];
+ if(!token)return asJson({error:'Sessão necessária.'},401);
+ try{
+  const result=await callSupabase(env,'/rest/v1/rpc/pitacco_control_database_check',token,{body:{}});
+  if(!result.ok)return asJson({error:result.status===401||result.status===403?'Acesso administrativo não autorizado.':'A consulta ao banco não respondeu.'},result.status===401||result.status===403?403:503);
+  const data=await result.json();if(data.status!=='operational')throw Error();
+  return asJson({...data,worker:'operational',source:'Cloudflare Worker + consulta autenticada Supabase'});
+ }catch{return asJson({error:'Não foi possível verificar a comunicação com o Supabase.'},503)}
+}
 export default {
   async fetch(request, env) {
     const path = new URL(request.url).pathname;
+    if (path === '/api/intelligence/releases') return handleControlReleases(request,env,callSupabase);
+    if (path === '/api/intelligence/health') return handleControlHealth(request,env);
     if (path === '/api/intelligence/sales') return handleSalesCoach(request, env);
     if (path === '/api/intelligence/analyze') return handleAnalyze(request, env);
     if (path.startsWith('/api/intelligence/')) return asJson({ error: 'Rota desconhecida.' }, 404);

@@ -3,8 +3,8 @@ import IfoodConnections from './IfoodConnections.jsx';
 import IfoodShippingTest from './IfoodShippingTest.jsx';
 import OwnerIfoodCentralRequests from './OwnerIfoodCentralRequests.jsx';
 
-export default function OwnerIfood({client,stores}){
- const [storeId,setStoreId]=useState(''),[enabled,setEnabled]=useState(null);
+export default function OwnerIfood({client,stores,initialStore=''}){
+ const [storeId,setStoreId]=useState(initialStore),[enabled,setEnabled]=useState(null);
  const [error,setError]=useState(''),[busy,setBusy]=useState(false);
  useEffect(()=>{
   let live=true;

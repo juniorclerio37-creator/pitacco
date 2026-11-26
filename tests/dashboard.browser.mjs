@@ -1274,7 +1274,10 @@ try {
     async function adminNavigate(name){
       const toggle=page.getByRole('button',{name:'Menu administrativo'});
       if(await toggle.getAttribute('aria-expanded')==='false')await toggle.click();
-      await platform.getByRole('button',{name,exact:true}).click();
+      const label=({'Central de Aplicativos':'Aplicativos e versões','Plano Pitacco':'Planos e assinaturas','Assinaturas':'Planos e assinaturas','Homologação':'Integrações e homologações','Módulos do lojista':'Módulos e permissões'})[name]||name;
+      await platform.getByRole('button',{name:label,exact:true}).click();
+      if(name==='Plano Pitacco')await page.getByText('Catálogo e regras dos planos',{exact:true}).click();
+      if(name==='Estabelecimentos')await page.getByRole('button',{name:'Abrir '+store.name,exact:true}).click();
     }
     const platformDashboard=page.getByRole('region',{name:'Visão geral do Pitacco'});
     await platformDashboard.getByText('Entregadores cadastrados',{exact:true}).waitFor();
@@ -1290,6 +1293,7 @@ try {
       await platformDashboard.getByRole('button',{name:'Buscar',exact:true}).click();
       await platformDashboard.getByRole('button',{name:'Abrir configuração de '+store.name}).click();
       await page.getByRole('region',{name:'Configuração do estabelecimento'}).waitFor();
+      await page.getByRole('navigation',{name:'Seções do estabelecimento'}).getByRole('button',{name:'Identidade',exact:true}).click();
       await page.getByLabel('WhatsApp para clientes').waitFor();
       assert.equal(await page.getByLabel('WhatsApp para clientes').inputValue(),'21900000002');
     }

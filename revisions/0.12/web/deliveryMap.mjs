@@ -510,3 +510,13 @@ export async function mountDeliveryCoverageMap(container,{
   remove(){map.remove()}
  };
 }
+
+/** Read-only global map. Locations come from the authorized Control Center query. */
+export async function mountControlOperationsMap(container,rows){
+ const L=await leaflet();if(!container?.isConnected)throw Error('Mapa fechado');
+ const map=L.map(container,{scrollWheelZoom:false}).setView([-14.24,-51.93],4);
+ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+ const bounds=[];
+ for(const row of rows){const lat=Number(row.latitude),lng=Number(row.longitude);if(!Number.isFinite(lat)||!Number.isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180)continue;const point=[lat,lng];bounds.push(point);const label=document.createElement('span');label.textContent=(row.kind==='store'?'Loja: ':'Entregador: ')+row.name;L.circleMarker(point,{radius:row.kind==='store'?9:7,color:'#fff',weight:2,fillColor:row.kind==='store'?'#ed7135':'#7755ca',fillOpacity:1}).addTo(map).bindPopup(label);}
+ if(bounds.length)map.fitBounds(bounds,{padding:[30,30],maxZoom:15});return {remove:()=>map.remove()};
+}

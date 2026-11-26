@@ -15,7 +15,7 @@ const POLL_MS=5000;
 
 // This is an alert in an authenticated ADMIN browser session, not a background
 // push service. Browser audio and desktop notifications require user permission.
-export default function OwnerIncidentNotifier({client,onOpen}){
+export default function OwnerIncidentNotifier({client,onOpen,compact=false}){
  const [pulse,setPulse]=useState(null),[error,setError]=useState('');
  const [audioEnabled,setAudioEnabled]=useState(false),[permission,setPermission]=useState('default');
  const seen=useRef(new Set()),initial=useRef(false),busy=useRef(false),audio=useRef(null);
@@ -96,12 +96,12 @@ export default function OwnerIncidentNotifier({client,onOpen}){
   <button type="button" className={'secondary owner-alerts-indicator'+(urgent?' owner-alerts-indicator--urgent':'')}
    onClick={onOpen} aria-label={'Abrir Central de Diagnósticos, '+pending+' incidente(s) não reconhecido(s)'}>
    <AlertTriangle size={17} aria-hidden="true"/>
-   <span>{pending} alertas{urgent?' · '+urgent+' urgentes':''}</span>
+   <span className={compact?'cc-notification-count':''}>{compact?(pending||''):pending+' alertas'+(urgent?' · '+urgent+' urgentes':'')}</span>
   </button>
   <button type="button" className="secondary" onClick={activate}
     aria-label="Habilitar som e notificações deste navegador">
    <BellRing size={17} aria-hidden="true"/>
-   {audioEnabled?'Som ativo':'Ativar alarmes'}
+   {!compact&&(audioEnabled?'Som ativo':'Ativar alarmes')}
   </button>
   {error&&<span className="owner-alerts-error" role="alert">Falha no monitor</span>}
   {permission==='denied'&&<span className="owner-alerts-error">Notificações bloqueadas pelo navegador</span>}

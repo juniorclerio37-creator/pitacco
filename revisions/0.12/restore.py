@@ -207,3 +207,6 @@ ui.write_text(content,encoding='utf-8')
 
 # Shared merchant header action and cross-session canonical store refresh.
 subprocess.run([sys.executable,'revisions/0.12/integration_review_0135.py'],check=True)
+
+# Consent and communications are shared by browser and Windows. No merchant AI module is mounted.
+subprocess.run([sys.executable,'revisions/0.12/mount_control_center.py'],check=True)

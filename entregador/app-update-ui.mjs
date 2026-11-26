@@ -1,7 +1,7 @@
 import {discoverCourierReleaseWithFallback,compareCourierVersions} from './app-update.mjs';
 
 /** Update UX is independent of order alerts and never makes the courier offline. */
-export function mountCourierUpdateUI({client,onOpenSettings,request=fetch,clock=()=>Date.now()}){
+export function mountCourierUpdateUI({client,onOpenSettings,onVersion,request=fetch,clock=()=>Date.now()}){
  const $=id=>document.getElementById(id);
  const native=window.PitaccoUpdater?.postMessage?window.PitaccoUpdater:null;
  const state={installed:null,latest:null,lastCheck:0,checking:false};
@@ -50,6 +50,7 @@ export function mountCourierUpdateUI({client,onOpenSettings,request=fetch,clock=
    const data=String(event.data||'');
    if(data.startsWith('version:')){
     state.installed=data.slice(8);
+    if(/^[0-9]+[.][0-9]+[.][0-9]+$/.test(state.installed))onVersion?.(state.installed);
     installed.textContent='Versão instalada: '+state.installed;
     void refresh(true);
    }else if(data==='update:downloading'){

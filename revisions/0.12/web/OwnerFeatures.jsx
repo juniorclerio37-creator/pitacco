@@ -1,8 +1,8 @@
 import React,{useEffect,useState} from 'react';
 import {featureLabels} from './storeFeatures.mjs';
 
-export default function OwnerFeatures({client,stores}){
- const [store,setStore]=useState(''),[settings,setSettings]=useState(null),[busy,setBusy]=useState(false);
+export default function OwnerFeatures({client,stores,initialStore=''}){
+ const [store,setStore]=useState(initialStore),[settings,setSettings]=useState(null),[busy,setBusy]=useState(false);
  const [error,setError]=useState(''),[notice,setNotice]=useState('');
  useEffect(()=>{
   let current=true;
