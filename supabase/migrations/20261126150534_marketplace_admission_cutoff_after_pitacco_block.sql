@@ -37,6 +37,7 @@ do $patch$
 declare d text; a text; b text;
 begin
  select pg_get_functiondef('public.pitacco_ifood_complete(uuid,uuid,jsonb,boolean)'::regprocedure) into d;
+ d:=replace(d,chr(13),'');
  a:='if link.external_id is null then'||chr(10)||'    insert into public.orders';
  b:=$new$if link.external_id is null then
     -- Provider order creation time, not delivery time of the lifecycle event.
@@ -48,6 +49,7 @@ begin
       return;
     end if;
     insert into public.orders$new$;
+ b:=replace(b,chr(13),'');
  if strpos(d,a)>0 then execute replace(d,a,b);elsif strpos(d,b)=0 then raise exception 'iFood late order admission anchor missing';end if;
 end $patch$;
 do $verify$ begin
