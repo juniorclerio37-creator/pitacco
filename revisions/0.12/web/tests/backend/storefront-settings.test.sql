@@ -27,11 +27,11 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
 select public.save_public_menu_settings('20000000-0000-0000-0000-000000000001','acaidolinho',true,true,true,5,array['dinheiro'],'');
 select public.pitacco_save_channel_payments('20000000-0000-0000-0000-000000000001','acaidolinho',true,true,true,array['dinheiro','cartao_credito','voucher_alelo'],array['dinheiro','pix_maquininha','voucher_ticket'],'');
-do $
+do $$
 begin
  assert (select pdv_payment_methods=array['dinheiro','pix_maquininha','voucher_ticket'] from public.public_menu_settings where store_id='20000000-0000-0000-0000-000000000001');
  assert public.get_public_menu('acaidolinho')->'store'->'payment_methods'='["dinheiro","cartao_credito","voucher_alelo"]'::jsonb;
-end $;
+end $$;
 -- A real circle definition, configured in Área de Entrega, replaces the
 -- old delivery_fee=5 setting that still exists for schema compatibility.
 select public.pitacco_save_delivery_zone('20000000-0000-0000-0000-000000000001',
@@ -112,16 +112,16 @@ begin
   '60000000-0000-0000-0000-000000000020');
  assert (public.checkout_public_order('acaidolinho',gen_random_uuid(),'Cliente',
   '21999999999','',items,'pickup','dinheiro','')->>'total')::numeric=25;
-end $;
+end $$;
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
-do $
+do $$
 declare result jsonb; req uuid:=gen_random_uuid();
 begin
  result:=public.pitacco_merchant_channel_checkout('20000000-0000-0000-0000-000000000001',req,'balcao','Cliente','21999999999','',
  '[{"product_id":"30000000-0000-0000-0000-000000000001","quantity":1}]'::jsonb,'pix_maquininha','','',null,null,25);
  assert result->>'payment_status'='paid_manual';
  assert (select receipt->>'payment'='pix_maquininha' and receipt->>'payment_status'='paid' from public.orders where request_id=req);
-end $;
+end $$;
 rollback;
