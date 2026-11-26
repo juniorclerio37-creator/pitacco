@@ -19,8 +19,8 @@ s=s[:start]+""" {tab==='Lançamentos'&&active&&<ModernFinance key={selected} cli
 replace("<CustomersFromOrders key={navigationRoute} orders={orders} storeId={selected} blockedOnly={route.section==='bloqueados'}/>","<ModernCustomers key={selected+':'+navigationRoute} client={supabase} storeId={selected} blockedOnly={route.section==='bloqueados'}/>")
 replace('+(menuCollapsed?" mn-sidebar-collapsed":"")','+(menuCollapsed?" mn-sidebar-collapsed":"")+(!isDriver&&["Integrações","Pagamentos da loja","Lançamentos","Clientes","Relatórios","Ocorrências"].includes(tab)?" modern-merchant":"")')
 replace("<strong>{active?.name||'Pitacco'}</strong>","<strong>{!isDriver&&['Integrações','Pagamentos da loja','Lançamentos','Clientes','Relatórios','Ocorrências'].includes(tab)?'Pitacco':active?.name||'Pitacco'}</strong>")
-# Only integrations and overview need the storefront link; don't duplicate it on payments, customers and finance.
-replace("{active&&<StorefrontShare","{active&&!['Pagamentos da loja','Lançamentos','Clientes','Relatórios','Ocorrências'].includes(tab)&&<StorefrontShare")
+# The global storefront sharing strip belongs exclusively to Visão Geral.
+replace("{active&&<StorefrontShare","{active&&!isDriver&&navigationRoute==='Painel'&&<StorefrontShare")
 # Give the incident page its own header; the route still inherits delivery permissions.
 import re
 headers=list(re.finditer(r'<h2>\{([^{}\n]*primary[^{}\n]*)\}</h2>',s))

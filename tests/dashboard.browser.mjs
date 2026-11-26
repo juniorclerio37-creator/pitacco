@@ -687,6 +687,7 @@ try {
         if(await toggle.getAttribute('aria-expanded')==='false')await toggle.click();
       }
       await navigation.getByRole('button',{name,exact:true}).click();
+      if(name!=='Visão Geral')await page.locator('.storefront-share').waitFor({state:'detached'});
     }
 
     if (width <= 800) {
@@ -739,6 +740,7 @@ try {
       await wizard.getByRole('button',{name:/Produtos do cardápio/}).click();
       await wizard.getByRole('button',{name:'Abrir Produtos'}).click();
       await page.getByRole('heading',{name:'Produtos',exact:true}).waitFor();
+      await page.locator('.storefront-share').waitFor({state:'detached'});
       await navigation.getByRole('button',{name:'Visão Geral',exact:true}).click();
       await page.getByRole('heading',{name:'Visão Geral',exact:true}).waitFor();
       await merchantNavigate('Configurações','Aplicativos e downloads');
@@ -749,6 +751,8 @@ try {
     }
     await navigation.getByRole('button', { name:'Visão Geral', exact:true }).click();
     await page.getByRole('heading', { name:'Visão Geral', exact:true }).waitFor();
+    await page.locator('.storefront-share').waitFor({state:'attached'});
+    assert.equal(await page.locator('.storefront-share').count(),1);
     try{
       await page.getByRole('region',{name:'Indicadores da loja'}).getByText('Ticket médio',{exact:true}).waitFor({timeout:8500});
     }catch(error){
