@@ -72,7 +72,7 @@ begin
  insert into auth.users(id,email,email_confirmed_at) values(a,a::text||'@example.invalid',now());
  insert into pitacco_private.platform_owner(user_id,login_name_hash) values(a,sha256(convert_to(a::text,'UTF8'))) on conflict(singleton) do update set user_id=excluded.user_id;
  perform set_config('request.jwt.claim.sub',a::text,true);perform set_config('request.jwt.claims','{"aal":"aal2"}',true);
- update pitacco_private.commercial_billing_control set enforce_own_orders=true where singleton;
+ update pitacco_private.commercial_billing_control set enforce_own_orders=true,payment_instructions='Teste isolado de cobrança',pix_cnpj='00000000000000',pix_recipient='Fixture de teste' where singleton;
  insert into public.stores(name) values('Control gate Flex') returning id into s;
  insert into public.stores(name) values('Control gate other') returning id into other_s;
  insert into public.orders(store_id,channel,gross,status,source) values(s,'Delivery próprio',20,'pending','proprio') returning id into existing;
