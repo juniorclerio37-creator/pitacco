@@ -10,6 +10,7 @@ const keys=['alertas','estoque','cardapio','clientes','fideliza','financeiro','c
 const user = { id: '10000000-0000-0000-0000-000000000001', aud: 'authenticated', email: 'teste@example.invalid' };
 const store = { id: '20000000-0000-0000-0000-000000000001', name: 'Loja de Teste', plan: 'saas', address:'Rua Central',address_number:'100',neighborhood:'Centro',city:'Nova Iguacu',state:'RJ',postal_code:'26000-000',latitude:-22.71,longitude:-43.4 };
 const readOnlyStore = { id: '20000000-0000-0000-0000-000000000002', name: 'Loja sem gestão', plan: 'saas' };
+const desktopSecondStore={...store,id:'20000000-0000-0000-0000-000000000003',name:'Segunda loja Windows'};
 const fixtureUsername = '00000000001';
 const adminToken = [ {alg:'HS256'}, {sub:user.id, exp:Math.floor(Date.now()/1000)+3600} ]
   .map(part=>Buffer.from(JSON.stringify(part)).toString('base64url')).join('.')+'.Zml4dHVyZQ';
@@ -24,6 +25,8 @@ try {
     const errors = [];
     const windowsPings=[];
     let ifoodOrder=null;
+    let windowsSwitchFixture=false;
+    const secondOrder={id:'30000000-0000-0000-0000-000000000093',store_id:desktopSecondStore.id,source:'ifood',status:'pending',gross:39,fees:0,created_at:new Date().toISOString(),receipt:{display_number:'SEG-93',customer:'Cliente da segunda loja',items:[]}};
     let logisticsOrders=[],logisticsDeliveries=[];
     let flowGpsFresh=false;
     const flowOrder={id:'30000000-0000-0000-0000-000000000050',store_id:store.id,source:'proprio',
@@ -139,6 +142,19 @@ try {
         'access-control-allow-methods': 'GET,POST,OPTIONS'
       };
       if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
+      if(windowsSwitchFixture&&pathname.startsWith('/rest/v1/rpc/')&&route.request().method()==='POST'){
+        const payload=route.request().postDataJSON();
+        if(payload?.p_store===desktopSecondStore.id||payload?.s===desktopSecondStore.id){
+          if(pathname.endsWith('/is_store_manager'))return route.fulfill({headers,json:true});
+          if(pathname.endsWith('/pitacco_daily_operational_orders'))return route.fulfill({headers,json:[secondOrder]});
+          if(pathname.endsWith('/pitacco_store_identity'))return route.fulfill({headers,json:{store_id:desktopSecondStore.id,logo_path:null,legacy_logo_url:null}});
+          if(pathname.endsWith('/pitacco_windows_ping')){assert.equal(payload.p_device,'fixture-device');windowsPings.push(payload);return route.fulfill({headers,json:{received:true}})}
+          if(pathname.endsWith('/pitacco_windows_watch_start'))return route.fulfill({headers,json:'a'.repeat(64)});
+          if(pathname.endsWith('/pitacco_windows_connection'))return route.fulfill({headers,json:{status:'connected'}});
+          if(pathname.endsWith('/pitacco_auto_print_status'))return route.fulfill({headers,json:false});
+          return route.fulfill({headers,json:[]});
+        }
+      }
       if(pathname==='/functions/v1/platform-owner-login'){
         assert.equal(origin,realApi);
         const {username,password}=route.request().postDataJSON();
@@ -371,6 +387,7 @@ try {
         return route.fulfill({headers,json:45});
       }
       if(pathname==='/rest/v1/rpc/is_admin')throw new Error('O painel do proprietário consultou a permissão legada');
+      if(pathname==='/rest/v1/rpc/pitacco_my_merchant_stores')return route.fulfill({headers,json:windowsSwitchFixture?[store,desktopSecondStore]:width===1440?[store,readOnlyStore]:[store]});
       if(pathname==='/rest/v1/rpc/is_store_manager'){
         assert.equal(origin,api);
         const {s}=route.request().postDataJSON();
@@ -520,6 +537,7 @@ try {
       }
       if (pathname === '/rest/v1/orders') {
         const filters = new URL(route.request().url()).searchParams;
+        if(windowsSwitchFixture&&filters.get('store_id')==='eq.'+desktopSecondStore.id)return route.fulfill({headers,json:[secondOrder]});
         if(width===375 && filters.has('scheduled_release_at')){
           return route.fulfill({headers,status:400,json:{code:'42703',message:'column orders.scheduled_release_at does not exist'}});
         }
@@ -672,7 +690,7 @@ try {
           Object.assign(store,updates);
           return route.fulfill({headers,json:{id:store.id}});
         }
-        if(route.request().headers().accept?.includes('object'))return route.fulfill({headers,json:store});
+        if(route.request().headers().accept?.includes('object'))return route.fulfill({headers,json:windowsSwitchFixture&&searchParams.get('id')==='eq.'+desktopSecondStore.id?desktopSecondStore:store});
         return route.fulfill({headers,json:origin===api&&width===1440?[store,readOnlyStore]:[store]});
       }
       if (pathname === '/rest/v1/couriers' && route.request().headers().accept?.includes('object')) {
@@ -1502,12 +1520,24 @@ try {
       ifoodOrder=newOrder('81');
       await liveOrders.locator('.pedidos-card').filter({hasText:'#IF-81'}).waitFor();
       await page.waitForFunction(()=>window.orderTones===6);
-      // Mock the two native alert commands while exercising real app refresh and store selection.
+      assert.equal(await page.getByRole('button',{name:'Verificar atualização',exact:true}).count(),0,'Updater is native-only');
+      windowsSwitchFixture=true;
+      // Mock the native alert and printer-context commands while exercising store selection.
       await page.addInitScript(origin=>{
         if(location.origin!==origin)return;
         window.nativeNotices=[];
         window.nativeOrderSounds=0;
+        window.activeStoreCommands=[];
+        window.nativeUpdateChecks=0;
+        window.activeNativeStore=null;
         window.__TAURI__={core:{invoke:async (command,args)=>{
+          if(command==='set_active_store'){
+            if(args.storeId===null)await new Promise(resolve=>setTimeout(resolve,100));
+            window.activeNativeStore=args.storeId;
+            window.activeStoreCommands.push(args.storeId);
+            return null;
+          }
+          if(command==='check_update'){window.nativeUpdateChecks++;return 'O Pitacco já está atualizado.';}
           if(command==='device_id')return 'fixture-device';
           if(command==='list_printers'||command==='list_jobs')return [];
           if(command==='get_autostart')return false;
@@ -1520,6 +1550,14 @@ try {
       const windowsStore=page.getByRole('combobox',{name:'Trocar estabelecimento',exact:true});
       await windowsStore.getByRole('option',{name:'Selecione a loja deste computador'}).waitFor({state:'attached'});
       assert.equal(await windowsStore.inputValue(),'');
+      const updater=page.getByRole('region',{name:'Atualizações do Windows'});
+      const installed=JSON.parse(await readFile(new URL('../web/package.json',import.meta.url),'utf8')).version;
+      await updater.getByText('Versão instalada: Pitacco Windows v'+installed,{exact:true}).waitFor();
+      await updater.getByRole('button',{name:'Verificar atualização',exact:true}).click();
+      await updater.getByRole('status').filter({hasText:'O Pitacco já está atualizado.'}).waitFor();
+      assert.equal(await page.evaluate(()=>window.nativeUpdateChecks),1);
+      assert.equal(await page.getByRole('button',{name:'Verificar atualização',exact:true}).count(),1);
+      console.log('PASS Windows updater in sidebar shows installed package version before store selection');
       await windowsStore.selectOption(store.id);
       const desktopOrders=page.getByRole('region',{name:'Central de pedidos',exact:true});
       await desktopOrders.locator('.pedidos-card').filter({hasText:'#IF-81'}).waitFor();
@@ -1530,6 +1568,55 @@ try {
       assert.ok(windowsPings.length>=1,'Windows app must send authenticated presence heartbeat');
       assert.deepEqual(await page.evaluate(()=>window.nativeNotices),['Você tem um novo pedido.']);
       console.log('PASS iFood incoming order alert on web and Windows bridge');
+      await windowsStore.selectOption(desktopSecondStore.id);
+      await desktopOrders.locator('.pedidos-card').filter({hasText:'#SEG-93'}).waitFor();
+      assert.equal(await desktopOrders.locator('.pedidos-card').filter({hasText:'#IF-82'}).count(),0,'No old-store orders in the new tenant');
+      await page.waitForFunction(id=>window.activeNativeStore===id,desktopSecondStore.id);
+      assert.equal(await page.evaluate(uid=>localStorage.getItem('pitacco.windows.store.'+uid),user.id),desktopSecondStore.id);
+      await page.reload();
+      await desktopOrders.locator('.pedidos-card').filter({hasText:'#SEG-93'}).waitFor();
+      assert.equal(await windowsStore.inputValue(),desktopSecondStore.id,'Selected store survives application reopen');
+      await windowsStore.selectOption(store.id);
+      await desktopOrders.locator('.pedidos-card').filter({hasText:'#IF-82'}).waitFor();
+      assert.equal(await desktopOrders.locator('.pedidos-card').filter({hasText:'#SEG-93'}).count(),0);
+      await page.waitForFunction(id=>window.activeNativeStore===id,store.id);
+      assert.deepEqual(await page.evaluate(()=>window.nativeNotices),[],'Store switch is not a new order');
+      console.log('PASS Windows two-store switch, isolated order feed, persisted selection and native printer context');
+      // Each native menu opens the corresponding workspace, without legacy submenus.
+      await merchantNavigate('Cardápio','Categorias');
+      await page.locator('.catalog-categories-only #catalog-category-navigation').waitFor();
+      assert.equal(await page.locator('.catalog-product-panel').count(),0);
+      assert.equal(await page.getByRole('tablist',{name:'Gestão do cardápio'}).count(),0);
+      await merchantNavigate('Cardápio','Produtos');
+      await page.locator('.catalog-product-panel').waitFor();
+      assert.equal(await page.locator('.pitacco-category-settings').count(),0);
+      assert.equal(await page.getByRole('button',{name:'Importar cardápio',exact:true}).count(),1);
+      await merchantNavigate('Entregas','Cadastro de motoboys');
+      await page.locator('.courier-registration-only').waitFor();
+      assert.equal(await page.getByRole('navigation',{name:'Menu principal'}).getByRole('button',{name:'Cardápio',exact:true}).getAttribute('aria-expanded'),'false');
+      assert.equal(await page.getByRole('navigation',{name:'Seções de motoboys'}).count(),0);
+      assert.equal(await page.locator('.courier-side-cards').count(),0);
+      await merchantNavigate('Entregas','Histórico de entregas');
+      await page.locator('.courier-workspace').getByRole('heading',{name:'Histórico de entregas',exact:true}).last().waitFor();
+      await merchantNavigate('Financeiro','Visão financeira');
+      await page.getByRole('region',{name:'Relatório financeiro'}).waitFor();
+      assert.equal(await page.getByRole('group',{name:'Tipos de relatório'}).count(),0);
+      await merchantNavigate('Financeiro','Resultado por pedido');
+      await page.getByRole('region',{name:'Resultado por pedido'}).waitFor();
+      await merchantNavigate('Financeiro','Conciliação de repasses');
+      await page.getByRole('region',{name:'Conciliação de repasses'}).waitFor();
+      await merchantNavigate('Configurações','Configurar impressão e visualizar nota');
+      await page.getByRole('heading',{name:'Computador responsável pela impressão',exact:true}).waitFor();
+      assert.equal(await page.locator('[aria-label="Seções de configuração"]').isVisible(),false);
+      await merchantNavigate('Configurações','Alertas e sons');
+      await page.getByRole('heading',{name:'Preferências do aplicativo',exact:true}).waitFor();
+      assert.equal(await page.getByRole('heading',{name:'Computador responsável pela impressão',exact:true}).count(),0);
+      assert.equal(await page.getByRole('button',{name:'Verificar atualização',exact:true}).count(),1);
+      assert.equal(await page.getByRole('button',{name:'Outras funções',exact:true}).count(),0);
+      assert.equal(await page.locator('.mn-favorites').count(),0);
+      assert.equal(await page.locator('.mn-new-order').count(),1);
+      await page.waitForFunction(id=>window.activeNativeStore===id,store.id);
+      console.log('PASS Windows dedicated menu workspaces without duplicated controls or interrupted native printer context');
     }
     assert.deepEqual(errors, []);
     await page.close();

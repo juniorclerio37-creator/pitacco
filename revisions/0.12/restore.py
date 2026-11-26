@@ -210,3 +210,6 @@ subprocess.run([sys.executable,'revisions/0.12/integration_review_0135.py'],chec
 
 # Consent and communications are shared by browser and Windows. No merchant AI module is mounted.
 subprocess.run([sys.executable,'revisions/0.12/mount_control_center.py'],check=True)
+
+# Isolate tenant transitions after all merchant and native overlays.
+subprocess.run([sys.executable,'revisions/0.12/windows_store_switch_0136.py'],check=True)

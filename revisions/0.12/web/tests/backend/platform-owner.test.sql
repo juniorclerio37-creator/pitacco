@@ -91,3 +91,31 @@ begin
 end;
 $test$;
 rollback;
+
+-- An invitation is claimed only by the authenticated account with the exact verified email.
+begin;
+do $test$
+declare a uuid:=gen_random_uuid();b uuid:=gen_random_uuid();s uuid;t uuid;mail text:='pending-'||gen_random_uuid()||'@example.invalid';
+begin
+ insert into public.stores(name) values('Merchant access A') returning id into s;
+ insert into public.stores(name) values('Merchant access B') returning id into t;
+ insert into auth.users(id,email,email_confirmed_at) values(a,mail,null),(b,'other-'||gen_random_uuid()||'@example.invalid',now());
+ insert into public.store_members(store_id,user_id,role) values(t,b,'gestor');
+ insert into pitacco_private.store_member_invites(store_id,email) values(s,mail);
+ perform set_config('request.jwt.claim.sub',a::text,true);
+ assert not exists(select 1 from public.pitacco_my_merchant_stores());
+ perform set_config('request.jwt.claim.sub',b::text,true);
+ assert (select array_agg(id) from public.pitacco_my_merchant_stores())=array[t];
+ update auth.users set email_confirmed_at=now() where id=a;
+ perform set_config('request.jwt.claim.sub',a::text,true);
+ assert (select array_agg(id) from public.pitacco_my_merchant_stores())=array[s];
+ assert (select role from public.store_members where store_id=s and user_id=a)='gestor';
+ assert (select claimed_by from pitacco_private.store_member_invites where store_id=s)=a;
+ -- Even platform-owner authority must not widen the operational selector.
+ insert into pitacco_private.platform_owner(user_id,login_name_hash) values(a,sha256(convert_to('00000000001','UTF8')));
+ assert public.is_admin();
+ assert (select array_agg(id) from public.pitacco_my_merchant_stores())=array[s];
+ assert not has_function_privilege('anon','public.pitacco_my_merchant_stores()','EXECUTE');
+ assert not has_table_privilege('authenticated','pitacco_private.store_member_invites','SELECT');
+end $test$;
+rollback;

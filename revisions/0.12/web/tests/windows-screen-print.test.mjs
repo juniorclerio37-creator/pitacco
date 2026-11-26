@@ -48,7 +48,10 @@ test('iFood object modifiers render by name and quantity on 80mm and 58mm notes'
 test('Windows navigation makes printing independently clickable and identifies installed version',()=>{
  const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
  const config=JSON.parse(readFileSync(new URL('../src-tauri/tauri.conf.json',import.meta.url),'utf8'));
- assert.ok(source.includes('Pitacco Windows v'+config.version));
+ const pkg=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));
+ assert.equal(pkg.version,config.version);
+ assert.ok(source.includes("'Pitacco Windows v'+installedPackage.version"));
+ assert.match(source,/import installedPackage from '.\/package.json'/);
  const nav=readFileSync(new URL('../MerchantNavigation.jsx',import.meta.url),'utf8');
  assert.match(nav,/Configurar impressão e visualizar nota/);
  assert.match(source,/onNavigate=\{target=>\{setTab\(target\)/);
@@ -330,3 +333,17 @@ test('Windows exposes iFood cancellation after acceptance using the shared offic
  assert.ok(orders.includes("acceptMode==='automatic'&&!scheduleInfo(o)"));
  assert.ok(orders.includes("acceptMode!=='automatic'||scheduleInfo(current)"));
  });
+
+test('Windows persists tenant selection and reopens after an authenticated signed update',()=>{
+ const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
+ const ops=readFileSync(new URL('../Operations.jsx',import.meta.url),'utf8');
+ const rust=readFileSync(new URL('../src-tauri/src/main.rs',import.meta.url),'utf8');
+ assert.ok(source.includes("supabase.rpc('pitacco_my_merchant_stores')"));
+ assert.match(source,/onStoreChange=\{changeSelectedStore\}/);
+ assert.match(source,/saveWindowsStore\(storage,session.user.id,next\)/);
+ assert.match(ops,/queueActiveStore\(manager\?storeId:null\)/);
+ assert.match(ops,/queueActiveStore\(null\)/);
+ assert.match(rust,/restart_after_install\(true\)\.download_and_install/);
+ assert.match(rust,/let reopen=explicit_reopen\|\|changed_version/);
+ assert.match(rust,/if reopen\{if let Some\(w\)=app.get_webview_window\("main"\)\{w.show\(\)\?/);
+});
