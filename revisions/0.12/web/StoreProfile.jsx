@@ -1,8 +1,9 @@
 import React,{useEffect,useRef,useState} from 'react';
-import {postalDigits,formatPostal,lookupPostalAddress,mergePostalAddress} from './storePostalLookup.mjs';
+import {postalDigits,formatPostal,lookupStorePostalAddress,mergePostalAddress} from './storePostalLookup.mjs';
 import {Store,UserRound,Building2,MapPin,ShieldCheck,MessageCircle} from 'lucide-react';
 import {mountStorePointPicker,currentDeviceLocation} from './deliveryMap.mjs';
 import {locateStoreByAddress} from './mapOrigin.mjs';
+import {instagramHandle,instagramProfileUrl,deviceProposalAllowed} from './storeRegistrationFields.mjs';
 import {StoreReadiness} from './StoreReadiness.jsx';
 import './store-profile-modern.css';
 const keys=[['name','Nome da loja'],['description','Descrição'],['phone','Telefone'],['address','Rua / avenida'],['address_number','Número'],['neighborhood','Bairro'],['city','Cidade'],['state','Estado'],['postal_code','CEP']];
@@ -154,21 +155,23 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
    // GPS is a proposal, never an implicit update to the store database.
    const {point:p,accuracyMeters}=await currentDeviceLocation();
    if(!mounted.current||request!==deviceRequest.current||selection!==selectionVersion.current)return;
+   if(!deviceProposalAllowed(p,point)){setError('A localização do dispositivo está distante do ponto cadastrado ou fora do Brasil. Mantivemos o marcador da loja. Use o endereço ou ajuste o mapa manualmente.');return;}
    manualProposal.current=true;selectionVersion.current++;
    if(retryTimer.current){clearTimeout(retryTimer.current);retryTimer.current=null;}
    const lowPrecision=accuracyMeters==null||accuracyMeters>250;
-   setNeedsDeviceAdjustment(lowPrecision);
+   // A GPS estimate always requires explicit merchant confirmation on the map.
+   setNeedsDeviceAdjustment(true);
    setSuggestedPoint(p);setPicked(p);
    map.current?.setPoint(p);
    map.current?.focus(p,accuracyMeters!=null&&accuracyMeters<=100?17:accuracyMeters!=null&&accuracyMeters<=500?15:13);
    if(lowPrecision){
     setMessage('Localização aproximada deste dispositivo'+
       (accuracyMeters!=null?' (margem informada de '+accuracyMeters+' m)':'')+
-      '. Confira no mapa e arraste a lojinha até a entrada real antes de salvar.');
+      '. A posição é apenas uma sugestão. Clique ou arraste o marcador até a entrada real antes de salvar.');
    }else{
     setMessage('Localização do dispositivo encontrada'+
       (accuracyMeters!=null?' (precisão estimada de '+accuracyMeters+' m)':'')+
-      '. Confirme o marcador na entrada da loja antes de salvar.');
+      '. Clique ou arraste o marcador até a entrada real antes de salvar. A precisão informada não garante que o dispositivo esteja na loja.');
    }
   }catch(err){
    if(mounted.current&&request===deviceRequest.current)setError('Não foi possível obter o GPS: '+(err.message||String(err))+
@@ -180,7 +183,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
   try{
    if(addressDirty||!savedAddress)throw Error('Complete e salve primeiro o endereço da loja.');
    if(!picked||picked.some(x=>!Number.isFinite(x)))throw Error('Selecione o ponto da loja no mapa.');
-   if(needsDeviceAdjustment)throw Error('A localização fornecida pelo dispositivo é imprecisa. Arraste a lojinha até a entrada real e tente salvar novamente.');
+   if(needsDeviceAdjustment)throw Error('Confirme a posição sugerida clicando ou arrastando a lojinha até a entrada real e tente salvar novamente.');
    const {data,error}=await client.functions.invoke('delivery-quote',{
     body:{action:'store-point',store_id:store.id,latitude:picked[0],longitude:picked[1]}
    });
@@ -218,7 +221,7 @@ function StorePointPicker({client,store,manager,addressDirty,onSaved}){
      Salvar ponto da loja
    </button>}
   </div>
-  <small>O endereço é pesquisado automaticamente. Se o resultado não for exato, use a localização do celular ou computador e confirme a entrada da loja no mapa. A localização do computador pode ser aproximada.</small>
+  <small>O endereço é pesquisado automaticamente. Se o resultado não for exato, use a localização do celular ou computador e confirme a entrada da loja no mapa. A localização do computador pode corresponder à rede de internet, e não à loja. Prefira o GPS do celular na entrada ou marque o ponto no mapa.</small>
   <small>Geocodificação quando habilitada: Powered by <a href="https://www.geoapify.com/" target="_blank" rel="noreferrer">Geoapify</a>.</small>
   {error&&<p role="alert" className="store-point-error">{error}</p>}
   {message&&<p role="status" className="store-point-success">{message}</p>}
@@ -239,7 +242,7 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
   setCepState('loading');setCepNotice('Buscando endereço pelo CEP…');
   r.timer=setTimeout(async()=>{
    try{
-    const result=await lookupPostalAddress(cep,{signal:controller.signal});
+    const result=await lookupStorePostalAddress(client,store.id,cep,{signal:controller.signal});
     if(generation!==r.generation||controller.signal.aborted)return;
     setDraft(current=>mergePostalAddress(current,original,result,cep));
     setCepState('success');setCepNotice(result.address&&result.neighborhood?'Endereço localizado. Confira os dados e informe o número.':'CEP localizado. Complete os campos que não foram retornados.');
@@ -271,7 +274,7 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
     const {data,error}=await client.rpc('pitacco_store_registration',{p_store:store.id});
     if(!active||draftDirty.current)return;
     if(error||!data)throw Error('Não foi possível consultar os dados da loja.');
-    setDraft(data);setSavedRegistration(data);setLoaded(true);setLoadError('');initialized=true;
+    setDraft({...data,instagram_url:instagramHandle(data.instagram_url)});setSavedRegistration(data);setLoaded(true);setLoadError('');initialized=true;
    }catch{if(active&&!initialized)setLoadError('Não foi possível consultar os dados da loja.')}
    finally{running=false}
   }
@@ -286,7 +289,7 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
   try{
    if(!draft.name?.trim())throw Error('Informe o nome da loja.');
    const {document,person_type,legal_name,responsible_name,administrative_phone,administrative_email,whatsapp,name,description,address,address_number,address_complement,neighborhood,city,state,postal_code,instagram_url,facebook_url}=draft;
-   const {data,error}=await client.rpc('pitacco_save_store_registration',{p_store:store.id,p_data:{document,person_type,legal_name,responsible_name,administrative_phone,administrative_email,whatsapp,name,description,address,address_number,address_complement,neighborhood,city,state,postal_code,instagram_url,facebook_url}});
+   const {data,error}=await client.rpc('pitacco_save_store_registration',{p_store:store.id,p_data:{document,person_type,legal_name,responsible_name,administrative_phone,administrative_email,whatsapp,name,description,address,address_number,address_complement,neighborhood,city,state,postal_code,instagram_url:instagramProfileUrl(instagram_url),facebook_url}});
    if(error||!data?.saved)throw error||Error('A gravação não foi confirmada.');
    draftDirty.current=false;setSavedRegistration({...draft});setMessage('Dados da sua loja atualizados.');window.dispatchEvent(new Event('pitacco:store-identity'));onSaved?.();
   }catch(err){setMessage(err.message||String(err))}finally{setBusy(false)}
@@ -298,7 +301,7 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
  const input=(key,label,required=true,type='text')=><label key={key} className="identity-field"><span>{label}{required&&<span className="identity-required"> *</span>}</span>
   {key==='description'?<textarea maxLength={1500} rows={3} value={draft[key]||''} disabled={!manager||busy}
     onChange={e=>change(key,e.target.value)} placeholder="Conte aos clientes sobre seu estabelecimento"/>
-   :<input type={type} value={draft[key]||''} required={required} maxLength={key==='postal_code'?9:key==='name'?100:key==='document'?18:180} inputMode={key==='postal_code'?'numeric':undefined}
+   :<input type={type} placeholder={key==='instagram_url'?'@sualoja':undefined} value={draft[key]||''} required={required} maxLength={key==='postal_code'?9:key==='name'?100:key==='document'?18:180} inputMode={key==='postal_code'?'numeric':undefined}
      disabled={!manager||busy} autoComplete={key==='postal_code'?'postal-code':key==='document'?'off':undefined} readOnly={key==='document'&&Boolean(draft.payer_registered&&draft.document)} onChange={e=>change(key,e.target.value)}/>}
  </label>;
  if(!loaded)return <section className="identity-modern" aria-label="Dados e identidade da loja"><h3>Dados da loja</h3>{loadError?<><p role="alert">{loadError}</p><button type="button" onClick={()=>refresh(n=>n+1)}>Tentar novamente</button></>:<p role="status">Consultando cadastro…</p>}</section>;
@@ -330,11 +333,11 @@ export default function StoreProfile({client,store,manager,onSaved,onAppearance,
     <div className="identity-grid">{draft.person_type==='cnpj'&&input('legal_name','Razão social')}{input('document',draft.person_type==='cnpj'?'CNPJ':'CPF')}{input('responsible_name',draft.person_type==='cnpj'?'Nome do responsável da loja':'Nome completo')}{input('administrative_phone','Telefone administrativo',true,'tel')}{input('administrative_email','E-mail administrativo',true,'email')}{input('whatsapp','WhatsApp para clientes',true,'tel')}</div>
     <p><MessageCircle size={16}/> O WhatsApp para clientes é público. O telefone e e-mail administrativos são utilizados no cadastro e nas cobranças.</p>
    </section>
-   <section className="identity-section"><h4><MessageCircle size={21}/> Redes sociais da loja</h4><p>Os botões aparecem na página inicial do cardápio quando os links são preenchidos.</p><div className="identity-grid">{input('instagram_url','Instagram (link do perfil)',false,'url')}{input('facebook_url','Facebook (link da página)',false,'url')}</div></section>
+   <section className="identity-section"><h4><MessageCircle size={21}/> Redes sociais da loja</h4><p>Informe o @ do Instagram e, se desejar, o link do Facebook. Os botões aparecem na página inicial do cardápio.</p><div className="identity-grid">{input('instagram_url','Instagram (@ do perfil)',false)}{input('facebook_url','Facebook (link da página)',false,'url')}</div></section>
    <section className="identity-section identity-address">
     <h4><MapPin size={21}/> Endereço da Loja</h4>
     <p>Este é o endereço único usado no mapa do entregador, cálculo de frete, pagamentos e demais serviços.</p>
-    <div className="identity-grid"><div>{input('postal_code','CEP')}<button type="button" className="secondary" disabled={!manager||busy||cepState==='loading'||postalDigits(draft.postal_code).length!==8} onClick={()=>{draftDirty.current=true;scheduleCep(draft.postal_code,draft,true)}}>{cepState==='loading'?'Consultando CEP…':'Buscar endereço'}</button>{cepNotice&&<small role={cepState==='error'?'alert':'status'}>{cepNotice}</small>}</div>{input('address','Rua / avenida')}{input('address_number','Número')}{input('address_complement','Complemento',false)}
+    <div className="identity-grid identity-address-grid"><div className="identity-cep-field">{input('postal_code','CEP')}<button type="button" className="secondary" disabled={!manager||busy||cepState==='loading'||postalDigits(draft.postal_code).length!==8} onClick={()=>{draftDirty.current=true;scheduleCep(draft.postal_code,draft,true)}}>{cepState==='loading'?'Consultando CEP…':'Buscar endereço'}</button>{cepNotice&&<small role={cepState==='error'?'alert':'status'}>{cepNotice}</small>}</div>{input('address','Rua / avenida')}{input('address_number','Número')}{input('address_complement','Complemento',false)}
       {input('neighborhood','Bairro')}{input('city','Cidade')}{input('state','Estado')}</div>
     <StorePointPicker key={store.id} client={client} store={mapStore} manager={manager} addressDirty={addressDirty} onSaved={onSaved}/>
    </section>

@@ -32,3 +32,6 @@ verify_jwt = true
 
 [functions.ifood-central-check]
 verify_jwt = false
+
+[functions.store-postal-lookup]
+verify_jwt = false

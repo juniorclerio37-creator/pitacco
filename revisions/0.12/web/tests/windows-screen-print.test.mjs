@@ -343,7 +343,15 @@ test('Windows persists tenant selection and reopens after an authenticated signe
  assert.match(source,/saveWindowsStore\(storage,session.user.id,next\)/);
  assert.match(ops,/queueActiveStore\(manager\?storeId:null\)/);
  assert.match(ops,/queueActiveStore\(null\)/);
- assert.match(rust,/restart_after_install\(true\)\.download_and_install/);
+ const installation=rust.slice(rust.indexOf('async fn install_signed_update('),rust.indexOf('#[tauri::command]async fn check_update('));
+ const signedDownload=installation.indexOf('update.download(');
+ const install=installation.indexOf('restart_after_install(true).install(bytes)');
+ const guard='update_guard(&app,startup)?';
+ assert.ok(signedDownload>=0&&install>signedDownload,'Verified download precedes installation and restart');
+ assert.ok(installation.indexOf(guard)>=0&&installation.indexOf(guard)<signedDownload,'Queue checked before downloading');
+ assert.ok(installation.lastIndexOf(guard)>signedDownload&&installation.lastIndexOf(guard)<install,'Queue rechecked before installation');
+ assert.match(installation,/show-after-update/);
+ assert.match(installation,/remove_file\(&reopen_marker\)/);
  assert.match(rust,/let reopen=explicit_reopen\|\|changed_version/);
  assert.match(rust,/if reopen\{if let Some\(w\)=app.get_webview_window\("main"\)\{w.show\(\)\?/);
 });
