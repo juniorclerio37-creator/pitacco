@@ -1,0 +1,79 @@
+name: Pitacco Core — ações de pedidos com SQL original
+on:
+  push:
+    branches: [pitacco-core]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/core-order-actions.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  actions:
+    if: github.ref == 'refs/heads/pitacco-core'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: isolated-ci-password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:isolated-ci-password@localhost:5432/postgres
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_HOST: 127.0.0.1
+      DB_DATABASE: postgres
+      CORE_AUTH_DB_USERNAME: pitacco_core_auth
+      CORE_AUTH_DB_PASSWORD: ci-auth-only
+      CORE_ACTIONS_DB_USERNAME: pitacco_core_actions
+      CORE_ACTIONS_DB_PASSWORD: ci-actions-only
+      REDIS_HOST: 127.0.0.1
+      CACHE_STORE: redis
+      SESSION_DRIVER: array
+      LOG_CHANNEL: stderr
+      PITACCO_AUTH_ENABLED: 'true'
+      PITACCO_ACTIONS_ENABLED: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, redis, mbstring, dom, curl
+          tools: composer:v2
+          coverage: none
+      - name: Reconstruir SQL original em banco descartável
+        run: |
+          cp -a core-source/web web
+          cp -a core-source/android android
+          npm ci --prefix web/tests/backend
+          npm install --prefix web/tests/backend --no-save --package-lock=false pg@8.16.3
+          node web/tests/backend/run.mjs
+      - name: Preparar cadastros fictícios e permissões específicas
+        run: |
+          hash=$(php -r 'echo password_hash("fixture-only-password", PASSWORD_BCRYPT, ["cost"=>12]);')
+          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -v password_hash="$hash" -f backend/tests/auth-fixture.sql -f backend/tests/actions-fixture.sql
+          test "$(PGPASSWORD=ci-actions-only psql -h 127.0.0.1 -U pitacco_core_actions -d postgres -Atc 'select count(id) from public.orders')" = 0
+          if PGPASSWORD=ci-actions-only psql -h 127.0.0.1 -U pitacco_core_actions -d postgres -v ON_ERROR_STOP=1 -c "update public.orders set status='accepted'"; then exit 1; fi
+      - name: Testar operações via Laravel
+        working-directory: backend
+        run: |
+          composer install --no-interaction --prefer-dist
+          composer audit --locked
+          php artisan serve --host=127.0.0.1 --port=8080 >/tmp/core-actions.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true; cat /tmp/core-actions.log' EXIT
+          for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/up >/dev/null && break; sleep 1; done
+          python3 tests/actions-smoke.py

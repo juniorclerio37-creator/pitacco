@@ -7,3 +7,6 @@ Os endpoints de autenticação utilizam exclusivamente o esquema sintético core
 
 ## Pedidos — leitura experimental
 A rota GET /api/v1/stores/{store}/orders usa a função existente pitacco_daily_operational_orders (migração 20261125222344), sem reescrever a lógica do dia operacional e dos pedidos em andamento. O PostgreSQL de CI usa tabelas e ponte de identidade sintéticas; a mesma sessão e papel de gestor são verificados no banco, RLS é habilitado e a transação é somente leitura. A resposta expõe apenas campos mínimos e paginação limitada. Não é a API completa de pedidos: detalhes, checkout, cancelamento, pagamentos e entregas ainda não foram portados. A API está bloqueada em produção até a reconciliação e homologação.
+
+## Operações de pedidos próprios — experimental
+Ações de aceite, preparo pronto, finalização da retirada e recusa pendente são encaminhadas para funções SQL originais reconstruídas no PostgreSQL de CI. Não há aceite ou cancelamento de marketplace, despacho, estorno ou checkout novo. O ambiente de teste usa uma ponte de identidade sintética e um papel SQL separado, sem grants de escrita direta. A opção de ações permanece desativada por padrão e bloqueada em produção. O teste de integração não substitui a recuperação do esquema real.

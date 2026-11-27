@@ -13,6 +13,7 @@ return [
     'default' => 'pgsql',
     'connections' => [
         'pgsql' => $base + ['username'=>env('DB_USERNAME','pitacco_core_app'),'password'=>env('DB_PASSWORD')],
+        'core_actions' => $base + ['username'=>env('CORE_ACTIONS_DB_USERNAME','pitacco_core_actions'),'password'=>env('CORE_ACTIONS_DB_PASSWORD')],
         'core_orders' => $base + ['username'=>env('CORE_ORDERS_DB_USERNAME','pitacco_core_orders'),'password'=>env('CORE_ORDERS_DB_PASSWORD')],
         'core_auth' => $base + ['username'=>env('CORE_AUTH_DB_USERNAME','pitacco_core_auth'),'password'=>env('CORE_AUTH_DB_PASSWORD')],
         'menu' => $base + ['username'=>env('MENU_DB_USERNAME','pitacco_core_menu'),'password'=>env('MENU_DB_PASSWORD')],
