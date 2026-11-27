@@ -1,0 +1,27 @@
+name: Pitacco Core — preservar serviço de cotação
+on:
+  push:
+    branches: [pitacco-core]
+    paths:
+      - 'backend/**'
+      - 'supabase/functions/delivery-quote/**'
+      - 'supabase/migrations/**'
+      - 'tests/delivery-zone-pricing.test.mjs'
+      - '.github/workflows/core-delivery-quote.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-quote:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    if: github.ref == 'refs/heads/pitacco-core'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Executar serviço original com dependências simuladas
+        run: node --test backend/tests/original-delivery-quote.test.mjs tests/delivery-zone-pricing.test.mjs

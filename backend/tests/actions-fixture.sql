@@ -134,7 +134,10 @@ select public.pitacco_store_hours_save_v2('20000000-0000-4000-8000-000000000001'
 commit;
 
 -- Synthetic route pricing, never a production geocoder or routing response.
-update public.stores set latitude=-22.91,longitude=-43.46,address='Rua Fixture',city='Nova Iguaçu',state='RJ'
+-- Address edits invalidate the old pin by the original trigger.
+update public.stores set address='Rua Fixture',city='Nova Iguaçu',state='RJ'
+where id='20000000-0000-4000-8000-000000000001';
+update public.stores set latitude=-22.91,longitude=-43.46
 where id='20000000-0000-4000-8000-000000000001';
 begin;
 set local role authenticated;
