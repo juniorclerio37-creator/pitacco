@@ -1,0 +1,74 @@
+name: Pitacco Core — checkout com SQL original
+on:
+  push:
+    branches: [pitacco-core]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/core-checkout.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checkout:
+    if: github.ref == 'refs/heads/pitacco-core'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: isolated-ci-password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:isolated-ci-password@localhost:5432/postgres
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_HOST: 127.0.0.1
+      DB_DATABASE: postgres
+      CORE_CHECKOUT_DB_USERNAME: pitacco_core_checkout
+      CORE_CHECKOUT_DB_PASSWORD: ci-checkout-only
+      REDIS_HOST: 127.0.0.1
+      CACHE_STORE: redis
+      SESSION_DRIVER: array
+      LOG_CHANNEL: stderr
+      PITACCO_CHECKOUT_ENABLED: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, redis, mbstring, dom, curl
+          tools: composer:v2
+          coverage: none
+      - name: Reconstruir SQL original em banco descartável
+        run: |
+          cp -a core-source/web web
+          cp -a core-source/android android
+          npm ci --prefix web/tests/backend
+          npm install --prefix web/tests/backend --no-save --package-lock=false pg@8.16.3
+          node web/tests/backend/run.mjs
+      - name: Preparar cardápio sintético e permissões
+        run: |
+          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/tests/checkout-fixture.sql
+          if PGPASSWORD=ci-checkout-only psql -h 127.0.0.1 -U pitacco_core_checkout -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.orders'; then exit 1; fi
+      - name: Testar checkout via Laravel
+        working-directory: backend
+        run: |
+          composer install --no-interaction --prefer-dist
+          composer audit --locked
+          php artisan serve --host=127.0.0.1 --port=8080 >/tmp/core-checkout.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true; cat /tmp/core-checkout.log' EXIT
+          for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/up >/dev/null && break; sleep 1; done
+          python3 tests/checkout-smoke.py

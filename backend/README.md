@@ -10,3 +10,6 @@ A rota GET /api/v1/stores/{store}/orders usa a função existente pitacco_daily_
 
 ## Operações de pedidos próprios — experimental
 Ações de aceite, preparo pronto, finalização da retirada e recusa pendente são encaminhadas para funções SQL originais reconstruídas no PostgreSQL de CI. Não há aceite ou cancelamento de marketplace, despacho, estorno ou checkout novo. O ambiente de teste usa uma ponte de identidade sintética e um papel SQL separado, sem grants de escrita direta. A opção de ações permanece desativada por padrão e bloqueada em produção. O teste de integração não substitui a recuperação do esquema real.
+
+## Checkout experimental
+Rotas de checkout e recuperação, somente local/testing e desativadas por padrão. A etapa inicial admite Pix manual e itens com variantes UUID; usa SQL original para preço, cotação, agendamento, aceite e replay. Regras de preço confirmado são encaminhadas à função original quando informadas, sem aceitar total arbitrário. Fideliza+, Fiado, preço por pagamento em cenários completos, geração de cotação, Pix automático, outros meios, cliente web e restauração real ainda dependem de integração e validação. Não usar dados reais.
