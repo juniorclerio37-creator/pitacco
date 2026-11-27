@@ -34,7 +34,7 @@ final class RealtimeAuthorizationController
                 $db->selectOne("select set_config('request.jwt.claim.sub',?,true),set_config('pitacco.core_session_id',?,true),set_config('request.jwt.claims',?,true)",[$session->user_id,$session->session_id,json_encode(['sub'=>$session->user_id,'role'=>'authenticated'],JSON_THROW_ON_ERROR)]);
                 return $db->selectOne('select core_auth.can_act(cast(? as uuid)) as allowed',[$store])?->allowed===true;
             });
-            abort_unless($allowed,404);
+            if (!$allowed) return response()->json(['error'=>'not_found'],404)->header('Cache-Control','no-store');
             $auth=$key.':'.hash_hmac('sha256',$data['socket_id'].':'.$data['channel_name'],$secret);
             return response()->json(['auth'=>$auth])->header('Cache-Control','no-store');
         } catch(QueryException $e) {
