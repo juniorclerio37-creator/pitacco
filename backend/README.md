@@ -52,3 +52,6 @@ O adaptador experimental `clients/customer-session.mjs` reutiliza literalmente `
 
 ## Histórico do cliente — experimental
 A API `/api/v1/public/menus/{slug}/profile/orders` encaminha somente `list` e `link` à função original, exigindo identificação do aparelho e, ao vincular, o identificador de acompanhamento do pedido. Preserva o histórico vinculado à sessão, sem buscar pedidos de terceiros pelo número de telefone. Os testes verificam isolamento, repetição idempotente, telefone incompatível, expiração do acompanhamento, itens para refazer compra e encerramento da sessão. A regra original limita a consulta a 50 pedidos. O cardápio publicado ainda não consome esta API; a migração precisa restaurar os vínculos de histórico. Carteira financeira e extrato Fiado continuam pendentes de integração segura.
+
+## Dependência do número público no histórico
+A reconstrução descartável não incluía `pitacco_order_public_label(jsonb,text)`. A fixture de checkout restaura exatamente a função e ACL documentadas em `docs/sql/order-card-public-number-localizer.sql`, sem criar uma nova numeração, alterar pedidos ou aplicar SQL em produção. A paridade integral ainda requer recuperação do esquema real.

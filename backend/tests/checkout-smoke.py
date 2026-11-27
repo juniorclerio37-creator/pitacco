@@ -138,6 +138,7 @@ history_data=call(history,200,history_request)['data']
 assert history_data['active'] is True and len(history_data['orders'])==1
 entry=history_data['orders'][0]
 assert entry['id']==l['order_id'] and float(entry['total'])==20
+assert 'number' in entry and (entry['number'] is None or len(entry['number'])<=24)
 assert entry['items'][0]['product_id']==loyalty['items'][0]['product_id']
 assert 'phone' not in entry and 'address' not in entry
 assert call(history,200,history_request|{'device':str(uuid.uuid4())})['data']=={'active':False}

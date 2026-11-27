@@ -45,3 +45,41 @@ grant execute on function public.pitacco_customer_device_session(text,text,text)
 
 -- Original device-bound history function; no direct table access.
 grant execute on function public.pitacco_customer_device_orders(text,text,text,uuid) to pitacco_core_profile;
+
+-- Original label helper from docs/sql/order-card-public-number-localizer.sql.
+-- Restore only this missing dependency in the disposable CI database.
+create or replace function public.pitacco_order_public_label(p_receipt jsonb,p_source text)
+returns text language plpgsql immutable set search_path to ''
+as $$
+declare
+  r jsonb:=coalesce(p_receipt,'{}'::jsonb);
+  src text:=lower(coalesce(p_source,''));
+  candidate text;
+begin
+  if src in ('99','99food','99_food','99-food') then
+    candidate:=coalesce(
+      nullif(pg_catalog.btrim(r->>'display_number'),''),
+      nullif(pg_catalog.btrim(r->>'external_order_number'),''),
+      nullif(pg_catalog.btrim(r->>'order_number'),''),
+      nullif(pg_catalog.btrim(r->>'display_id'),'')
+    );
+  else
+    candidate:=coalesce(
+      nullif(pg_catalog.btrim(r->>'display_number'),''),
+      nullif(pg_catalog.btrim(r->>'external_order_number'),''),
+      nullif(pg_catalog.btrim(r->>'order_number'),''),
+      nullif(pg_catalog.btrim(r->>'display_id'),''),
+      nullif(pg_catalog.btrim(r->>'number'),'')
+    );
+  end if;
+  if candidate is null then return null; end if;
+  -- Reject raw technical IDs and long opaque identifiers.
+  if length(candidate)>24
+     or candidate ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+     or (src in ('99','99food','99_food','99-food') and candidate ~ '^[0-9]{13,}$')
+  then return null; end if;
+  return candidate;
+end;
+$$;
+revoke all on function public.pitacco_order_public_label(jsonb,text) from public,anon;
+grant execute on function public.pitacco_order_public_label(jsonb,text) to authenticated,service_role;
