@@ -6,7 +6,7 @@ insert into auth.users(id,email) values
 insert into public.profiles(id,email,role) values
  ('96000000-0000-0000-0000-000000000001','courier-receipt-fixture@example.invalid','entregador'),
  ('96000000-0000-0000-0000-000000000002','other-courier-fixture@example.invalid','entregador')
- on conflict(id) do nothing;
+ on conflict(id) do update set role=excluded.role;
 insert into public.couriers(id,user_id,name,fleet_type,store_id,active,available) values
  ('96000000-0000-0000-0000-000000000003','96000000-0000-0000-0000-000000000001','Entregador fictício','propria','91000000-0000-0000-0000-000000000002',true,true),
  ('96000000-0000-0000-0000-000000000004','96000000-0000-0000-0000-000000000002','Outro entregador fictício','propria','91000000-0000-0000-0000-000000000002',true,true);
@@ -20,6 +20,13 @@ insert into public.orders(id,store_id,channel,gross,source,status,preparation_st
  ('96000000-0000-0000-0000-000000000007','91000000-0000-0000-0000-000000000002','Delivery próprio',34,'proprio','accepted','ready','{"payment":"dinheiro","logistics":"loja","change_for":50,"delivery_fee":9}');
 insert into public.deliveries(id,store_id,order_id,courier_id,customer_name,address,status,source,logistics_provider,collected_at) values
  ('96000000-0000-0000-0000-000000000008','91000000-0000-0000-0000-000000000002','96000000-0000-0000-0000-000000000007','96000000-0000-0000-0000-000000000003','Cliente fictício','Endereço fictício','retirada','proprio','loja',now());
+-- Verify fixture identity under the database owner, not by granting access to the private helper.
+select set_config('request.jwt.claim.sub','96000000-0000-0000-0000-000000000002',true);
+select set_config('request.jwt.claims','{"sub":"96000000-0000-0000-0000-000000000002","role":"authenticated","session_id":"96000000-0000-0000-0000-000000000006"}',true);
+do $fixture$
+begin
+ assert public.pitacco_courier_session_ready(), 'Synthetic outsider courier session is not ready';
+end $fixture$;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','96000000-0000-0000-0000-000000000002',true);
 select set_config('request.jwt.claims','{"sub":"96000000-0000-0000-0000-000000000002","role":"authenticated","session_id":"96000000-0000-0000-0000-000000000006"}',true);
@@ -28,7 +35,7 @@ begin
  begin
   perform public.pitacco_driver_confirm_payment('96000000-0000-0000-0000-000000000008');
   raise exception 'Expected assignment isolation';
- exception when insufficient_privilege then assert sqlerrm like 'Entrega não atribuída%'; end;
+ exception when insufficient_privilege then if sqlerrm not like 'Entrega não atribuída%' then raise; end if; end;
 end $test$;
 select set_config('request.jwt.claim.sub','96000000-0000-0000-0000-000000000001',true);
 select set_config('request.jwt.claims','{"sub":"96000000-0000-0000-0000-000000000001","role":"authenticated","session_id":"96000000-0000-0000-0000-000000000005"}',true);
@@ -37,7 +44,7 @@ begin
  begin
   perform public.pitacco_driver_confirm_payment('96000000-0000-0000-0000-000000000008');
   raise exception 'Expected arrival requirement';
- exception when sqlstate '22023' then assert sqlerrm like 'Registre a chegada%'; end;
+ exception when sqlstate '22023' then if sqlerrm not like 'Registre a chegada%' then raise; end if; end;
 end $test$;
 -- Exercise session denial through the existing authorized entry point, not a private helper.
 select set_config('request.jwt.claims','{"sub":"96000000-0000-0000-0000-000000000001","role":"authenticated","session_id":"96000000-0000-0000-0000-000000000006"}',true);
@@ -46,7 +53,7 @@ begin
  begin
   perform public.pitacco_driver_confirm_payment('96000000-0000-0000-0000-000000000008');
   raise exception 'Expected invalid session denial';
- exception when insufficient_privilege then assert sqlerrm like 'Sessão do entregador não autorizada%'; end;
+ exception when insufficient_privilege then if sqlerrm not like 'Sessão do entregador não autorizada%' then raise; end if; end;
 end $test$;
 select set_config('request.jwt.claims','{"sub":"96000000-0000-0000-0000-000000000001","role":"authenticated","session_id":"96000000-0000-0000-0000-000000000005"}',true);
 reset role;
