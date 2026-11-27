@@ -167,7 +167,37 @@ rules=call(pricing_path,200,token=alice)['data']
 assert len(rules['drafts'])==3 and rules['publication_available'] is False
 assert sql("select public.pitacco_public_payment_price_rules('core-settings-fixture')::text")=='{}'
 print('PASS: pricing drafts by channel, revision conflict, voucher cost only, no publication, role and tenant isolation')
+publish_path=pricing_path+'/publish'
+publication={'channel':'cardapio','method':'cartao_credito','expected_revision':2}
+call(publish_path,401,'POST',publication)
+call(publish_path,404,'POST',publication,bob)
+call(publish_path.replace(A,B),404,'POST',publication,alice)
+call(publish_path,422,'POST',publication|{'method':'voucher_vr'},alice)
+call(publish_path,422,'POST',publication|{'publication_enabled':True},alice)
+call(publish_path,409,'POST',publication,alice)
+assert sql("select public.pitacco_public_payment_price_rules('core-settings-fixture')::text")=='{}'
+# Only the disposable CI owner changes the original platform release flag.
+sql("update pitacco_private.payment_pricing_release set publication_enabled=true where singleton")
+try:
+    call(publish_path,409,'POST',publication|{'expected_revision':1},alice)
+    call(publish_path,409,'POST',publication|{'channel':'balcao','expected_revision':1},alice)
+    active=call(publish_path,200,'POST',publication,alice)['data']
+    assert active['active_adjustment_bps']==250 and active['active_revision']==2
+    call(publish_path,200,'POST',publication,alice)
+    assert sql("select count(*) from public.operation_audit where store_id='"+A+"' and action='payment_price_published'")=='1'
+    assert json.loads(sql("select public.pitacco_public_payment_price_rules('core-settings-fixture')::text"))=={'cartao_credito':{'adjustment_bps':250,'revision':2}}
+    # A new draft must not affect the active price.
+    zero=call(pricing_path,200,'PUT',draft|{'expected_revision':2,'adjustment_bps':0},alice)['data']
+    assert zero['active_adjustment_bps']==250 and zero['revision']==3
+finally:
+    sql("update pitacco_private.payment_pricing_release set publication_enabled=false where singleton")
+# Original SQL permits safely removing an active adjustment even while release is closed.
+reset=call(publish_path,200,'POST',publication|{'expected_revision':3},alice)['data']
+assert reset['active_adjustment_bps']==0 and reset['active_revision']==3
+assert sql("select public.pitacco_public_payment_price_rules('core-settings-fixture')::text")=='{}'
+print('PASS: controlled pricing publication, closed release, eligible channel, stale revision, idempotency, draft isolation and safe removal')
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
+call(publish_path,404,'POST',publication,alice)
 call(pricing_path,404,token=alice)
 call(payment_path,404,token=alice)
 call(payment_path,404,'PUT',payload,alice)

@@ -9,6 +9,21 @@ use JsonException;
 use UnexpectedValueException;
 final class PaymentPricingController
 {
+    public function publish(Request $request,string $store,PaymentPricing $pricing): JsonResponse
+    {
+        abort_unless(app()->environment('testing')&&config('pitacco.payment_pricing_enabled')&&config('pitacco.payment_publish_enabled'),404);
+        $data=$request->validate([
+            'channel'=>['required','in:cardapio,balcao'],
+            'method'=>['required','in:dinheiro,cartao_credito,cartao_debito,pix_manual,pix_maquininha'],
+            'expected_revision'=>['required','integer','min:1','max:2147483647'],
+        ]);
+        if(array_diff(array_keys($request->all()),array_keys($data)))throw ValidationException::withMessages(['request'=>'Campos não suportados.']);
+        try{return response()->json(['data'=>$pricing->publish($request->attributes->get('core_session'),$store,$data)])->header('Cache-Control','no-store');}
+        catch(QueryException $e){
+            $s=$e->errorInfo[0]??'';
+            return response()->json(['error'=>match($s){'42501'=>'forbidden','P0001','22023'=>'operation_not_allowed',default=>'temporarily_unavailable'}],match($s){'42501'=>403,'P0001','22023'=>409,default=>503})->header('Cache-Control','no-store');
+        }catch(JsonException|UnexpectedValueException){return response()->json(['error'=>'temporarily_unavailable'],503)->header('Cache-Control','no-store');}
+    }
     public function __invoke(Request $request,string $store,PaymentPricing $pricing): JsonResponse
     {
         abort_unless(app()->environment('testing')&&config('pitacco.payment_pricing_enabled'),404);

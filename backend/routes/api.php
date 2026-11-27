@@ -41,6 +41,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/stores/{store}/fiado',FiadoOverviewController::class)->whereUuid('store');
             Route::match(['get','put'],'/stores/{store}/payments/settings',PaymentSettingsController::class)->whereUuid('store');
             Route::match(['get','put'],'/stores/{store}/payments/pricing',PaymentPricingController::class)->whereUuid('store');
+            Route::post('/stores/{store}/payments/pricing/publish',[PaymentPricingController::class,'publish'])->whereUuid('store');
             Route::get('/stores/{store}/reports/financial',FinancialReportController::class)->whereUuid('store');
             Route::get('/stores/{store}/context',[CoreAuthController::class,'store'])->whereUuid('store');
         });

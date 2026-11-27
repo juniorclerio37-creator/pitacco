@@ -4,6 +4,23 @@ use Illuminate\Support\Facades\DB;
 use UnexpectedValueException;
 final class PaymentPricing
 {
+    public function publish(object $session,string $store,array $data): array
+    {
+        $db=DB::connection('core_payment_publish');
+        return $db->transaction(function() use($db,$session,$store,$data){
+            $db->statement("set local statement_timeout = '3s'");
+            $db->statement("set local lock_timeout = '1s'");
+            $db->selectOne("select set_config('request.jwt.claim.sub', ?, true), set_config('request.jwt.claims', ?, true), set_config('pitacco.core_session_id', ?, true)",[
+                $session->user_id,json_encode(['sub'=>$session->user_id,'role'=>'authenticated','aal'=>'aal1'],JSON_THROW_ON_ERROR),$session->session_id
+            ]);
+            abort_unless($db->selectOne('select core_auth.can_act(cast(? as uuid)) as allowed',[$store])?->allowed,404);
+            // The original SQL owns the release gate, revision checks and audit.
+            $row=$db->selectOne('select public.pitacco_publish_payment_price(cast(? as uuid),cast(? as text),cast(? as text),cast(? as bigint)) as payload',[$store,$data['channel'],$data['method'],$data['expected_revision']]);
+            $result=json_decode($row->payload,true,512,JSON_THROW_ON_ERROR);
+            if(!is_array($result)||!isset($result['active_revision'],$result['active_adjustment_bps']))throw new UnexpectedValueException('Invalid publication contract');
+            return array_intersect_key($result,array_flip(['channel','method','adjustment_bps','processing_cost_bps','revision','active_adjustment_bps','active_revision','updated_at']));
+        });
+    }
     public function run(object $session,string $store,?array $data): array
     {
         $db=DB::connection('core_payment_pricing');

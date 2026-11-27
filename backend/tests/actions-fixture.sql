@@ -99,3 +99,8 @@ commit;
 create role pitacco_core_payment_pricing login password 'ci-payment-pricing-only' nosuperuser nocreatedb nocreaterole nobypassrls;
 grant usage on schema core_auth,auth,public to pitacco_core_payment_pricing;
 grant execute on function core_auth.can_act(uuid),auth.uid(),public.pitacco_payment_pricing_drafts(uuid),public.pitacco_payment_pricing_release_status(uuid),public.pitacco_save_payment_pricing_draft(uuid,text,text,integer,integer,bigint) to pitacco_core_payment_pricing;
+
+-- Disposable CI publication role; does not have access to the release switch.
+create role pitacco_core_payment_publish login password 'ci-payment-publish-only' nosuperuser nocreatedb nocreaterole nobypassrls;
+grant usage on schema core_auth,auth,public to pitacco_core_payment_publish;
+grant execute on function core_auth.can_act(uuid),auth.uid(),public.pitacco_publish_payment_price(uuid,text,text,bigint) to pitacco_core_payment_publish;
