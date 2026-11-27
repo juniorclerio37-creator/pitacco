@@ -42,3 +42,14 @@ insert into public.orders(id,store_id,channel,gross,source,status,preparation_st
 ('30000000-0000-4000-8000-000000000003','20000000-0000-4000-8000-000000000002','Delivery próprio',20,'proprio','pending','preparing','{"logistics":"retirada"}'),
 ('30000000-0000-4000-8000-000000000004','20000000-0000-4000-8000-000000000001','iFood',20,'ifood','pending','preparing','{}'),
 ('30000000-0000-4000-8000-000000000005','20000000-0000-4000-8000-000000000001','Delivery próprio',20,'proprio','accepted','preparing','{"logistics":"loja"}');
+
+-- Synthetic administrative read role; existing manager and session checks stay mandatory.
+create role pitacco_core_fiado_read login password 'ci-fiado-read-only' nosuperuser nocreatedb nocreaterole nobypassrls;
+grant usage on schema core_auth,auth,public to pitacco_core_fiado_read;
+grant execute on function core_auth.can_act(uuid),auth.uid(),public.pitacco_fiado_overview(uuid) to pitacco_core_fiado_read;
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
+select public.pitacco_fiado_toggle('20000000-0000-4000-8000-000000000001',true);
+select public.pitacco_fiado_save_customer('20000000-0000-4000-8000-000000000001','Conta fictícia A','21988881110',100,true,7,'manual',true);
+commit;

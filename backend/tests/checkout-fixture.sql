@@ -35,3 +35,8 @@ grant execute on function public.pitacco_track_public_order(uuid) to pitacco_cor
 create role pitacco_core_menu login password 'ci-menu-only' nosuperuser nocreatedb nocreaterole nobypassrls;
 grant usage on schema public to pitacco_core_menu;
 grant execute on function public.get_public_menu(text) to pitacco_core_menu;
+
+-- Isolated synthetic profile permission; no direct reads of personal data.
+create role pitacco_core_profile login password 'ci-profile-only' nosuperuser nocreatedb nocreaterole nobypassrls;
+grant usage on schema public to pitacco_core_profile;
+grant execute on function public.pitacco_v2_customer_profile(text,text,text,text,text,jsonb) to pitacco_core_profile;

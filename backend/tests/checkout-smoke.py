@@ -97,3 +97,19 @@ track('invalid',422)
 sql("update public.public_checkouts set expires_at=now()-interval '1 second' where order_id='"+str(uuid.UUID(first['order_id']))+"'")
 track(first['tracking_token'],404)
 print('PASS: private tracking, correct order, scheduled and priority fields, no pre-dispatch GPS, invalid and expired token denial')
+
+# Original V2 device-scoped profile, synthetic customer only.
+device=str(uuid.uuid4())
+identity={'phone':'21988881111','device':device,'action':'load'}
+assert call(SLUG+'/profile',200,identity)['data']=={'found':False,'addresses':[]}
+address={'label':'Casa','street':'Rua Fixture','number':'10','neighborhood':'Centro','city':'Cidade Fixture','state':'RJ','postal':'','extra':'','is_default':True}
+saved=call(SLUG+'/profile',200,identity|{'action':'save','name':'Cliente fictício','addresses':[address]})['data']
+assert saved['found'] and saved['name']=='Cliente fictício'
+assert saved['addresses'][0]['street']=='Rua Fixture'
+assert call(SLUG+'/profile',200,identity)['data']==saved
+assert call(SLUG+'/profile',200,identity|{'device':str(uuid.uuid4())})['data']=={'found':False,'addresses':[]}
+assert call(SLUG+'/profile',200,identity|{'phone':'21988881112'})['data']=={'found':False,'addresses':[]}
+call(SLUG+'/profile',422,{'phone':identity['phone'],'action':'load'})
+call(SLUG+'/profile',422,identity|{'action':'save','name':'Cliente fictício','addresses':[address]*9})
+assert call(SLUG+'/profile',200,identity)['data']==saved
+print('PASS: original V2 profile, persisted address, phone and device isolation, invalid input')

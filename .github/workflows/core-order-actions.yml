@@ -43,6 +43,9 @@ jobs:
       LOG_CHANNEL: stderr
       PITACCO_AUTH_ENABLED: 'true'
       PITACCO_ACTIONS_ENABLED: 'true'
+      PITACCO_FIADO_OVERVIEW_ENABLED: 'true'
+      CORE_FIADO_DB_USERNAME: pitacco_core_fiado_read
+      CORE_FIADO_DB_PASSWORD: ci-fiado-read-only
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -67,6 +70,7 @@ jobs:
           PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -v password_hash="$hash" -f backend/tests/auth-fixture.sql -f backend/tests/actions-fixture.sql
           test "$(PGPASSWORD=ci-actions-only psql -h 127.0.0.1 -U pitacco_core_actions -d postgres -Atc 'select count(id) from public.orders')" = 0
           if PGPASSWORD=ci-actions-only psql -h 127.0.0.1 -U pitacco_core_actions -d postgres -v ON_ERROR_STOP=1 -c "update public.orders set status='accepted'"; then exit 1; fi
+          if PGPASSWORD=ci-fiado-read-only psql -h 127.0.0.1 -U pitacco_core_fiado_read -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.pitacco_fiado_customers'; then exit 1; fi
       - name: Testar operações via Laravel
         working-directory: backend
         run: |

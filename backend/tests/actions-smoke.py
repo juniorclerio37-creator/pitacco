@@ -46,6 +46,20 @@ assert sql("select count(*) from public.operation_audit where order_id='"+oid(2)
 action(A,5,'ready',200,alice)
 action(A,5,'complete_pickup',409,alice)
 assert sql("select status from public.orders where id='"+oid(4)+"'")=='pending'
+fiado='/stores/'+A+'/fiado'
+call(fiado,401)
+call('/stores/'+B+'/fiado',404,token=alice)
+call(fiado,404,token=bob)
+call('/stores/'+B+'/fiado',404,token=bob)
+overview=call(fiado,200,token=alice)['data']
+assert overview['enabled'] is True
+assert len(overview['customers'])==1 and overview['customers'][0]['name']=='Conta fictícia A'
+assert float(overview['customers'][0]['limit'])==100
+assert 'pin_hash' not in overview['customers'][0]
+assert overview['charges']==[] and overview['payments']==[]
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
+call(fiado,404,token=alice)
+print('PASS: original Fiado manager overview, role and store isolation, revoked membership')
+
 action(A,1,'accept',404,alice)
 print('PASS: original SQL accept, ready, pickup, rejection, retry, print queue, tenant and marketplace isolation')

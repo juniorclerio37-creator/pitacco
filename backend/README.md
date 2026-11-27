@@ -31,3 +31,6 @@ POST /api/v1/public/orders/tracking recebe o identificador privado no corpo JSON
 
 ## Homologação visual isolada
 A rota `/core-homologacao` só é servida em APP_ENV=testing e com a opção explícita PITACCO_HOMOLOGATION_ENABLED. Usa loja e produto fictícios fixos, Pix manual e retirada. Não é uma reformulação do template V2 aprovado. O teste Chromium simula confirmação perdida e recuperação, verifica acompanhamento e ausência de conexões externas. Nenhuma integração com o site publicado, nenhuma compra real. O restante das modalidades e a adaptação visual do cardápio original ficam pendentes.
+
+## Perfil V2 e consulta administrativa do Fiado
+Perfil experimental usa a função original, com telefone e identificador privado do aparelho; cadastro e endereços permanecem vinculados à loja e ao aparelho. Não é prova de posse do telefone nem autenticação da carteira financeira. A consulta administrativa de Fiado usa sessão de gestor e autorização de loja no banco, transação somente leitura e papel separado. Não cria nem modifica crédito, saldo, pagamento ou autorização. Ambos são restritos a APP_ENV=testing com flags explícitas. PIN, extrato do cliente, autorização de compra, carteira e histórico completo ainda dependem de integração segura. Nenhum dado real ou credencial real deve ser usado.
