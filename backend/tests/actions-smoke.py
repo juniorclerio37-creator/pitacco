@@ -96,6 +96,35 @@ assert call(reprint,200,'POST',rp,alice)['data']['queued'] is True
 assert sql("select count(*) from public.print_jobs where order_id='"+oid(1)+"' and request_id='"+rp['request_id']+"'")=='2'
 assert sql("select count(*) from public.print_jobs where order_id='"+oid(1)+"'")=='4'
 assert sql("select count(*) from public.operation_audit where order_id='"+oid(1)+"' and action='reprint_requested' and details->>'request_id'='"+rp['request_id']+"'")=='1'
+# Exercise original device binding and durable queue state, no physical printer.
+queue='/stores/'+A+'/own-print/'
+dev=str(uuid.uuid4());other_dev=str(uuid.uuid4())
+call(queue+'bind',401,'POST',{'device_id':dev})
+call(queue+'bind',404,'POST',{'device_id':dev},bob)
+call(queue+'claim',404,'POST',{'device_id':dev},alice)
+assert call(queue+'bind',200,'POST',{'device_id':dev},alice)['data']['bound']
+assert call(queue+'bind',200,'POST',{'device_id':dev},alice)['data']['bound']
+call(queue+'bind',409,'POST',{'device_id':other_dev},alice)
+call(queue+'claim',404,'POST',{'device_id':other_dev},alice)
+jobs=call(queue+'claim',200,'POST',{'device_id':dev},alice)['data']['jobs']
+own=[j for j in jobs if j['order_id']==oid(1)]
+assert len(own)==4 and all(j['state']=='claimed' and j['store_id']==A for j in own),own
+assert all('tracking_token' not in j['receipt'] for j in jobs)
+assert {j['id'] for j in call(queue+'claim',200,'POST',{'device_id':dev},alice)['data']['jobs']}=={j['id'] for j in jobs}
+job=own[0]['id']
+ack={'device_id':dev,'job_id':job,'state':'saved'}
+call(queue+'ack',404,'POST',ack|{'device_id':other_dev},alice)
+call(queue+'ack',404,'POST',ack,bob)
+call(queue+'ack',422,'POST',ack|{'state':'pending'},alice)
+assert call(queue+'ack',200,'POST',ack,alice)['data']['acknowledged']
+assert call(queue+'ack',200,'POST',ack|{'state':'uncertain','error':'Fixture spooler'},alice)['data']['acknowledged']
+call(queue+'ack',200,'POST',ack,alice)
+assert sql("select state from public.print_jobs where id='"+job+"'")=='uncertain'
+call(queue+'ack',200,'POST',ack|{'state':'submitted'},alice)
+call(queue+'ack',200,'POST',ack,alice)
+assert sql("select state from public.print_jobs where id='"+job+"'")=='submitted'
+assert job not in {j['id'] for j in call(queue+'claim',200,'POST',{'device_id':dev},alice)['data']['jobs']}
+print('PASS: original device binding, queue claim/replay, uncertain state and submitted terminal acknowledgement')
 BASE=board_actions_base
 print('PASS: original own-order reprint queue, fixed request id, two copies, role and tenant isolation')
 assert sql("select count(*) from public.operation_audit where order_id='"+oid(1)+"' and action='accepted'")=='1'
@@ -432,6 +461,7 @@ call(fiado,404,token=alice)
 print('PASS: original Fiado manager overview, role and store isolation, revoked membership')
 
 BASE=board_base
+call(queue+'claim',404,'POST',{'device_id':dev},alice)
 call(reprint,404,'POST',rp,alice)
 call(ops,404,token=alice)
 call(board,404,token=alice)

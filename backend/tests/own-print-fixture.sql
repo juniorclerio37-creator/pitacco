@@ -16,3 +16,36 @@ revoke all on function core_auth.own_reprint_fixture(uuid,uuid,uuid,text) from p
 create role pitacco_core_own_print login password 'ci-own-print-only' nosuperuser nocreatedb nocreaterole nobypassrls;
 grant usage on schema core_auth to pitacco_core_own_print;
 grant execute on function core_auth.can_act(uuid),core_auth.own_reprint_fixture(uuid,uuid,uuid,text) to pitacco_core_own_print;
+
+-- CI only. Original device/queue routines, restricted to synthetic own orders.
+create function core_auth.own_print_queue_fixture(s uuid,op text,device uuid,job uuid,st text,err text) returns jsonb
+language plpgsql security definer set search_path='' as $fn$
+declare result jsonb;
+begin
+ if not core_auth.can_act(s) then raise exception 'Escopo não autorizado' using errcode='42501';end if;
+ if device is null or device='00000000-0000-0000-0000-000000000000' then raise exception 'Dispositivo inválido' using errcode='22023';end if;
+ if op='bind' then
+  perform public.bind_print_device(s,device);
+  return jsonb_build_object('bound',true);
+ end if;
+ if not exists(select 1 from public.print_devices d where d.store_id=s and d.device_id=device) then raise exception 'Dispositivo não autorizado' using errcode='42501';end if;
+ if op='claim' then
+  -- Test database ONLY: serialize with any concurrent queue write so the
+  -- original unfiltered claim routine cannot claim a marketplace job.
+  lock table public.print_jobs in share row exclusive mode;
+  if exists(select 1 from public.print_jobs j left join public.orders o on o.id=j.order_id and o.store_id=j.store_id where j.store_id=s and j.state<>'submitted' and o.source is distinct from 'proprio') then
+   raise exception 'Fila exige integração específica' using errcode='22023';
+  end if;
+  select coalesce(jsonb_agg(jsonb_build_object('id',j.id,'store_id',j.store_id,'order_id',j.order_id,'sector',j.sector,'printer',j.printer,'width',j.width,'copy_no',j.copy_no,'request_id',j.request_id,'state',j.state,'receipt',core_auth.board_receipt_fixture(j.receipt)||jsonb_build_object('source','proprio')) order by j.created_at,j.id),'[]'::jsonb)
+  into result from public.claim_print_jobs(s,device) j;
+  return jsonb_build_object('jobs',result);
+ elsif op='ack' then
+  if st is null or st not in ('saved','submitted','uncertain','error') or length(coalesce(err,''))>240 then raise exception 'Estado inválido' using errcode='22023';end if;
+  if not exists(select 1 from public.print_jobs j join public.orders o on o.id=j.order_id and o.store_id=j.store_id where j.id=job and j.store_id=s and o.source='proprio' and j.device_id=device) then raise exception 'Trabalho não autorizado' using errcode='42501';end if;
+  perform public.ack_print_job(job,device,st,err);
+  return jsonb_build_object('acknowledged',true);
+ end if;
+ raise exception 'Operação inválida' using errcode='22023';
+end $fn$;
+revoke all on function core_auth.own_print_queue_fixture(uuid,text,uuid,uuid,text,text) from public,anon,authenticated;
+grant execute on function core_auth.own_print_queue_fixture(uuid,text,uuid,uuid,text,text) to pitacco_core_own_print;
