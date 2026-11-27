@@ -26,4 +26,4 @@ jobs:
           node-version: '24'
       - name: Regressão dos componentes originais, sem credenciais de produção
         run: |
-          node --test tests/ifood-orders.test.mjs tests/ifood-driver-arrival.test.mjs tests/ifood-shipping-events.test.mjs tests/ifood-shipping-requests.test.mjs entregador/ifood-departure.test.mjs
+          node --test tests/ifood-orders.test.mjs tests/ifood-driver-arrival.test.mjs tests/ifood-shipping-events.test.mjs tests/ifood-shipping-requests.test.mjs entregador/ifood-departure.test.mjs backend/tests/ifood-actions-client.test.mjs
