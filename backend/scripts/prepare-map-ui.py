@@ -24,7 +24,7 @@ def build(target):
     s=replace(s,"  }, [client,storeId,state.store?.id","  }, [client,experimentalMap,storeId,state.store?.id")
     f.write_text(s)
     f=target/'StoreProfile.jsx';s=f.read_text()
-    s=replace(s,"function StorePointPicker({client,store,manager,addressDirty,registrationBusy,onSaved})","function StorePointPicker({client,store,manager,addressDirty,registrationBusy,onSaved,experimentalMap=null})")
+    s=replace(s,"function StorePointPicker({client,store,manager,addressDirty,registrationBusy,onSaved})","export function StorePointPicker({client,store,manager,addressDirty,registrationBusy,onSaved,experimentalMap=null})")
     s=replace(s," const initial=pointFromStore(store);"," const initial=experimentalMap?null:pointFromStore(store);")
     s=replace(s,"  const p=pointFromStore(store);\n  setPoint(p);","  if(experimentalMap)return;\n  const p=pointFromStore(store);\n  setPoint(p);")
     s=replace(s," },[store?.id,store?.latitude,store?.longitude]);"," },[store?.id,store?.latitude,store?.longitude,experimentalMap]);\n useEffect(()=>{\n  if(!experimentalMap||!manager)return;\n  let alive=true;\n  experimentalMap.readPoint().then(p=>{if(!alive||manualProposal.current)return;const next=pointFromStore(p);setPoint(next);setPicked(next);if(next)map.current?.setPoint(next);}).catch(err=>{if(alive){setPoint(null);setPicked(null);setError(err.message||'Mapa indisponível.');}});\n  return()=>{alive=false};\n },[experimentalMap,manager,store?.id]);")
@@ -34,6 +34,7 @@ def build(target):
     s=replace(s,"   const {data,error}=await client.functions.invoke('delivery-quote',{","   const {data,error}=await (experimentalMap?experimentalMap.invoke:client.functions.invoke.bind(client.functions))('delivery-quote',{")
     s=replace(s,"export default function StoreProfile({client,store,manager,onSaved,onAppearance,storeLogoUrl=''})","export default function StoreProfile({client,store,manager,onSaved,onAppearance,storeLogoUrl='',experimentalMap=null})")
     s=replace(s,"<StorePointPicker key={store.id} client={client}","<StorePointPicker key={store.id} experimentalMap={experimentalMap} client={client}")
+    s=replace(s,'{manager&&<button type="submit" className="secondary" disabled={registrationBusy||busy||deviceBusy}>Salvar dados', '{manager&&(!experimentalMap||onSaved)&&<button type="submit" className="secondary" disabled={registrationBusy||busy||deviceBusy}>Salvar dados')
     f.write_text(s)
     # Optional guard for the isolated board. Default original behavior unchanged.
     f=target/'Pedidos.jsx';s=f.read_text()

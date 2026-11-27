@@ -20,6 +20,16 @@ export function createMerchantMap({store,token,scopedFetch,fetcher=globalThis.fe
   return {id:store,name:data.name,latitude:data.latitude,longitude:data.longitude};
  }
  async function readPoint(){return point(await request('map-point'));}
+ async function readStoreAddress(){
+  const data=await request('map-point');
+  const shop=point(data);
+  const address={};
+  for(const field of ['address','address_number','neighborhood','city','state','postal_code']){
+   if(data[field]!==null&&typeof data[field]!=='string')throw Error('Endereço da loja inconsistente.');
+   address[field]=data[field];
+  }
+  return {...shop,...address};
+ }
  async function savePoint(latitude,longitude){
   if(!valid({latitude,longitude}))throw Error('Escolha a entrada da loja no mapa, dentro do Brasil.');
   if(writing)throw Error('Gravação em andamento.');
@@ -56,5 +66,5 @@ export function createMerchantMap({store,token,scopedFetch,fetcher=globalThis.fe
    throw Error('Operação não autorizada.');
   }catch(e){return {data:null,error:{message:e.message||'Mapa indisponível.',context:{status:e.status||0}}};}
  }
- return {readPoint,savePoint,readFleet,invoke,stop};
+ return {readPoint,readStoreAddress,savePoint,readFleet,invoke,stop};
 }

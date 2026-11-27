@@ -5,13 +5,14 @@ import React,{useEffect,useRef,useState} from 'react';
 import {createCoreSession} from './core-clients/core-session.mjs';
 import {createMerchantRuntime} from './core-clients/merchant-runtime.mjs';
 import FleetTracking from './FleetTracking.jsx';
+import {StorePointPicker} from './StoreProfile.jsx';
 import Pedidos from './Pedidos.jsx';
 import {orderStage} from './orderBoard.mjs';
 import './style.css';
 import './merchant-reference.css';
 const noLegacy=new Proxy({}, {get(){throw Error('Transporte legado desativado neste ensaio.');}});
 function ExperimentalBoard({runtime,enableOwnActions=false}){
- const [data,setData]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[actionError,setActionError]=useState(''),[printFeedback,setPrintFeedback]=useState('');
+ const [data,setData]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[actionError,setActionError]=useState(''),[printFeedback,setPrintFeedback]=useState(null);
  const live=useRef(false),mutating=useRef(false);
  async function refresh(){try{const value=await runtime.board.read();if(live.current){setData(value);setError('');}}catch(e){if(live.current){setData(null);setError(e.message||'Pedidos indisponíveis.');}}}
  useEffect(()=>{
@@ -30,14 +31,29 @@ function ExperimentalBoard({runtime,enableOwnActions=false}){
  }
  async function reprint(id){
   if(!enableOwnActions||mutating.current)return;
-  mutating.current=true;setBusy(true);setActionError('');setPrintFeedback('');
-  try{await runtime.board.reprint(id);if(live.current)setPrintFeedback('Reimpressão enviada à fila do Windows.');}
-  catch(e){if(live.current)setActionError(e.message||'Envio à fila não confirmado.');}
+  mutating.current=true;setBusy(true);setActionError('');setPrintFeedback(null);
+  try{await runtime.board.reprint(id);if(live.current)setPrintFeedback({message:'Reimpressão enviada à fila do Windows.',error:false});}
+  catch(e){if(live.current)setPrintFeedback({message:e.message||'Envio à fila não confirmado.',error:true});}
   finally{mutating.current=false;if(live.current)setBusy(false);}
  }
  if(!data)return <section className="panel" role={error?'alert':'status'}>{error||'Carregando pedidos…'}</section>;
  const byOrder=new Map(data.deliveries.map(d=>[d.order_id,d]));
- return <><p role="status">{enableOwnActions?'Ensaio local: aceite, recusa, preparo e retirada de pedidos próprios. Reimpressão em fila de teste.':'Ensaio de leitura: pedidos próprios e iFood. Ações operacionais desativadas.'}</p>{printFeedback&&<p role="status">{printFeedback}</p>}<Pedidos key={runtime.store} storeId={runtime.store} orders={data.orders} deliveries={data.deliveries} couriers={data.couriers} stage={o=>orderStage(o,byOrder.get(o.id))} busy={!enableOwnActions||busy} experimentalOwnOnly={true} actionError={actionError} onAccept={id=>action(id,'accept')} onDecision={(id,status,reason)=>status==='rejected'?action(id,'reject',reason):Promise.resolve(false)} onReady={id=>action(id,'ready')} onPickup={id=>action(id,'complete_pickup')} onReprint={enableOwnActions?reprint:undefined} merchantLayout={true} dispatchMode={data.settings.dispatch_mode}/></>;
+ return <><p role="status">{enableOwnActions?'Ensaio local: aceite, recusa, preparo e retirada de pedidos próprios. Reimpressão em fila de teste.':'Ensaio de leitura: pedidos próprios e iFood. Ações operacionais desativadas.'}</p>{printFeedback&&<p role={printFeedback.error?'alert':'status'}>{printFeedback.message}</p>}<Pedidos key={runtime.store} storeId={runtime.store} orders={data.orders} deliveries={data.deliveries} couriers={data.couriers} stage={o=>orderStage(o,byOrder.get(o.id))} busy={!enableOwnActions||busy} experimentalOwnOnly={true} actionError={actionError} onAccept={id=>action(id,'accept')} onDecision={(id,status,reason)=>status==='rejected'?action(id,'reject',reason):Promise.resolve(false)} onReady={id=>action(id,'ready')} onPickup={id=>action(id,'complete_pickup')} onReprint={enableOwnActions?reprint:undefined} merchantLayout={true} dispatchMode={data.settings.dispatch_mode}/></>;
+}
+function ExperimentalStorePoint({map}){
+ const [shop,setShop]=useState(null),[error,setError]=useState('');
+ useEffect(()=>{
+  let alive=true;
+  map.readStoreAddress().then(value=>{if(alive)setShop(value);}).catch(e=>{
+   if(alive)setError(e.message||'Endereço indisponível.');
+  });
+  return()=>{alive=false;};
+ },[map]);
+ return <section className="panel"><h3>Dados da Loja</h3>
+  {shop?<><p>{[shop.address,shop.address_number,shop.neighborhood,shop.city,shop.state,shop.postal_code].filter(Boolean).join(', ')}</p>
+   <StorePointPicker client={noLegacy} store={shop} manager={true} experimentalMap={map}/>
+  </>:<p role={error?'alert':'status'}>{error||'Carregando endereço da loja…'}</p>}
+ </section>;
 }
 export default function CoreMerchantHost({fetcher=globalThis.fetch,windows=null,enableOwnActions=false}){
  const [snapshot,setSnapshot]=useState({identity:null,selected:null,expires_at:null});
@@ -73,5 +89,5 @@ export default function CoreMerchantHost({fetcher=globalThis.fetch,windows=null,
  if(!snapshot.identity)return <div className="setup"><img className="auth-logo" src="/pitacco-brand-013.svg" alt="Pitacco"/><h2>Entrar na plataforma</h2><p>Ambiente isolado de integração Core — somente contas de teste.</p><form onSubmit={login}><input type="email" name="email" placeholder="E-mail" required/><input type="password" name="password" placeholder="Senha" required/><button disabled={busy}>Entrar</button></form>{message&&<p role="alert">{message}</p>}</div>;
  const shops=snapshot.identity.stores.filter(s=>s.role!=='courier');
  const chosen=runtime&&runtime.store===snapshot.selected?.store_id?runtime:null;
- return <main className="pitacco-theme-light"><section className="panel"><h3>Ensaio isolado — Pitacco Core</h3><label>Estabelecimento<select value={snapshot.selected?.store_id||''} disabled={busy} onChange={e=>{const id=e.target.value;if(id)void run(()=>session.selectStore(id));}}><option value="" disabled>Selecione a loja</option>{shops.map(s=><option key={s.store_id} value={s.store_id}>{s.name}</option>)}</select></label><div className="quick-actions"><button disabled={busy} onClick={()=>void run(()=>session.refresh())}>Atualizar sessão</button><button disabled={busy} onClick={()=>void run(()=>session.renew())}>Renovar sessão</button><button disabled={busy} onClick={()=>void run(async()=>{const result=await session.logout();if(!result.revoked)setMessage('Sessão local encerrada; revogação remota não confirmada.');})}>Sair</button></div>{message&&<p role="alert">{message}</p>}{chosen?.device&&<div><button disabled={started} onClick={()=>{chosen.device.start();setStarted(true);}}>Iniciar ponte Windows de teste</button><p role="status">{deviceState?.state||'Ponte inativa'}</p></div>}</section>{chosen&&<ExperimentalBoard key={chosen.store} runtime={chosen} enableOwnActions={enableOwnActions}/>}{chosen&&<FleetTracking key={chosen.store} client={noLegacy} storeId={chosen.store} experimentalMap={chosen.map} onBack={()=>{}}/>}</main>;
+ return <main className="pitacco-theme-light"><section className="panel"><h3>Ensaio isolado — Pitacco Core</h3><label>Estabelecimento<select value={snapshot.selected?.store_id||''} disabled={busy} onChange={e=>{const id=e.target.value;if(id)void run(()=>session.selectStore(id));}}><option value="" disabled>Selecione a loja</option>{shops.map(s=><option key={s.store_id} value={s.store_id}>{s.name}</option>)}</select></label><div className="quick-actions"><button disabled={busy} onClick={()=>void run(()=>session.refresh())}>Atualizar sessão</button><button disabled={busy} onClick={()=>void run(()=>session.renew())}>Renovar sessão</button><button disabled={busy} onClick={()=>void run(async()=>{const result=await session.logout();if(!result.revoked)setMessage('Sessão local encerrada; revogação remota não confirmada.');})}>Sair</button></div>{message&&<p role="alert">{message}</p>}{chosen?.device&&<div><button disabled={started} onClick={()=>{chosen.device.start();setStarted(true);}}>Iniciar ponte Windows de teste</button><p role="status">{deviceState?.state||'Ponte inativa'}</p></div>}</section>{chosen&&<ExperimentalBoard key={chosen.store} runtime={chosen} enableOwnActions={enableOwnActions}/>}{chosen&&<ExperimentalStorePoint key={chosen.store} map={chosen.map}/>}{chosen&&<FleetTracking key={chosen.store} client={noLegacy} storeId={chosen.store} experimentalMap={chosen.map} onBack={()=>{}}/>}</main>;
 }

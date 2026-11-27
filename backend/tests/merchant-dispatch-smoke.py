@@ -147,7 +147,9 @@ snap=merchant_map('fleet-map',token=owner)['data']
 assert snap['store']['id']==s and snap['store']['latitude']==saved['latitude']
 # Store registration's map is a single point, not the operational fleet payload.
 point=merchant_map('map-point',token=owner)['data']
-assert set(point)=={'id','name','latitude','longitude','saved'} and point['id']==s
+address_fields={'address','address_number','neighborhood','city','state','postal_code'}
+assert set(point)=={'id','name','latitude','longitude','saved'}|address_fields and point['id']==s
+assert all(point[field]==snap['store'][field] for field in address_fields)
 assert point['latitude']==saved['latitude'] and point['longitude']==saved['longitude']
 # Same canonical coordinate from the courier's authenticated map, no second marker.
 req=urllib.request.Request('http://127.0.0.1:8099/api/v1/courier/map',headers={'Accept':'application/json','Authorization':'Bearer '+courier})

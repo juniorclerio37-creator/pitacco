@@ -50,3 +50,15 @@ test('missing point uses server-side lookup; approximate results remain proposal
  assert.deepEqual(result,{point:[-22.86,-43.46],approximate:true});
  assert.deepEqual(calls.map(x=>x[1]),['GET','POST']);
 });
+
+test('Dados da Loja uses the scoped address and point without reading operational logistics',async()=>{
+ const address={address:'Rua A',address_number:'10',neighborhood:null,city:'Nova Iguaçu',state:'RJ',postal_code:null};
+ const scopedFetch=async(url)=>{
+  assert.equal(url,'/api/v1/stores/'+store+'/map-point');
+  return {ok:true,json:async()=>({data:{...p,...address,couriers:[{id:'private-row'}]}})};
+ };
+ const map=createMerchantMap({store,scopedFetch});
+ assert.deepEqual(await map.readStoreAddress(),{id:store,name:p.name,latitude:p.latitude,longitude:p.longitude,...address});
+ map.stop();
+ await assert.rejects(map.readStoreAddress(),/encerrada/);
+});

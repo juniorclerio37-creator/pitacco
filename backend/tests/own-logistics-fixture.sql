@@ -62,7 +62,9 @@ begin
   if counter is null then raise exception 'Limite de ponto' using errcode='P0001';end if;
   update public.stores set latitude=round(lat,6),longitude=round(lng,6) where id=s;
  end if;
- select jsonb_build_object('id',x.id,'name',x.name,'latitude',x.latitude,'longitude',x.longitude,'saved',lat is not null) into result from public.stores x where x.id=s;
+ select jsonb_build_object('id',x.id,'name',x.name,'latitude',x.latitude,'longitude',x.longitude,'saved',lat is not null,
+  'address',x.address,'address_number',x.address_number,'neighborhood',x.neighborhood,
+  'city',x.city,'state',x.state,'postal_code',x.postal_code) into result from public.stores x where x.id=s;
  return result;
 end $fn$;
 revoke all on function core_auth.store_point_fixture(uuid,numeric,numeric) from public,anon,authenticated;
