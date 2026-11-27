@@ -76,3 +76,6 @@ O checkout Laravel e seu adaptador de navegador passam o método selecionado (li
 
 ## Regressão de pagamento na entrega e preço publicado
 `tests/offline-delivery-smoke.py` testa as modalidades no recebimento via Laravel com cotações prioritárias fictícias. Confere o resumo original de cobrança do entregador, valor a receber, troco, ausência de confirmação antecipada e preço por modalidade confirmado pelo servidor (total incorreto ou revisão antiga rejeitados). Não implementa login/recebimento do entregador nem confirma pagamentos reais. Resultado pendente de CI; não representa homologação integral dos aplicativos.
+
+## Isolamento dos testes de pagamento
+O primeiro teste HTTP das modalidades presenciais confirmou a criação das dez modalidades e a rejeição de troco inválido, mas esgotou o limite compartilhado com os testes de navegador antes de completar todos os asserts. A suíte agora usa instância CI e prefixo Redis próprios, mantendo o limite de 20 requisições/minuto e sem modificar a política de segurança. A regressão integral ainda precisa passar.

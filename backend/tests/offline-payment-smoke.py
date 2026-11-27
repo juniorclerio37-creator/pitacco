@@ -1,6 +1,6 @@
 # Only disposable CI; no provider calls or payment confirmation.
 import json,urllib.request,urllib.error,subprocess,os,uuid,datetime
-BASE='http://127.0.0.1:8081/api/v1/public/menus/core-checkout-fixture'
+BASE='http://127.0.0.1:8083/api/v1/public/menus/core-checkout-fixture'
 S='91000000-0000-0000-0000-000000000002'
 M='91000000-0000-0000-0000-000000000001'
 P='91000000-0000-0000-0000-000000000003'
