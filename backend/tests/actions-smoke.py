@@ -24,6 +24,9 @@ def action(store,n,verb,expected,token=None,reason=None):
 alice=login('alice@example.test')
 bob=login('bob@example.test')
 board='/stores/'+A+'/orders/own-board'
+board_actions_base=BASE
+board_base='http://127.0.0.1:8087/api/v1'
+BASE=board_base
 call(board,401)
 call(board,404,token=bob)
 call(board.replace(A,B),404,token=alice)
@@ -42,6 +45,7 @@ assert len(call(board+'?limit=1',200,token=alice)['data'])==1
 # Restore original fixture receipt before all existing action/printing assertions.
 sql("""update public.orders set receipt='{"logistics":"retirada","customer":"Cliente fixture","items":[{"name":"Açaí","quantity":1,"unit_price":20,"modifiers":[]}],"total":20,"payment":"dinheiro","payment_status":"nao confirmado"}'::jsonb where id='30000000-0000-4000-8000-000000000001'""")
 print('PASS: own operational board projection, nested receipt allowlist, pagination and store isolation')
+BASE=board_actions_base
 action(A,1,'accept',401)
 action(B,3,'accept',404,alice)
 action(A,1,'accept',404,bob)
@@ -392,6 +396,8 @@ print('PASS: Fiado configuration, existing customer identity, approval mode and 
 call(fiado,404,token=alice)
 print('PASS: original Fiado manager overview, role and store isolation, revoked membership')
 
+BASE=board_base
 call(board,404,token=alice)
+BASE=board_actions_base
 action(A,1,'accept',404,alice)
 print('PASS: original SQL accept, ready, pickup, rejection, retry, print queue, tenant and marketplace isolation')

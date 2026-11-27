@@ -229,3 +229,6 @@ O componente existente `core-source/web/Operations.jsx` (painel de pedidos e mod
 
 ## Leitura operacional de pedidos próprios — experimental
 `GET /api/v1/stores/{store}/orders/own-board` é um endpoint separado, somente testing e flag explícita. Reutiliza a consulta original de dia operacional, preserva paginação e campos de agenda, status, valores, cliente, contato, endereço, itens, complementos, observações e pagamento por projeção explícita (inclusive objetos aninhados). Sem tokens de rastreamento, PINs, credenciais ou dados não reconhecidos. Role exclusiva sem SELECT direto de pedidos; validação de sessão e gestor no banco. O escopo é **somente pedidos próprios**, não substitui o painel completo, não inclui detalhes de marketplaces, entrega/entregador, impressão e badges. Testes em SQL original reconstruído. CI pendente.
+
+## Isolamento de limites dos testes HTTP
+O run 46026417555 passou pelas verificações de projeção do quadro próprio e demais operações até a última requisição, que recebeu 429 por acumular as consultas do quadro no mesmo limite de 60/min da suíte de ações. As consultas own-board agora usam um processo CI separado na porta 8087 e prefixo Redis exclusivo, preservando o limite real, os mesmos tokens, banco, verificações de autorização e revogação. Não há alteração do throttle de produção. Revalidação pendente.
