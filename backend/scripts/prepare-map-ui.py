@@ -47,7 +47,7 @@ def build(target):
     # Compile a separate preview entry; original entry remains untouched.
     clients=target/'core-clients'
     clients.mkdir()
-    for name in ('core-session.mjs','merchant-map.mjs','windows-print.mjs','windows-device.mjs','merchant-runtime.mjs'):
+    for name in ('core-session.mjs','merchant-map.mjs','merchant-board.mjs','windows-print.mjs','windows-device.mjs','merchant-runtime.mjs'):
         shutil.copy2(ROOT/'backend'/'clients'/name,clients/name)
     runtime=clients/'merchant-runtime.mjs'
     runtime.write_text(replace(runtime.read_text(),"../../core-source/web/printBridge.mjs","../printBridge.mjs"))
