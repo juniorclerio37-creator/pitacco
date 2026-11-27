@@ -12,6 +12,7 @@ const fonts=[['sistema','Moderna'],['arredondada','Arredondada'],['serifada','El
 const photoSizes=[['pequeno','Pequena'],['medio','Média'],['grande','Grande']];
 const field=(label,value,change,props={})=><label className="design-field">{label}<input value={value||''} onChange={event=>change(event.target.value)} {...props}/></label>;
 const cash=value=>Number(value||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const featuredColorFields=[['background','Fundo do destaque','#8522c8'],['border','Moldura','#f4c84e'],['price','Preço','#ffe16b'],['badge','Selo mais vendido','#ffcb28'],['button','Botão Adicionar','#ffffff']];
 const logoFrameDefault={size:100,zoom:100,x:0,y:0,padding:5,fit:'contain',shape:'default'};
 const logoFrameFor=d=>({...logoFrameDefault,...(d?.logo_frame||{})});
 const defaultDesign=(()=>{const {id,name,description,...style}=templates[0];return {template:id,...style,photo_size:'medio',
@@ -94,6 +95,9 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
  },[client,store.id,loadAttempt,focus]);
  useEffect(()=>()=>Object.values(fileUrls).forEach(url=>URL.revokeObjectURL(url)),[fileUrls]);
  const update=(key,value)=>setDesign(d=>({...d,[key]:value}));
+ const updateFeaturedColor=(key,value)=>setDesign(d=>({...d,featured_colors:{...(d.featured_colors||{}),[key]:value}}));
+ const resetFeaturedColors=()=>setDesign(d=>{const next={...d};delete next.featured_colors;return next});
+ const resetFeaturedColor=key=>setDesign(d=>{const next={...d},custom={...(d.featured_colors||{})};delete custom[key];if(Object.keys(custom).length)next.featured_colors=custom;else delete next.featured_colors;return next});
  const updateLogoFrame=(key,value)=>setDesign(d=>({...d,logo_frame:{...logoFrameFor(d),[key]:value}}));
  const resetLogoFrame=()=>setDesign(d=>{const next={...d};delete next.logo_frame;return next});
  const setBanner=(index,key,value)=>setDesign(d=>({...d,banners:d.banners.map((b,i)=>i===index?{...b,[key]:value}:b)}));
@@ -120,6 +124,7 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
  function validate(d){
   if(!templates.some(t=>t.id===d.template))throw Error('Escolha um template disponível.');
   if(!isHex(d.primary)||!isHex(d.foreground)||!isHex(d.paper))throw Error('Confira as cores selecionadas.');
+  if(d.featured_colors&&Object.entries(d.featured_colors).some(([key,value])=>!featuredColorFields.some(([field])=>field===key)||!isHex(value)))throw Error('Confira as cores dos destaques.');
   if(!Number.isInteger(Number(d.radius))||Number(d.radius)<0||Number(d.radius)>32)throw Error('Arredondamento inválido.');
   if(d.instagram&&!/^@[A-Za-z0-9._]{1,30}$/.test(d.instagram))throw Error('Informe o Instagram com @ e o nome de usuário.');
   if(d.banners.some((b,i)=>{
@@ -227,6 +232,15 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
         onChange={e=>update(key,e.target.value)}/><small>{design[key]}</small></span>
       </label>)}</div>
       <p className="design-tip">O sistema escolhe automaticamente a cor do texto dos botões para melhorar a leitura.</p>
+     </section>
+     <section className="design-control-card"><h4>Cores dos cards em destaque</h4>
+      <p>Personalize os dois cards de mais vendidos separadamente das demais cores do cardápio. O fundo recebe um degradê escurecido para manter o nome legível.</p>
+      <div className="design-color-grid">{featuredColorFields.map(([key,label,fallback])=><div className="design-color" key={key}>
+       <label>{label}<span><input aria-label={'Cor '+label} type="color" value={design.featured_colors?.[key]||fallback} disabled={!manager||working} onChange={e=>updateFeaturedColor(key,e.target.value)}/><small>{design.featured_colors?.[key]||'Automática'}</small></span></label>
+       {design.featured_colors?.[key]&&<button type="button" className="secondary" disabled={!manager||working} onClick={()=>resetFeaturedColor(key)} aria-label={'Restaurar cor '+label}>Automática</button>}
+      </div>)}</div>
+      <button type="button" className="secondary" disabled={!manager||working||!design.featured_colors} onClick={resetFeaturedColors}>Restaurar cores dos destaques</button>
+      <p className="design-tip">Confira a leitura do preço na prévia. O texto do selo e do botão tem contraste automático. As cores padrão seguem a identidade da loja.</p>
      </section>
      <section className="design-control-card"><h4>Enquadramento do logotipo</h4>
       <p>Ajuste a imagem cadastrada em Dados da loja sem alterar o arquivo original. Confira o resultado na prévia em tempo real.</p>
