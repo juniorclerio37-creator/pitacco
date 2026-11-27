@@ -1,0 +1,1827 @@
+[
+  {
+    "version": "20261110144157",
+    "name": "pitacco_whatsapp_delivery_events",
+    "normalized_sha256": "c6fdd8c3ff1906faa400b64faea8ef1451c0e48155ab0240f67d995d2afe2712"
+  },
+  {
+    "version": "20261110144307",
+    "name": "pitacco_whatsapp_store_scoped_onboarding",
+    "normalized_sha256": "bf8b325b854c3783ef027c7f5ef037439fb493d57486eb67ebf39329857980b5"
+  },
+  {
+    "version": "20261110163453",
+    "name": "pitacco_whatsapp_encrypted_store_credentials",
+    "normalized_sha256": "0501751c85230ec491a1211b328083ed9b82ecb7a03b3d20545324f79066b7fb"
+  },
+  {
+    "version": "20261110171112",
+    "name": "pitacco_self_service_store_signup_trial",
+    "normalized_sha256": "13f05b8032b931b411063484f1f92443ce8f0a64c9380227bed31c4d1286822c"
+  },
+  {
+    "version": "20261110175332",
+    "name": "pitacco_verified_identity_30_day_signup",
+    "normalized_sha256": "81b8e1235bbfae2535d9d31fecce0a6ea253a2b79d12f271433138d6261c9a34"
+  },
+  {
+    "version": "20261110182424",
+    "name": "restrict_legacy_trial_signup_rpc",
+    "normalized_sha256": "e20adbc49bc90e035467dad87cf7dee4f398fa50a594e6a42917ff135e66fcab"
+  },
+  {
+    "version": "20261110182712",
+    "name": "secure_store_self_service_configuration",
+    "normalized_sha256": "5d2bc3f5fe823041fc41e6450439c0ec2a2a4c7106371c945a6a34c24f97bf71"
+  },
+  {
+    "version": "20261110183009",
+    "name": "secure_product_catalog_management",
+    "normalized_sha256": "29cb08163abe31215e9df18d3a638d1d2afae8dbe7794b05b6cd5aa6e4cf21dc"
+  },
+  {
+    "version": "20261110183219",
+    "name": "product_complement_groups_and_options",
+    "normalized_sha256": "2fb5017bcdc7652ea4798d8500838e6b53140bce6ee85140dc9ec8a73a85200f"
+  },
+  {
+    "version": "20261110183437",
+    "name": "allow_required_complement_groups_before_options",
+    "normalized_sha256": "90f17d5b07ec60c129ee4833b3e4f6c07d138f0d6268b359bd6858f0275cccae"
+  },
+  {
+    "version": "20261110183548",
+    "name": "validate_complements_and_prices_in_public_checkout",
+    "normalized_sha256": "6f6f72f869f0eb0db18b91104a86b789f4f14a744a4bb183805839b8d5562c10"
+  },
+  {
+    "version": "20261110183600",
+    "name": "expose_complement_groups_on_public_menu",
+    "normalized_sha256": "a3344a1c8f21f8c6b87b3f7ebeae32785660fa8ca17024ee52acaadf059c3cd0"
+  },
+  {
+    "version": "20261110184035",
+    "name": "secure_per_platform_acceptance_preferences",
+    "normalized_sha256": "feaac0a3e6f728594cc5e0f52f6c60ed0ff5542a728ebaffdc42b9d242fe5f95"
+  },
+  {
+    "version": "20261110184230",
+    "name": "marketplace_acceptance_confirmation_state_machine",
+    "normalized_sha256": "4f68786eca4ee3c47127df4813f7b5e08610bc6bf9a35ca77320153a9539a937"
+  },
+  {
+    "version": "20261110184240",
+    "name": "secure_marketplace_acceptance_status_for_store",
+    "normalized_sha256": "ea4a754f30edbefb6bc03b475539b9b19ca74b9db911950814951b31535d2d31"
+  },
+  {
+    "version": "20261110184419",
+    "name": "whatsapp_store_permission_rpc",
+    "normalized_sha256": "e94816162f6b89b0b788d7a30d9ebcc45e81babfa3dc02c718988a06862d269d"
+  },
+  {
+    "version": "20261110185114",
+    "name": "pause_whatsapp_automation_for_now",
+    "normalized_sha256": "0c3871706e0e03956688c3bae8cd69e9b44f7146d8c602056b39fa5818bfdb87"
+  },
+  {
+    "version": "20261110185159",
+    "name": "public_order_tracking_by_private_token",
+    "normalized_sha256": "90a5765b97864e7c0f444eea533b1c0b0b4ec18b8b44c29cc7ed3a6aba7b5005"
+  },
+  {
+    "version": "20261110185345",
+    "name": "public_tracking_private_token_readonly",
+    "normalized_sha256": "751aa5c01859b0612460db37d69b4c9d830fff83ce50d6d9d6defdb5b81fb5a3"
+  },
+  {
+    "version": "20261110185523",
+    "name": "secure_customer_webpush_subscriptions",
+    "normalized_sha256": "2cabb6862e14d2275af7d67e7b00a0fc3abde3fcbc24db0f85a0386b3b8e5508"
+  },
+  {
+    "version": "20261110185716",
+    "name": "queue_order_and_delivery_push_events",
+    "normalized_sha256": "693576e014fab43d100da5aac0b93d354c2becb348c9cfcfed642840f0bd43d4"
+  },
+  {
+    "version": "20261110185725",
+    "name": "claim_and_acknowledge_webpush_jobs",
+    "normalized_sha256": "8737c88ea2fc4fb0a053bfc2a778a917ad8e299538b031cd47116a45009927e3"
+  },
+  {
+    "version": "20261110191027",
+    "name": "service_only_push_key_validation_rpc",
+    "normalized_sha256": "b24708bd1e09400c6df5e2a65fdafbd61e4c768d2413fa9c3c0f0b8f596ce4ba"
+  },
+  {
+    "version": "20261110191122",
+    "name": "schedule_pitacco_push_worker_every_minute",
+    "normalized_sha256": "6f7632b802f322ef0812de7cf64ed015327270413f48971b75e0670eee625366"
+  },
+  {
+    "version": "20261110191552",
+    "name": "store_branded_customer_order_tracking",
+    "normalized_sha256": "d83e5b248846b44686b730eaef079ed5b623235ce8d2e086a2286336f1cf3449"
+  },
+  {
+    "version": "20261110191658",
+    "name": "sync_public_menu_branding_and_pickup_tracking",
+    "normalized_sha256": "2f23b56beb9c457c2ec6a8c859dda5c25c5a31db8ccc94588d02b4c6c0fc3bf4"
+  },
+  {
+    "version": "20261110191828",
+    "name": "store_identity_list_for_authenticated_manager",
+    "normalized_sha256": "e7b3e348c334c2f1595421d11e626a33e263c371f38ff5e30721dccb38c90086"
+  },
+  {
+    "version": "20261110193149",
+    "name": "safe_operational_payment_receipts_ledger",
+    "normalized_sha256": "c7193cebabdea42d6bde95cb0592375edf59d9aa75b1c62e0ed17205c162a234"
+  },
+  {
+    "version": "20261110193341",
+    "name": "operational_cash_sessions_and_movements",
+    "normalized_sha256": "505bebc67c09fb042e8325e64a5ef86d269f6f352a0a9ebef3e03730b4b960f4"
+  },
+  {
+    "version": "20261110205257",
+    "name": "pitacco_order_display_numbers_027",
+    "normalized_sha256": "ae3af6cbd0fc2467015947b70699bb731e3925b606aa94c6e0a16e910cc68109"
+  },
+  {
+    "version": "20261110210721",
+    "name": "pitacco_courier_payouts_028",
+    "normalized_sha256": "77e65c11e98987ee437b8d6cd53250cbeaf5ac7a27cab2585ea385a3d1d9d59c"
+  },
+  {
+    "version": "20261110212515",
+    "name": "pitacco_single_print_computer_032",
+    "normalized_sha256": "f671ae34f9ad4c33bc04aba00f0dded19e7b9ff180a9a124e2ccb7c8391d05db"
+  },
+  {
+    "version": "20261110213622",
+    "name": "pitacco_courier_pay_rules_034",
+    "normalized_sha256": "94a835d23c7a452f8a65704685055eff1b82233543c951bfa251be87919845b2"
+  },
+  {
+    "version": "20261110214045",
+    "name": "pitacco_order_costs_035",
+    "normalized_sha256": "0d939cea9f533ab749f788f1b4c26b7ace9c5ab14071de4bc1ca8140e647139c"
+  },
+  {
+    "version": "20261110215000",
+    "name": "pitacco_customer_blocks_037",
+    "normalized_sha256": "76211c2f776df09dfe0ff0faf1ab8e74aa392494d2196ed08ed45d06cf779512"
+  },
+  {
+    "version": "20261110224406",
+    "name": "customer_blocks_individual_store_scoped",
+    "normalized_sha256": "8014ff46f2b0c709484044d3c276f445bf3f2e723882687ccf82a14815d5a081"
+  },
+  {
+    "version": "20261110224522",
+    "name": "customer_block_checkout_message",
+    "normalized_sha256": "08093663bbd70925bc1872add0b1af27b53df0f08be9549e112cc78633cfc0cc"
+  },
+  {
+    "version": "20261111033443",
+    "name": "pitacco_store_receipt_html_templates",
+    "normalized_sha256": "655ab96123fd1256cee7d753695a30bbaba0143d935c0e915d92c02ab9f9ce61"
+  },
+  {
+    "version": "20261111140655",
+    "name": "pitacco_web_modifier_manager_read_20261111",
+    "normalized_sha256": "2d2d734d72974bcf134512ca7eb6efb48608589bcd842307c9ea3be6837de809"
+  },
+  {
+    "version": "20261111155829",
+    "name": "pitacco_checkout_coupon_server_validation_v3",
+    "normalized_sha256": "d3afdff4b77f86867f6f1525e594959bdc55c3232a172c11df2ba8b6e6092da9"
+  },
+  {
+    "version": "20261111160739",
+    "name": "pitacco_loyalty_coupon_discount_bounds",
+    "normalized_sha256": "68d95c1ac2b9f91dbc02aaaa9a95ea2db53d9d62ccfee0970af493552c80671a"
+  },
+  {
+    "version": "20261111160847",
+    "name": "pitacco_checkout_coupon_return_breakdown",
+    "normalized_sha256": "17bb5898a389f06c19ddea1fae777b64b02a8f704b555bf1b3290ca0912ee895"
+  },
+  {
+    "version": "20261111161020",
+    "name": "pitacco_public_menu_protect_reserved_paths",
+    "normalized_sha256": "97c81475caa4b1a6aa42050fee303c6c875fdc4ba83bbe6b683426a678bf009e"
+  },
+  {
+    "version": "20261111161757",
+    "name": "pitacco_seed_acai_do_linho_fictional_demo_menu",
+    "normalized_sha256": "394599f58bbbb407a19c3ac1dad33ffa9d83057b9fbc3ddb06f1c7878aa0b539"
+  },
+  {
+    "version": "20261111161924",
+    "name": "pitacco_fix_option_validation_ambiguous_record_names",
+    "normalized_sha256": "e6314923fe3f686ff645d4c4c09332924629bb05dd82cc835f460f706cf239cf"
+  },
+  {
+    "version": "20261111162031",
+    "name": "pitacco_receipt_brand_discount_and_modifier_fix",
+    "normalized_sha256": "38a0274f3c1c1682a6eb2f4f347b7c9122ba0f0726c7a3170af4b71806fe113d"
+  },
+  {
+    "version": "20261111172826",
+    "name": "delivery_area_public_status_for_checkout",
+    "normalized_sha256": "2892e810db77c4ca0398ad848b50be30c939eefbf6a805dfbfd798e5e5e39429"
+  },
+  {
+    "version": "20261111173112",
+    "name": "guard_public_delivery_polygon_until_trusted_geocoding",
+    "normalized_sha256": "f7f5b753f9fea3e2172559ff919278bb9da27941487b8a712f98eb7be6207101"
+  },
+  {
+    "version": "20261111173240",
+    "name": "protect_polygon_delivery_on_order_route_updates",
+    "normalized_sha256": "138f1167288fb56fc741b5add2f2af27ca443e73bfb2bbb06c7257c8ceb899ef"
+  },
+  {
+    "version": "20261111174550",
+    "name": "store_preparation_minutes_settings",
+    "normalized_sha256": "5df703a416d24f0e9f5555e98e03516acd681a8647b44b6b0be4b57d5c87aaba"
+  },
+  {
+    "version": "20261111222543",
+    "name": "store_order_sound_preferences",
+    "normalized_sha256": "1dabe01510b3bb5f9c7d2537dccd8c5e44f5247fbbc3a98080f5575771b24c16"
+  },
+  {
+    "version": "20261116041534",
+    "name": "pitacco_owner_and_features",
+    "normalized_sha256": "389d42f3e9219238017923d3285666fe71d415f837dca9db25293d7d377129ca"
+  },
+  {
+    "version": "20261116041549",
+    "name": "pitacco_platform_owner_access",
+    "normalized_sha256": "33d6a05aa26a3b7438048ac19a7ade57767760ee9e3b215871e72a553aec02f0"
+  },
+  {
+    "version": "20261116043752",
+    "name": "pitacco_owner_store_catalog",
+    "normalized_sha256": "9bd82f3fefc2e6b5c970e1afef24045e315b5797ce226c6748fee385b1a08332"
+  },
+  {
+    "version": "20261116044234",
+    "name": "pitacco_platform_owner_username",
+    "normalized_sha256": "14c050f55937fd8ab7107403bd53735a09bfbfbb099910dc208c2c74c3949b87"
+  },
+  {
+    "version": "20261116044633",
+    "name": "pitacco_checkout_product_variants",
+    "normalized_sha256": "371c07e54ebea920550d50bbf5f6c4f2fc58679b6192745ee3186b02e4ab3292"
+  },
+  {
+    "version": "20261116045237",
+    "name": "pitacco_new_store_seven_day_trial",
+    "normalized_sha256": "8127d67ae78ff07c737ccb4f51d86dcd417279d031f88427a267644918118baf"
+  },
+  {
+    "version": "20261116045239",
+    "name": "pitacco_inventory",
+    "normalized_sha256": "26dfad4e4f1862557dba490139f069439107f6ed7c8987b477aff3e0944e1d52"
+  },
+  {
+    "version": "20261116045241",
+    "name": "pitacco_self_service_store_manager",
+    "normalized_sha256": "729cfac6026f2700da97627ffa92073dc84a57b34454eef0a8f380e3983bbeef"
+  },
+  {
+    "version": "20261116045243",
+    "name": "pitacco_pending_order_decisions",
+    "normalized_sha256": "fe9eaf84d1a407dcb42cc3f76d89e958cb697692a865622af0228c84f20bdb28"
+  },
+  {
+    "version": "20261116045245",
+    "name": "pitacco_period_financial_report",
+    "normalized_sha256": "4fab6d7848a4958dfdef521c1b6de5823174450e18e949520b2b6ddc872b2eac"
+  },
+  {
+    "version": "20261116045247",
+    "name": "pitacco_scheduled_orders",
+    "normalized_sha256": "d5c1702fda575e94a72337587eef6ab6500a72310de3443a8d43eb6bae2d2836"
+  },
+  {
+    "version": "20261116045249",
+    "name": "pitacco_operational_alerts",
+    "normalized_sha256": "5a11e9050d8bdacea57100bef3f13c7a929b830cc0c6bfaae69c62aded695cf9"
+  },
+  {
+    "version": "20261116045251",
+    "name": "pitacco_subscription_entitlement",
+    "normalized_sha256": "5a18f07ff49bbec7751ce45edc22fc9f821366d22a9c147df5572632acbef32f"
+  },
+  {
+    "version": "20261116045252",
+    "name": "pitacco_asaas_subscription_binding",
+    "normalized_sha256": "80392a87ee7feaeedec0c15eda40a41f27eee49b3bb6cefc83932c89aa071d83"
+  },
+  {
+    "version": "20261116045255",
+    "name": "pitacco_private_delivery_tracking",
+    "normalized_sha256": "40de3e4262c76ebc108242b68b51ad20f4f2cb060e8c3b28ba7b1c95f14bba3e"
+  },
+  {
+    "version": "20261116045257",
+    "name": "pitacco_marketplace_settlements",
+    "normalized_sha256": "c1a3295e5ce23c3651da3f86b14d98a76d78ab74f7780fb8b538cd7330588ccf"
+  },
+  {
+    "version": "20261116045259",
+    "name": "pitacco_admin_homologation",
+    "normalized_sha256": "ec7f7b7ad0197c9cb62c5349442450918006b2be49588231ef23e89d3e0e95e6"
+  },
+  {
+    "version": "20261116045510",
+    "name": "pitacco_financial_report_period_bounds",
+    "normalized_sha256": "35d5cb7f59beabeaf172e6bf9f7d77a48297ffc2cc3bad2422bd151e25573237"
+  },
+  {
+    "version": "20261116112941",
+    "name": "pitacco_order_profit_report",
+    "normalized_sha256": "844ec3425630574a0e53090dc4b4eb72a44a3486afb80e940808e62372b1f71c"
+  },
+  {
+    "version": "20261116175522",
+    "name": "pitacco_storefront_delivery_settings",
+    "normalized_sha256": "d473aa5694d34d173d06e6a4e5116f223e89ea31f71351d435f1a956bac7c2cf"
+  },
+  {
+    "version": "20261116175531",
+    "name": "pitacco_store_payment_providers",
+    "normalized_sha256": "0078bfaf728bae9f24e3c99c5f6c4fe2e48f99dc8735afb6ed1c9b8b250f47a9"
+  },
+  {
+    "version": "20261116183515",
+    "name": "pitacco_ifood_order_events",
+    "normalized_sha256": "975e143b3e4e592fe5a409e7760efbf812ce2e70bc43719f57d734ed70a4f7a9"
+  },
+  {
+    "version": "20261116184556",
+    "name": "pitacco_owner_platform_dashboard",
+    "normalized_sha256": "34758a95c5fa36c608076ab47f19aaf676f3c78232dfec395a6d7da2ffd35feb"
+  },
+  {
+    "version": "20261116194102",
+    "name": "pitacco_owner_subscription_details",
+    "normalized_sha256": "d858b63422abe9f2efc9eecf4ef4cf8f3cbdd057bcadd5bbc9c2c2ee2eab77c3"
+  },
+  {
+    "version": "20261116194738",
+    "name": "owner_subscription_actions",
+    "normalized_sha256": "f86676505517deee599907269fc86b426277b296e3481e9d39a102149ac8ec7c"
+  },
+  {
+    "version": "20261116231052",
+    "name": "pitacco_owner_operations",
+    "normalized_sha256": "85660e04808e4b75830ee163bf39cd80c2c9581e2d3a5d3ad5a0b7aaf16069ac"
+  },
+  {
+    "version": "20261116231414",
+    "name": "pitacco_commercial_plan_catalog",
+    "normalized_sha256": "b748cfb38dab5e1ecece576c4c5fa92ab6d032632b835d8ac9bc34686aea3efd"
+  },
+  {
+    "version": "20261116232024",
+    "name": "pitacco_owner_finance_report",
+    "normalized_sha256": "9869d38199b80484b572e23a0d43b66b694df883e767f7510cdfb2f020dc0e8e"
+  },
+  {
+    "version": "20261116235306",
+    "name": "pitacco_single_monthly_plan",
+    "normalized_sha256": "9abc49f1c5927e6b032793a409c95307bb2540fc4d6501b4894a3afe1f3973af"
+  },
+  {
+    "version": "20261117000145",
+    "name": "pitacco_owner_99food_homologation",
+    "normalized_sha256": "7544de4c53bc49884d59f6c57520911286ac0661c84b7b1dc0ac744a2aa9e5fd"
+  },
+  {
+    "version": "20261117001627",
+    "name": "pitacco_ifood_auto_confirm",
+    "normalized_sha256": "c11bec60cce2484cdf730191c1078a43aa847a398867c7d2b7ace04d4e2b635c"
+  },
+  {
+    "version": "20261117031316",
+    "name": "scope_delivery_read_to_managers_and_assigned_couriers",
+    "normalized_sha256": "40fa1ab3a7f4caef3c10606b5c59b2fdae089653a593d1e96720b8fc6bdb77f1"
+  },
+  {
+    "version": "20261117031526",
+    "name": "revoke_public_truncate_from_delivery_tables",
+    "normalized_sha256": "884de0ec53d4fdc33ea440e7d275e9b6bf47bdba887c600f7a21032cd0f253aa"
+  },
+  {
+    "version": "20261117031821",
+    "name": "pitacco_courier_session_gate",
+    "normalized_sha256": "fe79f2eb6733b41156558e226668312c64a7a6a18384654c28d33d58390a9122"
+  },
+  {
+    "version": "20261117032326",
+    "name": "pitacco_driver_collect_depart_online",
+    "normalized_sha256": "ef1bc3c37ee2c27e3547603cc4762164c80dd8458816e5039a9fa91cac65ae79"
+  },
+  {
+    "version": "20261117032359",
+    "name": "pitacco_driver_collect_legacy_accepted",
+    "normalized_sha256": "d45f4d192dfbb7be9d89965264449fc844b15fb6d097610ee769adb3f120a3d6"
+  },
+  {
+    "version": "20261117032915",
+    "name": "secure_legacy_delivery_order_rpcs",
+    "normalized_sha256": "65ed95ae5003633e3efc51bd937b8c65b74e91c01b8966d4b234003929394cc9"
+  },
+  {
+    "version": "20261117034554",
+    "name": "fix_courier_store_platform_owner_access",
+    "normalized_sha256": "96ae93ac61ff96c790e7a5b5b336270ba75c777f7947e82aa14c92be1d73ad6c"
+  },
+  {
+    "version": "20261117041024",
+    "name": "pitacco_driver_earnings_dashboard",
+    "normalized_sha256": "3cc4629396668c2f60be8a3744493ca13f9e7de58e84277b9793b74003d5cec5"
+  },
+  {
+    "version": "20261117041740",
+    "name": "pitacco_driver_earnings_daily_breakdown",
+    "normalized_sha256": "b445457aad3d333e94fec4754345032f5ede1a89c0602b5e9efb32ca4fe08714"
+  },
+  {
+    "version": "20261117043123",
+    "name": "pitacco_driver_order_details_contact",
+    "normalized_sha256": "7dd29210e0e25d5c0d4aff1d0e73f77eeef9fa33f47525597e0af3f8f7fb8c0c"
+  },
+  {
+    "version": "20261117043254",
+    "name": "pitacco_driver_contact_private_storage",
+    "normalized_sha256": "3be241a77ee2f9dacb94a0a89af14c9584c0d6713fecc2564590ff6c24c1d392"
+  },
+  {
+    "version": "20261117043548",
+    "name": "pitacco_driver_order_detail_item_whitelist",
+    "normalized_sha256": "7440afa5a105e14f7448e61b293c87b5d41e951a142af53ae1a94757202d6993"
+  },
+  {
+    "version": "20261117044917",
+    "name": "pitacco_order_card_public_numbers_and_locators",
+    "normalized_sha256": "0108f1bb436cdcab30e5dcc6c6d09719da7527396aead07972ad3aecdaa0d017"
+  },
+  {
+    "version": "20261117044941",
+    "name": "pitacco_driver_order_detail_public_label",
+    "normalized_sha256": "f3897264702f16d92b73e056131c485b986086e1506914341303846df340e651"
+  },
+  {
+    "version": "20261117045208",
+    "name": "pitacco_driver_earnings_public_order_labels",
+    "normalized_sha256": "6cdcff8fbb0b466a7dc1f16b526cd59ce36af590dc3706c3351110afaf4d0eee"
+  },
+  {
+    "version": "20261117045231",
+    "name": "pitacco_99food_public_order_number_only",
+    "normalized_sha256": "d364e8d6d65e3485b0a5eb3640bce5eafc2871bc5eb6b8b4757f42c020e0d2b7"
+  },
+  {
+    "version": "20261117045427",
+    "name": "pitacco_ifood_contact_locator_private_ingestion",
+    "normalized_sha256": "6e9e6493dafe798f494599092451b02bbefbc9f07c502866708841d23d2a1aa7"
+  },
+  {
+    "version": "20261117050440",
+    "name": "pitacco_driver_arrival_privacy_proof",
+    "normalized_sha256": "d1e3c967595ef3a40d242cf1a910f6a991230cf502c0bab217bab45c8d63a4fb"
+  },
+  {
+    "version": "20261117050507",
+    "name": "pitacco_driver_earnings_masked_completed_records",
+    "normalized_sha256": "4c451762567454166510a996aa7f32f56d3de8812a51ebc68662ce67aa3894a0"
+  },
+  {
+    "version": "20261117050520",
+    "name": "pitacco_customer_tracking_arrival_delivery_code",
+    "normalized_sha256": "7e603e6094ee5f741fdf6681111a47ce2f5354323fa021dad50b52a34425bcc4"
+  },
+  {
+    "version": "20261117050608",
+    "name": "pitacco_ifood_courier_arrival_verify_bridge",
+    "normalized_sha256": "a9fc9418299b72ae899db5ce2dc49f826b1e7492ca7d2742f17eb8d1520a3d47"
+  },
+  {
+    "version": "20261117050707",
+    "name": "pitacco_customer_tracking_public_number",
+    "normalized_sha256": "041010cb11ec09914f4dbfa7b519182c9d09a740cc6215a545c857c6d092c8c3"
+  },
+  {
+    "version": "20261117051240",
+    "name": "pitacco_driver_terminal_rls_role_guard",
+    "normalized_sha256": "819f1905577f6271dd8918a9231d65c3fb31c13edc9a503a167e6f2976620b69"
+  },
+  {
+    "version": "20261117054144",
+    "name": "fix_driver_arrival_rpc_aliases",
+    "normalized_sha256": "4158aee68e3db98bfd297bb30c9ccb3a5bae6cd8ac083a0a00c84d615a7e8db5"
+  },
+  {
+    "version": "20261117123311",
+    "name": "pitacco_app_releases",
+    "normalized_sha256": "2b65493857f281dec0d7f4328839d156d6a5f1a89ce67af86fe2a1a3d144f7ae"
+  },
+  {
+    "version": "20261117130417",
+    "name": "pitacco_public_courier_download",
+    "normalized_sha256": "03bc9514292b52be57685402a25d52f50acdc191da6224dd655b884bfebc9953"
+  },
+  {
+    "version": "20261117131648",
+    "name": "pitacco_courier_push",
+    "normalized_sha256": "3f195f1f779e45fcbc90744e58a0aa0dd6963907d3e223a9f52793a0b976337f"
+  },
+  {
+    "version": "20261117143900",
+    "name": "pitacco_delivery_pricing_draft",
+    "normalized_sha256": "8e436283e5756154d1d96963c51867c45b72e9c8c7b6a17f35e3ca66af42e822"
+  },
+  {
+    "version": "20261117143903",
+    "name": "pitacco_store_readiness",
+    "normalized_sha256": "0150348b673cd85a7954e98d7ced33fa90a1faf26de8c3380ede01eb78462bfb"
+  },
+  {
+    "version": "20261117143908",
+    "name": "pitacco_delivery_quoted_checkout",
+    "normalized_sha256": "819b44e3fa4da1820c590dc5460c4fa0748cf3fa90010c332d98bbc83e62f547"
+  },
+  {
+    "version": "20261117143911",
+    "name": "pitacco_delivery_quote_limits",
+    "normalized_sha256": "8228ecceff042c7e69bb94b1521765ad0929fd52b83ff76742a86b429efbf7b3"
+  },
+  {
+    "version": "20261117145739",
+    "name": "pitacco_support_center",
+    "normalized_sha256": "16c90bbb3e329c10c8d1f687dd154b131f4a71ce2d1d33d4b2ec51aca9962be3"
+  },
+  {
+    "version": "20261117145742",
+    "name": "pitacco_operational_incident_monitor",
+    "normalized_sha256": "a1a641f529bd09452b13a31533475a7cd23a37da473a967388d592f9b73a8a01"
+  },
+  {
+    "version": "20261117154446",
+    "name": "pitacco_storefront_design_studio",
+    "normalized_sha256": "f232e864e055a6a9994a6f7cb0eb815ee7f66efc46b0c7629e17b68709882947"
+  },
+  {
+    "version": "20261117160805",
+    "name": "pitacco_self_service_onboarding_preflight",
+    "normalized_sha256": "25c2d2b1019158228e1be8c447f4103ae9533d970c3fed359a66882e6ff394ba"
+  },
+  {
+    "version": "20261117162645",
+    "name": "pitacco_windows_presence",
+    "normalized_sha256": "d331cf34865dd3350ec600744d52fe6d5c1a842cef704a44e03d8ea6693614bd"
+  },
+  {
+    "version": "20261117164334",
+    "name": "pitacco_windows_print_confirmation",
+    "normalized_sha256": "fdd796c4d9994d5a57d4db34763e2dfb003772495f17d40430c06a6aef4255b3"
+  },
+  {
+    "version": "20261117173611",
+    "name": "pitacco_store_opening_hours",
+    "normalized_sha256": "412abffb6410e7d5ee39f041a92bde21db749d94532e3bcd21316058f3bccbdb"
+  },
+  {
+    "version": "20261117173623",
+    "name": "pitacco_hours_readiness",
+    "normalized_sha256": "43cd4663188717ea320ad0badf4da6fb3be17d02ef1ec9babfb0692424ee0089"
+  },
+  {
+    "version": "20261117174737",
+    "name": "stage_courier_push_schedule_disabled",
+    "normalized_sha256": "0e7b1ef27944142e26e902b9a1e45f33a4999acd6cd85b9ee3f87fc7bcbb8c1d"
+  },
+  {
+    "version": "20261117203114",
+    "name": "pitacco_ifood_manual_accept_cancel",
+    "normalized_sha256": "5eb294f700d5b828eb11271a8dbcc9a3b7219eeed19197f08a54de08a783171f"
+  },
+  {
+    "version": "20261117210139",
+    "name": "pitacco_print_sectors_source_category_fields",
+    "normalized_sha256": "2d99277d7ddf3700151c055c942d2b0695f2c2a415d4a2e012288c1a4417c629"
+  },
+  {
+    "version": "20261117212228",
+    "name": "pitacco_one_courier_test_store",
+    "normalized_sha256": "cdd8df3aff54adafdc3c4ddd72c6a8bad83da4d6585a23342b80b1a2c803a355"
+  },
+  {
+    "version": "20261117213414",
+    "name": "pitacco_courier_app_second_test_store",
+    "normalized_sha256": "9ee12b8db3c6a0e1dd142676f75fa7e4ec79d27552becb89f81e9a240328eb87"
+  },
+  {
+    "version": "20261117220013",
+    "name": "ifood_prepared_not_delivered",
+    "normalized_sha256": "9b9cae8431887d1f57c663e5d724f496056a21fc2494bfe8e344c2e9b66a17a6"
+  },
+  {
+    "version": "20261117221421",
+    "name": "windows_print_order_queue",
+    "normalized_sha256": "801ce519880bfedd567518cb29a704a6f53d40b04690365ecd1dcb8d16b82ce5"
+  },
+  {
+    "version": "20261118001833",
+    "name": "pitacco_cross_store_push_assignments",
+    "normalized_sha256": "3163304247c7eedc64183acf331290577adcf2ce262bd9000b8eb7f39d68b4ea"
+  },
+  {
+    "version": "20261118004507",
+    "name": "courier_push_readiness",
+    "normalized_sha256": "771a8838ce10ec60de9dcb63ce122ac3ad08d1a2bd585981dfaff55a7a122553"
+  },
+  {
+    "version": "20261118012514",
+    "name": "pitacco_owner_incident_pulse_and_immediate_failure_capture",
+    "normalized_sha256": "43263659ffe8df3f9399b7bc700f0e5621a02c5ffc1f76b8f3792a4b6ffd50bc"
+  },
+  {
+    "version": "20261118033903",
+    "name": "pitacco_owner_diagnostic_snapshot",
+    "normalized_sha256": "b69eb211a0736465eb5c5279166cec225b27d051ab71da0fd193eb12cab89c1e"
+  },
+  {
+    "version": "20261118040500",
+    "name": "pitacco_owner_repair_approvals",
+    "normalized_sha256": "c9c187325dcd853a6050ab5bc792ab464c72860830d61e5f65ae95de5273bf54"
+  },
+  {
+    "version": "20261118041708",
+    "name": "pitacco_courier_native_voice_push",
+    "normalized_sha256": "a0a9922ce207da81682876c41d9ac902861ab1f0030131821e83e238ca84875c"
+  },
+  {
+    "version": "20261118042552",
+    "name": "pitacco_owner_recovery_preflight",
+    "normalized_sha256": "cb4fd9b75deb712a5fe87d5d6ab414172edc5b1c89cfccba30173948aabde0df"
+  },
+  {
+    "version": "20261118130553",
+    "name": "pitacco_driver_route_ifood_reconcile_20261118",
+    "normalized_sha256": "a44aa9539212ef0331f81788f8380233eecccf628b6c8c18035ffcbbef3a827c"
+  },
+  {
+    "version": "20261118130915",
+    "name": "pitacco_ifood_external_proof_20261118",
+    "normalized_sha256": "3ed88a16ac224862b03cae48b261cec3c753e955625aae4919d80c0232a4dfd4"
+  },
+  {
+    "version": "20261118135802",
+    "name": "pitacco_courier_terminal_status_sync_20261118",
+    "normalized_sha256": "b78750d0d120b8d9d2c5aa65d1ff6cc15054b697f0be74962a701acb4e0ee4bb"
+  },
+  {
+    "version": "20261118141451",
+    "name": "pitacco_courier_completion_earnings_20261118",
+    "normalized_sha256": "276bd62be3e7bd47f402fd378c268981cf19d3d19facbe6db0b8eb8ed393c040"
+  },
+  {
+    "version": "20261118145246",
+    "name": "pitacco_courier_finance_schema_compat_20261118",
+    "normalized_sha256": "284933a523bf54965e7e39309e2c839102067a3c61285b6a8b34ff09c3947cfd"
+  },
+  {
+    "version": "20261118145249",
+    "name": "pitacco_courier_original_freight_workday_20261118",
+    "normalized_sha256": "c61d084690cca2c58fbe42bfa2c9504da1c6a4989b0d0d42c0a6d9cfd005b58d"
+  },
+  {
+    "version": "20261118145252",
+    "name": "pitacco_checkout_original_freight_receipt_20261118",
+    "normalized_sha256": "e4b5f110a589c4fd396aeae14dde012dcf0b074f4b8d7004b4a95bc040f69f96"
+  },
+  {
+    "version": "20261118145256",
+    "name": "pitacco_courier_daily_financial_reports_20261118",
+    "normalized_sha256": "8c2c3eee19c4c915f49eff8623e71992db33e29af6738cec2d0da46317b8ff70"
+  },
+  {
+    "version": "20261118145947",
+    "name": "pitacco_courier_shared_test_pay_rule_20261118",
+    "normalized_sha256": "523103d6fa1cdfbafbbf26b25cbabf2817a8973a2545cbca296c2821f0215c19"
+  },
+  {
+    "version": "20261118155926",
+    "name": "pitacco_official_android_external_release_20261118",
+    "normalized_sha256": "cf80875cfa50b78b7a019513f75acd640ae3d80606219c240bd4dc6865212a45"
+  },
+  {
+    "version": "20261118155930",
+    "name": "pitacco_register_official_android_206_20261118",
+    "normalized_sha256": "e144ed7e9168999b054df8381f20a9d73d415dfe9ad735da04a088ea098c553b"
+  },
+  {
+    "version": "20261118185344",
+    "name": "fix_stale_completed_courier_route_assignment",
+    "normalized_sha256": "df09e784f3a162a744c44c7931f551e37931e2d64455f96edb842315244d758d"
+  },
+  {
+    "version": "20261118190755",
+    "name": "courier_authenticated_server_timestamped_gps_reporting",
+    "normalized_sha256": "4a6ca12c318557d9abc79c612b52b2df90a97aa5606af364dc98090025a4a421"
+  },
+  {
+    "version": "20261118192044",
+    "name": "register_official_android_207_gps",
+    "normalized_sha256": "4a5bbf7469c56fec9df90fe766e1e77691a64acd7efd3fc43b4fbba9605387d2"
+  },
+  {
+    "version": "20261118193812",
+    "name": "order_stage_controls_require_ready_before_route_assignment",
+    "normalized_sha256": "e1b96db9a1704233360b873e0e4c2c62ec199a64162ba29fb45489f5950f3f13"
+  },
+  {
+    "version": "20261118194546",
+    "name": "manager_conclude_only_preverified_own_delivery",
+    "normalized_sha256": "1c821b4a6a030933b386ff9c94272dd2b68b11b5b3a8cc1f0c17187637d7c1b9"
+  },
+  {
+    "version": "20261118205444",
+    "name": "ifood_dispatch_only_after_own_courier_collection",
+    "normalized_sha256": "b02685dc8d1361169ce22efd6294a690d35af0358e4eaafea36b6668f0ca9faa"
+  },
+  {
+    "version": "20261118232242",
+    "name": "register_official_android_209_gps_permissions",
+    "normalized_sha256": "2c740b2e3db81b01f39315bbbce4e4ad35233eb6bbf637cd2970f11eddca5651"
+  },
+  {
+    "version": "20261118234931",
+    "name": "native_courier_background_gps_scoped_capabilities",
+    "normalized_sha256": "9f17fee5099e39be9bf9ef22f29b7d9956cee4655b9e974655ab8f72c76829ef"
+  },
+  {
+    "version": "20261118235404",
+    "name": "register_official_android_210_background_gps",
+    "normalized_sha256": "d798a77fed44a3eafe01776f869f68680d77d7148e5f5ed061d2895403f0422d"
+  },
+  {
+    "version": "20261118235513",
+    "name": "fix_android_210_official_download_url",
+    "normalized_sha256": "3f12d38b13e10cef51be2d3ece2abc63db984806b810ea7ede67fde2d7ef04f6"
+  },
+  {
+    "version": "20261119002411",
+    "name": "windows_native_background_order_watcher",
+    "normalized_sha256": "5139baf5c718ceffd65914f79319384e4e0ad82a2ebc1f33854a31d960ce1b66"
+  },
+  {
+    "version": "20261119002444",
+    "name": "courier_native_background_assignment_alert_fallback",
+    "normalized_sha256": "6510854f2149a4391bebb011a4d382d56f3cdb1654c88c45f3c1765e41a6fb2d"
+  },
+  {
+    "version": "20261119002806",
+    "name": "register_official_android_211_native_shift_alerts",
+    "normalized_sha256": "047e1247fcdcfc7c9e8cf5dcb62e248b85d41847f47222ca8e29cc4a0578c9c4"
+  },
+  {
+    "version": "20261119010145",
+    "name": "vault_backed_courier_push_cron_authorization",
+    "normalized_sha256": "4fb939a0504edc6182d63cf35f845fbd72d368e9fc6a7b0bae72c4357b2cbe08"
+  },
+  {
+    "version": "20261120134156",
+    "name": "20261120120000_invalidate_store_pin_on_address_update",
+    "normalized_sha256": "376b1e20738ab9e2aaf39cc5f5ede9d1bdf63a675aec0d163fed3a31af0b7da9"
+  },
+  {
+    "version": "20261120134159",
+    "name": "20261120120500_store_scoped_shared_courier_map",
+    "normalized_sha256": "e079ddd1f403d8b03fd31d49ad4c74a5d235d34d8c4819095be4f00e5ddb86ff"
+  },
+  {
+    "version": "20261120184106",
+    "name": "20261120143000_visual_delivery_zone_pricing",
+    "normalized_sha256": "990a25c0da6bc7e9b713104faba1d8a0d298b583acbfa54bb444a0a1516bdb0e"
+  },
+  {
+    "version": "20261120184110",
+    "name": "20261120143500_checkout_delivery_quote_and_public_menu",
+    "normalized_sha256": "b0542a7b0c9cb1613616ede07117af077dd8d3af056b4a50f64c38e0237b46bf"
+  },
+  {
+    "version": "20261120215835",
+    "name": "fix_service_role_geocode_rate_limit_for_secret_keys",
+    "normalized_sha256": "dba24755e23e456228e3b1c16a13ddd7c4fb70a6d4703d42272fc91186e885ea"
+  },
+  {
+    "version": "20261120221255",
+    "name": "limit_nominatim_at_one_request_per_second_globally",
+    "normalized_sha256": "1eca4961209e6ad77191082f50a62796db3fe57ff839ac4cf373351d478fa284"
+  },
+  {
+    "version": "20261120225941",
+    "name": "enable_up_to_twelve_independent_delivery_polygons",
+    "normalized_sha256": "29d9a0acd83f06e7d9aa658f0f04fc1dcd27be860f8cbabecec7b0cfa49319ea"
+  },
+  {
+    "version": "20261120230246",
+    "name": "expose_delivery_region_shapes_to_public_map",
+    "normalized_sha256": "9a0cddb669e07358cc28284ac8df311fa3be3fdd9c47a5d00e9f38cb7035b1aa"
+  },
+  {
+    "version": "20261120230732",
+    "name": "fix_courier_visibility_shared_test_store_and_payments",
+    "normalized_sha256": "f24f2b0fdbcc71b32b4507f5e1d96052afc729db23fed21ea628cf40d02c1604"
+  },
+  {
+    "version": "20261120231431",
+    "name": "driver_map_shop_origins_for_all_active_assigned_orders",
+    "normalized_sha256": "da5b70deb9a1ae41403c9174f16466c7dc3bc4997e9396e5ec934e009ac9285b"
+  },
+  {
+    "version": "20261120231554",
+    "name": "driver_map_own_and_authorized_store_origins_even_when_idle",
+    "normalized_sha256": "22e3f673e16559aeb76d1444c17fa595016b5a346b0cef6b47b9ffb8b8b955f8"
+  },
+  {
+    "version": "20261121013235",
+    "name": "courier_push_readiness_reports_scheduler_without_secrets",
+    "normalized_sha256": "4c8d9d19181d6a37fe31f5a5baa5af5a065a438d50692f54e2699a06c1588879"
+  },
+  {
+    "version": "20261121013438",
+    "name": "prepare_guarded_courier_push_scheduler_disabled_until_firebase",
+    "normalized_sha256": "18fd8a75a3925cba0dce1be8129f6fcd0205bc4a67798fbf651b06362aa3af7c"
+  },
+  {
+    "version": "20261121042841",
+    "name": "courier_physical_activity_shift_motion_telemetry",
+    "normalized_sha256": "ec3017378c2a9f6fd35c7099c224dbffd933b5a86aebea45dba19b6f4ff00f57"
+  },
+  {
+    "version": "20261121042908",
+    "name": "fix_courier_motion_float_validation",
+    "normalized_sha256": "ca6d20292544c94d2dc3dc69ea5e167f6c3f3e2cbf533e2b51fbbd0a2cef68f1"
+  },
+  {
+    "version": "20261121133522",
+    "name": "admin_broadcast_silent_notifications_for_all_couriers",
+    "normalized_sha256": "6b505f843b6b7f8e958aa4fe59fd83cf28a957d72e7f87b58a381ac461a4ef0a"
+  },
+  {
+    "version": "20261121133552",
+    "name": "restrict_loud_courier_assignment_alerts_to_home_store_only",
+    "normalized_sha256": "f2cac356f37de67e3beeff18c7261b1cc11ee824b1eb92ff5064cd6c75f1d069"
+  },
+  {
+    "version": "20261121133704",
+    "name": "courier_authenticated_silent_admin_inbox",
+    "normalized_sha256": "9d442e876d235d6f2dd35e8fb28c8a03ee6b9c44e349e68460d57adc5f2338fc"
+  },
+  {
+    "version": "20261121133946",
+    "name": "restrict_admin_campaigns_to_silent_capable_android_devices",
+    "normalized_sha256": "1fec6bb878d2f03e009fbece1ab8bd1534fc52eef73c95efe3097a6ddf3b6e0c"
+  },
+  {
+    "version": "20261121160450",
+    "name": "authenticated_courier_firebase_registration_diagnostics_no_secrets",
+    "normalized_sha256": "75c70ee038e48da7180a3d89e2d977627d945a006a0b7dc6e1d420a78171f8a4"
+  },
+  {
+    "version": "20261122144807",
+    "name": "courier_payment_receipt_collection",
+    "normalized_sha256": "dd091c2bd5ac8bfe28e55d8211cd295e7b9f3769a2eb403f2cf3360c21727cbf"
+  },
+  {
+    "version": "20261122145343",
+    "name": "courier_card_payment_on_delivery",
+    "normalized_sha256": "87ad3f839fdfb2b88fea68dd1b9a9dc5955ea7697d0e2f9b2b7eac3332c12a15"
+  },
+  {
+    "version": "20261122172641",
+    "name": "store_delivery_code_digits_ifood_four",
+    "normalized_sha256": "848b6a194a07dd0559d5ed715612b9f20f751777826f66f75547a130eb67691e"
+  },
+  {
+    "version": "20261122173311",
+    "name": "own_delivery_codes_constraint_compat",
+    "normalized_sha256": "af07038b0b79c62735f57caedfa8d0b89f331d31085f5c25c739309c8a2c8d7d"
+  },
+  {
+    "version": "20261122173325",
+    "name": "own_delivery_pin_trigger",
+    "normalized_sha256": "fb0b547e773f19f5d602d675911237297f618f2cf24691d2e1005fef39d5a400"
+  },
+  {
+    "version": "20261122173447",
+    "name": "own_delivery_code_secure_random",
+    "normalized_sha256": "4ac8cb7a1c589bef5c448967f0e64ec150a228a7b85805520056bf2425fe2af4"
+  },
+  {
+    "version": "20261122190757",
+    "name": "ifood_dispatch_requires_departed",
+    "normalized_sha256": "302497b37ac8262ca611caf9be3624936d5bdabaa5fd40266e3aa16b6f4cc323"
+  },
+  {
+    "version": "20261122200034",
+    "name": "fiado_schema",
+    "normalized_sha256": "89f48c97653520765244fe6b247934c03c8e2eecaaf98adbe2993998f80915b6"
+  },
+  {
+    "version": "20261122200038",
+    "name": "fiado_manager_api",
+    "normalized_sha256": "9870f7e54dac8f68b178093a85dfd55dd537986d6fbb61a8a02f8c4138afb718"
+  },
+  {
+    "version": "20261122200041",
+    "name": "fiado_credit_engine",
+    "normalized_sha256": "2c7f922fa586b463348eb847ab7068a68815bb297ebe11b94122f7c823f7d57f"
+  },
+  {
+    "version": "20261122200047",
+    "name": "fiado_public_checkout",
+    "normalized_sha256": "87a9e71688b31ac8ee0d82e9e452ec818da1ad851a157368abcce0007122dd09"
+  },
+  {
+    "version": "20261122200050",
+    "name": "fiado_courier_privacy",
+    "normalized_sha256": "da4b1ecfdd6c028885396b4e2aa54791210648e6df6eb80d8292498ab5d6facc"
+  },
+  {
+    "version": "20261122200053",
+    "name": "fiado_balcao",
+    "normalized_sha256": "866cce93fb2c66eb02e763a6b8222d8d52f40c4160848e5b324a0686654d07a2"
+  },
+  {
+    "version": "20261122200057",
+    "name": "fiado_courier_detail_privacy",
+    "normalized_sha256": "6a191fffa405ea496236a657a54664fca808e7f0b58f8fdc17d59f11bc93f213"
+  },
+  {
+    "version": "20261122203122",
+    "name": "fiado_financial_report",
+    "normalized_sha256": "c9c5dac5479b9867888e95c170b35ed8979366b2c9d82ca3b1f20ab8f6425f30"
+  },
+  {
+    "version": "20261122203338",
+    "name": "coupon_start_date_guard",
+    "normalized_sha256": "f129cc4f18ec11f49ea07f155413cc6e1264a602b4066d79f6b8e8a7755569df"
+  },
+  {
+    "version": "20261122205113",
+    "name": "ifood_arrival_official_dispatch_backend",
+    "normalized_sha256": "95422107b08146f9fea3824f72f577facbc24a40e32141c5a8244e66a2cd163d"
+  },
+  {
+    "version": "20261122210148",
+    "name": "inventory_option_recipe_consumption",
+    "normalized_sha256": "d9fbeb9031342c31e3356b87af96b63553a6e21f854ec8459840c3f00ccc9c6f"
+  },
+  {
+    "version": "20261122211939",
+    "name": "inventory_unit_cost_profit_snapshot",
+    "normalized_sha256": "6c5ae61d2dc47dd3fbaf2fbc7e689a4756bbfe7562095578f91ffc7dc1f1a674"
+  },
+  {
+    "version": "20261122212215",
+    "name": "fideliza_runtime_schema",
+    "normalized_sha256": "8d3fd7165b616508f6de41f759af1f6441d103dbd5b7fbbe028f2e5518a9d971"
+  },
+  {
+    "version": "20261122212226",
+    "name": "fideliza_rewards_engine",
+    "normalized_sha256": "2c86da1f3a81c068f064ae9938878b0867abd70c15807c9ce053b104fb9e782f"
+  },
+  {
+    "version": "20261122212235",
+    "name": "fideliza_checkout",
+    "normalized_sha256": "c508f737c2637147283913bea66a7174ac8aaf878228180ad27b68a601230a2d"
+  },
+  {
+    "version": "20261122220358",
+    "name": "sealed_beverage_recovery_and_cancellation_losses",
+    "normalized_sha256": "6379feedbe34e7fbb913c9ba9568bd73464a6e40f9ca4fd92c43b1fd0019fe5e"
+  },
+  {
+    "version": "20261122234416",
+    "name": "fideliza_manager_rls_allow_platform_owner_20261122",
+    "normalized_sha256": "a735bc0c14ab36ffec16f44d439c02c24d397112f775d2694550d784628d5df5"
+  },
+  {
+    "version": "20261123000029",
+    "name": "fideliza_phone_identity_no_key_20261122",
+    "normalized_sha256": "eb6ab0f36c35318ebbabf0ca5fc8c0712812104762913c321d59c1788e68fdbe"
+  },
+  {
+    "version": "20261123021546",
+    "name": "fiado_phone_payment_eligibility_20261122",
+    "normalized_sha256": "285bba941376f03a5a1fde35085de0b30dde511e356ee8bf57be663f26908986"
+  },
+  {
+    "version": "20261123025031",
+    "name": "fiado_private_credit_status_20261122",
+    "normalized_sha256": "9ea4d5700c66a2580c2e8488f97ff3e01902c6d820e10e720da6f98dd0cdeb42"
+  },
+  {
+    "version": "20261123042452",
+    "name": "menu_templates_current_engine",
+    "normalized_sha256": "5b71a981a6b6aea2c9dde967a3e902aa6b6f2dd25a79d296ff6c5f8ebc967782"
+  },
+  {
+    "version": "20261123042610",
+    "name": "cardapio_v2_top_sellers_public_20261123",
+    "normalized_sha256": "122aeafa4c4da00bb463418e3e707375559ce0b00e20de6c5168a30d26a69241"
+  },
+  {
+    "version": "20261123102431",
+    "name": "fiado_store_approval_without_code_20261123",
+    "normalized_sha256": "a49631caa01ddb30b4502fd1a3211b9981a672d1181f9cd8673c15d14b3060ce"
+  },
+  {
+    "version": "20261123104606",
+    "name": "fiado_birthdate_verification_20261123",
+    "normalized_sha256": "f19ed3ce3fccd01d07267eae69e5f3320802dc46f4a1c4f34f14c671b2b6a193"
+  },
+  {
+    "version": "20261123111924",
+    "name": "fiado_pin_six_digits_secure_20261123",
+    "normalized_sha256": "bad28cc5fb8d3a1830e6cc5fd23a3da64a5789f81b6969f444572ad2c235e08f"
+  },
+  {
+    "version": "20261123113746",
+    "name": "public_cart_recovery",
+    "normalized_sha256": "acdb63a4c6007dc6d67b17f8c51a90557503d9a67e51708b03bad063a5b9842d"
+  },
+  {
+    "version": "20261123123311",
+    "name": "fideliza_referral_links",
+    "normalized_sha256": "0e354ce9b35e25855102f1114fe343cc9ac6cc3bb387a8d8d6c43e4c7320f0d5"
+  },
+  {
+    "version": "20261123134134",
+    "name": "v2_customer_profile_and_fiado_statement_20261123",
+    "normalized_sha256": "6e19072958795ac285e885f5c8603c31c3c5c8c0433c9a31011ed22c5b4a19ac"
+  },
+  {
+    "version": "20261123142621",
+    "name": "v2_customer_profiles_and_fiado_statement_20261123",
+    "normalized_sha256": "6e19072958795ac285e885f5c8603c31c3c5c8c0433c9a31011ed22c5b4a19ac"
+  },
+  {
+    "version": "20261123154627",
+    "name": "studio_media_bucket_and_image_validator_20261123",
+    "normalized_sha256": "447ace635862f5ba020b58bcfb086bba764ec8493262442ff5c70c6202e54677"
+  },
+  {
+    "version": "20261123164854",
+    "name": "studio_save_and_publish_atomic_20261123",
+    "normalized_sha256": "779497f2b70879f5d28acc82b554d5f8251a01a57c202bec79c939724ff266b7"
+  },
+  {
+    "version": "20261123171923",
+    "name": "menu_category_icons_per_store_20261123",
+    "normalized_sha256": "1ef14e3351917ce998255ef730b8b5b0d6dd91137277d8dd6ad3b3da18f3d191"
+  },
+  {
+    "version": "20261123182839",
+    "name": "studio_existing_branding_and_image_only_banners",
+    "normalized_sha256": "d797da1dd456163008f68fcad48cf45dee8ff6a00103b1796a0338a143cebffa"
+  },
+  {
+    "version": "20261123205757",
+    "name": "menu_import_universal",
+    "normalized_sha256": "039b8fb983eacb5dbc4c38d11f07254fb9f2a502e3dcfc854f79788a250038d8"
+  },
+  {
+    "version": "20261123205836",
+    "name": "menu_import_empty_image_fix",
+    "normalized_sha256": "ca5669f71241e4d054fd8aed4c67dddf458b6c8dd697788771371b0c58acf40e"
+  },
+  {
+    "version": "20261123225347",
+    "name": "catalog_studio_shared_groups_stock",
+    "normalized_sha256": "153acbc2a28e76a9ca36705215295b0a002b7bd6dbe8cfce81b3100c7cde61bf"
+  },
+  {
+    "version": "20261123225444",
+    "name": "catalog_template_read_permission",
+    "normalized_sha256": "72c065686fd5eafd9eff07ee4d7cbf07d18117e0f1a294973391ea67d9d30066"
+  },
+  {
+    "version": "20261123232657",
+    "name": "menu_catalog_order",
+    "normalized_sha256": "f56183918854a1c332fbf4e12c0aa9937e508e28d45578595da5cfb97f5e0614"
+  },
+  {
+    "version": "20261123232959",
+    "name": "sync_shared_template_option_order",
+    "normalized_sha256": "eb0643e1c1ab15954380d5a93a4751d79a65e36a2843d7c1192313862da7accb"
+  },
+  {
+    "version": "20261123233516",
+    "name": "shared_template_sort_sync",
+    "normalized_sha256": "d869779e079f2714dc3a4eb64bc42a963a5596c0ff2a02ff32010a3e6af1d8d3"
+  },
+  {
+    "version": "20261123234219",
+    "name": "linho_test_centralize_complements",
+    "normalized_sha256": "0c6be0ac9789f64a87964e28a33cb2266a5e77f5bbc15339b34381a9e1365b1e"
+  },
+  {
+    "version": "20261124002958",
+    "name": "cash_change_structured_checkout",
+    "normalized_sha256": "f633d651c3c9232c0b19220ca07d3292b3228d4cf8e3f730fbcbd26ab5eb84c3"
+  },
+  {
+    "version": "20261124003206",
+    "name": "cash_change_trigger_security",
+    "normalized_sha256": "c03a779dc821345f33b9bccc1012edaf4550e8c4988a0158648f98e4b16efe79"
+  },
+  {
+    "version": "20261124005310",
+    "name": "publish_official_courier_2_0_15",
+    "normalized_sha256": "1e7b4b4c707f7dbf14b3b4df4df514dcc0e2d6868d407b45adc189af17c09b86"
+  },
+  {
+    "version": "20261124011223",
+    "name": "publish_official_courier_2_0_16",
+    "normalized_sha256": "796af76d0e263645eb8dd80a288e166381f2db7003492d2801037d74f4c38266"
+  },
+  {
+    "version": "20261124022600",
+    "name": "fiado_manual_customer_block",
+    "normalized_sha256": "f6a092fc73780946b13e612539b3a86ece4b2729f6bd8cc59c16ce37e0ac1f11"
+  },
+  {
+    "version": "20261124032627",
+    "name": "active_order_cancellation",
+    "normalized_sha256": "62fbdb7222fb49d44a61a4b005485ff5afbd6188b5e00198b54d38d799bbf274"
+  },
+  {
+    "version": "20261124032812",
+    "name": "delivery_incidents_and_capacity",
+    "normalized_sha256": "da48f2202d76442be450b43691ed3a313412ea29b9840dceec5d5ae9bae074cc"
+  },
+  {
+    "version": "20261124033040",
+    "name": "delivery_incidents_realtime",
+    "normalized_sha256": "964e3164f65d600ecc48aa6dea6120a1e91ab81d21539d1327901e1c60e68280"
+  },
+  {
+    "version": "20261124033610",
+    "name": "incident_whatsapp",
+    "normalized_sha256": "58ed9e3754c12d70139acc1952734a7e44fa46346402837168b2ad5df589f70b"
+  },
+  {
+    "version": "20261124034346",
+    "name": "windows_incident_poll",
+    "normalized_sha256": "0373e7c579f595e6357882fd0eea5eb2bd696074b50bf9dd53a7e1c82ff7f467"
+  },
+  {
+    "version": "20261124035818",
+    "name": "merchant_modern_customer_dossier",
+    "normalized_sha256": "4c6558e33d3965ded91afb0411f2285081b34b9e5939f82c6da3bd662c13dc0e"
+  },
+  {
+    "version": "20261124041955",
+    "name": "pitacco_auto_print_preferences",
+    "normalized_sha256": "10d42607d81c9ec32e001b5488bda9f3eb5fa8827034d285bdd0f022320c5837"
+  },
+  {
+    "version": "20261124042122",
+    "name": "pitacco_merchant_subscription_details",
+    "normalized_sha256": "45e52799e4bb7a38b9de985874507bd9a285b5e620c7d7cd679f57c01af28c44"
+  },
+  {
+    "version": "20261124042229",
+    "name": "pitacco_operational_shortcut_modes",
+    "normalized_sha256": "1dbd02caac43980c7fed0fa9c953d3186b5dfc984b22731cc0968bb38e33b7ec"
+  },
+  {
+    "version": "20261124042554",
+    "name": "pitacco_merchant_create_checkout",
+    "normalized_sha256": "6ed9573a9c69e7c4b565bf0e8ee0aebcb7e735149b587d844899b98dff575fe1"
+  },
+  {
+    "version": "20261124042834",
+    "name": "pitacco_plan_change_requests",
+    "normalized_sha256": "b375e288fe0f5c5cccf3b89b999410c7cb9912bb2f7ac1d6c8fd500db5b61a1c"
+  },
+  {
+    "version": "20261124100523",
+    "name": "pitacco_pizza_drafts",
+    "normalized_sha256": "0b06635e8bb4e706caf7edf00a6baae91da179f55b056f88ae75d13dfd4ac88d"
+  },
+  {
+    "version": "20261124101129",
+    "name": "pitacco_validate_pizza_registration",
+    "normalized_sha256": "dc0d79f251952b4e5662472bc0747d4e5a0526019c87cbd633d669995c11b9d6"
+  },
+  {
+    "version": "20261124101252",
+    "name": "pitacco_pizza_server_quote",
+    "normalized_sha256": "139c6e68c28c285b93279fa8d5a6538d8cefc1f00557af89afc877e26a052df6"
+  },
+  {
+    "version": "20261124101513",
+    "name": "pitacco_pizza_catalog_checkout_bridge",
+    "normalized_sha256": "36dede9e3b9a9260491998b0377dcb52b7782ce6d8d630ecb40c59090726632a"
+  },
+  {
+    "version": "20261124101652",
+    "name": "pitacco_pizza_publish_catalog",
+    "normalized_sha256": "104d783eb7357d67aafaa81a8f2f7464faf41b0391413e2491b1571b323cac73"
+  },
+  {
+    "version": "20261124101957",
+    "name": "pitacco_pizza_flavor_library",
+    "normalized_sha256": "11cdaf0e1ec6cc25d1ac30e24dacef6ad9574d53dd0b5e56c3d4f4154797582b"
+  },
+  {
+    "version": "20261124102124",
+    "name": "pitacco_pizza_proportional_stock_recipes",
+    "normalized_sha256": "ce29bc64126dc4b68dc44ddda8f57731816847f173f2859cf9a256dca8c0b980"
+  },
+  {
+    "version": "20261124125232",
+    "name": "pitacco_pizza_combo_drafts",
+    "normalized_sha256": "d00770f535a5d241c1aa278cc7e2e5cdf92621434c1df22423452ee4289e872d"
+  },
+  {
+    "version": "20261124125707",
+    "name": "pitacco_combo_checkout_stock_bridge",
+    "normalized_sha256": "457685437b122966d0782653124fc2fb4562b7d35f4b0aa6f2c82585186b1695"
+  },
+  {
+    "version": "20261124125828",
+    "name": "pitacco_combo_publication_fixed_composition",
+    "normalized_sha256": "969c4c9331fbf386e85c3d7cd349b3c019a2613d341b9758f9e4717b33774f77"
+  },
+  {
+    "version": "20261124143259",
+    "name": "pitacco_commercial_catalog_and_billing_guarded",
+    "normalized_sha256": "722bb577c03544130815e0da4f111e46f9ad1dfc8c685bf778569f560d5d0120"
+  },
+  {
+    "version": "20261124143629",
+    "name": "pitacco_owner_payment_claims_inbox",
+    "normalized_sha256": "2725cde785bdff269e1ce4d88be2ba320cdf81f9543445f8c8fda288f1698368"
+  },
+  {
+    "version": "20261124161014",
+    "name": "ifood_reconcile_confirmed_accept_marker",
+    "normalized_sha256": "7d41f726a9af963cbb0adaf804ccf2bdf4e65ddef761c81f6ca67ca70c51b03c"
+  },
+  {
+    "version": "20261124163038",
+    "name": "exclude_homologation_from_driver_earnings",
+    "normalized_sha256": "afc31001864bb09d0f29cb4611201d723504504fd2c73335bf41e1832274c399"
+  },
+  {
+    "version": "20261124164038",
+    "name": "commercial_catalog_flex_fixo_fifteen_day_trial",
+    "normalized_sha256": "94d20eb64c61dcf0464352938caa2c9f11928dc80243e933c37ade9a45117194"
+  },
+  {
+    "version": "20261124164500",
+    "name": "fixo_prepaid_first_invoice_and_manual_coverage",
+    "normalized_sha256": "8fbd109ac7e901b38f81481785e193cf00bf9941851834cc48d5162dda0ff0fe"
+  },
+  {
+    "version": "20261124165020",
+    "name": "first_fixo_trial_payment_grace_48h",
+    "normalized_sha256": "21d8a8c6f6f6f4024c9df5f06c26032801008b8c2128fb7f61a35d840d82d4bb"
+  },
+  {
+    "version": "20261124165612",
+    "name": "asaas_commercial_invoice_reconciliation",
+    "normalized_sha256": "830729d760ea855d5827ba09570750cc0d2d412296d788c2a275512a4a4e4064"
+  },
+  {
+    "version": "20261124165710",
+    "name": "asaas_customer_and_pix_charge_reservations",
+    "normalized_sha256": "87a4849beb8f2d5234865c6d5d8158aeea8c989e5e8e27eb7f36407f20bb95cf"
+  },
+  {
+    "version": "20261124170103",
+    "name": "asaas_signup_customer_and_single_payment_guard",
+    "normalized_sha256": "aac53df8646527b200f78d7a999ef7c4e32f866e69dbc3ca418566a0266bc36a"
+  },
+  {
+    "version": "20261124171106",
+    "name": "commercial_signup_plan_and_first_invoice_schedule",
+    "normalized_sha256": "0f1842d536a13397724b7dbef2e77502f75f2dd307a0f0b7776d0c99a1f9bed8"
+  },
+  {
+    "version": "20261124190539",
+    "name": "flex_to_fixo_paid_cutover_and_final_commission",
+    "normalized_sha256": "de82418e55514256e172988ac5d32abb3f60dfbe1563fff912e6756dddc089f7"
+  },
+  {
+    "version": "20261124190619",
+    "name": "flex_commission_require_accepted_order",
+    "normalized_sha256": "b5379daed8e110706574211e32cd57f750abcae29e8cf3908f9c600bc0fc8a90"
+  },
+  {
+    "version": "20261124190823",
+    "name": "fixo_to_flex_paid_coverage_cutover",
+    "normalized_sha256": "e81b48237f367cfab0822b014e6346f149df0d070fc738e911e062c0d5682331"
+  },
+  {
+    "version": "20261124191022",
+    "name": "commercial_first_trial_block_after_48h",
+    "normalized_sha256": "9cd7c24af1f8d5d21ace9d68ea8a1b4146c34a152787f9bc4771b0fa75fa4d65"
+  },
+  {
+    "version": "20261124191325",
+    "name": "asaas_commercial_refund_chargeback_review",
+    "normalized_sha256": "8c807e6f0a554fb53d4c56e8582d8ba5d1e1cc56ae67cbecfa439f7501685166"
+  },
+  {
+    "version": "20261124191722",
+    "name": "asaas_incident_admin_resolution_and_recovery",
+    "normalized_sha256": "4c71f474ae7dcadc19da9ef7d8a8d8c9f4544da655e607130ff347c4dadcf04b"
+  },
+  {
+    "version": "20261124191841",
+    "name": "commercial_recovery_notice_and_reference_guard",
+    "normalized_sha256": "10cc27b935fef3fa3068ddedaf470f61326a6eb0120f75c821e904566ee3370b"
+  },
+  {
+    "version": "20261124192920",
+    "name": "flex_two_percent_all_sales_catalog_v4",
+    "normalized_sha256": "ba815245d6f758118b7ff9323c04182810bdf79e75c6c19c1c3730acfd533b36"
+  },
+  {
+    "version": "20261125014038",
+    "name": "pagbank_connect_sandbox_registration",
+    "normalized_sha256": "980e2750d4953c16b7cd7b268fca3fee66982da24b820f804adb3e6c18acba37"
+  },
+  {
+    "version": "20261125014303",
+    "name": "pagbank_connect_sandbox_flow",
+    "normalized_sha256": "ee3e76bd762cbba9d316df8eb5f648ca70fd473d5c72ee01f4854fce22076bda"
+  },
+  {
+    "version": "20261125015153",
+    "name": "pagbank_sandbox_isolate_seller_identity",
+    "normalized_sha256": "be18ee36932ac868885ac2d04ee4ad5a58cdc819d040527c7264cb66e1a1a706"
+  },
+  {
+    "version": "20261125015445",
+    "name": "pagbank_sandbox_checkout_server_pricing",
+    "normalized_sha256": "59297bf144da76c00887bbaf39b8aa49644f77e7aa4ade682b35b03048999789"
+  },
+  {
+    "version": "20261125015516",
+    "name": "pagbank_sandbox_refresh_rotation",
+    "normalized_sha256": "56670a54baf0d8471712bc97c7214c93aa3dcbe4e374cb37bbd6f67652d0e59c"
+  },
+  {
+    "version": "20261125015529",
+    "name": "pagbank_sandbox_checkout_catalog",
+    "normalized_sha256": "ba3bb69199e1f75883d8735deabf38ff1a8da7368f1a258663fb64bed9949039"
+  },
+  {
+    "version": "20261125015650",
+    "name": "pagbank_protected_sandbox_storefront_preview",
+    "normalized_sha256": "4f28171d5df0ca6d09a6deb351f37290e3bdeaf0ab7835fc2e0d9c7987116881"
+  },
+  {
+    "version": "20261125020654",
+    "name": "pagbank_sandbox_upgrade_seller_permissions",
+    "normalized_sha256": "51dc9a2acee337ecf3c5b7049303d69a9a5170a83ed5fe18361d0edaaa57c9f3"
+  },
+  {
+    "version": "20261125020704",
+    "name": "pagbank_sandbox_refund_once",
+    "normalized_sha256": "233ac20846975927ffa03755cacf70b115a4df3e5ce1c63432c8a93317a86849"
+  },
+  {
+    "version": "20261125022644",
+    "name": "storefront_persistent_device_sessions",
+    "normalized_sha256": "84641ca53edf5405cc700219f18c8967281a9ac43d3a2c3ef5b52d66c9df9196"
+  },
+  {
+    "version": "20261125022803",
+    "name": "storefront_device_order_history",
+    "normalized_sha256": "2c2eba9f923f3cd1f3b239572d9548eccb5f9b9dae19827062eb19c926b06c09"
+  },
+  {
+    "version": "20261125143136",
+    "name": "ifood_shipping_test_context",
+    "normalized_sha256": "1d8badd7292a72ebedaf430817a85cb1cef4e6b6ed31fa0b0ccef479376a7a73"
+  },
+  {
+    "version": "20261125143153",
+    "name": "ifood_shipping_test_context_aliases",
+    "normalized_sha256": "fc53f41bd25e4d51cf21be2c561e8aff88eb7ce08c6450c782baa274eeeca606"
+  },
+  {
+    "version": "20261125143415",
+    "name": "ifood_shipping_test_booking",
+    "normalized_sha256": "5169193abbbc431785b21e61d03922eb9c5ed2809a72fe837804e0b4a9e6a4ae"
+  },
+  {
+    "version": "20261125143500",
+    "name": "ifood_shipping_booking_preserve_operator_until_confirmation",
+    "normalized_sha256": "4f70816ff63ca1f94d3f2036bcd011e6cb448123c0a76082bab55830227ed0f9"
+  },
+  {
+    "version": "20261125143559",
+    "name": "ifood_shipping_test_event_reconciliation",
+    "normalized_sha256": "587d82d861a3dfa331cbc34c6c7861b70c006bd6d051472399d1fa757a701b33"
+  },
+  {
+    "version": "20261125143645",
+    "name": "ifood_shipping_test_poll_lease_and_evidence",
+    "normalized_sha256": "ba921ad0f39e524e277ae6e6c09f1f4f8e5374e6f3d901badb2e1d4ca8865cf5"
+  },
+  {
+    "version": "20261125143700",
+    "name": "ifood_shipping_test_event_discard_pos_order_duplicates",
+    "normalized_sha256": "f68e5340a66f8cbe19136f00a316b3bdee8d084ee4e9d6c947ae183d485e39a9"
+  },
+  {
+    "version": "20261125152647",
+    "name": "ifood_shipping_ack_after_durable_processing",
+    "normalized_sha256": "94e5a2ffc5284e88501c811b5edf99366d764fd6ba23c2f548703f9ceca86904"
+  },
+  {
+    "version": "20261125152810",
+    "name": "ifood_shipping_poll_clock_slots",
+    "normalized_sha256": "06c0231da01bbc49c97fe16cfe91ef5e25920292ae2bf50a3b21decf29d5500f"
+  },
+  {
+    "version": "20261125171311",
+    "name": "ifood_shipping_external_test_quote_claim",
+    "normalized_sha256": "9c30777088f03e39f38036c915457cea65eea24c876bbbd3e1cd49609990a0bb"
+  },
+  {
+    "version": "20261125171834",
+    "name": "ifood_shipping_external_address_and_cancel",
+    "normalized_sha256": "f2ba3dc18b194a298dd01c5d788204b93172764c0a9c3399d03635a210d5ee90"
+  },
+  {
+    "version": "20261125175000",
+    "name": "ifood_isolated_central_production_routing",
+    "normalized_sha256": "025df492cc635d1a096d9e421ce7f5bafe593552e794de1625afdb0770411b35"
+  },
+  {
+    "version": "20261125180335",
+    "name": "ifood_central_merchant_requests",
+    "normalized_sha256": "a21e541034dc98cec7b742b58d77995a61b29fa2199f2824505d62af15b4d22f"
+  },
+  {
+    "version": "20261125180813",
+    "name": "ifood_central_automatic_check",
+    "normalized_sha256": "be11a377751ac747f856378977ac9a1c884e37175197480e6f2948e0102b3eeb"
+  },
+  {
+    "version": "20261125181308",
+    "name": "fix_admin_courier_campaign_store_audit",
+    "normalized_sha256": "5a07c9277456cd1eee984cc7cbca3486e54479463432cd80f7e9459214b184b9"
+  },
+  {
+    "version": "20261125222344",
+    "name": "daily_operational_orders",
+    "normalized_sha256": "53d66a462693fa90afb01ff5ab2e06b72d84fbc6d0ba7d6df7cf5f0d9c3de571"
+  },
+  {
+    "version": "20261125222445",
+    "name": "merchant_order_history_filters",
+    "normalized_sha256": "189e29300e1bcfc72bff8db6a8d30b756a8bfa91072d8da7e0c4517a4a8c84c1"
+  },
+  {
+    "version": "20261125223023",
+    "name": "merchant_history_terminal_only",
+    "normalized_sha256": "dfdeebba61dfb1280e82c12a36a5e94488d7c47f555a12bf012e9de63e557fea"
+  },
+  {
+    "version": "20261125223948",
+    "name": "manual_scheduled_acceptance_and_preparation_gate",
+    "normalized_sha256": "739cce366f12d2f595c5eb822a7f6b2e9dfbf7d22982aedc7959acfe05920445"
+  },
+  {
+    "version": "20261125224112",
+    "name": "ifood_scheduled_manual_acceptance",
+    "normalized_sha256": "50828fdd3dde051b3e376da3a871cdfd39bc2e142a86d8070e3b87e6370e4062"
+  },
+  {
+    "version": "20261125224913",
+    "name": "unify_scheduling_with_store_opening_hours",
+    "normalized_sha256": "ffef3a02e0e83b412fc8fe96bcd9e5a42e2db07708f97a3b499d052ec56e311c"
+  },
+  {
+    "version": "20261125225411",
+    "name": "unified_published_store_logo",
+    "normalized_sha256": "c72cb13bf36b4a544822a358f1cac2be131eb25d8aa8a44625f1484952fb6a5f"
+  },
+  {
+    "version": "20261125230636",
+    "name": "exclude_fiado_from_all_fideliza_benefits",
+    "normalized_sha256": "736a5a9844eaab2e3c55969252af36ab9f271cf0be036cb5dc4b6d476ffd8dfa"
+  },
+  {
+    "version": "20261125230753",
+    "name": "fiado_manual_counter_discount_and_referral_eligibility",
+    "normalized_sha256": "8d5cdd7b7a7b69983522d084f62551f60b5f61a22ba8e811136240134efd8de1"
+  },
+  {
+    "version": "20261125233025",
+    "name": "manual_and_geographic_delivery_grouping",
+    "normalized_sha256": "992db9b25069c8c2d40ae2271157d0c7b8c50b487c595d1418db8a3875054db5"
+  },
+  {
+    "version": "20261125233043",
+    "name": "geographic_grouping_internal_permissions_and_empty_routes",
+    "normalized_sha256": "412b6adbcb4d168502b175f4ec923e22b978e61e7500211f9ad1aea49f3e6fff"
+  },
+  {
+    "version": "20261125234138",
+    "name": "delivery_area_eta_snapshot",
+    "normalized_sha256": "f7cf31a69d4b4a60ad8c96a59043313f361602b04f37b59f9796c1ac3f891f33"
+  },
+  {
+    "version": "20261125234454",
+    "name": "ifood_official_preparation_estimate",
+    "normalized_sha256": "04a9929eb9dde878609c72fa383cc0d0afc0e8489e4323c57004a20e37b85412"
+  },
+  {
+    "version": "20261125234626",
+    "name": "public_tracking_delivery_estimate",
+    "normalized_sha256": "063b8c7e2bdddec28c47805f5fd0eafa106f0551a175212a7b15c3f58cc19425"
+  },
+  {
+    "version": "20261125235203",
+    "name": "priority_delivery_quote_and_dispatch",
+    "normalized_sha256": "c81143848a3cb712cf4525afc37309cb48d2e6825dc8cb8c5708db3dd0048bfe"
+  },
+  {
+    "version": "20261125235433",
+    "name": "priority_tracking_and_geographic_dispatch_schedule",
+    "normalized_sha256": "2bbdf5697d11f5906faf6fc44245b11e650246150daa563df0c2366eb44325ab"
+  },
+  {
+    "version": "20261126000700",
+    "name": "own_delivery_reassignment_and_manual_hold",
+    "normalized_sha256": "be2ba4204e49a5b4fac1e9292ecedd9833a32c66aa617105ae93b8723e2787f8"
+  },
+  {
+    "version": "20261126000828",
+    "name": "ifood_test_cancel_driver_preserve_sale",
+    "normalized_sha256": "e114253519758d8685f7e1148443a7d3ca1246a1aa40afb5feb577f4b7a8934b"
+  },
+  {
+    "version": "20261126002920",
+    "name": "checkout_committed_quote_recovery",
+    "normalized_sha256": "6a8d8f1d4005e098db5f6c1fa13f14052e4ef180418528d36c69421d943c39f9"
+  },
+  {
+    "version": "20261126015356",
+    "name": "self_service_commercial_plan_migration",
+    "normalized_sha256": "b11f3f50d98a1a70ebf342410cd2dbea1343b8830c8d1f88afcc6403af8e9ef8"
+  },
+  {
+    "version": "20261126021611",
+    "name": "manual_proof_identity_and_pending_activation_status",
+    "normalized_sha256": "8b0bbfec75755917da9c3f20aeaaeb3764cb6b697bde6c3e2f1d7bf54e5bf298"
+  },
+  {
+    "version": "20261126022129",
+    "name": "owner_legacy_payer_registration",
+    "normalized_sha256": "a1c0d1ee482cd945a5dc675bd7d8ed13e2dde72763f6c402347fe870803e8aa9"
+  },
+  {
+    "version": "20261126023353",
+    "name": "unified_store_registration",
+    "normalized_sha256": "ac41afb8ca35b1e29093712f1dc591ea19b7433119b94fd26d2a32acccea840e"
+  },
+  {
+    "version": "20261126024727",
+    "name": "customer_tracking_social_contacts",
+    "normalized_sha256": "c9e1659d4ba7c48355147c1cc6736e2a8ae8fd97acadc60c886bc8149c81ebfd"
+  },
+  {
+    "version": "20261126025900",
+    "name": "canonical_store_profile_logo",
+    "normalized_sha256": "3fbece5fcd6b49fa0620a1747ddf0de76da2d47a1595d618fc7c06577d88b055"
+  },
+  {
+    "version": "20261126030506",
+    "name": "fix_signup_store_registration_conflict",
+    "normalized_sha256": "fe95bbb33b038a7576570acf5eec0dfdf91bf66997c53d6f8f0c5f867c3ec7e9"
+  },
+  {
+    "version": "20261126032658",
+    "name": "owner_copy_store_catalog",
+    "normalized_sha256": "77ee7d1e2b685faf40b2f06439ff2b96159f90bd0b0627890b92246b3898c8e0"
+  },
+  {
+    "version": "20261126034557",
+    "name": "intelligence_business_insights",
+    "normalized_sha256": "c724f75c9b44a40c1389b5a0efaa13bc75b2471a8a784ba5146f0adf8c819b81"
+  },
+  {
+    "version": "20261126095940",
+    "name": "intelligence_admin_only",
+    "normalized_sha256": "e444d9513053cb8a57fea13430a06b383d2a5f87d392f8ff84467769180d967b"
+  },
+  {
+    "version": "20261126103331",
+    "name": "merchant_customers_own_channels_only",
+    "normalized_sha256": "29596b58d383d406b909284819a3b527f0a2d2a2271cc62b5c2aa8b6c67eef82"
+  },
+  {
+    "version": "20261126105458",
+    "name": "channel_payment_methods",
+    "normalized_sha256": "83545cf2f04ffda8b46aec74cee892a560a3754fd13c45042bb98be11e3c34b4"
+  },
+  {
+    "version": "20261126113011",
+    "name": "split_payment_settings",
+    "normalized_sha256": "1194a723aff241ec5c4311bdceaaea3acb0c8506ed311a8fa101c543f4ee8af6"
+  },
+  {
+    "version": "20261126113336",
+    "name": "payment_pricing_drafts",
+    "normalized_sha256": "cefe8fa144874c83772598a4b3f8780c896a689273b71e0ab0ec389765996e28"
+  },
+  {
+    "version": "20261126113339",
+    "name": "confirmed_payment_prices",
+    "normalized_sha256": "9583274e3109803c732a85e9b2b89bef81026b5cd54af51283b85b7093f3e7b2"
+  },
+  {
+    "version": "20261126113342",
+    "name": "payment_price_financial_report",
+    "normalized_sha256": "41cfe1d06efd259bda41ea86f942115ef3b865f1036f8f68511a11b0aba73265"
+  },
+  {
+    "version": "20261126113345",
+    "name": "payment_price_publication",
+    "normalized_sha256": "d0afc2c31453a4534e86d7b22385cb6896beb16aa6b315eb6d90e72556f2019b"
+  },
+  {
+    "version": "20261126115817",
+    "name": "verified_delivery_addresses",
+    "normalized_sha256": "3a68e1bcc2c22a37e5efbd12f8dd184c187d1b048044ae592f56ebdc1757a501"
+  },
+  {
+    "version": "20261126122251",
+    "name": "registration_email_identity_sync",
+    "normalized_sha256": "1ee9a4a50e9f421810e254613b872502ee1ea42a24c751a54ba82baa9da8b6c2"
+  },
+  {
+    "version": "20261126135333",
+    "name": "control_center_core",
+    "normalized_sha256": "d2da20d82b8bf189d5b42fc55f6f0945022f313183c18e271294d2e67bdff54a"
+  },
+  {
+    "version": "20261126143328",
+    "name": "control_center_stabilization",
+    "normalized_sha256": "4712a0985cc85d549d79eb1fa356ff85e1f8e64a908165f90b1a638a003e7ea8"
+  },
+  {
+    "version": "20261126143429",
+    "name": "control_center_database_heartbeat",
+    "normalized_sha256": "93dd54219e943af53c115bb7e2bfe801343f094797d01688328cad8732559bb5"
+  },
+  {
+    "version": "20261126143838",
+    "name": "control_legacy_rpc_least_privilege",
+    "normalized_sha256": "899600a085e2077a45ee2cdf7285c5900e0c00a04dd28c72af79fb488946fca6"
+  },
+  {
+    "version": "20261126144503",
+    "name": "control_center_current_commercial_plans",
+    "normalized_sha256": "52ba801ae4b8141bd0f8647f9e1b197a3af1406054e5890e102f8f62b03efbb4"
+  },
+  {
+    "version": "20261126145032",
+    "name": "control_center_store_block_visibility",
+    "normalized_sha256": "5927ab3d07da977e159f4abaf4ee8839d8066b1624a6465b49e8b908f016e8ff"
+  },
+  {
+    "version": "20261126145550",
+    "name": "public_store_effective_order_availability",
+    "normalized_sha256": "2df36309e91bc0212ea9231a312f90283ba11f3bad8a8b9616d7707489090690"
+  },
+  {
+    "version": "20261126150324",
+    "name": "ifood_suppress_new_orders_during_pitacco_block",
+    "normalized_sha256": "a82b652abad22d7bbb7dc2357f0b788de18ed968f645a008b197a8f3ef4813e3"
+  },
+  {
+    "version": "20261126150534",
+    "name": "marketplace_admission_cutoff_after_pitacco_block",
+    "normalized_sha256": "1259bb19269a33ecf5f94826b0b5a27714e1df7274cdde1f215b05f7b11c4168"
+  },
+  {
+    "version": "20261126161807",
+    "name": "merchant_membership_scope_and_verified_invites",
+    "normalized_sha256": "b6da0b48d342b650efec011d8f254df6e3c6c2d77a9a269bd54064c40da06d00"
+  },
+  {
+    "version": "20261126175045",
+    "name": "ifood_dispatch_recover_unstarted_claim",
+    "normalized_sha256": "67cce7deaebc4e1de04a7fb0dd38acf643ad64f93a4a06a6b4b6d7cff98616eb"
+  },
+  {
+    "version": "20261126175229",
+    "name": "ifood_verify_concluded_webhook_race",
+    "normalized_sha256": "222ae4578a80870e2ae2a9b7676ed8381777574544e927f96e5effffe99a3e17"
+  },
+  {
+    "version": "20261126181716",
+    "name": "group_same_destination_before_bearing",
+    "normalized_sha256": "e7515470dc935e0b61d652283aa963e12305aa5d104a270a8b7053d36deee9e6"
+  },
+  {
+    "version": "20261126181849",
+    "name": "manual_grouping_override_auto_rules",
+    "normalized_sha256": "cec68f40432576684850232508404e66aeb4c7dfb859e33c5172241435719e1a"
+  },
+  {
+    "version": "20261126182243",
+    "name": "reconcile_courier_collect_depart_entrypoints",
+    "normalized_sha256": "15fa309d7794c125fef76c0bc1c1f4c16e9b6d8034377027a803fd30457ffa74"
+  },
+  {
+    "version": "20261126182517",
+    "name": "reconcile_courier_arrival_entrypoint",
+    "normalized_sha256": "49447564b259b1033f88e26c403279fd379b43bf524b2e28178780e5541840bb"
+  },
+  {
+    "version": "20261126184601",
+    "name": "central_individual_complements",
+    "normalized_sha256": "34016401d6fef46befbf74e5ed0e7a730c29c076c2e241b72b8b1092e2acbe46"
+  },
+  {
+    "version": "20261126190823",
+    "name": "require_commercial_plan_for_all_stores",
+    "normalized_sha256": "e5decff82d6a0319b0e9550129f9d0313d5317063a2b9a2e425eb7713cd6207d"
+  },
+  {
+    "version": "20261126191013",
+    "name": "centralize_equivalent_groups_for_every_import",
+    "normalized_sha256": "d27f2bd6c5e23bfc1a75d125207de47618a9b823e729c7654362bd61b022e5a9"
+  },
+  {
+    "version": "20261126210557",
+    "name": "ifood_authorized_print_contact",
+    "normalized_sha256": "0a5ac944d36c0d5c2b910d0495023fd445ce480cb4c1e8f6a4e7e13c8f654597"
+  },
+  {
+    "version": "20261126211531",
+    "name": "ifood_ready_outbox",
+    "normalized_sha256": "ed9ab3fa18586e1a798f6811f1ea5e55361798ebe11570cce6fbe7d58443bc57"
+  },
+  {
+    "version": "20261126223836",
+    "name": "persist_customer_delivery_points",
+    "normalized_sha256": "0fa33f91a8890cd4736102044ff3a0ff16ca8f4b308ff064ae66824c3094f175"
+  },
+  {
+    "version": "20261126231529",
+    "name": "public_menu_identity",
+    "normalized_sha256": "91cc4ae617603f0e0c309934e6ec982e1713b9be35e9f6632dfd98c3a78cafa3"
+  },
+  {
+    "version": "20261126231533",
+    "name": "storefront_logo_framing",
+    "normalized_sha256": "18b7bc841a3cbd1cd1a8c98d22069d6d7673fa2a5c77d5ac031c444dde6882c3"
+  },
+  {
+    "version": "20261126234459",
+    "name": "public_weekly_opening_hours",
+    "normalized_sha256": "5bf5f2b5cf0433b5e1322e54be39e6f128c8abbac6d8084f99f2938b8cafa8f9"
+  },
+  {
+    "version": "20261127002200",
+    "name": "public_top_four_sellers",
+    "normalized_sha256": "f74eaee560b3eb3cfc4ec4293e12b537554aa7272a7dfaac786af37c1a329578"
+  },
+  {
+    "version": "20261127010700",
+    "name": "storefront_featured_colors",
+    "normalized_sha256": "ec1ea0bcfaad364b238dbd8ded85e0b78d6ddae248baff3ffa9d22e60a92bca9"
+  },
+  {
+    "version": "20261127035046",
+    "name": "public_checkout_private_auto_accept",
+    "normalized_sha256": "0078ad74863b690d571ac9c4e9ac42ea38135338acd1fbd16681211bcdd53b42"
+  }
+]
