@@ -24,6 +24,9 @@ declare items jsonb:='[{"product_id":"91000000-0000-0000-0000-000000000003","qua
 begin
  result:=public.pitacco_checkout_quoted_delivery('priority-recovery-fixture','92000000-0000-0000-0000-000000000011','Cliente','21999999999','Rua Fixture 123',items,'delivery','pix_manual','Complemento preservado','91000000-0000-0000-0000-000000000011');
  assert (result->>'total')::numeric=34,'Priority quote charges its own fee';
+ assert result->>'status'='accepted','Anonymous quoted delivery honors automatic acceptance';
+ assert not has_function_privilege('anon','pitacco_private.accept_own_from_checkout(uuid,uuid)','EXECUTE');
+ assert not has_function_privilege('authenticated','pitacco_private.accept_own_from_checkout(uuid,uuid)','EXECUTE');
  replay:=public.pitacco_checkout_quoted_delivery('priority-recovery-fixture','92000000-0000-0000-0000-000000000011','Cliente','21999999999','Rua Fixture 123',items,'delivery','pix_manual','Complemento preservado','91000000-0000-0000-0000-000000000011');
  assert replay=result,'Lost response returns original receipt';
  assert public.pitacco_public_checkout_recovery('priority-recovery-fixture','92000000-0000-0000-0000-000000000011')->>'order_id'=result->>'order_id';
@@ -73,4 +76,21 @@ begin
   if sqlerrm <> 'Chave reutilizada com dados diferentes' then raise;end if;
  end;
 end $test$;
+
+-- The same public customer path is used by plain and Fideliza+ checkout.
+reset role;
+insert into public.loyalty_coupons(store_id,code,discount_type,discount_value) values('91000000-0000-0000-0000-000000000002','AUTOACEITE','fixed',5);
+update public.pitacco_store_hours set paused=false where store_id='91000000-0000-0000-0000-000000000002';
+set local role anon;
+select set_config('request.jwt.claim.sub','',true);
+do $test$
+declare items jsonb:='[{"product_id":"91000000-0000-0000-0000-000000000003","quantity":1,"options":[]}]'; r jsonb; req uuid:=gen_random_uuid();
+begin
+ r:=public.pitacco_loyalty_checkout('priority-recovery-fixture',req,'Cliente','21999990081','',items,'pickup','dinheiro');
+ assert r->>'status'='accepted','Anonymous Fideliza pickup must auto accept';
+ assert public.pitacco_loyalty_checkout('priority-recovery-fixture',req,'Cliente','21999990081','',items,'pickup','dinheiro')=r,'Retry returns identical confirmation';
+ r:=public.pitacco_loyalty_checkout('priority-recovery-fixture',gen_random_uuid(),'Cliente','21999990082','',items,'pickup','dinheiro','','','AUTOACEITE');
+ assert r->>'status'='accepted' and (r->>'total')::numeric=20,'Coupon path also auto accepts';
+end $test$;
+reset role;
 rollback;
