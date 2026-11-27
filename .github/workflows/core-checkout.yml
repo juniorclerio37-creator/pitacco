@@ -112,6 +112,7 @@ jobs:
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8081/up >/dev/null && break; sleep 1; done
           node tests/storefront-http.mjs
           node tests/storefront-browser.mjs
+          node tests/template-v2-schedule-browser.mjs
           python3 tests/wallet-smoke.py
       - name: Validar modalidades presenciais em sessão isolada
         working-directory: backend

@@ -74,3 +74,10 @@ export async function readCoreSchedule(slug,fulfillment,options={}){
   }
   return state('ready',data);
 }
+
+// Compatibility contract for the existing V2 schedule selector only.
+export async function readCoreScheduleRpc(args,options={}){
+  if(!args||Object.keys(args).sort().join(',')!=='p_fulfillment,p_slug')return {data:null,error:{code:'invalid'}};
+  const result=await readCoreSchedule(args.p_slug,args.p_fulfillment,options);
+  return result.state==='ready'?{data:result.data.slots,error:null}:{data:null,error:{code:result.state}};
+}

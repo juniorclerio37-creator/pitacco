@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readCoreMenu,placeCoreOrder,recoverCoreOrder,readCoreSchedule} from '../clients/storefront.mjs';
+import {readCoreMenu,placeCoreOrder,recoverCoreOrder,readCoreSchedule,readCoreScheduleRpc} from '../clients/storefront.mjs';
 const request_id='10000000-0000-4000-8000-000000000001';
 const receipt={order_id:'20000000-0000-4000-8000-000000000001',tracking_token:'30000000-0000-4000-8000-000000000001',total:25};
 const cart=Object.freeze({request_id,payment:'pix_manual',fulfillment:'pickup',items:[]});
@@ -71,4 +71,18 @@ test('schedule uses original server slots, preserves offset and rejects invalid 
  assert.equal((await readCoreSchedule('fixture','pickup',{fetcher:async()=>json({},429)})).state,'rate_limited');
  assert.equal((await readCoreSchedule('fixture','pickup',{fetcher:async()=>{throw Error('offline')}})).state,'retry');
  assert.equal((await readCoreSchedule('fixture','invalid',{fetcher:()=>assert.fail('unexpected request')})).state,'invalid');
+});
+
+test('V2 schedule compatibility returns original RPC shape without another upstream',async()=>{
+ const args={p_slug:'fixture',p_fulfillment:'delivery'};
+ const slots=['2026-11-28T14:00:00-03:00'];
+ let calls=0;
+ const result=await readCoreScheduleRpc(args,{fetcher:async(path,opt)=>{
+   calls++;assert.equal(path,'/api/v1/public/menus/fixture/schedule-slots?fulfillment=delivery');
+   return json({timezone:'America/Sao_Paulo',slots});
+ }});
+ assert.deepEqual(result,{data:slots,error:null});
+ assert.equal(calls,1);
+ assert.deepEqual(await readCoreScheduleRpc(args,{fetcher:async()=>json({},503)}),{data:null,error:{code:'retry'}});
+ assert.deepEqual(await readCoreScheduleRpc({...args,store_id:'other'},{fetcher:()=>assert.fail('unexpected request')}),{data:null,error:{code:'invalid'}});
 });
