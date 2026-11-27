@@ -40,6 +40,9 @@ jobs:
       SESSION_DRIVER: array
       LOG_CHANNEL: stderr
       PITACCO_CHECKOUT_ENABLED: 'true'
+      PITACCO_TRACKING_ENABLED: 'true'
+      CORE_TRACKING_DB_USERNAME: pitacco_core_tracking
+      CORE_TRACKING_DB_PASSWORD: ci-tracking-only
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -62,6 +65,8 @@ jobs:
         run: |
           PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/tests/checkout-fixture.sql
           if PGPASSWORD=ci-checkout-only psql -h 127.0.0.1 -U pitacco_core_checkout -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.orders'; then exit 1; fi
+          if PGPASSWORD=ci-tracking-only psql -h 127.0.0.1 -U pitacco_core_tracking -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.public_checkouts'; then exit 1; fi
+          test "$(PGPASSWORD=ci-tracking-only psql -h 127.0.0.1 -U pitacco_core_tracking -d postgres -Atc "select has_function_privilege(current_user,'public.checkout_public_order(text,uuid,text,text,text,jsonb,text,text,text)','execute')")" = f
       - name: Testar checkout via Laravel
         working-directory: backend
         run: |

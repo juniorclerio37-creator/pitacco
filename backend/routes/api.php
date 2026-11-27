@@ -2,6 +2,7 @@
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\PublicMenuController;
 use App\Http\Controllers\PublicCheckoutController;
+use App\Http\Controllers\PublicTrackingController;
 use App\Http\Controllers\CoreAuthController;
 use App\Http\Controllers\DailyOrdersController;
 use App\Http\Controllers\OwnOrderActionsController;
@@ -15,6 +16,7 @@ Route::prefix('v1')->group(function () {
         ->middleware('throttle:public-menu');
     Route::post('/public/menus/{slug}/checkout',[PublicCheckoutController::class,'place'])->where('slug','[a-z0-9][a-z0-9-]{0,119}')->middleware('throttle:core-checkout');
     Route::post('/public/menus/{slug}/checkout/recovery',[PublicCheckoutController::class,'recover'])->where('slug','[a-z0-9][a-z0-9-]{0,119}')->middleware('throttle:core-checkout');
+    Route::post('/public/orders/tracking',PublicTrackingController::class)->middleware('throttle:core-tracking');
     Route::middleware(ExperimentalAuthGate::class)->group(function () {
         Route::post('/auth/login',[CoreAuthController::class,'login'])->middleware('throttle:core-login');
         Route::middleware(['throttle:60,1',CoreBearerSession::class])->group(function () {

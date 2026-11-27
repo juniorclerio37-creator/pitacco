@@ -25,3 +25,8 @@ grant execute on function public.pitacco_loyalty_checkout(text,uuid,text,text,te
 insert into public.loyalty_programs(store_id,points_enabled,points_per_real,min_points_to_redeem,points_reward_cents,orders_enabled,orders_required,orders_reward_cents,cashback_enabled,cashback_percent,cashback_max_redeem_percent,referrals_enabled,referral_reward_cents,referral_welcome_cents,campaigns_enabled)
 values('91000000-0000-0000-0000-000000000002',true,1,100,1000,true,1,500,true,10,100,true,300,200,true);
 insert into public.loyalty_coupons(store_id,code,discount_type,discount_value,max_uses,starts_at) values('91000000-0000-0000-0000-000000000002','CORE20','percent',20,1,now()-interval '1 day');
+
+-- Separate synthetic tracking role; no direct table or checkout grants.
+create role pitacco_core_tracking login password 'ci-tracking-only' nosuperuser nocreatedb nocreaterole nobypassrls;
+grant usage on schema public to pitacco_core_tracking;
+grant execute on function public.pitacco_track_public_order(uuid) to pitacco_core_tracking;

@@ -72,3 +72,28 @@ assert sql("select count(*) from public.loyalty_ledger where order_id='"+referre
 call(SLUG+'/checkout',422,cart(loyalty=True,coupon='CORE20',reward='cashback'))
 assert sql("select count(*) from public.orders where store_id='91000000-0000-0000-0000-000000000002'")=='6'
 print('PASS: points and cashback earning, redemption replay and reversal, insufficient balance, referral and exclusive discounts')
+
+# Tracking uses only synthetic checkout capabilities, not order IDs.
+def track(token,expected=200):
+    req=urllib.request.Request('http://127.0.0.1:8080/api/v1/public/orders/tracking',headers={'Accept':'application/json','Content-Type':'application/json'},method='POST',data=json.dumps({'tracking_token':token}).encode())
+    try:res=urllib.request.urlopen(req,timeout=12)
+    except urllib.error.HTTPError as e:res=e
+    with res:
+        assert res.status==expected,('tracking',res.status,expected)
+        assert 'no-store' in res.headers.get('Cache-Control','') if expected in (200,404) else True
+        return json.loads(res.read())
+t=track(first['tracking_token'])['data']
+assert t['order_number']==first['order_id'] and float(t['total'])==25
+assert 'phone' not in t and 'address' not in t
+assert t.get('courier_position') is None
+d=track(q['tracking_token'])['data']
+assert d['order_number']==q['order_id'] and d['delivery_service']=='priority'
+assert d.get('courier_position') is None
+s=track(scheduled['tracking_token'])['data']
+assert s['order_number']==scheduled['order_id'] and s['scheduled_for']
+track(first['order_id'],404)
+track(str(uuid.uuid4()),404)
+track('invalid',422)
+sql("update public.public_checkouts set expires_at=now()-interval '1 second' where order_id='"+str(uuid.UUID(first['order_id']))+"'")
+track(first['tracking_token'],404)
+print('PASS: private tracking, correct order, scheduled and priority fields, no pre-dispatch GPS, invalid and expired token denial')
