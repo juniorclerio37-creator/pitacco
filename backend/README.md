@@ -73,3 +73,6 @@ A matriz de aceitação de todos os métodos está em `../docs/core/payment-acce
 
 ## Pagamentos no recebimento — integração experimental
 O checkout Laravel e seu adaptador de navegador passam o método selecionado (lista explícita de dinheiro, crédito/débito, cartão legado, Pix na maquininha, Pix manual e quatro vouchers) para o SQL original, sem marcar o pedido pago e sem acessar provedores. As novas modalidades só podem ser testadas em APP_ENV=testing. Fiado e pagamentos online continuam fora desta rota. A regressão usa configuração sintética autorizada, testa separação de canais, método desabilitado, troco, repetição, compatibilidade e ausência de confirmação indevida. A interface final e os fluxos de recebimento/entrega/PDV ainda exigem homologação; nenhum deploy.
+
+## Regressão de pagamento na entrega e preço publicado
+`tests/offline-delivery-smoke.py` testa as modalidades no recebimento via Laravel com cotações prioritárias fictícias. Confere o resumo original de cobrança do entregador, valor a receber, troco, ausência de confirmação antecipada e preço por modalidade confirmado pelo servidor (total incorreto ou revisão antiga rejeitados). Não implementa login/recebimento do entregador nem confirma pagamentos reais. Resultado pendente de CI; não representa homologação integral dos aplicativos.

@@ -114,6 +114,16 @@ jobs:
           node tests/storefront-browser.mjs
           python3 tests/wallet-smoke.py
           python3 tests/offline-payment-smoke.py
+      - name: Validar pagamentos no recebimento e preços por modalidade
+        working-directory: backend
+        env:
+          CORE_REDIS_PREFIX: 'pitacco_core_delivery_ci:'
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8082 >/tmp/core-delivery.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true; cat /tmp/core-delivery.log' EXIT
+          for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8082/up >/dev/null && break; sleep 1; done
+          python3 tests/offline-delivery-smoke.py
       - uses: actions/upload-artifact@v4
         if: success()
         with:
