@@ -5,6 +5,7 @@ use App\Http\Controllers\PublicScheduleController;
 use App\Http\Controllers\PublicStoreStateController;
 use App\Http\Controllers\PublicCheckoutController;
 use App\Http\Controllers\PublicTrackingController;
+use App\Http\Controllers\CourierGpsController;
 use App\Http\Controllers\CustomerProfileController;
 use App\Http\Controllers\CustomerWalletController;
 use App\Http\Controllers\FiadoOverviewController;
@@ -31,6 +32,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/menus/{slug}/schedule-slots',PublicScheduleController::class)->where('slug','[a-z0-9][a-z0-9-]{0,119}')->middleware('throttle:public-menu');
     Route::post('/public/menus/{slug}/checkout',[PublicCheckoutController::class,'place'])->where('slug','[a-z0-9][a-z0-9-]{0,119}')->middleware('throttle:core-checkout');
     Route::post('/public/menus/{slug}/checkout/recovery',[PublicCheckoutController::class,'recover'])->where('slug','[a-z0-9][a-z0-9-]{0,119}')->middleware('throttle:core-checkout');
+    Route::post('/courier/gps',CourierGpsController::class)->middleware('throttle:60,1');
     Route::post('/public/orders/tracking',PublicTrackingController::class)->middleware('throttle:core-tracking');
     Route::post('/public/menus/{slug}/profile',CustomerProfileController::class)->where('slug','[a-z0-9][a-z0-9-]{0,119}')->middleware('throttle:core-profile');
     Route::post('/public/menus/{slug}/profile/session',[CustomerProfileController::class,'session'])->where('slug','[a-z0-9][a-z0-9-]{0,119}')->middleware('throttle:core-profile');
