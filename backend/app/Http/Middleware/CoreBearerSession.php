@@ -5,10 +5,12 @@ use Closure;
 use Illuminate\Http\Request;
 final class CoreBearerSession
 {
-    public function handle(Request $request, Closure $next, CoreSessions $sessions)
+    public function __construct(private readonly CoreSessions $sessions) {}
+
+    public function handle(Request $request, Closure $next)
     {
         $token=$request->bearerToken();
-        $session=$sessions->find($token);
+        $session=$this->sessions->find($token);
         if (!$session) return response()->json(['error'=>'unauthenticated'],401)->header('Cache-Control','no-store');
         $request->attributes->set('core_session',$session);
         return $next($request);
