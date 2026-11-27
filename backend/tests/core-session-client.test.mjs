@@ -51,3 +51,32 @@ test('late store response after logout cannot restore selection',async()=>{
  const selection=session.selectStore(A);await session.logout();resolve(ok({data:shops[0]}));
  await assert.rejects(selection,/encerrada/);assert.equal(session.snapshot().selected,null);
 });
+
+test('renew rotates bearer once and retains selected scope',async()=>{
+ let t=1000,rotations=0;const next='b'.repeat(64);
+ const session=createCoreSession({now:()=>t,fetcher:async(path,o)=>{
+  if(path.endsWith('/auth/login'))return ok({access_token:token,token_type:'Bearer',expires_at:new Date(600000).toISOString()});
+  if(path.endsWith('/auth/renew')){rotations++;return ok({access_token:next,token_type:'Bearer',expires_at:new Date(3600000).toISOString()});}
+  if(path.endsWith('/auth/me'))return ok({id:U,email:'fixture@example.test',stores:shops});
+  if(path.endsWith('/context'))return ok({data:shops[0]});
+  assert.equal(new Headers(o.headers).get('Authorization'),'Bearer '+next);return ok({data:[]});
+ }});
+ await session.login('fixture@example.test','pw');await session.selectStore(A);
+ const f=session.scopedFetch();const p=session.renew(),q=session.renew();assert.equal(p,q);
+ await p;assert.equal(rotations,1);assert.equal(session.snapshot().selected.store_id,A);
+ await f('/api/v1/stores/'+A+'/map-point');
+ await assert.rejects(session.renew(),/indisponível/);
+});
+test('logout during renewal revokes new token without restoring identity',async()=>{
+ let resolve;const revoked=[];const next='b'.repeat(64);
+ const session=createCoreSession({now:()=>1000,fetcher:async(path,o)=>{
+  if(path.endsWith('/auth/login'))return ok({access_token:token,token_type:'Bearer',expires_at:new Date(600000).toISOString()});
+  if(path.endsWith('/auth/me'))return ok({id:U,email:'fixture@example.test',stores:shops});
+  if(path.endsWith('/auth/renew'))return new Promise(r=>{resolve=r});
+  if(path.endsWith('/auth/logout')){revoked.push(o.headers.Authorization);return ok({status:'revoked'});}
+ }});
+ await session.login('fixture@example.test','pw');const p=session.renew();
+ await session.logout();resolve(ok({access_token:next,token_type:'Bearer',expires_at:new Date(3600000).toISOString()}));
+ await assert.rejects(p,/encerrada/);assert.equal(session.snapshot().identity,null);
+ assert.ok(revoked.includes('Bearer '+next));
+});

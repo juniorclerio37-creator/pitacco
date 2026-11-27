@@ -68,6 +68,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/courier/delivery',CourierDeliveryController::class);
             Route::post('/realtime/auth',RealtimeAuthorizationController::class);
             Route::get('/auth/me',[CoreAuthController::class,'me']);
+            Route::post('/auth/renew',[CoreAuthController::class,'renew']);
             Route::post('/auth/logout',[CoreAuthController::class,'logout']);
             Route::post('/stores/{store}/map-origin',[OwnBoardLogisticsController::class,'origin'])->whereUuid('store');
             Route::match(['GET','PUT'],'/stores/{store}/map-point',[OwnBoardLogisticsController::class,'point'])->whereUuid('store');

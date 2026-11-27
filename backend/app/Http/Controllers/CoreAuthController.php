@@ -17,6 +17,12 @@ final class CoreAuthController
         $session=$request->attributes->get('core_session');
         return response()->json(['id'=>$session->user_id,'email'=>$session->email,'stores'=>$sessions->memberships($session)]);
     }
+    public function renew(Request $request,CoreSessions $sessions): JsonResponse
+    {
+        if($request->all()||$request->query())return response()->json(['error'=>'invalid_request'],422)->header('Cache-Control','no-store');
+        $token=$sessions->renew($request->attributes->get('core_session'),(string)$request->bearerToken());
+        return $token ? response()->json($token)->header('Cache-Control','no-store') : response()->json(['error'=>'renewal_unavailable'],409)->header('Cache-Control','no-store');
+    }
     public function logout(Request $request,CoreSessions $sessions): JsonResponse
     {
         $sessions->revoke($request->attributes->get('core_session'));

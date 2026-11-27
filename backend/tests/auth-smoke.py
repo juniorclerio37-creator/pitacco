@@ -34,6 +34,20 @@ request('/stores/'+B+'/context',404,token=bob)
 assert request('/auth/me',200,token=bob)['stores']==[]
 sql("update core_auth.sessions set expires_at=now()-interval '1 second' where user_id='10000000-0000-4000-8000-000000000002'")
 request('/auth/me',401,token=bob)
+# Renewal only in the final 15 minutes, retains the original session ID.
+request('/auth/renew',401,'POST')
+request('/auth/renew',422,'POST',{'token':'untrusted'},alice)
+request('/auth/renew',409,'POST',token=alice)
+sql("update core_auth.sessions set expires_at=now()+interval '10 minutes' where user_id='10000000-0000-4000-8000-000000000001'")
+rotated=request('/auth/renew',200,'POST',token=alice)['access_token']
+assert len(rotated)==64 and rotated!=alice
+request('/auth/me',401,token=alice)
+request('/auth/renew',401,'POST',token=alice)
+assert request('/stores/'+A+'/context',200,token=rotated)['data']['role']=='owner'
+request('/auth/renew',409,'POST',token=rotated)
+sql("update core_auth.sessions set created_at=now()-interval '8 hours',expires_at=now()+interval '5 minutes' where user_id='10000000-0000-4000-8000-000000000001'")
+request('/auth/renew',409,'POST',token=rotated)
+alice=rotated
 request('/auth/logout',200,'POST',token=alice)
 request('/auth/me',401,token=alice)
 print('PASS: credential rejection, bearer sessions, live store membership, cross-store denial, expiry and revocation')

@@ -22,6 +22,22 @@ final class CoreSessions
         if (!$token || !preg_match('/\A[a-f0-9]{64}\z/D',$token)) return null;
         return $this->db()->selectOne('select s.id as session_id,u.id as user_id,u.email from core_auth.sessions s join core_auth.users u on u.id=s.user_id where s.token_hash=? and s.revoked_at is null and s.expires_at>now() and u.active',[hash('sha256',$token)]);
     }
+    // Rotate the active bearer in place. No refresh secret, no resurrection,
+    // no change to session_id (native GPS/print bindings stay scoped).
+    public function renew(object $session,string $previous): ?array
+    {
+        if (!preg_match('/\A[a-f0-9]{64}\z/D',$previous)) return null;
+        $token=bin2hex(random_bytes(32));
+        $row=$this->db()->selectOne("update core_auth.sessions s
+          set token_hash=?, expires_at=least(now()+interval '1 hour',s.created_at+interval '8 hours')
+          where s.id=? and s.user_id=? and s.token_hash=? and s.revoked_at is null
+          and s.expires_at>now() and s.created_at+interval '8 hours'>now()+interval '1 minute'
+          and s.expires_at<=now()+interval '15 minutes'
+          and exists(select 1 from core_auth.users u where u.id=s.user_id and u.active)
+          returning expires_at", [hash('sha256',$token),$session->session_id,$session->user_id,hash('sha256',$previous)]);
+        return $row ? ['access_token'=>$token,'token_type'=>'Bearer','expires_at'=>$row->expires_at] : null;
+    }
+
     public function revoke(object $session): void
     {
         $this->db()->update('update core_auth.sessions set revoked_at=now() where id=? and user_id=? and revoked_at is null',[$session->session_id,$session->user_id]);

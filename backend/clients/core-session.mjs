@@ -13,7 +13,7 @@ function identity(v){
 }
 export function createCoreSession({fetcher=globalThis.fetch,onState=()=>{},now=Date.now}={}){
  let token='',expires=0,person=null,selected=null,version=0,scopeVersion=0,scope=null,busy=false,controller=new AbortController();
- const resources=new Set();
+ const resources=new Set();let renewal=null;
  const snapshot=()=>({identity:person?{...person,stores:person.stores.map(s=>({...s}))}:null,selected:selected?{...selected}:null,expires_at:expires||null});
  function emit(){onState(snapshot());}
  function clearScope(){
@@ -50,27 +50,50 @@ export function createCoreSession({fetcher=globalThis.fetch,onState=()=>{},now=D
    if(v===version)busy=false;
   }
  }
+ function renew(){
+  expire();if(!token)return Promise.reject(Error('Sessão encerrada.'));
+  if(renewal)return renewal;
+  if(expires-now()>15*60*1000)return Promise.reject(Error('Renovação ainda indisponível.'));
+  const v=version,old=token;let issued='';
+  renewal=(async()=>{
+   try{
+    // Do not abort the rotation response on local logout: if it succeeds,
+    // revoke the newly issued bearer rather than resurrecting the session.
+    const res=await http('/auth/renew',{method:'POST',credential:old,signal:new AbortController().signal});
+    if(!/^[a-f0-9]{64}$/.test(res.access_token??'')||res.token_type!=='Bearer'||res.access_token===old)throw Error('Sessão inválida.');
+    issued=res.access_token;const exp=Date.parse(res.expires_at);
+    if(v!==version||!token||!Number.isFinite(exp)||exp<=now())throw Error('Sessão encerrada.');
+    token=issued;issued='';expires=exp;emit();return snapshot();
+   }catch(e){if(v===version&&e.status===401)clear();throw e;}
+   finally{
+    if(issued)try{await http('/auth/logout',{method:'POST',credential:issued,signal:new AbortController().signal});}catch{}
+    renewal=null;
+   }
+  })();return renewal;
+ }
  async function refresh(){
   expire();if(!token)throw Error('Sessão encerrada.');
-  const v=version;
+  if(renewal)await renewal;
+  const v=version,credential=token;
   try{
    const next=identity(await http('/auth/me'));
    if(v!==version||!token)throw Error('Sessão encerrada.');
    if(next.id!==person.id){clear();throw Error('Identidade alterada.');}
    if(selected&&!next.stores.some(s=>s.store_id===selected.store_id&&s.role===selected.role))clearScope();
    person=next;emit();return snapshot();
-  }catch(e){if(v===version&&e.status===401)clear();throw e;}
+  }catch(e){if(v===version&&credential===token&&e.status===401)clear();throw e;}
  }
  async function selectStore(id){
   expire();if(!token||!UUID.test(id??''))throw Error('Sessão inválida.');
   if(!person.stores.some(s=>s.store_id===id))throw Error('Loja não autorizada.');
-  clearScope();emit();const v=version,sv=scopeVersion;
+  if(renewal)await renewal;
+  clearScope();emit();const v=version,sv=scopeVersion,credential=token;
   try{
    const {data}=await http('/stores/'+id+'/context');
    if(v!==version||sv!==scopeVersion||!token)throw Error('Seleção encerrada.');
    if(data?.store_id!==id||typeof data.name!=='string'||!person.stores.some(s=>s.store_id===id&&s.role===data.role))throw Error('Vínculo inconsistente.');
    selected={store_id:id,name:data.name,role:data.role};emit();return {...selected};
-  }catch(e){if(v===version&&e.status===401)clear();throw e;}
+  }catch(e){if(v===version&&credential===token&&e.status===401)clear();throw e;}
  }
  // Scoped fetch never discloses a bearer to application components. Only
  // exact relative API paths for the active store may be requested.
@@ -82,11 +105,13 @@ export function createCoreSession({fetcher=globalThis.fetch,onState=()=>{},now=D
    expire();if(v!==version||sv!==scopeVersion||!token)throw Error('Seleção encerrada.');
    const prefix='/api/v1/stores/'+id+'/';
    if(typeof path!=='string'||!path.startsWith(prefix)||/[\\%#]/.test(path)||path.split('?')[0].split('/').some(x=>x==='.'||x==='..'))throw Error('Destino não autorizado.');
-   const headers=new Headers(opts.headers);headers.set('Authorization','Bearer '+token);
+   if(renewal)await renewal;
+   if(v!==version||sv!==scopeVersion||!token)throw Error('Seleção encerrada.');
+   const credential=token;const headers=new Headers(opts.headers);headers.set('Authorization','Bearer '+credential);
    const signal=opts.signal?AbortSignal.any([opts.signal,controller.signal]):controller.signal;
    const res=await fetcher(path,{...opts,headers,signal,credentials:'omit',cache:'no-store',redirect:'error',referrerPolicy:'no-referrer'});
    if(v!==version||sv!==scopeVersion)throw Error('Seleção encerrada.');
-   if(res.status===401){clear();throw Error('Sessão encerrada.');}
+   if(res.status===401){if(credential===token)clear();throw Error('Sessão encerrada.');}
    return res;
   };return scope;
  }
@@ -100,5 +125,5 @@ export function createCoreSession({fetcher=globalThis.fetch,onState=()=>{},now=D
   try{const res=await http('/auth/logout',{method:'POST',credential,signal:new AbortController().signal});return {revoked:res.status==='revoked'};}
   catch{return {revoked:false};}
  }
- return {login,refresh,selectStore,scopedFetch,attach,logout,stop:clear,snapshot:()=>{expire();return snapshot();}};
+ return {login,refresh,renew,selectStore,scopedFetch,attach,logout,stop:clear,snapshot:()=>{expire();return snapshot();}};
 }
