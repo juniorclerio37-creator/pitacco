@@ -66,6 +66,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/stores/{store}/own-print/{operation}',OwnPrintQueueController::class)->whereUuid('store')->whereIn('operation',['bind','claim','ack']);
             Route::post('/stores/{store}/orders/{order}/reprint',OwnPrintController::class)->whereUuid(['store','order']);
             Route::get('/stores/{store}/operation-settings',[OwnBoardOrdersController::class,'settings'])->whereUuid('store');
+            Route::get('/stores/{store}/orders/ifood-board',[OwnBoardOrdersController::class,'ifood'])->whereUuid('store');
             Route::get('/stores/{store}/orders/own-board',OwnBoardOrdersController::class)->whereUuid('store');
             Route::get('/stores/{store}/orders',DailyOrdersController::class)->whereUuid('store');
             Route::post('/stores/{store}/orders/{order}/actions',OwnOrderActionsController::class)->whereUuid(['store','order']);

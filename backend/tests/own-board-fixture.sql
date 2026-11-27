@@ -62,3 +62,23 @@ begin
 end $$;
 revoke all on function core_auth.operation_settings_fixture(uuid) from public,anon,authenticated;
 grant execute on function core_auth.operation_settings_fixture(uuid) to pitacco_core_own_board;
+
+-- CI-only read projection of normalized iFood orders; not a provider adapter.
+-- Do not recover restricted contact records, internal identifiers or raw events.
+create function core_auth.ifood_board_fixture(s uuid,lim integer,off integer) returns jsonb
+language plpgsql stable security definer set search_path='' as $$
+declare result jsonb;
+begin
+ if not core_auth.can_act(s) then raise exception 'Escopo não autorizado' using errcode='42501';end if;
+ if lim is null or lim not between 1 and 100 or off is null or off not between 0 and 10000 then raise exception 'Paginação inválida' using errcode='22023';end if;
+ select coalesce(jsonb_agg(jsonb_build_object(
+ 'id',o.id,'store_id',o.store_id,'channel',o.channel,'gross',o.gross,'status',o.status,'source',o.source,
+ 'preparation_status',o.preparation_status,'created_at',o.created_at,'scheduled_for',o.scheduled_for,'scheduled_release_at',o.scheduled_release_at,
+ 'receipt',(core_auth.board_receipt_fixture(o.receipt)-array['phone','customer_phone','localizer','localizador','locator','order_locator','delivery_locator','external_locator','pickup_locator','phone_localizer','phone_localizer_expiration','contact_expires_at'])
+ || core_auth.board_scalars_fixture(o.receipt,array['ifood_status','ifood_test','ifood_received_at','ifood_manual_accept','ifood_manual_cancel','provider_preparation_due_at','provider_delivery_due_at','provider_scheduled_for','delivery_fee_discount','delivery_fee_customer'])
+ ) order by o.created_at desc,o.id desc),'[]'::jsonb)
+ into result from (select * from public.pitacco_daily_operational_orders(s) where store_id=s and source='ifood' order by created_at desc,id desc limit lim offset off) o;
+ return result;
+end $$;
+revoke all on function core_auth.ifood_board_fixture(uuid,integer,integer) from public,anon,authenticated;
+grant execute on function core_auth.ifood_board_fixture(uuid,integer,integer) to pitacco_core_own_board;

@@ -134,6 +134,22 @@ print('PASS: original device binding, queue claim/replay, uncertain state and su
 device_base='http://127.0.0.1:8088/api/v1'
 BASE=device_base
 dp='/stores/'+A+'/print-device/'
+ifood='/stores/'+A+'/orders/ifood-board'
+call(ifood,401)
+call(ifood,404,token=bob)
+call(ifood.replace(A,B),404,token=alice)
+call(ifood+'?limit=101',422,token=alice)
+sql("""update public.orders set receipt='{"display_number":"1234","customer":"Cliente iFood Fixture","logistics":"marketplace","ifood_status":"PLACED","ifood_manual_accept":"requested","provider_preparation_due_at":"2026-11-27T20:00:00Z","provider_scheduled_for":"2026-11-27T21:00:00Z","delivery_fee_original":10,"delivery_fee_discount":5,"delivery_fee_customer":5,"payment_status":"paid","items":[{"name":"Açaí","quantity":1,"modifiers":[{"name":"Granola","quantity":1}]}],"phone":"PRIVATE-CONTACT","localizer":"PRIVATE-LOCATOR","contact_phone":"PRIVATE-CONTACT","raw_payload":{"secret":"PRIVATE-RAW"},"external_order_id":"PRIVATE-EXTERNAL"}'::jsonb where id='30000000-0000-4000-8000-000000000004'""")
+market=call(ifood,200,token=alice)['data']
+assert len(market)==1 and market[0]['id']==oid(4) and market[0]['source']=='ifood' and market[0]['store_id']==A
+receipt=market[0]['receipt']
+assert receipt['display_number']=='1234' and receipt['ifood_status']=='PLACED' and receipt['ifood_manual_accept']=='requested'
+assert receipt['provider_scheduled_for']=='2026-11-27T21:00:00Z' and receipt['delivery_fee_customer']==5
+assert receipt['items'][0]['modifiers'][0]['name']=='Granola' and receipt['payment_status']=='paid'
+assert 'PRIVATE-' not in json.dumps(market)
+assert call(ifood+'?limit=1&offset=1',200,token=alice)['data']==[]
+sql("update public.orders set receipt='{}'::jsonb where id='"+oid(4)+"'")
+print('PASS: normalized iFood operational order, provider status, deadlines, schedule, payment, no private contact or raw events, store isolation')
 call(dp+'status',401,'POST',{})
 call(dp+'status',404,'POST',{},bob)
 call(dp.replace(A,B)+'status',404,'POST',{},alice)
@@ -500,6 +516,7 @@ call(fiado,404,token=alice)
 print('PASS: original Fiado manager overview, role and store isolation, revoked membership')
 
 BASE=device_base
+call(ifood,404,token=alice)
 call(dp+'status',404,'POST',{},alice)
 call(dp+'ping',404,'POST',{'device_id':dev},alice)
 BASE=board_base
