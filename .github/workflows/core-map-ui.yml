@@ -37,3 +37,14 @@ jobs:
           npm run build -- --config core-preview.vite.config.mjs --outDir dist-core-preview
           test -s dist-core-preview/index.html
           node -e "const t=require('./src-tauri/tauri.conf.json'); if(t.build.frontendDist!=='../dist')process.exit(1)"
+      - name: Testar reimpressão e confirmação do marcador no Chromium
+        working-directory: ${{ runner.temp }}/pitacco-map-ui
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+          cp "$GITHUB_WORKSPACE/backend/tests/merchant-preview-browser.mjs" .
+          npx vite preview --config core-preview.vite.config.mjs --outDir dist-core-preview --port 4173 > preview.log 2>&1 &
+          preview=$!
+          trap 'kill "$preview" 2>/dev/null || true; cat preview.log' EXIT
+          for attempt in $(seq 1 10); do curl -fsS http://127.0.0.1:4173/ >/dev/null && break; sleep 1; done
+          node merchant-preview-browser.mjs
