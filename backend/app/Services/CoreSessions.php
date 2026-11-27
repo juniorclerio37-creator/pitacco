@@ -1,7 +1,6 @@
 <?php
 namespace App\Services;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 final class CoreSessions
 {
     private function db() { return DB::connection('core_auth'); }
@@ -10,12 +9,14 @@ final class CoreSessions
         $db=$this->db();
         $user=$db->selectOne('select id,email,password_hash,active from core_auth.users where email=?',[strtolower(trim($email))]);
         // Verify a dummy hash even for absent identities; never return different login errors.
-        $dummy='$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
-        $valid=Hash::check($password,$user?->password_hash ?? $dummy);
+        $valid=LegacyBcrypt::verify($password,$user?->password_hash);
         if (!$valid || !$user || !$user->active) return null;
         $token=bin2hex(random_bytes(32));
-        $session=$db->selectOne("insert into core_auth.sessions(user_id,token_hash,expires_at) values (?, ?, now()+interval '1 hour') returning expires_at",[$user->id,hash('sha256',$token)]);
-        return ['access_token'=>$token,'token_type'=>'Bearer','expires_at'=>$session->expires_at];
+        // Recheck the exact credential and account status at issuance.
+        $session=$db->selectOne("insert into core_auth.sessions(user_id,token_hash,expires_at)
+          select id, ?, now()+interval '1 hour' from core_auth.users where id=? and active and password_hash=?
+          returning expires_at",[hash('sha256',$token),$user->id,$user->password_hash]);
+        return $session ? ['access_token'=>$token,'token_type'=>'Bearer','expires_at'=>$session->expires_at] : null;
     }
     public function find(?string $token): ?object
     {
