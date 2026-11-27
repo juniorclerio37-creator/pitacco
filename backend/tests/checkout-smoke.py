@@ -107,13 +107,25 @@ saved=call(SLUG+'/profile',200,identity|{'action':'save','name':'Cliente fictíc
 assert saved['found'] and saved['name']=='Cliente fictício'
 assert saved['addresses'][0]['street']=='Rua Fixture'
 loaded=call(SLUG+'/profile',200,identity)['data']
-assert loaded==saved,('synthetic profile mismatch',loaded,saved)
+assert saved.get('session_active') is True
+assert loaded=={k:v for k,v in saved.items() if k!='session_active'},('synthetic profile mismatch',loaded,saved)
 
 assert call(SLUG+'/profile',200,identity|{'device':str(uuid.uuid4())})['data']=={'found':False,'addresses':[]}
-assert call(SLUG+'/profile',200,identity|{'phone':'21988881112'})['data']=={'found':False,'addresses':[]}
+assert call(SLUG+'/profile',409,identity|{'phone':'21988881112'})['session_reset'] is True
 call(SLUG+'/profile',422,{'phone':identity['phone'],'action':'load'})
 call(SLUG+'/profile',422,identity|{'action':'save','name':'Cliente fictício','addresses':[address]*9})
 loaded=call(SLUG+'/profile',200,identity)['data']
-assert loaded==saved,('synthetic profile mismatch',loaded,saved)
+assert saved.get('session_active') is True
+assert loaded=={k:v for k,v in saved.items() if k!='session_active'},('synthetic profile mismatch',loaded,saved)
 
 print('PASS: original V2 profile, persisted address, phone and device isolation, invalid input')
+
+session_path=SLUG+'/profile/session'
+resumed=call(session_path,200,{'device':device,'action':'resume'})['data']
+assert resumed['active'] is True and resumed['phone']==identity['phone']
+assert resumed['addresses']==saved['addresses'] and resumed['name']==saved['name']
+assert call(session_path,200,{'device':str(uuid.uuid4()),'action':'resume'})['data']=={'active':False}
+assert call(session_path,200,{'device':device,'action':'logout'})['data']=={'active':False,'reset':True}
+assert call(session_path,200,{'device':device,'action':'resume'})['data']=={'active':False,'reset':True}
+assert call(SLUG+'/profile',409,identity)['session_reset'] is True
+print('PASS: original device session resume and logout, revoked profile denial')

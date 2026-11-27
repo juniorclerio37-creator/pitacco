@@ -40,3 +40,5 @@ grant execute on function public.get_public_menu(text) to pitacco_core_menu;
 create role pitacco_core_profile login password 'ci-profile-only' nosuperuser nocreatedb nocreaterole nobypassrls;
 grant usage on schema public to pitacco_core_profile;
 grant execute on function public.pitacco_v2_customer_profile(text,text,text,text,text,jsonb) to pitacco_core_profile;
+
+grant execute on function public.pitacco_customer_device_session(text,text,text) to pitacco_core_profile;

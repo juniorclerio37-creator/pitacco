@@ -8,6 +8,16 @@ use JsonException;
 use UnexpectedValueException;
 final class CustomerProfileController
 {
+    public function session(Request $request,string $slug,CustomerProfile $profile): JsonResponse
+    {
+        abort_unless(app()->environment('testing') && config('pitacco.profile_enabled'),404);
+        $data=$request->validate(['device'=>['required','uuid'],'action'=>['required','in:resume,logout']]);
+        try{
+            return response()->json(['data'=>$profile->session($slug,$data)])->header('Cache-Control','no-store');
+        } catch(QueryException|JsonException|UnexpectedValueException $e){
+            return response()->json(['error'=>'temporarily_unavailable'],503)->header('Cache-Control','no-store');
+        }
+    }
     public function __invoke(Request $request,string $slug,CustomerProfile $profile): JsonResponse
     {
         abort_unless(app()->environment('testing') && config('pitacco.profile_enabled'),404);
@@ -31,7 +41,7 @@ final class CustomerProfileController
         ]);
         try {
             $result=$profile->run($slug,$data);
-            if(isset($result['error'])) return response()->json(['error'=>'profile_unavailable'],409)->header('Cache-Control','no-store');
+            if(isset($result['error'])) return response()->json(['error'=>'profile_unavailable','session_reset'=>($result['session_reset']??false)===true],409)->header('Cache-Control','no-store');
             return response()->json(['data'=>$result])->header('Cache-Control','no-store');
         } catch(QueryException|JsonException|UnexpectedValueException $e) {
             return response()->json(['error'=>'temporarily_unavailable'],503)->header('Cache-Control','no-store');

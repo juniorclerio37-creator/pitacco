@@ -21,6 +21,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/public/menus/{slug}/checkout/recovery',[PublicCheckoutController::class,'recover'])->where('slug','[a-z0-9][a-z0-9-]{0,119}')->middleware('throttle:core-checkout');
     Route::post('/public/orders/tracking',PublicTrackingController::class)->middleware('throttle:core-tracking');
     Route::post('/public/menus/{slug}/profile',CustomerProfileController::class)->where('slug','[a-z0-9][a-z0-9-]{0,119}')->middleware('throttle:core-profile');
+    Route::post('/public/menus/{slug}/profile/session',[CustomerProfileController::class,'session'])->where('slug','[a-z0-9][a-z0-9-]{0,119}')->middleware('throttle:core-profile');
     Route::middleware(ExperimentalAuthGate::class)->group(function () {
         Route::post('/auth/login',[CoreAuthController::class,'login'])->middleware('throttle:core-login');
         Route::middleware(['throttle:60,1',CoreBearerSession::class])->group(function () {

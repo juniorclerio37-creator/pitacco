@@ -37,3 +37,6 @@ Perfil experimental usa a função original, com telefone e identificador privad
 
 ## Configuração administrativa do Fiado — experimental
 POST `/api/v1/stores/{store}/fiado/settings` permite ativar/desativar a modalidade e cadastrar/atualizar autorização, limite, prazo, modo de aprovação e bloqueio de vencidos por meio das funções SQL originais. Sessão de gestor, vínculo no banco, papel de banco separado e ambiente testing obrigatório. Não aceita saldo utilizado nem altera PIN. Aprovação de compra, recebimentos, extrato e checkout Fiado ainda não integram esta API. O teste de perfil mantém comparação integral entre dados salvos e recuperados, agora com diagnóstico exclusivamente sintético se houver divergência.
+
+## Sessão do perfil V2
+A API experimental mantém o contrato original de salvamento (`session_active`) e consulta (dados do perfil), e integra retomada e encerramento da sessão pelo identificador privado do aparelho. O teste compara integralmente nome e endereços, exige sessão ativa no salvamento e verifica bloqueio de telefone divergente e sessão encerrada. A credencial de aparelho não comprova posse do telefone para acesso financeiro. Uso somente em testing, sem dados reais.
