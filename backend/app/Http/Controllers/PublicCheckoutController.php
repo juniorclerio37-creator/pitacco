@@ -26,7 +26,7 @@ final class PublicCheckoutController
             'items.*.options'=>['sometimes','array','max:50'],
             'items.*.options.*'=>['required','uuid'],
             'fulfillment'=>['required','in:pickup,delivery'],
-            'payment'=>['required','in:pix_manual'],
+            'payment'=>['required','in:pix_manual,dinheiro,cartao_credito,cartao_debito,cartao_entrega,pix_maquininha,voucher_alelo,voucher_pluxee,voucher_vr,voucher_ticket'],
             'loyalty'=>['sometimes','boolean'],
             'coupon'=>['nullable','string','max:128'],
             'reward'=>['nullable','string','in:points,orders,cashback'],
@@ -38,6 +38,7 @@ final class PublicCheckoutController
             'price_revision'=>['required_with:expected_cents','nullable','integer','min:1'],
         ]);
         if(array_diff(array_keys($request->all()),array_keys($data))) throw ValidationException::withMessages(['request'=>'Campos não suportados nesta versão.']);
+        if($data['payment']!=='pix_manual' && !app()->environment('testing')) abort(404);
         if(strlen(json_encode($data['items'],JSON_THROW_ON_ERROR))>12000) throw ValidationException::withMessages(['items'=>'Carrinho excede o limite.']);
         if((!empty($data['coupon']) || !empty($data['reward']) || !empty($data['referral_code'])) && !($data['loyalty']??false)) throw ValidationException::withMessages(['loyalty'=>'Benefícios exigem checkout Fideliza+.']);
         if(!empty($data['coupon']) && !empty($data['reward'])) throw ValidationException::withMessages(['reward'=>'Escolha cupom ou resgate por pedido.']);

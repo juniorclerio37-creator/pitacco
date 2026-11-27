@@ -11,7 +11,7 @@ final class PublicCheckout
             $db->statement("set local statement_timeout = '5s'");
             $db->statement("set local lock_timeout = '2s'");
             $db->selectOne("select set_config('request.jwt.claim.sub','',true), set_config('request.jwt.claims','{\"role\":\"anon\"}',true)");
-            $args=[$slug,$data['request_id'],$data['customer'],$data['phone'],$data['address']??'',json_encode($data['items'],JSON_THROW_ON_ERROR),$data['fulfillment'],'pix_manual',$data['notes']??''];
+            $args=[$slug,$data['request_id'],$data['customer'],$data['phone'],$data['address']??'',json_encode($data['items'],JSON_THROW_ON_ERROR),$data['fulfillment'],$data['payment'],$data['notes']??''];
             $base='cast(? as text),cast(? as uuid),cast(? as text),cast(? as text),cast(? as text),cast(? as jsonb),cast(? as text),cast(? as text),cast(? as text)';
             $schedule=$data['scheduled_for']??null;
             $loyalty=(bool)($data['loyalty']??false);

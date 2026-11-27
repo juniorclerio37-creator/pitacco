@@ -41,3 +41,16 @@ test('recovery is explicit and scoped to the original request',async()=>{
   assert.equal((await recoverCoreOrder('fixture',request_id,{fetcher:async()=>json({confirmed:false})})).state,'not_found');
   assert.equal((await recoverCoreOrder('fixture',request_id,{fetcher:async()=>json({},503)})).state,'uncertain');
 });
+
+test('offline payment methods are forwarded without substitution; specialized methods remain excluded',async()=>{
+ for(const payment of ["pix_manual","dinheiro","cartao_credito","cartao_debito","cartao_entrega","pix_maquininha","voucher_alelo","voucher_pluxee","voucher_vr","voucher_ticket"]){
+   const result=await placeCoreOrder('fixture',{...cart,payment},{fetcher:async(path,opt)=>{
+     assert.equal(JSON.parse(opt.body).payment,payment);
+     return json(receipt);
+   }});
+   assert.equal(result.state,'confirmed');
+ }
+ for(const payment of ['fiado','pix_online','cartao_online','unknown']){
+   assert.equal((await placeCoreOrder('fixture',{...cart,payment},{fetcher:()=>assert.fail('unexpected request')})).state,'invalid');
+ }
+});

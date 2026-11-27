@@ -70,3 +70,6 @@ A regressão adicional cria uma compra fictícia por meio da função de balcão
 
 ## Gate de pagamentos completo
 A matriz de aceitação de todos os métodos está em `../docs/core/payment-acceptance.md`. O checkout Laravel atual aceita somente `pix_manual`. O inventário registra explicitamente os demais métodos e as pendências, sem ampliar permissões ou habilitar cobranças externas.
+
+## Pagamentos no recebimento — integração experimental
+O checkout Laravel e seu adaptador de navegador passam o método selecionado (lista explícita de dinheiro, crédito/débito, cartão legado, Pix na maquininha, Pix manual e quatro vouchers) para o SQL original, sem marcar o pedido pago e sem acessar provedores. As novas modalidades só podem ser testadas em APP_ENV=testing. Fiado e pagamentos online continuam fora desta rota. A regressão usa configuração sintética autorizada, testa separação de canais, método desabilitado, troco, repetição, compatibilidade e ausência de confirmação indevida. A interface final e os fluxos de recebimento/entrega/PDV ainda exigem homologação; nenhum deploy.

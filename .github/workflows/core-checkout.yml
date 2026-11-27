@@ -113,6 +113,7 @@ jobs:
           node tests/storefront-http.mjs
           node tests/storefront-browser.mjs
           python3 tests/wallet-smoke.py
+          python3 tests/offline-payment-smoke.py
       - uses: actions/upload-artifact@v4
         if: success()
         with:

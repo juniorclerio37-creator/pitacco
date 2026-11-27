@@ -1,6 +1,7 @@
 // Experimental, same-origin API only. No automatic fallback to another backend.
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SLUG=/^[a-z0-9][a-z0-9-]{0,119}$/;
+const PAYMENT_METHODS=new Set(["pix_manual","dinheiro","cartao_credito","cartao_debito","cartao_entrega","pix_maquininha","voucher_alelo","voucher_pluxee","voucher_vr","voucher_ticket"]);
 const state=(name,data=null)=>({state:name,data});
 function menuPath(slug){
   return typeof slug==='string'&&SLUG.test(slug)?'/api/v1/public/menus/'+slug:null;
@@ -36,7 +37,7 @@ export async function readCoreMenu(slug,options={}){
 }
 export async function placeCoreOrder(slug,cart,options={}){
   const path=menuPath(slug);
-  if(!path||!UUID.test(cart?.request_id??'')||cart?.payment!=='pix_manual')return state('invalid');
+  if(!path||!UUID.test(cart?.request_id??'')||!PAYMENT_METHODS.has(cart?.payment))return state('invalid');
   // Caller owns the stable request_id and immutable checkout snapshot across retries.
   // Never generate a replacement ID, replay automatically or switch upstream here.
   const {status,data}=await request(path+'/checkout',{...options,body:cart});
