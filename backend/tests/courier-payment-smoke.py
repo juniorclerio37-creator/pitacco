@@ -109,7 +109,40 @@ for remaining in range(4,-1,-1):
     assert call(d,200,{'action':'verify','delivery_id':other,'code':other_wrong},courier)['data']=={'verified':False,'remaining':remaining}
 call(d,409,{'action':'verify','delivery_id':other,'code':other_pin},courier)
 assert sql("select status from public.deliveries where id='"+other+"'")=='retirada'
+# Same original earnings query; only completed delivery remuneration, not
+# the amount collected from the customer. Use a separate read-only CI server
+# to retain the ordinary rate limits on the courier action endpoint.
+def earnings(period,expected=200,token=None,extra=''):
+    headers={'Accept':'application/json'}
+    if token:headers['Authorization']='Bearer '+token
+    req=urllib.request.Request('http://127.0.0.1:8097/api/v1/courier/earnings?period='+period+extra,headers=headers)
+    try:res=urllib.request.urlopen(req,timeout=12)
+    except urllib.error.HTTPError as e:res=e
+    with res:
+        raw=res.read()
+        assert res.status==expected,(res.status,expected,raw[:250])
+        return json.loads(raw)
+earnings('hoje',401)
+earnings('hoje',403,owner)
+earnings('hoje',401,gps)
+earnings('ano',422,courier)
+earnings('hoje',422,courier,'&store_id='+s)
+sql("update public.deliveries set courier_payment=7.50 where id='"+delivery+"'")
+before=earnings('hoje',token=courier)['data']
+assert before['timezone']=='America/Sao_Paulo' and before['period']=='hoje'
+assert float(before['today']['amount'])==7.50 and before['today']['count']==1
+assert len(before['week_chart'])==7 and float(before['week']['amount'])==7.50 and float(before['month']['amount'])==7.50
+assert any(float(x['amount'])==7.50 for x in before['recent'])
+for period in ['semana','mes']:
+    result=earnings(period,token=courier)['data']
+    assert result['period']==period and result['today']==before['today']
+# Homologation orders must not alter the actual balance.
+sql("update public.orders set receipt=receipt||'{\"ifood_test\":true}'::jsonb where id='98000000-0000-0000-0000-000000000011'")
+assert float(earnings('hoje',token=courier)['data']['today']['amount'])==0
+sql("update public.orders set receipt=receipt-'ifood_test' where id='98000000-0000-0000-0000-000000000011'")
+print('PASS: original courier earnings, real remuneration, Sao Paulo calendar, test exclusion, scoped read only')
 call('/auth/logout',200,{},courier)
+earnings('hoje',401,courier)
 call(d,401,{'action':'code_lengths'},courier)
 call(p,401,confirm,courier)
 print('PASS: authenticated courier cards and original receipt confirmation, exact amount, arrival, replay, no GPS authorization, no Pix manual collection and logout')

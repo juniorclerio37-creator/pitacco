@@ -313,3 +313,6 @@ A ação `unified_cards` em `/courier/payments` reaproveita `pitacco_driver_paym
 
 ## Gate de contratação do VPS
 Ver `VPS-READINESS.md`. A contratação não é necessária para os testes CI atuais. Manter produção, domínios e aplicativos existentes intactos. Correção CI: UUIDs dinâmicos no ensaio de roteamento de impressão eliminam colisão com cadastro fictício anterior. Cliente de coleta mantém exclusão de chamadas concorrentes até terminar a operação mesmo em pedidos pré-pagos; teste adicional pendente.
+
+## Paridade de ganhos do entregador
+GET `/courier/earnings?period=hoje|semana|mes` usa a função original `pitacco_driver_earnings`, com a exclusão de homologação já existente, apenas sessão Core+legado autorizada e identidade inequívoca de entregador próprio. Não recalcula remuneração nem usa o valor bruto do pedido. Projeção original para gráficos e totais, sem mudança de interface. Testes CI incluem valor recebido versus repasse, período, exclusão de teste e revogação. API experimental ainda não conectada à tela publicada.

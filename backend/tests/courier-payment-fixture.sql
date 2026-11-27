@@ -39,3 +39,22 @@ insert into public.orders(id,store_id,channel,gross,source,status,preparation_st
 insert into public.deliveries(id,store_id,order_id,courier_id,customer_name,address,status,source,logistics_provider,collected_at,arrived_at) values
 ('98000000-0000-0000-0000-000000000021','20000000-0000-4000-8000-000000000001','98000000-0000-0000-0000-000000000011','98000000-0000-0000-0000-000000000002','Cliente Fixture','Rua Fixture','atribuida','proprio','loja',null,null),
 ('98000000-0000-0000-0000-000000000022','20000000-0000-4000-8000-000000000001','98000000-0000-0000-0000-000000000012','98000000-0000-0000-0000-000000000002','Cliente Fixture','Rua Fixture','retirada','proprio','loja',now(),now());
+
+-- Read-only original earnings dashboard, not order gross or cash collected.
+create function core_auth.courier_earnings_fixture(p_period text) returns jsonb
+language plpgsql security definer set search_path='' as $fn$
+begin
+ perform core_auth.courier_shift_fixture('ready');
+ if p_period is null or p_period not in ('hoje','semana','mes') then raise exception 'Período inválido' using errcode='22023';end if;
+ -- Original function chooses an active courier by user. Fail closed on ambiguous
+ -- identities rather than returning earnings from a different membership.
+ if (select count(*) from public.couriers c where c.user_id=auth.uid() and c.active and c.store_id is not null)<>1 then
+  raise exception 'Identidade ambígua' using errcode='42501';
+ end if;
+ if not exists(select 1 from public.couriers c join core_auth.memberships m on m.store_id=c.store_id and m.user_id=c.user_id and m.active and m.role='courier' join core_auth.stores st on st.id=m.store_id and st.active where c.user_id=auth.uid() and c.active and c.fleet_type='propria') then
+  raise exception 'Escopo não autorizado' using errcode='42501';
+ end if;
+ return public.pitacco_driver_earnings(p_period);
+end $fn$;
+revoke all on function core_auth.courier_earnings_fixture(text) from public,anon,authenticated;
+grant execute on function core_auth.courier_earnings_fixture(text) to pitacco_core_courier_payment;
