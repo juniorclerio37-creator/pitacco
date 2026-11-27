@@ -123,6 +123,8 @@ jobs:
           trap 'kill "$server" 2>/dev/null || true; cat /tmp/core-offline.log' EXIT
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8083/up >/dev/null && break; sleep 1; done
           python3 tests/offline-payment-smoke.py
+      - name: Validar confirmação original de recebimentos presenciais
+        run: PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/tests/offline-original-receipts.sql
       - name: Validar pagamentos no recebimento e preços por modalidade
         working-directory: backend
         env:

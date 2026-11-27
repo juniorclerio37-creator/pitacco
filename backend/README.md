@@ -79,3 +79,6 @@ O checkout Laravel e seu adaptador de navegador passam o método selecionado (li
 
 ## Isolamento dos testes de pagamento
 O primeiro teste HTTP das modalidades presenciais confirmou a criação das dez modalidades e a rejeição de troco inválido, mas esgotou o limite compartilhado com os testes de navegador antes de completar todos os asserts. A suíte agora usa instância CI e prefixo Redis próprios, mantendo o limite de 20 requisições/minuto e sem modificar a política de segurança. A regressão integral ainda precisa passar.
+
+## Confirmação original de recebimentos presenciais
+A regressão `tests/offline-original-receipts.sql` utiliza os dez pedidos sintéticos de retirada já criados pela API experimental e a função original `confirm_manual_payment`, sob a identidade do gestor da fixture. Verifica valor integral, referência, repetição idempotente, tentativa de segundo registro, auditoria e ausência de permissão anônima. A transação é revertida. Não acrescenta rota pública, não registra pagamentos reais nem substitui a confirmação do entregador. Ainda é necessário validar a conciliação entre `manual_payments`, `store_payment_receipts` e a declaração de cobrança do entregador antes de integrar as confirmações no Laravel.
