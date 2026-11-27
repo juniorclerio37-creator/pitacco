@@ -43,7 +43,7 @@ try{
    const url=new URL(route.request().url());
    if(url.origin===origin && (url.pathname==='/'+conf.slug || url.pathname==='/cardapio/'))
     return route.fulfill({contentType:'text/html',body:html});
-   if(url.origin==='https://esm.sh')
+   if(url.origin===origin&&url.pathname==='/assets/menu-supabase.mjs')
     return route.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},
      body:moduleStub.replace('"template":"pitacco-v2"',`"template":"${conf.template}"`)});
    if(url.origin==='https://photos.pitacco.test'){

@@ -8,18 +8,17 @@ test('sandbox checkout shares the storefront and never submits an operational or
  assert.match(html,/PITACCO_PAGBANK_PREVIEW_V1/);
  assert.match(html,/if\(pagbankPreviewMode\)\{openPagBankPreview\(\);return;\}/);
  assert.match(html,/if\(pagbankPreviewMode&&checkout\)\{openPagBankPreview\(\);return;\}/);
- assert.match(html,/if\(pagbankPreviewMode\)return \{loyalty:null,best:null\}/);
  // Verify the sandbox still skips the operational storefront startup RPCs.
- const startup=html.match(/async function prepareMenuStartup\(\)\{([\s\S]*?)\n\}/)?.[0];
+ const startup=html.match(/function loadMenuExtras\(\)\{([\s\S]*?)\n\}/)?.[0];
  assert.ok(startup);
  const calls=[];
- const sandboxStartup=new Function('pagbankPreviewMode','menuStartupRpc','slug',startup+';return prepareMenuStartup;')(true,(...args)=>{calls.push(args);throw Error('Sandbox must not query operational data');},'sandbox');
+ const sandboxStartup=new Function('pagbankPreviewMode','loadMenuExtra',startup+';return loadMenuExtras;')(true,(...args)=>{calls.push(args);throw Error('Sandbox must not query operational data');});
  assert.doesNotMatch(startup,/pitacco_public_store_region/);
  assert.match(html,/cartStoragePaused=true;menu.store.delivery_enabled=false/);
  assert.match(edge,/if\(!page.includes\('PITACCO_PAGBANK_PREVIEW_V1'\)/);
  assert.match(edge,/p_payload:\{items:d.items,fulfillment:'pickup'\}/);
  assert.match(edge,/order_released:false/);
- return sandboxStartup().then(result=>{assert.deepEqual(result,{loyalty:null,best:null});assert.deepEqual(calls,[]);});
+ sandboxStartup();assert.deepEqual(calls,[]);
 });
 test('the shared storefront module parses as JavaScript',()=>{
  const code=html.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1];assert.ok(code);

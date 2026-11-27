@@ -87,7 +87,7 @@ try {
       if (routeOrigin === origin && pathname === '/acompanhar/') {
         return route.fulfill({ contentType: 'text/html', body: trackingPage });
       }
-      if (routeOrigin === 'https://esm.sh') {
+      if ((routeOrigin === origin && pathname === '/assets/menu-supabase.mjs') || routeOrigin === 'https://esm.sh') {
         return route.fulfill({
           contentType: 'text/javascript',
           headers: { 'access-control-allow-origin': '*' },

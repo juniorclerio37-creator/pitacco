@@ -1488,10 +1488,10 @@ setTimeout(()=>{
  loading.dataset.error='true';
  document.getElementById('menuStartupMessage').textContent='Está demorando um pouco mais que o normal. Tente novamente.';
  document.getElementById('menuStartupRetry').hidden=false;
-},25000);
+},new URLSearchParams(location.search).has('pagbank_preview')?40000:12500);
 </script>
 <script type="module">
-import{createClient}from'https://esm.sh/@supabase/supabase-js@2';
+import{createClient}from'/assets/menu-supabase.mjs';
 const client=createClient('https://mdevzehqcpcgxspwbiyz.supabase.co','sb_publishable_JLIp1y5II26GrztrKDNIyQ_ryETrCuj');
 const $=id=>document.getElementById(id),money=n=>moneyFormat.format(Number(n)||0);
 const segments=location.pathname.split('/').filter(Boolean);
@@ -1944,95 +1944,51 @@ function v2SaveFavorite(id){
 // Na ausência de histórico, a vitrine usa itens reais do catálogo, sem inventar vendas.
 let v2TopSellerIds=[];
 const v2HighlightLimit=()=>2;
-const MENU_STARTUP_RPC_LIMIT_MS=1000;
-const MENU_STARTUP_SESSION_LIMIT_MS=250;
-function menuStartupDeadline(promise,ms){
+const MENU_STARTUP_RPC_LIMIT_MS=2500;
+const MENU_CATALOG_RPC_LIMIT_MS=5000;
+function menuStartupRpc(name,args,ms=MENU_STARTUP_RPC_LIMIT_MS){
+ const controller=new AbortController();
  return new Promise(resolve=>{
-  const timer=setTimeout(()=>resolve(null),ms);
-  Promise.resolve(promise).then(value=>{clearTimeout(timer);resolve(value)},()=>{clearTimeout(timer);resolve(null)});
+  const finish=result=>{clearTimeout(timer);resolve(result)};
+  const failure=error=>finish({error,status:0});
+  const timer=setTimeout(()=>{
+   controller.abort();
+   finish({error:{message:'Request timeout'},status:408});
+  },ms);
+  Promise.resolve().then(()=>{
+   const request=client.rpc(name,args);
+   return typeof request.abortSignal==='function'?request.abortSignal(controller.signal):request;
+  }).then(finish,failure);
  });
 }
-function menuStartupRpc(name,args){
- // Cada RPC tem prazo finito. Resultados atrasados não modificam a página já montada.
- return new Promise(resolve=>{
-  let settled=false;
-  const finish=result=>{if(settled)return;settled=true;clearTimeout(timer);resolve(result)};
-  const timer=setTimeout(()=>finish(null),MENU_STARTUP_RPC_LIMIT_MS);
-  Promise.resolve().then(()=>client.rpc(name,args)).then(finish,()=>finish(null));
+function isTransientMenuError({error,status}){
+ return error?.code==='57014'||[408,500,502,503,504].includes(status)||
+  /timeout|timed out|network|failed to fetch|fetch failed|abort/i.test(error?.message||'');
+}
+async function loadMenuExtra(name,apply){
+ const args={p_slug:slug};
+ let result=await menuStartupRpc(name,args);
+ if(result.error&&isTransientMenuError(result)){
+  await new Promise(resolve=>setTimeout(resolve,2500+Math.random()*500));
+  if(document.hidden||!navigator.onLine)return;
+  result=await menuStartupRpc(name,args);
+ }
+ if(!result.error)apply(result.data);
+}
+function loadMenuExtras(){
+ if(pagbankPreviewMode)return;
+ void loadMenuExtra('pitacco_loyalty_program',data=>{
+  if(!data?.rules)return;
+  loyaltyProgram=data;
+  $('loyaltyOpen').hidden=false;
+  $('v2ClassicLoyalty').hidden=document.body.dataset.menuTemplate==='pitacco-v2';
+  renderLoyalty();v2RenderHomeLoyaltyProgress();void refreshLoyaltyWallet();
  });
-}
-async function prepareMenuStartup(){
- if(pagbankPreviewMode)return {loyalty:null,best:null};
- const [loyalty,best]=await Promise.all([
-  menuStartupRpc('pitacco_loyalty_program',{p_slug:slug}),
-  menuStartupRpc('pitacco_public_top_sellers',{p_slug:slug})
- ]);
- return {loyalty,best};
-}
-function applyMenuStartupData(prepared){
- const {loyalty,best}=prepared;
- v2TopSellerIds=!best?.error&&Array.isArray(best?.data)
-  ?[...new Set(best.data.filter(id=>typeof id==='string'))].slice(0,4):[];
- if(!loyalty?.error&&loyalty?.data?.rules){
-  loyaltyProgram=loyalty.data;
-  $('loyaltyBox').hidden=false;$('loyaltyOpen').hidden=false;
-  $('v2ClassicLoyalty').hidden=document.body.dataset.menuTemplate==='pitacco-v2';
-  renderLoyalty();void refreshLoyaltyWallet();
- }
-}
-async function retryMenuStartupExtras(prepared){
- const currentMenu=menu;
- const [loyalty,best]=await Promise.all([
-  !prepared.loyalty||prepared.loyalty.error?menuStartupRpc('pitacco_loyalty_program',{p_slug:slug}):Promise.resolve(null),
-  !prepared.best||prepared.best.error?menuStartupRpc('pitacco_public_top_sellers',{p_slug:slug}):Promise.resolve(null)
- ]);
- if(menu!==currentMenu)return;
- // Only replace the optional data that actually arrived; never reset the customer's wallet.
- if(loyalty?.data?.rules&&!loyalty.error&&!loyaltyProgram){
-  loyaltyProgram=loyalty.data;$('loyaltyOpen').hidden=false;
-  $('v2ClassicLoyalty').hidden=document.body.dataset.menuTemplate==='pitacco-v2';
-  renderLoyalty();void refreshLoyaltyWallet();v2RenderHomeLoyaltyProgress();
- }
- if(!best?.error&&Array.isArray(best?.data)){
-  v2TopSellerIds=[...new Set(best.data.filter(id=>typeof id==='string'))].slice(0,4);
+ void loadMenuExtra('pitacco_public_top_sellers',data=>{
+  if(!Array.isArray(data))return;
+  v2TopSellerIds=[...new Set(data.filter(id=>typeof id==='string'))].slice(0,4);
   v2Feature();
- }
-}
-async function warmMenuStartupImages(){
- const shop=menu.store;
- const featured=v2TopSellerIds.map(id=>menu.products.find(p=>p.id===id)).filter(Boolean);
- const urls=[
-  studioAsset(shop.profile_logo_path)||studioAsset(shop.appearance?.logo_path)||shop.logo_url,
-  studioAsset(shop.appearance?.cover_path)||shop.banner_url,
-  ...[...new Map([...featured,...menu.products].map(p=>[p.id,p])).values()].slice(0,v2HighlightLimit()).map(p=>p.image_url)
- ].filter(imageUrl);
- await Promise.all([...new Set(urls)].map(url=>new Promise(resolve=>{
-  const image=new Image();let finished=false;
-  const complete=()=>{if(finished)return;finished=true;clearTimeout(timer);resolve()};
-  const timer=setTimeout(complete,1200);
-  image.onload=complete;image.onerror=complete;image.src=url;
-  if(image.complete)complete();
- })));
-}
-async function waitForMenuIdentityPaint(){
- const images=['storeLogo','storeBanner'].map($).filter(node=>node?.src);
- await Promise.all(images.map(node=>new Promise(resolve=>{
-  let finished=false;
-  const complete=()=>{if(finished)return;finished=true;clearTimeout(timer);resolve()};
-  const timer=setTimeout(complete,120);
-  if(node.complete){complete();return;}
-  node.addEventListener('load',complete,{once:true});
-  node.addEventListener('error',complete,{once:true});
- })));
- // Entregar o primeiro quadro somente depois de aplicar a visibilidade da capa/logo.
- await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
-}
-async function v2LoadTopSellers(){
- if(!menu||document.body.dataset.menuTemplate!=='pitacco-v2')return;
- const [result]=await Promise.allSettled([client.rpc('pitacco_public_top_sellers',{p_slug:slug})]);
- const best=result.status==='fulfilled'?result.value:null;
- if(!best?.error&&Array.isArray(best?.data))v2TopSellerIds=[...new Set(best.data.filter(id=>typeof id==='string'))].slice(0,4);
- v2Feature();
+ });
 }
 // All models use the same persisted category keys; no platform pizza emoji.
 const pitaccoCategoryIconKeys=new Set(["flame","star","discount","crown","trophy","tag","megaphone","acai","ice-cream-cone","ice-cream-cup","dessert","combo-burger","combo-pizza","combo-acai","combo-ice-cream","combo-meal","combo-mixed","pizza-slice","pizza-whole","pizza-sweet","meal-box","plate","meal","buffet","pf","healthy","homemade","burger","snack","sandwich","hot-dog","soda","juice","energy","beer","water","drink","fries","appetizer","rings","board","plus","cheese","sauce","spice","calendar","more","pizza"]);
@@ -3382,16 +3338,15 @@ function rememberStartupBrand(shop){
  displayStartupBrand(brand);
  try{localStorage.setItem(menuBrandCacheKey,JSON.stringify({at:Date.now(),brand}))}catch{}
 }
-async function loadStartupBrand(){
+function loadStartupBrand(){
  try{const saved=JSON.parse(localStorage.getItem(menuBrandCacheKey)||'null');if(saved&&Date.now()-saved.at<86400000)displayStartupBrand(saved.brand)}catch{}
- try{const {data,error}=await client.rpc('pitacco_public_menu_identity',{p_slug:slug});if(!error&&data?.name&&!menu)rememberStartupBrand(data)}catch{}
 }
 let identityRefreshRunning=false;
 async function refreshPublicStoreIdentity(){
  if(!menu||identityRefreshRunning||studioPreviewActive||pagbankPreviewMode||document.visibilityState!=='visible')return;
  identityRefreshRunning=true;
  try{
-  const {data,error}=await client.rpc('pitacco_public_menu_identity',{p_slug:slug});
+  const {data,error}=await menuStartupRpc('pitacco_public_menu_identity',{p_slug:slug});
   if(error||typeof data?.name!=='string')return;
   // Never re-fetch the full catalogue just to update the identity.
   for(const key of ['name','whatsapp','instagram_url','facebook_url','profile_logo_path','logo_url'])menu.store[key]=data[key];
@@ -3403,23 +3358,15 @@ setInterval(()=>void refreshPublicStoreIdentity(),30000);
 window.addEventListener('focus',()=>void refreshPublicStoreIdentity());
 
 async function fetchPublicMenuWithRetry(){
- for(let attempt=0;attempt<3;attempt++){
-  let result;
-  // Cap a stalled connection; a slow request cannot trap the loading screen indefinitely.
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),6500);
-  try{
-   let request=client.rpc('get_public_menu',{p_slug:slug});
-   if(typeof request.abortSignal==='function')request=request.abortSignal(controller.signal);
-   result=await menuStartupDeadline(request,6600)||{error:{message:'Request timeout'},status:408};
-  }catch(error){result={error}}finally{clearTimeout(timer)}
-  if(!result?.error)return result?.data;
-  const error=result.error;
-  const temporary=error.code==='57014'||[408,429,500,502,503,504].includes(result.status)||/timeout|timed out|network|failed to fetch|fetch failed|abort/i.test(error.message||'');
-  if(!temporary||attempt===2)throw error;
-  $('menuStartupMessage').textContent='Estamos conectando à loja. Só mais um instante.';
-  await new Promise(resolve=>setTimeout(resolve,300*(attempt+1)+Math.random()*180));
+ const getMenu=()=>menuStartupRpc('get_public_menu',{p_slug:slug},MENU_CATALOG_RPC_LIMIT_MS);
+ let result=await getMenu();
+ if(result.error&&isTransientMenuError(result)&&navigator.onLine){
+  $('menuStartupMessage').textContent='Estamos reconectando à loja.';
+  await new Promise(resolve=>setTimeout(resolve,400+Math.random()*250));
+  result=await getMenu();
  }
+ if(result.error)throw result.error;
+ return result.data;
 }
 
 function initOptions(){
@@ -3766,7 +3713,7 @@ async function restoreCustomerSession(){
  const device=rememberedDevice();if(!device)return;
  customerSessionBusy=true;
  try{
-  const {data,error}=await client.rpc('pitacco_customer_device_session',{p_slug:slug,p_device:device,p_action:'resume'});
+  const {data,error}=await menuStartupRpc('pitacco_customer_device_session',{p_slug:slug,p_device:device,p_action:'resume'});
   if(error||device!==rememberedDevice())return;
   if(data?.reset){const wasActive=customerSessionActive;discardCustomerCredential();if(wasActive)location.reload();return}
   if(!data?.active||typeof data.name!=='string'||!/^\d{10,11}$/.test(data.phone||''))return;
@@ -4296,8 +4243,7 @@ async function startPublicMenu(){
    if(proof.slug!==slug||proof.environment!=='sandbox')throw Error('Link Sandbox pertence a outra loja.');
    pagbankPreviewReady=true;
   }
-  if(!studioPreviewActive&&!pagbankPreviewMode)void loadStartupBrand();
-  const startupData=prepareMenuStartup();
+  if(!studioPreviewActive&&!pagbankPreviewMode)loadStartupBrand();
   const data=await fetchPublicMenuWithRetry();
   if(!data?.store||!Array.isArray(data.products))throw Error('Cardápio inválido ou indisponível.');
   menu=data;
@@ -4309,25 +4255,15 @@ async function startPublicMenu(){
    document.body.prepend(el('div','AMBIENTE SANDBOX · Retirada fictícia · Não utilize dinheiro real','pagbank-preview-banner'));
   }else if(studioPreviewActive)cartStoragePaused=true;
   else restoreCartDraft();
-  // Consultas independentes já correm junto ao catálogo; fotos não bloqueiam a abertura.
-  const prepared=await startupData;
-  setMenuTemplate(menu.store);
-  applyMenuStartupData(prepared);
   initOptions();
-  void warmMenuStartupImages();
-  const restoring=restoreCustomerSession();
-  await menuStartupDeadline(restoring,MENU_STARTUP_SESSION_LIMIT_MS);
-  await menuStartupDeadline(waitForMenuIdentityPaint(),120);
   if(pagbankPreviewMode&&v2Only()&&pagbankPreviewItems){const resume=el('button','Retomar pagamento de teste','primary pb-v2-resume');resume.type='button';resume.onclick=openPagBankPreview;document.querySelector('.pagbank-preview-banner')?.append(resume)}
   if(studioPreviewActive){
    studioPreviewReady=true;studioPreviewReport('pitacco-studio-preview-ready');studioPreviewApply();
   }
   $('menuStartup').hidden=true;
+  void restoreCustomerSession();
+  loadMenuExtras();
   if(!studioPreviewActive&&cartRecoveryId)void checkPendingCart();
-  // Optional RPC timeouts never leave an enabled program unavailable for the whole visit.
-  if(!studioPreviewActive&&!pagbankPreviewMode&&(!prepared.loyalty||prepared.loyalty.error||!prepared.best||prepared.best.error)){
-   void retryMenuStartupExtras(prepared);
-  }
  }catch(err){
   $('menuStartup').dataset.error='true';
   $('menuStartupMessage').textContent='Não foi possível carregar o cardápio agora. Tente novamente.';
