@@ -35,8 +35,23 @@ assert len(pin)==6
 wrong='0'*6 if pin!='0'*6 else '1'*6
 def operate(action,expected=200,**extra):
     return call(d,expected,{'action':action,'delivery_id':delivery}|extra,courier)
-# Existing fixture is already collected and departed. Replay must not create a new departure.
+# Start at actual assignment; do not synthesize collected_at or departure.
+operate('depart',409)
+operate('arrive',409)
+call(d,403,{'action':'collect','delivery_id':str(uuid.uuid4())},courier)
+call(d,403,{'action':'collect','delivery_id':delivery},owner)
+call(d,401,{'action':'collect','delivery_id':delivery},gps)
+assert operate('collect')['data']=={'collected':True}
+assert operate('collect')['data']=={'collected':True}
+assert sql("select status from public.deliveries where id='"+delivery+"'")=='aceita'
+assert sql("select (collected_at is not null)::text from public.deliveries where id='"+delivery+"'")=='true'
+assert sql("select count(*) from public.operation_audit where order_id='98000000-0000-0000-0000-000000000011' and action='courier_collected'")=='1'
+operate('arrive',409)
 assert operate('depart')['data']=={'departed':True}
+assert operate('depart')['data']=={'departed':True}
+assert sql("select status from public.deliveries where id='"+delivery+"'")=='retirada'
+assert sql("select count(*) from public.operation_audit where order_id='98000000-0000-0000-0000-000000000011' and action='courier_departed_single'")=='1'
+operate('collect',409)
 operate('verify',403,code=pin)
 call(d,403,{'action':'arrive','delivery_id':str(uuid.uuid4())},courier)
 result={x['delivery_id']:x['payment'] for x in call(p,200,cards,courier)['data']}

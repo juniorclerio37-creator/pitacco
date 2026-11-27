@@ -1,3 +1,36 @@
+-- CI only: original documented collection, installed without changing other original functions.
+create or replace function public.pitacco_driver_collect(p_delivery uuid)
+returns void language plpgsql security definer set search_path = ''
+as $$
+declare d public.deliveries%rowtype;
+begin
+  if not public.pitacco_courier_session_ready() then
+    raise exception 'Sessão não liberada';
+  end if;
+  select * into d from public.deliveries where id = p_delivery for update;
+  if not found or d.logistics_provider <> 'loja' or
+     d.courier_id is null or not public.is_courier(d.courier_id) then
+    raise exception 'Entrega não atribuída a este entregador';
+  end if;
+  if d.batch_id is not null and exists (
+    select 1 from public.delivery_batches b
+    where b.id = d.batch_id and (b.departed_at is not null or b.completed_at is not null)
+  ) then
+    raise exception 'Rota já saiu da loja';
+  end if;
+  if d.status = 'aceita' and d.collected_at is not null then return; end if;
+  if d.status not in ('atribuida','aceita') then raise exception 'Entrega não está aguardando coleta'; end if;
+  update public.deliveries
+     set status = 'aceita', collected_at = now(), updated_at = now()
+   where id = d.id;
+  insert into public.operation_audit(store_id,order_id,actor,action,details)
+  values(d.store_id,d.order_id,(select auth.uid()),'courier_collected',
+         jsonb_build_object('delivery',d.id,'route',d.batch_id));
+end;
+$$;
+revoke all on function public.pitacco_driver_collect(uuid) from public, anon;
+grant execute on function public.pitacco_driver_collect(uuid) to authenticated;
+
 -- CI ONLY. Original own-delivery transitions and PIN rules.
 create function core_auth.courier_delivery_fixture(p_action text,p_delivery uuid,p_code text) returns jsonb
 language plpgsql security definer set search_path='' as $fn$
@@ -21,6 +54,9 @@ begin
   where d.id=p_delivery and d.source='proprio' and o.source='proprio' and d.logistics_provider='loja'
  ) then raise exception 'Entrega não autorizada' using errcode='42501';end if;
  case p_action
+ when 'collect' then
+  perform public.pitacco_driver_collect(p_delivery);
+  return jsonb_build_object('collected',true);
  when 'depart' then
   perform public.pitacco_driver_depart_single(p_delivery);
   return jsonb_build_object('departed',true);

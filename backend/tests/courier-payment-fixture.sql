@@ -35,5 +35,5 @@ insert into public.orders(id,store_id,channel,gross,source,status,preparation_st
 ('98000000-0000-0000-0000-000000000011','20000000-0000-4000-8000-000000000001','Delivery próprio',34,'proprio','accepted','ready','{"payment":"dinheiro","logistics":"loja","change_for":50,"delivery_fee":9}'),
 ('98000000-0000-0000-0000-000000000012','20000000-0000-4000-8000-000000000001','Delivery próprio',25,'proprio','accepted','ready','{"payment":"pix_manual","logistics":"loja"}');
 insert into public.deliveries(id,store_id,order_id,courier_id,customer_name,address,status,source,logistics_provider,collected_at,arrived_at) values
-('98000000-0000-0000-0000-000000000021','20000000-0000-4000-8000-000000000001','98000000-0000-0000-0000-000000000011','98000000-0000-0000-0000-000000000002','Cliente Fixture','Rua Fixture','retirada','proprio','loja',now(),null),
+('98000000-0000-0000-0000-000000000021','20000000-0000-4000-8000-000000000001','98000000-0000-0000-0000-000000000011','98000000-0000-0000-0000-000000000002','Cliente Fixture','Rua Fixture','atribuida','proprio','loja',null,null),
 ('98000000-0000-0000-0000-000000000022','20000000-0000-4000-8000-000000000001','98000000-0000-0000-0000-000000000012','98000000-0000-0000-0000-000000000002','Cliente Fixture','Rua Fixture','retirada','proprio','loja',now(),now());

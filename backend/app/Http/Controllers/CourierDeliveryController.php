@@ -13,7 +13,7 @@ final class CourierDeliveryController
     {
         abort_unless(app()->environment('testing')&&config('pitacco.courier_delivery_enabled'),404);
         $data=$request->validate([
-            'action'=>['required','in:code_lengths,depart,arrive,verify'],
+            'action'=>['required','in:code_lengths,collect,depart,arrive,verify'],
             'delivery_id'=>['required_unless:action,code_lengths','prohibited_if:action,code_lengths','nullable','uuid'],
             'code'=>['required_if:action,verify','prohibited_unless:action,verify','nullable','string','regex:/\A[0-9]{4,8}\z/'],
         ]);
