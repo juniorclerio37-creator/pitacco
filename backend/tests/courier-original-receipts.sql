@@ -76,4 +76,69 @@ begin
  assert not has_function_privilege('anon','public.pitacco_driver_confirm_payment(uuid)','execute');
  raise notice 'PASS: original courier receipt, assigned courier session, arrival, exact amount, idempotency and unchanged delivery status';
 end $test$;
+
+-- Use the actual receipt shape produced by the ten Laravel delivery checkouts.
+-- All clones and declarations remain inside the rolled-back test transaction.
+do $test$
+declare
+ s constant uuid:='91000000-0000-0000-0000-000000000002';
+ courier constant uuid:='96000000-0000-0000-0000-000000000003';
+ methods constant text[]:=array['dinheiro','cartao_credito','cartao_debito','cartao_entrega','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket','pix_manual'];
+ method text; i integer:=0; source_receipt jsonb; gross_value numeric; oid uuid; did uuid; r jsonb; card jsonb; replay jsonb;
+begin
+ foreach method in array methods loop
+  select o.receipt,o.gross into strict source_receipt,gross_value
+  from public.orders o join public.public_checkouts c on c.order_id=o.id and c.store_id=o.store_id
+  where c.store_id=s and c.phone='21988887'||lpad((200+i)::text,3,'0') and o.receipt->>'payment'=method;
+  assert gross_value=34;
+  oid:=gen_random_uuid();did:=gen_random_uuid();
+  insert into public.orders(id,store_id,channel,gross,source,status,preparation_status,receipt)
+   values(oid,s,'Delivery próprio',gross_value,'proprio','accepted','ready',source_receipt);
+  insert into public.deliveries(id,store_id,order_id,courier_id,customer_name,address,status,source,logistics_provider,collected_at,arrived_at)
+   values(did,s,oid,courier,'Cliente fictício','Endereço fictício','retirada','proprio','loja',now(),now());
+  select item->'payment' into strict card from jsonb_array_elements(public.pitacco_driver_payment_cards()) item where item->>'delivery_id'=did::text;
+  assert card->>'received_by_courier'='false';
+  if method='pix_manual' then
+   assert card->>'state'<>'collect';
+   begin
+    perform public.pitacco_driver_confirm_payment(did);
+    raise exception 'Expected manual Pix denial';
+   exception when sqlstate '22023' then if sqlerrm not like 'Este pedido não possui cobrança%' then raise;end if;end;
+   assert not exists(select 1 from public.operation_audit where order_id=oid and action='courier_payment_received');
+  else
+   assert card->>'state'='collect' and (card->>'amount')::numeric=34;
+   if method='dinheiro' then
+    assert (card->>'change_for')::numeric=50 and (card->>'change_due')::numeric=16;
+   end if;
+   begin
+    update public.deliveries set status='entregue',delivery_code_verified_at=now() where id=did;
+    raise exception 'Expected collection gate';
+   exception when check_violation then
+    if sqlerrm not like 'Confirme o recebimento%' then raise;end if;
+   end;
+   r:=public.pitacco_driver_confirm_payment(did);
+   replay:=public.pitacco_driver_confirm_payment(did);
+   assert r=replay and r->>'state'='paid' and (r->>'amount')::numeric=34;
+   assert (select count(*)=1 from public.operation_audit where order_id=oid and action='courier_payment_received');
+   assert (select status='retirada' from public.deliveries where id=did);
+   assert (select (receipt#>>'{courier_collection,amount}')::numeric=34 from public.orders where id=oid);
+  end if;
+  i:=i+1;
+ end loop;
+ -- Fiado privacy: no amount, limit, debt or due date in the courier's payment card.
+ oid:=gen_random_uuid();did:=gen_random_uuid();
+ insert into public.orders(id,store_id,channel,gross,source,status,preparation_status,receipt)
+ values(oid,s,'Delivery próprio',34,'proprio','accepted','ready','{"payment":"fiado","logistics":"loja"}');
+ insert into public.deliveries(id,store_id,order_id,courier_id,customer_name,address,status,source,logistics_provider,collected_at,arrived_at)
+ values(did,s,oid,courier,'Cliente fictício','Endereço fictício','retirada','proprio','loja',now(),now());
+ select item->'payment' into strict card from jsonb_array_elements(public.pitacco_driver_payment_cards()) item where item->>'delivery_id'=did::text;
+ assert card->>'state'='no_collect' and card->>'method'='Sem cobrança na entrega' and card->>'amount' is null;
+ assert not (card ?| array['limit','outstanding','next_due','fiado']);
+ begin
+  perform public.pitacco_driver_confirm_payment(did);
+  raise exception 'Expected deferred payment denial';
+ exception when sqlstate '22023' then if sqlerrm not like 'Este pedido não possui cobrança%' then raise;end if;end;
+ assert not exists(select 1 from public.operation_audit where order_id=oid and action='courier_payment_received');
+ raise notice 'PASS: courier cards and receipt confirmations across nine collection methods, manual Pix, Fiado privacy, exact amount, change, completion gate and idempotency';
+end $test$;
 rollback;
