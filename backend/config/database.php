@@ -17,6 +17,7 @@ return [
         'core_profile' => $base + ['username'=>env('CORE_PROFILE_DB_USERNAME','pitacco_core_profile'),'password'=>env('CORE_PROFILE_DB_PASSWORD')],
         'core_fiado_manage' => $base + ['username'=>env('CORE_FIADO_MANAGE_DB_USERNAME','pitacco_core_fiado_manage'),'password'=>env('CORE_FIADO_MANAGE_DB_PASSWORD')],
         'core_fiado_statement' => $base + ['username'=>env('CORE_FIADO_STATEMENT_DB_USERNAME','pitacco_core_fiado_statement'),'password'=>env('CORE_FIADO_STATEMENT_DB_PASSWORD')],
+        'core_opening_hours' => $base + ['username'=>env('CORE_OPENING_HOURS_DB_USERNAME','pitacco_core_opening_hours'),'password'=>env('CORE_OPENING_HOURS_DB_PASSWORD')],
         'core_delivery_settings' => $base + ['username'=>env('CORE_DELIVERY_SETTINGS_DB_USERNAME','pitacco_core_delivery_settings'),'password'=>env('CORE_DELIVERY_SETTINGS_DB_PASSWORD')],
         'core_merchant_checkout' => $base + ['username'=>env('CORE_MERCHANT_CHECKOUT_DB_USERNAME','pitacco_core_merchant_checkout'),'password'=>env('CORE_MERCHANT_CHECKOUT_DB_PASSWORD')],
         'core_payment_publish' => $base + ['username'=>env('CORE_PAYMENT_PUBLISH_DB_USERNAME','pitacco_core_payment_publish'),'password'=>env('CORE_PAYMENT_PUBLISH_DB_PASSWORD')],

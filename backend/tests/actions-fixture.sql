@@ -155,3 +155,8 @@ revoke all on function core_auth.delivery_settings_fixture(uuid) from public,ano
 create role pitacco_core_delivery_settings login password 'ci-delivery-settings-only' nosuperuser nocreatedb nocreaterole nobypassrls;
 grant usage on schema core_auth,auth,public to pitacco_core_delivery_settings;
 grant execute on function core_auth.can_act(uuid),auth.uid(),core_auth.delivery_settings_fixture(uuid),public.pitacco_save_delivery_zone_times(uuid,integer,jsonb,jsonb),public.pitacco_save_delivery_polygons_times(uuid,jsonb) to pitacco_core_delivery_settings;
+
+-- CI-only opening hours role: original revision-controlled operations only.
+create role pitacco_core_opening_hours login password 'ci-opening-hours-only' nosuperuser nocreatedb nocreaterole nobypassrls;
+grant usage on schema core_auth,auth,public to pitacco_core_opening_hours;
+grant execute on function core_auth.can_act(uuid),auth.uid(),public.pitacco_store_hours_state(uuid),public.pitacco_store_hours_save_v2(uuid,jsonb,boolean,integer,boolean) to pitacco_core_opening_hours;

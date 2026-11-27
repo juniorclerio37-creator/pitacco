@@ -288,7 +288,41 @@ assert [p['id'] for p in saved['polygons']]==[p['id'] for p in regions]
 assert saved['polygons'][6]['priority']['fee']==21
 assert call(delivery_settings,200,token=alice)['data']==saved
 print('PASS: merchant delivery settings, circle and seven ordered polygons, independent fees and priority, invalidation of old quotes, role isolation')
+hours='/stores/'+A+'/opening-hours'
+call(hours,401)
+call(hours,404,token=bob)
+call(hours.replace(A,B),404,token=alice)
+initial=call(hours,200,token=alice)['data']
+assert initial['current']['open'] is True and initial['current']['accepts_scheduled'] is True
+hours_body={'periods':initial['periods'],'paused':False,'accepts_scheduled':True,'expected_revision':initial['revision']}
+call(hours,404,'PUT',hours_body,bob)
+call(hours,422,'PUT',hours_body|{'timezone':'UTC'},alice)
+call(hours,422,'PUT',hours_body|{'periods':[initial['periods'][0]]*2},alice)
+overlap=[{'weekday':7,'slot':1,'opens_minute':1200,'closes_minute':120},{'weekday':1,'slot':1,'opens_minute':60,'closes_minute':180}]
+call(hours,409,'PUT',hours_body|{'periods':overlap},alice)
+assert call(hours,200,token=alice)['data']['revision']==initial['revision']
+paused=call(hours,200,'PUT',hours_body|{'paused':True},alice)['data']
+assert paused['revision']==initial['revision']+1 and paused['current']['reason']=='paused'
+assert paused['current']['scheduling_available'] is False
+assert sql("select cardinality(public.pitacco_public_schedule_slots('core-settings-fixture','pickup'))")=='0'
+call(pdv,409,'POST',sale|{'request_id':str(uuid.uuid4())},alice)
+# A confirmed sale remains recoverable while the store is closed.
+assert call(pdv,200,'POST',sale,alice)['data']['order_id']==order
+call(hours,409,'PUT',hours_body,alice)
+resumed=call(hours,200,'PUT',hours_body|{'expected_revision':paused['revision']},alice)['data']
+assert resumed['current']['open'] is True and resumed['current']['scheduling_available'] is True
+assert int(sql("select cardinality(public.pitacco_public_schedule_slots('core-settings-fixture','pickup'))"))>0
+overnight=[{'weekday':5,'slot':1,'opens_minute':1200,'closes_minute':120}]
+night=call(hours,200,'PUT',hours_body|{'periods':overnight,'accepts_scheduled':False,'expected_revision':resumed['revision']},alice)['data']
+assert night['periods']==overnight
+assert night['current']['accepts_scheduled'] is False
+assert sql("select pitacco_private.store_opening_status('"+A+"','2026-11-21 01:30:00-03')->>'open'")=='true'
+assert sql("select pitacco_private.store_opening_status('"+A+"','2026-11-21 02:00:00-03')->>'open'")=='false'
+call(hours,200,'PUT',hours_body|{'expected_revision':night['revision']},alice)
+print('PASS: weekly opening hours, revision, pause/resume, overnight, appointment slots, closed checkout and committed retry, tenant isolation')
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
+call(hours,404,token=alice)
+call(hours,404,'PUT',hours_body,alice)
 call(delivery_settings,404,token=alice)
 call(delivery_settings,404,'PUT',circle,alice)
 call(pdv,404,'POST',sale,alice)
