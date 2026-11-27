@@ -224,6 +224,7 @@ test('merchant logo crop applies to the original image and preview',()=>{
 });
 
 test('home does not overlap navigation or duplicate categories',()=>{
+ assert.match(html,/body\[data-menu-template="pitacco-v2"\] \.catalog\{padding-top:12px\}/);
  assert.match(html,/#v2Home\{display:block;margin:0;position:relative;z-index:1\}/);
  assert.doesNotMatch(html,/#v2Home\{[^}]*margin(?:-top)?:-/);
  assert.match(html,/root\.hidden=categories\.length<2\|\|\(document\.body\.dataset\.menuTemplate==='pitacco-v2'&&v2Page==='inicio'\)/);
