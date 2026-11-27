@@ -22,3 +22,6 @@ O checkout de Pix manual aceita resgate de pontos, carimbos de pedidos ou cashba
 
 ## Acompanhamento experimental
 POST /api/v1/public/orders/tracking recebe o identificador privado no corpo JSON, com resposta sem cache, transação somente leitura e papel SQL separado. A função original `pitacco_track_public_order(uuid)` mantém validade, dados do pedido, agendamento, contatos e regras de GPS (incluindo agrupamento). Os testes HTTP cobrem pedido correto, expiração, identificador inválido, prioridade e ausência de GPS antes da coleta. As regressões SQL existentes exercitam a localização agrupada e a interrupção do compartilhamento. Nenhum canal em tempo real ou adaptação da interface foi realizado. Antes da produção, auditar logs, titularidade, expiração e o contrato de dados no esquema recuperado. Desativado por padrão, bloqueado fora de local/testing.
+
+## Transporte cliente experimental
+`clients/tracking.mjs` prepara o transporte same-origin para acompanhamento no Laravel, sem token na URL da API, sem credenciais/cookies, sem cache, sem fallback automático e com timeout. Testes Node verificam contrato, falhas e ausência de exposição do identificador nos erros. O arquivo não foi importado pelo cardápio atual; push, interface e publicação permanecem inalterados. A implantação requer roteamento same-origin e homologação integral.

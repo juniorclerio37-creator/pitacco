@@ -77,3 +77,4 @@ jobs:
           trap 'kill "$server" 2>/dev/null || true; cat /tmp/core-checkout.log' EXIT
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/up >/dev/null && break; sleep 1; done
           python3 tests/checkout-smoke.py
+          node --test tests/tracking-client.test.mjs
