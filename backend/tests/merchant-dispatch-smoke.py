@@ -286,6 +286,44 @@ rollback;
 """)
 assert sql("select count(*) from public.deliveries where id in ('"+one+"','"+two+"') and courier_id is null and batch_id is null and status='pendente'")=='2'
 print('PASS: original geographic scheduler respects manual hold, preparation, stale GPS, direction, compatible route and duplicate prevention; rolled back')
+# Rehearse mixed automatic grouping against the unchanged original scheduler.
+# Disposable transaction only; do not widen the live experimental CLI scope.
+sql("""
+begin;
+do $mixed_geo$
+declare
+ s uuid:='20000000-0000-4000-8000-000000000001';
+ a uuid:='98000000-0000-0000-0000-000000000041';
+ m uuid:='98000000-0000-0000-0000-000000000081';
+ mo uuid:='98000000-0000-0000-0000-000000000082';
+ c uuid:='98000000-0000-0000-0000-000000000002';
+ route uuid;
+begin
+ update public.deliveries set manual_dispatch_hold=true where store_id=s and status='pendente';
+ update public.couriers set available=(id=c) where store_id=s;
+ update public.stores set dispatch_mode='automatico',latitude=-22.85,longitude=-43.45,max_orders_per_trip=2 where id=s;
+ update public.deliveries set latitude=-22.84,longitude=-43.45,deliver_by=now()+interval '45 minutes',manual_dispatch_hold=false where id=a;
+ update public.courier_positions set latitude=-22.85,longitude=-43.45,observed_at=now() where courier_id=c;
+ insert into public.orders(id,store_id,channel,gross,source,status,preparation_status,receipt)
+ values(mo,s,'iFood',25,'ifood','accepted','ready','{"ifood_status":"CONFIRMED","logistics":"loja","ifood_test":true}');
+ insert into public.deliveries(id,store_id,order_id,customer_name,address,status,source,logistics_provider,latitude,longitude,deliver_by,manual_dispatch_hold)
+ values(m,s,mo,'Cliente Fixture','Rua Fixture','pendente','ifood','loja',-22.86,-43.45,now()+interval '60 minutes',true);
+ route:=pitacco_private.group_auto_one(s);
+ if route is null or not exists(select 1 from public.deliveries where id=a and batch_id=route and courier_id=c) then raise exception 'Own route was not assigned';end if;
+ update public.deliveries set manual_dispatch_hold=false where id=m;
+ if pitacco_private.group_auto_one(s) is not null then raise exception 'Opposite marketplace destination grouped';end if;
+ update public.deliveries set latitude=-22.839,longitude=-43.45,external_delivery_status='SHIPPING_UNCERTAIN' where id=m;
+ if pitacco_private.group_auto_one(s) is not null then raise exception 'Shipping uncertain delivery assigned';end if;
+ update public.deliveries set external_delivery_status=null where id=m;
+ if pitacco_private.group_auto_one(s) is distinct from route then raise exception 'Compatible iFood stop did not join own route';end if;
+ if (select count(*) from public.deliveries where id in (a,m) and batch_id=route and status='atribuida')<>2 then raise exception 'Mixed route mismatch';end if;
+ if pitacco_private.group_auto_one(s) is not null then raise exception 'Capacity or replay failed';end if;
+ if exists(select 1 from pitacco_private.ifood_courier_dispatch where delivery_id=m) then raise exception 'Unexpected provider dispatch';end if;
+ if (select receipt->>'ifood_status' from public.orders where id=mo)<>'CONFIRMED' then raise exception 'Official status mutated';end if;
+end $mixed_geo$;
+rollback;
+""")
+print('PASS: isolated original mixed geographic grouping rehearsal, opposite direction, Shipping hold, capacity and no provider dispatch')
 
 call(p,401,body)
 call(p,404,body,courier)

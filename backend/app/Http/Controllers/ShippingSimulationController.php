@@ -32,8 +32,9 @@ final class ShippingSimulationController
     public function transition(Request $request,string $store,string $order): JsonResponse
     {
         abort_unless(app()->environment('testing') && config('pitacco.shipping_simulation_enabled'),404);
-        $input=$request->validate(['action'=>['required','in:start,status,request,submitted,uncertain,rejected,allocated,cancel,cancel_submitted,cancel_uncertain,cancel_rejected,cancel_confirmed'],'revision'=>['required','integer','min:0'],'confirmed'=>['required_if:action,request,cancel','prohibited_unless:action,request,cancel','accepted'],'amount_cents'=>['required_if:action,request','prohibited_unless:action,request','integer','min:0']]);
+        $input=$request->validate(['action'=>['required','in:start,status,request,submitted,uncertain,rejected,allocated,cancel,cancel_submitted,cancel_uncertain,cancel_rejected,cancel_confirmed'],'revision'=>['required','integer','min:0'],'confirmed'=>['required_if:action,request,cancel','prohibited_unless:action,request,cancel','boolean'],'amount_cents'=>['required_if:action,request','prohibited_unless:action,request','integer','min:0']]);
         if($request->query()||array_diff(array_keys($request->all()),array_keys($input)))throw ValidationException::withMessages(['request'=>'Apenas simulação.']);
+        if(in_array($input['action'],['request','cancel'],true)&&($input['confirmed']??false)!==true)throw ValidationException::withMessages(['confirmed'=>'Confirme explicitamente a operação simulada.']);
         $session=$request->attributes->get('core_session');
         try {
             $db=DB::connection('core_own_board');

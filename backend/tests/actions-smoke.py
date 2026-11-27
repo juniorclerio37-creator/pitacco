@@ -170,6 +170,8 @@ BASE=board_base
 def ship(action,revision,expected=200,**extra):
     return call(shipping,expected,'POST',{'action':action,'revision':revision,**extra},alice)
 assert ship('start',0)['data']['state']=='quoted'
+ship('request',1,422,confirmed=False,amount_cents=1200)
+ship('status',1,422,confirmed=True)
 ship('request',1,409,confirmed=True,amount_cents=1199)
 assert ship('request',1,confirmed=True,amount_cents=1200)['data']['own_available'] is False
 ship('request',1,409,confirmed=True,amount_cents=1200)
