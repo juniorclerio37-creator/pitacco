@@ -231,7 +231,9 @@ def quote(req,service,expired=False):
     return qid
 for i,service in enumerate(['standard','priority']):
     req=str(uuid.uuid4())
-    qid=quote(req,service)
+    generated=json.loads(subprocess.check_output(['node','tests/original-quote-postgres.mjs',req,service],text=True))
+    qid=str(uuid.UUID(generated['quote_id']))
+    assert generated['delivery_service']==service
     delivery=sale|{'request_id':req,'sale_mode':'entrega','payment':'cartao_credito','phone':'2198888771'+str(i),'address':'Rua Fixture 789','quote_id':qid}
     call(pdv,422,'POST',delivery|{'sale_mode':'retirada'},alice)
     call(pdv,422,'POST',delivery|{'quote_id':None},alice)
@@ -253,7 +255,7 @@ req=str(uuid.uuid4())
 expired=quote(req,'standard',True)
 call(pdv,409,'POST',sale|{'request_id':req,'sale_mode':'entrega','payment':'cartao_credito','address':'Rua Fixture 789','quote_id':expired},alice)
 assert sql("select count(*) from public.orders where request_id='"+req+"'")=='0'
-print('PASS: original merchant delivery, standard and priority fee, address and request binding, public payment methods, expired quote, idempotency')
+print('PASS: original quote handler persisted server-calculated standard and priority quotes in PostgreSQL, merchant checkout, address and request binding, public payment methods, expired quote, idempotency')
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
 call(pdv,404,'POST',sale,alice)
 BASE=report_base
