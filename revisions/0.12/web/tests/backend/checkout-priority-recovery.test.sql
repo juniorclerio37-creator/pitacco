@@ -25,8 +25,7 @@ begin
  result:=public.pitacco_checkout_quoted_delivery('priority-recovery-fixture','92000000-0000-0000-0000-000000000011','Cliente','21999999999','Rua Fixture 123',items,'delivery','pix_manual','Complemento preservado','91000000-0000-0000-0000-000000000011');
  assert (result->>'total')::numeric=34,'Priority quote charges its own fee';
  assert result->>'status'='accepted','Anonymous quoted delivery honors automatic acceptance';
- assert not has_function_privilege('anon','pitacco_private.accept_own_from_checkout(uuid,uuid)','EXECUTE');
- assert not has_function_privilege('authenticated','pitacco_private.accept_own_from_checkout(uuid,uuid)','EXECUTE');
+
  replay:=public.pitacco_checkout_quoted_delivery('priority-recovery-fixture','92000000-0000-0000-0000-000000000011','Cliente','21999999999','Rua Fixture 123',items,'delivery','pix_manual','Complemento preservado','91000000-0000-0000-0000-000000000011');
  assert replay=result,'Lost response returns original receipt';
  assert public.pitacco_public_checkout_recovery('priority-recovery-fixture','92000000-0000-0000-0000-000000000011')->>'order_id'=result->>'order_id';
@@ -49,6 +48,8 @@ reset role;
 do $test$
 declare o public.orders%rowtype; d public.deliveries%rowtype;
 begin
+ assert not has_function_privilege('anon','pitacco_private.accept_own_from_checkout(uuid,uuid)','EXECUTE');
+ assert not has_function_privilege('authenticated','pitacco_private.accept_own_from_checkout(uuid,uuid)','EXECUTE');
  select * into strict o from public.orders where request_id='92000000-0000-0000-0000-000000000011';
  assert o.receipt->>'delivery_service'='priority' and (o.receipt#>>'{delivery_eta,max_minutes}')::int=30;
  select * into strict d from public.deliveries where order_id=o.id;
