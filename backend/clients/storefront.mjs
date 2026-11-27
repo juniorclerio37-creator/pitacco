@@ -92,3 +92,50 @@ export async function readCoreStoreStateRpc(name,args,options={}){
   if(resource==='payment-prices'&&Object.values(data).some(r=>!Number.isSafeInteger(r?.adjustment_bps)||!Number.isSafeInteger(r?.revision)))return {data:null,error:{code:'retry'}};
   return {data,error:null};
 }
+
+// Explicit compatibility for existing V2 offline checkout RPC payloads.
+// Ambiguous failure must not clear V2's persisted request ID.
+const checkoutFields={
+ p_request:'request_id',p_customer:'customer',p_phone:'phone',p_address:'address',
+ p_items:'items',p_fulfillment:'fulfillment',p_payment:'payment',p_notes:'notes',
+ p_quote:'quote_id',p_scheduled_for:'scheduled_for',p_key:'referral_code',
+ p_coupon:'coupon',p_reward:'reward',p_expected_cents:'expected_cents',
+ p_price_revision:'price_revision'
+};
+const offlineEndpoints=new Set(['checkout_public_order','pitacco_checkout_quoted_delivery','pitacco_checkout_scheduled_order','pitacco_loyalty_checkout','pitacco_confirm_priced_public_checkout']);
+const rpcFailure=(code,status=503)=>({data:null,error:{code,message:code==='unsupported'?'Modalidade ainda não integrada ao ambiente de teste.':'Não foi possível confirmar o pedido. Preserve a solicitação original.'},status});
+export async function placeCoreOrderRpc(name,args,options={}){
+ if(!offlineEndpoints.has(name)||!args||typeof args!=='object'||Array.isArray(args))return rpcFailure('unsupported');
+ if(!menuPath(args.p_slug)||!UUID.test(args.p_request??'')||!PAYMENT_METHODS.has(args.p_payment))return rpcFailure('unsupported');
+ if(Object.keys(args).some(k=>k!=='p_slug'&&k!=='p_use_loyalty'&&!Object.hasOwn(checkoutFields,k)))return rpcFailure('unsupported');
+ const priced=name==='pitacco_confirm_priced_public_checkout';
+ const loyalty=name==='pitacco_loyalty_checkout'||(priced&&args.p_use_loyalty===true);
+ if(priced!==Object.hasOwn(args,'p_price_revision')||priced!==Object.hasOwn(args,'p_expected_cents'))return rpcFailure('unsupported');
+ if(priced&&typeof args.p_use_loyalty!=='boolean')return rpcFailure('unsupported');
+ if(!priced&&Object.hasOwn(args,'p_use_loyalty'))return rpcFailure('unsupported');
+ if(!loyalty&&['p_key','p_coupon','p_reward'].some(k=>Object.hasOwn(args,k)))return rpcFailure('unsupported');
+ if(!priced&&!loyalty){
+   const expected=args.p_quote?'pitacco_checkout_quoted_delivery':args.p_scheduled_for?'pitacco_checkout_scheduled_order':'checkout_public_order';
+   if(name!==expected)return rpcFailure('unsupported');
+ }
+ if(!['pickup','delivery'].includes(args.p_fulfillment)||Boolean(args.p_quote)!==(args.p_fulfillment==='delivery'))return rpcFailure('unsupported');
+ const body={};
+ for(const [from,to] of Object.entries(checkoutFields)){
+   if(Object.hasOwn(args,from))body[to]=args[from];
+ }
+ // Laravel's original optional reward validator accepts null rather than ''.
+ if(body.reward==='')body.reward=null;
+ if(loyalty)body.loyalty=true;
+ const result=await placeCoreOrder(args.p_slug,body,options);
+ if(result.state==='confirmed')return {data:result.data,error:null,status:200};
+ // V2 clears pendingRequest on most HTTP 4xx. Until reconciliation of
+ // definitive rejects is implemented, don't misclassify an existing sale.
+ return rpcFailure(result.state);
+}
+export async function recoverCoreOrderRpc(args,options={}){
+ if(!args||Object.keys(args).sort().join(',')!=='p_request,p_slug'||!menuPath(args.p_slug)||!UUID.test(args.p_request??''))return rpcFailure('unsupported');
+ const result=await recoverCoreOrder(args.p_slug,args.p_request,options);
+ if(result.state==='confirmed')return {data:result.data,error:null,status:200};
+ if(result.state==='not_found')return {data:{confirmed:false},error:null,status:200};
+ return rpcFailure(result.state);
+}

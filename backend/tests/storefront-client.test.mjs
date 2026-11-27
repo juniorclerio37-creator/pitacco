@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readCoreMenu,placeCoreOrder,recoverCoreOrder,readCoreSchedule,readCoreScheduleRpc,readCoreStoreStateRpc} from '../clients/storefront.mjs';
+import {readCoreMenu,placeCoreOrder,recoverCoreOrder,readCoreSchedule,readCoreScheduleRpc,readCoreStoreStateRpc,placeCoreOrderRpc,recoverCoreOrderRpc} from '../clients/storefront.mjs';
 const request_id='10000000-0000-4000-8000-000000000001';
 const receipt={order_id:'20000000-0000-4000-8000-000000000001',tracking_token:'30000000-0000-4000-8000-000000000001',total:25};
 const cart=Object.freeze({request_id,payment:'pix_manual',fulfillment:'pickup',items:[]});
@@ -103,4 +103,52 @@ test('V2 refresh reads only explicitly allowed public projections',async()=>{
  assert.equal((await readCoreStoreStateRpc('pitacco_public_store_open',args,{fetcher:async()=>json({open:'true'})})).error.code,'retry');
  assert.equal((await readCoreStoreStateRpc('pitacco_public_payment_price_rules',args,{fetcher:async()=>json({pix_manual:{adjustment_bps:100,revision:'3'}})})).error.code,'retry');
  assert.equal((await readCoreStoreStateRpc('arbitrary_rpc',args,{fetcher:()=>assert.fail('unexpected request')})).error.code,'invalid');
+});
+
+test('V2 offline checkout compatibility preserves original request and explicit channel',async()=>{
+ const args={p_slug:'fixture',p_request:request_id,p_customer:'Cliente Fixture',p_phone:'21999999999',p_address:'',p_items:[],p_fulfillment:'pickup',p_payment:'pix_manual',p_notes:''};
+ const variants=[
+ ['checkout_public_order',args,{}],
+ ['pitacco_checkout_scheduled_order',{...args,p_scheduled_for:'2026-11-28T14:00:00-03:00'},{scheduled_for:'2026-11-28T14:00:00-03:00'}],
+ ['pitacco_checkout_quoted_delivery',{...args,p_fulfillment:'delivery',p_address:'Rua Fixture 123',p_quote:request_id},{fulfillment:'delivery',address:'Rua Fixture 123',quote_id:request_id}],
+ ['pitacco_loyalty_checkout',{...args,p_key:'',p_coupon:'CORE20',p_reward:''},{loyalty:true,referral_code:'',coupon:'CORE20',reward:null}],
+ ['pitacco_confirm_priced_public_checkout',{...args,p_expected_cents:2500,p_price_revision:3,p_use_loyalty:false},{expected_cents:2500,price_revision:3}]
+ ];
+ for(const [name,payload,extra] of variants){
+  const snapshot=JSON.stringify(payload);
+  let calls=0;
+  const r=await placeCoreOrderRpc(name,payload,{fetcher:async(path,opt)=>{
+   calls++;assert.equal(path,'/api/v1/public/menus/fixture/checkout');
+   assert.deepEqual(JSON.parse(opt.body),{request_id,customer:'Cliente Fixture',phone:'21999999999',address:'',items:[],fulfillment:'pickup',payment:'pix_manual',notes:'',...extra});
+   return json(receipt);
+  }});
+  assert.deepEqual(r,{data:receipt,error:null,status:200});
+  assert.equal(calls,1);assert.equal(JSON.stringify(payload),snapshot);
+ }
+ for(const [name,payload] of [
+  ['pitacco_checkout_fiado',{...args,p_payment:'fiado'}],
+  ['checkout_public_order',{...args,p_payment:'pix_online'}],
+  ['arbitrary_rpc',args],
+  ['checkout_public_order',{...args,p_total:1}],
+  ['checkout_public_order',{...args,p_fulfillment:'delivery'}],
+  ['pitacco_confirm_priced_public_checkout',{...args,p_price_revision:3,p_use_loyalty:false}],
+ ]){
+  const r=await placeCoreOrderRpc(name,payload,{fetcher:()=>assert.fail('unexpected request')});
+  assert.equal(r.status,503);assert.equal(r.error.code,'unsupported');
+ }
+ for(const status of [409,422,429,503]){
+  const r=await placeCoreOrderRpc('checkout_public_order',args,{fetcher:async()=>json({},status)});
+  assert.equal(r.status,503);assert.equal(r.data,null);
+ }
+});
+test('V2 recovery keeps original ID and does not clear a missing confirmation',async()=>{
+ const args={p_slug:'fixture',p_request:request_id};
+ const result=await recoverCoreOrderRpc(args,{fetcher:async(path,opt)=>{
+  assert.equal(path,'/api/v1/public/menus/fixture/checkout/recovery');
+  assert.deepEqual(JSON.parse(opt.body),{request_id});
+  return json({...receipt,confirmed:true});
+ }});
+ assert.equal(result.data.confirmed,true);assert.equal(result.error,null);
+ assert.deepEqual(await recoverCoreOrderRpc(args,{fetcher:async()=>json({confirmed:false})}),{data:{confirmed:false},error:null,status:200});
+ assert.equal((await recoverCoreOrderRpc(args,{fetcher:async()=>{throw Error('offline')}})).status,503);
 });
