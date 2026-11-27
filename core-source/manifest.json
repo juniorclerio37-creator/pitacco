@@ -1,4 +1,12 @@
 {
+  "core_overlay_commits": [
+    "347e0d66802ff6d5cae6117afede1ad14e9f4559"
+  ],
+  "core_overlay_paths": [
+    "web/Operations.jsx",
+    "web/operationalRefresh.mjs",
+    "web/tests/operational-refresh.test.mjs"
+  ],
   "files": {
     "android/.gitignore": {
       "bytes": 127,
@@ -445,8 +453,8 @@
       "sha256": "088082f31db29dcd64e00d0a3baf5f763e97549160663f167e37b2e0f39c5d9c"
     },
     "web/Operations.jsx": {
-      "bytes": 52093,
-      "sha256": "2381f6888591ba5a17ef727755950f1f40664d9637fe01e16e27b19ae0cce17a"
+      "bytes": 51745,
+      "sha256": "a0dd72a42b35a2b62768a849daf12e32ed422565ca6f7587e353006dcb8b9439"
     },
     "web/OrderDetails.jsx": {
       "bytes": 9811,
@@ -775,6 +783,10 @@
     "web/operationRequestId.mjs": {
       "bytes": 626,
       "sha256": "3d57732ba6b871a0405fc12502f13122296abf1fc02e93a87940c5e772b214b7"
+    },
+    "web/operationalRefresh.mjs": {
+      "bytes": 1675,
+      "sha256": "140b7819db6fcae414d7ac2bdabcebdde980f67b6c4a98b268973aa08f432d60"
     },
     "web/order-history.css": {
       "bytes": 2549,
@@ -1479,6 +1491,10 @@
     "web/tests/merchant-navigation.test.mjs": {
       "bytes": 7257,
       "sha256": "18b458f8b756d0ce7a21e26878284bf9326c3002b886b25fe45da45bba676bac"
+    },
+    "web/tests/operational-refresh.test.mjs": {
+      "bytes": 2567,
+      "sha256": "71b693cd27489312bc717fe5b44b832d91a8de05498e1ec03a8d6a7a22864916"
     },
     "web/tests/orderArrival.test.mjs": {
       "bytes": 1804,
