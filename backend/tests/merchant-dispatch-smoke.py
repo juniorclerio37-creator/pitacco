@@ -197,7 +197,11 @@ assert call(driver_route,200,reconcile,courier)['data']==pending
 sql("update pitacco_private.ifood_events set merchant_id='"+merchant+"',done_at=null where id='"+event+"'")
 assert call(driver_route,200,reconcile,courier)['data']==pending
 sql("update pitacco_private.ifood_events set done_at=now(),event_at=(select arrived_at-interval '1 second' from public.deliveries where id='"+market_delivery+"') where id='"+event+"'")
-assert call(driver_route,200,reconcile,courier)['data']==pending
+evidence=sql("select jsonb_build_object('status',d.status,'arrived_at',d.arrived_at,'event_at',e.event_at,'done_at',e.done_at,'old_event',e.event_at<d.arrived_at)::text from public.deliveries d join pitacco_private.ifood_events e on e.id='"+event+"' where d.id='"+market_delivery+"'")
+assert json.loads(evidence)['old_event'] is True,evidence
+assert json.loads(evidence)['status']=='retirada',evidence
+reconciled=call(driver_route,200,reconcile,courier)['data']
+assert reconciled==pending,(reconciled,evidence)
 assert sql("select status from public.deliveries where id='"+market_delivery+"'")=='retirada'
 sql("update pitacco_private.ifood_events set event_at=now() where id='"+event+"'")
 assert call(driver_route,200,reconcile,courier)['data']=={'confirmed':True,'already':False}

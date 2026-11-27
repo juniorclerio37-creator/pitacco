@@ -121,3 +121,39 @@ begin
 end $$;
 revoke all on function core_auth.shipping_simulation_fixture(uuid,uuid) from public,anon,authenticated;
 grant execute on function core_auth.shipping_simulation_fixture(uuid,uuid) to pitacco_core_own_board;
+
+-- Separate disposable rehearsal records, never linked to actual booking or
+-- delivery updates. No provider credentials or client-writable event queue.
+create table core_auth.shipping_rehearsal_fixture(
+ store_id uuid not null, order_id uuid not null, revision integer not null default 1,
+ state text not null default 'quoted', cancel_state text not null default 'none',
+ expires_at timestamptz not null, primary key(store_id,order_id)
+);
+revoke all on core_auth.shipping_rehearsal_fixture from public,anon,authenticated,pitacco_core_own_board;
+create function core_auth.shipping_simulation_transition(s uuid,oid uuid,a text,rev integer,amount integer) returns jsonb
+language plpgsql security definer set search_path='' as $$
+declare rec core_auth.shipping_rehearsal_fixture%rowtype;
+begin
+ if core_auth.shipping_simulation_fixture(s,oid) is null then return null;end if;
+ perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('shipping-rehearsal:'||oid::text,0));
+ select * into rec from core_auth.shipping_rehearsal_fixture x where x.store_id=s and x.order_id=oid for update;
+ if a='start' and not found and rev=0 then
+  insert into core_auth.shipping_rehearsal_fixture(store_id,order_id,expires_at) values(s,oid,now()+interval '5 minutes') returning * into rec;
+ elsif not found then raise exception 'Simulação inexistente' using errcode='22023';
+ elsif a='status' then null;
+ elsif rec.revision<>rev then raise exception 'Atualize a simulação' using errcode='22023';
+ else
+  if a='request' and rec.state='quoted' and rec.expires_at>now() and amount=1200 then rec.state:='requesting';
+  elsif a in ('submitted','uncertain','rejected') and rec.state='requesting' then rec.state:=a;
+  elsif a='allocated' and rec.state in ('submitted','uncertain') then rec.state:='allocated';
+  elsif a='cancel' and rec.state in ('submitted','allocated') and rec.cancel_state in ('none','rejected') then rec.cancel_state:='requesting';
+  elsif a in ('cancel_submitted','cancel_uncertain','cancel_rejected') and rec.cancel_state='requesting' then rec.cancel_state:=substring(a from 8);
+  elsif a='cancel_confirmed' and rec.cancel_state in ('requesting','submitted','uncertain') and rec.state in ('submitted','allocated') then rec.cancel_state:='confirmed';rec.state:='cancelled';
+  else raise exception 'Transição simulada inválida' using errcode='22023';end if;
+  update core_auth.shipping_rehearsal_fixture set state=rec.state,cancel_state=rec.cancel_state,revision=rec.revision+1 where store_id=s and order_id=oid returning * into rec;
+ end if;
+ return jsonb_build_object('environment','simulation','homologated',false,'commercial_enabled',false,'order_preserved',true,
+ 'order_id',oid,'revision',rec.revision,'state',rec.state,'cancel_state',rec.cancel_state,'own_available',rec.state in ('quoted','rejected','cancelled'),'net_value_cents',1200,'expires_at',rec.expires_at);
+end $$;
+revoke all on function core_auth.shipping_simulation_transition(uuid,uuid,text,integer,integer) from public,anon,authenticated;
+grant execute on function core_auth.shipping_simulation_transition(uuid,uuid,text,integer,integer) to pitacco_core_own_board;

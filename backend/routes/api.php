@@ -70,6 +70,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/stores/{store}/orders/{order}/reprint',OwnPrintController::class)->whereUuid(['store','order']);
             Route::get('/stores/{store}/operation-settings',[OwnBoardOrdersController::class,'settings'])->whereUuid('store');
             Route::post('/stores/{store}/orders/{order}/ifood-ready',IfoodPreparationController::class)->whereUuid(['store','order']);
+            Route::post('/stores/{store}/orders/{order}/shipping-simulation',[ShippingSimulationController::class,'transition'])->whereUuid(['store','order']);
             Route::get('/stores/{store}/orders/{order}/shipping-simulation',ShippingSimulationController::class)->whereUuid(['store','order']);
             Route::get('/stores/{store}/orders/ifood-board',[OwnBoardOrdersController::class,'ifood'])->whereUuid('store');
             Route::get('/stores/{store}/orders/own-board',OwnBoardOrdersController::class)->whereUuid('store');

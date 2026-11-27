@@ -165,6 +165,26 @@ assert sim['environment']=='simulation' and sim['homologated'] is False and sim[
 assert sim['quote']['simulated'] is True and sim['quote']['net_value_cents']==1200 and 'id' not in sim['quote']
 assert ship_merchant not in json.dumps(sim) and ship_external not in json.dumps(sim)
 call(shipping+'?action=request_driver',422,token=alice)
+# Use distinct test server's limiter for this isolated rehearsal.
+BASE=board_base
+def ship(action,revision,expected=200,**extra):
+    return call(shipping,expected,'POST',{'action':action,'revision':revision,**extra},alice)
+assert ship('start',0)['data']['state']=='quoted'
+ship('request',1,409,confirmed=True,amount_cents=1199)
+assert ship('request',1,confirmed=True,amount_cents=1200)['data']['own_available'] is False
+ship('request',1,409,confirmed=True,amount_cents=1200)
+assert ship('uncertain',2)['data']['state']=='uncertain'
+assert ship('allocated',3)['data']['state']=='allocated'
+assert ship('cancel',4,confirmed=True)['data']['cancel_state']=='requesting'
+assert ship('cancel_uncertain',5)['data']['own_available'] is False
+done=ship('cancel_confirmed',6)['data']
+assert done['state']=='cancelled' and done['own_available'] is True and done['order_preserved'] is True and done['commercial_enabled'] is False
+assert ship('status',0)['data']==done
+assert sql("select status from public.orders where id='"+oid(4)+"'")=='pending'
+assert sql("select count(*) from pitacco_private.ifood_shipping_test_bookings where order_id='"+oid(4)+"'")=='0'
+sql("delete from core_auth.shipping_rehearsal_fixture where order_id='"+oid(4)+"'")
+BASE=device_base
+print('PASS: persisted Shipping rehearsal, price and revision guards, uncertain reservation, cancellation proof and no real booking')
 sql("update pitacco_private.ifood_merchants set test_only=false where merchant_id='"+ship_merchant+"'")
 call(shipping,404,token=alice)
 sql("delete from pitacco_private.ifood_order_links where external_id='"+ship_external+"';delete from pitacco_private.ifood_merchants where merchant_id='"+ship_merchant+"';update public.orders set receipt='{}'::jsonb where id='"+oid(4)+"'")

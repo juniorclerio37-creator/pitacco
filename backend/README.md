@@ -293,3 +293,6 @@ Correção da reconciliação Core: a fronteira experimental exige explicitament
 
 ## Simulador de ciclo Shipping (não homologado)
 `backend/clients/shipping-simulation.mjs` é uma máquina de estados pura para ensaiar a solicitação, resposta incerta, alocação e cancelamento logístico. Aceita apenas cotação explicitamente simulada e sem ID de provedor. Estados e eventos sintéticos não são persistidos, não chamam iFood, não alteram pedido ou entrega real. Retorno à frota própria exige confirmação simulada de cancelamento ou rejeição definitiva da solicitação; não há reenvio automático nem cancelamento da venda. Testes unitários na suíte de preservação. Nenhuma ativação comercial.
+
+## Persistência do ensaio Shipping
+POST na mesma rota `shipping-simulation` somente testing/flag, transições fictícias em tabela privada `core_auth.shipping_rehearsal_fixture`. Revisão otimista, bloqueio por pedido, confirmação de preço, validade, reserva simulada incerta, confirmação de cancelamento simulada. Nenhum efeito sobre public.orders, public.deliveries ou reservas Shipping originais. A resposta comercial permanece desabilitada e não há integração com interface publicada. Testes HTTP pendentes; diagnóstico da regressão de reconciliação temporal imprime somente estado e timestamps sintéticos, sem dados reais.
