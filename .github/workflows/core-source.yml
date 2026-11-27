@@ -1,0 +1,49 @@
+name: Pitacco Core — consolidar fonte isolada
+on:
+  push:
+    branches: [pitacco-core]
+    paths:
+      - '.github/workflows/core-source.yml'
+      - 'scripts/consolidate-core-source.py'
+permissions:
+  contents: write
+concurrency:
+  group: pitacco-core-source
+  cancel-in-progress: false
+jobs:
+  consolidate:
+    if: github.ref == 'refs/heads/pitacco-core'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Conferir ferramentas
+        run: |
+          python3 --version
+          if ! command -v ffmpeg >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+      - name: Restaurar e comparar fontes
+        run: python3 -X utf8 scripts/consolidate-core-source.py
+      - name: Validar sintaxe e dependências sem publicação
+        run: |
+          test -s core-source/web/package.json
+          test -s core-source/web/src-tauri/Cargo.toml
+          test -s core-source/android/lib/main.dart
+          python3 -m json.tool core-source/manifest.json >/dev/null
+          python3 -m json.tool core-source/web/package.json >/dev/null
+      - name: Salvar snapshot validado na branch isolada
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/pitacco-core"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f -- core-source/
+          git diff --cached --stat
+          git diff --cached --name-only | python3 -c 'import sys; paths=sys.stdin.read().splitlines(); assert paths and all(p.startswith("core-source/") for p in paths)'
+          git commit -m "core: version reproducible consolidated source snapshot"
+          git push origin HEAD:refs/heads/pitacco-core
