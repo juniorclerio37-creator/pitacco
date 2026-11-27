@@ -13,3 +13,6 @@ Ações de aceite, preparo pronto, finalização da retirada e recusa pendente s
 
 ## Checkout experimental
 Rotas de checkout e recuperação, somente local/testing e desativadas por padrão. A etapa inicial admite Pix manual e itens com variantes UUID; usa SQL original para preço, cotação, agendamento, aceite e replay. Regras de preço confirmado são encaminhadas à função original quando informadas, sem aceitar total arbitrário. Fideliza+, Fiado, preço por pagamento em cenários completos, geração de cotação, Pix automático, outros meios, cliente web e restauração real ainda dependem de integração e validação. Não usar dados reais.
+
+## Fideliza+ — cupons experimentais
+O checkout admite opt-in explícito no programa e cupom, encaminhados ao SQL original inclusive quando há confirmação de preço. O teste HTTP usa somente um cupom fictício, valida o desconto, a repetição idempotente e o limite de uso. O pagamento continua restrito ao Pix manual. Carteira, resgates, indicação e Fiado permanecem pendentes. O gate de checkout impede uso em produção.

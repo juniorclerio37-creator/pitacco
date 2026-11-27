@@ -34,3 +34,14 @@ scheduled=call(SLUG+'/checkout',200,cart(scheduled_for=schedule))['data']
 assert scheduled['status']=='pending'
 assert sql("select count(*) from public.orders where store_id='91000000-0000-0000-0000-000000000002'")=='3'
 print('PASS: original checkout, server price, quote, scheduled manual acceptance, recovery and no duplicate orders')
+
+# Separate synthetic customer avoids interfering with the earlier checkout limit.
+loyalty=cart(phone='21988886666',loyalty=True,coupon='CORE20')
+l=call(SLUG+'/checkout',200,loyalty)['data']
+assert float(l['total'])==20
+assert call(SLUG+'/checkout',200,loyalty)['data']==l
+assert sql("select uses from public.loyalty_coupons where code='CORE20'")=='1'
+call(SLUG+'/checkout',422,cart(coupon='CORE20'))
+call(SLUG+'/checkout',409,cart(phone='21988885555',loyalty=True,coupon='CORE20'))
+assert sql("select count(*) from public.orders where store_id='91000000-0000-0000-0000-000000000002'")=='4'
+print('PASS: original Fideliza checkout, coupon pricing, one-time use and retry')

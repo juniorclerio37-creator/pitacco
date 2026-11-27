@@ -19,3 +19,9 @@ insert into public.acceptance_settings(store_id,source,mode,enabled) values('910
 insert into public.pitacco_delivery_route_quotes(id,store_id,request_id,destination_address,distance_m,fee,pricing_updated_at,expires_at,destination_latitude,destination_longitude,delivery_min_minutes,delivery_max_minutes,delivery_region,delivery_service)
 select '91000000-0000-0000-0000-000000000011',store_id,'92000000-0000-0000-0000-000000000011','Rua Fixture 123',500,9,updated_at,now()+interval '10 minutes',-22.91,-43.46,20,30,'Centro','priority'
 from public.pitacco_delivery_pricing where store_id='91000000-0000-0000-0000-000000000002';
+
+-- Synthetic Fideliza fixtures.
+grant execute on function public.pitacco_loyalty_checkout(text,uuid,text,text,text,jsonb,text,text,text,text,text,text,uuid,timestamptz,text) to pitacco_core_checkout;
+insert into public.loyalty_programs(store_id,points_enabled,points_per_real,min_points_to_redeem,points_reward_cents,orders_enabled,orders_required,orders_reward_cents,cashback_enabled,cashback_percent,cashback_max_redeem_percent,referrals_enabled,referral_reward_cents,referral_welcome_cents,campaigns_enabled)
+values('91000000-0000-0000-0000-000000000002',true,1,100,1000,true,1,500,true,10,100,true,300,200,true);
+insert into public.loyalty_coupons(store_id,code,discount_type,discount_value,max_uses,starts_at) values('91000000-0000-0000-0000-000000000002','CORE20','percent',20,1,now()-interval '1 day');

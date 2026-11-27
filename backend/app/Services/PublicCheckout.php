@@ -14,9 +14,14 @@ final class PublicCheckout
             $args=[$slug,$data['request_id'],$data['customer'],$data['phone'],$data['address']??'',json_encode($data['items'],JSON_THROW_ON_ERROR),$data['fulfillment'],'pix_manual',$data['notes']??''];
             $base='cast(? as text),cast(? as uuid),cast(? as text),cast(? as text),cast(? as text),cast(? as jsonb),cast(? as text),cast(? as text),cast(? as text)';
             $schedule=$data['scheduled_for']??null;
+            $loyalty=(bool)($data['loyalty']??false);
+            $coupon=$data['coupon']??'';
             if(isset($data['expected_cents'],$data['price_revision'])) {
-                $sql="select public.pitacco_confirm_priced_public_checkout($base,cast(? as bigint),cast(? as bigint),null,'','',cast(? as uuid),cast(? as timestamptz),false) as payload";
-                array_push($args,$data['expected_cents'],$data['price_revision'],$data['quote_id']??null,$schedule);
+                $sql="select public.pitacco_confirm_priced_public_checkout($base,cast(? as bigint),cast(? as bigint),null,cast(? as text),'',cast(? as uuid),cast(? as timestamptz),cast(? as boolean)) as payload";
+                array_push($args,$data['expected_cents'],$data['price_revision'],$coupon,$data['quote_id']??null,$schedule,$loyalty?'true':'false');
+            } elseif($loyalty) {
+                $sql="select public.pitacco_loyalty_checkout($base,'',cast(? as text),'',cast(? as uuid),cast(? as timestamptz),null) as payload";
+                array_push($args,$coupon,$data['quote_id']??null,$schedule);
             } elseif($data['fulfillment']==='delivery') {
                 $sql="select public.pitacco_checkout_quoted_delivery($base,cast(? as uuid),cast(? as timestamptz)) as payload";
                 array_push($args,$data['quote_id'],$schedule);
