@@ -88,3 +88,6 @@ A rota autenticada `/api/v1/stores/{store}/reports/financial?start=AAAA-MM-DD&en
 
 ## Diagnóstico de conciliação — CI descartável
 `tests/payment-reconciliation.sql` observa a confirmação manual original e compara evidências por pedido, agrupando o caixa antes de comparar com `manual_payments` e `courier_collection`. Classifica ausência de lançamento, valores coincidentes, sobreposição, valores divergentes e múltiplos lançamentos para revisão. Não soma fontes como se fossem pagamentos independentes. Os cenários de sobreposição e divisão do lançamento são simulados na fixture; não representam a execução real do entregador. A função é temporária e toda a transação é revertida. A tabela `store_payment_receipts` do harness é uma fixture; a origem oficial e os gatilhos reais ainda precisam ser confirmados por paridade do esquema antes de definir uma integração de escrita. Nenhuma correção automática do caixa, nenhuma rota de confirmação nova e nenhum deploy.
+
+## Separação da regressão administrativa
+A primeira execução passou os asserts do relatório e encontrou HTTP 429 nos testes finais de revogação devido ao contador compartilhado de 60 requisições/minuto. A regressão do relatório passa a usar servidor e prefixo Redis próprios, com as mesmas sessões e o mesmo PostgreSQL descartável. A política da API não foi alterada.

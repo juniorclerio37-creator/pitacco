@@ -86,6 +86,9 @@ jobs:
           composer audit --locked
           php artisan serve --host=127.0.0.1 --port=8080 >/tmp/core-actions.log 2>&1 &
           server=$!
-          trap 'kill "$server" 2>/dev/null || true; cat /tmp/core-actions.log' EXIT
+          CORE_REDIS_PREFIX=pitacco_core_report_ci: php artisan serve --host=127.0.0.1 --port=8084 >/tmp/core-report.log 2>&1 &
+          report_server=$!
+          trap 'kill "$server" "$report_server" 2>/dev/null || true; cat /tmp/core-actions.log /tmp/core-report.log' EXIT
+          for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8084/up >/dev/null && break; sleep 1; done
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/up >/dev/null && break; sleep 1; done
           python3 tests/actions-smoke.py

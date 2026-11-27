@@ -104,6 +104,8 @@ assert float(last['remaining'])==0
 assert sql("select state from public.pitacco_fiado_charges where order_id='"+credit_order+"'")=='settled'
 assert sql("select count(*) from public.pitacco_fiado_payments where customer_id='"+cid+"'")=='2'
 assert sql("select sum(amount) from public.pitacco_fiado_payments where customer_id='"+cid+"'")=='20.00'
+actions_base=BASE
+BASE='http://127.0.0.1:8084/api/v1'
 report='/stores/'+A+'/reports/financial?start=2026-11-16&end=2026-11-16'
 call(report,401)
 call(report,404,token=bob)
@@ -126,6 +128,7 @@ assert float(current['recebimentos']['amount'])==0
 print('PASS: original financial aggregates, local calendar, price adjustments once, receipt separation, tenant and role isolation')
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
 call(report,404,token=alice)
+BASE=actions_base
 call(settings,404,'POST',payment,alice)
 print('PASS: manual approval, partial settlement, payment idempotency and full settlement')
 
