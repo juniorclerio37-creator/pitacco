@@ -16,3 +16,6 @@ Rotas de checkout e recuperação, somente local/testing e desativadas por padr�
 
 ## Fideliza+ — cupons experimentais
 O checkout admite opt-in explícito no programa e cupom, encaminhados ao SQL original inclusive quando há confirmação de preço. O teste HTTP usa somente um cupom fictício, valida o desconto, a repetição idempotente e o limite de uso. O pagamento continua restrito ao Pix manual. Carteira, resgates, indicação e Fiado permanecem pendentes. O gate de checkout impede uso em produção.
+
+## Fideliza+ — benefícios experimentais
+O checkout de Pix manual aceita resgate de pontos, carimbos de pedidos ou cashback, e código de indicação, usando as rotinas SQL originais. Cupom e resgate são mutuamente exclusivos. A regressão HTTP usa cadastros fictícios, e testa concessão de pontos, cashback, resgate, reversão e indicação. Não foram criadas rotas de consulta de carteira por telefone: antes de expor saldo, ofertas ou resgate em produção é necessário validar titularidade da carteira, autenticação, abuso e isolamento. O checkout permanece bloqueado fora de local/testing; Fiado não foi alterado.

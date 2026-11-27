@@ -29,6 +29,8 @@ final class PublicCheckoutController
             'payment'=>['required','in:pix_manual'],
             'loyalty'=>['sometimes','boolean'],
             'coupon'=>['nullable','string','max:128'],
+            'reward'=>['nullable','string','in:points,orders,cashback'],
+            'referral_code'=>['nullable','string','max:128'],
             'notes'=>['nullable','string','max:1000'],
             'quote_id'=>['required_if:fulfillment,delivery','prohibited_if:fulfillment,pickup','nullable','uuid'],
             'scheduled_for'=>['nullable','date_format:Y-m-d\TH:i:sP'],
@@ -37,7 +39,8 @@ final class PublicCheckoutController
         ]);
         if(array_diff(array_keys($request->all()),array_keys($data))) throw ValidationException::withMessages(['request'=>'Campos não suportados nesta versão.']);
         if(strlen(json_encode($data['items'],JSON_THROW_ON_ERROR))>12000) throw ValidationException::withMessages(['items'=>'Carrinho excede o limite.']);
-        if(!empty($data['coupon']) && !($data['loyalty']??false)) throw ValidationException::withMessages(['coupon'=>'Cupom exige checkout Fideliza+.']);
+        if((!empty($data['coupon']) || !empty($data['reward']) || !empty($data['referral_code'])) && !($data['loyalty']??false)) throw ValidationException::withMessages(['loyalty'=>'Benefícios exigem checkout Fideliza+.']);
+        if(!empty($data['coupon']) && !empty($data['reward'])) throw ValidationException::withMessages(['reward'=>'Escolha cupom ou resgate por pedido.']);
         try {
             $result=$checkout->place($slug,$data);
         } catch(QueryException $e) {

@@ -45,3 +45,30 @@ call(SLUG+'/checkout',422,cart(coupon='CORE20'))
 call(SLUG+'/checkout',409,cart(phone='21988885555',loyalty=True,coupon='CORE20'))
 assert sql("select count(*) from public.orders where store_id='91000000-0000-0000-0000-000000000002'")=='4'
 print('PASS: original Fideliza checkout, coupon pricing, one-time use and retry')
+
+# Synthetic lifecycle: complete and pay the coupon order, then exercise the original ledger.
+def finish(order_id):
+    sql("update public.orders set status='accepted',preparation_status='completed',receipt=receipt||'{\"payment_status\":\"paid\"}'::jsonb where id='"+str(uuid.UUID(order_id))+"'")
+def earned(order_id,asset):
+    return sql("select coalesce(sum(points_delta),0) from public.loyalty_ledger where order_id='"+str(uuid.UUID(order_id))+"' and event_type='earn' and asset='"+asset+"'")
+finish(l['order_id'])
+assert earned(l['order_id'],'points')=='20'
+assert earned(l['order_id'],'orders')=='1'
+assert earned(l['order_id'],'cashback')=='200'
+finish(l['order_id'])
+assert earned(l['order_id'],'cashback')=='200'
+redeem=cart(phone=loyalty['phone'],loyalty=True,reward='cashback')
+red=call(SLUG+'/checkout',200,redeem)['data']
+assert float(red['total'])==23
+assert call(SLUG+'/checkout',200,redeem)['data']==red
+assert sql("select count(*) from public.loyalty_ledger where order_id='"+red['order_id']+"' and event_type='redeem'")=='1'
+sql("update public.orders set status='cancelled' where id='"+red['order_id']+"'")
+assert sql("select coalesce(sum(points_delta),0) from public.loyalty_ledger where order_id='"+red['order_id']+"' and asset='cashback'")== '0'
+call(SLUG+'/checkout',409,cart(phone=loyalty['phone'],loyalty=True,reward='points'))
+ref=sql("select referral_code from pitacco_private.loyalty_customers where store_id='91000000-0000-0000-0000-000000000002' and phone='21988886666'")
+referred=call(SLUG+'/checkout',200,cart(phone='21988884444',loyalty=True,referral_code=ref))['data']
+finish(referred['order_id'])
+assert sql("select count(*) from public.loyalty_ledger where order_id='"+referred['order_id']+"' and event_type='earn' and asset='cashback'")=='3'
+call(SLUG+'/checkout',422,cart(loyalty=True,coupon='CORE20',reward='cashback'))
+assert sql("select count(*) from public.orders where store_id='91000000-0000-0000-0000-000000000002'")=='6'
+print('PASS: points and cashback earning, redemption replay and reversal, insufficient balance, referral and exclusive discounts')
