@@ -22,3 +22,26 @@ test('original order stage receives both sources and matching local delivery',as
  board.stop();await assert.rejects(board.read(),/encerrada/);
 });
 test('foreign rows fail closed',async()=>{await assert.rejects(setup(true).board.read(),/escopo/);});
+
+test('own actions are scoped, server confirmed, no marketplace mutation or automatic retry',async()=>{
+ const calls=[];let state='pending',fail=false;
+ const board=createMerchantBoard({store,scopedFetch:async(path,opts)=>{
+  const route=path.split('/'+store+'/')[1].split('?')[0];
+  if(opts.method==='POST'){
+   calls.push({route,body:JSON.parse(opts.body)});
+   if(fail)return {ok:false,status:503};
+   state='accepted';return {ok:true,status:200,json:async()=>({data:{id:id(1),store_id:store,status:state,preparation_status:'preparing'}})};
+  }
+  const rows={'orders/own-board':[{...order(1,'proprio'),status:state,preparation_status:'preparing'}],'orders/ifood-board':[order(2,'ifood')],'own-logistics/deliveries':[],'own-logistics/ifood-deliveries':[],'own-logistics/couriers':[]};
+  return {ok:true,status:200,json:async()=>route==='operation-settings'?{data:{store_id:store,dispatch_mode:'manual',acceptance_settings:[],print_sectors:[]}}:{data:rows[route],limit:100,offset:0}};
+ }});
+ await board.read();await assert.rejects(board.act(id(2),'accept'),/não autorizado/);
+ await assert.rejects(board.act(id(1),'cancel'),/não suportada/);
+ await assert.rejects(board.act(id(1),'reject','x'),/motivo/);
+ fail=true;await assert.rejects(board.act(id(1),'accept'),/não confirmado/);
+ assert.equal(calls.length,1);
+ await assert.rejects(board.act(id(1),'accept'),/não autorizado/);
+ await board.read();fail=false;await board.act(id(1),'accept');
+ assert.equal(calls.length,2);assert.deepEqual(calls[1].body,{action:'accept'});
+ assert.equal((await board.read()).orders.find(o=>o.id===id(1)).status,'accepted');
+});

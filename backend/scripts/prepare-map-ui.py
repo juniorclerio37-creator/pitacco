@@ -35,6 +35,25 @@ def build(target):
     s=replace(s,"export default function StoreProfile({client,store,manager,onSaved,onAppearance,storeLogoUrl=''})","export default function StoreProfile({client,store,manager,onSaved,onAppearance,storeLogoUrl='',experimentalMap=null})")
     s=replace(s,"<StorePointPicker key={store.id} client={client}","<StorePointPicker key={store.id} experimentalMap={experimentalMap} client={client}")
     f.write_text(s)
+    # Optional guard for the isolated board. Default original behavior unchanged.
+    f=target/'Pedidos.jsx';s=f.read_text()
+    s=replace(s,"dispatchMode='manual'})","dispatchMode='manual',experimentalOwnOnly=false})")
+    s=replace(s,"const canCancelOwnOrder=o=>o?.source","const canCancelOwnOrder=o=>!experimentalOwnOnly&&o?.source")
+    for old,new in [
+        ("disabled={busy} onClick={()=>onReady(o.id)}","disabled={busy||(experimentalOwnOnly&&o.source!=='proprio')} onClick={()=>onReady(o.id)}"),
+        ("disabled={busy} onClick={()=>onReady(current.id)}","disabled={busy||(experimentalOwnOnly&&current.source!=='proprio')} onClick={()=>onReady(current.id)}"),
+        ("disabled={busy} onClick={()=>onAssign(o)}","disabled={busy||(experimentalOwnOnly&&!onAssign)} onClick={()=>onAssign?.(o)}"),
+        ("disabled={busy} onClick={()=>onAssign(current)}","disabled={busy||(experimentalOwnOnly&&!onAssign)} onClick={()=>onAssign?.(current)}"),
+        ("disabled={busy} onClick={()=>onReprint(o.id)}","disabled={busy||(experimentalOwnOnly&&!onReprint)} onClick={()=>onReprint?.(o.id)}"),
+        ("disabled={busy} onClick={()=>onReprint(current.id)}","disabled={busy||(experimentalOwnOnly&&!onReprint)} onClick={()=>onReprint?.(current.id)}"),
+    ]:
+        s=replace(s,old,new)
+    # Both card detail buttons share the same original fragment.
+    old="disabled={busy} onClick={()=>onDetail(o)}"
+    if s.count(old)!=2:raise RuntimeError("Unexpected delivery detail anchors")
+    s=s.replace(old,"disabled={busy||(experimentalOwnOnly&&!onDetail)} onClick={()=>onDetail?.(o)}")
+    s=replace(s,'className="secondary" onClick={()=>onDetail(current)}','className="secondary" disabled={experimentalOwnOnly&&!onDetail} onClick={()=>onDetail?.(current)}')
+    f.write_text(s)
     # The host must explicitly supply a session-bound factory. Default remains
     # original. No token is read from localStorage, URL, or legacy session.
     f=target/'src.jsx';s=f.read_text()

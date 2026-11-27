@@ -1,10 +1,10 @@
-// Read-only board transport for the original Pedidos cards. No provider calls.
+// Board and explicitly enabled own-order actions. No provider calls.
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function createMerchantBoard({store,scopedFetch}){
  if(!UUID.test(store??'')||typeof scopedFetch!=='function')throw Error('Sessão inválida.');
- let active=true,flight=null;const abort=new AbortController();
+ let active=true,flight=null,writing=false,last=null;const abort=new AbortController();
  const base='/api/v1/stores/'+store+'/';
- function stop(){active=false;abort.abort();}
+ function stop(){active=false;last=null;abort.abort();}
  async function get(path){
   if(!active)throw Error('Sessão encerrada.');
   const response=await scopedFetch(base+path,{headers:{Accept:'application/json'},signal:AbortSignal.any([abort.signal,AbortSignal.timeout(8000)])});
@@ -47,8 +47,49 @@ export function createMerchantBoard({store,scopedFetch}){
    if(settings?.data?.store_id!==store||!Array.isArray(settings.data.acceptance_settings)||!Array.isArray(settings.data.print_sectors)||
       [...settings.data.acceptance_settings,...settings.data.print_sectors].some(s=>s.store_id!==store))throw Error('Configuração inconsistente.');
    orders.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at))||b.id.localeCompare(a.id));
-   return {orders,deliveries,couriers,settings:settings.data};
-  })().finally(()=>{flight=null;});return flight;
+   last={orders,deliveries,couriers,settings:settings.data};
+   return last;
+  })().catch(e=>{last=null;throw e;}).finally(()=>{flight=null;});return flight;
  }
- return {read,stop};
+ async function act(id,action,reason){
+  if(!active)throw Error('Sessão encerrada.');
+  if(writing)throw Error('Operação em andamento.');
+  if(!UUID.test(id??'')||!['accept','reject','ready','complete_pickup'].includes(action))throw Error('Ação não suportada.');
+  const order=last?.orders.find(o=>o.id===id);
+  if(!order||order.source!=='proprio'||order.store_id!==store)throw Error('Pedido próprio não autorizado.');
+  if((['accept','reject'].includes(action)&&order.status!=='pending')||
+     (action==='ready'&&(order.status!=='accepted'||order.preparation_status!=='preparing'))||
+     (action==='complete_pickup'&&(order.status!=='accepted'||order.preparation_status!=='ready'||order.receipt.logistics!=='retirada')))
+   throw Error('Etapa não permitida.');
+  const body={action};
+  if(action==='reject'){
+   if(typeof reason!=='string'||reason.trim().length<3||reason.trim().length>240)throw Error('Informe o motivo da recusa.');
+   body.reason=reason.trim();
+  }else if(reason!==undefined)throw Error('Motivo não suportado.');
+  writing=true;
+  try{
+   // Do not replay a mutation after a lost response or a session renewal.
+   // The server remains the source of truth and checks the current transition.
+   const res=await scopedFetch(base+'orders/'+id+'/actions',{method:'POST',
+    headers:{Accept:'application/json','Content-Type':'application/json'},
+    body:JSON.stringify(body),signal:AbortSignal.any([abort.signal,AbortSignal.timeout(8000)])});
+   if(!active)throw Error('Sessão encerrada.');
+   if([401,403,404].includes(res.status)){stop();throw Error('Pedido não autorizado.');}
+   if(!res.ok)throw Error(res.status===409?'Etapa alterada. Atualize o pedido.':'Resultado não confirmado. Atualize antes de tentar novamente.');
+   const {data}=await res.json();
+   if(!active)throw Error('Sessão encerrada.');
+   if(data?.id!==id||data.store_id!==store||
+      (action==='accept'&&data.status!=='accepted')||
+      (action==='reject'&&data.status!=='rejected')||
+      (action==='ready'&&(data.status!=='accepted'||data.preparation_status!=='ready'))||
+      (action==='complete_pickup'&&(data.status!=='accepted'||data.preparation_status!=='completed')))
+    throw Error('Resultado não confirmado. Atualize antes de tentar novamente.');
+   return data;
+  }finally{
+   // Any pre-mutation poll might be stale. Wait for it before a fresh read.
+   if(flight)try{await flight;}catch{}
+   last=null;writing=false;
+  }
+ }
+ return {read,act,stop};
 }
