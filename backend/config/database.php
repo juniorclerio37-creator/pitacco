@@ -22,7 +22,7 @@ return [
     ],
     'redis' => [
         'client' => 'phpredis',
-        'options' => ['prefix' => 'pitacco_core:'],
+        'options' => ['prefix' => env('CORE_REDIS_PREFIX','pitacco_core:')],
         'default' => ['host'=>env('REDIS_HOST','127.0.0.1'),'password'=>env('REDIS_PASSWORD'),'port'=>env('REDIS_PORT',6379),'database'=>0,'timeout'=>2,'read_timeout'=>2],
         'cache' => ['host'=>env('REDIS_HOST','127.0.0.1'),'password'=>env('REDIS_PASSWORD'),'port'=>env('REDIS_PORT',6379),'database'=>1,'timeout'=>2,'read_timeout'=>2],
     ],

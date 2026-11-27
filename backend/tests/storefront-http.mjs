@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {readCoreMenu,placeCoreOrder,recoverCoreOrder} from '../clients/storefront.mjs';
-const fetcher=(path,opt)=>fetch('http://127.0.0.1:8080'+path,opt);
+const fetcher=(path,opt)=>fetch('http://127.0.0.1:8081'+path,opt);
 const slug='core-checkout-fixture';
 const menu=await readCoreMenu(slug,{fetcher});
 assert.equal(menu.state,'ready');
