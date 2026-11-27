@@ -160,3 +160,43 @@ begin
 end $fn$;
 revoke all on function core_auth.courier_detail_fixture(uuid) from public,anon,authenticated;
 grant execute on function core_auth.courier_detail_fixture(uuid) to pitacco_core_courier_payment;
+
+-- CI-only read model for the unchanged courier map. Explicit same-store scope;
+-- exact coordinates are visible only to the assigned authenticated courier.
+create function core_auth.courier_map_fixture() returns jsonb
+language plpgsql security definer set search_path='' as $fn$
+declare origins jsonb; stops jsonb; gps jsonb;
+begin
+ perform core_auth.courier_shift_fixture('ready');
+ select coalesce(jsonb_agg(q order by q.store_id),'[]'::jsonb) into origins from (
+  select distinct s.id as store_id,s.latitude,s.longitude
+  from public.stores s join public.couriers c on c.store_id=s.id and c.active and c.fleet_type='propria' and c.user_id=auth.uid()
+  join core_auth.memberships m on m.store_id=s.id and m.user_id=c.user_id and m.active and m.role='courier'
+  join core_auth.stores st on st.id=m.store_id and st.active
+ ) q;
+ select coalesce(jsonb_agg(q order by q.created_at desc,q.id),'[]'::jsonb) into stops from (
+  select d.id,d.store_id,d.order_id,d.batch_id,d.status,d.source,d.logistics_provider,d.latitude,d.longitude,d.address,d.created_at,d.collected_at,d.arrived_at,d.deliver_by,
+   case when o.receipt->>'delivery_service'='priority' then 'priority' else 'standard' end as delivery_service,
+   public.pitacco_order_public_label(o.receipt,o.source) as public_number
+  from public.deliveries d join public.couriers c on c.id=d.courier_id and c.store_id=d.store_id and c.user_id=auth.uid() and c.active and c.fleet_type='propria'
+  join core_auth.memberships m on m.store_id=d.store_id and m.user_id=c.user_id and m.active and m.role='courier'
+  join core_auth.stores st on st.id=m.store_id and st.active
+  join public.orders o on o.id=d.order_id and o.store_id=d.store_id and o.source=d.source and o.status='accepted'
+  where d.status in ('atribuida','aceita','retirada') and d.logistics_provider='loja' and d.source in ('proprio','ifood')
+   and (d.source='proprio' or (o.receipt->>'ifood_status' in ('CONFIRMED','READY_TO_PICKUP','DISPATCHED') and coalesce(o.receipt->>'ifood_manual_cancel','')<>'requested'))
+ ) q;
+ select to_jsonb(q) into gps from (
+  select p.latitude,p.longitude,p.accuracy_m,p.observed_at
+  from public.courier_positions p join public.couriers c on c.id=p.courier_id and c.user_id=auth.uid() and c.active and c.available and c.fleet_type='propria'
+  join core_auth.memberships m on m.store_id=c.store_id and m.user_id=c.user_id and m.active and m.role='courier'
+  join core_auth.stores st on st.id=m.store_id and st.active
+  where p.observed_at between now()-interval '120 seconds' and now()+interval '30 seconds'
+    and p.accuracy_m between 0 and 2000
+    and p.latitude between -90 and 90 and p.longitude between -180 and 180
+    and (p.latitude<>0 or p.longitude<>0)
+  order by p.observed_at desc limit 1
+ ) q;
+ return jsonb_build_object('origins',origins,'deliveries',stops,'gps',gps);
+end $fn$;
+revoke all on function core_auth.courier_map_fixture() from public,anon,authenticated;
+grant execute on function core_auth.courier_map_fixture() to pitacco_core_courier_payment;

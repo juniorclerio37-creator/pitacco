@@ -46,6 +46,16 @@ def detail(did,expected=200,token=None):
         raw=res.read()
         assert res.status==expected,(res.status,expected,raw[:250])
         return json.loads(raw)
+def courier_map(expected=200,token=None,query=''):
+    headers={'Accept':'application/json'}
+    if token:headers['Authorization']='Bearer '+token
+    req=urllib.request.Request('http://127.0.0.1:8097/api/v1/courier/map'+query,headers=headers)
+    try:res=urllib.request.urlopen(req,timeout=12)
+    except urllib.error.HTTPError as e:res=e
+    with res:
+        raw=res.read()
+        assert res.status==expected,(res.status,expected,raw[:250])
+        return json.loads(raw)
 # Original payment projection for the original pickup reminder, including iFood.
 s='20000000-0000-4000-8000-000000000001'
 market_order='98000000-0000-0000-0000-000000000091'
@@ -67,6 +77,19 @@ detail(market_delivery,401,gps)
 view=detail(market_delivery,token=courier)['data']
 assert view['display_number']=='4321' and view['contact']['localizer']=='123456' and view['contact']['kind']=='intermediary'
 assert view['items'][0]['options']==[{'name':'Leite em pó','quantity':'1'}] and 'PRIVATE-FIXTURE' not in json.dumps(view)
+courier_map(401)
+courier_map(403,owner)
+courier_map(401,gps)
+courier_map(422,courier,'?store_id='+s)
+sql("update public.deliveries set latitude=-22.84,longitude=-43.45 where id='"+market_delivery+"'")
+map_data=courier_map(token=courier)['data']
+assert [x['store_id'] for x in map_data['origins']]==[s]
+stop=next(x for x in map_data['deliveries'] if x['id']==market_delivery)
+assert stop['public_number']=='4321' and float(stop['latitude'])==-22.84 and stop['source']=='ifood'
+assert all(x['store_id']==s for x in map_data['deliveries'])
+assert 'PRIVATE-FIXTURE' not in json.dumps(map_data) and 'contact' not in stop
+assert map_data['gps'] is None
+print('PASS: scoped map origins, exact assigned delivery coordinates, public labels and no private contact')
 sql("update public.pitacco_delivery_customer_contacts set phone_expires_at=now()-interval '1 second' where delivery_id='"+market_delivery+"'")
 assert detail(market_delivery,token=courier)['data']['contact']['kind']=='expired'
 assert detail(market_delivery,token=courier)['data']['contact']['number'] is None
@@ -126,6 +149,7 @@ assert sql("select status from public.deliveries where id='"+delivery+"'")=='ent
 assert sql("select count(*) from public.operation_audit where order_id='98000000-0000-0000-0000-000000000011' and action='courier_delivery_verified'")=='1'
 operate('verify',403,code=pin)
 detail(delivery,403,courier)
+assert delivery not in {x['id'] for x in courier_map(token=courier)['data']['deliveries']}
 other='98000000-0000-0000-0000-000000000022'
 other_pin=sql("select code from public.pitacco_own_delivery_codes where delivery_id='"+other+"'")
 other_wrong='0'*len(other_pin) if other_pin!='0'*len(other_pin) else '1'*len(other_pin)
@@ -196,6 +220,7 @@ assert len(rows)==2 and any(x['status']=='cancelada' and float(x['amount'])==0 f
 print('PASS: safe courier history, completed and cancelled, amount and privacy, no active delivery data')
 call('/auth/logout',200,{},courier)
 history(401,courier)
+courier_map(401,courier)
 earnings('hoje',401,courier)
 call(d,401,{'action':'code_lengths'},courier)
 call(p,401,confirm,courier)
