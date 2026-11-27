@@ -50,3 +50,25 @@ revoke all on function core_auth.courier_shift_fixture(text) from public,anon,au
 create role pitacco_core_courier_shift login password 'ci-courier-shift-only' nosuperuser nocreatedb nocreaterole nobypassrls;
 grant usage on schema core_auth to pitacco_core_courier_shift;
 grant execute on function core_auth.courier_shift_fixture(text) to pitacco_core_courier_shift;
+
+-- CI only. Reuse original device registration, no real Firebase tokens or
+-- dispatch. Never enable the original sender or scheduler from this bridge.
+create function core_auth.courier_push_fixture(a text,t text) returns jsonb
+language plpgsql security definer set search_path='' as $fn$
+declare cid uuid; sid uuid:=nullif(current_setting('pitacco.core_session_id',true),'')::uuid; registered boolean; protocol text;
+begin
+ perform core_auth.courier_shift_fixture('ready');
+ if (select count(*) from public.couriers where user_id=auth.uid() and active)<>1 then raise exception 'Identidade ambígua' using errcode='42501';end if;
+ select c.id into cid from public.couriers c join core_auth.memberships m on m.user_id=c.user_id and m.store_id=c.store_id and m.active and m.role='courier' join core_auth.stores s on s.id=m.store_id and s.active where c.user_id=auth.uid() and c.active and c.fleet_type='propria';
+ if cid is null or exists(select 1 from pitacco_private.courier_push_settings where enabled) then raise exception 'Ensaio indisponível' using errcode='42501';end if;
+ if a in ('register_native','register_legacy') then
+  if t is null or t !~ '^fixture-only-[A-Za-z0-9_-]{32,80}$' then raise exception 'Dispositivo fictício obrigatório' using errcode='42501';end if;
+  if a='register_native' then perform public.pitacco_register_courier_push_native(t);else perform public.pitacco_register_courier_push(t);end if;
+ elsif a='unregister' and t is null then perform public.pitacco_unregister_courier_push();
+ elsif a='status' and t is null then null;
+ else raise exception 'Ação inválida' using errcode='42501';end if;
+ select true,d.push_protocol into registered,protocol from pitacco_private.courier_push_device d where d.courier_id=cid and d.session_id=sid and d.expires_at>now();
+ return jsonb_build_object('environment','simulation','device_registered',coalesce(registered,false),'protocol',protocol,'server_enabled',false,'dispatch_scheduled',false,'cron_credential_present',false);
+end $fn$;
+revoke all on function core_auth.courier_push_fixture(text,text) from public,anon,authenticated;
+grant execute on function core_auth.courier_push_fixture(text,text) to pitacco_core_courier_shift;

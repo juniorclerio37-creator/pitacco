@@ -24,6 +24,21 @@ owner=login('alice@example.test')
 shift(owner,'ready',403)
 courier=login('courier@example.test')
 assert shift(courier,'ready')['data']=={'ready':True}
+push='/courier/push'
+fake='fixture-only-'+'A'*40
+call(push,401,{'action':'status'})
+call(push,403,{'action':'status'},owner)
+call(push,422,{'action':'register_native','device_token':'not-a-fixture'},courier)
+call(push,422,{'action':'status','device_token':fake},courier)
+assert call(push,200,{'action':'status'},courier)['data']['device_registered'] is False
+legacy=call(push,200,{'action':'register_legacy','device_token':fake},courier)['data']
+assert legacy['device_registered'] is True and legacy['protocol']=='notification'
+native=call(push,200,{'action':'register_native','device_token':fake},courier)['data']
+assert native['protocol']=='data_only' and native['server_enabled'] is False and native['dispatch_scheduled'] is False
+assert fake not in json.dumps(native)
+assert sql("select count(*) from pitacco_private.courier_push_device where courier_id='98000000-0000-0000-0000-000000000002'")=='1'
+assert call(push,200,{'action':'unregister'},courier)['data']['device_registered'] is False
+print('PASS: original push registration, native data-only protocol, legacy compatibility, explicit unregister, no real dispatch')
 call('/courier/shift',422,{'action':'ready','user_id':'98000000-0000-0000-0000-000000000001'},courier)
 gps=shift(courier,'start_gps')['data']['gps_token']
 assert re.fullmatch('[a-f0-9]{64}',gps)
@@ -41,5 +56,6 @@ shift(courier,'ready',403)
 sql("update public.pitacco_courier_auth_state set must_change_password=false where user_id='98000000-0000-0000-0000-000000000001'")
 call('/auth/logout',200,{},courier)
 shift(courier,'start_gps',401)
+call(push,401,{'action':'status'},courier)
 assert sql("select count(*) from auth.sessions where user_id='98000000-0000-0000-0000-000000000001'")=='0'
 print('PASS: synthetic Laravel courier login, original session readiness, GPS authorization issuance and revocation, offline, forced password change and logout')
