@@ -7,7 +7,7 @@ channel='private-pitacco.store.'+a
 def api(path,body,expected,token=None):
     h={'Content-Type':'application/json','Accept':'application/json'}
     if token:h['Authorization']='Bearer '+token
-    req=urllib.request.Request('http://127.0.0.1:8091/api/v1'+path,data=json.dumps(body).encode(),headers=h,method='POST')
+    req=urllib.request.Request('http://127.0.0.1:8093/api/v1'+path,data=json.dumps(body).encode(),headers=h,method='POST')
     try:r=urllib.request.urlopen(req,timeout=10)
     except urllib.error.HTTPError as e:r=e
     with r:
