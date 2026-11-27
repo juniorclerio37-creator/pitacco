@@ -7,6 +7,7 @@ use App\Http\Controllers\PublicCheckoutController;
 use App\Http\Controllers\PublicTrackingController;
 use App\Http\Controllers\CourierGpsController;
 use App\Http\Controllers\CourierAssignmentsController;
+use App\Http\Controllers\CourierShiftController;
 use App\Http\Controllers\CustomerProfileController;
 use App\Http\Controllers\CustomerWalletController;
 use App\Http\Controllers\FiadoOverviewController;
@@ -44,6 +45,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware(ExperimentalAuthGate::class)->group(function () {
         Route::post('/auth/login',[CoreAuthController::class,'login'])->middleware('throttle:core-login');
         Route::middleware(['throttle:60,1',CoreBearerSession::class])->group(function () {
+            Route::post('/courier/shift',CourierShiftController::class);
             Route::get('/auth/me',[CoreAuthController::class,'me']);
             Route::post('/auth/logout',[CoreAuthController::class,'logout']);
             Route::get('/stores/{store}/orders',DailyOrdersController::class)->whereUuid('store');
