@@ -167,3 +167,23 @@ assert set(result)<= {'outstanding','next_due','charges','payments','pix_instruc
 assert sql("select count(*) from pitacco_private.fiado_pin_verifications where store_id='91000000-0000-0000-0000-000000000002' and used_at is null")=='0'
 call(statement,422,{'phone':auth['phone']})
 print('PASS: statement PIN validation, persistent failed attempt, store isolation, no limit disclosure and single-use verification')
+
+# Validate a non-empty statement using an existing authorized manager PDV operation.
+# This is not the public Fiado checkout; no API or credential bypass is introduced.
+fixture_store='91000000-0000-0000-0000-000000000002'
+fixture_manager='91000000-0000-0000-0000-000000000001'
+fixture_customer=str(uuid.UUID(sql("select id from public.pitacco_fiado_customers where store_id='"+fixture_store+"' and phone='"+auth['phone']+"'")))
+fixture_request=str(uuid.uuid4())
+def manager_sql(query):
+    return sql("begin; set local role authenticated; select set_config('request.jwt.claim.sub','"+fixture_manager+"',true); "+query+"; commit;")
+manager_sql("select public.pitacco_fiado_balcao_create('"+fixture_store+"','"+fixture_customer+"','"+fixture_request+"','[{\"product_id\":\"91000000-0000-0000-0000-000000000003\",\"quantity\":1,\"options\":[]}]','Extrato Fixture')")
+fixture_order=str(uuid.UUID(sql("select id from public.orders where store_id='"+fixture_store+"' and request_id='"+fixture_request+"'")))
+manager_sql("select public.accept_order('"+fixture_order+"'); select public.set_order_preparation('"+fixture_order+"','ready'); select public.set_order_preparation('"+fixture_order+"','completed')")
+manager_sql("select public.pitacco_fiado_receive('"+fixture_store+"','"+fixture_customer+"',8,'pix','"+str(uuid.uuid4())+"','Fixture')")
+detail=call(statement,200,auth)['data']
+assert float(detail['outstanding'])==17 and len(detail['charges'])==1
+assert detail['charges'][0]['order_id']==fixture_order
+assert float(detail['charges'][0]['amount'])==25 and float(detail['charges'][0]['paid'])==8
+assert len(detail['payments'])==1 and float(detail['payments'][0]['amount'])==8
+assert detail['next_due'] and 'limit' not in detail and 'available' not in detail
+print('PASS: customer statement reflects authorized synthetic PDV debt and partial settlement')

@@ -61,3 +61,6 @@ A rota POST `/api/v1/public/menus/{slug}/fiado/statement` recebe telefone e PIN 
 
 ## Carteira Fideliza+ — protótipo isolado de leitura autorizada
 A API experimental usa exclusivamente uma função de fixture CI que exige sessão ativa, dispositivo e comprovação de titularidade sintética emitida fora da API. Consulta o saldo e ofertas pelo cálculo original, sem aceitar telefone arbitrário. A role da carteira não tem acesso direto ao registro de comprovação nem à função pública por telefone. Nenhuma rota pública emite comprovação. Não é um serviço de verificação real: SMS/OTP ou outro provedor confiável ainda precisa ser integrado, com revogação, expiração, recuperação e proteção de resgates. Não publicar nem migrar o esquema core_wallet_test para produção. Os testes usam apenas dados fictícios e verificam a recusa de sessão sem comprovação, outra loja, outro aparelho, expiração e logout. A integração do checkout Fiado continua pendente; nenhuma regra original foi modificada.
+
+## Extrato com movimentação
+A regressão adicional cria uma compra fictícia por meio da função de balcão original, sob gestor autorizado do ambiente descartável, completa a retirada, registra recebimento parcial e consulta o extrato existente. Verifica dívida, histórico e ausência do limite disponível. Não adiciona checkout público Fiado nem substitui a verificação original de PIN.
