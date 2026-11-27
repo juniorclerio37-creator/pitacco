@@ -12,6 +12,7 @@ import {receiptItems} from './receiptItems.mjs';
 import Pedidos from './Pedidos.jsx';
 import {Printer} from 'lucide-react';
 import {fetchDailyOrders} from './dailyOrders.mjs';
+import {connectOperationalRefresh} from './operationalRefresh.mjs';
 import {openBrowserPrint} from './browserReceipt.mjs';
 import {WindowsConnectionStatus} from './WindowsConnectionStatus.jsx';
 import {CUPOM_80MM_HTML} from './cupom80mm.mjs';
@@ -25,7 +26,7 @@ const SOURCES=[['proprio','Cardápio próprio'],['ifood','iFood'],['99food','99F
 const currency=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 let activeStoreCommand=Promise.resolve();
 function queueActiveStore(storeId){const next=activeStoreCommand.catch(()=>{}).then(()=>invoke('set_active_store',{storeId}));activeStoreCommand=next;return next}
-export default function Operations({client,storeId,view,manager,onNavigate,storeName='',storeLogoPath='',navigationSection='',navigationKey}){
+export default function Operations({client,storeId,view,manager,onNavigate,storeName='',storeLogoPath='',navigationSection='',navigationKey,experimentalRefreshSource=null}){
  const nativePrintScope=useRef(null);
  async function waitForNativePrintStore(){
   const scope=nativePrintScope.current;
@@ -328,21 +329,11 @@ export default function Operations({client,storeId,view,manager,onNavigate,store
    }catch(e){if(!stopped){setStatus('Sincronização pendente · nova tentativa automática');setError(e.message||String(e));}}
    finally{running=false;if(refreshAgain&&!stopped){refreshAgain=false;void refresh()}}
   }
-  void refresh();const timer=setInterval(refresh,5000);
-  let channel;
-  try{
-   channel=client.channel(`operations:${storeId}`);
-   channel.on('postgres_changes',{event:'*',schema:'public',table:'orders',filter:`store_id=eq.${storeId}`},refresh)
-    .on('postgres_changes',{event:'*',schema:'public',table:'deliveries',filter:`store_id=eq.${storeId}`},refresh)
-    .subscribe(state=>{if(state==='SUBSCRIBED')void refresh()});
-  }catch{
-   // The interval continues syncing orders when this browser blocks Realtime.
-  }
+  const stopRefresh=connectOperationalRefresh({client,storeId,refresh,experimentalSource:experimentalRefreshSource});
   return()=>{
-   stopped=true;clearInterval(timer);
-   if(channel)void client.removeChannel(channel).catch(()=>{});
+   stopped=true;stopRefresh();
   };
- },[client,storeId,device,desktop,manager]);
+ },[client,storeId,device,desktop,manager,experimentalRefreshSource]);
  async function decideFiado(order,approved){
   if(!manager||!storeId||order?.source!=='proprio'||order?.receipt?.payment!=='fiado')return;
   if(!window.confirm(approved?'Autorizar o pagamento fiado deste pedido?':'Recusar o Fiado e cancelar este pedido?'))return;

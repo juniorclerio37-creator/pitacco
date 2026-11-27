@@ -76,7 +76,7 @@ jobs:
         with:
           node-version: '24'
       - name: Validar cliente experimental de sincronização do lojista
-        run: node --test backend/tests/merchant-realtime.test.mjs backend/tests/merchant-reverb.test.mjs
+        run: node --test backend/tests/merchant-realtime.test.mjs backend/tests/merchant-reverb.test.mjs core-source/web/tests/operational-refresh.test.mjs
       - name: Preparar banco exclusivamente sintético
         run: |
           PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/tests/fixture.sql
