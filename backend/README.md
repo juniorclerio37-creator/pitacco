@@ -67,3 +67,6 @@ A regressão adicional cria uma compra fictícia por meio da função de balcão
 
 ## Regressão adicional do SQL original do Fiado
 `tests/fiado-original-fulfillment.sql` amplia os testes do mecanismo original, em transação descartada, para entrega prioritária, reserva incluindo frete, repetição de confirmação, cancelamento e retirada agendada. Não cria endpoint, não concede permissões novas e não habilita o checkout Laravel. Resultado pendente de CI. A liberação definitiva continua condicionada ao gate Fiado e carteira em `docs/core/migration-gates.md`.
+
+## Gate de pagamentos completo
+A matriz de aceitação de todos os métodos está em `../docs/core/payment-acceptance.md`. O checkout Laravel atual aceita somente `pix_manual`. O inventário registra explicitamente os demais métodos e as pendências, sem ampliar permissões ou habilitar cobranças externas.
