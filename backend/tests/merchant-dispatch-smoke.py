@@ -49,6 +49,48 @@ call(individual,200,{'action':'resume'},owner)
 assert sql("select manual_dispatch_hold::text from public.deliveries where id='"+one+"'")=='false'
 assert sql("select status from public.orders where id='98000000-0000-0000-0000-000000000031'")=='accepted'
 print('PASS: original individual assignment, repeated request, stale expected courier, reassignment, remove and automatic resume')
+
+# Original geographic scheduler, in an isolated transaction. Rollback leaves the
+# two deliveries exactly as the following HTTP manual grouping scenario expects.
+sql("""
+begin;
+do $geo$
+declare
+ s uuid:='20000000-0000-4000-8000-000000000001';
+ a uuid:='98000000-0000-0000-0000-000000000041';
+ b uuid:='98000000-0000-0000-0000-000000000042';
+ c uuid:='98000000-0000-0000-0000-000000000002';
+ route uuid;
+begin
+ -- Isolate existing synthetic checkout records in this disposable database.
+ update public.deliveries set manual_dispatch_hold=true where store_id=s and id not in (a,b) and status='pendente';
+ update public.couriers set available=false where store_id=s and id<>c;
+ update public.couriers set available=true where id=c;
+ update public.stores set dispatch_mode='automatico',latitude=-22.85,longitude=-43.45,max_orders_per_trip=2 where id=s;
+ update public.deliveries set latitude=-22.84,longitude=-43.45,deliver_by=now()+interval '45 minutes',manual_dispatch_hold=true where id=a;
+ update public.deliveries set latitude=-22.86,longitude=-43.45,deliver_by=now()+interval '60 minutes',manual_dispatch_hold=false where id=b;
+ update public.courier_positions set latitude=-22.85,longitude=-43.45,observed_at=now() where courier_id=c;
+ if pitacco_private.group_auto_one(s) is not null then raise exception 'Held or preparing delivery was assigned';end if;
+ update public.deliveries set manual_dispatch_hold=false where id=a;
+ update public.courier_positions set observed_at=now()-interval '3 minutes' where courier_id=c;
+ if pitacco_private.group_auto_one(s) is not null then raise exception 'Stale GPS was accepted';end if;
+ update public.courier_positions set observed_at=now() where courier_id=c;
+ route:=pitacco_private.group_auto_one(s);
+ if route is null or not exists(select 1 from public.deliveries where id=a and courier_id=c and batch_id=route and status='atribuida') then raise exception 'Ready delivery was not assigned by original scheduler';end if;
+ update public.orders set preparation_status='ready' where id='98000000-0000-0000-0000-000000000032';
+ if pitacco_private.group_auto_one(s) is not null then raise exception 'Opposite destination was grouped';end if;
+ update public.deliveries set latitude=-22.839,longitude=-43.45 where id=b;
+ if pitacco_private.group_auto_one(s) is distinct from route then raise exception 'Compatible destination did not join existing route';end if;
+ if (select count(*) from public.deliveries where id in (a,b) and batch_id=route and courier_id=c and status='atribuida')<>2 then raise exception 'Geographic grouping state mismatch';end if;
+ if pitacco_private.group_auto_one(s) is not null then raise exception 'Repeated scheduler created an additional assignment';end if;
+ if (select count(*) from public.operation_audit where action='route_auto_assigned' and details->>'delivery' in (a::text,b::text))<>2 then raise exception 'Automatic assignment audit mismatch';end if;
+ if (select count(*) from public.operation_audit where action='route_geographic_auto_validation' and details->>'delivery' in (a::text,b::text))<>2 then raise exception 'Geographic evidence audit mismatch';end if;
+end $geo$;
+rollback;
+""")
+assert sql("select count(*) from public.deliveries where id in ('"+one+"','"+two+"') and courier_id is null and batch_id is null and status='pendente'")=='2'
+print('PASS: original geographic scheduler respects manual hold, preparation, stale GPS, direction, compatible route and duplicate prevention; rolled back')
+
 call(p,401,body)
 call(p,404,body,courier)
 call(p.replace(s,'20000000-0000-4000-8000-000000000002'),404,body,owner)
