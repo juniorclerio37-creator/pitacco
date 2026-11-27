@@ -94,3 +94,8 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 select public.save_public_menu_settings('20000000-0000-4000-8000-000000000001','core-settings-fixture',true,true,true,0,array['dinheiro'],'');
 commit;
+
+-- CI-only merchant draft role. No direct pricing writes and no publication function.
+create role pitacco_core_payment_pricing login password 'ci-payment-pricing-only' nosuperuser nocreatedb nocreaterole nobypassrls;
+grant usage on schema core_auth,auth,public to pitacco_core_payment_pricing;
+grant execute on function core_auth.can_act(uuid),auth.uid(),public.pitacco_payment_pricing_drafts(uuid),public.pitacco_payment_pricing_release_status(uuid),public.pitacco_save_payment_pricing_draft(uuid,text,text,integer,integer,bigint) to pitacco_core_payment_pricing;

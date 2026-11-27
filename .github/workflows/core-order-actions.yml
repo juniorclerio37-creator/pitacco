@@ -41,6 +41,9 @@ jobs:
       CACHE_STORE: redis
       SESSION_DRIVER: array
       LOG_CHANNEL: stderr
+      PITACCO_PAYMENT_PRICING_ENABLED: 'true'
+      CORE_PAYMENT_PRICING_DB_USERNAME: pitacco_core_payment_pricing
+      CORE_PAYMENT_PRICING_DB_PASSWORD: ci-payment-pricing-only
       PITACCO_PAYMENT_SETTINGS_ENABLED: 'true'
       CORE_PAYMENT_SETTINGS_DB_USERNAME: pitacco_core_payment_settings
       CORE_PAYMENT_SETTINGS_DB_PASSWORD: ci-payment-settings-only
@@ -83,6 +86,7 @@ jobs:
           if PGPASSWORD=ci-fiado-manage-only psql -h 127.0.0.1 -U pitacco_core_fiado_manage -d postgres -v ON_ERROR_STOP=1 -c 'update public.pitacco_fiado_customers set used=0'; then exit 1; fi
           if PGPASSWORD=ci-financial-read-only psql -h 127.0.0.1 -U pitacco_core_financial_read -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.store_payment_receipts'; then exit 1; fi
           if PGPASSWORD=ci-payment-settings-only psql -h 127.0.0.1 -U pitacco_core_payment_settings -d postgres -v ON_ERROR_STOP=1 -c 'update public.public_menu_settings set enabled=false'; then exit 1; fi
+          test "$(PGPASSWORD=ci-payment-pricing-only psql -h 127.0.0.1 -U pitacco_core_payment_pricing -d postgres -Atc "select has_function_privilege(current_user,'public.pitacco_publish_payment_price(uuid,text,text,bigint)','execute')")" = f
       - name: Testar operações via Laravel
         working-directory: backend
         run: |

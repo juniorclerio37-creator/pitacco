@@ -144,7 +144,31 @@ assert saved['saved'] is True and saved['payment_methods']==payload['payment_met
 assert call(payment_path,200,token=alice)['data']==payload
 assert sql("select concat(slug,':',enabled,':',delivery_enabled,':',pickup_enabled) from public.public_menu_settings where store_id='"+A+"'")==snapshot
 print('PASS: separate payment channel settings, original publication preserved, invalid methods and tenant denial')
+pricing_path='/stores/'+A+'/payments/pricing'
+call(pricing_path,401)
+call(pricing_path,404,token=bob)
+call(pricing_path.replace(A,B),404,token=alice)
+assert call(pricing_path,200,token=alice)['data']=={'drafts':[],'publication_available':False}
+draft={'channel':'cardapio','method':'cartao_credito','adjustment_bps':400,'processing_cost_bps':350,'expected_revision':0}
+created=call(pricing_path,200,'PUT',draft,alice)['data']
+assert created['revision']==1 and created['active_revision'] is None
+call(pricing_path,409,'PUT',draft,alice)
+call(pricing_path,404,'PUT',draft,bob)
+call(pricing_path,422,'PUT',draft|{'method':'voucher_vr'},alice)
+call(pricing_path,422,'PUT',draft|{'method':'fiado'},alice)
+call(pricing_path,422,'PUT',draft|{'active_adjustment_bps':400},alice)
+counter=call(pricing_path,200,'PUT',draft|{'channel':'balcao','adjustment_bps':-500},alice)['data']
+assert counter['revision']==1 and counter['adjustment_bps']==-500
+voucher=call(pricing_path,200,'PUT',draft|{'method':'voucher_vr','adjustment_bps':0},alice)['data']
+assert voucher['processing_cost_bps']==350 and voucher['adjustment_bps']==0
+updated=call(pricing_path,200,'PUT',draft|{'expected_revision':1,'adjustment_bps':250},alice)['data']
+assert updated['revision']==2 and updated['active_revision'] is None
+rules=call(pricing_path,200,token=alice)['data']
+assert len(rules['drafts'])==3 and rules['publication_available'] is False
+assert sql("select public.pitacco_public_payment_price_rules('core-settings-fixture')::text")=='{}'
+print('PASS: pricing drafts by channel, revision conflict, voucher cost only, no publication, role and tenant isolation')
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
+call(pricing_path,404,token=alice)
 call(payment_path,404,token=alice)
 call(payment_path,404,'PUT',payload,alice)
 call(report,404,token=alice)

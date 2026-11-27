@@ -17,6 +17,7 @@ return [
         'core_profile' => $base + ['username'=>env('CORE_PROFILE_DB_USERNAME','pitacco_core_profile'),'password'=>env('CORE_PROFILE_DB_PASSWORD')],
         'core_fiado_manage' => $base + ['username'=>env('CORE_FIADO_MANAGE_DB_USERNAME','pitacco_core_fiado_manage'),'password'=>env('CORE_FIADO_MANAGE_DB_PASSWORD')],
         'core_fiado_statement' => $base + ['username'=>env('CORE_FIADO_STATEMENT_DB_USERNAME','pitacco_core_fiado_statement'),'password'=>env('CORE_FIADO_STATEMENT_DB_PASSWORD')],
+        'core_payment_pricing' => $base + ['username'=>env('CORE_PAYMENT_PRICING_DB_USERNAME','pitacco_core_payment_pricing'),'password'=>env('CORE_PAYMENT_PRICING_DB_PASSWORD')],
         'core_payment_settings' => $base + ['username'=>env('CORE_PAYMENT_SETTINGS_DB_USERNAME','pitacco_core_payment_settings'),'password'=>env('CORE_PAYMENT_SETTINGS_DB_PASSWORD')],
         'core_financial_read' => $base + ['username'=>env('CORE_FINANCIAL_DB_USERNAME','pitacco_core_financial_read'),'password'=>env('CORE_FINANCIAL_DB_PASSWORD')],
         'core_fiado_read' => $base + ['username'=>env('CORE_FIADO_DB_USERNAME','pitacco_core_fiado_read'),'password'=>env('CORE_FIADO_DB_PASSWORD')],
