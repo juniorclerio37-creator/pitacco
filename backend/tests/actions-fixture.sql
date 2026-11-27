@@ -104,3 +104,22 @@ grant execute on function core_auth.can_act(uuid),auth.uid(),public.pitacco_paym
 create role pitacco_core_payment_publish login password 'ci-payment-publish-only' nosuperuser nocreatedb nocreaterole nobypassrls;
 grant usage on schema core_auth,auth,public to pitacco_core_payment_publish;
 grant execute on function core_auth.can_act(uuid),auth.uid(),public.pitacco_publish_payment_price(uuid,text,text,bigint) to pitacco_core_payment_publish;
+
+-- Disposable CI only. Explicit scoped wrapper excludes specialized payment flows.
+create function core_auth.merchant_checkout_fixture(s uuid,req uuid,mode text,customer text,phone text,items jsonb,payment text,notes text)
+returns jsonb language plpgsql security definer set search_path='' as $$
+begin
+ if not core_auth.can_act(s) then raise exception 'Sem permissão' using errcode='42501';end if;
+ if mode is null or mode not in ('balcao','retirada') or payment is null or payment not in ('dinheiro','cartao_credito','cartao_debito','cartao_entrega','pix_manual','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket') then
+ raise exception 'Modalidade não suportada' using errcode='22023';end if;
+ return public.pitacco_merchant_channel_checkout(s,req,mode,customer,phone,'',items,payment,notes,'',null,null,null);
+end $$;
+revoke all on function core_auth.merchant_checkout_fixture(uuid,uuid,text,text,text,jsonb,text,text) from public,anon,authenticated;
+create role pitacco_core_merchant_checkout login password 'ci-merchant-checkout-only' nosuperuser nocreatedb nocreaterole nobypassrls;
+grant usage on schema core_auth,auth to pitacco_core_merchant_checkout;
+grant execute on function core_auth.can_act(uuid),auth.uid(),core_auth.merchant_checkout_fixture(uuid,uuid,text,text,text,jsonb,text,text) to pitacco_core_merchant_checkout;
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
+select public.pitacco_store_hours_save_v2('20000000-0000-4000-8000-000000000001',(select jsonb_agg(jsonb_build_object('weekday',day,'slot',1,'opens_minute',0,'closes_minute',1440)) from generate_series(1,7) day),false,0,true);
+commit;

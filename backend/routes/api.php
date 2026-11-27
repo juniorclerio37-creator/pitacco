@@ -9,6 +9,7 @@ use App\Http\Controllers\FiadoOverviewController;
 use App\Http\Controllers\FinancialReportController;
 use App\Http\Controllers\PaymentSettingsController;
 use App\Http\Controllers\PaymentPricingController;
+use App\Http\Controllers\MerchantCheckoutController;
 use App\Http\Controllers\FiadoStatementController;
 use App\Http\Controllers\FiadoManagementController;
 use App\Http\Controllers\CoreAuthController;
@@ -42,6 +43,7 @@ Route::prefix('v1')->group(function () {
             Route::match(['get','put'],'/stores/{store}/payments/settings',PaymentSettingsController::class)->whereUuid('store');
             Route::match(['get','put'],'/stores/{store}/payments/pricing',PaymentPricingController::class)->whereUuid('store');
             Route::post('/stores/{store}/payments/pricing/publish',[PaymentPricingController::class,'publish'])->whereUuid('store');
+            Route::post('/stores/{store}/checkout',MerchantCheckoutController::class)->whereUuid('store');
             Route::get('/stores/{store}/reports/financial',FinancialReportController::class)->whereUuid('store');
             Route::get('/stores/{store}/context',[CoreAuthController::class,'store'])->whereUuid('store');
         });

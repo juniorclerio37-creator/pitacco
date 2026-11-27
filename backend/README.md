@@ -109,3 +109,6 @@ O novo workflow `core-ifood-preservation.yml` executa a suíte original de event
 
 ### Ajuste da regressão de recebimento do entregador
 O primeiro CI encontrou falta de EXECUTE direto na função auxiliar de sessão após a restrição de grants da fixture. O teste passa a exercitar a autenticação exclusivamente pela operação original autorizada, com asserts distintos para sessão inválida, entregador não atribuído e ausência de chegada. Nenhuma permissão foi ampliada. O fluxo de sucesso e a repetição continuam obrigatórios; nova execução pendente.
+
+## Lançamento manual de venda — PDV experimental
+POST `/api/v1/stores/{store}/checkout` reutiliza `pitacco_merchant_channel_checkout` em fixture restrita de balcão/retirada, respeitando as modalidades do PDV e os totais do SQL original. Não recebe preço arbitrário, valor recebido, conta de crédito, token de gateway ou confirmação. Testes: cartão habilitado apenas no cardápio não pode ser usado no PDV, venda presencial fictícia, repetição, modalidade de venda preservada, ausência de confirmação e acesso revogado. A função intermediária é exclusivamente de CI; não é contrato de produção. Entrega, variantes completas, preços ativos confirmados, recebimentos, integração das interfaces e demais modalidades especializadas continuam gates. Flag false por padrão e ambiente testing obrigatório. Resultado pendente.

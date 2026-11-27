@@ -41,6 +41,9 @@ jobs:
       CACHE_STORE: redis
       SESSION_DRIVER: array
       LOG_CHANNEL: stderr
+      PITACCO_MERCHANT_CHECKOUT_ENABLED: 'true'
+      CORE_MERCHANT_CHECKOUT_DB_USERNAME: pitacco_core_merchant_checkout
+      CORE_MERCHANT_CHECKOUT_DB_PASSWORD: ci-merchant-checkout-only
       PITACCO_PAYMENT_PUBLISH_ENABLED: 'true'
       CORE_PAYMENT_PUBLISH_DB_USERNAME: pitacco_core_payment_publish
       CORE_PAYMENT_PUBLISH_DB_PASSWORD: ci-payment-publish-only
@@ -91,6 +94,7 @@ jobs:
           if PGPASSWORD=ci-payment-settings-only psql -h 127.0.0.1 -U pitacco_core_payment_settings -d postgres -v ON_ERROR_STOP=1 -c 'update public.public_menu_settings set enabled=false'; then exit 1; fi
           test "$(PGPASSWORD=ci-payment-pricing-only psql -h 127.0.0.1 -U pitacco_core_payment_pricing -d postgres -Atc "select has_function_privilege(current_user,'public.pitacco_publish_payment_price(uuid,text,text,bigint)','execute')")" = f
           if PGPASSWORD=ci-payment-publish-only psql -h 127.0.0.1 -U pitacco_core_payment_publish -d postgres -v ON_ERROR_STOP=1 -c 'update pitacco_private.payment_pricing_release set publication_enabled=true'; then exit 1; fi
+          test "$(PGPASSWORD=ci-merchant-checkout-only psql -h 127.0.0.1 -U pitacco_core_merchant_checkout -d postgres -Atc "select has_function_privilege(current_user,'public.confirm_manual_payment(uuid,uuid,numeric,text)','execute')")" = f
       - name: Testar operações via Laravel
         working-directory: backend
         run: |
@@ -100,7 +104,10 @@ jobs:
           server=$!
           CORE_REDIS_PREFIX=pitacco_core_report_ci: php artisan serve --host=127.0.0.1 --port=8084 >/tmp/core-report.log 2>&1 &
           report_server=$!
-          trap 'kill "$server" "$report_server" 2>/dev/null || true; cat /tmp/core-actions.log /tmp/core-report.log' EXIT
+          CORE_REDIS_PREFIX=pitacco_core_pdv_ci: php artisan serve --host=127.0.0.1 --port=8085 >/tmp/core-pdv.log 2>&1 &
+          pdv_server=$!
+          trap 'kill "$server" "$report_server" "$pdv_server" 2>/dev/null || true; cat /tmp/core-actions.log /tmp/core-report.log /tmp/core-pdv.log' EXIT
+          for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8085/up >/dev/null && break; sleep 1; done
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8084/up >/dev/null && break; sleep 1; done
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/up >/dev/null && break; sleep 1; done
           python3 tests/actions-smoke.py

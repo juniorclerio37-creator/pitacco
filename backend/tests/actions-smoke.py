@@ -196,7 +196,34 @@ reset=call(publish_path,200,'POST',publication|{'expected_revision':3},alice)['d
 assert reset['active_adjustment_bps']==0 and reset['active_revision']==3
 assert sql("select public.pitacco_public_payment_price_rules('core-settings-fixture')::text")=='{}'
 print('PASS: controlled pricing publication, closed release, eligible channel, stale revision, idempotency, draft isolation and safe removal')
+report_base=BASE
+BASE='http://127.0.0.1:8085/api/v1'
+pdv='/stores/'+A+'/checkout'
+sale={'request_id':str(uuid.uuid4()),'sale_mode':'balcao','customer':'Cliente PDV fictício','phone':'21988887701','items':[{'product_id':'31000000-0000-4000-8000-000000000001','quantity':1,'options':[]}],'payment':'dinheiro'}
+call(pdv,401,'POST',sale)
+call(pdv,404,'POST',sale,bob)
+call(pdv.replace(A,B),404,'POST',sale,alice)
+call(pdv,422,'POST',sale|{'received_amount':20},alice)
+call(pdv,422,'POST',sale|{'sale_mode':'entrega'},alice)
+call(pdv,409,'POST',sale|{'payment':'cartao_credito'},alice)
+assert sql("select count(*) from public.orders where request_id='"+sale['request_id']+"'")=='0'
+created=call(pdv,200,'POST',sale,alice)['data']
+order=str(uuid.UUID(created['order_id']))
+assert float(created['total'])==20
+assert 'tracking_token' not in created
+assert call(pdv,200,'POST',sale,alice)['data']['order_id']==order
+assert sql("select count(*) from public.orders where request_id='"+sale['request_id']+"'")=='1'
+assert sql("select receipt->>'merchant_sale_mode' from public.orders where id='"+order+"'")=='balcao'
+assert sql("select count(*) from public.manual_payments where order_id='"+order+"'")=='0'
+assert sql("select count(*) from public.operation_audit where order_id='"+order+"' and action='merchant_sale_created'")=='1'
+call(pdv,409,'POST',sale|{'sale_mode':'retirada'},alice)
+pickup=call(pdv,200,'POST',sale|{'request_id':str(uuid.uuid4()),'sale_mode':'retirada','payment':'voucher_vr','phone':'21988887702'},alice)['data']
+assert float(pickup['total'])==20
+assert sql("select receipt->>'merchant_sale_mode' from public.orders where id='"+str(uuid.UUID(pickup['order_id']))+"'")=='retirada'
+print('PASS: original PDV and pickup checkout, independent payment methods, idempotency, no early receipt, tenant isolation')
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
+call(pdv,404,'POST',sale,alice)
+BASE=report_base
 call(publish_path,404,'POST',publication,alice)
 call(pricing_path,404,token=alice)
 call(payment_path,404,token=alice)
