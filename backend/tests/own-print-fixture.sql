@@ -167,3 +167,14 @@ end $fn$;
 revoke all on function core_auth.unified_print_queue_fixture(uuid,text,uuid,uuid,text,text) from public,anon,authenticated;
 grant execute on function core_auth.unified_print_queue_fixture(uuid,text,uuid,uuid,text,text) to pitacco_core_own_print;
 
+
+-- CI only: reuse original durable automatic print preference, same store.
+create function core_auth.print_preferences_fixture(s uuid,enabled boolean) returns boolean
+language plpgsql security definer set search_path='' as $$
+begin
+ if not core_auth.can_act(s) then raise exception 'Sem permissão' using errcode='42501';end if;
+ if enabled is not null then perform public.pitacco_set_auto_print(s,enabled);end if;
+ return public.pitacco_auto_print_status(s);
+end $$;
+revoke all on function core_auth.print_preferences_fixture(uuid,boolean) from public,anon,authenticated;
+grant execute on function core_auth.print_preferences_fixture(uuid,boolean) to pitacco_core_own_print;

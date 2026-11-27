@@ -555,6 +555,9 @@ assert sql("select count(*) from public.operation_audit where order_id='"+ready_
 assert sql("select count(*) from public.print_jobs where order_id='"+ready_id+"'")=='0'
 assert sql("select count(*) from pitacco_private.ifood_courier_dispatch f join public.deliveries d on d.id=f.delivery_id where d.order_id='"+ready_id+"'")=='0'
 print('PASS: local iFood readiness, official state preserved, repeat, pending cancellation, no dispatch or print jobs')
+# Separate print-specific limiter; never loosen the original rate limit.
+print_base='http://127.0.0.1:8096/api/v1'
+BASE=print_base
 # Separate reprint command: no provider call or status mutation.
 market_print='/stores/'+A+'/orders/'+ready_id+'/ifood-reprint'
 market_rp={'request_id':'38000000-0000-4000-8000-000000000003','reason':'Reimpressao de teste iFood'}
@@ -598,6 +601,19 @@ assert not any(j['order_id']==ready_id for j in call(unified+'claim',200,'POST',
 sql("delete from public.pitacco_delivery_customer_contacts where delivery_id='"+market_delivery+"';delete from public.deliveries where id='"+market_delivery+"';delete from public.print_jobs where order_id='"+ready_id+"'")
 print('PASS: unified native queue, scoped temporary iFood contact, expiry, immutable stored receipt and submitted acknowledgement')
 print('PASS: official iFood reprint, original sectors and copies, idempotent audit, isolated queue and no provider mutation')
+prefs='/stores/'+A+'/print-preferences'
+call(prefs,401)
+call(prefs,404,token=bob)
+call(prefs.replace(A,B),404,token=alice)
+call(prefs,422,'PUT',{'automatic':'true'},alice)
+call(prefs,422,'PUT',{'automatic':True,'device_id':dev},alice)
+assert call(prefs,200,token=alice)['data']=={'automatic':True}
+assert call(prefs,200,'PUT',{'automatic':False},alice)['data']=={'automatic':False}
+assert call(prefs,200,token=alice)['data']=={'automatic':False}
+assert call(prefs,200,'PUT',{'automatic':True},alice)['data']=={'automatic':True}
+assert call(prefs,200,token=alice)['data']=={'automatic':True}
+sql("delete from pitacco_private.auto_print_preferences where store_id='"+A+"'")
+print('PASS: durable original automatic print preference, strict boolean, store isolation and restart-safe readback')
 BASE=actions_base
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
 call(hours,404,token=alice)
@@ -623,8 +639,12 @@ print('PASS: original Fiado manager overview, role and store isolation, revoked 
 
 BASE=device_base
 call(ready_path,404,'POST',{},alice)
-call(market_print,404,'POST',market_rp,alice)
 call(ifood,404,token=alice)
+BASE=print_base
+call(market_print,404,'POST',market_rp,alice)
+call(prefs,404,token=alice)
+call(unified+'claim',404,'POST',{'device_id':dev},alice)
+BASE=device_base
 call(dp+'status',404,'POST',{},alice)
 call(dp+'ping',404,'POST',{'device_id':dev},alice)
 BASE=board_base

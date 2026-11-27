@@ -131,7 +131,10 @@ jobs:
           board_server=$!
           CORE_REDIS_PREFIX=pitacco_core_print_device_ci: php artisan serve --host=127.0.0.1 --port=8088 >/tmp/core-print-device.log 2>&1 &
           print_device_server=$!
-          trap 'kill "$server" "$report_server" "$pdv_server" "$settings_server" "$board_server" "$print_device_server" 2>/dev/null || true; cat /tmp/core-actions.log /tmp/core-report.log /tmp/core-pdv.log /tmp/core-store-settings.log /tmp/core-own-board.log /tmp/core-print-device.log' EXIT
+          CORE_REDIS_PREFIX=pitacco_core_unified_print_ci: php artisan serve --host=127.0.0.1 --port=8096 >/tmp/core-unified-print.log 2>&1 &
+          unified_print_server=$!
+          trap 'kill "$server" "$report_server" "$pdv_server" "$settings_server" "$board_server" "$print_device_server" "$unified_print_server" 2>/dev/null || true; cat /tmp/core-actions.log /tmp/core-report.log /tmp/core-pdv.log /tmp/core-store-settings.log /tmp/core-own-board.log /tmp/core-print-device.log /tmp/core-unified-print.log' EXIT
+          for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8096/up >/dev/null && break; sleep 1; done
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8088/up >/dev/null && break; sleep 1; done
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8087/up >/dev/null && break; sleep 1; done
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8086/up >/dev/null && break; sleep 1; done
@@ -141,6 +144,8 @@ jobs:
           if PGPASSWORD=ci-own-board-only psql -h 127.0.0.1 -U pitacco_core_own_board -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.orders'; then exit 1; fi
           if PGPASSWORD=ci-own-print-only psql -h 127.0.0.1 -U pitacco_core_own_print -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.print_jobs'; then exit 1; fi
           python3 tests/actions-smoke.py
+          sed -E '/^[[:space:]]*(begin|commit);[[:space:]]*$/Id' ../core-source/web/supabase/015_advanced_print_routing.sql >/tmp/core-original-print-routing.sql
+          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f tests/print-routing-smoke.sql
       - name: Validar sessão autenticada do entregador e autorização GPS
         working-directory: backend
         env:

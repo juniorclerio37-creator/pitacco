@@ -66,6 +66,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/auth/logout',[CoreAuthController::class,'logout']);
             Route::get('/stores/{store}/own-logistics/{resource}',OwnBoardLogisticsController::class)->whereUuid('store')->whereIn('resource',['deliveries','couriers','positions','ifood-deliveries']);
             Route::post('/stores/{store}/print-device/{operation}',OwnPrintDeviceController::class)->whereUuid('store')->whereIn('operation',['status','ping','switch','unbind']);
+            Route::match(['GET','PUT'],'/stores/{store}/print-preferences',[OwnPrintQueueController::class,'preferences'])->whereUuid('store');
             Route::post('/stores/{store}/unified-print/{operation}',[OwnPrintQueueController::class,'unified'])->whereUuid('store')->whereIn('operation',['bind','claim','ack']);
             Route::post('/stores/{store}/own-print/{operation}',OwnPrintQueueController::class)->whereUuid('store')->whereIn('operation',['bind','claim','ack']);
             Route::post('/stores/{store}/orders/{order}/ifood-reprint',[OwnPrintController::class,'ifood'])->whereUuid(['store','order']);
