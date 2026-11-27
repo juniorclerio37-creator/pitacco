@@ -24,6 +24,8 @@ declare result jsonb;
 begin
  if not core_auth.can_act(s) then raise exception 'Escopo não autorizado' using errcode='42501';end if;
  if device is null or device='00000000-0000-0000-0000-000000000000' then raise exception 'Dispositivo inválido' using errcode='22023';end if;
+ -- Serialize all experimental queue/device operations for this store.
+ perform 1 from public.stores where id=s for update;
  if op='bind' then
   perform public.bind_print_device(s,device);
   return jsonb_build_object('bound',true);
@@ -49,3 +51,36 @@ begin
 end $fn$;
 revoke all on function core_auth.own_print_queue_fixture(uuid,text,uuid,uuid,text,text) from public,anon,authenticated;
 grant execute on function core_auth.own_print_queue_fixture(uuid,text,uuid,uuid,text,text) to pitacco_core_own_print;
+
+-- CI only: reuse original switch, unbind and presence functions. The
+-- expected device prevents stale commands from moving another device's queue.
+create function core_auth.own_print_device_fixture(s uuid,op text,device uuid,expected uuid) returns jsonb
+language plpgsql security definer set search_path='' as $fn$
+declare current_device uuid; result jsonb;
+begin
+ if not core_auth.can_act(s) then raise exception 'Escopo não autorizado' using errcode='42501';end if;
+ perform 1 from public.stores where id=s for update;
+ select d.device_id into current_device from public.print_devices d where d.store_id=s;
+ if op='status' then
+  return public.pitacco_windows_connection(s)||jsonb_build_object('bound_device_id',current_device);
+ end if;
+ if device is null or device='00000000-0000-0000-0000-000000000000' then raise exception 'Dispositivo inválido' using errcode='22023';end if;
+ if op='ping' then return public.pitacco_windows_ping(s,device);end if;
+ if op not in ('switch','unbind') then raise exception 'Operação inválida' using errcode='22023';end if;
+ if current_device is distinct from expected then raise exception 'Vínculo mudou' using errcode='22023';end if;
+ if op='switch' and current_device=device then return jsonb_build_object('bound',true);end if;
+ if op='unbind' and current_device is distinct from device then raise exception 'Dispositivo não autorizado' using errcode='42501';end if;
+ -- Additional conservative guard for errors as well as claimed/saved/uncertain.
+ -- A failed spooler job is not proof that no paper was emitted.
+ if current_device is not null and exists(select 1 from public.print_jobs j where j.store_id=s and j.device_id=current_device and j.state<>'submitted') then
+  raise exception 'Trabalhos não conciliados' using errcode='22023';
+ end if;
+ if op='switch' then
+  perform public.pitacco_switch_print_device(s,device);
+  return jsonb_build_object('bound',true);
+ end if;
+ perform public.pitacco_unbind_print_device(s,device);
+ return jsonb_build_object('unbound',true);
+end $fn$;
+revoke all on function core_auth.own_print_device_fixture(uuid,text,uuid,uuid) from public,anon,authenticated;
+grant execute on function core_auth.own_print_device_fixture(uuid,text,uuid,uuid) to pitacco_core_own_print;

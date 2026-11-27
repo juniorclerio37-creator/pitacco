@@ -88,6 +88,7 @@ jobs:
           npm ci --prefix web/tests/backend
           npm install --prefix web/tests/backend --no-save --package-lock=false pg@8.16.3
           node web/tests/backend/run.mjs
+          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f core-source/web/supabase/032_single_print_computer.sql
       - name: Preparar cadastros fictícios e permissões específicas
         run: |
           hash=$(php -r 'echo password_hash("fixture-only-password", PASSWORD_BCRYPT, ["cost"=>12]);')
@@ -127,7 +128,10 @@ jobs:
           settings_server=$!
           CORE_REDIS_PREFIX=pitacco_core_own_board_ci: php artisan serve --host=127.0.0.1 --port=8087 >/tmp/core-own-board.log 2>&1 &
           board_server=$!
-          trap 'kill "$server" "$report_server" "$pdv_server" "$settings_server" "$board_server" 2>/dev/null || true; cat /tmp/core-actions.log /tmp/core-report.log /tmp/core-pdv.log /tmp/core-store-settings.log /tmp/core-own-board.log' EXIT
+          CORE_REDIS_PREFIX=pitacco_core_print_device_ci: php artisan serve --host=127.0.0.1 --port=8088 >/tmp/core-print-device.log 2>&1 &
+          print_device_server=$!
+          trap 'kill "$server" "$report_server" "$pdv_server" "$settings_server" "$board_server" "$print_device_server" 2>/dev/null || true; cat /tmp/core-actions.log /tmp/core-report.log /tmp/core-pdv.log /tmp/core-store-settings.log /tmp/core-own-board.log /tmp/core-print-device.log' EXIT
+          for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8088/up >/dev/null && break; sleep 1; done
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8087/up >/dev/null && break; sleep 1; done
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8086/up >/dev/null && break; sleep 1; done
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8085/up >/dev/null && break; sleep 1; done

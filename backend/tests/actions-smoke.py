@@ -130,6 +130,40 @@ call(queue+'ack',200,'POST',ack,alice)
 assert sql("select state from public.print_jobs where id='"+job+"'")=='submitted'
 assert job not in {j['id'] for j in call(queue+'claim',200,'POST',{'device_id':dev},alice)['data']['jobs']}
 print('PASS: original device binding, queue claim/replay, uncertain state and submitted terminal acknowledgement')
+# Separate test quota; keep the same authenticated sessions and database.
+device_base='http://127.0.0.1:8088/api/v1'
+BASE=device_base
+dp='/stores/'+A+'/print-device/'
+call(dp+'status',401,'POST',{})
+call(dp+'status',404,'POST',{},bob)
+call(dp.replace(A,B)+'status',404,'POST',{},alice)
+info=call(dp+'status',200,'POST',{},alice)['data']
+assert info['bound_device_id']==dev and info['printer_computer_bound'] is True
+assert call(dp+'ping',200,'POST',{'device_id':dev},alice)['data']['received'] is True
+info=call(dp+'status',200,'POST',{},alice)['data']
+assert info['status']=='connected' and info['bound_computer_connected'] is True
+assert info['automatic_print_tested'] is False and info['installation_confirmed'] is False
+switch={'device_id':other_dev,'expected_device_id':dev}
+call(dp+'switch',409,'POST',switch,alice)
+call(dp+'unbind',409,'POST',{'device_id':dev,'expected_device_id':dev},alice)
+assert call(dp+'status',200,'POST',{},alice)['data']['bound_device_id']==dev
+# Mark remaining jobs as submitted only in the synthetic fixture.
+BASE=board_base
+for j in jobs:
+    if j['id']!=job:call(queue+'ack',200,'POST',{'device_id':dev,'job_id':j['id'],'state':'submitted'},alice)
+BASE=device_base
+call(dp+'switch',409,'POST',switch|{'expected_device_id':None},alice)
+assert call(dp+'switch',200,'POST',switch,alice)['data']['bound'] is True
+call(dp+'switch',409,'POST',switch,alice)
+assert call(dp+'status',200,'POST',{},alice)['data']['bound_device_id']==other_dev
+call(dp+'unbind',409,'POST',{'device_id':dev,'expected_device_id':dev},alice)
+assert call(dp+'unbind',200,'POST',{'device_id':other_dev,'expected_device_id':other_dev},alice)['data']['unbound'] is True
+assert call(dp+'status',200,'POST',{},alice)['data']['bound_device_id'] is None
+assert call(dp+'switch',200,'POST',{'device_id':dev,'expected_device_id':None},alice)['data']['bound'] is True
+sql("update public.pitacco_windows_presence set last_seen_at=now()-interval '5 minutes' where store_id='"+A+"'")
+assert call(dp+'status',200,'POST',{},alice)['data']['status']=='offline'
+print('PASS: original Windows presence, guarded switch, stale command, pending job protection and unbind')
+BASE=board_base
 BASE=board_actions_base
 print('PASS: original own-order reprint queue, fixed request id, two copies, role and tenant isolation')
 assert sql("select count(*) from public.operation_audit where order_id='"+oid(1)+"' and action='accepted'")=='1'
@@ -465,6 +499,9 @@ print('PASS: Fiado configuration, existing customer identity, approval mode and 
 call(fiado,404,token=alice)
 print('PASS: original Fiado manager overview, role and store isolation, revoked membership')
 
+BASE=device_base
+call(dp+'status',404,'POST',{},alice)
+call(dp+'ping',404,'POST',{'device_id':dev},alice)
 BASE=board_base
 call(queue+'claim',404,'POST',{'device_id':dev},alice)
 call(reprint,404,'POST',rp,alice)
