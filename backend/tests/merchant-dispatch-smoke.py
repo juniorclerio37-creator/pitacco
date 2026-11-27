@@ -122,7 +122,40 @@ assert sql("select (departed_at is null)::text from public.delivery_batches wher
 call(market_path,200,{'action':'remove','expected_courier_id':second},owner)
 call('/stores/'+s+'/dispatch/deliveries/'+mixed_delivery,200,{'action':'remove','expected_courier_id':second},owner)
 assert sql("select (completed_at is not null)::text from public.delivery_batches where id='"+mixed_route+"'")=='true'
+# Reassign the two synthetic stops to the authenticated courier, now test local
+# collection and departure separately from the provider.
+base='http://127.0.0.1:8095/api/v1'
+sql("update public.courier_positions set observed_at=now() where courier_id='"+cid+"'")
+route2=call(mixed_path,200,mixed_body|{'courier_id':cid},owner)['data']['route_id']
+driver_route='/courier/ifood-route'
+depart={'action':'depart_group','route_id':route2}
+collect_market={'action':'collect','delivery_id':market_delivery}
+call(driver_route,401,depart)
+call(driver_route,403,depart,owner)
+call(driver_route,403,depart|{'route_id':str(uuid.uuid4())},courier)
+call(driver_route,422,depart|{'code':'1234'},courier)
+call(d,403,depart,courier)
+call(driver_route,409,depart,courier)
+call(driver_route,200,collect_market,courier)
+call(driver_route,200,collect_market,courier)
+assert sql("select count(*) from public.operation_audit where action='courier_collected' and details->>'delivery'='"+market_delivery+"'")=='1'
+assert sql("select count(*) from pitacco_private.ifood_courier_dispatch where delivery_id='"+market_delivery+"'")=='0'
+call(driver_route,409,depart,courier)
+call(driver_route,200,{'action':'collect','delivery_id':mixed_delivery},courier)
+assert call(driver_route,200,depart,courier)['data']=={'departed':True,'pending_ifood_dispatch':[market_delivery]}
+assert call(driver_route,200,depart,courier)['data']=={'departed':True,'pending_ifood_dispatch':[market_delivery]}
+assert sql("select count(*) from public.deliveries where batch_id='"+route2+"' and status='retirada'")=='2'
+assert sql("select count(*) from public.operation_audit where action='route_departed' and details->>'route'='"+route2+"'")=='1'
+assert sql("select receipt->>'ifood_status' from public.orders where id='"+market_order+"'")=='CONFIRMED'
+assert sql("select count(*) from pitacco_private.ifood_courier_dispatch where delivery_id='"+market_delivery+"'")=='0'
+call(driver_route,409,collect_market,courier)
+# Dispose of this synthetic route only, simulating official cancellation locally
+# for the independent test; no provider communication.
+sql("update public.orders set receipt=receipt||'{\"ifood_status\":\"CANCELLED\"}'::jsonb,status='cancelled' where id='"+market_order+"'")
 sql("update public.orders set status='cancelled' where id='"+mixed_order+"'")
+sql("update public.courier_positions set observed_at=now()-interval '3 minutes' where courier_id='"+cid+"'")
+base='http://127.0.0.1:8094/api/v1'
+print('PASS: mixed route collection and local departure, replay, all stops collected, pending iFood dispatch only')
 print('PASS: mixed local route, readiness, stale GPS, audited manual capacity override, Shipping hold, atomic rejection, no official dispatch')
 # End this independent synthetic fixture so the original scheduler's fail-closed
 # marketplace scope and the own-order grouping tests are unaffected.

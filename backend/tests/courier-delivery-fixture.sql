@@ -105,3 +105,49 @@ create role pitacco_core_courier_delivery login password 'ci-courier-delivery-on
 grant usage on schema core_auth to pitacco_core_courier_delivery;
 grant execute on function core_auth.courier_delivery_fixture(text,uuid,text) to pitacco_core_courier_delivery;
 
+
+-- CI only: local iFood/mixed route collection and departure.
+-- Return pending dispatch IDs, never claim a provider lease or mark DISPATCHED.
+create function core_auth.courier_ifood_route_fixture(a text,target uuid) returns jsonb
+language plpgsql security definer set search_path='' as $fn$
+declare b public.delivery_batches%rowtype; result jsonb; rid uuid;
+begin
+ perform core_auth.courier_shift_fixture('ready');
+ if a='collect' then
+  select d.batch_id into rid from public.deliveries d where d.id=target;
+ elsif a='depart_group' then rid:=target;
+ else raise exception 'Ação inválida' using errcode='22023';end if;
+ select x.* into b from public.delivery_batches x
+ join public.couriers c on c.id=x.courier_id and c.user_id=auth.uid() and c.active and c.store_id=x.store_id and c.fleet_type='propria'
+ join core_auth.memberships m on m.user_id=c.user_id and m.store_id=x.store_id and m.active and m.role='courier'
+ join core_auth.stores st on st.id=m.store_id and st.active where x.id=rid;
+ if not found then raise exception 'Rota não autorizada' using errcode='42501';end if;
+ perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(b.store_id::text,13));
+ select * into b from public.delivery_batches where id=rid for update;
+ perform 1 from public.deliveries d where d.batch_id=rid order by d.id for update;
+ if not exists(select 1 from public.deliveries d where d.batch_id=rid and d.source='ifood' and d.status not in ('cancelada','entregue')) or exists(
+ select 1 from public.deliveries d left join public.orders o on o.id=d.order_id and o.store_id=d.store_id
+ where d.batch_id=rid and (d.store_id is distinct from b.store_id or d.courier_id is distinct from b.courier_id or d.logistics_provider is distinct from 'loja' or d.source not in ('proprio','ifood') or o.source is distinct from d.source)
+ ) then raise exception 'Rota exige integração específica' using errcode='42501';end if;
+ if b.completed_at is not null then raise exception 'Rota encerrada' using errcode='22023';end if;
+ if b.departed_at is null and exists(
+ select 1 from public.deliveries d join public.orders o on o.id=d.order_id and o.store_id=d.store_id
+ where d.batch_id=rid and d.status<>'cancelada' and (o.status<>'accepted' or o.preparation_status<>'ready' or d.capacity_released_at is not null or coalesce(d.external_delivery_status,'') in ('SHIPPING_REQUESTING','SHIPPING_SUBMITTED','SHIPPING_UNCERTAIN') or (d.source='ifood' and (coalesce(o.receipt->>'ifood_status','') not in ('CONFIRMED','READY_TO_PICKUP') or coalesce(o.receipt->>'ifood_manual_cancel','')='requested')))
+ ) then raise exception 'Pedido não está liberado' using errcode='22023';end if;
+ if a='collect' then
+  if b.departed_at is not null or not exists(select 1 from public.deliveries d where d.id=target and d.batch_id=rid and d.status in ('atribuida','aceita')) then raise exception 'Coleta indisponível' using errcode='22023';end if;
+  perform public.pitacco_driver_collect(target);
+  return jsonb_build_object('collected',true);
+ end if;
+ if b.departed_at is null then
+  if exists(select 1 from public.deliveries d where d.batch_id=rid and d.status<>'cancelada' and (d.status<>'aceita' or d.collected_at is null)) then raise exception 'Confirme todas as coletas' using errcode='22023';end if;
+  perform public.pitacco_driver_depart(rid);
+ end if;
+ select coalesce(jsonb_agg(d.id order by d.id),'[]'::jsonb) into result
+ from public.deliveries d join public.orders o on o.id=d.order_id and o.store_id=d.store_id
+ where d.batch_id=rid and d.source='ifood' and d.status='retirada' and d.collected_at is not null and o.status='accepted'
+ and coalesce(o.receipt->>'ifood_status','') in ('CONFIRMED','READY_TO_PICKUP');
+ return jsonb_build_object('departed',true,'pending_ifood_dispatch',result);
+end $fn$;
+revoke all on function core_auth.courier_ifood_route_fixture(text,uuid) from public,anon,authenticated;
+grant execute on function core_auth.courier_ifood_route_fixture(text,uuid) to pitacco_core_courier_delivery;

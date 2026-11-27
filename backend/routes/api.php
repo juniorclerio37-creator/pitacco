@@ -58,6 +58,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware(['throttle:60,1',CoreBearerSession::class])->group(function () {
             Route::post('/courier/shift',CourierShiftController::class);
             Route::post('/courier/payments',CourierPaymentController::class);
+            Route::post('/courier/ifood-route',[CourierDeliveryController::class,'ifoodRoute']);
             Route::post('/courier/delivery',CourierDeliveryController::class);
             Route::post('/realtime/auth',RealtimeAuthorizationController::class);
             Route::get('/auth/me',[CoreAuthController::class,'me']);

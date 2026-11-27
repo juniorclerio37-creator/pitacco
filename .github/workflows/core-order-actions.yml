@@ -186,7 +186,10 @@ jobs:
           server=$!
           CORE_REDIS_PREFIX=pitacco_core_own_logistics_ci: php artisan serve --host=127.0.0.1 --port=8094 >/tmp/core-own-logistics.log 2>&1 &
           logistics_server=$!
-          trap 'kill "$server" "$logistics_server" 2>/dev/null || true; cat /tmp/core-group.log /tmp/core-own-logistics.log' EXIT
+          CORE_REDIS_PREFIX=pitacco_core_mixed_driver_ci: php artisan serve --host=127.0.0.1 --port=8095 >/tmp/core-mixed-driver.log 2>&1 &
+          mixed_driver_server=$!
+          trap 'kill "$server" "$logistics_server" "$mixed_driver_server" 2>/dev/null || true; cat /tmp/core-group.log /tmp/core-own-logistics.log /tmp/core-mixed-driver.log' EXIT
+          for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8095/up >/dev/null && break; sleep 1; done
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8094/up >/dev/null && break; sleep 1; done
           if PGPASSWORD=ci-own-logistics-only psql -h 127.0.0.1 -U pitacco_core_own_logistics -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.deliveries'; then exit 1; fi
           if PGPASSWORD=ci-own-logistics-only psql -h 127.0.0.1 -U pitacco_core_own_logistics -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.couriers'; then exit 1; fi
