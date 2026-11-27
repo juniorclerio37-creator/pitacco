@@ -43,8 +43,8 @@ final class CourierDeliveryController
     {
         abort_unless(app()->environment('testing')&&config('pitacco.courier_delivery_enabled'),404);
         $data=$request->validate([
-            'action'=>['required','in:collect,depart_group'],
-            'delivery_id'=>['required_if:action,collect','prohibited_unless:action,collect','nullable','uuid'],
+            'action'=>['required','in:collect,depart_group,arrive,confirm_payment,verify_ready'],
+            'delivery_id'=>['required_unless:action,depart_group','prohibited_if:action,depart_group','nullable','uuid'],
             'route_id'=>['required_if:action,depart_group','prohibited_unless:action,depart_group','nullable','uuid'],
         ]);
         if(array_diff(array_keys($request->all()),array_keys($data)))throw ValidationException::withMessages(['request'=>'Campos não suportados.']);

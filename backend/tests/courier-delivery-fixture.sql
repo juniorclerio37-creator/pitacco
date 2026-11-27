@@ -110,9 +110,30 @@ grant execute on function core_auth.courier_delivery_fixture(text,uuid,text) to 
 -- Return pending dispatch IDs, never claim a provider lease or mark DISPATCHED.
 create function core_auth.courier_ifood_route_fixture(a text,target uuid) returns jsonb
 language plpgsql security definer set search_path='' as $fn$
-declare b public.delivery_batches%rowtype; result jsonb; rid uuid;
+declare b public.delivery_batches%rowtype; result jsonb; rid uuid; d public.deliveries%rowtype; o public.orders%rowtype; payment jsonb;
 begin
  perform core_auth.courier_shift_fixture('ready');
+ if a in ('arrive','confirm_payment','verify_ready') then
+  select x.* into d from public.deliveries x
+  join public.couriers c on c.id=x.courier_id and c.active and c.user_id=auth.uid() and c.store_id=x.store_id and c.fleet_type='propria'
+  join core_auth.memberships m on m.user_id=c.user_id and m.store_id=x.store_id and m.active and m.role='courier'
+  join core_auth.stores st on st.id=m.store_id and st.active
+  where x.id=target and x.source='ifood' and x.logistics_provider='loja' for update of x;
+  if not found then raise exception 'Entrega não autorizada' using errcode='42501';end if;
+  select x.* into o from public.orders x where x.id=d.order_id and x.store_id=d.store_id and x.source='ifood' for update;
+  if not found then raise exception 'Pedido não autorizado' using errcode='42501';end if;
+  if a='verify_ready' and d.status='entregue' then return jsonb_build_object('eligible',false,'delivered',true);end if;
+  if d.status<>'retirada' or d.collected_at is null or o.status<>'accepted' or coalesce(o.receipt->>'ifood_status','')='CANCELLED' then raise exception 'Entrega não está em rota' using errcode='22023';end if;
+  if a='arrive' then
+   result:=public.pitacco_driver_arrive(target);
+   return result||jsonb_build_object('dispatch_confirmed',coalesce(o.receipt->>'ifood_status','')='DISPATCHED');
+  end if;
+  if d.arrived_at is null then raise exception 'Registre a chegada primeiro' using errcode='22023';end if;
+  if a='confirm_payment' then return public.pitacco_driver_confirm_payment(target);end if;
+  payment:=pitacco_private.courier_payment_details(o.receipt,o.gross);
+  if payment->>'state'='collect' then raise exception 'Confirme o recebimento antes do código' using errcode='22023';end if;
+  return jsonb_build_object('eligible',true,'delivered',false);
+ end if;
  if a='collect' then
   select d.batch_id into rid from public.deliveries d where d.id=target;
  elsif a='depart_group' then rid:=target;

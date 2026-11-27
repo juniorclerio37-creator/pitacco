@@ -5,8 +5,8 @@ const UUID=/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 export function createIfoodRoute({actor,token,legacyClient,driverAction,fetcher=globalThis.fetch}){
  if(!UUID.test(actor??'')||typeof token!=='string'||!token||typeof legacyClient?.auth?.getUser!=='function'||typeof driverAction!=='function')throw new TypeError('Sessão do entregador inválida.');
  let active=true,busy=false;
- const abort=new AbortController(),attempted=new Map();
- function stop(){active=false;token='';abort.abort();attempted.clear();}
+ const abort=new AbortController(),attempted=new Map(),arrivalAttempts=new Map(),verificationUncertain=new Set();
+ function stop(){active=false;token='';abort.abort();attempted.clear();arrivalAttempts.clear();verificationUncertain.clear();}
  async function identity(){
   if(!active)throw Error('Sessão encerrada.');
   const {data,error}=await legacyClient.auth.getUser();
@@ -69,5 +69,59 @@ export function createIfoodRoute({actor,token,legacyClient,driverAction,fetcher=
    return {departed:true,outcomes};
   });
  }
- return {collect,depart,stop};
+ function arrive(delivery){
+  return run(async()=>{
+   if(!UUID.test(delivery??''))throw Error('Entrega inválida.');
+   const data=await core({action:'arrive',delivery_id:delivery});
+   if(!data.arrived_at||typeof data.dispatch_confirmed!=='boolean')throw Error('Chegada não confirmada.');
+   const key=delivery.toLowerCase();
+   if(['submitted','confirmed'].includes(data.provider_state))return {arrived:true,provider_state:data.provider_state};
+   if(!data.dispatch_confirmed)return {arrived:true,provider_state:'pending_dispatch'};
+   if(arrivalAttempts.has(key))return {arrived:true,provider_state:arrivalAttempts.get(key)};
+   try{await identity();}catch{if(!active)throw Error('Sessão encerrada.');return {arrived:true,provider_state:'pending'};}
+   arrivalAttempts.set(key,'uncertain');
+   try{
+    const result=await driverAction(delivery,'arrival');
+    if(!active)throw Error('Sessão encerrada.');
+    const state=['submitted','confirmed'].includes(result?.provider_state)?result.provider_state:'uncertain';
+    arrivalAttempts.set(key,state);
+    return {arrived:true,provider_state:state};
+   }catch{if(!active)throw Error('Sessão encerrada.');return {arrived:true,provider_state:'uncertain'};}
+  });
+ }
+ function confirmPayment(delivery){
+  return run(async()=>{
+   if(!UUID.test(delivery??''))throw Error('Entrega inválida.');
+   const data=await core({action:'confirm_payment',delivery_id:delivery});
+   if(data.state!=='paid'||data.received_by_courier!==true)throw Error('Recebimento não confirmado.');
+   return data;
+  });
+ }
+ function verify(delivery,code){
+  return run(async()=>{
+   if(!UUID.test(delivery??'')||typeof code!=='string'||!/^[0-9]{4}$/.test(code))throw Error('Informe os quatro dígitos do código iFood.');
+   const data=await core({action:'verify_ready',delivery_id:delivery});
+   if(data.delivered===true)return {state:'already_delivered'};
+   if(data.eligible!==true||data.delivered!==false)throw Error('Entrega não liberada.');
+   const key=delivery.toLowerCase();
+   if(verificationUncertain.has(key))return {state:'uncertain'};
+   await identity();
+   verificationUncertain.add(key);
+   try{
+    const result=await driverAction(delivery,'verify',code);
+    if(!active)throw Error('Sessão encerrada.');
+    // Only provider verification plus persisted completion constitutes success.
+    if(result?.verified===true&&result?.delivered===true)return {state:'verified'};
+    return {state:'uncertain'};
+   }catch(error){
+    if(!active)throw Error('Sessão encerrada.');
+    if(error?.providerState==='invalid_code'){
+     verificationUncertain.delete(key);
+     return {state:'invalid_code'};
+    }
+    return {state:'uncertain'};
+   }
+  });
+ }
+ return {collect,depart,arrive,confirmPayment,verify,stop};
 }

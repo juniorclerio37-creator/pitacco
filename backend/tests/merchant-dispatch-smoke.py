@@ -149,6 +149,30 @@ assert sql("select count(*) from public.operation_audit where action='route_depa
 assert sql("select receipt->>'ifood_status' from public.orders where id='"+market_order+"'")=='CONFIRMED'
 assert sql("select count(*) from pitacco_private.ifood_courier_dispatch where delivery_id='"+market_delivery+"'")=='0'
 call(driver_route,409,collect_market,courier)
+# Local arrival, COD confirmation and provider verification eligibility.
+arrival={'action':'arrive','delivery_id':market_delivery}
+eligibility={'action':'verify_ready','delivery_id':market_delivery}
+payment={'action':'confirm_payment','delivery_id':market_delivery}
+call(driver_route,403,arrival,owner)
+call(driver_route,403,arrival|{'delivery_id':mixed_delivery},courier)
+call(driver_route,409,eligibility,courier)
+call(driver_route,409,payment,courier)
+sql("update public.orders set receipt=receipt||'{\"payment\":\"dinheiro\",\"payment_status\":\"pending\"}'::jsonb where id='"+market_order+"'")
+arrived=call(driver_route,200,arrival,courier)['data']
+assert arrived['arrived_at'] and arrived['provider_state']=='pending' and arrived['dispatch_confirmed'] is False
+assert call(driver_route,200,arrival,courier)['data']==arrived
+assert sql("select count(*) from public.operation_audit where action='courier_arrived' and details->>'delivery'='"+market_delivery+"'")=='1'
+call(driver_route,409,eligibility,courier)
+paid=call(driver_route,200,payment,courier)['data']
+assert paid['state']=='paid' and paid['received_by_courier'] is True
+assert call(driver_route,200,payment,courier)['data']==paid
+assert sql("select count(*) from public.operation_audit where action='courier_payment_received' and details->>'delivery'='"+market_delivery+"'")=='1'
+assert call(driver_route,200,eligibility,courier)['data']=={'eligible':True,'delivered':False}
+# Synthetic official event state only; no provider network or verified PIN.
+sql("update public.orders set receipt=receipt||'{\"ifood_status\":\"DISPATCHED\"}'::jsonb where id='"+market_order+"'")
+assert call(driver_route,200,arrival,courier)['data']['dispatch_confirmed'] is True
+assert sql("select (status='retirada' and delivery_code_verified_at is null)::text from public.deliveries where id='"+market_delivery+"'")=='true'
+print('PASS: local iFood arrival, official dispatch gate, payment collection, repeat and pre-verification without PIN or provider mutation')
 # Dispose of this synthetic route only, simulating official cancellation locally
 # for the independent test; no provider communication.
 sql("update public.orders set receipt=receipt||'{\"ifood_status\":\"CANCELLED\"}'::jsonb,status='cancelled' where id='"+market_order+"'")
