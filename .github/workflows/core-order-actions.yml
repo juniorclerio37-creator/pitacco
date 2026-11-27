@@ -41,6 +41,9 @@ jobs:
       CACHE_STORE: redis
       SESSION_DRIVER: array
       LOG_CHANNEL: stderr
+      PITACCO_DELIVERY_SETTINGS_ENABLED: 'true'
+      CORE_DELIVERY_SETTINGS_DB_USERNAME: pitacco_core_delivery_settings
+      CORE_DELIVERY_SETTINGS_DB_PASSWORD: ci-delivery-settings-only
       PITACCO_MERCHANT_CHECKOUT_ENABLED: 'true'
       CORE_MERCHANT_CHECKOUT_DB_USERNAME: pitacco_core_merchant_checkout
       CORE_MERCHANT_CHECKOUT_DB_PASSWORD: ci-merchant-checkout-only
@@ -95,6 +98,7 @@ jobs:
           test "$(PGPASSWORD=ci-payment-pricing-only psql -h 127.0.0.1 -U pitacco_core_payment_pricing -d postgres -Atc "select has_function_privilege(current_user,'public.pitacco_publish_payment_price(uuid,text,text,bigint)','execute')")" = f
           if PGPASSWORD=ci-payment-publish-only psql -h 127.0.0.1 -U pitacco_core_payment_publish -d postgres -v ON_ERROR_STOP=1 -c 'update pitacco_private.payment_pricing_release set publication_enabled=true'; then exit 1; fi
           test "$(PGPASSWORD=ci-merchant-checkout-only psql -h 127.0.0.1 -U pitacco_core_merchant_checkout -d postgres -Atc "select has_function_privilege(current_user,'public.confirm_manual_payment(uuid,uuid,numeric,text)','execute')")" = f
+          if PGPASSWORD=ci-delivery-settings-only psql -h 127.0.0.1 -U pitacco_core_delivery_settings -d postgres -v ON_ERROR_STOP=1 -c 'update public.pitacco_delivery_pricing set enabled=false'; then exit 1; fi
       - name: Testar operações via Laravel
         working-directory: backend
         run: |

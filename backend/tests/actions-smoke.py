@@ -256,7 +256,41 @@ expired=quote(req,'standard',True)
 call(pdv,409,'POST',sale|{'request_id':req,'sale_mode':'entrega','payment':'cartao_credito','address':'Rua Fixture 789','quote_id':expired},alice)
 assert sql("select count(*) from public.orders where request_id='"+req+"'")=='0'
 print('PASS: original quote handler persisted server-calculated standard and priority quotes in PostgreSQL, merchant checkout, address and request binding, public payment methods, expired quote, idempotency')
+delivery_settings='/stores/'+A+'/delivery/settings'
+call(delivery_settings,401)
+call(delivery_settings,404,token=bob)
+call(delivery_settings.replace(A,B),404,token=alice)
+config=call(delivery_settings,200,token=alice)['data']
+assert config['mode']=='circle' and config['radius_km']==1
+area_time={'min_minutes':40,'max_minutes':60,'priority':{'enabled':True,'fee':9,'min_minutes':20,'max_minutes':30}}
+circle={'mode':'circle','radius_km':2,'distance_fees':[5,6]+[7]*8,'distance_times':[area_time]*10}
+call(delivery_settings,404,'PUT',circle,bob)
+call(delivery_settings,422,'PUT',circle|{'latitude':-22.91},alice)
+call(delivery_settings,422,'PUT',circle|{'radius_km':11},alice)
+invalid=area_time|{'priority':{'enabled':True,'fee':4,'min_minutes':20,'max_minutes':30}}
+call(delivery_settings,409,'PUT',circle|{'distance_times':[invalid]*10},alice)
+assert call(delivery_settings,200,token=alice)['data']==config
+stale_req=str(uuid.uuid4())
+stale_quote=quote(stale_req,'standard')
+saved=call(delivery_settings,200,'PUT',circle,alice)['data']
+assert saved['radius_km']==2 and saved['distance_fees'][:2]==[5,6]
+assert saved['distance_times'][0]['priority']['fee']==9
+assert saved['updated_at']!=config['updated_at']
+call(pdv,409,'POST',sale|{'request_id':stale_req,'sale_mode':'entrega','payment':'cartao_credito','address':'Rua Fixture 789','quote_id':stale_quote},alice)
+regions=[]
+for i in range(7):
+    lat=-22.92+i*.001
+    regions.append({'id':'fixture-'+str(i),'name':'Regiao '+str(i+1),'vertices':[[lat,-43.465],[lat,-43.455],[lat+.006,-43.455],[lat+.006,-43.465]],'fee':5+i, 'min_minutes':40,'max_minutes':60,'priority':{'enabled':True,'fee':15+i,'min_minutes':20,'max_minutes':30}})
+polygons={'mode':'polygons','polygons':regions}
+saved=call(delivery_settings,200,'PUT',polygons,alice)['data']
+assert saved['mode']=='polygons' and len(saved['polygons'])==7
+assert [p['id'] for p in saved['polygons']]==[p['id'] for p in regions]
+assert saved['polygons'][6]['priority']['fee']==21
+assert call(delivery_settings,200,token=alice)['data']==saved
+print('PASS: merchant delivery settings, circle and seven ordered polygons, independent fees and priority, invalidation of old quotes, role isolation')
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
+call(delivery_settings,404,token=alice)
+call(delivery_settings,404,'PUT',circle,alice)
 call(pdv,404,'POST',sale,alice)
 BASE=report_base
 call(publish_path,404,'POST',publication,alice)

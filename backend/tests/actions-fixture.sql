@@ -144,3 +144,14 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 select public.pitacco_save_delivery_zone_times('20000000-0000-4000-8000-000000000001',1,'[5,5,5,5,5,5,5,5,5,5]',(select jsonb_agg('{"min_minutes":40,"max_minutes":60,"priority":{"enabled":true,"fee":9,"min_minutes":20,"max_minutes":30}}'::jsonb) from generate_series(1,10)));
 commit;
+
+-- CI-only delivery settings reader, with explicit field allowlist and live membership.
+create function core_auth.delivery_settings_fixture(s uuid) returns jsonb
+language sql stable security definer set search_path='' as $$
+ select jsonb_build_object('enabled',enabled,'mode',coverage_type,'radius_km',max_radius_km,'distance_fees',distance_fees,'distance_times',distance_times,'polygons',polygons,'updated_at',updated_at)
+ from public.pitacco_delivery_pricing where store_id=s and core_auth.can_act(s)
+$$;
+revoke all on function core_auth.delivery_settings_fixture(uuid) from public,anon,authenticated;
+create role pitacco_core_delivery_settings login password 'ci-delivery-settings-only' nosuperuser nocreatedb nocreaterole nobypassrls;
+grant usage on schema core_auth,auth,public to pitacco_core_delivery_settings;
+grant execute on function core_auth.can_act(uuid),auth.uid(),core_auth.delivery_settings_fixture(uuid),public.pitacco_save_delivery_zone_times(uuid,integer,jsonb,jsonb),public.pitacco_save_delivery_polygons_times(uuid,jsonb) to pitacco_core_delivery_settings;
