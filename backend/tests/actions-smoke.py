@@ -221,6 +221,39 @@ pickup=call(pdv,200,'POST',sale|{'request_id':str(uuid.uuid4()),'sale_mode':'ret
 assert float(pickup['total'])==20
 assert sql("select receipt->>'merchant_sale_mode' from public.orders where id='"+str(uuid.UUID(pickup['order_id']))+"'")=='retirada'
 print('PASS: original PDV and pickup checkout, independent payment methods, idempotency, no early receipt, tenant isolation')
+# Delivery uses the original public channel payment rules, not the counter list.
+def quote(req,service,expired=False):
+    qid=str(uuid.uuid4())
+    fee=9 if service=='priority' else 5
+    min_time,max_time=(20,30) if service=='priority' else (40,60)
+    expiration="- interval '1 minute'" if expired else "+ interval '10 minutes'"
+    sql("insert into public.pitacco_delivery_route_quotes(id,store_id,request_id,destination_address,distance_m,fee,pricing_updated_at,expires_at,destination_latitude,destination_longitude,delivery_min_minutes,delivery_max_minutes,delivery_region,delivery_service) select '"+qid+"',store_id,'"+req+"','Rua Fixture 789',500,"+str(fee)+",updated_at,now()"+expiration+",-22.91,-43.46,"+str(min_time)+","+str(max_time)+",'Centro','"+service+"' from public.pitacco_delivery_pricing where store_id='"+A+"'")
+    return qid
+for i,service in enumerate(['standard','priority']):
+    req=str(uuid.uuid4())
+    qid=quote(req,service)
+    delivery=sale|{'request_id':req,'sale_mode':'entrega','payment':'cartao_credito','phone':'2198888771'+str(i),'address':'Rua Fixture 789','quote_id':qid}
+    call(pdv,422,'POST',delivery|{'sale_mode':'retirada'},alice)
+    call(pdv,422,'POST',delivery|{'quote_id':None},alice)
+    call(pdv,422,'POST',delivery|{'delivery_fee':0},alice)
+    call(pdv,409,'POST',delivery|{'address':'Outro endereço fictício'},alice)
+    call(pdv,409,'POST',delivery|{'request_id':str(uuid.uuid4())},alice)
+    call(pdv,409,'POST',delivery|{'payment':'voucher_vr'},alice)
+    assert sql("select count(*) from public.orders where request_id='"+req+"'")=='0'
+    result=call(pdv,200,'POST',delivery,alice)['data']
+    oid2=str(uuid.UUID(result['order_id']))
+    assert float(result['total'])==(29 if service=='priority' else 25)
+    stored=json.loads(sql("select receipt::text from public.orders where id='"+oid2+"'"))
+    assert stored['merchant_sale_mode']=='entrega' and stored['delivery_service']==service
+    assert float(stored['delivery_fee'])==(9 if service=='priority' else 5)
+    assert call(pdv,200,'POST',delivery,alice)['data']['order_id']==oid2
+    assert sql("select count(*) from public.orders where request_id='"+req+"'")=='1'
+    assert sql("select count(*) from public.manual_payments where order_id='"+oid2+"'")=='0'
+req=str(uuid.uuid4())
+expired=quote(req,'standard',True)
+call(pdv,409,'POST',sale|{'request_id':req,'sale_mode':'entrega','payment':'cartao_credito','address':'Rua Fixture 789','quote_id':expired},alice)
+assert sql("select count(*) from public.orders where request_id='"+req+"'")=='0'
+print('PASS: original merchant delivery, standard and priority fee, address and request binding, public payment methods, expired quote, idempotency')
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
 call(pdv,404,'POST',sale,alice)
 BASE=report_base

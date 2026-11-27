@@ -16,8 +16,8 @@ final class MerchantCheckout
             abort_unless($db->selectOne('select core_auth.can_act(cast(? as uuid)) as allowed',[$store])?->allowed,404);
             // The disposable wrapper calls the original merchant channel checkout.
             // No collected amount, credit account or provider request is accepted.
-            $row=$db->selectOne('select core_auth.merchant_checkout_fixture(cast(? as uuid),cast(? as uuid),cast(? as text),cast(? as text),cast(? as text),cast(? as jsonb),cast(? as text),cast(? as text)) as payload',[
-                $store,$data['request_id'],$data['sale_mode'],$data['customer'],$data['phone'],json_encode($data['items'],JSON_THROW_ON_ERROR),$data['payment'],$data['notes']??''
+            $row=$db->selectOne('select core_auth.merchant_checkout_fixture(cast(? as uuid),cast(? as uuid),cast(? as text),cast(? as text),cast(? as text),cast(? as jsonb),cast(? as text),cast(? as text),cast(? as text),cast(? as uuid)) as payload',[
+                $store,$data['request_id'],$data['sale_mode'],$data['customer'],$data['phone'],json_encode($data['items'],JSON_THROW_ON_ERROR),$data['payment'],$data['notes']??'',$data['address']??'',$data['quote_id']??null
             ]);
             $result=json_decode($row->payload,true,512,JSON_THROW_ON_ERROR);
             if(!is_array($result)||(!isset($result['error'])&&!isset($result['order_id'],$result['total'])))throw new UnexpectedValueException('Invalid merchant checkout result');

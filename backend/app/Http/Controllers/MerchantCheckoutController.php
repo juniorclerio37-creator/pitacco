@@ -14,7 +14,9 @@ final class MerchantCheckoutController
         abort_unless(app()->environment('testing')&&config('pitacco.merchant_checkout_enabled'),404);
         $data=$request->validate([
             'request_id'=>['required','uuid'],
-            'sale_mode'=>['required','in:balcao,retirada'],
+            'sale_mode'=>['required','in:balcao,retirada,entrega'],
+            'address'=>['required_if:sale_mode,entrega','prohibited_unless:sale_mode,entrega','nullable','string','min:5','max:500'],
+            'quote_id'=>['required_if:sale_mode,entrega','prohibited_unless:sale_mode,entrega','nullable','uuid'],
             'customer'=>['required','string','min:2','max:120'],
             'phone'=>['required','string','max:30'],
             'items'=>['required','array','list','min:1','max:30'],

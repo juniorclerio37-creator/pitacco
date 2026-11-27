@@ -106,20 +106,38 @@ grant usage on schema core_auth,auth,public to pitacco_core_payment_publish;
 grant execute on function core_auth.can_act(uuid),auth.uid(),public.pitacco_publish_payment_price(uuid,text,text,bigint) to pitacco_core_payment_publish;
 
 -- Disposable CI only. Explicit scoped wrapper excludes specialized payment flows.
-create function core_auth.merchant_checkout_fixture(s uuid,req uuid,mode text,customer text,phone text,items jsonb,payment text,notes text)
+create function core_auth.merchant_checkout_fixture(s uuid,req uuid,mode text,customer text,phone text,items jsonb,payment text,notes text,address text,quote_id uuid)
 returns jsonb language plpgsql security definer set search_path='' as $$
 begin
  if not core_auth.can_act(s) then raise exception 'Sem permissão' using errcode='42501';end if;
- if mode is null or mode not in ('balcao','retirada') or payment is null or payment not in ('dinheiro','cartao_credito','cartao_debito','cartao_entrega','pix_manual','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket') then
+ if mode is null or mode not in ('balcao','retirada','entrega') or payment is null or payment not in ('dinheiro','cartao_credito','cartao_debito','cartao_entrega','pix_manual','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket') then
  raise exception 'Modalidade não suportada' using errcode='22023';end if;
- return public.pitacco_merchant_channel_checkout(s,req,mode,customer,phone,'',items,payment,notes,'',null,null,null);
+ if mode='entrega' then
+  if quote_id is null or not exists(
+   select 1 from public.pitacco_delivery_route_quotes q
+   join public.pitacco_delivery_pricing p on p.store_id=q.store_id and p.enabled
+   where q.id=quote_id and q.store_id=s and q.request_id=req and q.destination_address=trim(address)
+  ) then raise exception 'Cotação indisponível' using errcode='22023';end if;
+ elsif quote_id is not null or coalesce(trim(address),'')<>'' then
+  raise exception 'Cotação exclusiva para entrega' using errcode='22023';
+ end if;
+ return public.pitacco_merchant_channel_checkout(s,req,mode,customer,phone,coalesce(address,''),items,payment,notes,'',quote_id,null,null);
 end $$;
-revoke all on function core_auth.merchant_checkout_fixture(uuid,uuid,text,text,text,jsonb,text,text) from public,anon,authenticated;
+revoke all on function core_auth.merchant_checkout_fixture(uuid,uuid,text,text,text,jsonb,text,text,text,uuid) from public,anon,authenticated;
 create role pitacco_core_merchant_checkout login password 'ci-merchant-checkout-only' nosuperuser nocreatedb nocreaterole nobypassrls;
 grant usage on schema core_auth,auth to pitacco_core_merchant_checkout;
-grant execute on function core_auth.can_act(uuid),auth.uid(),core_auth.merchant_checkout_fixture(uuid,uuid,text,text,text,jsonb,text,text) to pitacco_core_merchant_checkout;
+grant execute on function core_auth.can_act(uuid),auth.uid(),core_auth.merchant_checkout_fixture(uuid,uuid,text,text,text,jsonb,text,text,text,uuid) to pitacco_core_merchant_checkout;
 begin;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
 select public.pitacco_store_hours_save_v2('20000000-0000-4000-8000-000000000001',(select jsonb_agg(jsonb_build_object('weekday',day,'slot',1,'opens_minute',0,'closes_minute',1440)) from generate_series(1,7) day),false,0,true);
+commit;
+
+-- Synthetic route pricing, never a production geocoder or routing response.
+update public.stores set latitude=-22.91,longitude=-43.46,address='Rua Fixture',city='Nova Iguaçu',state='RJ'
+where id='20000000-0000-4000-8000-000000000001';
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
+select public.pitacco_save_delivery_zone_times('20000000-0000-4000-8000-000000000001',1,'[5,5,5,5,5,5,5,5,5,5]',(select jsonb_agg('{"min_minutes":40,"max_minutes":60,"priority":{"enabled":true,"fee":9,"min_minutes":20,"max_minutes":30}}'::jsonb) from generate_series(1,10)));
 commit;
