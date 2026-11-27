@@ -78,3 +78,19 @@ insert into public.orders(id,store_id,channel,gross,fees,created_at,source,statu
 insert into public.store_payment_receipts(order_id,store_id,amount,recorded_at) values
  ('39000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001',103,'2026-11-16T06:00:00Z'),
  ('39000000-0000-4000-8000-000000000005','20000000-0000-4000-8000-000000000002',900,'2026-11-16T06:00:00Z');
+
+-- Test-only scoped configuration reader; no table access granted to the API role.
+create function core_auth.payment_settings_fixture(p_store uuid) returns jsonb
+language sql stable security definer set search_path='' as $$
+ select jsonb_build_object('payment_methods',payment_methods,'pdv_payment_methods',coalesce(pdv_payment_methods,payment_methods),'pix_instructions',pix_instructions)
+ from public.public_menu_settings where store_id=p_store and core_auth.can_act(p_store)
+$$;
+revoke all on function core_auth.payment_settings_fixture(uuid) from public,anon,authenticated;
+create role pitacco_core_payment_settings login password 'ci-payment-settings-only' nosuperuser nocreatedb nocreaterole nobypassrls;
+grant usage on schema core_auth,auth,public to pitacco_core_payment_settings;
+grant execute on function core_auth.can_act(uuid),auth.uid(),core_auth.payment_settings_fixture(uuid),public.pitacco_save_payment_methods_only(uuid,text[],text[],text) to pitacco_core_payment_settings;
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
+select public.save_public_menu_settings('20000000-0000-4000-8000-000000000001','core-settings-fixture',true,true,true,0,array['dinheiro'],'');
+commit;

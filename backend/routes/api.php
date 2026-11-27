@@ -7,6 +7,7 @@ use App\Http\Controllers\CustomerProfileController;
 use App\Http\Controllers\CustomerWalletController;
 use App\Http\Controllers\FiadoOverviewController;
 use App\Http\Controllers\FinancialReportController;
+use App\Http\Controllers\PaymentSettingsController;
 use App\Http\Controllers\FiadoStatementController;
 use App\Http\Controllers\FiadoManagementController;
 use App\Http\Controllers\CoreAuthController;
@@ -37,6 +38,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/stores/{store}/orders/{order}/actions',OwnOrderActionsController::class)->whereUuid(['store','order']);
             Route::post('/stores/{store}/fiado/settings',FiadoManagementController::class)->whereUuid('store');
             Route::get('/stores/{store}/fiado',FiadoOverviewController::class)->whereUuid('store');
+            Route::match(['get','put'],'/stores/{store}/payments/settings',PaymentSettingsController::class)->whereUuid('store');
             Route::get('/stores/{store}/reports/financial',FinancialReportController::class)->whereUuid('store');
             Route::get('/stores/{store}/context',[CoreAuthController::class,'store'])->whereUuid('store');
         });

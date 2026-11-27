@@ -91,3 +91,6 @@ A rota autenticada `/api/v1/stores/{store}/reports/financial?start=AAAA-MM-DD&en
 
 ## Separação da regressão administrativa
 A primeira execução passou os asserts do relatório e encontrou HTTP 429 nos testes finais de revogação devido ao contador compartilhado de 60 requisições/minuto. A regressão do relatório passa a usar servidor e prefixo Redis próprios, com as mesmas sessões e o mesmo PostgreSQL descartável. A política da API não foi alterada.
+
+## Configuração de pagamentos por canal — experimental
+GET/PUT `/api/v1/stores/{store}/payments/settings` integra a leitura restrita da fixture e a função original `pitacco_save_payment_methods_only`, sem alterar a publicação do cardápio, o Fiado, gateways ou dados de recebimento. Preserva os dez identificadores presenciais e a configuração distinta de cardápio e PDV. Os testes usam somente instruções Pix fictícias, verificam isolamento, duplicidade, métodos não suportados, revogação e ausência de alteração da publicação. APP_ENV=testing, flag desativada por padrão. O leitor fixture e as permissões precisam ser substituídos por contrato de produção verificado antes de publicação.

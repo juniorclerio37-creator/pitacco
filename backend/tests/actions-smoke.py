@@ -126,7 +126,27 @@ current={x['metric']:x for x in call(today_report,200,token=alice)['data']['metr
 assert float(current['recebimentos_fiado']['amount'])==20 and current['recebimentos_fiado']['entries']==2
 assert float(current['recebimentos']['amount'])==0
 print('PASS: original financial aggregates, local calendar, price adjustments once, receipt separation, tenant and role isolation')
+payment_path='/stores/'+A+'/payments/settings'
+call(payment_path,401)
+call(payment_path,404,token=bob)
+call(payment_path.replace(A,B),404,token=alice)
+original=call(payment_path,200,token=alice)['data']
+assert original['payment_methods']==['dinheiro']
+payload={'payment_methods':['pix_manual','cartao_credito'],'pdv_payment_methods':['dinheiro','voucher_vr'],'pix_instructions':'Instrução fictícia'}
+call(payment_path,404,'PUT',payload,bob)
+call(payment_path,422,'PUT',payload|{'payment_methods':['pix_online']},alice)
+call(payment_path,422,'PUT',payload|{'pdv_payment_methods':['dinheiro','dinheiro']},alice)
+call(payment_path,422,'PUT',payload|{'pix_instructions':''},alice)
+call(payment_path,422,'PUT',payload|{'enabled':False},alice)
+snapshot=sql("select concat(slug,':',enabled,':',delivery_enabled,':',pickup_enabled) from public.public_menu_settings where store_id='"+A+"'")
+saved=call(payment_path,200,'PUT',payload,alice)['data']
+assert saved['saved'] is True and saved['payment_methods']==payload['payment_methods'] and saved['pdv_payment_methods']==payload['pdv_payment_methods']
+assert call(payment_path,200,token=alice)['data']==payload
+assert sql("select concat(slug,':',enabled,':',delivery_enabled,':',pickup_enabled) from public.public_menu_settings where store_id='"+A+"'")==snapshot
+print('PASS: separate payment channel settings, original publication preserved, invalid methods and tenant denial')
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
+call(payment_path,404,token=alice)
+call(payment_path,404,'PUT',payload,alice)
 call(report,404,token=alice)
 BASE=actions_base
 call(settings,404,'POST',payment,alice)
