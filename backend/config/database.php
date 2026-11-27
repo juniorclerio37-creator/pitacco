@@ -25,6 +25,7 @@ return [
         'core_payment_settings' => $base + ['username'=>env('CORE_PAYMENT_SETTINGS_DB_USERNAME','pitacco_core_payment_settings'),'password'=>env('CORE_PAYMENT_SETTINGS_DB_PASSWORD')],
         'core_financial_read' => $base + ['username'=>env('CORE_FINANCIAL_DB_USERNAME','pitacco_core_financial_read'),'password'=>env('CORE_FINANCIAL_DB_PASSWORD')],
         'core_fiado_read' => $base + ['username'=>env('CORE_FIADO_DB_USERNAME','pitacco_core_fiado_read'),'password'=>env('CORE_FIADO_DB_PASSWORD')],
+        'core_courier_delivery' => $base + ['username'=>env('CORE_COURIER_DELIVERY_DB_USERNAME','pitacco_core_courier_delivery'),'password'=>env('CORE_COURIER_DELIVERY_DB_PASSWORD')],
         'core_courier_payment' => $base + ['username'=>env('CORE_COURIER_PAYMENT_DB_USERNAME','pitacco_core_courier_payment'),'password'=>env('CORE_COURIER_PAYMENT_DB_PASSWORD')],
         'core_courier_shift' => $base + ['username'=>env('CORE_COURIER_SHIFT_DB_USERNAME','pitacco_core_courier_shift'),'password'=>env('CORE_COURIER_SHIFT_DB_PASSWORD')],
         'core_courier_gps' => $base + ['username'=>env('CORE_COURIER_GPS_DB_USERNAME','pitacco_core_courier_gps'),'password'=>env('CORE_COURIER_GPS_DB_PASSWORD')],

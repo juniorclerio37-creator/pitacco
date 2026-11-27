@@ -9,6 +9,7 @@ use App\Http\Controllers\CourierGpsController;
 use App\Http\Controllers\CourierAssignmentsController;
 use App\Http\Controllers\CourierShiftController;
 use App\Http\Controllers\CourierPaymentController;
+use App\Http\Controllers\CourierDeliveryController;
 use App\Http\Controllers\CustomerProfileController;
 use App\Http\Controllers\CustomerWalletController;
 use App\Http\Controllers\FiadoOverviewController;
@@ -48,6 +49,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware(['throttle:60,1',CoreBearerSession::class])->group(function () {
             Route::post('/courier/shift',CourierShiftController::class);
             Route::post('/courier/payments',CourierPaymentController::class);
+            Route::post('/courier/delivery',CourierDeliveryController::class);
             Route::get('/auth/me',[CoreAuthController::class,'me']);
             Route::post('/auth/logout',[CoreAuthController::class,'logout']);
             Route::get('/stores/{store}/orders',DailyOrdersController::class)->whereUuid('store');
