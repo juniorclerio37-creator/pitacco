@@ -40,3 +40,6 @@ POST `/api/v1/stores/{store}/fiado/settings` permite ativar/desativar a modalida
 
 ## Sessão do perfil V2
 A API experimental mantém o contrato original de salvamento (`session_active`) e consulta (dados do perfil), e integra retomada e encerramento da sessão pelo identificador privado do aparelho. O teste compara integralmente nome e endereços, exige sessão ativa no salvamento e verifica bloqueio de telefone divergente e sessão encerrada. A credencial de aparelho não comprova posse do telefone para acesso financeiro. Uso somente em testing, sem dados reais.
+
+## Aprovação e recebimentos administrativos do Fiado
+As ações explícitas `approve` e `receive` usam as funções originais de decisão e recebimento. O teste cria uma venda de balcão fictícia pelo SQL autorizado, verifica a aprovação manual e a reserva de crédito, registra recebimento parcial e integral e testa a idempotência do pagamento e a revogação de acesso. Nenhuma cobrança externa, transferência ou alteração de dados reais. A autorização pública por PIN e o extrato do cliente não foram implementados nesta etapa.

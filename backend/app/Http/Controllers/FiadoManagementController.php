@@ -10,7 +10,14 @@ final class FiadoManagementController
     public function __invoke(Request $request,string $store,FiadoManagement $service): JsonResponse
     {
         abort_unless(app()->environment('testing') && config('pitacco.fiado_manage_enabled'),404);
-        $data=$request->validate(['action'=>['required','in:toggle,save_customer'],'enabled'=>['required','boolean']]);
+        $data=$request->validate(['action'=>['required','in:toggle,save_customer,approve,receive']]);
+        if(in_array($data['action'],['toggle','save_customer'],true)) $data+=$request->validate(['enabled'=>['required','boolean']]);
+        if($data['action']==='approve') $data+=$request->validate(['order_id'=>['required','uuid'],'approve'=>['required','boolean']]);
+        if($data['action']==='receive') $data+=$request->validate([
+            'customer_id'=>['required','uuid'], 'request_id'=>['required','uuid'],
+            'amount'=>['required','numeric','decimal:0,2','min:0.01','max:100000'],
+            'method'=>['required','in:pix,dinheiro,cartao,outro'], 'note'=>['nullable','string','max:500'],
+        ]);
         if($data['action']==='save_customer'){
             $data=$data+$request->validate([
                 'name'=>['required','string','min:2','max:120'],

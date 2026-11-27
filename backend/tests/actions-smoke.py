@@ -74,7 +74,39 @@ call(settings,422,'POST',customer|{'limit':-1},alice)
 call(settings,422,'POST',customer|{'approval_mode':'other'},alice)
 call(settings,422,'POST',customer|{'used':0},alice)
 assert call(fiado,200,token=alice)['data']['customers'][0]==updated
+# Synthetic credit generated through the original authorized PDV operation.
+import uuid
+call(settings,200,'POST',customer|{'approval_mode':'manual'},alice)
+request_id=str(uuid.uuid4())
+sql("begin; set local role authenticated; select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true); select public.pitacco_fiado_balcao_create('"+A+"','"+cid+"','"+request_id+"','[{\"product_id\":\"31000000-0000-4000-8000-000000000001\",\"quantity\":1,\"options\":[]}]','Fixture'); commit;")
+credit_order=sql("select id from public.orders where store_id='"+A+"' and request_id='"+request_id+"'")
+credit_path='/stores/'+A+'/orders/'+credit_order+'/actions'
+decision={'action':'approve','order_id':credit_order,'approve':True}
+call(settings,404,'POST',decision,bob)
+call(credit_path,409,'POST',{'action':'accept'},alice)
+assert call(settings,200,'POST',decision,alice)['data']['decided'] is True
+assert call(credit_path,200,'POST',{'action':'accept'},alice)['data']['status']=='accepted'
+call(credit_path,200,'POST',{'action':'ready'},alice)
+call(credit_path,200,'POST',{'action':'complete_pickup'},alice)
+assert sql("select state from public.pitacco_fiado_charges where order_id='"+credit_order+"'")=='open'
+payment={'action':'receive','customer_id':cid,'request_id':str(uuid.uuid4()),'amount':8,'method':'pix'}
+call(settings,401,'POST',payment)
+call(settings,404,'POST',payment,bob)
+call(settings,409,'POST',payment|{'amount':21},alice)
+partial=call(settings,200,'POST',payment,alice)['data']
+assert float(partial['remaining'])==12 and partial['duplicate'] is False
+replay=call(settings,200,'POST',payment,alice)['data']
+assert replay['payment_id']==partial['payment_id'] and replay['duplicate'] is True and float(replay['remaining'])==12
+call(settings,409,'POST',payment|{'amount':9},alice)
+last=call(settings,200,'POST',payment|{'request_id':str(uuid.uuid4()),'amount':12,'method':'dinheiro'},alice)['data']
+assert float(last['remaining'])==0
+assert sql("select state from public.pitacco_fiado_charges where order_id='"+credit_order+"'")=='settled'
+assert sql("select count(*) from public.pitacco_fiado_payments where customer_id='"+cid+"'")=='2'
+assert sql("select sum(amount) from public.pitacco_fiado_payments where customer_id='"+cid+"'")=='20.00'
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
+call(settings,404,'POST',payment,alice)
+print('PASS: manual approval, partial settlement, payment idempotency and full settlement')
+
 call(settings,404,'POST',toggle,alice)
 print('PASS: Fiado configuration, existing customer identity, approval mode and revoked access')
 

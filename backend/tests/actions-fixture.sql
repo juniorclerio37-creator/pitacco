@@ -58,3 +58,8 @@ commit;
 create role pitacco_core_fiado_manage login password 'ci-fiado-manage-only' nosuperuser nocreatedb nocreaterole nobypassrls;
 grant usage on schema core_auth,auth,public to pitacco_core_fiado_manage;
 grant execute on function core_auth.can_act(uuid),auth.uid(),public.pitacco_fiado_toggle(uuid,boolean),public.pitacco_fiado_save_customer(uuid,text,text,numeric,boolean,integer,text,boolean) to pitacco_core_fiado_manage;
+
+-- Additional explicit manager-only operations and a synthetic PDV product.
+grant execute on function public.pitacco_fiado_approve(uuid,uuid,boolean),public.pitacco_fiado_receive(uuid,uuid,numeric,text,uuid,text) to pitacco_core_fiado_manage;
+insert into public.products(id,store_id,name,price,cost,menu_active)
+values('31000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','Produto Fiado Fixture',20,5,true);

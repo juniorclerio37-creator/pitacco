@@ -19,6 +19,16 @@ final class FiadoManagement
                 $row=$db->selectOne('select public.pitacco_fiado_toggle(cast(? as uuid),cast(? as boolean)) as enabled',[$store,$data['enabled']?'true':'false']);
                 return ['enabled'=>(bool)$row->enabled];
             }
+            if($data['action']==='approve'){
+                $row=$db->selectOne('select public.pitacco_fiado_approve(cast(? as uuid),cast(? as uuid),cast(? as boolean)) as decided',[$store,$data['order_id'],$data['approve']?'true':'false']);
+                return ['decided'=>(bool)$row->decided];
+            }
+            if($data['action']==='receive'){
+                $row=$db->selectOne('select public.pitacco_fiado_receive(cast(? as uuid),cast(? as uuid),cast(? as numeric),cast(? as text),cast(? as uuid),cast(? as text)) as payload',[
+                    $store,$data['customer_id'],$data['amount'],$data['method'],$data['request_id'],$data['note']??''
+                ]);
+                return json_decode($row->payload,true,512,JSON_THROW_ON_ERROR);
+            }
             $row=$db->selectOne('select public.pitacco_fiado_save_customer(cast(? as uuid),cast(? as text),cast(? as text),cast(? as numeric),cast(? as boolean),cast(? as integer),cast(? as text),cast(? as boolean)) as customer_id',[
                 $store,$data['name'],$data['phone'],$data['limit'],$data['enabled']?'true':'false',$data['due_days'],$data['approval_mode'],$data['block_overdue']?'true':'false'
             ]);
