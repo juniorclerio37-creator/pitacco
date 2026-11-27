@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readCoreMenu,placeCoreOrder,recoverCoreOrder} from '../clients/storefront.mjs';
+import {readCoreMenu,placeCoreOrder,recoverCoreOrder,readCoreSchedule} from '../clients/storefront.mjs';
 const request_id='10000000-0000-4000-8000-000000000001';
 const receipt={order_id:'20000000-0000-4000-8000-000000000001',tracking_token:'30000000-0000-4000-8000-000000000001',total:25};
 const cart=Object.freeze({request_id,payment:'pix_manual',fulfillment:'pickup',items:[]});
@@ -53,4 +53,22 @@ test('offline payment methods are forwarded without substitution; specialized me
  for(const payment of ['fiado','pix_online','cartao_online','unknown']){
    assert.equal((await placeCoreOrder('fixture',{...cart,payment},{fetcher:()=>assert.fail('unexpected request')})).state,'invalid');
  }
+});
+
+test('schedule uses original server slots, preserves offset and rejects invalid data',async()=>{
+ const data={timezone:'America/Sao_Paulo',slots:['2026-11-28T14:00:00-03:00','2026-11-28T14:30:00-03:00']};
+ for(const mode of ['pickup','delivery']){
+  assert.deepEqual(await readCoreSchedule('fixture',mode,{fetcher:async(path,opt)=>{
+   assert.equal(path,'/api/v1/public/menus/fixture/schedule-slots?fulfillment='+mode);
+   assert.equal(opt.method,'GET');assert.equal(opt.cache,'no-store');assert.equal(opt.credentials,'omit');
+   return json(data);
+  }}),{state:'ready',data});
+ }
+ for(const slots of [[data.slots[0],data.slots[0]],data.slots.slice().reverse(),['invalid'],['2026-11-28T17:00:00Z']]){
+   assert.equal((await readCoreSchedule('fixture','pickup',{fetcher:async()=>json({...data,slots})})).state,'retry');
+ }
+ assert.equal((await readCoreSchedule('fixture','pickup',{fetcher:async()=>json({...data,slots:[]})})).state,'ready');
+ assert.equal((await readCoreSchedule('fixture','pickup',{fetcher:async()=>json({},429)})).state,'rate_limited');
+ assert.equal((await readCoreSchedule('fixture','pickup',{fetcher:async()=>{throw Error('offline')}})).state,'retry');
+ assert.equal((await readCoreSchedule('fixture','invalid',{fetcher:()=>assert.fail('unexpected request')})).state,'invalid');
 });

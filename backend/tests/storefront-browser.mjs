@@ -23,6 +23,7 @@ try{
   await page.locator('#track').click();
   await page.getByText('Status: accepted',{exact:true}).waitFor();
   assert.equal(writes,1);
+  await page.unroute('**/api/v1/public/menus/core-checkout-fixture/checkout');
   // Legacy storage key is populated before the Laravel adapter is first used.
   const device=await page.evaluate(async()=>{
     const device=crypto.randomUUID();
@@ -42,6 +43,21 @@ try{
   await page.unroute('**/profile/session');
   assert.equal(await page.evaluate(async()=>{const {customerSession}=await import('/core-homologacao/customer-session.mjs');return (await customerSession('core-checkout-fixture').logout()).state}),'inactive');
   assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-v2-customer-device:core-checkout-fixture')),null);
+  await page.getByText('Cardápio carregado.',{exact:true}).waitFor();
+  await page.locator('#load-schedule').click();
+  await page.getByText('Horários disponíveis.',{exact:true}).waitFor();
+  const slot=await page.locator('#schedule option').nth(1).getAttribute('value');
+  assert.match(slot,/-03:00$/);
+  await page.locator('#schedule').selectOption(slot);
+  await page.locator('#review').click();
+  const responsePromise=page.waitForResponse(r=>r.url().endsWith('/checkout')&&r.request().method()==='POST');
+  await page.locator('#submit').click();
+  const response=await responsePromise;
+  assert.equal(response.status(),200);
+  assert.equal(response.request().postDataJSON().scheduled_for,slot);
+  assert.equal((await response.json()).data.status,'pending');
+  await page.getByRole('heading',{name:'Pedido agendado enviado com sucesso'}).waitFor();
+  assert.equal(await page.locator('#scheduled-notice').isVisible(),true);
   assert.deepEqual(external,[]);
   await page.screenshot({path:'/tmp/core-storefront-homologation.png',fullPage:true});
   console.log('PASS: Chromium storefront, actual Laravel checkout, lost response recovery, tracking, no external requests');

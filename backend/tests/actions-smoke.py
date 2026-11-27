@@ -256,6 +256,7 @@ expired=quote(req,'standard',True)
 call(pdv,409,'POST',sale|{'request_id':req,'sale_mode':'entrega','payment':'cartao_credito','address':'Rua Fixture 789','quote_id':expired},alice)
 assert sql("select count(*) from public.orders where request_id='"+req+"'")=='0'
 print('PASS: original quote handler persisted server-calculated standard and priority quotes in PostgreSQL, merchant checkout, address and request binding, public payment methods, expired quote, idempotency')
+BASE='http://127.0.0.1:8086/api/v1'
 delivery_settings='/stores/'+A+'/delivery/settings'
 call(delivery_settings,401)
 call(delivery_settings,404,token=bob)

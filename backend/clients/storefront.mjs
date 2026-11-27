@@ -57,3 +57,20 @@ export async function recoverCoreOrder(slug,requestId,options={}){
   if(status===429)return state('rate_limited');
   return state('uncertain');
 }
+
+export async function readCoreSchedule(slug,fulfillment,options={}){
+  const path=menuPath(slug);
+  if(!path||!['pickup','delivery'].includes(fulfillment))return state('invalid');
+  const {status,data}=await request(path+'/schedule-slots?fulfillment='+fulfillment,{...options,body:undefined});
+  if(status===429)return state('rate_limited');
+  if(status===404)return state('unavailable');
+  if(status!==200||data?.timezone!=='America/Sao_Paulo'||!Array.isArray(data.slots)||data.slots.length>350)return state('retry');
+  let last=-Infinity;
+  for(const slot of data.slots){
+    if(typeof slot!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}-03:00$/.test(slot))return state('retry');
+    const time=Date.parse(slot);
+    if(!Number.isFinite(time)||time<=last)return state('retry');
+    last=time;
+  }
+  return state('ready',data);
+}

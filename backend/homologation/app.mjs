@@ -1,4 +1,4 @@
-import {readCoreMenu,placeCoreOrder,recoverCoreOrder} from './storefront.mjs';
+import {readCoreMenu,placeCoreOrder,recoverCoreOrder,readCoreSchedule} from './storefront.mjs';
 import {readCoreTracking} from './tracking.mjs';
 const slug='core-checkout-fixture';
 const productId='91000000-0000-0000-0000-000000000003';
@@ -11,7 +11,10 @@ function controls({submit=false,recover=false,retry=false}={}){
   for(const id of ['submit','recover','retry'])$(id).disabled=busy;
 }
 function confirmed(data){
+  const scheduled=Boolean(pending?.scheduled_for);
   receipt=data;pending=null;$('checkout').hidden=true;$('success').hidden=false;
+  $('success-title').textContent=scheduled?'Pedido agendado enviado com sucesso':'Pedido confirmado!';
+  $('scheduled-notice').hidden=!scheduled;
   $('receipt').textContent='Total confirmado: '+money(Number(data.total));message('Pedido de teste registrado.');
 }
 async function load(){
@@ -23,12 +26,24 @@ async function load(){
   $('product').textContent=product.name;$('price').textContent=money(Number(product.price));
   $('menu').hidden=false;message('Cardápio carregado.');
 }
+$('load-schedule').addEventListener('click',async()=>{
+  if(busy||pending||receipt)return;
+  busy=true;$('load-schedule').disabled=true;$('review').disabled=true;
+  $('schedule').replaceChildren(new Option('Pedido imediato',''));
+  const result=await readCoreSchedule(slug,'pickup');
+  if(result.state==='ready'){
+    const format=new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Sao_Paulo'});
+    for(const slot of result.data.slots)$('schedule').add(new Option(format.format(new Date(slot)),slot));
+    message(result.data.slots.length?'Horários disponíveis.':'Nenhum horário disponível.');
+  }else message('Não foi possível consultar os horários. Tente novamente.');
+  busy=false;$('load-schedule').disabled=false;$('review').disabled=false;
+});
 $('review').addEventListener('click',()=>{
   if(pending||busy||receipt)return;
   const quantity=Number($('quantity').value);
   if(!Number.isInteger(quantity)||quantity<1||quantity>5){message('Quantidade inválida.');return;}
-  pending=Object.freeze({request_id:crypto.randomUUID(),customer:'Cliente Navegador Fixture',phone:'21988882222',items:[{product_id:productId,quantity,options:[]}],fulfillment:'pickup',payment:'pix_manual'});
-  $('summary').textContent=quantity+' × '+product.name+' · estimativa '+money(quantity*Number(product.price));
+  pending=Object.freeze({request_id:crypto.randomUUID(),customer:'Cliente Navegador Fixture',phone:'21988882222',items:[{product_id:productId,quantity,options:[]}],fulfillment:'pickup',payment:'pix_manual',...($('schedule').value?{scheduled_for:$('schedule').value}:{})});
+  $('summary').textContent=quantity+' × '+product.name+' · estimativa '+money(quantity*Number(product.price))+(pending.scheduled_for?' · '+$('schedule').selectedOptions[0].text:'');
   $('menu').hidden=true;$('checkout').hidden=false;controls({submit:true});
 });
 async function send(){
