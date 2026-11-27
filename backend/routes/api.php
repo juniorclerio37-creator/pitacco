@@ -2,6 +2,7 @@
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\PublicMenuController;
 use App\Http\Controllers\PublicScheduleController;
+use App\Http\Controllers\PublicStoreStateController;
 use App\Http\Controllers\PublicCheckoutController;
 use App\Http\Controllers\PublicTrackingController;
 use App\Http\Controllers\CustomerProfileController;
@@ -26,6 +27,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/menus/{slug}', PublicMenuController::class)
         ->where('slug', '[a-z0-9][a-z0-9-]{0,119}')
         ->middleware('throttle:public-menu');
+    Route::get('/public/menus/{slug}/{resource}',PublicStoreStateController::class)->where('slug','[a-z0-9][a-z0-9-]{0,119}')->whereIn('resource',['opening','payment-prices'])->middleware('throttle:public-menu');
     Route::get('/public/menus/{slug}/schedule-slots',PublicScheduleController::class)->where('slug','[a-z0-9][a-z0-9-]{0,119}')->middleware('throttle:public-menu');
     Route::post('/public/menus/{slug}/checkout',[PublicCheckoutController::class,'place'])->where('slug','[a-z0-9][a-z0-9-]{0,119}')->middleware('throttle:core-checkout');
     Route::post('/public/menus/{slug}/checkout/recovery',[PublicCheckoutController::class,'recover'])->where('slug','[a-z0-9][a-z0-9-]{0,119}')->middleware('throttle:core-checkout');

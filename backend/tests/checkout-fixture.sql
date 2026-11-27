@@ -91,3 +91,6 @@ grant execute on function public.pitacco_fiado_verify_pin(text,text,text,uuid),p
 
 -- Existing read-only menu role can only query the original public slot list.
 grant execute on function public.pitacco_public_schedule_slots(text,text) to pitacco_core_menu;
+
+-- Read-only projections, no access to private drafts or write methods.
+grant execute on function public.pitacco_public_store_open(text),public.pitacco_public_payment_price_rules(text) to pitacco_core_menu;

@@ -81,3 +81,14 @@ export async function readCoreScheduleRpc(args,options={}){
   const result=await readCoreSchedule(args.p_slug,args.p_fulfillment,options);
   return result.state==='ready'?{data:result.data.slots,error:null}:{data:null,error:{code:result.state}};
 }
+
+export async function readCoreStoreStateRpc(name,args,options={}){
+  const resource=name==='pitacco_public_store_open'?'opening':name==='pitacco_public_payment_price_rules'?'payment-prices':null;
+  const path=menuPath(args?.p_slug);
+  if(!resource||!path||Object.keys(args).join(',')!=='p_slug')return {data:null,error:{code:'invalid'}};
+  const {status,data}=await request(path+'/'+resource,{...options,body:undefined});
+  if(status!==200||!data||typeof data!=='object'||Array.isArray(data))return {data:null,error:{code:status===429?'rate_limited':status===404?'unavailable':'retry'}};
+  if(resource==='opening'&&typeof data.open!=='boolean')return {data:null,error:{code:'retry'}};
+  if(resource==='payment-prices'&&Object.values(data).some(r=>!Number.isSafeInteger(r?.adjustment_bps)||!Number.isSafeInteger(r?.revision)))return {data:null,error:{code:'retry'}};
+  return {data,error:null};
+}

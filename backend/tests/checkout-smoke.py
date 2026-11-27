@@ -37,6 +37,24 @@ def slots(slug,fulfillment,expected=200):
         assert res.status==expected,(res.status,expected,raw[:300])
         if expected==200:assert 'no-store' in res.headers.get('Cache-Control','')
         return json.loads(raw)
+def projection(slug,resource,expected=200):
+    req=urllib.request.Request(BASE+slug+'/'+resource,headers={'Accept':'application/json'})
+    try:res=urllib.request.urlopen(req,timeout=12)
+    except urllib.error.HTTPError as e:res=e
+    with res:
+        raw=res.read()
+        assert res.status==expected,(resource,res.status,expected,raw[:300])
+        if expected==200:assert 'no-store' in res.headers.get('Cache-Control','')
+        return json.loads(raw)
+opening=projection(SLUG,'opening')['data']
+assert opening['open'] is True and opening['accepts_scheduled'] is True
+original=json.loads(sql("select public.pitacco_public_store_open('core-checkout-fixture')::text"))
+assert opening=={k:v for k,v in original.items() if k in ['open','reason','paused','accepts_scheduled','scheduling_available','next_open_at','weekly_periods','configured','timezone']}
+assert 'weekly_periods' in opening and len(opening['weekly_periods'])==7
+projection('other-store','opening',404)
+assert projection(SLUG,'payment-prices')['data']==json.loads(sql("select public.pitacco_public_payment_price_rules('core-checkout-fixture')::text"))
+assert projection('other-store','payment-prices')['data']=={}
+print('PASS: original public opening status and active payment rules, same SQL projections and no private drafts')
 available=slots(SLUG,'pickup')['data']
 assert available['timezone']=='America/Sao_Paulo' and available['slots']
 dates=[datetime.datetime.fromisoformat(t) for t in available['slots']]

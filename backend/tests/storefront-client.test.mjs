@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readCoreMenu,placeCoreOrder,recoverCoreOrder,readCoreSchedule,readCoreScheduleRpc} from '../clients/storefront.mjs';
+import {readCoreMenu,placeCoreOrder,recoverCoreOrder,readCoreSchedule,readCoreScheduleRpc,readCoreStoreStateRpc} from '../clients/storefront.mjs';
 const request_id='10000000-0000-4000-8000-000000000001';
 const receipt={order_id:'20000000-0000-4000-8000-000000000001',tracking_token:'30000000-0000-4000-8000-000000000001',total:25};
 const cart=Object.freeze({request_id,payment:'pix_manual',fulfillment:'pickup',items:[]});
@@ -85,4 +85,22 @@ test('V2 schedule compatibility returns original RPC shape without another upstr
  assert.equal(calls,1);
  assert.deepEqual(await readCoreScheduleRpc(args,{fetcher:async()=>json({},503)}),{data:null,error:{code:'retry'}});
  assert.deepEqual(await readCoreScheduleRpc({...args,store_id:'other'},{fetcher:()=>assert.fail('unexpected request')}),{data:null,error:{code:'invalid'}});
+});
+
+test('V2 refresh reads only explicitly allowed public projections',async()=>{
+ const args={p_slug:'fixture'};
+ const opening={open:false,reason:'paused',accepts_scheduled:false};
+ const rules={pix_manual:{adjustment_bps:-100,revision:3}};
+ for(const [name,resource,data] of [['pitacco_public_store_open','opening',opening],['pitacco_public_payment_price_rules','payment-prices',rules]]){
+  assert.deepEqual(await readCoreStoreStateRpc(name,args,{fetcher:async(path,opt)=>{
+   assert.equal(path,'/api/v1/public/menus/fixture/'+resource);
+   assert.equal(opt.method,'GET');assert.equal(opt.cache,'no-store');
+   return json(data);
+  }}),{data,error:null});
+  assert.deepEqual(await readCoreStoreStateRpc(name,args,{fetcher:async()=>json({},503)}),{data:null,error:{code:'retry'}});
+ }
+ assert.deepEqual(await readCoreStoreStateRpc('pitacco_public_payment_price_rules',args,{fetcher:async()=>json({})}),{data:{},error:null});
+ assert.equal((await readCoreStoreStateRpc('pitacco_public_store_open',args,{fetcher:async()=>json({open:'true'})})).error.code,'retry');
+ assert.equal((await readCoreStoreStateRpc('pitacco_public_payment_price_rules',args,{fetcher:async()=>json({pix_manual:{adjustment_bps:100,revision:'3'}})})).error.code,'retry');
+ assert.equal((await readCoreStoreStateRpc('arbitrary_rpc',args,{fetcher:()=>assert.fail('unexpected request')})).error.code,'invalid');
 });
