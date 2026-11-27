@@ -45,3 +45,6 @@ Este documento é uma matriz de requisitos, não uma certificação de funcionam
 
 ## Evidência de conciliação necessária
 O diagnóstico temporário `backend/tests/payment-reconciliation.sql` testa comparações por pedido sem somar confirmação manual, declaração do entregador e lançamento de caixa. Valores coincidentes não provam liquidação independente; sobreposição, ausência de lançamento, valor divergente e múltiplos lançamentos exigem revisão. Confirmar a fonte canônica e os gatilhos no esquema real restaurado antes de definir um escritor único de recebimentos. Não importar histórico a partir de suposições do harness.
+
+## Resultado da auditoria de conciliação
+A regressão de 27/11/2026 confirmou que, no harness, uma confirmação manual não gera lançamento no caixa. A consulta de metadados do ambiente original confirmou a existência de uma operação separada de registro financeiro; não se deve tratar confirmação manual e declaração do entregador como lançamentos independentes. Recuperar o contrato original em ambiente privado, validar recebimentos parciais, modalidades, idempotência, cancelamentos e conciliação, sem reconstruir um escritor de caixa a partir de suposições. A regressão do entregador usa dados fictícios e não substitui a integração real de identidade.
