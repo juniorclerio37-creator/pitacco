@@ -25,3 +25,6 @@ Referências oficiais:
 - https://developer.ifood.com.br/en-US/docs/food/guides/modules/order/homologation
 - https://developer.ifood.com.br/en-US/docs/food/guides/modules/events/webhook-signature
 - https://developer.ifood.com.br/en-US/docs/food/guides/modules/logistics/homologation
+
+### Resultado da primeira regressão dedicada
+Em 27/11/2026, os 41 testes existentes passaram (0 falhas): https://github.com/juniorclerio37-creator/pitacco/actions/runs/46014284208 . Esse resultado confirma apenas o comportamento dos componentes originais sob mocks, sem alterações da integração ou comprovação de homologação do novo backend.

@@ -106,3 +106,6 @@ POST `/api/v1/stores/{store}/payments/pricing/publish` encaminha somente canal, 
 
 ## Preservação iFood
 O novo workflow `core-ifood-preservation.yml` executa a suíte original de eventos, pedidos, Shipping e entregador na branch isolada. A estratégia é reaproveitar os componentes existentes e adaptar a comunicação interna somente depois de recuperar os contratos e validar a transição. Ver `../docs/core/ifood-preservation.md`. Nenhuma integração de produção foi modificada.
+
+### Ajuste da regressão de recebimento do entregador
+O primeiro CI encontrou falta de EXECUTE direto na função auxiliar de sessão após a restrição de grants da fixture. O teste passa a exercitar a autenticação exclusivamente pela operação original autorizada, com asserts distintos para sessão inválida, entregador não atribuído e ausência de chegada. Nenhuma permissão foi ampliada. O fluxo de sucesso e a repetição continuam obrigatórios; nova execução pendente.

@@ -25,22 +25,30 @@ select set_config('request.jwt.claim.sub','96000000-0000-0000-0000-000000000002'
 select set_config('request.jwt.claims','{"sub":"96000000-0000-0000-0000-000000000002","role":"authenticated","session_id":"96000000-0000-0000-0000-000000000006"}',true);
 do $test$
 begin
- assert public.pitacco_courier_session_ready();
  begin
   perform public.pitacco_driver_confirm_payment('96000000-0000-0000-0000-000000000008');
   raise exception 'Expected assignment isolation';
- exception when insufficient_privilege then null; end;
+ exception when insufficient_privilege then assert sqlerrm like 'Entrega não atribuída%'; end;
 end $test$;
 select set_config('request.jwt.claim.sub','96000000-0000-0000-0000-000000000001',true);
 select set_config('request.jwt.claims','{"sub":"96000000-0000-0000-0000-000000000001","role":"authenticated","session_id":"96000000-0000-0000-0000-000000000005"}',true);
 do $test$
 begin
- assert public.pitacco_courier_session_ready();
  begin
   perform public.pitacco_driver_confirm_payment('96000000-0000-0000-0000-000000000008');
   raise exception 'Expected arrival requirement';
  exception when sqlstate '22023' then assert sqlerrm like 'Registre a chegada%'; end;
 end $test$;
+-- Exercise session denial through the existing authorized entry point, not a private helper.
+select set_config('request.jwt.claims','{"sub":"96000000-0000-0000-0000-000000000001","role":"authenticated","session_id":"96000000-0000-0000-0000-000000000006"}',true);
+do $test$
+begin
+ begin
+  perform public.pitacco_driver_confirm_payment('96000000-0000-0000-0000-000000000008');
+  raise exception 'Expected invalid session denial';
+ exception when insufficient_privilege then assert sqlerrm like 'Sessão do entregador não autorizada%'; end;
+end $test$;
+select set_config('request.jwt.claims','{"sub":"96000000-0000-0000-0000-000000000001","role":"authenticated","session_id":"96000000-0000-0000-0000-000000000005"}',true);
 reset role;
 update public.deliveries set arrived_at=now() where id='96000000-0000-0000-0000-000000000008';
 set local role authenticated;
