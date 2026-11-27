@@ -62,3 +62,29 @@ grant execute on function core_auth.merchant_delivery_fixture(uuid,uuid,text,uui
 insert into auth.users(id,email) values('98000000-0000-0000-0000-000000000051','dispatch-second@example.invalid');
 insert into public.couriers(id,user_id,name,fleet_type,store_id,active,available) values
 ('98000000-0000-0000-0000-000000000052','98000000-0000-0000-0000-000000000051','Fixture 2','propria','20000000-0000-4000-8000-000000000001',true,true);
+
+-- Isolated worker role. No HTTP endpoint, store selector, direct table grants or service_role.
+create role pitacco_core_auto_dispatch login password 'ci-auto-dispatch-only' nosuperuser nocreatedb nocreaterole nobypassrls;
+grant usage on schema core_auth to pitacco_core_auto_dispatch;
+create function core_auth.geographic_dispatch_tick_fixture() returns boolean
+language plpgsql security definer set search_path='' as $fn$
+declare s uuid:='20000000-0000-4000-8000-000000000001';
+begin
+ perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(s::text,13));
+ -- Fail closed if eligible records or an active candidate's open route require a marketplace integration.
+ if exists(select 1 from public.deliveries d left join public.orders o on o.id=d.order_id and o.store_id=d.store_id
+ where d.store_id=s and d.status='pendente' and not d.manual_dispatch_hold and d.courier_id is null
+ and (d.source is distinct from 'proprio' or o.source is distinct from 'proprio' or d.logistics_provider is distinct from 'loja')) then
+  raise exception 'Escopo de logística não autorizado' using errcode='42501';
+ end if;
+ if exists(select 1 from public.couriers c join public.deliveries d on d.courier_id=c.id
+ left join public.orders o on o.id=d.order_id and o.store_id=d.store_id
+ where c.store_id=s and c.active and c.available and c.fleet_type='propria'
+ and d.status not in ('entregue','cancelada') and d.capacity_released_at is null
+ and (d.store_id is distinct from s or d.source is distinct from 'proprio' or o.source is distinct from 'proprio' or d.logistics_provider is distinct from 'loja')) then
+  raise exception 'Escopo de rota não autorizado' using errcode='42501';
+ end if;
+ return pitacco_private.group_auto_one(s) is not null;
+end $fn$;
+revoke all on function core_auth.geographic_dispatch_tick_fixture() from public,anon,authenticated;
+grant execute on function core_auth.geographic_dispatch_tick_fixture() to pitacco_core_auto_dispatch;

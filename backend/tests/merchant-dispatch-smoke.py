@@ -133,3 +133,36 @@ call(p,404,body,owner)
 call(individual,404,{'action':'remove','expected_courier_id':cid},owner)
 assert sql("select count(*) from public.deliveries where batch_id='"+route+"' and status='retirada'")=='2'
 print('PASS: merchant dispatch rejects revoked membership without modifying the existing route')
+
+# CLI worker: a fresh synthetic order and the second courier, independent of
+# the departed grouped route above. The database is disposable.
+def tick(enabled):
+    env={**os.environ,'PITACCO_AUTO_DISPATCH_ENABLED':'true' if enabled else 'false',
+         'CORE_AUTO_DISPATCH_DB_USERNAME':'pitacco_core_auto_dispatch',
+         'CORE_AUTO_DISPATCH_DB_PASSWORD':'ci-auto-dispatch-only'}
+    return subprocess.run(['php','artisan','pitacco:dispatch-tick'],env=env,text=True,capture_output=True,timeout=15)
+worker_order='98000000-0000-0000-0000-000000000061'
+worker_delivery='98000000-0000-0000-0000-000000000062'
+sql("update public.deliveries set manual_dispatch_hold=true where store_id='"+s+"' and status='pendente'")
+sql("update public.couriers set available=false where store_id='"+s+"'")
+sql("update public.couriers set available=true where id='"+second+"'")
+sql("update public.stores set dispatch_mode='automatico',latitude=-22.85,longitude=-43.45 where id='"+s+"'")
+sql("insert into public.courier_positions(courier_id,latitude,longitude,accuracy_m,observed_at) values('"+second+"',-22.85,-43.45,15,now()) on conflict(courier_id) do update set observed_at=excluded.observed_at")
+sql("insert into public.orders(id,store_id,channel,gross,source,status,preparation_status,receipt) values('"+worker_order+"','"+s+"','Delivery próprio',25,'proprio','accepted','ready','{}')")
+sql("insert into public.deliveries(id,store_id,order_id,customer_name,address,status,source,logistics_provider,latitude,longitude,deliver_by,manual_dispatch_hold) values('"+worker_delivery+"','"+s+"','"+worker_order+"','Cliente Fixture','Rua Fixture','pendente','proprio','loja',-22.84,-43.45,now()+interval '45 minutes',true)")
+def worker_state():
+    return sql("select (status='pendente' and courier_id is null and batch_id is null)::text from public.deliveries where id='"+worker_delivery+"'")
+assert tick(False).returncode!=0
+assert worker_state()=='true'
+held=tick(True)
+assert held.returncode==0 and 'assigned=0' in held.stdout,(held.returncode,held.stdout)
+sql("update public.deliveries set manual_dispatch_hold=false where id='"+worker_delivery+"'")
+assigned=tick(True)
+assert assigned.returncode==0 and 'assigned=1' in assigned.stdout,(assigned.returncode,assigned.stdout)
+assert sql("select (courier_id='"+second+"' and status='atribuida' and batch_id is not null)::text from public.deliveries where id='"+worker_delivery+"'")=='true'
+repeat=tick(True)
+assert repeat.returncode==0 and 'assigned=0' in repeat.stdout,(repeat.returncode,repeat.stdout)
+assert sql("select count(*) from public.operation_audit where action='route_auto_assigned' and details->>'delivery'='"+worker_delivery+"'")=='1'
+denied=subprocess.run(['psql','-h','127.0.0.1','-U','pitacco_core_auto_dispatch','-d','postgres','-v','ON_ERROR_STOP=1','-Atc','select * from public.deliveries'],env={**os.environ,'PGPASSWORD':'ci-auto-dispatch-only'},capture_output=True)
+assert denied.returncode!=0
+print('PASS: isolated Laravel CLI dispatch tick, disabled gate, manual hold, assignment, replay and restricted SQL role')

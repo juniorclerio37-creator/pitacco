@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(api: __DIR__.'/../routes/api.php', health: '/up', then: fn()=>require __DIR__.'/../routes/homologation.php')
+    ->withCommands([\App\Console\Commands\GeographicDispatchTick::class])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->throttleWithRedis();
     })
