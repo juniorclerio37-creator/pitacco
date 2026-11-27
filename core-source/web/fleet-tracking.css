@@ -1,0 +1,62 @@
+/* Merchant fleet map. Scoped to Pedidos to preserve the Windows order cards. */
+.pitacco-fleet{display:flex;flex-direction:column;gap:14px;min-width:0;color:#283041}
+.pitacco-fleet *{box-sizing:border-box}
+.fleet-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.fleet-heading h3{display:flex;align-items:center;gap:9px;margin:0;color:#222b3c;font-size:20px}
+.fleet-heading h3 svg{color:#ea580c}
+.fleet-heading p{margin:5px 0 0;color:#687386;font-size:13px}
+.fleet-heading-actions{display:flex;gap:8px}
+.fleet-heading-actions button{padding:10px 14px;border-radius:10px;border:1px solid #d7dee9;background:#fff;color:#353c4b;font-weight:700;cursor:pointer}
+.fleet-stats{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.fleet-stats span{display:inline-flex;align-items:center;gap:6px;border:1px solid #e7eaf0;background:#fff;padding:8px 12px;border-radius:20px;font-size:12px;font-weight:650}
+.fleet-stats svg{color:#f97316}
+.fleet-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(290px,1fr);gap:13px;align-items:start}
+.fleet-map-column{min-width:0;display:flex;flex-direction:column;gap:8px}
+.fleet-map{height:430px;width:100%;border:1px solid #dbe2ec;border-radius:16px;background:#f1f0ec;overflow:hidden;z-index:0}
+.fleet-map.leaflet-container{font-family:inherit}
+.fleet-empty{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;text-align:center;padding:30px;color:#6b7280}
+.fleet-empty svg{color:#f97316}
+.fleet-empty p{max-width:390px;margin:0;font-size:13px}
+.fleet-legend{display:flex;flex-wrap:wrap;gap:9px 16px;background:#fff;border:1px solid #e5e9ef;padding:10px 12px;border-radius:11px}
+.fleet-legend span{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:#546075}
+.fleet-dot{display:inline-block;width:11px;height:11px;border-radius:50%;background:#f97316;border:2px solid #f97316}
+.fleet-dot[data-kind="store"]{background:#111827;border-color:#111827}
+.fleet-dot[data-kind="online"]{background:#1eac70;border-color:#1eac70}
+.fleet-dot[data-kind="stale"]{background:#9099ab;border-color:#9099ab}
+.fleet-dot[data-kind="delivery"]{background:#fff7ed}
+.fleet-map-column>small{color:#7b8593;font-size:11px}
+.fleet-hint{display:flex;gap:7px;align-items:center;margin:0;font-size:12px;color:#697587}
+.fleet-side{border:1px solid #e2e7ee;background:#fff;border-radius:15px;padding:12px;min-height:240px;min-width:0}
+.fleet-side-tabs{display:flex;gap:6px;padding:4px;background:#f3f5f9;border-radius:11px;margin-bottom:10px}
+.fleet-side-tabs button{flex:1;border:0;padding:9px 10px;border-radius:9px;background:transparent;font-weight:700;color:#546071;cursor:pointer}
+.fleet-side-tabs button.active{background:#fff;color:#d95614;box-shadow:0 1px 3px #0001}
+.fleet-list{display:flex;flex-direction:column;gap:8px;max-height:525px;overflow:auto}
+.fleet-list-row{border:1px solid #e7eaf0;background:#fff;width:100%;padding:11px;border-radius:11px;display:flex;justify-content:space-between;align-items:center;text-align:left;gap:10px;color:#263044;cursor:pointer}
+.fleet-list-row.selected,.fleet-list-row[aria-pressed="true"],.fleet-route-title[aria-pressed="true"]{border-color:#fb923c;background:#fff7ed}
+.fleet-list-row span{display:flex;flex-direction:column;gap:3px}
+.fleet-list-row small,.fleet-route-title small,.fleet-stop small{display:block;color:#748092;font-size:11px;line-height:1.35}
+.fleet-signal{font-size:11px;white-space:nowrap;text-align:right}
+.fleet-signal.online{color:#16855a}.fleet-signal.stale{color:#97710e}.fleet-signal.offline{color:#6b7280}
+.fleet-route-card{border:1px solid #e6eaf1;border-radius:12px;overflow:hidden}
+.fleet-route-title{width:100%;display:flex;align-items:center;gap:9px;text-align:left;padding:12px;border:0;border-bottom:1px solid #ebeff3;background:#fafbfc;cursor:pointer;color:#293249}
+.fleet-route-title svg{color:#ea580c}
+.fleet-stop{padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #f0f2f6}
+.fleet-stop:last-child{border-bottom:0}
+.fleet-stop span{min-width:0;overflow-wrap:anywhere}
+.fleet-stop a{display:flex;align-items:center;gap:4px;border:1px solid #fdba74;border-radius:8px;padding:8px;color:#c2410c;text-decoration:none;font-size:12px;font-weight:800;white-space:nowrap}
+.fleet-stop a:focus-visible,.fleet-list-row:focus-visible,.fleet-route-title:focus-visible{outline:3px solid #fb923c;outline-offset:2px}
+.fleet-error{background:#fff0ec;border:1px solid #f8b7a3;color:#9a3412;padding:10px;border-radius:10px;margin:0}
+.fleet-map-pin{display:flex;align-items:center;justify-content:center;background:#fff;border:3px solid #12a86a;border-radius:50%;font-size:21px;box-shadow:0 2px 10px #0002}
+.fleet-map-pin-store{border-color:#111827}.fleet-map-pin-stale{border-color:#94a3b8;filter:grayscale(.65)}
+.fleet-map-pin-active{border-color:#ea580c;box-shadow:0 0 0 5px #fed7aa}
+.pitacco-pedidos .pedidos-layout-switch{display:flex;gap:4px;width:fit-content;max-width:100%;background:#f0f2f6;border:1px solid #e1e6ee;padding:4px;border-radius:12px}
+.pitacco-pedidos .pedidos-layout-switch button{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 19px;flex:1;background:transparent;border:0;border-radius:9px;font-weight:750;color:#576176;cursor:pointer;white-space:nowrap}
+.pitacco-pedidos .pedidos-layout-switch button.active{background:#fff;color:#d95614;box-shadow:0 1px 4px #0001}
+@media(max-width:900px){.fleet-grid{grid-template-columns:minmax(0,1fr)}.fleet-map{height:350px}.fleet-side{min-height:120px}.fleet-heading h3{font-size:18px}}
+@media(max-width:480px){.fleet-map{height:300px}.fleet-heading-actions,.fleet-heading-actions button{width:100%}.fleet-stats span{font-size:11px}.pitacco-pedidos .pedidos-layout-switch{width:100%}.pitacco-pedidos .pedidos-layout-switch button{padding:10px 7px}.fleet-legend{gap:8px}.fleet-list{max-height:440px}}
+
+/* Unified illustrated courier marker across rider, merchant and customer. */
+.pitacco-courier-moto-pin{background:transparent!important;border:0!important;box-shadow:none!important;overflow:visible!important}
+.pitacco-courier-moto-pin svg{display:block;width:72px;height:70px;max-width:none;filter:drop-shadow(0 3px 4px #33415552)}
+.pitacco-courier-moto-stale svg{opacity:.68;filter:grayscale(.85) drop-shadow(0 2px 3px #33415535)}
+.pitacco-courier-moto-selected svg{filter:drop-shadow(0 0 4px #fb923c) drop-shadow(0 3px 3px #33415540)}

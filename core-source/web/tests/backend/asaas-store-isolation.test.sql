@@ -1,0 +1,54 @@
+begin;
+do $test$
+declare a uuid; b uuid; ua uuid:=gen_random_uuid(); ub uuid:=gen_random_uuid(); ca uuid; cb uuid; ia uuid; ib uuid; ib2 uuid; rev text; offer jsonb; coverage timestamptz;
+today date:=(now() at time zone 'America/Sao_Paulo')::date;
+custa text:='cus_'||replace(gen_random_uuid()::text,'-',''); custb text:='cus_'||replace(gen_random_uuid()::text,'-','');
+paya text:='pay_'||replace(gen_random_uuid()::text,'-',''); payb text:='pay_'||replace(gen_random_uuid()::text,'-',''); payb2 text:='pay_'||replace(gen_random_uuid()::text,'-','');
+begin
+ insert into auth.users(id,email) values(ua,ua::text||'@example.invalid'),(ub,ub::text||'@example.invalid');
+ insert into public.stores(name) values('Fixture Fixo') returning id into a;
+ insert into public.stores(name) values('Fixture Flex') returning id into b;
+ insert into public.store_members(store_id,user_id,role) values(a,ua,'gestor'),(b,ub,'gestor');
+ update pitacco_private.subscription_control set asaas_environment='production';
+ update pitacco_private.commercial_billing_control set enforce_own_orders=true,payment_instructions='Teste isolado de cobrança',pix_cnpj='00000000000000',pix_recipient='Fixture de teste' where singleton;
+ select revision into rev from public.pitacco_plan_catalog_signal where singleton;
+ select x into offer from pitacco_private.plan_catalog_versions v cross join lateral jsonb_array_elements(v.plans) x where v.revision=rev and x->>'code'='complete';
+ insert into pitacco_private.commercial_contracts(store_id,revision,plan_code,effective_from,terms,assigned_by) values(a,rev,'complete',today,offer||jsonb_build_object('trial_days',0,'prepaid',true),ua) returning id into ca;
+ insert into pitacco_private.fixo_prepaid_state(contract_id,first_due_at) values(ca,now());
+ ia:=pitacco_private.ensure_fixo_prepaid_invoice(ca);
+ select x into offer from pitacco_private.plan_catalog_versions v cross join lateral jsonb_array_elements(v.plans) x where v.revision=rev and x->>'code'='free';
+ insert into pitacco_private.commercial_contracts(store_id,revision,plan_code,effective_from,terms,assigned_by) values(b,rev,'free',today-30,offer,ub) returning id into cb;
+ insert into pitacco_private.commercial_closings(contract_id,store_id,kind,period_start,period_end,due_at,grace_until,amount_cents,state,details) values
+ (cb,b,'commission',today-14,today-7,now()-interval '7 days',now()-interval '5 days',5990,'calculated','{}'),
+ (cb,b,'commission',today-7,today,now()-interval '3 days',now()-interval '1 day',1250,'calculated','{}');
+ insert into pitacco_private.commercial_invoices(contract_id,kind,period_end,amount_cents,due_at,grace_until) values(cb,'commission',today-7,5990,now()-interval '7 days',now()-interval '5 days') returning id into ib;
+ insert into pitacco_private.commercial_invoices(contract_id,kind,period_end,amount_cents,due_at,grace_until) values(cb,'commission',today,1250,now()-interval '3 days',now()-interval '1 day') returning id into ib2;
+ insert into pitacco_private.asaas_commercial_customers(store_id,customer_id) values(a,custa),(b,custb);
+ begin perform public.pitacco_asaas_reserve_charge(ua,ib,custb);raise exception 'TEST cross tenant charge';exception when insufficient_privilege then null;end;
+ perform public.pitacco_asaas_reserve_charge(ua,ia,custa);
+ perform public.pitacco_asaas_reserve_charge(ub,ib,custb);
+ perform public.pitacco_asaas_reserve_charge(ub,ib2,custb);
+ perform public.pitacco_asaas_bind_charge(ia,custa,paya);
+ perform public.pitacco_asaas_bind_charge(ib,custb,payb);
+ perform public.pitacco_asaas_bind_charge(ib2,custb,payb2);
+ assert pitacco_private.commercial_orders_blocked(b),'Flex has overdue commission';
+ assert public.pitacco_asaas_settle_commercial_invoice(paya,custa,ib,5990)='not_linked','Same amount cannot settle another store';
+ assert public.pitacco_asaas_settle_commercial_invoice(paya,custb,ia,5990)='not_linked','Customer mismatch';
+ assert public.pitacco_asaas_settle_commercial_invoice(paya,custa,ia,5989)='review_required','Wrong amount';
+ assert (select activated_at is null from pitacco_private.fixo_prepaid_state where contract_id=ca);
+ assert public.pitacco_asaas_settle_commercial_invoice(paya,custa,ia,5990)='processed';
+ select paid_until into coverage from pitacco_private.fixo_prepaid_state where contract_id=ca;
+ assert coverage>now(),'Fixo coverage activated';
+ assert not pitacco_private.commercial_orders_blocked(a);
+ assert pitacco_private.commercial_orders_blocked(b),'Other store stays blocked';
+ assert public.pitacco_asaas_settle_commercial_invoice(paya,custa,ia,5990)='duplicate';
+ assert (select paid_until=coverage from pitacco_private.fixo_prepaid_state where contract_id=ca),'Replay does not extend coverage';
+ assert public.pitacco_asaas_settle_commercial_invoice(payb,custb,ib,5990)='processed';
+ assert pitacco_private.commercial_orders_blocked(b),'Other overdue invoice remains';
+ assert public.pitacco_asaas_settle_commercial_invoice(payb2,custb,ib2,1250)='processed';
+ assert not pitacco_private.commercial_orders_blocked(b),'Flex regularized after all overdue invoices paid';
+ assert (select paid_until=coverage from pitacco_private.fixo_prepaid_state where contract_id=ca),'Flex payment cannot alter Fixo coverage';
+ assert (select count(*)=3 from pitacco_private.commercial_manual_payments where invoice_id in (ia,ib,ib2)),'Each invoice settled exactly once';
+ assert not has_function_privilege('authenticated','public.pitacco_asaas_settle_commercial_invoice(text,text,uuid,bigint)','execute');
+end $test$;
+rollback;

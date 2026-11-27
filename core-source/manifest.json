@@ -1,0 +1,1566 @@
+{
+  "files": {
+    "android/.gitignore": {
+      "bytes": 127,
+      "sha256": "c28ad2ddaae491875e029a2dc6ffdf60a0e4d129b1b993a6849020b61f43a94e"
+    },
+    "android/README.md": {
+      "bytes": 6297,
+      "sha256": "8aa88ddbd0eb5a44ce0486a8fd6a8a32400c2c49fd0b4f5538f1efb233beb429"
+    },
+    "android/lib/main.dart": {
+      "bytes": 19743,
+      "sha256": "3ae4de848064ceabc9c7694935efe59fe26b0b87dd15621fe9de37873f734f16"
+    },
+    "android/pubspec.yaml": {
+      "bytes": 381,
+      "sha256": "b233cab1e7e93dd3d3f0c7577cbf87a1dd35b55956baa2ceb8c8bb5407e4a2b8"
+    },
+    "android/supabase/004_dispatch_mobile.sql": {
+      "bytes": 5372,
+      "sha256": "d54eb37267edbddd3532f5f63863dd79d098f82ba09ebdf83969e22050df153f"
+    },
+    "android/supabase/005_routes_and_delivery_codes.sql": {
+      "bytes": 2003,
+      "sha256": "432be28d793c74b0e60009dea6623b8f65c6270e3997f2f02f2742c205146638"
+    },
+    "android/supabase/functions/verify-marketplace-delivery/index.ts": {
+      "bytes": 371,
+      "sha256": "0f8cbe25f3fd2d10cace21da5d54f88b88624ec75522900faad450f28e42b13f"
+    },
+    "docs/ASAAS-ASSINATURAS.md": {
+      "bytes": 2379,
+      "sha256": "e4cf5a65f0d0ace2e9149df612607c9ddb7a178c2235a97b011259d3ba990fe9"
+    },
+    "docs/ATUALIZACAO-0.12.md": {
+      "bytes": 6555,
+      "sha256": "f726286ae548bb1158d4c9e19df0ff4d25d70435f5b9b9a5a4241040519974c0"
+    },
+    "docs/CLOUDFLARE.md": {
+      "bytes": 3981,
+      "sha256": "3a62b0ad24556069d76ce1c9623fbdc01ca6ef545d3b2552edf682b944e3c532"
+    },
+    "docs/CONTROL-CENTER.md": {
+      "bytes": 4652,
+      "sha256": "b744657e70ce3c2059ccf09dc11cea5d8051fa8e7df6f8a9ea26e8c66cf8782e"
+    },
+    "docs/DISTRIBUICAO.md": {
+      "bytes": 2064,
+      "sha256": "e1ed2953ecbd69ecfbe8f84b4b7a918ed0bad1881fc25b228dd75ea3f3b19508"
+    },
+    "docs/FIDELIZA.md": {
+      "bytes": 3492,
+      "sha256": "49bf9fdad0d9014ff2f1120cdf6ddf922c13edeba6e894bd9d16b8699c15db76"
+    },
+    "docs/IFOOD-SHIPPING.md": {
+      "bytes": 5585,
+      "sha256": "268f278e24163416e7f059375bf3ea9efbbbe283603eb34fa5c87d9b555ebac3"
+    },
+    "docs/IFOOD.md": {
+      "bytes": 2521,
+      "sha256": "416f612b73d5406fdf45ecf145ee62df2a762cde6fa6593c60cd05a258168eae"
+    },
+    "docs/IMPRESSORAS.md": {
+      "bytes": 3890,
+      "sha256": "0dfcbcf90a002953faa8d7ee2662740cf507e19aa8a265ed12837ca26ebcef40"
+    },
+    "docs/PAGBANK.md": {
+      "bytes": 3903,
+      "sha256": "ede08ee4d6f684fff0ebf3473562815b97e0e03f8cda28a4ea389a2dc6a94134"
+    },
+    "docs/PITACCO-INTELLIGENCE-APPROVALS.md": {
+      "bytes": 3239,
+      "sha256": "e24b21f764fb41aad6e3118e1b89a62a76a00723e1aae8f3de88d60fe8dd79b2"
+    },
+    "docs/PITACCO-INTELLIGENCE-RECOVERY.md": {
+      "bytes": 5324,
+      "sha256": "02e18e01b7386097728df44239c5b90a04e45b4e20b1d4285ef29683549cfa8a"
+    },
+    "docs/PITACCO-INTELLIGENCE.md": {
+      "bytes": 6250,
+      "sha256": "00c4852c752afcb3fb9ef678b3bf943f45aded70b66ef3fc9879b7d7e740c0fd"
+    },
+    "docs/STATUS-E-TESTES.md": {
+      "bytes": 6123,
+      "sha256": "7f228cc6a903bd49ec1c17c9773a12da91c39856824863d89939940ce80b6ddf"
+    },
+    "docs/UPDATER_WINDOWS.md": {
+      "bytes": 2667,
+      "sha256": "8f91b9bb369c473f23621dfec7dd72ac32bd02e9c72977249a50681370b91055"
+    },
+    "docs/WINDOWS.md": {
+      "bytes": 3822,
+      "sha256": "f93a3e82e98372f936dc25f97e6a28a49abcff495285dc2399cf02bae0351e01"
+    },
+    "docs/alocacao-direta-entregadores.md": {
+      "bytes": 1703,
+      "sha256": "d64bc1f5cfe24f7a9744dc06e59a8b95e20bdc83e2e89af47544114673640087"
+    },
+    "docs/android-gps-em-segundo-plano.md": {
+      "bytes": 3914,
+      "sha256": "f51b6af05bdfe53bd0cc7aa9394a736807c5cace86af733edd3cc97a2829b4d7"
+    },
+    "docs/api-entregador-auth.md": {
+      "bytes": 2701,
+      "sha256": "370ee23704db1d8ca94c529a95caadcc05f4f37da5ce3aa1bceb774b5a6f97e4"
+    },
+    "docs/atalhos-operacionais-pendencias.md": {
+      "bytes": 1692,
+      "sha256": "c2dda0f2a4ba558fd48a069859e5a3f3dd0b4c386e7a5d582b165eb7690d4130"
+    },
+    "docs/ativacao-push-entregador-android.md": {
+      "bytes": 6746,
+      "sha256": "0082afb22af808df5a40860b9241c0e42e3afdd729d8b051aa16cb1a4342df97"
+    },
+    "docs/ativacao-web-push.md": {
+      "bytes": 2543,
+      "sha256": "9248c08a95bc58712e30873ee969f727972862482f7098b20f28d68893019945"
+    },
+    "docs/auditoria-rls-entregador.md": {
+      "bytes": 2696,
+      "sha256": "0140dd8deb8bac031169e32c6719932daaad83a58a8bf90c4f57398a279f034c"
+    },
+    "docs/cadastro-entregadores-lojista.md": {
+      "bytes": 2644,
+      "sha256": "9e1747e485d057768347093a0f2e2eeeee9a5901506d4ff1a15733e9f1e2ba7f"
+    },
+    "docs/cobranca-na-entrega.md": {
+      "bytes": 2910,
+      "sha256": "703757289e37c5787b2b13de48bfc4c3e05a85b92c2206f511f83457dc84b255"
+    },
+    "docs/confirmacao-codigo-entrega.md": {
+      "bytes": 2675,
+      "sha256": "b009df361048825f35e8a36ace3155c08f0f3288c80b03d0aada7187979a427e"
+    },
+    "docs/contato-cliente-entregador.md": {
+      "bytes": 5283,
+      "sha256": "6e6f210ea6c1898405c221b92a614e98257e895cb815cdef22b6869596a822f5"
+    },
+    "docs/distribuicao-pitacco-entregador-android.md": {
+      "bytes": 2035,
+      "sha256": "4f71e05e4a414be934b7fffe6b48a2a33cb76c2de14ea40fc0a50eee24e13cb9"
+    },
+    "docs/landing-partner-logos.md": {
+      "bytes": 1449,
+      "sha256": "af9b75430d8da371d8060d93e7772e271cbba5ea214a1d12a530361e33b5a8f6"
+    },
+    "docs/login-telefone-entregadores.md": {
+      "bytes": 4042,
+      "sha256": "b634eeaf9edcdfb282a2aa4155130be753f8f0055f7ba9f452753655f12b1d57"
+    },
+    "docs/mapeamento-supabase-entregador.md": {
+      "bytes": 2596,
+      "sha256": "f8d0dd7d6b15c879813875d589f0b6df4b0650c241679bd81c7b99d3e732aa9b"
+    },
+    "docs/pitacco-entregador-2-e-admin-diagnosticos.md": {
+      "bytes": 5242,
+      "sha256": "6bda65deab72168400f2f8ce3f58735feabafb816f7631754bfabdf0acc3ec65"
+    },
+    "docs/plano-implementacao-0.11.md": {
+      "bytes": 3178,
+      "sha256": "4fb70e64e44355bf2f7dc931662cf3f1735b59e03b3ac6d345bce9948b78de27"
+    },
+    "docs/seguranca-truncate-delivery.md": {
+      "bytes": 868,
+      "sha256": "3c1f996d832602f8382dfe204fb458e6705965d37bc7818171c20ef3453cbe03"
+    },
+    "docs/sql/20261117-fix-driver-arrival-rpcs.sql": {
+      "bytes": 8264,
+      "sha256": "ce729180af7d087a24d8307f800826aa95adbdcc524a5df80b9a0dc95893202c"
+    },
+    "docs/sql/customer-tracking-arrival-code.sql": {
+      "bytes": 1644,
+      "sha256": "a66aaef69289bff489fdf79ca20894a7389ef488849a9a3a5698089e638dd3f0"
+    },
+    "docs/sql/driver-arrival-privacy-proof.sql": {
+      "bytes": 11510,
+      "sha256": "dc86381f397c9681bda00be60088bce80152251270f9ac016b4c35c9917954dc"
+    },
+    "docs/sql/driver-earnings-dashboard.sql": {
+      "bytes": 4972,
+      "sha256": "9fe0329b924d167a85f8c664005626711dba43d46ddd56c439befc66262b8dba"
+    },
+    "docs/sql/driver-order-details-contact.sql": {
+      "bytes": 8618,
+      "sha256": "16fc382c930be136eae6dd8c895e39b92cb5c047b8908a055ecd998f0b5360a7"
+    },
+    "docs/sql/entregador-autenticacao-sessoes.sql": {
+      "bytes": 2453,
+      "sha256": "49dc8e6b486acadd4ffca4bf67f9d3a8335e3358969a5961eee2a0bc4f397f7c"
+    },
+    "docs/sql/entregador-coleta-saida.sql": {
+      "bytes": 2961,
+      "sha256": "1958df6bc3a78e17ad906e7573477999316146e70ecc2113081d5c49a7203ff3"
+    },
+    "docs/sql/fix-courier-store-admin-authorization.sql": {
+      "bytes": 1095,
+      "sha256": "fb0a3813d177de00907577a12a1f3fe986c921f9c9666766653c77cc9895418e"
+    },
+    "docs/sql/ifood-courier-arrival-verify.sql": {
+      "bytes": 4317,
+      "sha256": "4eafac8525d267e5e7b0e6bc47a6e20ac800645b799d17c87142a71c15fb471c"
+    },
+    "docs/sql/ifood-private-contact-ingestion.sql": {
+      "bytes": 6252,
+      "sha256": "ad80b887a7c91a0ba56695779011d3e69d8486ed75b3b64fcd12206a97d69d40"
+    },
+    "docs/sql/order-card-public-number-localizer.sql": {
+      "bytes": 6681,
+      "sha256": "5f9976870550c9f837b6666cb0c0e88ade191bac72ed98bdb6da5e522b1e9ff6"
+    },
+    "docs/sql/order-detail-public-number.sql": {
+      "bytes": 6733,
+      "sha256": "ac2ca091f3997905a9ad263ba33eca19f0edc1cc2f61bf1093cd20373d802b6e"
+    },
+    "docs/sql/order-number-trigger-99food.sql": {
+      "bytes": 1376,
+      "sha256": "d572a402eaf192b6f94c9d89960290b609aa718c22a848c2b24123d852aa153a"
+    },
+    "docs/sql/proposta-deliveries-rls.sql": {
+      "bytes": 1164,
+      "sha256": "2a84d0d66554e3167d10197508f4762b11cb98f5660f77baae47eee8c10690bc"
+    },
+    "docs/sql/proteger-rpcs-de-aceite-e-atribuicao.sql": {
+      "bytes": 5763,
+      "sha256": "9469c740e2a12eb2d52a3e9b7a54bd071e2209ec7a14362d56fde38313f45af8"
+    },
+    "docs/testes-homologacao-entregador.md": {
+      "bytes": 1734,
+      "sha256": "4c62a85d4200164c8a57519897445554340ae4c9e0a812d4c9e0c6bf699ef214"
+    },
+    "docs/troco-entregas.md": {
+      "bytes": 2358,
+      "sha256": "07655972b7f8969e1fbe4dc8837f4331e8231bb28ab971d7108bca887227a130"
+    },
+    "docs/work-sessions/2026-11-22-aprimoramento-geral.md": {
+      "bytes": 14848,
+      "sha256": "e779e2cc740e17d8c2d57a0b8c738ec4801b3dd9cfa1ce357650e11de3100556"
+    },
+    "docs/work-sessions/2026-11-22-deploy-recovery.md": {
+      "bytes": 4995,
+      "sha256": "b30a641ee2d177db99d503177f9215d5cd89c881f0609cf6833922d1899fce65"
+    },
+    "docs/work-sessions/2026-11-22-fideliza-integrado.md": {
+      "bytes": 5025,
+      "sha256": "65c2c22e296022802b0232c7052ee0ca26a7780bf20aa07ca6dc5b5c5503bf77"
+    },
+    "web/.env.example": {
+      "bytes": 102,
+      "sha256": "3208d805325be270ea42fb9866711ee1964a3dc3d43d58161b5162a72ff7bc15"
+    },
+    "web/.github/workflows/windows-initial-draft.yml.reference": {
+      "bytes": 861,
+      "sha256": "62b5afc018829800db681ab96ec5f9ee2305607d37f9d82cfbfb583411d51b59"
+    },
+    "web/.gitignore": {
+      "bytes": 102,
+      "sha256": "f5739a2a5daa421eeeb9e916f8d543566a3b21eb866e3a4f8fbc3d928114bd5b"
+    },
+    "web/AdminApp.jsx": {
+      "bytes": 26045,
+      "sha256": "4d31ab1b9524917cffa237a3d55d811411caeefe6a9470029f168a8ca3e8e95a"
+    },
+    "web/AppDownloads.jsx": {
+      "bytes": 4105,
+      "sha256": "7e5893602b079972e1cdd35739db7c4a4d5af1d22ee1917afe7b79342821fd78"
+    },
+    "web/BillingStatus.jsx": {
+      "bytes": 18761,
+      "sha256": "0a428ec4dd4617429f31b0a1daf53e6fffb340777c24166a978af78f206ec6d6"
+    },
+    "web/BusinessInsights.jsx": {
+      "bytes": 12970,
+      "sha256": "45f028fcd519617c2dd21ca520eddbfa3aecf1796f65d714f2231e8de2405d72"
+    },
+    "web/CashDesk.jsx": {
+      "bytes": 4881,
+      "sha256": "3f678953783f496fce843d30c865139900c9a77b2b4a99447393f80e26a6118a"
+    },
+    "web/CatalogFinishedStock.jsx": {
+      "bytes": 6153,
+      "sha256": "a81729214d260ba9fbd6632e52ee3759f80e206e79fbff3288e7e0cc5a2af7f0"
+    },
+    "web/CategoryIcons.jsx": {
+      "bytes": 7643,
+      "sha256": "4ed3443cc74486d8e059e76c6fdf17a26f5bf33118ba66ce18ed2bf1d96dc08e"
+    },
+    "web/CentralComplementLibrary.jsx": {
+      "bytes": 21787,
+      "sha256": "7166b300974fdedc02d8edfa43ff0c15bc63908b06ab4336777a8e46477a1969"
+    },
+    "web/ControlAlerts.jsx": {
+      "bytes": 6493,
+      "sha256": "83a4d19b1cfcef0b936252786c84f2a5d22ddcabaf0321d6b5ecc8de6fb1e296"
+    },
+    "web/ControlAppCatalog.jsx": {
+      "bytes": 3013,
+      "sha256": "93bf89320b603e9ccffdaeb01b0cf852c0c4d34ad635a841177d44cf49217ca6"
+    },
+    "web/ControlChrome.jsx": {
+      "bytes": 3083,
+      "sha256": "f938af4e8caa54a57688be4dfead338f162542a8f912753538353c39277a7a0e"
+    },
+    "web/ControlDashboard.jsx": {
+      "bytes": 13617,
+      "sha256": "3bfa12f9a05dad1c044db6ebabb0985788f3b75453ca379f4d13c087fcfda164"
+    },
+    "web/ControlDirectory.jsx": {
+      "bytes": 6479,
+      "sha256": "70a551be7838da2bcb9169ac1c4b3be650aac30faf50908ad31ac446ce3cacdb"
+    },
+    "web/ControlMerchantMessages.jsx": {
+      "bytes": 2332,
+      "sha256": "12d95c3187be622dd182bbec0b26e8cce0ec11b0f6b4c8dfd4f188f98d578057"
+    },
+    "web/ControlStoreBlocking.jsx": {
+      "bytes": 5882,
+      "sha256": "3ccc64856ee62b53ba2eef4126bb6d091c3c81e8c8d6dee0b232e3aeae7612d0"
+    },
+    "web/ControlWorkspaces.jsx": {
+      "bytes": 30089,
+      "sha256": "d749fdcae03e6029b03c1ebf075f8dbd8771c93716119c9e186053a55d05a6b3"
+    },
+    "web/CourierAccessManager.css": {
+      "bytes": 4641,
+      "sha256": "583f20750c69bb462e27b3debeb1fee5bd28802308799d20b148d4463488b552"
+    },
+    "web/CourierAccessManager.jsx": {
+      "bytes": 10211,
+      "sha256": "05ed8fcc1eb9e10b4b6e7721c012c401431726adf84b6f17a4d8eb7cd9d5167a"
+    },
+    "web/CourierFinance.jsx": {
+      "bytes": 5468,
+      "sha256": "d9c83731cf15483042a1886f0cc40476e5a298eafbe15ced2ffb10f928785537"
+    },
+    "web/CourierRates.jsx": {
+      "bytes": 2518,
+      "sha256": "63c0bbbb81def8ffc4f7736eb961e5f8b8a66078ca6c8afbf946e426bb55f182"
+    },
+    "web/CourierRemunerationFields.jsx": {
+      "bytes": 4269,
+      "sha256": "3ddec5d47aa2310e3c5c39c566ccab253112d37fb9aaafea501d7cdb60ee6531"
+    },
+    "web/CourierWorkspace.jsx": {
+      "bytes": 7971,
+      "sha256": "df18280fafe500259adb16bb8f6852df6eeb7c043794b23dba8c1495369390c5"
+    },
+    "web/DeliveryCodeSettings.jsx": {
+      "bytes": 2714,
+      "sha256": "e83d3802d148e73cae2380095c276f39435f8ff085a22105f0c37872b22da107"
+    },
+    "web/DeliveryDialog.jsx": {
+      "bytes": 17415,
+      "sha256": "6202a2092a06c16d5797f8142566e0a58e4d6b1b9bfc3f7e33f9e69db8c9d994"
+    },
+    "web/FiadoCaderneta.jsx": {
+      "bytes": 20917,
+      "sha256": "43b9b23be3e34c8858ab8c20b46b03128daf17c9df93ffebf2adec7efc1b8e37"
+    },
+    "web/Fideliza.jsx": {
+      "bytes": 27313,
+      "sha256": "5a963cf352f9310cd9b03544f0e98d93572e2117036663c315bd85a9b6160aa7"
+    },
+    "web/FinancialReport.jsx": {
+      "bytes": 6624,
+      "sha256": "d44328b6523ef237c75f175a7f01bb141c3623aaf08bb0312f4fcfcc4747018d"
+    },
+    "web/FleetTracking.jsx": {
+      "bytes": 15407,
+      "sha256": "ed544fe221c47f938515debd5c2757d51f42cc9d475c99aaaaa620442f249225"
+    },
+    "web/GroupDeliveryDialog.jsx": {
+      "bytes": 5104,
+      "sha256": "3d70f5a41bfc18fa5ec8d801ddd226dfb46a7a5dd8b80164b70fc6339e514060"
+    },
+    "web/Homologation.jsx": {
+      "bytes": 11023,
+      "sha256": "471f7c1092d555ba503b4d3fe087515d72eb4d3ca89c666931a614ceb6406744"
+    },
+    "web/IfoodConnections.jsx": {
+      "bytes": 4160,
+      "sha256": "4c7f982563c55cc0732dab6951d9d3ba733aef3dcd3c73a4c18b735405b93b6e"
+    },
+    "web/IfoodExternalShippingActions.jsx": {
+      "bytes": 4401,
+      "sha256": "c448a9deccc217826c364d23af7bb2704d61c14f4e95c5ffe609ce664139d93a"
+    },
+    "web/IfoodExternalShippingTest.jsx": {
+      "bytes": 3653,
+      "sha256": "3295a0d134eff17042b5fe0bfa63ef13cedc69b5e273a224c0229811c690ffe6"
+    },
+    "web/IfoodShippingOrder.jsx": {
+      "bytes": 5262,
+      "sha256": "5f56b8a3c2c8895d79f7dc9960ffadcbc997ac5d7bed7b68bdc638c336f34cbd"
+    },
+    "web/IfoodShippingTest.jsx": {
+      "bytes": 4349,
+      "sha256": "f9c5b7ca65d429aa6ecb0eb07d06f74684f066ca2df87b00a8285462c9f041e9"
+    },
+    "web/IncidentCenter.jsx": {
+      "bytes": 10008,
+      "sha256": "00a60dabce23636e1438bac13b3d39cf6e62af7072462f730b4f06ec0cd4d836"
+    },
+    "web/IndividualComplementLibrary.jsx": {
+      "bytes": 8226,
+      "sha256": "26ba3358cecdf2dc8ee219a8d4d9e7220306237987bfb0789adb685b336c9581"
+    },
+    "web/IntelligenceRepairs.jsx": {
+      "bytes": 6450,
+      "sha256": "0c906d59e3965d8c8495e525d71e946f0b2d737da4153bcc9fc24aad9dd10e4c"
+    },
+    "web/Inventory.jsx": {
+      "bytes": 17431,
+      "sha256": "c0b643ac8feff69579c88d7c7295ad8a7985f9eb1f34bb7dca819a68d6b6a147"
+    },
+    "web/LogisticsHub.jsx": {
+      "bytes": 5437,
+      "sha256": "3af4c24c811d3f0def9d3ecb497f0cdeb7d60122c08a8561c52982186121dfc8"
+    },
+    "web/MarketplaceReconciliation.jsx": {
+      "bytes": 5721,
+      "sha256": "36c5aa622891dd61c9a9887050972c9e9b9084d3ae77d35ca12bcd3dd8bded13"
+    },
+    "web/MenuStudio.jsx": {
+      "bytes": 31748,
+      "sha256": "f069d63b88ce46e8aa8100c3a996f8dfb233cb27860e3bef6f7e2271a4e6ee39"
+    },
+    "web/MerchantModern.jsx": {
+      "bytes": 22491,
+      "sha256": "72926af7cfcd123942b77b82ebc2884974c2477232ec7f9262526b86a499f45e"
+    },
+    "web/MerchantNavigation.jsx": {
+      "bytes": 11386,
+      "sha256": "e35fb55d588e52dc5b4cf20015330ec940e8525854d7591258bd0abf3dbf3bf3"
+    },
+    "web/MerchantNewOrder.jsx": {
+      "bytes": 32433,
+      "sha256": "d2cc9bc0bfe77f9fd7780d19be5001965cab1fa0f021b4094915464340c53a4e"
+    },
+    "web/OperationalAlerts.jsx": {
+      "bytes": 2843,
+      "sha256": "be3d615ba01f615a1001ecdd348b31385a519b12f784fe5241718cf28899baa5"
+    },
+    "web/OperationalShortcuts.jsx": {
+      "bytes": 3585,
+      "sha256": "088082f31db29dcd64e00d0a3baf5f763e97549160663f167e37b2e0f39c5d9c"
+    },
+    "web/Operations.jsx": {
+      "bytes": 52093,
+      "sha256": "2381f6888591ba5a17ef727755950f1f40664d9637fe01e16e27b19ae0cce17a"
+    },
+    "web/OrderDetails.jsx": {
+      "bytes": 9811,
+      "sha256": "b75e0f6168efd382d2d8f71c8e407efaa5c004b2f0c7a8d484decd2b5bcc73c9"
+    },
+    "web/OrderHistory.jsx": {
+      "bytes": 7443,
+      "sha256": "32bd916f8f3aed5faa158a15931ddb4bd6cbe2544a0aca8e3a628691136cebdd"
+    },
+    "web/OrderProfitReport.jsx": {
+      "bytes": 14579,
+      "sha256": "67f6316055c02c1a618e458b53ad366ef435fc5146277aa53783ebede384592a"
+    },
+    "web/Owner99Food.jsx": {
+      "bytes": 6164,
+      "sha256": "50b26ba9e7d52f6440f16df099783b19641d6d06cfc697bb3097b5da317f8bfa"
+    },
+    "web/OwnerAppReleases.jsx": {
+      "bytes": 8925,
+      "sha256": "490cf73badb44647a402551b0443a2cc2429f73b8e3f1af07ae7aacfab8511f4"
+    },
+    "web/OwnerCatalog.jsx": {
+      "bytes": 7608,
+      "sha256": "6745b40f7ba56acb510cc4927a197788848f27ec1a6559281a0d65ffc7959a9f"
+    },
+    "web/OwnerCommercialFinance.jsx": {
+      "bytes": 12714,
+      "sha256": "dda2c9ac5bc4397ece3cf443c9ee32ae72ad43db62b7c6c2c966795d1186f196"
+    },
+    "web/OwnerCourierCampaigns.jsx": {
+      "bytes": 8116,
+      "sha256": "3eb82999aa747ce75aa08463a9b04c7f41e3069c7b6017aba803e79e6cb7a047"
+    },
+    "web/OwnerDashboard.jsx": {
+      "bytes": 7281,
+      "sha256": "70fb7ee18307fe10245f4811a537b62fb1da24e01072b8102e29ea3c75b1d86d"
+    },
+    "web/OwnerFeatures.jsx": {
+      "bytes": 2811,
+      "sha256": "bfd71e4d5880d35953edb3a41875c3261a640aa69906fb31be65e8abca07122c"
+    },
+    "web/OwnerFinance.jsx": {
+      "bytes": 6935,
+      "sha256": "070dce94c4e0f19be8e2c66c8b0873f359154b9f3757493b8dbe35d0b4c99560"
+    },
+    "web/OwnerIfood.jsx": {
+      "bytes": 8234,
+      "sha256": "3a2f77100af0b54ee7e4f06642ad428f57a9a23ee852b719dc5105f842bbdb59"
+    },
+    "web/OwnerIfoodCentralRequests.jsx": {
+      "bytes": 3610,
+      "sha256": "14e51867dd9d134408d485a008f1156c0e82286ab7877da8282f511bf50d6b4e"
+    },
+    "web/OwnerIncidentNotifier.jsx": {
+      "bytes": 4827,
+      "sha256": "3b5e82ab872e8b6e3c4bbf3b7a937ec6e5c1f5c2269085db407b5f65cc0beaa0"
+    },
+    "web/OwnerMenuSettings.jsx": {
+      "bytes": 4331,
+      "sha256": "1d9d0e8b18f0c1c752eef60894bc777259cff761ad43291a319fe18c2e96bda1"
+    },
+    "web/OwnerOperations.jsx": {
+      "bytes": 5207,
+      "sha256": "0aff0022042b65c61e665e4dfc701fb910459a54ed453417b1df0195d750c9c1"
+    },
+    "web/OwnerPlans.jsx": {
+      "bytes": 1595,
+      "sha256": "53030b4b33bb3c3fd223f3f252325b842f90b824fbfcb0eb40a2d756923dd907"
+    },
+    "web/OwnerSubscriptions.jsx": {
+      "bytes": 8527,
+      "sha256": "3b495e7853a0bd89e73665c73f125073bbb42ca2487c80ce40fdf56ffcc3262c"
+    },
+    "web/PagBankSandbox.jsx": {
+      "bytes": 5929,
+      "sha256": "1a254b0858d3b4dda94f53174fbfeb81061928f0d54e918291e70efaf55f23a2"
+    },
+    "web/PaymentHomologation.jsx": {
+      "bytes": 4405,
+      "sha256": "b161c94b68d3aa1e431335a57ce471980284b76a5c238519517ae7b97ac0c3cf"
+    },
+    "web/Pedidos.jsx": {
+      "bytes": 34344,
+      "sha256": "dc3366896258169f94de04d76bc442a8390538e6ff6a942a2ff9144f86b8ae77"
+    },
+    "web/PitaccoIntelligence.jsx": {
+      "bytes": 8809,
+      "sha256": "8bc8d37ab78e3140661867b22cff9302f6189440edcacdd48edc0e85b1f96b36"
+    },
+    "web/PizzaBuilder.jsx": {
+      "bytes": 2748,
+      "sha256": "8b6e31d592c0c78cac715a1172ca7cf030e8753750029b6d862417cd62435129"
+    },
+    "web/PizzaComboEditor.jsx": {
+      "bytes": 8664,
+      "sha256": "32b57ed01bca19c27287c34fa98d0140e73e27d00bd8def9a7eb358424bfca39"
+    },
+    "web/PizzaEditor.jsx": {
+      "bytes": 7662,
+      "sha256": "c47a84a6fa5e375725ea1acc4192983e57c4e3a592b1d9e76f677a462c073903"
+    },
+    "web/PizzaRecipeEditor.jsx": {
+      "bytes": 4471,
+      "sha256": "faba29922f3e728c27d684bd9207c18747e3d83608e63d3e62dc97ced046d76a"
+    },
+    "web/PlanChange.jsx": {
+      "bytes": 8815,
+      "sha256": "4b5f67855b5d8eec583512e61a1c56d107097368231af6de90c6fdaa7795b7e3"
+    },
+    "web/PrinterPanelBoundary.jsx": {
+      "bytes": 829,
+      "sha256": "aa47f2f2be60e039abc35db6429f028e8c12315ebb266294d90a5dc341e4738a"
+    },
+    "web/ProductComplements.jsx": {
+      "bytes": 7256,
+      "sha256": "cdfae04ba73612bed366eea7e4c9f2962779a9900a6447c0964cb5ad6db72a99"
+    },
+    "web/ProductPhotoCrop.jsx": {
+      "bytes": 4233,
+      "sha256": "3de831bacb9a4a666a948be548d541c95bada820fba211fd9d02ac974319dae2"
+    },
+    "web/README.md": {
+      "bytes": 10049,
+      "sha256": "03e1a8b7e5fbbeb0d46e7e30f5bf9f833392ea31b32b989df31e1f8f7c594ce0"
+    },
+    "web/ReceiptEditor.jsx": {
+      "bytes": 4071,
+      "sha256": "72276d31f13761c0dd6082f0f1981faae7925241e96320ef1e300496f71c1fdd"
+    },
+    "web/RecoveryPreflight.jsx": {
+      "bytes": 6596,
+      "sha256": "1500db1097ac6fd4f8268f25ab24f435960b05c5948b2e75c04e9f0a60a7e522"
+    },
+    "web/ScheduleSettings.jsx": {
+      "bytes": 371,
+      "sha256": "6aef8c44bc0dfc728576c44bc5e0f251486cebebc1004cbc1ef1a16117877ac9"
+    },
+    "web/SetupConnection.jsx": {
+      "bytes": 1272,
+      "sha256": "b38e96fb5320abfa39799dff78429503fb74dcefebfda15af3a881e0b66553d9"
+    },
+    "web/StoreDesignStudio.jsx": {
+      "bytes": 26996,
+      "sha256": "459a158603c8702e9f450a583c1e270f75c0d1e6e80ebae1495bd1f3ba6e466d"
+    },
+    "web/StoreLaunchWizard.jsx": {
+      "bytes": 13592,
+      "sha256": "a863493e4bd1b9598551b4daf01ff9f82c44eb13924dfbe2cd8cd2a1c89e4cef"
+    },
+    "web/StoreOpeningHours.jsx": {
+      "bytes": 8970,
+      "sha256": "d845fb7444213cf15cd1c158710b9f400eeb9437367492af7d5729ebf9c9c0b4"
+    },
+    "web/StoreOverview.jsx": {
+      "bytes": 12986,
+      "sha256": "85f9d9e2981e97f3ce3477cc658a327a3779f0377343c43bb05e41937ebc4c62"
+    },
+    "web/StoreProfile.jsx": {
+      "bytes": 26202,
+      "sha256": "c4cffff6894c7cfcf2eae1133fa640e6eeac716ee766f463eeb3742ff6d2a14b"
+    },
+    "web/StoreReadiness.jsx": {
+      "bytes": 5163,
+      "sha256": "e96f4755871d356aa9cd9d3919dc77cbc8bfbdcce1d87798a079ee1b286448f2"
+    },
+    "web/StorefrontLivePreview.jsx": {
+      "bytes": 4694,
+      "sha256": "28d1d24a8fa608d239245631eb272c301d16c06fada3817b4bc17a8ab2f61a9a"
+    },
+    "web/StorefrontSettings.jsx": {
+      "bytes": 46408,
+      "sha256": "416b013c929c9f35456c4831ee3192ecc6613a8356926c43ab684f6f2657070c"
+    },
+    "web/SupportCenter.jsx": {
+      "bytes": 7818,
+      "sha256": "45e1763c1819da953b6bb16f3f4c868a65b3666c2026ef590e71d8ae5ec33b34"
+    },
+    "web/UniversalMenuImporter.css": {
+      "bytes": 4675,
+      "sha256": "661f78c1e74643001d50c8d5a2cd5027ad265d8c70b0c758c4494d26b6342520"
+    },
+    "web/UniversalMenuImporter.jsx": {
+      "bytes": 22399,
+      "sha256": "7ae4cf8871fb6f25949e1ef71348a2c38ab2791d6670205b19e1dc5e1aebaa7d"
+    },
+    "web/WhatsAppSettings.jsx": {
+      "bytes": 7254,
+      "sha256": "1c1a3af808291a3c246b563119536c12b297a1cfbd03c60390f4d896bf4f1cc8"
+    },
+    "web/WindowsConnectionStatus.jsx": {
+      "bytes": 7506,
+      "sha256": "677c8c7d40431d0acbecc1c173cbc65480948d297db061b18a30380d26d5d491"
+    },
+    "web/WindowsReceiptPreview.jsx": {
+      "bytes": 6647,
+      "sha256": "5539e766c1b892f7889f748fb331bc3a900ece7cdca8d63c848cd629c0944276"
+    },
+    "web/WorkspaceBoundary.jsx": {
+      "bytes": 1030,
+      "sha256": "92c7c07e6578d8338b25668a06c29520da404d8369e6227c5dd571941d1be9a0"
+    },
+    "web/admin.html": {
+      "bytes": 350,
+      "sha256": "39c088a4fec02dfffcdfff5a6cebe984ca13171ce22991ef0ba36f783214f51a"
+    },
+    "web/admin.vite.config.mjs": {
+      "bytes": 112,
+      "sha256": "1f7198a16733d42773bb0d2480fa53b69f8e52303cddb9ee9e40928829f98665"
+    },
+    "web/app-releases.css": {
+      "bytes": 715,
+      "sha256": "bd49f51882b9b1a567eb3cae082a6c33e1bedc90cba18ffa03db24f2f8ab3edf"
+    },
+    "web/appReleases.mjs": {
+      "bytes": 4629,
+      "sha256": "e043b4691c32bd1fbde4bee98e38b59a7f84b86eddd66a00609b8d44cc09178a"
+    },
+    "web/approvedReceipt.mjs": {
+      "bytes": 10609,
+      "sha256": "a344f43aa187d09fca99feec0a2debcd36c0bfbd63f108f53e643bec4e72aa73"
+    },
+    "web/browserReceipt.mjs": {
+      "bytes": 2435,
+      "sha256": "5894612e0c62b1b0c3148c6e70c9179aca85a9cb1411d2084ffb9f08ac7b9278"
+    },
+    "web/catalog-studio-modern.css": {
+      "bytes": 9650,
+      "sha256": "02425e62cb32f17f10da7ff39a029f16e76a68ae459065646f077909fe301890"
+    },
+    "web/category-icons.css": {
+      "bytes": 2342,
+      "sha256": "4357e32783fb03d6d256883064a68d6a7f25a52978c22d72b406082e762bc692"
+    },
+    "web/complement-workspace.css": {
+      "bytes": 7390,
+      "sha256": "77beac5e1f4747c2326bdeb20a7357c91cc6777e2377442cb29a02edf3c31a9c"
+    },
+    "web/config.mjs": {
+      "bytes": 1560,
+      "sha256": "dcfe02e8c76d643c7a803e0d336f577c4ba3ee1f818bba0cffc660da8e22261f"
+    },
+    "web/control-center.css": {
+      "bytes": 33366,
+      "sha256": "271c84a2da57fdbb02896293a2385453ae9b864befc71a440bb7b1ba4e6822ca"
+    },
+    "web/controlCenter.mjs": {
+      "bytes": 4175,
+      "sha256": "0ffbe1ba86826a0c4a10ed43b8e76aafa5b8cc8a93c803f348a8859704c63ec0"
+    },
+    "web/cupom80mm.mjs": {
+      "bytes": 4536,
+      "sha256": "bd163f93685c9a274f2372d3e2df034d62bef6ca4f4b733381dc6cc65bcb5899"
+    },
+    "web/dailyOrders.mjs": {
+      "bytes": 987,
+      "sha256": "db3f021e2c961acec4051ae7875cb0747d5c9743c87b1a322adde8f1176e4e90"
+    },
+    "web/deliveryCoverageGeometry.mjs": {
+      "bytes": 2225,
+      "sha256": "8b9cf12cd3586616faddc3f752ca4862cf05a6e3aebf7504468134fef201e9fc"
+    },
+    "web/deliveryMap.mjs": {
+      "bytes": 26524,
+      "sha256": "518ec2b0570744447c3b21499e103501a090e07cbd0f4eafe3be012dade458bd"
+    },
+    "web/dispatchOptions.mjs": {
+      "bytes": 3040,
+      "sha256": "7121b928c4892d4bd0636b3295b1124ceaa81d87eb82557314df0cce56ac541a"
+    },
+    "web/fiado.css": {
+      "bytes": 6528,
+      "sha256": "1085648b2c637abb27b3d138c56c3dad2c7a42bcea7e76af60ccb2ba1888392f"
+    },
+    "web/fideliza.css": {
+      "bytes": 17414,
+      "sha256": "ee19be6c1d9cef80e4c955c83bce8609442e9e904d8c12ac2557787647443252"
+    },
+    "web/fleet-tracking.css": {
+      "bytes": 6471,
+      "sha256": "752cb4bfe115d896e68104c12fb218b2f69cd250bc5fae08cca9d4cb272aec9a"
+    },
+    "web/index.html": {
+      "bytes": 255,
+      "sha256": "bba607baba04533144c8cfc81fcd026d6fe9a2f6b59e6808a337b10ba2018ade"
+    },
+    "web/mapOrigin.mjs": {
+      "bytes": 2556,
+      "sha256": "d192fcaf90852fe33cfb0fb193f2f4295fbc63b209c3907f96d41b1ebb87b8df"
+    },
+    "web/merchant-modern.css": {
+      "bytes": 23695,
+      "sha256": "9a986207337f4f83b53b92a3251f0079f8fd3525e10704b4f2bd902586d09f54"
+    },
+    "web/merchant-navigation.css": {
+      "bytes": 30316,
+      "sha256": "bac91c5e0ed48a4e3b36bf33897879a09c72f33a09b57b26dadc0ea2ace4982f"
+    },
+    "web/merchant-reference.css": {
+      "bytes": 20102,
+      "sha256": "acd2f79a5a688eb2a0eecdeba341daef99116bd1957449ff5418539227346b27"
+    },
+    "web/merchantDeliveryAddress.mjs": {
+      "bytes": 825,
+      "sha256": "fac5672d984447d323e8f62b63fe7c36ffdc7d35d73f3106479b005273859c97"
+    },
+    "web/merchantNavigation.mjs": {
+      "bytes": 5789,
+      "sha256": "f07302c971c5fcca2e4d86c0506c4adff01a9de2631eba1619abe53024df21fe"
+    },
+    "web/native-tests/Cargo.lock": {
+      "bytes": 10419,
+      "sha256": "5b3b1d24e69ef83b2b475460c63ca30e5148168cf874635f0ebd3f3c7c269044"
+    },
+    "web/native-tests/Cargo.toml": {
+      "bytes": 241,
+      "sha256": "bc9bfb0baef6f73317b96d83fe25494896049b4b405456c2069bc1a64e8ca4ab"
+    },
+    "web/native-tests/src/lib.rs": {
+      "bytes": 110,
+      "sha256": "76ac142d4dc9e26a81f63e9856532577e63cb5df16cace96e09c2a022673c025"
+    },
+    "web/normalizePizzaConfig.mjs": {
+      "bytes": 1653,
+      "sha256": "3bc0a836af10b61dc6910ebe18407d341c605edbba5ebfbf0ced696c20eb6856"
+    },
+    "web/operationRequestId.mjs": {
+      "bytes": 626,
+      "sha256": "3d57732ba6b871a0405fc12502f13122296abf1fc02e93a87940c5e772b214b7"
+    },
+    "web/order-history.css": {
+      "bytes": 2549,
+      "sha256": "39652ff9229741a889c92a654e843533317fc7df61116032a6288d75c5f11808"
+    },
+    "web/orderArrival.mjs": {
+      "bytes": 1198,
+      "sha256": "77a6d282843d098cc3fdf82e3e37a29f32ed7d51976fe6811eba6f2ad50bb6be"
+    },
+    "web/orderBoard.mjs": {
+      "bytes": 1518,
+      "sha256": "cd7223a60bdf05ce3b4344dad32ce2fabdb772523cb784c48853c5b2e76662a9"
+    },
+    "web/orderDeadline.mjs": {
+      "bytes": 1256,
+      "sha256": "51b99bbc8f7c8d948c0c1d0ee3043282ef1f5a6410e815e8d3305eba0f0276d2"
+    },
+    "web/orderDisplay.mjs": {
+      "bytes": 2358,
+      "sha256": "c625ba114d19ac3c6e566bffca6dac42181cf2a61a3fd64998ce89e4e287b625"
+    },
+    "web/orderSound.mjs": {
+      "bytes": 950,
+      "sha256": "8a44db2e83b50216b371442c016bba2740e66999657a048ff804b794e5216d30"
+    },
+    "web/owner-courier-campaigns.css": {
+      "bytes": 1770,
+      "sha256": "5ef6703bc5bdf5384885f83b40007f134e002bad84ae8e62c49e1e87ae402b0a"
+    },
+    "web/owner-dashboard.css": {
+      "bytes": 1789,
+      "sha256": "86b6ea7a260e9fcf10b51f3d6d20e5c9c0ab94bb322b5218e7b0cf9b562b7d64"
+    },
+    "web/owner-incident-notifier.css": {
+      "bytes": 725,
+      "sha256": "e278031cccb741fd9147721f41bf52a7df5e85e988844c25cc8a8e67def3c831"
+    },
+    "web/package-integrated.json": {
+      "bytes": 639,
+      "sha256": "1b0c3cf0b9abaae18817c3bf30bd74e525abf1764a71906d3fb14681f3da1642"
+    },
+    "web/package-lock.json": {
+      "bytes": 51133,
+      "sha256": "71e586313d6dc57e07f16f124dfbf1e1ca698ce291e2a003743addd958bf39fd"
+    },
+    "web/package.json": {
+      "bytes": 664,
+      "sha256": "fb4356369c9bddef7fb430368fb9113eb3324a6d3df1a2aee63972bb7a915224"
+    },
+    "web/pedidos.css": {
+      "bytes": 29586,
+      "sha256": "ea503bf1fce2dfa5617c26020e1757432870d62b0732b239e97a8657f3a900ca"
+    },
+    "web/pizzaPricing.mjs": {
+      "bytes": 2360,
+      "sha256": "9f3126a87247001834ecac0b75b7c76b6b41904b9e4084ea0dca86c8f287c564"
+    },
+    "web/printBridge.mjs": {
+      "bytes": 4035,
+      "sha256": "619d0657d7872f55243b8b59a6d55cb2a23d8ce99cb8ef2cc89659811f121148"
+    },
+    "web/printPreferences.mjs": {
+      "bytes": 497,
+      "sha256": "74408af872894b7a745fe3218370e3601ad90d2247e23b20f7131bb741f93864"
+    },
+    "web/public/pitacco-brand-013.svg": {
+      "bytes": 824,
+      "sha256": "1182227699ec182748faf90ad1af2f97813e35af61a67d4acc3cb31f07b1ab5e"
+    },
+    "web/public/pitacco-logo.png": {
+      "bytes": 1407583,
+      "sha256": "25eb351e8ded256d0c16b9432796c40b48e7629469a0cd855c4646ba5aa732dc"
+    },
+    "web/receiptArtwork.mjs": {
+      "bytes": 14183,
+      "sha256": "b1a29ca0dfc5a4ad47ca488301245ec83d6fde9cf2ba45c8bd75189472393db3"
+    },
+    "web/receiptBranding.mjs": {
+      "bytes": 4226,
+      "sha256": "7349988f9345b00c19506191490a9dd81a7ee11c25d358e15ffeac28d7fb03b6"
+    },
+    "web/receiptContact.mjs": {
+      "bytes": 950,
+      "sha256": "5c0f43d351b96f1fc68e0ab7110824453f792577c83f636d1ff6d4c0ba0ba31e"
+    },
+    "web/receiptItems.mjs": {
+      "bytes": 146,
+      "sha256": "2a31b8a3d6846df3c9ce2f8701c6ffdc68cd8f45359a653fe7d9560b8bc4ad2f"
+    },
+    "web/receiptMenuQr.mjs": {
+      "bytes": 3406,
+      "sha256": "9a2d479997f221a8f0aca70aad66ea65dd2cd3aebe584b5b209f65097a2ec758"
+    },
+    "web/receiptTemplates.mjs": {
+      "bytes": 529,
+      "sha256": "9bf56289207f0227d144d9d4ffedb3df75fe5c92a60c59e8a1c8630ef79cb923"
+    },
+    "web/receiptTestSample.mjs": {
+      "bytes": 1973,
+      "sha256": "03ee84840dec55afe6dec5de2bdb0009c8f7e5cbb68a517218d7dc721d0afb0f"
+    },
+    "web/roadOptimizer.mjs": {
+      "bytes": 3020,
+      "sha256": "251ec3136a37eff99cbbcab562583ca01038187ba28f933482700438af559966"
+    },
+    "web/routeEngine.mjs": {
+      "bytes": 2618,
+      "sha256": "e22c280cbe17ee100ea00616b7382a07ef62729d5d6c68b39e3306a80f38dadb"
+    },
+    "web/salesOfferMath.mjs": {
+      "bytes": 1044,
+      "sha256": "108ac897155683f9edf0be09da939d88e5f67a9d97698ae19cff1742455ab2f9"
+    },
+    "web/scheduleInfo.mjs": {
+      "bytes": 714,
+      "sha256": "f359a1cf70f049fce892ea4a8908aee8f08cf3aa3bfcc1bdfe6ae97d10fa0e68"
+    },
+    "web/scripts/build-windows.ps1": {
+      "bytes": 850,
+      "sha256": "4a135d698055bb3ec4657001ad877c80fe13949b3cf0d61420103104ba9e3ab6"
+    },
+    "web/server/dispatch-worker.mjs": {
+      "bytes": 2472,
+      "sha256": "3dae043ddd5259d2f4d3cd93fdf348ce227a097d6331b735bc95916b6542acc3"
+    },
+    "web/server/routeValidation.mjs": {
+      "bytes": 2712,
+      "sha256": "39a08dd3da1d555024b55cd41dbbc796f8dd734228a477fa0b76925922883e85"
+    },
+    "web/src-integrated.jsx": {
+      "bytes": 32482,
+      "sha256": "709985ec81acd3bdea07913ca880dd33f934b2bb00a7b9f2c83def3c1201994b"
+    },
+    "web/src-tauri/Cargo.lock": {
+      "bytes": 134668,
+      "sha256": "710093050c5a263bb464d1d77456568940d3591410d5a1fe7a870f729e868523"
+    },
+    "web/src-tauri/Cargo.toml": {
+      "bytes": 659,
+      "sha256": "64d370eb151951a94ee4f1d5a4a6feaf5cf88405706e3eeea79d7466b60303b2"
+    },
+    "web/src-tauri/build.rs": {
+      "bytes": 35,
+      "sha256": "8af41c0062014fc594e4bb9899e60ee9930ab57d4cf0c73041ff557d6ec736e6"
+    },
+    "web/src-tauri/icons/icon.ico": {
+      "bytes": 97185,
+      "sha256": "028d6f5124a01e7bd4f02260f081870c545aedeb369aa2c3bd6d00262257793f"
+    },
+    "web/src-tauri/src/incident-alert.wav": {
+      "bytes": 294218,
+      "sha256": "5c76b75ab4fd5bda669f3d1031ea43a50bba02abaac930df29dead3e5c6b195b"
+    },
+    "web/src-tauri/src/main.rs": {
+      "bytes": 24499,
+      "sha256": "391e1d76c7daf42d77133522071f5c5dad3d62dbee3adf283d286a3dc872475d"
+    },
+    "web/src-tauri/src/order-alert-high.wav": {
+      "bytes": 114284,
+      "sha256": "acf3a23235cc7f2033744db7613b40c93c399d0dc385b0bd4aa27a1dd7a00bb1"
+    },
+    "web/src-tauri/src/order-alert-soft.wav": {
+      "bytes": 114284,
+      "sha256": "2d1c527cb7e42251a2cc132ec3c9eb2b7609d2fdde84aeaf2b1f871f6df541f4"
+    },
+    "web/src-tauri/src/order-alert.wav": {
+      "bytes": 114284,
+      "sha256": "2c96faeaadab3c70e7b3d5eda49749c1d2acb3e4c2a1add6c394aac1a1c41d50"
+    },
+    "web/src-tauri/src/order-bell-classico-1.wav": {
+      "bytes": 115244,
+      "sha256": "31ab4a230d4f9eb1e09e008aa0050829f68a781ece2d2604756576d13ba5297d"
+    },
+    "web/src-tauri/src/order-bell-classico-2.wav": {
+      "bytes": 115244,
+      "sha256": "8632b76b26b66ab0f2dfe6fb4832c8cc1acd14ec23b021ccd369abad55d4b03d"
+    },
+    "web/src-tauri/src/order-bell-classico-3.wav": {
+      "bytes": 115244,
+      "sha256": "9b144599fe226fe298c8b42460a00fb2376b68681504e398766695bcaf017d59"
+    },
+    "web/src-tauri/src/order-bell-duplo-1.wav": {
+      "bytes": 115244,
+      "sha256": "72f136effa3d8abaea7b1622b83bd1ba2d4beb8b8e9044f1271be0533cb3d759"
+    },
+    "web/src-tauri/src/order-bell-duplo-2.wav": {
+      "bytes": 115244,
+      "sha256": "853e4882a0a071a7229b50ed377370edc954bcc13b586f3c7623d118bbe25f17"
+    },
+    "web/src-tauri/src/order-bell-duplo-3.wav": {
+      "bytes": 115244,
+      "sha256": "f89c3eeeb42e6b6be18986f2d4fff7bd3314391078a0049bafd6aa44f89d950d"
+    },
+    "web/src-tauri/src/order-bell-intenso-1.wav": {
+      "bytes": 115244,
+      "sha256": "ce3c78ccc6a30e56e6fdef56a90eedc39ceea32dd9956e7dc65b358bad35b63a"
+    },
+    "web/src-tauri/src/order-bell-intenso-2.wav": {
+      "bytes": 115244,
+      "sha256": "cbe5e28baec29497061545e0436809d4ca70fbdcdb132597759c36a96241bd58"
+    },
+    "web/src-tauri/src/order-bell-intenso-3.wav": {
+      "bytes": 115244,
+      "sha256": "e9e0a8982a1240c079f02125695abbbd4d5c8963a821f0e10369f333ff73ba73"
+    },
+    "web/src-tauri/src/order-bell-moderno-1.wav": {
+      "bytes": 115244,
+      "sha256": "74762c23b82fb1477148a59cd255060b2a1af26179b7356913d2d1e93f47a83d"
+    },
+    "web/src-tauri/src/order-bell-moderno-2.wav": {
+      "bytes": 115244,
+      "sha256": "e38c6d9d26446ea1b262c03083616523f1c5f4664913f4da3fa3a29160e72f0e"
+    },
+    "web/src-tauri/src/order-bell-moderno-3.wav": {
+      "bytes": 115244,
+      "sha256": "73204e0998bb70b474e499781e81fa7b9650f62cf95147f216f5e7b618f37fb1"
+    },
+    "web/src-tauri/src/order-merchant-voice-1.wav": {
+      "bytes": 138318,
+      "sha256": "4ecdacf1e63d0f7f19f86f65006cbd3c95e01c2b456ab52a747993eb2b417f0e"
+    },
+    "web/src-tauri/src/order-merchant-voice-2.wav": {
+      "bytes": 138284,
+      "sha256": "9b7eed6c491e16bddb68d8622245cda2630ecc526382ce756241c9a484858dc0"
+    },
+    "web/src-tauri/src/order-merchant-voice-3.wav": {
+      "bytes": 138284,
+      "sha256": "a4704964e8c7029ee0655ca0237eeaa16e306270ea98cd03c2a4f3939fd7059d"
+    },
+    "web/src-tauri/src/printer.rs": {
+      "bytes": 7562,
+      "sha256": "a4f3e8fbf13f375426849279972d100c93a79be09de5e9b88e957864a21a6150"
+    },
+    "web/src-tauri/src/queue.rs": {
+      "bytes": 8449,
+      "sha256": "768cd72d4e798691066677388e8d5de026f2bc1999a0425c435e0b6b33ba84e3"
+    },
+    "web/src-tauri/src/queue.sql": {
+      "bytes": 856,
+      "sha256": "ccf75f74ece10c2f4e6861af39f83dc2d8f12cabf504cc3fe9b7af220f2d2b89"
+    },
+    "web/src-tauri/tauri.conf.json": {
+      "bytes": 1312,
+      "sha256": "9b08b8b89847f82fc70ecfe6b169b05b8ff81f43d170d1328d0bcfd7ff1f2585"
+    },
+    "web/src.jsx": {
+      "bytes": 60476,
+      "sha256": "db59f9d2d4823b57083ef59704389053405ba27732574147efe5343d50241c27"
+    },
+    "web/store-design-studio.css": {
+      "bytes": 16378,
+      "sha256": "aa5e35bfcdcb3c2028245a3c504ded193adbeb101ef8807b5a59084ee086710c"
+    },
+    "web/store-launch-wizard.css": {
+      "bytes": 4938,
+      "sha256": "145c85aa563c009c5b4f27a6d57a348ea6bf2a35404d685741ec0a2241556ec1"
+    },
+    "web/store-opening-hours.css": {
+      "bytes": 4726,
+      "sha256": "7fe1908ac15ebab608e100546e49bd41ff504adfa356b59886b94fec6847f769"
+    },
+    "web/store-profile-modern.css": {
+      "bytes": 5346,
+      "sha256": "e7363d40555c9c42d3ea2501c4b8edead3db244e25bcb8c989b9cbae5f74bee8"
+    },
+    "web/storeAccess.mjs": {
+      "bytes": 1008,
+      "sha256": "9545dc2cf86206ba9043c8b259cf1cfde4f6fcdbd00376ea3d6edf8b66a7fdaf"
+    },
+    "web/storeFeatures.mjs": {
+      "bytes": 1821,
+      "sha256": "ae2604947412a663dd4dff567d2fe24b2566569e127d6fc263bc1d182e9798d5"
+    },
+    "web/storePostalLookup.mjs": {
+      "bytes": 2897,
+      "sha256": "594ee5e5ca59989852737de8fb055153af88d9177120a6a68686258a921e6997"
+    },
+    "web/storeRegistrationFields.mjs": {
+      "bytes": 1148,
+      "sha256": "7f55e7bacaba46f17ff39b7d92b353f92407aaaf27a1f58d93cfef5e46d1f059"
+    },
+    "web/storefront.css": {
+      "bytes": 7312,
+      "sha256": "679466c838ef5e02dd30cdf32ee6a3ded103680ae8a4b35a192f0f1d3117277d"
+    },
+    "web/storefrontLink.mjs": {
+      "bytes": 177,
+      "sha256": "9e421953259c373ae4dd3a7700360f10b2a183ea8e4c6179d9cb94a800318208"
+    },
+    "web/style.css": {
+      "bytes": 69539,
+      "sha256": "2a7f8c03975dd1da70e7b91168713ab0f1ded8aa9276bd862d38759e8068444a"
+    },
+    "web/subscription-modern.css": {
+      "bytes": 7336,
+      "sha256": "80f69de1c68267edb3c6c29fbf997da02a719030cf2c4c70fc77e83e66e90534"
+    },
+    "web/supabase/003_delivery.sql": {
+      "bytes": 7575,
+      "sha256": "2473a79ee313916faa61e77de9c031cada49c5b95ec3e5f4fc38efd6869fadf1"
+    },
+    "web/supabase/006_dispatch_batches.sql": {
+      "bytes": 2839,
+      "sha256": "42448e0312427633c98493b5cf72765bba0fa40722c2d6f3e9be49435ee24d25"
+    },
+    "web/supabase/007_marketplace_logistics.sql": {
+      "bytes": 6545,
+      "sha256": "2ca8512094d2aba513dbb62589803b7cb3091b18337dd6fd4d091dd0e03ee1a7"
+    },
+    "web/supabase/008_imports_external_delivery.sql": {
+      "bytes": 2460,
+      "sha256": "206ce81709f24c2cde1edd9cdf06e7d26a2634dea5e2e46bae507b01ce257f82"
+    },
+    "web/supabase/009_menu_images_dispatch_policy.sql": {
+      "bytes": 6804,
+      "sha256": "95e198c1847d240aaa71a99799d7ef9d78c9d864312f1a2441928f7e3e2e77cd"
+    },
+    "web/supabase/010_acceptance_printing.sql": {
+      "bytes": 19180,
+      "sha256": "07090626e263751210b123468fa70f950e5745809253fbbbe2539760dd2984cd"
+    },
+    "web/supabase/011_public_checkout.sql": {
+      "bytes": 16725,
+      "sha256": "3004d0bf67212c51095ffaa2f2980221396e4761b44dd9990c591f5fc503085c"
+    },
+    "web/supabase/012_order_board.sql": {
+      "bytes": 1679,
+      "sha256": "62b552cd1a59079d9fce5ca5ffb4c160e6e8a2decd542f2c74961ad9d2aed3a5"
+    },
+    "web/supabase/013_logistics_routes.sql": {
+      "bytes": 17887,
+      "sha256": "ac34366203a107feebd5646495ac560c9da2f23797c92f99b1495367e6059dbb"
+    },
+    "web/supabase/014_print_receipt_templates.sql": {
+      "bytes": 1703,
+      "sha256": "d419b28443fbcbfc7dd6e0b125dc76981cfd94255b762387cf7433d13492f4cf"
+    },
+    "web/supabase/015_advanced_print_routing.sql": {
+      "bytes": 2251,
+      "sha256": "ca844476ef17c0f386f6e20ec06b8e95ffd625b8e9cfe4abd59d1887684a5136"
+    },
+    "web/supabase/016_fideliza.sql": {
+      "bytes": 4301,
+      "sha256": "6ef8bc36b3552ee6c9d92375dc5fc8bf13f06d6a9a8911a97515615cd9cc7ead"
+    },
+    "web/supabase/017_catalog_editor.sql": {
+      "bytes": 1548,
+      "sha256": "0b13a8ea9dbd93cc86d64988e6811e1f26582b20fbae2f63b713e166aeafd99d"
+    },
+    "web/supabase/018_store_branding_media.sql": {
+      "bytes": 2794,
+      "sha256": "4b913c0147409fccb7900a811b8a94439eddec6b8ee1ecb155532b115121bdde"
+    },
+    "web/supabase/019_owner_support_access.sql": {
+      "bytes": 3360,
+      "sha256": "0e524df8af9729b2def299b9f06d636f7476903d2f7997a156842c451ec7a583"
+    },
+    "web/supabase/020_customer_blocks.sql": {
+      "bytes": 1624,
+      "sha256": "108487cedbe4ab7615b3953f4098c3276888334a5c4484b3e08a64e95a319c98"
+    },
+    "web/supabase/021_whatsapp_notifications.sql": {
+      "bytes": 2625,
+      "sha256": "1000487c676bd5cd656ac6923e96c54730b7176eef2f5e8e6c53f62aed1fe1f2"
+    },
+    "web/supabase/022_whatsapp_settings_rpc.sql": {
+      "bytes": 1930,
+      "sha256": "c04aa0b5e07fb98faab27901e232d6d4440c321ebbd8e2eb9863decf12074bc6"
+    },
+    "web/supabase/023_whatsapp_connections.sql": {
+      "bytes": 1443,
+      "sha256": "d1a0c0057510f6b0327dbe985f45c9224a50e60be9d249bc14bb72a651c6c167"
+    },
+    "web/supabase/024_whatsapp_onboarding_consent.sql": {
+      "bytes": 1559,
+      "sha256": "ac83252acfde4f2ab3eadf9e913f8b3cfec9a6b0b348e214e29fd66ab2f50ec4"
+    },
+    "web/supabase/025_whatsapp_permission_rpc.sql": {
+      "bytes": 462,
+      "sha256": "4c5e01e09f8d8ce1e4deb4b7e53664e9b2546f9da4947fba236b15e7794336dc"
+    },
+    "web/supabase/026_whatsapp_encrypted_credentials.sql": {
+      "bytes": 750,
+      "sha256": "66470ebb6c6b944c81a10b8c7a1c915063577a5d0833757e820b6dc8e6c6ca39"
+    },
+    "web/supabase/027_order_display_numbers.sql": {
+      "bytes": 5163,
+      "sha256": "0120fa7cc883f03d776e3298d3e22dacae637c53e50afa100d9b5b203fd3d69f"
+    },
+    "web/supabase/028_courier_payouts.sql": {
+      "bytes": 3097,
+      "sha256": "3d31cc5c7a37d9f36062b5b8b7efbb4e6c75f72e50f62f31138d725653a9592f"
+    },
+    "web/supabase/029_courier_rate_rules.sql": {
+      "bytes": 1431,
+      "sha256": "0c7b7dea8e554ee7d56ad04559c908307904260a4a4c0358f959fe6f25f1e3b6"
+    },
+    "web/supabase/032_single_print_computer.sql": {
+      "bytes": 2166,
+      "sha256": "f671ae34f9ad4c33bc04aba00f0dded19e7b9ff180a9a124e2ccb7c8391d05db"
+    },
+    "web/supabase/PRINTING_BACKEND.md": {
+      "bytes": 6833,
+      "sha256": "cff2318c6741f5217dd1eaba59c5008962b3a749304e15e89c1aba9b473ebbf5"
+    },
+    "web/supabase/functions/whatsapp-connect-start/index.ts": {
+      "bytes": 2745,
+      "sha256": "7b8f526d35e36a9236435788ba4940bdacb2122a887c77704889f0971afc948d"
+    },
+    "web/supabase/schema.sql": {
+      "bytes": 6766,
+      "sha256": "c00da8067163b6519fde68007ff0aafec9ae62e83933d851068fedf2186992f1"
+    },
+    "web/supabase/tests/010_acceptance_printing.test.sql": {
+      "bytes": 6714,
+      "sha256": "9cc624f2fa002a8660e4182651c3b1cc52b503c7a5ca58091939384dcc0399c6"
+    },
+    "web/supabase/tests/011_public_checkout.test.sql": {
+      "bytes": 3548,
+      "sha256": "e055bab7c39947f07c1c473e80780ff38cb3a42cb0f34cda1fde47bcd36cdb14"
+    },
+    "web/supabase/tests/012_order_board.test.sql": {
+      "bytes": 2566,
+      "sha256": "2a95eaaf4959a51e693d8bf13d5966316d2f07a2c15bc895549debb7eba6fb38"
+    },
+    "web/supabase/tests/013_logistics_routes.test.sql": {
+      "bytes": 7834,
+      "sha256": "653b6d5eaa86845077e63a60eb8941365df47644d47923f28a0c772c3738415e"
+    },
+    "web/super-admin.css": {
+      "bytes": 3424,
+      "sha256": "5cb8a1b586f9a660a6b5c43cb7b488ee64a330dab51f079417a6f3ea6948048f"
+    },
+    "web/tests/approvedReceipt.test.mjs": {
+      "bytes": 6389,
+      "sha256": "051105420348868f981b3838d2e6a7a5dc2285f85bc3d5e6b197a955eb274243"
+    },
+    "web/tests/backend/active-order-cancellation.test.sql": {
+      "bytes": 4070,
+      "sha256": "04961fb7182c8f71c7557263047df504ffab1bca620d0c0932b54f66822bdf58"
+    },
+    "web/tests/backend/admin-homologation.test.sql": {
+      "bytes": 5444,
+      "sha256": "380fbc55eb7ab57a50b19857f7cc30cac11ab518db467ebc5441d6a739c0cadc"
+    },
+    "web/tests/backend/app-releases.test.sql": {
+      "bytes": 5825,
+      "sha256": "88197c83c99a2b6d801e035b8dc83d946770d4784838bdc7d571c672f83207d0"
+    },
+    "web/tests/backend/asaas-recovery.test.sql": {
+      "bytes": 4372,
+      "sha256": "55dfb3122bfbb871fadd9f788bd7032fa0e643275969028ce5894b0323b6ff58"
+    },
+    "web/tests/backend/asaas-store-isolation.test.sql": {
+      "bytes": 5518,
+      "sha256": "7a60d4ca5347d382d11254cf8fb65c7d3647237ae8128e0f288b4a0084ecd6cc"
+    },
+    "web/tests/backend/asaas-subscription.test.sql": {
+      "bytes": 1518,
+      "sha256": "496b7baddc96fd8bf666f200a4afa9d66d62e87a18b3a954a6c6f81c439b5777"
+    },
+    "web/tests/backend/business-insights.test.sql": {
+      "bytes": 6469,
+      "sha256": "3447ec93117cec281e2445fb1abeab3dc0e3745cbeb119d90c9c217b4b721de9"
+    },
+    "web/tests/backend/cancelled-beverage-returns.test.sql": {
+      "bytes": 10193,
+      "sha256": "30d8a94dc5b97f7aab64fb7baf1273d78b1c13ceb7ca3afacda2db361faf66a9"
+    },
+    "web/tests/backend/checkout-priority-recovery.test.sql": {
+      "bytes": 9521,
+      "sha256": "265e164cca86e00e7826da124ac66b582035450e7b1c495724eadd9ac24fc7cd"
+    },
+    "web/tests/backend/checkout-variants.test.sql": {
+      "bytes": 7122,
+      "sha256": "b7e71bd24b2d22fe6ecfb468d5471d2622e106ccf72baaf04bafd53bf7b52c59"
+    },
+    "web/tests/backend/commercial-plans.test.sql": {
+      "bytes": 4711,
+      "sha256": "90b5f47d569feea9cbc53a6558690ee4fa78e372451f59ed3fde603e5ba1e59a"
+    },
+    "web/tests/backend/concurrency.mjs": {
+      "bytes": 9156,
+      "sha256": "79193928961cebef09b3462bf96b385b7fdc0934465ec4f3aedee49a49b4566d"
+    },
+    "web/tests/backend/confirmed-payment-prices.test.sql": {
+      "bytes": 5637,
+      "sha256": "4d0de2d02e2feb2696b7550a7e4ea771109cc25696929f7b4b4d725b016bde1b"
+    },
+    "web/tests/backend/control-center.test.sql": {
+      "bytes": 16585,
+      "sha256": "f392e5de2f799f95afb0568ae7b5f4f269eb9d380b1d87107453e6e9ef5ee830"
+    },
+    "web/tests/backend/courier-push.test.sql": {
+      "bytes": 3373,
+      "sha256": "fd7cb309bba99173dbcf5f2bde78bd0dbc31c37ba22df2a5f1be406f4389ec7c"
+    },
+    "web/tests/backend/delivery-pricing.test.sql": {
+      "bytes": 3101,
+      "sha256": "c578f11c632f2f6761c3d860c72ab0f6f1ccdcb698d1005b6d22798044030214"
+    },
+    "web/tests/backend/delivery-reassignment.test.sql": {
+      "bytes": 5892,
+      "sha256": "64840cdfd5f164a5ddf8482e4d2cc81d5549b615b1dc220802397e03593e28f7"
+    },
+    "web/tests/backend/delivery-tracking.test.sql": {
+      "bytes": 4664,
+      "sha256": "16ae3f76393d8a203a6be9776d01a1335404e71d19aba916de0d5043d97c2057"
+    },
+    "web/tests/backend/fiado-credit.test.sql": {
+      "bytes": 16721,
+      "sha256": "db08d14926db842c13332639887c16f947aa2345117c96ab4f773208cec36ec0"
+    },
+    "web/tests/backend/fideliza-runtime.test.sql": {
+      "bytes": 20029,
+      "sha256": "9830af68c11ab4e00ee1928f328e7493b112e9ea234034743767147bb7e3566e"
+    },
+    "web/tests/backend/financial-report.test.sql": {
+      "bytes": 5293,
+      "sha256": "d8cea26010f73b8359935b371f633e2e392124b4ec982be0820e95867925b525"
+    },
+    "web/tests/backend/fixture-schema.sql": {
+      "bytes": 7221,
+      "sha256": "e6f01414406c2a9ce32bc0d8be3dbdc4b157a09a1df7eb660669eeb81f6e63ce"
+    },
+    "web/tests/backend/flex-fixo-cutover.test.sql": {
+      "bytes": 3699,
+      "sha256": "650ccb2a9a29ed4805156d771a087b9de8f85f30e107fce68dc1f26cc361b930"
+    },
+    "web/tests/backend/ifood-arrival-dispatch-gate.test.sql": {
+      "bytes": 6292,
+      "sha256": "8d734253704861ded69cded3e2d9fd7a3f0c457ff41c93fc8d9a86d54a582198"
+    },
+    "web/tests/backend/ifood-events.test.sql": {
+      "bytes": 20015,
+      "sha256": "2bb44b9f816eeaf5bb6ade1bee31eabc42083d5aa9033115c9aa493232b16408"
+    },
+    "web/tests/backend/incident-monitor.test.sql": {
+      "bytes": 8808,
+      "sha256": "454f95f9ec8bd9c528a2c3ac56752c2c735e497e9dce098785ac9ecf193a3b6c"
+    },
+    "web/tests/backend/incident-whatsapp.test.sql": {
+      "bytes": 1888,
+      "sha256": "502e02537188f7c7ab2707678ff94a0b21ed6adb911a016198f671ba1475f950"
+    },
+    "web/tests/backend/inventory-options.test.sql": {
+      "bytes": 16313,
+      "sha256": "95b7313e8c11d398a744d20b731abeadbec93b64e7ff2931e49d99560da9819b"
+    },
+    "web/tests/backend/inventory.test.sql": {
+      "bytes": 4982,
+      "sha256": "fb116b27411e181489a2c2e6bf3dcaaae5df847ae331630ee2f9e92cf6375e48"
+    },
+    "web/tests/backend/legacy-payer-registration.test.sql": {
+      "bytes": 1234,
+      "sha256": "3ece572a998758f3d65e889ab2bc435263996186493e0207fb95b57d0a256506"
+    },
+    "web/tests/backend/mandatory-plan.test.sql": {
+      "bytes": 8643,
+      "sha256": "c1bc8d5799b7dc9c919bf850367bff510235004e558f4a422e6fedd1a1332e6a"
+    },
+    "web/tests/backend/manual-proof-identity.test.sql": {
+      "bytes": 1899,
+      "sha256": "deaf811c7db13707e6bd713fa7148576bae1e91fbfa8d7892a99a4070f4dab2d"
+    },
+    "web/tests/backend/marketplace-settlements.test.sql": {
+      "bytes": 3785,
+      "sha256": "37f07a3ab436accf7312c8ff16c22646ba35abada23857b021df833f8d58c610"
+    },
+    "web/tests/backend/menu-category-icons.test.sql": {
+      "bytes": 3378,
+      "sha256": "1ac304a8342b1d429ded65c051489b7ae8488039a2c22db39382f350a2184237"
+    },
+    "web/tests/backend/onboarding-preflight.test.sql": {
+      "bytes": 3925,
+      "sha256": "a1142d05f9c809dbcb0bdb4dc2bc4d4b64724ae46ed8bd0cb1df4703c66d53bc"
+    },
+    "web/tests/backend/operational-alerts.test.sql": {
+      "bytes": 3693,
+      "sha256": "549386b87a4bce7f0c490d6a55b88c2ff5bccd2c2fad3384a5151c518c1c58a7"
+    },
+    "web/tests/backend/order-decisions.test.sql": {
+      "bytes": 3761,
+      "sha256": "fa4c64c38899754b23366cad2976a01cfc927689c9fa4a93edfc9c225bda73b7"
+    },
+    "web/tests/backend/owner-copy-catalog.test.sql": {
+      "bytes": 5250,
+      "sha256": "c622e61c694b79c271cfc7904cd976b172fb5b64fdf585af055e49a8f6fb7e2e"
+    },
+    "web/tests/backend/owner-platform-dashboard.test.sql": {
+      "bytes": 6281,
+      "sha256": "8677c4254777990b8878326682f5c140d1d1a33ae5029be24b09f00d83882ef7"
+    },
+    "web/tests/backend/package-lock.json": {
+      "bytes": 497,
+      "sha256": "cb8174bb1f89b27031bde3a3f70c6f272b84ba9f47cc57d9699f1a13e2e9abb0"
+    },
+    "web/tests/backend/package.json": {
+      "bytes": 138,
+      "sha256": "40b216bbefe22037de307f13ebd51bebecb71147cd6a5ec507d2d957bd6c5521"
+    },
+    "web/tests/backend/payment-pricing-drafts.test.sql": {
+      "bytes": 4033,
+      "sha256": "09cd3243e0def5d9ec089c50c9dfec295a6dafca380213660d13f960339c3bfb"
+    },
+    "web/tests/backend/platform-owner.test.sql": {
+      "bytes": 6876,
+      "sha256": "c8acae8941df514a1d55b379691a234ebe6ddb764de99589fc1fa955d5eb2b56"
+    },
+    "web/tests/backend/production-function-fixture.sql": {
+      "bytes": 20075,
+      "sha256": "012ac23dcf51a4e3270d1e47f432f98519eebd56e04c288f47d5b3670136543f"
+    },
+    "web/tests/backend/run.mjs": {
+      "bytes": 10666,
+      "sha256": "66f3b2cb4efcba2ae9e7b9f03dfaa583af5bc47d0502bfa4f935d62ead0ac337"
+    },
+    "web/tests/backend/scheduled-orders.test.sql": {
+      "bytes": 6580,
+      "sha256": "7636e56d38179dc9977674c44a5dd86872f44a8b15ab2eb56783ce368861703e"
+    },
+    "web/tests/backend/self-service-plan.test.sql": {
+      "bytes": 3508,
+      "sha256": "95d96c16af1bf678967d37b4cd67871adce739e52faed483d4aba32d0098810a"
+    },
+    "web/tests/backend/store-opening-hours.test.sql": {
+      "bytes": 10534,
+      "sha256": "61b7e0ac3e3b7b5c82abad945b4d676c06e2a2fb8650328a0e55ac20a23d4c73"
+    },
+    "web/tests/backend/store-profile-logo.test.sql": {
+      "bytes": 2693,
+      "sha256": "01ea0c028209a7d338937d59616973707ae6d9aedef3eef3d497afd6745e1e59"
+    },
+    "web/tests/backend/store-trial.test.sql": {
+      "bytes": 2254,
+      "sha256": "75caa0ed5df5c27c29cf23c3a825a736df3710c163febc752d9ba996aca707fe"
+    },
+    "web/tests/backend/storefront-design.test.sql": {
+      "bytes": 8523,
+      "sha256": "2a00baa4c5c1b7ddf641f52ed5aaf860c17d16fcfdc75e09ae996f4969a5930b"
+    },
+    "web/tests/backend/storefront-settings.test.sql": {
+      "bytes": 8787,
+      "sha256": "6ee0692bec70cbd3c4a7cd76ac2807c29fe67e4ecab605fb3a31cda681d6e841"
+    },
+    "web/tests/backend/studio-save-publish.test.sql": {
+      "bytes": 3703,
+      "sha256": "0a181ca1f0febb2cb9ae395a624b882892364ab888109263b012ba50dc0f112d"
+    },
+    "web/tests/backend/subscription-entitlement.test.sql": {
+      "bytes": 5283,
+      "sha256": "1fa575c09ed798ee6abf43c54ec252a8505d377027b1e8617bafa52ff3600eea"
+    },
+    "web/tests/backend/support-center.test.sql": {
+      "bytes": 3755,
+      "sha256": "22d8c284c6ffc25cea0f1be04284ea5dbadf7576aede76151d54817832c16b9d"
+    },
+    "web/tests/backend/unified-store-registration.test.sql": {
+      "bytes": 3281,
+      "sha256": "f758cdc1ada8393b82bbf212fe009d1c4ae85582d3709f60b26e651574de4a2b"
+    },
+    "web/tests/backend/v2-customer-profile.test.sql": {
+      "bytes": 4669,
+      "sha256": "9ec39ebc709e1202a7abd3f2d020f079b193dd5c9e09add120f3198dcfc93050"
+    },
+    "web/tests/backend/verified-delivery-addresses.test.sql": {
+      "bytes": 8512,
+      "sha256": "bf9f9188f5c37b0f61cf87e1826ba483dbc5a330a62acb3a9eef9e5a844ae354"
+    },
+    "web/tests/backend/windows-paper-confirmation.test.sql": {
+      "bytes": 3558,
+      "sha256": "9aa440caccd8e10162f42b70266330ef6a2d1bf66f3dc8e7531a54a43e3ace44"
+    },
+    "web/tests/backend/windows-presence.test.sql": {
+      "bytes": 3256,
+      "sha256": "2f60e861da9c47f5ea73f40fb20ec96c7fa8122de4e12c961537d7c9cb5e4ea1"
+    },
+    "web/tests/browserReceipt.test.mjs": {
+      "bytes": 1814,
+      "sha256": "5e069eae5bc7816e8899dec545690731ef73a3eff90e0515b0a036448475a3b5"
+    },
+    "web/tests/config.test.mjs": {
+      "bytes": 1418,
+      "sha256": "12965a2f30667412a95490dbf6e53c1ebe1282c0be1a65a84ffada7a9231c1f2"
+    },
+    "web/tests/dailyOrders.test.mjs": {
+      "bytes": 714,
+      "sha256": "f2e934b760cf8fbc5007017fda532ac92554d3083c536d326929416dd2d7a4e2"
+    },
+    "web/tests/dispatchOptions.test.mjs": {
+      "bytes": 3241,
+      "sha256": "a50420668a606f6d2051ef4fd8de1d6c9b92333638081cdd3f308031f3c02fa8"
+    },
+    "web/tests/fiado-manual-block.test.mjs": {
+      "bytes": 714,
+      "sha256": "1df4e7ce70a488341aaa2ab34cb7e85d6fae864000eda7148a3fbe79cd95fa71"
+    },
+    "web/tests/fiado-navigation.test.mjs": {
+      "bytes": 652,
+      "sha256": "1fac8a3b98cadb76e965c7f7fb4f0d837f012895321515494285cf5285d0e729"
+    },
+    "web/tests/merchant-navigation.test.mjs": {
+      "bytes": 7257,
+      "sha256": "18b458f8b756d0ce7a21e26878284bf9326c3002b886b25fe45da45bba676bac"
+    },
+    "web/tests/orderArrival.test.mjs": {
+      "bytes": 1804,
+      "sha256": "9d696f6be2119235ecd58e97a8ee3da90bb2a58d728b1ddf8cd92bdc796a8a08"
+    },
+    "web/tests/orderBoard.test.mjs": {
+      "bytes": 2719,
+      "sha256": "df7a645538bb75c24963ec441133dea7b3faca2140e90522870485afaed84e36"
+    },
+    "web/tests/orderDeadline.test.mjs": {
+      "bytes": 1317,
+      "sha256": "0f6a3f532a3922cade5d0caa63838ebc420724be4bf0d34857d7e4d4fd4a1ed1"
+    },
+    "web/tests/print-replay.test.mjs": {
+      "bytes": 2062,
+      "sha256": "5070d44f7634b408673afc4e61c5cc961feffacb4a3b1bf053edea9f61b56fb9"
+    },
+    "web/tests/printBridge.test.mjs": {
+      "bytes": 1398,
+      "sha256": "800d064a5f5f18e9deb81241049c9b8ca6283813aad96ef6bc8924bfbb6ac74e"
+    },
+    "web/tests/receiptArtwork.test.mjs": {
+      "bytes": 5092,
+      "sha256": "533d54d38858d0e8072a92f8c2c0798d543c4b4c06ebf314c7d3666acf130395"
+    },
+    "web/tests/receiptBranding.test.mjs": {
+      "bytes": 1674,
+      "sha256": "dc9436cd19c50c928e0ba9e2427b0294a1e63ff9173845313c6464bba429855e"
+    },
+    "web/tests/receiptMenuQr.test.mjs": {
+      "bytes": 1663,
+      "sha256": "10dbef9acc787149bc042e09c5211a93fdb9454bfdaa4e48ad16d06462fc1912"
+    },
+    "web/tests/receiptTemplates.test.mjs": {
+      "bytes": 1140,
+      "sha256": "29b90ed554f46dfc78950ef479a2ea1f1b3f9a857b0010eadd874c422ee8dc5a"
+    },
+    "web/tests/roadOptimizer.test.mjs": {
+      "bytes": 1029,
+      "sha256": "7886613b1d02e2deb8ed8bb64b3a7865439e29019cd5065242873d80873078b7"
+    },
+    "web/tests/routeEngine.test.mjs": {
+      "bytes": 1130,
+      "sha256": "bfd309134e90e8f314b88b7453a95e8f1e39fb7eda5ae3e9f94ba76e7d81c0e9"
+    },
+    "web/tests/routeValidation.test.mjs": {
+      "bytes": 2255,
+      "sha256": "205414d203b581c2a8180c69b8314afa7a7456e1947f72e58190384a242fb51e"
+    },
+    "web/tests/ui-smoke.mjs": {
+      "bytes": 11152,
+      "sha256": "f9880c86e35d1646c53da74b0c3d5e330da17d6dfe0e74979aa87d090696aa0d"
+    },
+    "web/tests/windows-screen-print.test.mjs": {
+      "bytes": 22528,
+      "sha256": "f01af87ae646e570b7b7186bbaee0c0c5c09370053cc74b1b5b6ce2424e67e0b"
+    },
+    "web/tests/windowsPublicDownload.test.mjs": {
+      "bytes": 4569,
+      "sha256": "6339a9b9cc844d352ba2a43d1ca58a46bc977d4e58200b970890be5ce4260b1b"
+    },
+    "web/whatsappEmbeddedSignup.js": {
+      "bytes": 3667,
+      "sha256": "85fa0912ce99dae75b694fe0a9f4c46115b9548854ec38757a1f08e3118a5138"
+    },
+    "web/windows-printing.css": {
+      "bytes": 2375,
+      "sha256": "8d0131e28d76efd1ea8d73768b8c1ad769a2615bda0322c5e706caba98f36a75"
+    },
+    "web/windows-receipt-preview.css": {
+      "bytes": 1364,
+      "sha256": "b7a29cd29d50ff54391d28f6bcd5197cb5103cd9d0e7ec6512662eb6c51dcbad"
+    }
+  },
+  "native_files": 388,
+  "native_repeat_identical": true,
+  "source_commit": "0bdd766963222b8bfc923879e35bfaacd6d672db",
+  "web_only_differences": [
+    "web/src-tauri/src/incident-alert.wav",
+    "web/src-tauri/src/order-merchant-voice-1.wav",
+    "web/src-tauri/src/order-merchant-voice-2.wav",
+    "web/src-tauri/src/order-merchant-voice-3.wav"
+  ],
+  "web_only_files": 384
+}

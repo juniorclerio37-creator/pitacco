@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {distanceKm,suggestTrip} from '../routeEngine.mjs';
+const origin={lat:-22.759,lng:-43.451};
+const o=(id,lat,lng,extra={})=>({id,lat,lng,status:'pendente',logistics_provider:'own',...extra});
+test('zero distance',()=>assert.equal(distanceKm(origin,origin),0));
+test('single order always possible',()=>assert.equal(suggestTrip({origin,orders:[o('a',-22.75,-43.45)]}).selected.length,1));
+test('opposite direction excluded',()=>{const r=suggestTrip({origin,orders:[o('a',-22.75,-43.451),o('b',-22.77,-43.451)]});assert.equal(r.selected.length,1);assert.equal(r.excluded[0].reason,'Direção incompatível')});
+test('marketplace delivery excluded',()=>assert.equal(suggestTrip({origin,orders:[o('a',-22.75,-43.451,{logistics_provider:'marketplace'})]}).selected.length,0));
+test('one-order policy',()=>assert.equal(suggestTrip({origin,orders:[o('a',-22.75,-43.451),o('b',-22.749,-43.451)],maxOrders:1}).selected.length,1));
+test('missing coordinates excluded',()=>assert.equal(suggestTrip({origin,orders:[{id:'x',status:'pendente'}]}).selected.length,0));

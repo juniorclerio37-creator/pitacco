@@ -1,0 +1,116 @@
+.storefront-share,.storefront-map-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem 1rem;
+}
+.storefront-share {
+  margin: .75rem 0;
+  padding: .6rem .9rem;
+  border: 1px solid currentColor;
+  border-radius: .65rem;
+  font-size: .875rem;
+}
+.storefront-share a { overflow-wrap: anywhere; color: inherit; text-decoration: underline; }
+.storefront-map { height: 320px; width: 100%; margin: .75rem 0; z-index: 0; }
+.storefront-area-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: .75rem;
+}
+
+/* Delimitação visual de entrega — mesma origem do mapa da loja. */
+.delivery-zone-config{display:grid;gap:14px}
+.delivery-zone-config fieldset{min-width:0;border:1px solid #eadacb;border-radius:13px;padding:14px}
+.delivery-zone-config legend{font-weight:800;color:inherit;padding:0 6px}
+.delivery-zone-mode{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px;margin:8px 0 12px}
+.delivery-zone-mode label{display:flex;align-items:center;gap:9px;min-height:48px;
+ border:1px solid #edd8c8;border-radius:12px;padding:12px;font-weight:750;cursor:pointer}
+.delivery-zone-mode label:has(input:checked){background:#fff4e9;border-color:#fb923c;color:#9a3412}
+.delivery-zone-mode input{accent-color:#ea580c}
+.delivery-zone-range{display:grid;gap:12px;font-size:.96rem}
+.delivery-zone-range input{width:100%;accent-color:#ea580c}
+.delivery-zone-map{height:min(54vh,490px);min-height:320px;border:1px solid #ead6c4;
+ border-radius:15px;overflow:hidden;background:#f5f2ec;margin:0}
+.delivery-zone-rates{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.delivery-zone-rates label{display:grid;gap:5px;font-weight:700}
+.delivery-zone-rates input{width:100%;min-height:43px;border-radius:8px}
+.delivery-zone-polygon-actions p{margin:6px 0 12px}
+.delivery-zone-polygon-actions>div{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.delivery-zone-polygon-actions button{min-height:43px}
+.storefront-delivery-note{background:#fff7ed;border:1px solid #fed7aa;padding:12px;
+ color:#8a4515;border-radius:11px;margin:8px 0;line-height:1.55}
+@media(max-width:620px){.delivery-zone-map{height:350px;min-height:280px}
+ .delivery-zone-mode{grid-template-columns:1fr}.delivery-zone-polygon-actions button{flex:1}}
+
+/* Clearly draggable polygon points (works with touch on Android). */
+.pitacco-polygon-handle{display:flex;align-items:center;justify-content:center;
+ width:30px;height:30px;box-sizing:border-box;border:3px solid #ea580c;
+ background:white;color:#9a3412;border-radius:50%;font-size:13px;
+ font-weight:900;box-shadow:0 3px 9px #0003;cursor:grab;touch-action:none}
+.pitacco-polygon-handle:active{cursor:grabbing}
+
+
+/* Independent polygons. Keep the existing circle-by-km controls untouched. */
+.delivery-region-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.delivery-region-heading strong{font-size:1rem}
+.delivery-region-heading button{min-height:42px}
+.delivery-region-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:10px}
+.delivery-region-item{display:flex;align-items:center;justify-content:space-between;gap:7px;min-width:0;
+ border:1px solid #e1d5c8;border-radius:12px;background:var(--panel,#fff);padding:8px}
+.delivery-region-item.is-selected{border:2px solid #ea580c;background:#fff7ed;color:#713f12}
+.delivery-region-select{flex:1;min-width:0;display:flex;align-items:center;gap:9px;text-align:left;
+ border:0;background:transparent;color:inherit;cursor:pointer;padding:5px;font:inherit}
+.delivery-region-select>span:last-child{display:grid;gap:2px;min-width:0}
+.delivery-region-select strong{font-size:.9rem;overflow-wrap:anywhere}
+.delivery-region-select small{font-size:.75rem;opacity:.8}
+.delivery-region-dot{width:17px;height:17px;border:2px solid #fff;border-radius:50%;flex-shrink:0;
+ box-shadow:0 1px 4px #0004}
+.delivery-region-item-actions{display:flex;align-items:center;gap:3px;flex-shrink:0}
+.delivery-region-item-actions button{width:29px;height:34px;min-height:34px;padding:0;
+ border:1px solid #ead6c4;border-radius:7px;background:#fff;color:#7c2d12;
+ font-size:18px;cursor:pointer}
+.delivery-region-item-actions button:disabled{opacity:.35;cursor:not-allowed}
+.delivery-region-editor{display:grid;gap:12px;border:1px solid #f0c7a8;border-radius:12px;
+ background:#fff9f2;padding:14px;color:#653e26}
+.delivery-region-editor .delivery-zone-rates{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+.delivery-region-editor p{margin:0;line-height:1.45}
+@media(max-width:620px){
+ .delivery-region-heading button{width:100%}
+ .delivery-region-list{grid-template-columns:1fr}
+ .delivery-region-select{flex:1;min-height:50px}
+}
+
+/* The delivery-area form is a full-width single-column workspace, not a
+   generic merchant two-column form. Use the available panel width rather
+   than the viewport, including desktop mode on a phone. */
+.delivery-area-panel{container:delivery-area / inline-size;min-width:0;width:100%;max-width:100%;box-sizing:border-box}
+.delivery-area-panel :is(p,small,legend){overflow-wrap:anywhere}
+.delivery-area-panel form.delivery-zone-config{
+ display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;
+ width:100%;min-width:0;max-width:100%;box-sizing:border-box;margin:0;padding:0;gap:14px
+}
+.delivery-area-panel form.delivery-zone-config>*{
+ flex:0 0 auto;align-self:stretch;width:auto;min-width:0;max-width:100%;
+ box-sizing:border-box;margin-inline:0
+}
+.delivery-area-panel form.delivery-zone-config>fieldset{
+ display:block;width:auto;min-inline-size:0;max-width:100%;margin:0;align-self:stretch
+}
+.delivery-area-panel form.delivery-zone-config>.delivery-zone-map{width:auto;min-width:0;max-width:100%;align-self:stretch;margin-inline:0}
+.delivery-area-panel .delivery-zone-mode{grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))}
+.delivery-area-panel .delivery-zone-rates{grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}
+.delivery-area-panel .delivery-region-editor,.delivery-area-panel .delivery-zone-rates>label{min-width:0;max-width:100%;box-sizing:border-box}
+.delivery-area-panel .delivery-region-editor fieldset{width:100%;min-inline-size:0;margin:0}
+.delivery-area-panel .delivery-zone-mode label{min-width:0;white-space:normal;overflow-wrap:anywhere}
+.delivery-area-panel .delivery-zone-mode input[type=radio]{width:18px;height:18px;flex:none}
+.delivery-area-panel .delivery-zone-rates input{min-width:0;max-width:100%;box-sizing:border-box}
+.delivery-area-panel .delivery-zone-polygon-actions button{white-space:normal}
+@container delivery-area (max-width:620px){
+ .delivery-area-panel form.delivery-zone-config>fieldset{padding:10px}
+ .delivery-area-panel .delivery-zone-mode,.delivery-area-panel .delivery-region-list,.delivery-area-panel .delivery-zone-rates{grid-template-columns:minmax(0,1fr)}
+ .delivery-area-panel .delivery-region-editor{padding:10px}
+ .delivery-area-panel .delivery-zone-map{height:350px;min-height:280px}
+ .delivery-area-panel .delivery-region-heading>button,.delivery-area-panel form.delivery-zone-config>button[type=submit]{width:100%;justify-content:center}
+ .delivery-area-panel .delivery-region-item-actions button{min-width:29px}
+}

@@ -1,0 +1,9 @@
+[package]
+name="deliverygestor-native-tests"
+version="0.1.0"
+edition="2021"
+[dependencies]
+rusqlite={version="0.32",features=["bundled"]}
+serde={version="1",features=["derive"]}
+uuid={version="1",features=["v4"]}
+unicode-normalization="0.1"

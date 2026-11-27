@@ -1,0 +1,98 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {groups,routes,resolveMenuRoute,menuAllowed,searchMenu,fallbackMenuItems} from '../merchantNavigation.mjs';
+test('approved groups, unique routes, existing sections',()=>{
+ assert.deepEqual(groups.map(g=>g.name),['Operação','Cardápio','Entregas','Clientes','Fideliza+','Financeiro','Integrações','Configurações']);
+ assert.equal(new Set(routes.map(r=>r.id)).size,routes.length);
+ for(const [id,tab,section] of [['Complementos','Produtos','Complementos'],['Categorias','Produtos','Categorias'],['Cashback','Fideliza+','Cashback'],['Cupons de desconto','Fideliza+','Cupons'],['Contas a receber','Fiado / Caderneta','pedidos'],['Alertas e sons','Configurações','Alertas e aplicativo'],['Pagamento de motoboys','Entregadores','Pagamentos']]){const r=resolveMenuRoute(id);assert.equal(r.tab,tab);assert.equal(r.section,section)}
+});
+test('tenant and module restrictions, legacy fallback and search',()=>{
+ const ctx={allowed:()=>true,manager:false,active:true};
+ assert.equal(menuAllowed(resolveMenuRoute('Fiado / Caderneta'),ctx),false);
+ assert.equal(menuAllowed(resolveMenuRoute('Fiado / Caderneta'),{...ctx,manager:true}),true);
+ assert.equal(menuAllowed(resolveMenuRoute('Estoque do cardápio'),{...ctx,manager:true,featureSettings:{estoque:false}}),false);
+ assert.equal(menuAllowed(resolveMenuRoute('Pedidos'),{...ctx,driver:true}),false);
+ assert.equal(menuAllowed(resolveMenuRoute('Entregas'),{...ctx,driver:true}),true);
+ assert.equal(searchMenu(resolveMenuRoute('Configurações'),'impressao'),true);
+ assert.deepEqual(fallbackMenuItems([['Pedidos'],['Exemplo']],{},{}).map(r=>r.id),['Exemplo']);
+});
+test('final application keeps real components and stable route URLs',()=>{
+ const app=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
+ for(const name of ['MerchantNavigation','MerchantMobileBar','NavigationFleetTracking','MenuStudio','FiadoCaderneta','CourierWorkspace','FinancialReport','Operations','AppDownloads'])assert.ok(app.includes('<'+name),name);
+ assert.match(app,/location.searchParams.set\('aba',navigationRoute\)/);
+ assert.match(app,/initialSection=\{route.section/);
+ assert.match(app,/initialTab=\{route.section/);
+ assert.match(app,/<Operations navigationSection=\{route.section\} navigationKey=\{navigationKey\} key=\{selected\}/);
+});
+
+test('all menu groups start closed, only manual expansion or search opens them',()=>{
+ const source=readFileSync(new URL('../MerchantNavigation.jsx',import.meta.url),'utf8');
+ assert.match(source,/\[open,setOpen\]=useState\(\[\]\)/);
+ assert.match(source,/setFavorites\(read\(key\+':favorites',\[\]\)\);setOpen\(\[\]\)/);
+ assert.doesNotMatch(source,/key\+':open'/);
+ assert.doesNotMatch(source,/\},\[routeId,key\]\)/);
+ assert.match(source,/expanded=!!query\|\|open\.includes\(g\.name\)/);
+});
+
+test('mobile merchant menu opens only from the bottom More button and remains accessible',()=>{
+ const source=readFileSync(new URL('../MerchantNavigation.jsx',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../merchant-navigation.css',import.meta.url),'utf8');
+ assert.match(source,/aria-controls="pitacco-store-navigation" aria-expanded=\{menuOpen\}/);
+ assert.match(css,/\.pitacco-mobile-top\.mn-redundant-top\{display:none!important\}/);
+});
+
+test('incident center is a visible delivery shortcut and precedes the other workspaces',()=>{const route=resolveMenuRoute('Ocorrências');assert.equal(route.label,'Central de Ocorrências');assert.equal(route.tab,'Entregas');assert.equal(route.section,'occurrences');const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');assert.ok(source.indexOf('<IncidentCenter')<source.indexOf('<StorefrontShare'));assert.match(source,/showShortcut=\{tab==='Entregas'\|\|tab==='Ocorrências'\}/);assert.match(source,/tab=route.section==='occurrences'\?'Ocorrências':route.tab/);assert.match(source,/!allowed\(route.tab\)/);});
+
+ test('merchant navigation uses published store logo and falls back on load failure',()=>{
+ const src=readFileSync(new URL('../MerchantNavigation.jsx',import.meta.url),'utf8');
+ assert.ok(src.includes('storeLogoUrl&&!logoFailed'));
+ assert.ok(src.includes('onError={()=>setLogoFailed(true)}'));
+ });
+
+test('merchant header highlights the selected establishment instead of Pitacco brand',()=>{
+ const src=readFileSync(new URL('../MerchantNavigation.jsx',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../merchant-navigation.css',import.meta.url),'utf8');
+ assert.doesNotMatch(src,/pitacco-brand-013\.svg/);
+ assert.match(src,/const selectedStore=stores\.find\(s=>s\.id===selected\)/);
+ assert.match(src,/className="mn-store-name"\>\{storeName\}/);
+ assert.match(src,/aria-label="Trocar estabelecimento"/);
+ assert.match(src,/Powered by Pitacco/);
+ assert.match(css,/\.mn-store-logo\{[^}]*object-fit:contain/s);
+ assert.match(css,/\.mn-store-name\{[^}]*overflow-wrap:anywhere/s);
+});
+
+test('configuration routes stay in one canonical menu without the legacy settings toolbar',()=>{
+ const source=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
+ assert.doesNotMatch(source,/className="store-settings-tabs"/);
+ for(const [id,group] of [['Área de entrega','Entregas'],['Pagamentos da loja','Configurações'],['Aparência do cardápio','Cardápio'],['Minha Loja','Configurações'],['Horário de funcionamento','Configurações']]){
+  assert.deepEqual(groups.filter(g=>g.items.some(i=>i.id===id)).map(g=>g.name),[group]);
+ }
+});
+
+test('payment methods are listed only in Settings while legacy route remains stable',()=>{
+ const route=resolveMenuRoute('Pagamentos da loja');
+ assert.equal(route.label,'Formas de pagamento');
+ assert.equal(route.tab,'Pagamentos da loja');
+ assert.equal(route.manager,true);
+ assert.equal(menuAllowed(route,{allowed:()=>true,manager:false,active:true}),false);
+ assert.equal(menuAllowed(route,{allowed:()=>true,manager:true,active:true}),true);
+ assert.equal(groups.find(g=>g.name==='Integrações').items.some(i=>i.id==='Pagamentos da loja'),false);
+});
+
+test('Novo Pedido stays highlighted only in the original merchant sidebar',()=>{
+ const app=readFileSync(new URL('../src.jsx',import.meta.url),'utf8');
+ const nav=readFileSync(new URL('../MerchantNavigation.jsx',import.meta.url),'utf8');
+ const shortcuts=readFileSync(new URL('../OperationalShortcuts.jsx',import.meta.url),'utf8');
+ const baseCss=readFileSync(new URL('../style.css',import.meta.url),'utf8');
+ assert.doesNotMatch(app,/pitacco-new-sale/,'No global header button');
+ assert.doesNotMatch(baseCss,/\.pitacco-new-sale/,'Remove obsolete header styling');
+ assert.match(nav,/<OperationalShortcuts[^>]*onNewOrder=\{\(\)=>go\('Novo Pedido'\)\}/);
+ assert.equal((shortcuts.match(/className="mn-new-order"/g)||[]).length,1);
+ assert.match(shortcuts,/aria-label="Novo Pedido"/);
+ assert.match(baseCss,/\.merchant-nav \.mn-new-order\{min-height:46px/);
+ const ctx={allowed:()=>true,manager:true,active:true};
+ assert.equal(menuAllowed(resolveMenuRoute('Novo Pedido'),ctx),true);
+ assert.equal(menuAllowed(resolveMenuRoute('Novo Pedido'),{...ctx,manager:false}),false);
+ assert.equal(menuAllowed(resolveMenuRoute('Novo Pedido'),{...ctx,driver:true}),false);
+});

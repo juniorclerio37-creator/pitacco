@@ -1,0 +1,284 @@
+.pitacco-pedidos{display:flex;flex-direction:column;gap:16px;min-width:0;color:#141a26}.pitacco-pedidos *{box-sizing:border-box}.pedidos-heading{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}.pedidos-heading h2{font-size:26px;margin:0}.pedidos-heading p{margin:4px 0;color:#6b7585}.pedidos-heading>span{color:#6b7585;font-size:13px}.pedidos-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}.pedidos-kpi{border:1px solid #e5e9f0;border-radius:12px;padding:13px;background:#fff;display:flex;flex-direction:column;align-items:flex-start;gap:3px;color:#141a26;text-align:left}.pedidos-kpi strong{font-size:22px}.pedidos-kpi span{font-size:13px;color:#6b7585}.pedidos-kpi:nth-child(1){background:#fdeceb}.pedidos-kpi:nth-child(2){background:#fef3df}.pedidos-kpi:nth-child(3){background:#e6effd}.pedidos-kpi:nth-child(4){background:#e4f5ea}.pedidos-kpi.selected{outline:2px solid #d9232b}.pedidos-tabs{display:flex;align-items:center;flex-wrap:wrap;gap:7px}.pedidos-tabs button{background:#fff;border:1px solid #e5e9f0;border-radius:9px;padding:9px 12px;color:#141a26}.pedidos-tabs button.selected{background:#d9232b;color:white}.pedidos-tabs input{margin-left:auto;min-width:230px;border:1px solid #e5e9f0;border-radius:9px;padding:10px}.pedidos-split{display:grid;grid-template-columns:minmax(270px,360px) minmax(0,1fr);gap:14px;align-items:start}.pedidos-list{display:flex;flex-direction:column;gap:9px;max-height:68vh;overflow:auto}.pedidos-card{background:white;border:1px solid #e5e9f0;border-left:4px solid #d9232b;border-radius:12px;padding:14px;text-align:left;display:flex;flex-direction:column;gap:9px;color:#141a26}.pedidos-card.selected{outline:2px solid #d9232b}.pedidos-card>span{display:flex;justify-content:space-between;gap:10px}.pedidos-card small{color:#6b7585}.pedidos-detail{background:white;border:1px solid #e5e9f0;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:15px;min-width:0}.pedidos-detail-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}.pedidos-detail-heading h3{margin:0;font-size:21px}.pedidos-detail-pair{display:grid;grid-template-columns:1.4fr 1fr;gap:12px}.pedidos-detail-pair section,.pedidos-items{border:1px solid #e5e9f0;border-radius:11px;padding:13px}.pedidos-detail h4{margin:0 0 10px}.pedidos-detail p{margin:5px 0;color:#6b7585}.pedidos-items>div,.pedidos-items footer{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #e5e9f0}.pedidos-items small{display:block;color:#6b7585}.pedidos-items footer{border:0;font-size:18px}.pedidos-actions{display:flex;flex-wrap:wrap;gap:9px}.pedidos-actions button{padding:12px 15px;border-radius:9px;background:#fff;border:1px solid #aab2c0;color:#141a26}.pedidos-actions button.primary{background:#15803d;color:white;border-color:#15803d}.pedidos-actions button:disabled{opacity:.5}@media(max-width:1150px){.pedidos-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.pedidos-split{grid-template-columns:1fr}.pedidos-list{max-height:320px}}@media(max-width:650px){.pedidos-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.pedidos-detail-pair{grid-template-columns:1fr}.pedidos-tabs input{width:100%;margin:0}}
+
+.pedidos-list{padding:3px}
+.pitacco-pedidos .pedidos-card{padding:0;gap:0;min-width:0;border-left-color:var(--order-color,#aa4e1c)}
+.pedidos-card[data-source=ifood]{--order-color:#a93545}
+.pedidos-card[data-source="99food"]{--order-color:#9e7600}
+.pedidos-card[data-source=keeta]{--order-color:#6450aa}
+.pitacco-pedidos .pedidos-card-select{width:100%;display:grid;justify-items:start;gap:.55rem;min-width:0;background:transparent;border:0;box-shadow:none;color:inherit;text-align:left;padding:.8rem .85rem;border-radius:9px}
+.pedidos-card-row{width:100%;display:flex;align-items:center;justify-content:space-between;gap:.55rem;min-width:0;overflow-wrap:anywhere}
+.pedidos-card-row small{text-align:right}
+.pedidos-origin{font-size:.78rem;letter-spacing:.005em}
+.pedidos-delivery-badge{display:inline-flex;align-items:center;gap:.3rem;font-size:.76rem;font-weight:700;border-radius:999px;padding:.25rem .55rem;background:#edf0f5;color:#364054}
+.pedidos-delivery-badge[data-delivery=partner]{background:#fff1c4;color:#624703}
+.pedidos-delivery-badge[data-delivery=own]{background:#e2f4e8;color:#145833}
+.pedidos-card-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:.45rem;padding:0 .85rem .7rem}
+.pedidos-card-actions button{padding:.4rem .65rem;min-height:36px}
+.pedidos-card-print{display:inline-grid;place-items:center}
+
+/* Localizador de ligação destacado — sem confundir com PIN de entrega. */
+.pitacco-pedidos .pedidos-number{font-size:clamp(1.15rem,2.1vw,1.35rem);font-weight:950;letter-spacing:.015em;color:#c2580d;overflow-wrap:anywhere}
+.pitacco-pedidos .pedidos-localizer{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:11px;background:#fff3e3;border:1px solid #f4c585;color:#89450e}
+.pitacco-pedidos .pedidos-localizer strong{font-size:.7rem;letter-spacing:.07em;font-weight:850}
+.pitacco-pedidos .pedidos-localizer b{font-size:1.05rem;letter-spacing:.08em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pitacco-pedidos .pedidos-localizer-detail{margin-bottom:8px}
+.pitacco-pedidos .pedidos-detail-heading h3{font-size:clamp(1.15rem,2vw,1.4rem);color:#c2580d}
+
+/* Cozinha e expedição: localizador também visível no cartão da loja. */
+.operations-order-localizer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0;padding:10px 12px;border:1px solid #f5c991;background:#fff3e1;color:#864610;border-radius:10px}
+.operations-order-localizer small{font-size:.68rem;letter-spacing:.065em;font-weight:850}
+.operations-order-localizer strong{font-size:1.03rem;letter-spacing:.075em;font-weight:950;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+
+/* Windows: compact order workspace, card grid, no duplicated KPIs or side panel. */
+.pitacco-pedidos.windows-cards-only{gap:13px}
+.windows-cards-only .pedidos-heading>span,
+.windows-cards-only .pedidos-kpis{display:none}
+.windows-cards-only .pedidos-heading h2{font-size:22px}
+.windows-cards-only .pedidos-heading p{font-size:12px}
+.windows-cards-only .pedidos-tabs{display:flex;flex-wrap:wrap;gap:7px}
+.windows-cards-only .pedidos-tabs button{font-weight:650}
+.windows-cards-only .pedidos-tabs button.selected{background:#eb7925;border-color:#eb7925}
+.windows-cards-only .pedidos-split{display:block}
+.windows-cards-only .pedidos-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,285px),1fr));align-content:start;align-items:stretch;gap:13px;overflow:visible;max-height:none;padding:3px}
+.windows-cards-only .pedidos-card{height:100%;border-radius:13px;box-shadow:0 2px 8px rgba(15,23,42,.07)}
+.windows-cards-only .pedidos-card-actions{margin-top:auto;padding:9px 12px 12px;border-top:1px solid #edf0f5}
+.windows-cards-only .pedidos-step-button{flex:1;text-align:center;justify-content:center;background:#ec7720!important;border-color:#ec7720!important;color:white!important;font-weight:800}
+.windows-cards-only .pedidos-card-select{padding:13px;gap:9px}
+.windows-cards-only .pedidos-card.selected{outline:2px solid #ec7720}
+.windows-cards-only .pedidos-modal-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.58);z-index:500}
+.windows-cards-only .pedidos-detail-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:501;width:min(760px,calc(100vw - 44px));max-height:min(85vh,850px);overflow:auto;box-shadow:0 24px 72px rgba(0,0,0,.3);border:1px solid #eceff4}
+.windows-cards-only .pedidos-modal-close{margin-left:auto;white-space:nowrap}
+.windows-cards-only .pedidos-detail-heading{flex-wrap:wrap}
+.windows-cards-only .pedidos-detail-heading .store-stage{margin-left:0}
+@media (max-width:720px){.windows-cards-only .pedidos-list{grid-template-columns:1fr}.windows-cards-only .pedidos-detail-modal{width:calc(100vw - 20px);max-height:92vh}}
+
+/* Secondary Concluir remains alongside the primary action on eligible Windows cards. */
+.windows-cards-only .pedidos-complete-button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:95px;min-height:38px;background:#eef8f0;color:#17613a;border:1px solid #a6d4b3;font-weight:750;border-radius:8px}
+.windows-cards-only .pedidos-complete-button:hover:not(:disabled){background:#ddf2e4;border-color:#72ba88}
+.windows-cards-only .pedidos-complete-button:disabled{background:#f3f4f6;color:#808995;border-color:#e5e7eb;opacity:.86;cursor:not-allowed}
+.windows-cards-only .pedidos-card-actions>.pedidos-step-button{min-width:115px}
+.windows-cards-only .pedidos-card-actions>.pedidos-card-print{flex:0 0 40px}
+
+
+/* The merchant navigation already identifies Pedidos. Hide only the repeated
+   large top-page title; keep store switching accessible in a compact row.
+   Applied to web and Windows, without changing order cards or action handlers. */
+.app main:has(.pitacco-pedidos) > header > div:first-child{display:none!important}
+.app main:has(.pitacco-pedidos) > header{display:flex;justify-content:flex-end;min-height:0!important;margin:0 0 5px!important;padding:2px 0 6px!important;gap:6px!important}
+.app main:has(.pitacco-pedidos) > header > select{max-width:260px;min-height:32px;padding:5px 9px;font-size:13px}
+@media (max-width:700px){
+ .app main:has(.pitacco-pedidos) > header{padding:1px 0 5px!important}
+ .app main:has(.pitacco-pedidos) > header > select{max-width:100%;width:100%}
+}
+
+/* Identificação instantânea da origem do pedido; vetorial/offline, sem dependências externas. */
+.pitacco-pedidos .pedidos-origin{display:inline-flex;align-items:center;gap:7px;min-width:0;font-size:12px;font-weight:750;color:#414d60}
+.pitacco-pedidos .pedidos-platform-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 25px;width:25px;height:25px;border-radius:7px;background:#e97628;color:#fff;font-size:12px;font-weight:900;letter-spacing:-.06em;line-height:1;box-shadow:inset 0 0 0 1px rgba(0,0,0,.04)}
+.pitacco-pedidos .pedidos-platform-icon[data-platform="99food"]{background:#ffd238;color:#4a3700}
+.pitacco-pedidos .pedidos-platform-icon[data-platform="ifood"]{background:#e7303e;color:#fff}
+.pitacco-pedidos .pedidos-platform-icon[data-platform="keeta"]{background:#ffcc18;color:#2f3613}
+.pitacco-pedidos .pedidos-platform-icon[data-platform="loja"]{background:#e97928;color:#fff}
+.pitacco-pedidos .pedidos-platform-icon[data-platform="outros"]{background:#4b607f;color:#fff}
+
+/* Quadro Kanban do gestor: colunas por etapas reais, sem mudar o fluxo do backend. */
+.windows-cards-only .pedidos-list.pedidos-kanban{display:grid;grid-template-columns:repeat(4,minmax(190px,1fr));grid-auto-flow:column;grid-auto-columns:minmax(190px,1fr);grid-template-rows:minmax(300px,auto);align-items:stretch;align-content:start;gap:8px;width:100%;min-width:0;max-width:100%;max-height:none;overflow-x:auto;overflow-y:hidden;padding:3px 2px 12px}
+.windows-cards-only .pedidos-stage-column{display:flex;flex-direction:column;gap:10px;align-items:stretch;min-width:0;padding:10px;background:#f6f8fb;border:1px solid #e2e8f0;border-radius:13px}
+.windows-cards-only .pedidos-stage-title{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 7px 10px;border-bottom:2px solid #e5eaf2;font-size:13px;font-weight:850;color:#465167}
+.windows-cards-only .pedidos-stage-title span{min-width:26px;border-radius:999px;text-align:center;padding:2px 7px;background:#e5eaf1;color:#39445d;font-size:12px}
+.windows-cards-only .pedidos-stage-column[data-stage="analysis"] .pedidos-stage-title{color:#b13d4a;border-color:#ffd6db}
+.windows-cards-only .pedidos-stage-column[data-stage="preparing"] .pedidos-stage-title{color:#9f6c12;border-color:#f6d995}
+.windows-cards-only .pedidos-stage-column[data-stage="ready"] .pedidos-stage-title{color:#2762af;border-color:#b6d8ff}
+.windows-cards-only .pedidos-stage-column[data-stage="delivery"] .pedidos-stage-title{color:#257248;border-color:#b8e4c8}
+.windows-cards-only .pedidos-stage-empty{margin:45px 4px 12px;color:#95a0b2;font-size:12px;text-align:center}
+.windows-cards-only .pedidos-list.pedidos-kanban .pedidos-card{height:auto;flex:0 0 auto}
+.windows-cards-only .pedidos-list:not(.pedidos-kanban) .pedidos-stage-column{display:contents}
+/* The board uses its actual available width, not the monitor width. Extra stages scroll horizontally, never wrap. */
+
+/* Informações essenciais do pedido em linhas compactas, sem sobrecarregar o card. */
+.pitacco-pedidos .pedidos-card-contact,.pitacco-pedidos .pedidos-card-address{justify-content:flex-start;font-size:12px;color:#58677c;line-height:1.2}
+.pitacco-pedidos .pedidos-card-address{max-width:100%;overflow-wrap:anywhere}
+.pitacco-pedidos .pedidos-card-info{padding-top:6px;border-top:1px solid #edf1f5}
+.pitacco-pedidos .pedidos-payment-pill{border-radius:999px;padding:3px 8px;font-size:11px;font-weight:750;background:#fff5db;color:#92620c}
+.pitacco-pedidos .pedidos-payment-pill[data-payment="collect"]{background:#ffe1da;color:#9c3f2d}
+.pitacco-pedidos .pedidos-payment-pill[data-payment="paid"]{background:#e1f5e9;color:#247348}
+.pitacco-pedidos .pedidos-payment-pill[data-payment="review"]{background:#eef2f7;color:#5e6a7b}
+
+/* Web portal retains the existing stacked list; only Windows gets Kanban columns. */
+.pitacco-pedidos:not(.windows-cards-only) .pedidos-list>.pedidos-stage-column{display:contents}
+
+/* The routing tab is a web-only alternative view; existing order actions remain mounted. */
+.pitacco-pedidos[data-layout="routes"]>.pedidos-kpis,
+.pitacco-pedidos[data-layout="routes"]>.pedidos-tabs,
+.pitacco-pedidos[data-layout="routes"]>.pedidos-split,
+.pitacco-pedidos[data-layout="routes"]>small{display:none}
+
+/* Details use a top-layer dialog, leaving the full board available for cards. */
+.pitacco-pedidos:not(.windows-cards-only) .pedidos-split {display:block}
+.pitacco-pedidos:not(.windows-cards-only) .pedidos-list {
+ display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,255px),1fr));
+ align-items:start;gap:10px;max-height:none;overflow:visible;
+}
+.pitacco-pedidos .pedidos-order-dialog {
+ position:fixed;inset:0;margin:auto;transform:none;padding:0;border:1px solid var(--store-border,#e1e6ed);
+ width:min(720px,calc(100% - 40px));max-width:none;max-height:none;overflow:hidden;
+ border-radius:20px;background:var(--store-surface,#fff);color:var(--store-ink,#182136);
+ box-shadow:0 24px 80px #141b3940;
+}
+.pedidos-order-dialog::backdrop {background:#12172c99}
+.order-detail-surface {
+ max-height:min(760px,calc(100dvh - 44px));display:grid;grid-template-rows:auto minmax(0,1fr) auto;
+}
+.order-detail-header,.order-detail-footer {
+ display:flex;align-items:center;gap:12px;padding:14px 20px;
+ background:var(--store-surface,#fff);
+}
+.order-detail-header {border-bottom:1px solid var(--store-border,#e1e6ed)}
+.order-detail-heading {display:flex;align-items:center;gap:10px;min-width:0;margin-right:auto}
+.order-detail-heading>.pedidos-platform-icon {width:38px;height:38px;border-radius:11px;font-size:.9rem}
+.order-detail-origin,.order-detail-heading time,.order-detail-meta,.order-detail-label {
+ color:var(--store-muted,#535f74);font-size:.8rem;line-height:1.4;
+}
+.order-detail-heading h3 {margin:1px 0;font-size:1.15rem;line-height:1.2;overflow-wrap:anywhere}
+.order-detail-heading time {display:flex;align-items:center;gap:4px}
+.order-detail-header .store-stage {text-align:center;flex:none}
+.pedidos-order-dialog .pedidos-modal-close {
+ display:grid;place-items:center;width:40px;min-width:40px;height:40px;padding:0;border-radius:11px;
+}
+.order-detail-body {
+ display:grid;align-content:start;gap:12px;min-height:0;overflow:auto;overscroll-behavior:contain;
+ padding:16px 20px;background:var(--store-quiet,#f5f7fa);overflow-wrap:anywhere;
+}
+.order-detail-body :is(h4,p,ul,dl,dd) {margin:0}
+.order-detail-customer,.order-detail-section,.order-detail-decision {
+ padding:13px 14px;border:1px solid var(--store-border,#e1e6ed);border-radius:12px;background:var(--store-surface,#fff);
+}
+.order-detail-customer,.order-detail-address,.order-detail-fulfillment {
+ display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;
+}
+.order-detail-customer strong {font-size:1.05rem}
+.order-detail-section h4 {display:flex;align-items:center;gap:7px;font-size:.92rem;margin-bottom:8px}
+.order-detail-section h4 svg {color:var(--store-accent,#ba4322);flex:none}
+.order-detail-link {
+ display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:8px;
+ border:1px solid var(--store-border,#e1e6ed);color:var(--store-ink,#182136);font-size:.8rem;font-weight:700;
+ text-decoration:none;
+}
+.order-detail-link:hover {background:var(--store-quiet,#f5f7fa)}
+.order-detail-items {padding:0;list-style:none}
+.order-detail-items li {
+ display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;gap:9px;padding:8px 0;
+}
+.order-detail-items li+li {border-top:1px solid var(--store-border,#e1e6ed)}
+.order-detail-quantity {padding:3px 5px;border-radius:6px;background:var(--store-quiet,#f5f7fa);font-size:.75rem;font-weight:750}
+.order-detail-items li p {font-size:.8rem;margin-top:3px;color:var(--store-muted,#535f74)}
+.order-detail-body .order-detail-note {font-size:.8rem;padding:6px 9px;border-radius:7px;background:var(--store-quiet,#f5f7fa)}
+.order-detail-fulfillment {font-size:.84rem}
+.order-detail-finance dl>div {display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:.85rem}
+.order-detail-finance dd {font-weight:700;white-space:nowrap}
+.order-detail-finance dl>.order-detail-total {border-top:1px solid var(--store-border,#e1e6ed);font-size:1.05rem;font-weight:800;margin-top:4px}
+.order-detail-finance dl>.order-detail-collect {background:#fff0db;color:#733700;padding:8px 10px;border-radius:8px;font-weight:800}
+.order-detail-decision {display:flex;flex-wrap:wrap;align-items:end;gap:8px}
+.order-detail-decision :is(h4,p,label) {flex-basis:100%}
+.order-detail-decision :is(input,select) {width:100%;margin-top:4px}
+.order-detail-footer {border-top:1px solid var(--store-border,#e1e6ed);justify-content:flex-end;flex-wrap:wrap;gap:7px}
+.order-detail-footer button {min-height:40px;padding:7px 12px;font-size:.82rem}
+.order-detail-footer .primary {order:1}
+.order-detail-footer [role="alert"] {flex-basis:100%;margin:0;color:var(--store-ink,#182136)}
+@media(max-width:640px) {
+ .pitacco-pedidos .pedidos-order-dialog {inset:auto 0 0;margin:0;width:100%;border-radius:17px 17px 0 0;border-bottom:0}
+ .order-detail-surface {max-height:94dvh}
+ .order-detail-header,.order-detail-body {padding:12px}
+ .order-detail-header {gap:7px}
+ .order-detail-heading {gap:7px}
+ .order-detail-heading>.pedidos-platform-icon {width:29px;height:29px}
+ .order-detail-heading h3 {font-size:1rem}
+ .order-detail-footer {padding:9px 12px max(12px,env(safe-area-inset-bottom))}
+ .order-detail-footer button {flex:1 1 130px}
+ .order-detail-footer .primary {order:-1;flex-basis:100%}
+}
+
+/* Windows operational board: one uninterrupted row, including an empty board. */
+.pitacco-pedidos.windows-cards-only .pedidos-split{min-width:0;max-width:100%;width:100%}
+.windows-cards-only .pedidos-list-empty{grid-column:1/-1;margin:12px 4px;color:#697586}
+.windows-cards-only .pedidos-list.pedidos-kanban>.pedidos-stage-column{padding:7px;gap:8px;border-radius:11px;min-height:300px}
+.windows-cards-only .pedidos-stage-title{padding:6px 4px 9px;gap:5px;line-height:1.3}
+.windows-cards-only .pedidos-stage-title strong{min-width:0;overflow-wrap:normal}
+.windows-cards-only .pedidos-stage-empty{margin:0;flex:1;display:grid;place-items:center;min-height:100px;padding:10px;color:#697586}
+.windows-cards-only .pedidos-list.pedidos-kanban .pedidos-card-select{padding:9px;gap:7px}
+.windows-cards-only .pedidos-list.pedidos-kanban .pedidos-card-row{gap:5px;flex-wrap:wrap}
+.windows-cards-only .pedidos-list.pedidos-kanban .pedidos-card-actions{padding:7px;gap:5px}
+.windows-cards-only .pedidos-list.pedidos-kanban .pedidos-card-actions>.pedidos-step-button{min-width:0;flex:1 1 88px}
+.windows-cards-only .pedidos-list.pedidos-kanban .pedidos-card-actions>.pedidos-complete-button{min-width:0;flex:1 1 82px}
+.windows-cards-only .pedidos-list.pedidos-kanban .pedidos-card-actions>button{white-space:normal;min-height:36px;font-size:12px}
+.windows-cards-only .pedidos-tabs{gap:6px}
+.windows-cards-only .pedidos-tabs input{min-width:0;flex:1 1 170px;max-width:270px}
+
+/* Windows only: dense operational cards, with full details one click away. */
+.pitacco-pedidos.windows-cards-only {gap:8px}
+.pitacco-pedidos.windows-cards-only .pedidos-list.pedidos-kanban {gap:6px;grid-template-columns:repeat(4,minmax(190px,1fr));grid-auto-columns:minmax(190px,1fr)}
+.pitacco-pedidos.windows-cards-only .pedidos-list.pedidos-kanban>.pedidos-stage-column {padding:5px;gap:5px;border-radius:10px}
+.pitacco-pedidos.windows-cards-only .pedidos-stage-title {padding:5px 4px 7px;font-size:13px;margin:0}
+.pitacco-pedidos.windows-cards-only .pedidos-card.order-card {padding:0;gap:0;border-radius:9px}
+.pitacco-pedidos.windows-cards-only .pedidos-card-select {display:block;padding:5px 6px;line-height:1.2;min-height:0}
+.windows-cards-only .pedidos-compact-content {display:grid;gap:3px;min-width:0;width:100%;font-size:12px}
+.windows-cards-only .pedidos-compact-heading {display:flex;align-items:center;gap:4px;min-width:0;flex-wrap:wrap}
+.windows-cards-only .pedidos-compact-heading .pedidos-platform-icon {height:19px;width:22px;flex-basis:22px;border-radius:5px;font-size:11px}
+.windows-cards-only .pedidos-compact-heading .pedidos-platform-icon[data-platform="loja"] {background:#754497}
+.windows-cards-only .pedidos-compact-number {font-size:13px;color:var(--store-ink,#192735);font-weight:850;overflow-wrap:anywhere}
+.windows-cards-only .pedidos-compact-heading small {font-size:10px;white-space:nowrap}
+.windows-cards-only .pedidos-compact-total {margin-left:auto;color:var(--store-accent,#ce421e);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.windows-cards-only .pedidos-compact-customer,.windows-cards-only .pedidos-compact-item {display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.windows-cards-only .pedidos-compact-customer {font-weight:750}
+.windows-cards-only .pedidos-compact-item {font-size:11px}
+.windows-cards-only .pedidos-compact-meta {display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+.windows-cards-only .pedidos-compact-meta .pedidos-payment-pill,.windows-cards-only .pedidos-compact-meta .pedidos-delivery-badge,.windows-cards-only .pedidos-compact-meta .store-stage {font-size:10px;padding:1px 4px;line-height:1.25;border-radius:4px}
+.windows-cards-only .pedidos-compact-meta svg {width:11px;height:11px}
+.windows-cards-only .pedidos-compact-content .pedidos-localizer {padding:3px 5px;border-radius:5px}
+.windows-cards-only .pedidos-compact-content .pedidos-localizer b {font-size:12px}
+.pitacco-pedidos.windows-cards-only .pedidos-card-actions {padding:3px 5px 5px;gap:3px;justify-content:flex-start;align-items:center}
+.pitacco-pedidos.windows-cards-only .pedidos-card-actions>button {min-height:27px;padding:3px 5px;font-size:11px;line-height:1.15;border-radius:5px;min-width:0}
+.pitacco-pedidos.windows-cards-only .pedidos-card-actions>.pedidos-step-button {flex:1 1 74px;min-width:0}
+.pitacco-pedidos.windows-cards-only .pedidos-card-actions>.pedidos-card-print {order:-1;flex:0 0 30px;min-width:0}
+.pitacco-pedidos.windows-cards-only .pedidos-card-actions>.pedidos-complete-button {flex:1 1 60px;min-width:0}
+.pitacco-pedidos.windows-cards-only .pedidos-card-actions>.pedidos-card-cancel {order:3;flex:0 1 auto}
+.pitacco-pedidos.windows-cards-only .pedidos-card-actions>.pedidos-track-button {background:#16803d!important;border-color:#16803d!important;color:#fff!important}
+.pitacco-pedidos.windows-cards-only .pedidos-card-actions>.pedidos-reject-button {background:transparent;border:1px solid #d34d55;color:#b92532;flex:1 1 55px}
+.pitacco-pedidos.windows-cards-only .pedidos-card-actions>button.primary {background:#c94b18!important;border-color:#c94b18!important;color:#fff!important;flex:1 1 60px}
+.pitacco-pedidos.windows-cards-only .pedidos-card-actions>[role="status"] {font-size:10px;line-height:1.25;flex:1 0 100%;padding:0;margin:0;color:var(--store-muted,#536173)}
+.pitacco-pedidos.windows-cards-only .pedidos-card-actions>.pedidos-accept-deadline {flex:0 0 auto;font-weight:800;font-variant-numeric:tabular-nums;color:#b92532;white-space:nowrap}
+.pitacco-pedidos.windows-cards-only .pedidos-card-actions svg {width:14px;height:14px}
+
+/* Own order and marketplace cancellation use the same compact visual label. */
+.pitacco-pedidos .pedidos-card-actions>.pedidos-card-cancel {background:transparent!important;border:1px solid #d48b90!important;color:#b92532!important;font-weight:700}
+.pitacco-pedidos .pedidos-card-actions>.pedidos-card-cancel:hover:not(:disabled){background:#fff1f2!important}
+
+/* Identical compact board in web and Windows; retain web summary and routing. */
+.pitacco-pedidos.web-compact-orders .pedidos-kpis{display:none!important}
+.pitacco-pedidos.web-compact-orders .pedidos-heading>span{display:inline}
+.pitacco-pedidos.web-compact-orders[data-layout="routes"]>.pedidos-split{display:none}
+.pitacco-pedidos.web-compact-orders .pedidos-list.pedidos-kanban{overflow-x:auto;grid-template-columns:repeat(6,minmax(190px,1fr));grid-auto-columns:minmax(190px,1fr)}
+.pitacco-pedidos.windows-cards-only .pedidos-card-actions>.pedidos-pickup-finish{background:#16803d!important;border-color:#16803d!important;color:#fff!important}
+.pitacco-pedidos.windows-cards-only .pickup-ready-note{color:#2464a6;font-weight:700}
+.pitacco-pedidos.web-compact-orders .pedidos-stage-column{background:var(--store-quiet,#f6f8fb);border-color:var(--store-border,#e2e8f0)}
+@media(max-width:700px){.pitacco-pedidos.web-compact-orders .pedidos-list.pedidos-kanban{grid-template-columns:repeat(6,minmax(210px,1fr));grid-auto-columns:minmax(210px,1fr);scroll-snap-type:x proximity}.pitacco-pedidos.web-compact-orders .pedidos-stage-column{scroll-snap-align:start}}
+
+/* History filters remain visible in both compact merchant workspaces. */
+.pitacco-pedidos .pedidos-tabs button[data-order-filter="completed"]:not(.selected){color:#176534;border-color:#a7d9b8;background:#edf9f0}
+.pitacco-pedidos .pedidos-tabs button[data-order-filter="cancelled"]:not(.selected){color:#a32835;border-color:#e5b6bb;background:#fff1f2}
+
+/* Web history columns contain real terminal orders without operational actions. */
+.pitacco-pedidos .pedidos-stage-column[data-stage="completed"] .pedidos-stage-title{color:#176534;border-color:#a7d9b8}
+.pitacco-pedidos .pedidos-stage-column[data-stage="cancelled"] .pedidos-stage-title{color:#a32835;border-color:#e5b6bb}
+
+/* Approved scheduled-order highlight */
+.pitacco-pedidos .scheduled-order{border-color:#f4a45d!important;background:#fffaf3}.scheduled-order-badge{display:inline-flex;align-items:center;gap:5px;background:#ed600c;color:white;border-radius:6px;padding:4px 8px;font-weight:800;font-size:11px;width:fit-content}.scheduled-order-info{display:grid;gap:3px;background:#fff0dc;color:#963907;border-radius:6px;padding:6px;font-size:11px;overflow-wrap:anywhere}.scheduled-order-info small{color:#963907}.scheduled-order-detail{background:#fff3e5;border:1px solid #f5c394;border-radius:10px;padding:13px;color:#773008}.scheduled-order-detail h4{margin:8px 0}.scheduled-order-detail p{margin:5px 0}
+
+/* Grouping shared across the merchant web and native desktop shell. */
+.pitacco-pedidos .group-orders-start{border:1px solid #e77a3d;color:var(--store-accent,#c94b18);background:var(--store-surface,#fff);font-size:12px;padding:6px 5px;min-height:32px;width:100%;border-radius:6px}
+.group-order-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid #e77a3d;border-radius:8px;padding:8px;background:var(--store-surface,#fff);font-size:12px}.group-order-toolbar>span{flex:1}.group-order-toolbar button{min-height:32px;padding:5px 8px}
+.group-order-checkbox{display:flex;align-items:center;gap:6px;font-size:11px;padding:5px 7px;border-bottom:1px solid #e77a3d;color:var(--store-accent,#c94b18)}.group-order-checkbox input,.group-delivery-courier input{width:auto;accent-color:#d76a24}
+.group-delivery-dialog .modal-body{display:grid;gap:8px}.group-delivery-dialog h3{font-size:14px;margin:4px 0}.group-delivery-stop,.group-delivery-courier{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;padding:8px;border:1px solid var(--store-border,#e2e8f0);border-radius:7px;font-size:12px}.group-delivery-stop small,.group-delivery-courier small{display:block;flex-basis:100%;font-size:11px}.group-delivery-courier>span{flex:1}
+
+.order-deadline{display:flex;align-items:center;gap:4px;padding:3px 6px;border-radius:5px;font-size:11px;background:#edf8ef;color:#166534;line-height:1.3}.order-deadline b{margin-left:auto;font-variant-numeric:tabular-nums}.order-deadline[data-state=warning]{background:#fff4de;color:#92400e}.order-deadline[data-state=late],.order-deadline-alert{background:#fff0f0;color:#a71e25}.order-deadline[data-state=unknown]{background:var(--store-surface,#f3f4f6);color:var(--store-muted,#64748b)}.order-deadline-alert{font-size:12px;border:1px solid #efb4b4;padding:8px;border-radius:7px;margin:6px 0}
+
+.order-priority-label{display:block;background:#fff2df;color:#9a430b;border-radius:5px;padding:3px 6px;font-size:11px;font-weight:700}

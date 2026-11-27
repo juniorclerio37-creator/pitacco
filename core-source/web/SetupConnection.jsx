@@ -1,0 +1,6 @@
+import React,{useState} from 'react';
+import {saveConnection} from './config.mjs';
+export default function SetupConnection(){const[url,setUrl]=useState(''),[key,setKey]=useState(''),[error,setError]=useState('');
+ function save(e){e.preventDefault();try{saveConnection(localStorage,url,key);location.reload()}catch(e){setError(e.message||'Não foi possível salvar a conexão.')}}
+ return <div className="setup"><img src="/pitacco-logo.png" alt="Pitacco — Seja qual for, tá na mão!" style={{width:140,height:180,objectFit:'contain'}}/><h1>Pitacco</h1><h2>Conectar à sua operação</h2><p>Configure a conexão pública do mesmo projeto Supabase usado na web e no aplicativo dos entregadores.</p><form onSubmit={save}><label>URL do projeto<input type="url" required value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://seu-projeto.supabase.co" autoComplete="off"/></label><label>Chave pública anon ou publishable<textarea required value={key} onChange={e=>setKey(e.target.value)} rows={4} style={{width:'100%',padding:12}} autoComplete="off"/></label><p>Não informe senha, service_role ou chave secret. O login individual será solicitado em seguida.</p>{error&&<p role="alert">{error}</p>}<button>Salvar conexão e continuar</button></form></div>
+}

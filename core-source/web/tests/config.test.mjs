@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {validateConnection,connectionConfig,saveConnection} from '../config.mjs';
+const jwt=role=>'header.'+Buffer.from(JSON.stringify({role})).toString('base64url')+'.signature';
+const key='sb_publishable_1234567890abc';
+test('accepts public project connection',()=>{assert.equal(validateConnection('https://abc.supabase.co',key),'');assert.equal(validateConnection('https://abc.supabase.co/',jwt('anon')),'')});
+test('rejects privileged keys and untrusted URLs',()=>{for(const k of ['sb_secret_xxx',jwt('service_role'),jwt('authenticated')])assert.ok(validateConnection('https://abc.supabase.co',k));for(const u of ['http://abc.supabase.co','https://abc.supabase.co.evil.test','https://abc.supabase.co/path','https://user@abc.supabase.co','https://abc.supabase.co?token=x'])assert.ok(validateConnection(u,key))});
+test('persists public connection and reads runtime fallback',()=>{const m=new Map(),s={getItem:k=>m.get(k),setItem:(k,v)=>m.set(k,v)};saveConnection(s,'https://abc.supabase.co/',key);assert.deepEqual(connectionConfig({},s),{url:'https://abc.supabase.co',key,error:''});assert.throws(()=>saveConnection(s,'https://evil.test',key));assert.equal(m.get('dg.supabase.url'),'https://abc.supabase.co')});
+test('blocked local storage gives setup result',()=>{assert.equal(connectionConfig({}, {getItem(){throw Error('blocked')}}).url,'')});
