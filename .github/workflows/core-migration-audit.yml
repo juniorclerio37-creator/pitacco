@@ -1,0 +1,49 @@
+name: Pitacco Core — reconciliar migrações offline
+on:
+  push:
+    branches: [pitacco-core]
+    paths:
+      - '.github/workflows/core-migration-audit.yml'
+      - 'docs/core/schema-baseline/migration-normalized-hashes.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    if: github.ref == 'refs/heads/pitacco-core'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Comparar SQL versionado com impressões digitais de produção
+        run: |
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          base=Path('docs/core')
+          live=json.loads((base/'schema-baseline/migration-normalized-hashes.json').read_text())
+          exact=json.loads((base/'migration-content-comparison.json').read_text())
+          exact_by_version={m['version']:m['matched'] for m in exact['production']}
+          index={}
+          for path in sorted(Path('supabase/migrations').glob('*.sql')):
+              raw=path.read_bytes()
+              digest=hashlib.sha256(raw.replace(b'\r\n',b'\n').replace(b'\r',b'\n').strip(b' \t\r\n')).hexdigest()
+              index.setdefault(digest,[]).append(path.as_posix())
+          matches=[]
+          for row in live:
+              candidates=index.get(row['normalized_sha256'],[])
+              confirmed=exact_by_version[row['version']]
+              state='exact_or_terminal_newline' if confirmed else ('normalized_candidate_review_required' if candidates else 'unresolved')
+              matches.append({'version':row['version'],'name':row['name'],'status':state,'exact_matches':confirmed,'normalized_candidates':candidates})
+          counts={k:sum(m['status']==k for m in matches) for k in ['exact_or_terminal_newline','normalized_candidate_review_required','unresolved']}
+          assert len(matches)==len(exact_by_version)
+          report={'warning':'Normalization is diagnostic only, not proof of SQL equivalence. Never replay automatically. No database connection used.', 'counts':counts,'matches':matches}
+          Path('core-migration-comparison.json').write_text(json.dumps(report,indent=2)+'\n')
+          print(json.dumps(counts,indent=2))
+          with open(__import__('os').environ['GITHUB_STEP_SUMMARY'],'a') as summary:
+              summary.write('## Comparação de migrações\n\n'+ '\n'.join(f'- {k}: {v}' for k,v in counts.items())+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-migration-comparison
+          path: core-migration-comparison.json
