@@ -27,6 +27,7 @@ use App\Http\Controllers\FiadoManagementController;
 use App\Http\Controllers\CoreAuthController;
 use App\Http\Controllers\DailyOrdersController;
 use App\Http\Controllers\OwnBoardOrdersController;
+use App\Http\Controllers\IfoodPreparationController;
 use App\Http\Controllers\OwnPrintController;
 use App\Http\Controllers\OwnPrintQueueController;
 use App\Http\Controllers\OwnPrintDeviceController;
@@ -66,6 +67,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/stores/{store}/own-print/{operation}',OwnPrintQueueController::class)->whereUuid('store')->whereIn('operation',['bind','claim','ack']);
             Route::post('/stores/{store}/orders/{order}/reprint',OwnPrintController::class)->whereUuid(['store','order']);
             Route::get('/stores/{store}/operation-settings',[OwnBoardOrdersController::class,'settings'])->whereUuid('store');
+            Route::post('/stores/{store}/orders/{order}/ifood-ready',IfoodPreparationController::class)->whereUuid(['store','order']);
             Route::get('/stores/{store}/orders/ifood-board',[OwnBoardOrdersController::class,'ifood'])->whereUuid('store');
             Route::get('/stores/{store}/orders/own-board',OwnBoardOrdersController::class)->whereUuid('store');
             Route::get('/stores/{store}/orders',DailyOrdersController::class)->whereUuid('store');

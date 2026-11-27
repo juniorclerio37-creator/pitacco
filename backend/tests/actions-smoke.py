@@ -493,6 +493,28 @@ assert sql("select pitacco_private.store_opening_status('"+A+"','2026-11-21 01:3
 assert sql("select pitacco_private.store_opening_status('"+A+"','2026-11-21 02:00:00-03')->>'open'")=='false'
 call(hours,200,'PUT',hours_body|{'expected_revision':night['revision']},alice)
 print('PASS: weekly opening hours, revision, pause/resume, overnight, appointment slots, closed checkout and committed retry, tenant isolation')
+# Separate local preparation from the provider's official state; synthetic only.
+BASE=device_base
+ready_id='38000000-0000-4000-8000-000000000001'
+ready_path='/stores/'+A+'/orders/'+ready_id+'/ifood-ready'
+sql("insert into public.orders(id,store_id,channel,gross,source,status,preparation_status,receipt) values ('"+ready_id+"','"+A+"','iFood',25,'ifood','accepted','preparing','{\"ifood_status\":\"CONFIRMED\",\"logistics\":\"loja\"}'::jsonb)")
+call(ready_path,401,'POST',{})
+call(ready_path,404,'POST',{},bob)
+call(ready_path.replace(A,B),404,'POST',{},alice)
+call(ready_path.replace(ready_id,oid(1)),404,'POST',{},alice)
+call(ready_path.replace(ready_id,oid(4)),409,'POST',{},alice)
+call(ready_path,422,'POST',{'action':'dispatch'},alice)
+sql("update public.orders set receipt=receipt||'{\"ifood_manual_cancel\":\"requested\"}'::jsonb where id='"+ready_id+"'")
+call(ready_path,409,'POST',{},alice)
+sql("update public.orders set receipt=receipt-'ifood_manual_cancel' where id='"+ready_id+"'")
+ready=call(ready_path,200,'POST',{},alice)['data']
+assert ready=={'id':ready_id,'store_id':A,'status':'accepted','preparation_status':'ready','ifood_status':'CONFIRMED'}
+assert call(ready_path,200,'POST',{},alice)['data']==ready
+assert sql("select count(*) from public.operation_audit where order_id='"+ready_id+"' and action='preparation_changed'")=='1'
+assert sql("select count(*) from public.print_jobs where order_id='"+ready_id+"'")=='0'
+assert sql("select count(*) from pitacco_private.ifood_courier_dispatch f join public.deliveries d on d.id=f.delivery_id where d.order_id='"+ready_id+"'")=='0'
+print('PASS: local iFood readiness, official state preserved, repeat, pending cancellation, no dispatch or print jobs')
+BASE=actions_base
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
 call(hours,404,token=alice)
 call(hours,404,'PUT',hours_body,alice)
@@ -516,6 +538,7 @@ call(fiado,404,token=alice)
 print('PASS: original Fiado manager overview, role and store isolation, revoked membership')
 
 BASE=device_base
+call(ready_path,404,'POST',{},alice)
 call(ifood,404,token=alice)
 call(dp+'status',404,'POST',{},alice)
 call(dp+'ping',404,'POST',{'device_id':dev},alice)

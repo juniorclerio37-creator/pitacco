@@ -82,3 +82,22 @@ begin
 end $$;
 revoke all on function core_auth.ifood_board_fixture(uuid,integer,integer) from public,anon,authenticated;
 grant execute on function core_auth.ifood_board_fixture(uuid,integer,integer) to pitacco_core_own_board;
+
+-- CI only. Local kitchen readiness is not an iFood READY_TO_PICKUP or
+-- DISPATCHED event. No provider request, lease, token or contact is exposed.
+create function core_auth.ifood_ready_fixture(s uuid,oid uuid) returns jsonb
+language plpgsql security definer set search_path='' as $$
+declare o public.orders%rowtype;
+begin
+ if not core_auth.can_act(s) then return null;end if;
+ select x.* into o from public.orders x where x.id=oid and x.store_id=s and x.source='ifood' for update;
+ if not found then return null;end if;
+ if o.status<>'accepted' or coalesce(o.receipt->>'ifood_status','') not in ('CONFIRMED','READY_TO_PICKUP') or coalesce(o.receipt->>'ifood_manual_cancel','')='requested' then
+  raise exception 'Pedido sem confirmação oficial ou indisponível' using errcode='22023';
+ end if;
+ perform public.set_order_preparation(oid,'ready');
+ select x.* into o from public.orders x where x.id=oid and x.store_id=s;
+ return jsonb_build_object('id',o.id,'store_id',o.store_id,'status',o.status,'preparation_status',o.preparation_status,'ifood_status',o.receipt->>'ifood_status');
+end $$;
+revoke all on function core_auth.ifood_ready_fixture(uuid,uuid) from public,anon,authenticated;
+grant execute on function core_auth.ifood_ready_fixture(uuid,uuid) to pitacco_core_actions;
