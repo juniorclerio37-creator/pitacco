@@ -2,14 +2,14 @@
 // The host supplies the existing native bridge. Server IDs remain authoritative.
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const states=new Set(['claimed','saved','uncertain','error']);
-export function createWindowsPrintClient({store,device,token,fetcher=globalThis.fetch,nativeCall,ingestJobs,storeName,client,storeLogoPath}){
+export function createWindowsPrintClient({store,device,token,fetcher=globalThis.fetch,nativeCall,ingestJobs,storeName,client,storeLogoPath,unified=false}){
  if(!UUID.test(store??'')||!UUID.test(device??'')||typeof token!=='string'||!token||typeof nativeCall!=='function'||typeof ingestJobs!=='function')throw new TypeError('Sessão de impressão inválida.');
  let active=true,flight=null,cycle=null,abort=new AbortController();
  let remoteIds=new Set();
  const confirmed=new Map();
  async function post(op,data={}){
   if(!active)throw Error('Sessão encerrada.');
-  const res=await fetcher('/api/v1/stores/'+store+'/own-print/'+op,{
+  const res=await fetcher('/api/v1/stores/'+store+(unified?'/unified-print/':'/own-print/')+op,{
    method:'POST',headers:{Accept:'application/json','Content-Type':'application/json',Authorization:'Bearer '+token},
    body:JSON.stringify({device_id:device,...data}),cache:'no-store',credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',
    signal:AbortSignal.any([abort.signal,AbortSignal.timeout(8000)])});
@@ -32,7 +32,7 @@ export function createWindowsPrintClient({store,device,token,fetcher=globalThis.
    const {jobs}=await post('claim');
    if(!Array.isArray(jobs)||jobs.length>100||new Set(jobs.map(j=>j?.id)).size!==jobs.length||
     jobs.some(j=>!UUID.test(j?.id??'')||j.store_id!==store||!UUID.test(j.order_id??'')||
-     !states.has(j.state)||![58,80].includes(j.width)||typeof j.printer!=='string'||!j.printer||j.receipt?.source!=='proprio'))
+     !states.has(j.state)||![58,80].includes(j.width)||typeof j.printer!=='string'||!j.printer||!(unified?['proprio','ifood']:['proprio']).includes(j.receipt?.source)))
     throw Error('Lote de impressão inválido.');
    remoteIds=new Set(jobs.map(j=>j.id));
    for(const id of confirmed.keys())if(!remoteIds.has(id))confirmed.delete(id);

@@ -575,8 +575,28 @@ assert sql("select receipt->>'ifood_status' from public.orders where id='"+ready
 # The still own-only claim must fail closed; do not consume the marketplace job.
 call(queue+'claim',409,'POST',{'device_id':dev},alice)
 assert sql("select count(*) from public.print_jobs where order_id='"+ready_id+"' and device_id is not null")=='0'
-# Remove only the synthetic print records to preserve the independent tests.
-sql("delete from public.print_jobs where order_id='"+ready_id+"'")
+# Claim both sources using the same device and original queue.
+unified='/stores/'+A+'/unified-print/'
+market_delivery='38000000-0000-4000-8000-000000000004'
+sql("insert into public.deliveries(id,store_id,order_id,customer_name,address,status,source,logistics_provider) values('"+market_delivery+"','"+A+"','"+ready_id+"','Cliente Fixture','Rua Fixture','pendente','ifood','loja')")
+sql("insert into public.pitacco_delivery_customer_contacts(delivery_id,store_id,phone_number,phone_localizer,phone_expires_at) values('"+market_delivery+"','"+A+"','21999999999','123456',now()+interval '5 minutes')")
+sql("update public.print_jobs set receipt=receipt||'{\"phone\":\"PRIVATE-STALE\",\"localizer\":\"PRIVATE-STALE\",\"display_number\":\"4321\",\"customer\":{\"name\":\"Cliente Fixture\",\"phone\":\"PRIVATE-NESTED\"}}'::jsonb where order_id='"+ready_id+"'")
+call(unified+'claim',401,'POST',{'device_id':dev})
+call(unified+'claim',404,'POST',{'device_id':other_dev},alice)
+call(unified.replace(A,B)+'claim',404,'POST',{'device_id':dev},alice)
+claimed=call(unified+'claim',200,'POST',{'device_id':dev},alice)['data']['jobs']
+market_jobs=[j for j in claimed if j['order_id']==ready_id]
+assert len(market_jobs)>0 and all(j['receipt']['source']=='ifood' and j['receipt']['phone']=='21999999999' and j['receipt']['localizer']=='123456' and j['receipt']['display_number']=='4321' for j in market_jobs)
+assert 'PRIVATE-' not in json.dumps(market_jobs)
+assert sql("select count(*) from public.print_jobs where order_id='"+ready_id+"' and receipt->>'phone'='21999999999'")=='0'
+sql("update public.pitacco_delivery_customer_contacts set phone_expires_at=now()-interval '1 second' where delivery_id='"+market_delivery+"'")
+expired=[j for j in call(unified+'claim',200,'POST',{'device_id':dev},alice)['data']['jobs'] if j['order_id']==ready_id]
+assert all('phone' not in j['receipt'] and 'localizer' not in j['receipt'] for j in expired)
+for j in market_jobs:
+    call(unified+'ack',200,'POST',{'device_id':dev,'job_id':j['id'],'state':'submitted'},alice)
+assert not any(j['order_id']==ready_id for j in call(unified+'claim',200,'POST',{'device_id':dev},alice)['data']['jobs'])
+sql("delete from public.pitacco_delivery_customer_contacts where delivery_id='"+market_delivery+"';delete from public.deliveries where id='"+market_delivery+"';delete from public.print_jobs where order_id='"+ready_id+"'")
+print('PASS: unified native queue, scoped temporary iFood contact, expiry, immutable stored receipt and submitted acknowledgement')
 print('PASS: official iFood reprint, original sectors and copies, idempotent audit, isolated queue and no provider mutation')
 BASE=actions_base
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")

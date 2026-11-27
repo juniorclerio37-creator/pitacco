@@ -5,11 +5,11 @@ import {ingestJobs} from '../../core-source/web/printBridge.mjs';
 const store='20000000-0000-4000-8000-000000000001',other='20000000-0000-4000-8000-000000000002',device='30000000-0000-4000-8000-000000000001';
 const id=n=>'40000000-0000-4000-8000-'+String(n).padStart(12,'0');
 const job=(n,state='claimed')=>({id:id(n),store_id:store,order_id:id(99),state,printer:'FIXTURE',width:58,receipt:{source:'proprio',display_number:'D-101',customer:'Cliente Fixture',items:[{name:'Açaí',quantity:1,modifiers:[{name:'Leite em pó',quantity:2}]}],total:20,payment:'dinheiro'}});
-function setup(jobs){
+function setup(jobs,unified=false){
  const saved=new Map(),acks=[],calls=[],local=[];let deny=false,failAck=false,failFinal=false;
- const bridge=createWindowsPrintClient({store,device,token:'fixture-only',ingestJobs,
+ const bridge=createWindowsPrintClient({store,device,token:'fixture-only',ingestJobs,unified,
  nativeCall:async(op,args)=>{calls.push(op);if(op==='list_jobs')return local;if(op==='has_saved_print_job')return saved.has(args.id);if(op==='enqueue_job'){assert.ok(!saved.has(args.job.id));saved.set(args.job.id,args.job.receipt);return;}throw Error(op);},
- fetcher:async(path,opts)=>{assert.ok(path.startsWith('/api/v1/stores/'+store+'/own-print/'));assert.equal(opts.headers.Authorization,'Bearer fixture-only');assert.equal(opts.redirect,'error');const data=JSON.parse(opts.body);assert.equal(data.device_id,device);
+ fetcher:async(path,opts)=>{assert.ok(path.startsWith('/api/v1/stores/'+store+(unified?'/unified-print/':'/own-print/')));assert.equal(opts.headers.Authorization,'Bearer fixture-only');assert.equal(opts.redirect,'error');const data=JSON.parse(opts.body);assert.equal(data.device_id,device);
  if(deny)return {ok:false,status:404};
  if(path.endsWith('/bind'))return {ok:true,json:async()=>({data:{bound:true}})};
  if(path.endsWith('/claim'))return {ok:true,json:async()=>({data:{jobs}})};
@@ -51,4 +51,12 @@ test('duplicate local identities fail closed and concurrent polls share one cycl
  const a=x.bridge.syncAndReconcile(),b=x.bridge.syncAndReconcile();assert.equal(a,b);
  await assert.rejects(a,/inconsistente/);
  assert.equal(x.acks.filter(a=>a.state!=='saved').length,0);
+});
+
+test('same original native receipt renderer for own and iFood jobs, configured widths',async()=>{
+ const x=setup([job(1),{...job(2),width:80,receipt:{...job(2).receipt,source:'ifood',display_number:'4321',phone:'21999999999',localizer:'123456'}}],true);
+ await x.bridge.sync();assert.equal(x.saved.size,2);
+ assert.match(x.saved.get(id(1)),/Loja/);assert.match(x.saved.get(id(2)),/iFood/);assert.match(x.saved.get(id(2)),/4321/);
+ assert.match(x.saved.get(id(2)),/Localizador: 123456/);assert.match(x.saved.get(id(2)),/COBRAR NA ENTREGA/);
+ const y=setup([{...job(3),receipt:{...job(3).receipt,source:'ifood'}}]);await assert.rejects(y.bridge.sync(),/Lote/);
 });
