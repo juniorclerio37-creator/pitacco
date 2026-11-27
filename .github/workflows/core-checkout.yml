@@ -46,6 +46,9 @@ jobs:
       PITACCO_FIADO_STATEMENT_ENABLED: 'true'
       CORE_FIADO_STATEMENT_DB_USERNAME: pitacco_core_fiado_statement
       CORE_FIADO_STATEMENT_DB_PASSWORD: ci-statement-only
+      PITACCO_WALLET_ENABLED: 'true'
+      CORE_WALLET_DB_USERNAME: pitacco_core_wallet
+      CORE_WALLET_DB_PASSWORD: ci-wallet-only
       PITACCO_PROFILE_ENABLED: 'true'
       CORE_PROFILE_DB_USERNAME: pitacco_core_profile
       CORE_PROFILE_DB_PASSWORD: ci-profile-only
@@ -72,12 +75,14 @@ jobs:
           node web/tests/backend/run.mjs
       - name: Preparar cardápio sintético e permissões
         run: |
-          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/tests/checkout-fixture.sql
+          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/tests/checkout-fixture.sql -f backend/tests/wallet-fixture.sql
           if PGPASSWORD=ci-checkout-only psql -h 127.0.0.1 -U pitacco_core_checkout -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.orders'; then exit 1; fi
           if PGPASSWORD=ci-tracking-only psql -h 127.0.0.1 -U pitacco_core_tracking -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.public_checkouts'; then exit 1; fi
           test "$(PGPASSWORD=ci-tracking-only psql -h 127.0.0.1 -U pitacco_core_tracking -d postgres -Atc "select has_function_privilege(current_user,'public.checkout_public_order(text,uuid,text,text,text,jsonb,text,text,text)','execute')")" = f
           if PGPASSWORD=ci-profile-only psql -h 127.0.0.1 -U pitacco_core_profile -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.pitacco_v2_customer_profiles'; then exit 1; fi
           if PGPASSWORD=ci-statement-only psql -h 127.0.0.1 -U pitacco_core_fiado_statement -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.pitacco_fiado_customers'; then exit 1; fi
+          if PGPASSWORD=ci-wallet-only psql -h 127.0.0.1 -U pitacco_core_wallet -d postgres -v ON_ERROR_STOP=1 -c 'select * from core_wallet_test.verified_devices'; then exit 1; fi
+          test "$(PGPASSWORD=ci-wallet-only psql -h 127.0.0.1 -U pitacco_core_wallet -d postgres -Atc "select has_function_privilege(current_user,'public.pitacco_loyalty_phone_wallet(text,text)','execute')")" = f
       - name: Testar checkout via Laravel
         working-directory: backend
         run: |
@@ -105,6 +110,7 @@ jobs:
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8081/up >/dev/null && break; sleep 1; done
           node tests/storefront-http.mjs
           node tests/storefront-browser.mjs
+          python3 tests/wallet-smoke.py
       - uses: actions/upload-artifact@v4
         if: success()
         with:
