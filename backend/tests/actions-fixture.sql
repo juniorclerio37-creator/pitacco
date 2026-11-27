@@ -63,3 +63,18 @@ grant execute on function core_auth.can_act(uuid),auth.uid(),public.pitacco_fiad
 grant execute on function public.pitacco_fiado_approve(uuid,uuid,boolean),public.pitacco_fiado_receive(uuid,uuid,numeric,text,uuid,text) to pitacco_core_fiado_manage;
 insert into public.products(id,store_id,name,price,cost,menu_active)
 values('31000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','Produto Fiado Fixture',20,5,true);
+
+-- Disposable report role: only the original aggregate, no private receipt rows or writes.
+create role pitacco_core_financial_read login password 'ci-financial-read-only' nosuperuser nocreatedb nocreaterole nobypassrls;
+grant usage on schema public,core_auth,auth to pitacco_core_financial_read;
+grant execute on function core_auth.can_act(uuid),auth.uid(),public.pitacco_period_financial_report(uuid,date,date) to pitacco_core_financial_read;
+-- Isolated historical fixtures with explicit official receipt records and payment adjustments.
+insert into public.orders(id,store_id,channel,gross,fees,created_at,source,status,receipt) values
+ ('39000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','Delivery próprio',103,0,'2026-11-16T03:00:00Z','proprio','accepted','{"payment_price":{"adjustment_cents":300}}'),
+ ('39000000-0000-4000-8000-000000000002','20000000-0000-4000-8000-000000000001','Delivery próprio',95,0,'2026-11-16T04:00:00Z','proprio','accepted','{"payment_price":{"adjustment_cents":-500}}'),
+ ('39000000-0000-4000-8000-000000000003','20000000-0000-4000-8000-000000000001','Delivery próprio',99,0,'2026-11-16T02:59:59Z','proprio','accepted','{}'),
+ ('39000000-0000-4000-8000-000000000004','20000000-0000-4000-8000-000000000001','Delivery próprio',900,0,'2026-11-16T05:00:00Z','proprio','cancelled','{}'),
+ ('39000000-0000-4000-8000-000000000005','20000000-0000-4000-8000-000000000002','Delivery próprio',900,0,'2026-11-16T05:00:00Z','proprio','accepted','{}');
+insert into public.store_payment_receipts(order_id,store_id,amount,recorded_at) values
+ ('39000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001',103,'2026-11-16T06:00:00Z'),
+ ('39000000-0000-4000-8000-000000000005','20000000-0000-4000-8000-000000000002',900,'2026-11-16T06:00:00Z');

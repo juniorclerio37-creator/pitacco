@@ -104,7 +104,28 @@ assert float(last['remaining'])==0
 assert sql("select state from public.pitacco_fiado_charges where order_id='"+credit_order+"'")=='settled'
 assert sql("select count(*) from public.pitacco_fiado_payments where customer_id='"+cid+"'")=='2'
 assert sql("select sum(amount) from public.pitacco_fiado_payments where customer_id='"+cid+"'")=='20.00'
+report='/stores/'+A+'/reports/financial?start=2026-11-16&end=2026-11-16'
+call(report,401)
+call(report,404,token=bob)
+call(report.replace(A,B),404,token=alice)
+call('/stores/'+A+'/reports/financial?start=2026-11-17&end=2026-11-16',422,token=alice)
+call('/stores/'+A+'/reports/financial?start=2025-11-15&end=2026-11-16',422,token=alice)
+r=call(report,200,token=alice)['data']
+assert r['timezone']=='America/Sao_Paulo'
+metrics={x['metric']:x for x in r['metrics']}
+assert float(metrics['vendas']['amount'])==198
+assert float(metrics['acrescimos_pagamento']['amount'])==3
+assert float(metrics['descontos_pagamento']['amount'])==5
+assert float(metrics['recebimentos']['amount'])==103 and metrics['recebimentos']['entries']==1
+assert all(set(x)=={'metric','channel','amount','entries'} for x in r['metrics'])
+today=sql("select (now() at time zone 'America/Sao_Paulo')::date")
+today_report='/stores/'+A+'/reports/financial?start='+today+'&end='+today
+current={x['metric']:x for x in call(today_report,200,token=alice)['data']['metrics']}
+assert float(current['recebimentos_fiado']['amount'])==20 and current['recebimentos_fiado']['entries']==2
+assert float(current['recebimentos']['amount'])==0
+print('PASS: original financial aggregates, local calendar, price adjustments once, receipt separation, tenant and role isolation')
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
+call(report,404,token=alice)
 call(settings,404,'POST',payment,alice)
 print('PASS: manual approval, partial settlement, payment idempotency and full settlement')
 
