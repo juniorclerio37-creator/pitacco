@@ -193,6 +193,9 @@ jobs:
         working-directory: backend
         env:
           PITACCO_REALTIME_ENABLED: 'true'
+          PITACCO_OUTBOX_PUBLISH_ENABLED: 'true'
+          CORE_OUTBOX_DB_USERNAME: pitacco_core_outbox
+          CORE_OUTBOX_DB_PASSWORD: ci-outbox-only
           CORE_REALTIME_DB_USERNAME: pitacco_core_realtime
           CORE_REALTIME_DB_PASSWORD: ci-realtime-only
           PITACCO_REALTIME_KEY: fixture-realtime-key
@@ -213,6 +216,8 @@ jobs:
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8093/up >/dev/null && break; sleep 1; done
           kill -0 "$api"
           kill -0 "$ws"
+          if PGPASSWORD=ci-outbox-only psql -h 127.0.0.1 -U pitacco_core_outbox -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.orders'; then exit 1; fi
+          if PGPASSWORD=ci-outbox-only psql -h 127.0.0.1 -U pitacco_core_outbox -d postgres -v ON_ERROR_STOP=1 -c "delete from core_auth.order_invalidation_fixture"; then exit 1; fi
           python3 tests/reverb-wire-smoke.py
       - name: Guardar dependências experimentais auditadas
         uses: actions/upload-artifact@v4

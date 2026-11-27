@@ -83,6 +83,36 @@ try:
     subprocess.run(['php','-r',php],check=True,timeout=10)
     got=w.receive()
     assert got['event']=='pitacco.invalidate' and got['channel']==channel and json.loads(got['data'])=={'resource':'orders'},got
+    # Consume the real outbox produced by the earlier HTTP order transitions.
+    import uuid
+    def sql(q):
+        return subprocess.check_output(['psql','-h','127.0.0.1','-U','postgres','-d','postgres','-v','ON_ERROR_STOP=1','-Atc',q],env={**os.environ,'PGPASSWORD':'isolated-ci-password'},text=True).strip()
+    def publish(extra=None):
+        return subprocess.run(['php','artisan','pitacco:outbox-publish'],env={**os.environ,**(extra or {})},text=True,capture_output=True,timeout=12)
+    def pending():
+        return int(sql("select count(*) from core_auth.order_invalidation_fixture where published_at is null and store_id='"+a+"'"))
+    n=pending()
+    assert 0<n<100,n
+    assert publish({'PITACCO_OUTBOX_PUBLISH_ENABLED':'false'}).returncode!=0
+    assert pending()==n
+    assert publish({'PITACCO_REALTIME_SECRET':'incorrect-fixture-secret-at-least-32-characters'}).returncode!=0
+    assert pending()==n
+    seen=set()
+    for i in range(n):
+        result=publish()
+        assert result.returncode==0 and 'published=1' in result.stdout,(result.returncode,result.stdout)
+        frame=w.receive()
+        assert frame['event']=='pitacco.invalidate' and frame['channel']==channel,frame
+        data=json.loads(frame['data'])
+        assert set(data)=={'resource','event_id'} and data['resource']=='orders'
+        eid=str(uuid.UUID(data['event_id']))
+        assert eid not in seen
+        seen.add(eid)
+        assert sql("select (published_at is not null)::text from core_auth.order_invalidation_fixture where id='"+eid+"'")=='true'
+    assert pending()==0
+    result=publish()
+    assert result.returncode==0 and 'published=0' in result.stdout
+    print('PASS: actual committed order invalidations, failed publication retained, replay-safe event identifiers and acknowledgement')
     x.s.settimeout(1)
     try:
         leaked=x.receive()
