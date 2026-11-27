@@ -68,6 +68,10 @@ jobs:
           composer audit --locked
           find app bootstrap config routes public -name '*.php' -print0 | xargs -0 -n1 php -l
           php artisan route:list
+          # Reverb config is evaluated before the application environment is bound.
+          APP_ENV=testing PITACCO_REALTIME_ENABLED=false php -r 'require "vendor/autoload.php"; $c=require "config/reverb.php"; exit($c["apps"]["apps"] === [] ? 0 : 1);'
+          APP_ENV=production PITACCO_REALTIME_ENABLED=true php -r 'require "vendor/autoload.php"; $c=require "config/reverb.php"; exit($c["apps"]["apps"] === [] ? 0 : 1);'
+          APP_ENV=testing PITACCO_REALTIME_ENABLED=true php -r 'require "vendor/autoload.php"; $c=require "config/reverb.php"; exit(count($c["apps"]["apps"]) === 1 && $c["servers"]["reverb"]["host"] === "127.0.0.1" ? 0 : 1);'
       - name: Preparar banco exclusivamente sintético
         run: |
           PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/tests/fixture.sql
