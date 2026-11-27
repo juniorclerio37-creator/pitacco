@@ -1,5 +1,6 @@
 <?php
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\RealtimeAuthorizationController;
 use App\Http\Controllers\PublicMenuController;
 use App\Http\Controllers\PublicScheduleController;
 use App\Http\Controllers\PublicStoreStateController;
@@ -52,6 +53,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/courier/shift',CourierShiftController::class);
             Route::post('/courier/payments',CourierPaymentController::class);
             Route::post('/courier/delivery',CourierDeliveryController::class);
+            Route::post('/realtime/auth',RealtimeAuthorizationController::class);
             Route::get('/auth/me',[CoreAuthController::class,'me']);
             Route::post('/auth/logout',[CoreAuthController::class,'logout']);
             Route::get('/stores/{store}/orders',DailyOrdersController::class)->whereUuid('store');
