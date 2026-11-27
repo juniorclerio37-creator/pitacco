@@ -69,5 +69,21 @@ begin
  assert (d#>>'{catalog,0,orders}')::int=3;
 end $test$;
 reset role;
+-- Published storefront ranking returns at most four active products, by sold quantity.
+insert into public.public_menu_settings(store_id,slug,enabled,delivery_enabled,pickup_enabled,delivery_fee,payment_methods,pix_instructions)
+ values('20000000-0000-0000-0000-000000000081','insights-top-four',true,false,true,0,array['dinheiro'],'')
+ on conflict(store_id) do update set slug=excluded.slug,enabled=true;
+insert into public.products(id,store_id,name,category,price,cost,menu_active)
+ select ('40000000-0000-0000-0000-00000000009'||n)::uuid,'20000000-0000-0000-0000-000000000081','Destaque '||n,'Açaí',20,8,n<>6 from generate_series(1,6)n;
+update public.orders set receipt=jsonb_build_object('items',(
+ select jsonb_agg(jsonb_build_object('name','Destaque '||n,'quantity',case when n=6 then 99 else 7-n end)) from generate_series(1,6)n
+ )) where id='30000000-0000-0000-0000-000000000081';
+update public.orders set receipt='{"items":[{"name":"Destaque 5","quantity":999}]}'::jsonb where id in ('30000000-0000-0000-0000-000000000086','30000000-0000-0000-0000-000000000087');
+set local role anon;
+do $test$ begin
+ assert public.pitacco_public_top_sellers('insights-top-four')=array['40000000-0000-0000-0000-000000000091','40000000-0000-0000-0000-000000000092','40000000-0000-0000-0000-000000000093','40000000-0000-0000-0000-000000000094']::uuid[];
+ assert cardinality(public.pitacco_public_top_sellers('missing-top-four'))=0;
+end $test$;
+reset role;
 rollback;
 

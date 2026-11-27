@@ -1,5 +1,5 @@
 begin;
-do $test$ declare owner_id uuid:=gen_random_uuid();user_id uuid:=gen_random_uuid();manager_id uuid:=gen_random_uuid();s uuid;other_store uuid;x jsonb;rid uuid;begin
+do $test$ declare owner_id uuid:=gen_random_uuid();user_id uuid:=gen_random_uuid();manager_id uuid:=gen_random_uuid();s uuid;other_store uuid;x jsonb;rid uuid;day_br date:=(now() at time zone 'America/Sao_Paulo')::date;begin
  insert into auth.users(id,email,email_confirmed_at) values(owner_id,'control-owner@example.invalid',now()),(user_id,'control-observer@example.invalid',now()),(manager_id,'control-merchant@example.invalid',now());
  insert into pitacco_private.platform_owner(user_id,login_name_hash) values(owner_id,sha256(convert_to('control-owner','UTF8'))) on conflict(singleton) do update set user_id=excluded.user_id;
  insert into public.stores(name) values('Control Central') returning id into s;
@@ -7,11 +7,18 @@ do $test$ declare owner_id uuid:=gen_random_uuid();user_id uuid:=gen_random_uuid
  insert into public.store_members(store_id,user_id,role) values(s,manager_id,'gestor');
  perform set_config('request.jwt.claim.sub',owner_id::text,true);perform set_config('request.jwt.claims','{"aal":"aal1"}',true);
  assert (public.pitacco_control_access()->>'owner')::boolean;
- x:=public.pitacco_control_dashboard(current_date-1,current_date);assert x->'stores' ? 'mrr' and jsonb_array_length(x->'series')=2;
+ x:=public.pitacco_control_dashboard(day_br-1,day_br);assert x->'stores' ? 'mrr' and jsonb_array_length(x->'series')=2;
  assert x#>>'{finance,costs}' is null,'Unknown costs must not become zero';
  insert into public.orders(store_id,channel,gross,status,source,preparation_status,receipt) values(s,'Delivery próprio',123,'accepted','proprio','completed','{}'),(s,'Delivery próprio',777,'cancelled','proprio','completed','{}'),(s,'Delivery próprio',9999,'accepted','proprio','completed','{"is_test":true}');
- x:=public.pitacco_control_dashboard(current_date,current_date);
+ x:=public.pitacco_control_dashboard(day_br,day_br);
  assert (x#>>'{orders,gross}')::numeric=123,'Merchant gross excludes cancelled and explicit test orders';
+ -- Deliberately cross UTC midnight while remaining in the same Brazilian business day.
+ insert into public.orders(store_id,channel,gross,status,source,preparation_status,receipt,created_at)
+ values(s,'Delivery próprio',7,'accepted','proprio','completed','{}',(day_br::timestamp+interval '22 hours') at time zone 'America/Sao_Paulo');
+ x:=public.pitacco_control_dashboard(day_br,day_br);
+ assert (x#>>'{orders,gross}')::numeric=130,'Brazilian business date includes orders after UTC midnight';
+ x:=public.pitacco_control_dashboard(day_br+1,day_br+1);
+ assert (x#>>'{orders,gross}')::numeric=0,'Orders after UTC midnight do not count on the following Brazilian date';
  assert (x#>>'{finance,revenue}')::numeric=0,'Merchant sales never become platform revenue';
  assert x->'cohort' is not null and jsonb_array_length(x->'forecast')=30;
 
@@ -20,8 +27,8 @@ do $test$ declare owner_id uuid:=gen_random_uuid();user_id uuid:=gen_random_uuid
  begin perform public.pitacco_control_mutate('cost','{"category":"operational","description":"Fixture cost","amount_cents":1250,"incurred_on":"2026-11-26","reference":"test-one"}');raise exception 'TEST MFA bypass';exception when insufficient_privilege then null;end;
  begin perform public.pitacco_owner_set_feature(s,'caixa',false);raise exception 'TEST legacy MFA bypass';exception when insufficient_privilege then null;end;
  perform set_config('request.jwt.claims','{"aal":"aal2"}',true);
- x:=public.pitacco_control_mutate('cost',jsonb_build_object('category','operational','description','Fixture cost','amount_cents',1250,'incurred_on',current_date,'reference','test-one'));assert (x->>'saved')::boolean;
- x:=public.pitacco_control_dashboard(current_date,current_date);assert (x#>>'{finance,costs}')::numeric=12.5;
+ x:=public.pitacco_control_mutate('cost',jsonb_build_object('category','operational','description','Fixture cost','amount_cents',1250,'incurred_on',day_br,'reference','test-one'));assert (x->>'saved')::boolean;
+ x:=public.pitacco_control_dashboard(day_br,day_br);assert (x#>>'{finance,costs}')::numeric=12.5;
  x:=public.pitacco_control_mutate('member',jsonb_build_object('store_id',s,'email','control-observer@example.invalid','role','lojista'));
  assert exists(select 1 from public.store_members m where m.store_id=s and m.user_id=(x->>'id')::uuid and m.role='lojista');
  begin perform public.pitacco_control_mutate('member',jsonb_build_object('store_id',s,'email','control-merchant@example.invalid','role','lojista'));raise exception 'TEST last manager demotion';exception when invalid_parameter_value then null;end;

@@ -17,16 +17,20 @@ try{
  for(const template of ['pitacco-v2','essencial','editorial','urbano','classic']) for(const width of [375,768,1440]){
   const page=await browser.newPage({viewport:{width,height:1000}}),errors=[],sent=[];
   let linkGenerated=false;
+  const slowImageScenario=template==='pitacco-v2'&&width===375;
+  let imageReleased=false;
   page.on('pageerror',e=>errors.push(e.stack||e.message));page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(30000);
   await page.route('**/*',async route=>{
    const url=new URL(route.request().url()),name=url.pathname.split('/').pop();
-   if(url.hostname==='fixtures.pitacco.test')return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="600" height="500" viewBox="0 0 600 500"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="#f5e8dc"/><stop offset="1" stop-color="#d6bba5"/></linearGradient></defs><rect width="600" height="500" fill="url(#g)"/><ellipse cx="300" cy="430" rx="165" ry="20" fill="#4b075e" opacity=".15"/><path d="M175 160H425L395 425H205Z" fill="#4b075e"/><path d="M190 230H415L410 270H195Z" fill="#e9c6a1"/><ellipse cx="300" cy="160" rx="135" ry="48" fill="#751079"/><g fill="#dd3442"><circle cx="242" cy="132" r="35"/><circle cx="306" cy="118" r="35"/><circle cx="364" cy="140" r="35"/></g><g fill="#edbd60"><circle cx="209" cy="165" r="12"/><circle cx="284" cy="166" r="12"/><circle cx="343" cy="174" r="12"/><circle cx="390" cy="167" r="12"/></g></svg>'});
+   if(url.hostname==='fixtures.pitacco.test'){
+    if(slowImageScenario&&!imageReleased)await new Promise(resolve=>setTimeout(resolve,2500));
+    return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="600" height="500" viewBox="0 0 600 500"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="#f5e8dc"/><stop offset="1" stop-color="#d6bba5"/></linearGradient></defs><rect width="600" height="500" fill="url(#g)"/><ellipse cx="300" cy="430" rx="165" ry="20" fill="#4b075e" opacity=".15"/><path d="M175 160H425L395 425H205Z" fill="#4b075e"/><path d="M190 230H415L410 270H195Z" fill="#e9c6a1"/><ellipse cx="300" cy="160" rx="135" ry="48" fill="#751079"/><g fill="#dd3442"><circle cx="242" cy="132" r="35"/><circle cx="306" cy="118" r="35"/><circle cx="364" cy="140" r="35"/></g><g fill="#edbd60"><circle cx="209" cy="165" r="12"/><circle cx="284" cy="166" r="12"/><circle cx="343" cy="174" r="12"/><circle cx="390" cy="167" r="12"/></g></svg>'});}
    if(url.origin===origin&&url.pathname==='/loyalty-test')return route.fulfill({contentType:'text/html',body:source});
    if(url.origin==='https://esm.sh')return route.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:`export function createClient(){return {rpc:async(name,payload)=>{const r=await fetch('/fixture/'+name,{method:'POST',body:JSON.stringify(payload)});const data=await r.json();return {data:r.ok?data:null,error:r.ok?null:data,status:r.status}}}}`});
    if(!url.pathname.startsWith('/fixture/'))return route.abort();
    const p=route.request().postDataJSON();
-   if(name==='get_public_menu')return route.fulfill({json:{store:{appearance:{template,...templatePalettes[template]},name:'Loja Fideliza',delivery_enabled:false,pickup_enabled:true,payment_methods:['pix_manual'],opening_hours:{open:true,reason:'open'}},products:[{id:'p1',name:'Açaí',category:'Açaí',price:50,image_url:'https://fixtures.pitacco.test/acai.svg',option_groups:[]},{id:'p2',name:'Creme de cupuaçu',category:'Açaí',price:50,option_groups:[]},{id:'p3',name:'Combo da casa',category:'Açaí',price:50,option_groups:[]}]}});
-   if(name==='pitacco_public_store_region')return route.fulfill({json:'Localidade de teste com nome comprido · Nova Iguaçu'});
+   if(name==='get_public_menu')return route.fulfill({json:{store:{appearance:{template,...templatePalettes[template]},name:'Loja Fideliza',delivery_enabled:false,pickup_enabled:true,payment_methods:['pix_manual'],opening_hours:{open:true,reason:'open'}},products:[{id:'p1',name:'Açaí',category:'Açaí',price:50,image_url:'https://fixtures.pitacco.test/acai.svg',option_groups:[]},{id:'p2',name:'Creme de cupuaçu',category:'Açaí',price:50,option_groups:[]},{id:'p3',name:'Combo da casa',category:'Açaí',price:50,option_groups:[]},{id:'p4',name:'Açaí especial',category:'Açaí',price:50,option_groups:[]}]}});
+   if(name==='pitacco_public_top_sellers')return route.fulfill({json:['p1','p3','p2','p4']});
    if(name==='pitacco_public_store_open')return route.fulfill({json:{open:true,reason:'open'}});
    if(name==='pitacco_public_schedule_slots')return route.fulfill({json:[]});
    if(name==='pitacco_loyalty_program')return route.fulfill({json:{rules,campaigns:[{id:'campaign',title:'Oferta da semana',code:'SEMANA5',discount_type:'fixed',discount_value:5,minimum_order_cents:0}]}});
@@ -93,6 +97,10 @@ try{
 
   await page.waitForFunction(()=>document.body.dataset.menuSkin);
   await page.locator('#menuStartup').waitFor({state:'hidden'});
+  if(slowImageScenario){
+   assert.equal(await page.locator('#v2TopProducts img').first().evaluate(img=>img.complete&&img.naturalWidth>0),false,'Slow product photos must not block the menu');
+   imageReleased=true;
+  }
   assert.equal(await page.locator('#v2HomeLoyalty').isVisible(),true,
     'Fideliza+ deve estar presente desde a primeira exibição, sem empurrar categorias');
   if(template==='pitacco-v2'){
@@ -104,6 +112,18 @@ try{
   }else{
    assert.equal(await page.locator('#v2HomeLoyalty .v2-progress-card').isVisible(),true,'Other templates keep their existing loyalty design');
   }
+  assert.equal(await page.locator('#v2HeroLocation').count(),0,'Store location is not displayed under availability');
+  assert.equal(await page.locator('#hero').getByText('Localidade de teste com nome comprido · Nova Iguaçu',{exact:false}).count(),0);
+  assert.equal(await page.locator('#categories').isVisible(),false,'No duplicate category navigation on home');
+  assert.equal(await page.locator('#v2HomeCategories').isVisible(),true,'Keep category icons on home');
+  const separation=await page.evaluate(()=>{
+   const nav=document.getElementById('v2StoreNav'),card=document.getElementById('v2HomeLoyalty');
+   const gap=card.getBoundingClientRect().top-nav.getBoundingClientRect().bottom;
+   const visible=[...nav.querySelectorAll('button:not([hidden])')];
+   const clickable=visible.every(b=>{const r=b.getBoundingClientRect();return b.contains(document.elementFromPoint(r.left+r.width/2,r.top+r.height*.8));});
+   return {gap,clickable};
+  });
+  assert.ok(separation.gap>=8&&separation.clickable,'Fideliza+ stays below navigation and leaves all visible tabs clickable: '+JSON.stringify(separation));
   const firstCategoriesTop=await page.locator('#v2HomeCategories').evaluate(e=>e.getBoundingClientRect().top);
   await page.waitForTimeout(240);
   const finalCategoriesTop=await page.locator('#v2HomeCategories').evaluate(e=>e.getBoundingClientRect().top);
@@ -111,6 +131,17 @@ try{
     'Categorias não podem mudar de posição depois que o carregamento desaparece');
   await page.locator('.product-open').first().waitFor();
   await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
+  if(template==='pitacco-v2'){
+   assert.deepEqual(await page.locator('#v2TopProducts .v2-top-name').allTextContents(),['Açaí','Combo da casa','Creme de cupuaçu','Açaí especial']);
+   assert.equal(await page.locator('#v2TopProducts .v2-top-badge').filter({hasText:'Mais pedido'}).count(),4);
+   const compactGrid=await page.locator('#v2TopProducts').evaluate(grid=>({
+    columns:getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+    photos:[...grid.querySelectorAll('.v2-top-photo')].map(e=>e.getBoundingClientRect().height),
+    overflow:grid.scrollWidth>grid.clientWidth+1
+   }));
+   assert.equal(compactGrid.columns,width<=600?2:4);
+   assert.ok(compactGrid.photos.every(height=>height<=149)&&!compactGrid.overflow,'Four compact cards fit without overflow: '+JSON.stringify(compactGrid));
+  }else assert.equal(await page.locator('#v2TopProducts .v2-top-product').count(),2);
   await page.evaluate(()=>{for(const image of document.images)if(image.src.includes('fixtures.pitacco.test'))image.loading='eager';});
   await page.waitForFunction(()=>[...document.images].filter(i=>i.src.includes('fixtures.pitacco.test')).every(i=>i.complete&&i.naturalWidth>0),null,{timeout:10000});
   assert.equal(await page.locator('.product').first().evaluate(card=>{const photo=card.querySelector('.product-visual').getBoundingClientRect(),image=card.querySelector('.product-visual img').getBoundingClientRect();return image.bottom<=photo.bottom+1&&image.height<=photo.height+1;}),true,'Foto real limitada à área visual sem cobrir texto');
@@ -124,7 +155,7 @@ try{
    assert.ok(hero.size>=146&&hero.square&&hero.radius==='50%'&&hero.centered&&hero.below&&!hero.overflow,'Approved centered logo medallion and name below: '+JSON.stringify(hero));
   }
   if(template==='urbano')assert.equal(await page.locator('#v2HeroImage').evaluate(img=>img.getBoundingClientRect().left>=document.querySelector('.store-mark').getBoundingClientRect().right),true,'Foto decorativa não cobre o logotipo');
-  if(template==='urbano')assert.equal(await page.evaluate(()=>{const photo=document.getElementById('v2HeroImage').getBoundingClientRect();return ['v2DeliveryText','v2HeroLocation'].every(id=>document.getElementById(id).getBoundingClientRect().right<photo.left);}),true,'Prazo e localização legíveis ao lado da foto decorativa');
+  if(template==='urbano')assert.equal(await page.evaluate(()=>{const photo=document.getElementById('v2HeroImage').getBoundingClientRect();return document.getElementById('v2DeliveryText').getBoundingClientRect().right<photo.left;}),true,'Prazo legível ao lado da foto decorativa');
   assert.equal(await page.locator('body').getAttribute('data-menu-skin'),template==='pitacco-v2'?'principal':template);
   await mkdir('artifacts',{recursive:true});
   await page.screenshot({path:`artifacts/menu-${template}-${width}.png`,fullPage:true});
