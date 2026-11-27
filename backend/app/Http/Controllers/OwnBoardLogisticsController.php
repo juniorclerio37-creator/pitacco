@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\QueryException;
+use App\Services\StoreGeocoder;
 final class OwnBoardLogisticsController
 {
     public function __invoke(Request $request,string $store,string $resource): JsonResponse
@@ -69,19 +70,30 @@ final class OwnBoardLogisticsController
         $session=$request->attributes->get('core_session');
         try{
             $db=DB::connection('core_own_logistics');
-            $phase=function(?string $reservation=null)use($db,$session,$store){
-            return $db->transaction(function()use($db,$session,$store,$reservation){
+            $phase=function(?string $reservation=null,?array $candidate=null)use($db,$session,$store){
+            return $db->transaction(function()use($db,$session,$store,$reservation,$candidate){
                 $db->statement("set local statement_timeout = '5s'");
                 $db->statement("set local lock_timeout = '2s'");
                 $db->selectOne("select set_config('request.jwt.claim.sub',?,true),set_config('pitacco.core_session_id',?,true),set_config('request.jwt.claims',?,true)",[$session->user_id,$session->session_id,json_encode(['sub'=>$session->user_id,'role'=>'authenticated'],JSON_THROW_ON_ERROR)]);
                 abort_unless($db->selectOne('select core_auth.can_act(cast(? as uuid)) as allowed',[$store])?->allowed===true,404);
-                $row=$reservation===null?$db->selectOne('select core_auth.store_origin_reserve(cast(? as uuid)) as payload',[$store]):$db->selectOne('select core_auth.store_origin_finish(cast(? as uuid),cast(? as uuid)) as payload',[$store,$reservation]);
+                $row=$reservation===null?$db->selectOne('select core_auth.store_origin_reserve(cast(? as uuid)) as payload',[$store]):$db->selectOne('select core_auth.store_origin_finish(cast(? as uuid),cast(? as uuid),cast(? as jsonb)) as payload',[$store,$reservation,json_encode($candidate,JSON_THROW_ON_ERROR)]);
                 return json_decode($row->payload,true,512,JSON_THROW_ON_ERROR);
             });};
             $result=$phase();
-            // The provider boundary is between committed transactions. Only
-            // synthetic responses are supported by this testing-only endpoint.
-            if(isset($result['reservation']))$result=$phase($result['reservation']);
+            // The real matcher runs outside the transaction, but CI never sends
+            // an address or credential to the internet. No live fallback.
+            if(isset($result['reservation'])){
+                $candidate=null;
+                try{
+                    $payload=$result['provider_fixture'];
+                    $candidate=app(StoreGeocoder::class)->lookup($result['address'],'fixture-only-key',
+                        static function(string $endpoint,array $query)use($payload):array{
+                            if($endpoint!==StoreGeocoder::ENDPOINT||($query['apiKey']??null)!=='fixture-only-key')throw new \RuntimeException('Transporte indisponível.');
+                            return $payload;
+                        });
+                }catch(\RuntimeException){/* Consume reservation even on provider failure. */}
+                $result=$phase($result['reservation'],$candidate);
+            }
             if(($result['unavailable']??false)===true)return response()->json(['error'=>'address_not_located'],422)->header('Cache-Control','no-store');
             return response()->json(['data'=>$result])->header('Cache-Control','no-store');
         }catch(QueryException $e){

@@ -116,7 +116,7 @@ revoke all on core_auth.store_origin_reservations from public,anon,authenticated
 create function core_auth.store_origin_reserve(s uuid) returns jsonb
 language plpgsql security definer set search_path='' as $fn$
 declare shop public.stores%rowtype; sid uuid:=nullif(current_setting('pitacco.core_session_id',true),'')::uuid;
- addr jsonb; counter integer; ticket uuid; bucket timestamptz;
+ addr jsonb; counter integer; ticket uuid; bucket timestamptz; sample jsonb;
 begin
  if not core_auth.can_act(s) or not exists(select 1 from core_auth.sessions where id=sid and user_id=auth.uid() and revoked_at is null and expires_at>now()) then raise exception 'Sem permissão' using errcode='42501';end if;
  select * into shop from public.stores where id=s for update;
@@ -144,14 +144,27 @@ begin
  where pitacco_private.delivery_quote_rate_limits.attempts<24 returning attempts into counter;
  if counter is null then raise exception 'Limite de origem' using errcode='P0001';end if;
  addr:=jsonb_build_object('address',shop.address,'address_number',shop.address_number,'neighborhood',shop.neighborhood,'city',shop.city,'state',shop.state,'postal_code',shop.postal_code);
+ -- Bounded cleanup of expired reservations in the same store; quota remains.
+ delete from core_auth.store_origin_reservations where id in (select id from core_auth.store_origin_reservations where store_id=s and expires_at<now()-interval '1 minute' order by expires_at limit 100);
  insert into core_auth.store_origin_reservations(store_id,session_id,address,expires_at) values(s,sid,addr,now()+interval '30 seconds') returning id into ticket;
- return jsonb_build_object('reservation',ticket);
+ -- Capture a Geoapify-shaped synthetic result from the private fixture. The
+ -- server-side matcher, not the HTTP client, decides whether it is acceptable.
+ select jsonb_build_object('country_code','br','lat',f.latitude,'lon',f.longitude,
+ 'street',f.address,'city',f.city,'suburb',f.neighborhood,'postcode',f.postal_code,
+ 'housenumber',case when f.precise then f.address_number else null end,
+ 'result_type',case when f.precise then 'building' else 'street' end,
+ 'rank',jsonb_build_object('confidence',case when f.precise then 0.92 else 0.80 end))
+ into sample from core_auth.store_geocode_fixture f where f.store_id=s
+ and (f.address,f.address_number,f.neighborhood,f.city,f.state,f.postal_code)
+ is not distinct from (shop.address,shop.address_number,shop.neighborhood,shop.city,shop.state,shop.postal_code);
+ return jsonb_build_object('reservation',ticket,'address',addr,'provider_fixture',
+ jsonb_build_object('results',case when sample is null then '[]'::jsonb else jsonb_build_array(sample) end));
 end $fn$;
 
 -- CI only: use a private synthetic response instead of external Geoapify.
 -- Ticket is never exposed to the browser. Recheck session and scope after the
 -- simulated provider step; compare all six address fields, preserve manual point.
-create function core_auth.store_origin_finish(s uuid,ticket uuid) returns jsonb
+create function core_auth.store_origin_finish(s uuid,ticket uuid,p jsonb) returns jsonb
 language plpgsql security definer set search_path='' as $fn$
 declare shop public.stores%rowtype; res core_auth.store_origin_reservations%rowtype;
  result core_auth.store_geocode_fixture%rowtype; sid uuid:=nullif(current_setting('pitacco.core_session_id',true),'')::uuid;
@@ -170,9 +183,22 @@ begin
  select * into result from core_auth.store_geocode_fixture f where f.store_id=s
  and (f.address,f.address_number,f.neighborhood,f.city,f.state,f.postal_code)
  is not distinct from (shop.address,shop.address_number,shop.neighborhood,shop.city,shop.state,shop.postal_code);
- if not found then return jsonb_build_object('unavailable',true);end if;
+ if not found or p is null or p='null'::jsonb then return jsonb_build_object('unavailable',true);end if;
+ -- In CI even the trusted service cannot persist coordinates different from
+ -- the private fixture. A real provider adapter will need its own audited role.
+ if jsonb_typeof(p) is distinct from 'object'
+ or jsonb_typeof(p->'latitude') is distinct from 'number'
+ or jsonb_typeof(p->'longitude') is distinct from 'number'
+ or jsonb_typeof(p->'approximate') is distinct from 'boolean'
+ or p->>'provider' is distinct from 'geoapify'
+ or (p->>'latitude')::numeric is distinct from round(result.latitude,6)
+ or (p->>'longitude')::numeric is distinct from round(result.longitude,6)
+ or (p->>'approximate')::boolean is distinct from not result.precise
+ or p->'requires_confirmation' is distinct from p->'approximate' then
+  return jsonb_build_object('unavailable',true);
+ end if;
  if result.precise then update public.stores set latitude=round(result.latitude,6),longitude=round(result.longitude,6) where id=s;end if;
  return jsonb_build_object('latitude',round(result.latitude,6),'longitude',round(result.longitude,6),'approximate',not result.precise,'cached',false,'saved',result.precise,'requires_confirmation',not result.precise,'environment','simulation');
 end $fn$;
-revoke all on function core_auth.store_origin_reserve(uuid),core_auth.store_origin_finish(uuid,uuid) from public,anon,authenticated;
-grant execute on function core_auth.store_origin_reserve(uuid),core_auth.store_origin_finish(uuid,uuid) to pitacco_core_own_logistics;
+revoke all on function core_auth.store_origin_reserve(uuid),core_auth.store_origin_finish(uuid,uuid,jsonb) from public,anon,authenticated;
+grant execute on function core_auth.store_origin_reserve(uuid),core_auth.store_origin_finish(uuid,uuid,jsonb) to pitacco_core_own_logistics;

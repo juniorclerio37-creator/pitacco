@@ -73,8 +73,8 @@ merchant_map('fleet-map',404,owner,b)
 merchant_map('map-point',422,owner,body={'latitude':-22.85,'longitude':-43.45,'confirmed':False})
 merchant_map('map-point',422,owner,body={'latitude':60,'longitude':-43.45,'confirmed':True})
 other_point=sql("select jsonb_build_array(latitude,longitude)::text from public.stores where id='"+b+"'")
-previous=json.loads(sql("select jsonb_build_object('address',address,'city',city,'state',state,'latitude',latitude,'longitude',longitude)::text from public.stores where id='"+s+"'"))
-sql("update public.stores set address='Rua Fixture',city='Nova Iguacu',state='RJ' where id='"+s+"'")
+previous=json.loads(sql("select jsonb_build_object('address',address,'city',city,'state',state,'address_number',address_number,'neighborhood',neighborhood,'postal_code',postal_code,'latitude',latitude,'longitude',longitude)::text from public.stores where id='"+s+"'"))
+sql("update public.stores set address='Rua Fixture',city='Nova Iguacu',state='RJ',address_number='10',neighborhood='Centro',postal_code='26000000' where id='"+s+"'")
 # Geocoding replay uses only a server-side synthetic provider response.
 merchant_map('map-origin',401)
 merchant_map('map-origin',404,courier)
@@ -102,18 +102,36 @@ def phase(expr):
     return json.loads(next(line for line in raw.splitlines() if line.startswith('{')))
 def reserve():
     return phase("core_auth.store_origin_reserve('"+s+"')")['reservation']
-def finish(t):
-    return phase("core_auth.store_origin_finish('"+s+"','"+t+"')")
+candidate={'latitude':-22.86,'longitude':-43.46,'approximate':False,'requires_confirmation':False,'provider':'geoapify'}
+def finish(t,p=candidate):
+    return phase("core_auth.store_origin_finish('"+s+"','"+t+"','"+json.dumps(p)+"'::jsonb)")
+def denied_finish(t):
+    try:finish(t)
+    except subprocess.CalledProcessError:return
+    raise AssertionError('Expired, revoked or consumed geocode reservation accepted')
 sql("update public.stores set latitude=null,longitude=null where id='"+s+"'")
 ticket=reserve()
 sql("update public.stores set address='Rua Outra Fixture' where id='"+s+"'")
 assert finish(ticket)=={'unavailable':True}
+denied_finish(ticket)
 assert sql("select (latitude is null)::text from public.stores where id='"+s+"'")=='true'
 sql("update public.stores set address='Rua Fixture' where id='"+s+"'")
 ticket=reserve()
 sql("update public.stores set latitude=-22.87,longitude=-43.47 where id='"+s+"'")
 assert float(finish(ticket)['latitude'])==-22.87
 sql("update public.stores set latitude=null,longitude=null where id='"+s+"'")
+# A candidate with mismatched coordinates must not be applied.
+ticket=reserve()
+assert finish(ticket,candidate|{'latitude':-22.80})=={'unavailable':True}
+assert sql("select (latitude is null)::text from public.stores where id='"+s+"'")=='true'
+# Expired and revoked sessions/reservations cannot complete the second phase.
+ticket=reserve()
+sql("update core_auth.store_origin_reservations set expires_at=now()-interval '1 second' where id='"+ticket+"'")
+denied_finish(ticket)
+ticket=reserve()
+sql("update core_auth.sessions set revoked_at=now() where id='"+session+"'")
+denied_finish(ticket)
+sql("update core_auth.sessions set revoked_at=null where id='"+session+"'")
 # Quota exhausted globally: no new reservation or write.
 sql("update pitacco_private.delivery_quote_rate_limits set attempts=100 where scope='core-origin-global-hour'")
 merchant_map('map-origin',429,owner)
