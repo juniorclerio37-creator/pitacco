@@ -88,3 +88,6 @@ grant execute on function public.pitacco_order_public_label(jsonb,text) to authe
 create role pitacco_core_fiado_statement login password 'ci-statement-only' nosuperuser nocreatedb nocreaterole nobypassrls;
 grant usage on schema public to pitacco_core_fiado_statement;
 grant execute on function public.pitacco_fiado_verify_pin(text,text,text,uuid),public.pitacco_v2_fiado_statement(text,uuid) to pitacco_core_fiado_statement;
+
+-- Existing read-only menu role can only query the original public slot list.
+grant execute on function public.pitacco_public_schedule_slots(text,text) to pitacco_core_menu;

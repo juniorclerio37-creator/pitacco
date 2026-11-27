@@ -28,12 +28,29 @@ q=call(SLUG+'/checkout',200,delivery)['data']
 assert float(q['total'])==34 and q['status']=='accepted'
 sql("update public.pitacco_delivery_route_quotes set expires_at=now()-interval '1 minute' where id='91000000-0000-0000-0000-000000000011'")
 assert call(SLUG+'/checkout',200,delivery)['data']==q
-slot=sql("select (public.pitacco_public_schedule_slots('core-checkout-fixture','pickup'))[1]")
-schedule=datetime.datetime.fromisoformat(slot).isoformat(timespec='seconds')
+def slots(slug,fulfillment,expected=200):
+    req=urllib.request.Request(BASE+slug+'/schedule-slots?fulfillment='+fulfillment,headers={'Accept':'application/json'})
+    try:res=urllib.request.urlopen(req,timeout=12)
+    except urllib.error.HTTPError as e:res=e
+    with res:
+        raw=res.read()
+        assert res.status==expected,(res.status,expected,raw[:300])
+        if expected==200:assert 'no-store' in res.headers.get('Cache-Control','')
+        return json.loads(raw)
+available=slots(SLUG,'pickup')['data']
+assert available['timezone']=='America/Sao_Paulo' and available['slots']
+dates=[datetime.datetime.fromisoformat(t) for t in available['slots']]
+assert dates==sorted(set(dates))
+assert all(t.utcoffset()==datetime.timedelta(hours=-3) for t in dates)
+assert slots('other-store','pickup')['data']['slots']==[]
+assert slots(SLUG,'delivery')['data']['slots']
+slots(SLUG,'other',422)
+schedule=available['slots'][0]
+assert datetime.datetime.fromisoformat(schedule)==datetime.datetime.fromisoformat(sql("select (public.pitacco_public_schedule_slots('core-checkout-fixture','pickup'))[1]"))
 scheduled=call(SLUG+'/checkout',200,cart(scheduled_for=schedule))['data']
 assert scheduled['status']=='pending'
 assert sql("select count(*) from public.orders where store_id='91000000-0000-0000-0000-000000000002'")=='3'
-print('PASS: original checkout, server price, quote, scheduled manual acceptance, recovery and no duplicate orders')
+print('PASS: public scheduling read endpoint and original checkout, server price, quote, scheduled manual acceptance, recovery and no duplicate orders')
 
 # Separate synthetic customer avoids interfering with the earlier checkout limit.
 loyalty=cart(phone='21988886666',loyalty=True,coupon='CORE20')
