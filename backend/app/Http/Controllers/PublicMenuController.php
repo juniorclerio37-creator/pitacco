@@ -16,7 +16,7 @@ final class PublicMenuController
             $menu = $reader->get($slug);
         } catch (QueryException $exception) {
             $info = $exception->errorInfo;
-            if (($info[0] ?? '') === 'P0001' && preg_match('/Card[aá]pio indispon[ií]vel/i', (string)($info[2] ?? ''))) {
+            if (($info[0] ?? '') === 'P0001' && preg_match('/Card[aá]pio indispon[ií]vel/iu', (string)($info[2] ?? ''))) {
                 return response()->json(['error'=>'menu_unavailable'],404)->header('Cache-Control','no-store');
             }
             return response()->json(['error'=>'temporarily_unavailable'],503)->header('Cache-Control','no-store');

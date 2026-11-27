@@ -13,7 +13,7 @@ final class PublicStoreStateController
             return response()->json(['data'=>$reader->read($slug,$resource)])->header('Cache-Control','no-store');
         }catch(QueryException $e){
             $info=$e->errorInfo;
-            if(($info[0]??'')==='P0001'&&preg_match('/Card[aá]pio indispon[ií]vel/i',(string)($info[2]??'')))return response()->json(['error'=>'menu_unavailable'],404)->header('Cache-Control','no-store');
+            if(($info[0]??'')==='P0001'&&preg_match('/Card[aá]pio indispon[ií]vel/iu',(string)($info[2]??'')))return response()->json(['error'=>'menu_unavailable'],404)->header('Cache-Control','no-store');
             return response()->json(['error'=>'temporarily_unavailable'],503)->header('Cache-Control','no-store');
         }catch(Throwable){return response()->json(['error'=>'temporarily_unavailable'],503)->header('Cache-Control','no-store');}
     }

@@ -1,25 +1,39 @@
-// CI only. Exercises actual Laravel and reconstructed PostgreSQL, never production.
+// CI only. Existing V2 request contract against actual Laravel and disposable PostgreSQL.
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {readCoreMenu,placeCoreOrder,recoverCoreOrder} from '../clients/storefront.mjs';
+import {readCoreMenu,placeCoreOrderRpc,recoverCoreOrderRpc} from '../clients/storefront.mjs';
 const fetcher=(path,opt)=>fetch('http://127.0.0.1:8081'+path,opt);
 const slug='core-checkout-fixture';
 const menu=await readCoreMenu(slug,{fetcher});
 assert.equal(menu.state,'ready');
 assert.equal(menu.data.store.slug,slug);
-const cart={request_id:randomUUID(),customer:'Cliente HTTP Fixture',phone:'21988883333',items:[{product_id:'91000000-0000-0000-0000-000000000003',quantity:1,options:[]}],fulfillment:'pickup',payment:'pix_manual'};
-// Simulate a lost HTTP response after the actual server has completed the checkout.
-let calls=0;
-const lost=await placeCoreOrder(slug,cart,{fetcher:async(path,opt)=>{
+const request=Object.freeze({p_slug:slug,p_request:randomUUID(),p_customer:'Cliente HTTP Fixture',p_phone:'21988883333',p_address:'',p_items:[{product_id:'91000000-0000-0000-0000-000000000003',quantity:1,options:[]}],p_fulfillment:'pickup',p_payment:'pix_manual',p_notes:''});
+const snapshot=JSON.stringify(request);
+const recovery={p_slug:slug,p_request:request.p_request};
+let calls=0,committedStatus,committedData;
+const lost=await placeCoreOrderRpc('checkout_public_order',request,{fetcher:async(path,opt)=>{
   calls++;
   const response=await fetcher(path,opt);
-  assert.equal(response.status,200);
-  await response.text();
+  committedStatus=response.status;
+  committedData=(await response.json()).data;
   throw Error('synthetic lost response');
 }});
-assert.equal(calls,1);assert.equal(lost.state,'uncertain');
-const recovered=await recoverCoreOrder(slug,cart.request_id,{fetcher});
-assert.equal(recovered.state,'confirmed');assert.equal(Number(recovered.data.total),25);
-const replay=await placeCoreOrder(slug,cart,{fetcher});
-assert.equal(replay.state,'confirmed');assert.equal(replay.data.order_id,recovered.data.order_id);
-console.log('PASS: actual Laravel storefront transport, lost confirmation, same-request recovery and replay');
+assert.equal(calls,1);
+assert.equal(committedStatus,200);
+assert.ok(committedData.order_id);
+assert.equal(lost.status,503);
+assert.equal(lost.error.code,'uncertain');
+assert.equal(JSON.stringify(request),snapshot);
+const recovered=await recoverCoreOrderRpc(recovery,{fetcher});
+assert.equal(recovered.error,null);
+assert.equal(recovered.data.confirmed,true);
+assert.equal(Number(recovered.data.total),25);
+assert.equal(recovered.data.order_id,committedData.order_id);
+assert.equal(recovered.data.tracking_token,committedData.tracking_token);
+const replay=await placeCoreOrderRpc('checkout_public_order',request,{fetcher});
+assert.equal(replay.error,null);
+assert.equal(replay.data.order_id,recovered.data.order_id);
+assert.equal(JSON.stringify(request),snapshot);
+const missing=await recoverCoreOrderRpc({p_slug:slug,p_request:randomUUID()},{fetcher});
+assert.deepEqual(missing,{data:{confirmed:false},error:null,status:200});
+console.log('PASS: actual Laravel V2 checkout compatibility, lost committed response, original-request recovery and replay');
