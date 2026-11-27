@@ -83,14 +83,14 @@ def track(token,expected=200):
         assert 'no-store' in res.headers.get('Cache-Control','') if expected in (200,404) else True
         return json.loads(res.read())
 t=track(first['tracking_token'])['data']
-assert t['order_number']==first['order_id'] and float(t['total'])==25
+assert t['order_id']==first['order_id'] and float(t['total'])==25
 assert 'phone' not in t and 'address' not in t
 assert t.get('courier_position') is None
 d=track(q['tracking_token'])['data']
-assert d['order_number']==q['order_id'] and d['delivery_service']=='priority'
+assert d['order_id']==q['order_id'] and d['delivery_service']=='priority'
 assert d.get('courier_position') is None
 s=track(scheduled['tracking_token'])['data']
-assert s['order_number']==scheduled['order_id'] and s['scheduled_for']
+assert s['order_id']==scheduled['order_id'] and s['scheduled_for']
 track(first['order_id'],404)
 track(str(uuid.uuid4()),404)
 track('invalid',422)
