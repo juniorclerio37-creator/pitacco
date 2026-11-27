@@ -5,6 +5,7 @@ use App\Http\Controllers\PublicCheckoutController;
 use App\Http\Controllers\PublicTrackingController;
 use App\Http\Controllers\CustomerProfileController;
 use App\Http\Controllers\FiadoOverviewController;
+use App\Http\Controllers\FiadoManagementController;
 use App\Http\Controllers\CoreAuthController;
 use App\Http\Controllers\DailyOrdersController;
 use App\Http\Controllers\OwnOrderActionsController;
@@ -27,6 +28,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/auth/logout',[CoreAuthController::class,'logout']);
             Route::get('/stores/{store}/orders',DailyOrdersController::class)->whereUuid('store');
             Route::post('/stores/{store}/orders/{order}/actions',OwnOrderActionsController::class)->whereUuid(['store','order']);
+            Route::post('/stores/{store}/fiado/settings',FiadoManagementController::class)->whereUuid('store');
             Route::get('/stores/{store}/fiado',FiadoOverviewController::class)->whereUuid('store');
             Route::get('/stores/{store}/context',[CoreAuthController::class,'store'])->whereUuid('store');
         });

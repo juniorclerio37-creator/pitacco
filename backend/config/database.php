@@ -14,6 +14,7 @@ return [
     'connections' => [
         'pgsql' => $base + ['username'=>env('DB_USERNAME','pitacco_core_app'),'password'=>env('DB_PASSWORD')],
         'core_profile' => $base + ['username'=>env('CORE_PROFILE_DB_USERNAME','pitacco_core_profile'),'password'=>env('CORE_PROFILE_DB_PASSWORD')],
+        'core_fiado_manage' => $base + ['username'=>env('CORE_FIADO_MANAGE_DB_USERNAME','pitacco_core_fiado_manage'),'password'=>env('CORE_FIADO_MANAGE_DB_PASSWORD')],
         'core_fiado_read' => $base + ['username'=>env('CORE_FIADO_DB_USERNAME','pitacco_core_fiado_read'),'password'=>env('CORE_FIADO_DB_PASSWORD')],
         'core_tracking' => $base + ['username'=>env('CORE_TRACKING_DB_USERNAME','pitacco_core_tracking'),'password'=>env('CORE_TRACKING_DB_PASSWORD')],
         'core_checkout' => $base + ['username'=>env('CORE_CHECKOUT_DB_USERNAME','pitacco_core_checkout'),'password'=>env('CORE_CHECKOUT_DB_PASSWORD')],

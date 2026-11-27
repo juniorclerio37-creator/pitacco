@@ -57,7 +57,27 @@ assert len(overview['customers'])==1 and overview['customers'][0]['name']=='Cont
 assert float(overview['customers'][0]['limit'])==100
 assert 'pin_hash' not in overview['customers'][0]
 assert overview['charges']==[] and overview['payments']==[]
+settings=fiado+'/settings'
+toggle={'action':'toggle','enabled':False}
+call(settings,401,'POST',toggle)
+call(settings,404,'POST',toggle,bob)
+call('/stores/'+B+'/fiado/settings',404,'POST',toggle,alice)
+assert call(settings,200,'POST',toggle,alice)['data']['enabled'] is False
+assert call(fiado,200,token=alice)['data']['enabled'] is False
+assert call(settings,200,'POST',toggle|{'enabled':True},alice)['data']['enabled'] is True
+customer={'action':'save_customer','name':'Conta fictícia A','phone':'21988881110','limit':125.50,'enabled':True,'due_days':14,'approval_mode':'automatic','block_overdue':True}
+cid=call(settings,200,'POST',customer,alice)['data']['customer_id']
+assert cid==overview['customers'][0]['id']
+updated=call(fiado,200,token=alice)['data']['customers'][0]
+assert float(updated['limit'])==125.50 and updated['approval_mode']=='automatic' and updated['due_days']==14
+call(settings,422,'POST',customer|{'limit':-1},alice)
+call(settings,422,'POST',customer|{'approval_mode':'other'},alice)
+call(settings,422,'POST',customer|{'used':0},alice)
+assert call(fiado,200,token=alice)['data']['customers'][0]==updated
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
+call(settings,404,'POST',toggle,alice)
+print('PASS: Fiado configuration, existing customer identity, approval mode and revoked access')
+
 call(fiado,404,token=alice)
 print('PASS: original Fiado manager overview, role and store isolation, revoked membership')
 

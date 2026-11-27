@@ -53,3 +53,8 @@ select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001'
 select public.pitacco_fiado_toggle('20000000-0000-4000-8000-000000000001',true);
 select public.pitacco_fiado_save_customer('20000000-0000-4000-8000-000000000001','Conta fictícia A','21988881110',100,true,7,'manual',true);
 commit;
+
+-- Separate permission for manager configuration, no direct table access.
+create role pitacco_core_fiado_manage login password 'ci-fiado-manage-only' nosuperuser nocreatedb nocreaterole nobypassrls;
+grant usage on schema core_auth,auth,public to pitacco_core_fiado_manage;
+grant execute on function core_auth.can_act(uuid),auth.uid(),public.pitacco_fiado_toggle(uuid,boolean),public.pitacco_fiado_save_customer(uuid,text,text,numeric,boolean,integer,text,boolean) to pitacco_core_fiado_manage;

@@ -106,10 +106,14 @@ address={'label':'Casa','street':'Rua Fixture','number':'10','neighborhood':'Cen
 saved=call(SLUG+'/profile',200,identity|{'action':'save','name':'Cliente fictício','addresses':[address]})['data']
 assert saved['found'] and saved['name']=='Cliente fictício'
 assert saved['addresses'][0]['street']=='Rua Fixture'
-assert call(SLUG+'/profile',200,identity)['data']==saved
+loaded=call(SLUG+'/profile',200,identity)['data']
+assert loaded==saved,('synthetic profile mismatch',loaded,saved)
+
 assert call(SLUG+'/profile',200,identity|{'device':str(uuid.uuid4())})['data']=={'found':False,'addresses':[]}
 assert call(SLUG+'/profile',200,identity|{'phone':'21988881112'})['data']=={'found':False,'addresses':[]}
 call(SLUG+'/profile',422,{'phone':identity['phone'],'action':'load'})
 call(SLUG+'/profile',422,identity|{'action':'save','name':'Cliente fictício','addresses':[address]*9})
-assert call(SLUG+'/profile',200,identity)['data']==saved
+loaded=call(SLUG+'/profile',200,identity)['data']
+assert loaded==saved,('synthetic profile mismatch',loaded,saved)
+
 print('PASS: original V2 profile, persisted address, phone and device isolation, invalid input')

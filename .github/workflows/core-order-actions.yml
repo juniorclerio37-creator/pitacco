@@ -44,6 +44,9 @@ jobs:
       PITACCO_AUTH_ENABLED: 'true'
       PITACCO_ACTIONS_ENABLED: 'true'
       PITACCO_FIADO_OVERVIEW_ENABLED: 'true'
+      PITACCO_FIADO_MANAGE_ENABLED: 'true'
+      CORE_FIADO_MANAGE_DB_USERNAME: pitacco_core_fiado_manage
+      CORE_FIADO_MANAGE_DB_PASSWORD: ci-fiado-manage-only
       CORE_FIADO_DB_USERNAME: pitacco_core_fiado_read
       CORE_FIADO_DB_PASSWORD: ci-fiado-read-only
     steps:
@@ -71,6 +74,7 @@ jobs:
           test "$(PGPASSWORD=ci-actions-only psql -h 127.0.0.1 -U pitacco_core_actions -d postgres -Atc 'select count(id) from public.orders')" = 0
           if PGPASSWORD=ci-actions-only psql -h 127.0.0.1 -U pitacco_core_actions -d postgres -v ON_ERROR_STOP=1 -c "update public.orders set status='accepted'"; then exit 1; fi
           if PGPASSWORD=ci-fiado-read-only psql -h 127.0.0.1 -U pitacco_core_fiado_read -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.pitacco_fiado_customers'; then exit 1; fi
+          if PGPASSWORD=ci-fiado-manage-only psql -h 127.0.0.1 -U pitacco_core_fiado_manage -d postgres -v ON_ERROR_STOP=1 -c 'update public.pitacco_fiado_customers set used=0'; then exit 1; fi
       - name: Testar operações via Laravel
         working-directory: backend
         run: |
