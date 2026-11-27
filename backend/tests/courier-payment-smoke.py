@@ -89,6 +89,28 @@ for remaining in range(4,-1,-1):
     assert call(d,200,{'action':'verify','delivery_id':other,'code':other_wrong},courier)['data']=={'verified':False,'remaining':remaining}
 call(d,409,{'action':'verify','delivery_id':other,'code':other_pin},courier)
 assert sql("select status from public.deliveries where id='"+other+"'")=='retirada'
+# Grouped departure must remain atomic; both collections are required.
+route='98000000-0000-0000-0000-000000000030'
+one='98000000-0000-0000-0000-000000000041'
+two='98000000-0000-0000-0000-000000000042'
+group={'action':'depart_group','route_id':route}
+call(d,403,group,owner)
+call(d,401,group,gps)
+call(d,403,group|{'route_id':str(uuid.uuid4())},courier)
+call(d,422,group|{'delivery_id':one},courier)
+call(d,409,group,courier)
+call(d,200,{'action':'collect','delivery_id':one},courier)
+call(d,409,{'action':'depart','delivery_id':one},courier)
+call(d,409,group,courier)
+assert sql("select count(*) from public.deliveries where batch_id='"+route+"' and status='retirada'")=='0'
+assert sql("select (departed_at is null)::text from public.delivery_batches where id='"+route+"'")=='true'
+call(d,200,{'action':'collect','delivery_id':two},courier)
+assert call(d,200,group,courier)['data']=={'departed':True}
+assert call(d,200,group,courier)['data']=={'departed':True}
+assert sql("select count(*) from public.deliveries where batch_id='"+route+"' and status='retirada'")=='2'
+assert sql("select count(*) from public.operation_audit where action='route_departed' and details->>'route'='"+route+"'")=='1'
+call(d,409,{'action':'collect','delivery_id':one},courier)
+print('PASS: original grouped departure requires every collection and commits both deliveries together')
 call('/auth/logout',200,{},courier)
 call(d,401,{'action':'code_lengths'},courier)
 call(p,401,confirm,courier)

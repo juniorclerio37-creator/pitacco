@@ -13,8 +13,9 @@ final class CourierDeliveryController
     {
         abort_unless(app()->environment('testing')&&config('pitacco.courier_delivery_enabled'),404);
         $data=$request->validate([
-            'action'=>['required','in:code_lengths,collect,depart,arrive,verify'],
-            'delivery_id'=>['required_unless:action,code_lengths','prohibited_if:action,code_lengths','nullable','uuid'],
+            'action'=>['required','in:code_lengths,collect,depart,depart_group,arrive,verify'],
+            'delivery_id'=>['required_unless:action,code_lengths,depart_group','prohibited_if:action,code_lengths,depart_group','nullable','uuid'],
+            'route_id'=>['required_if:action,depart_group','prohibited_unless:action,depart_group','nullable','uuid'],
             'code'=>['required_if:action,verify','prohibited_unless:action,verify','nullable','string','regex:/\A[0-9]{4,8}\z/'],
         ]);
         if(array_diff(array_keys($request->all()),array_keys($data)))throw ValidationException::withMessages(['request'=>'Campos não suportados.']);
@@ -26,7 +27,7 @@ final class CourierDeliveryController
                 $db->statement("set local statement_timeout = '5s'");
                 $db->statement("set local lock_timeout = '2s'");
                 $db->selectOne("select set_config('pitacco.core_session_id',?,true),set_config('request.jwt.claim.sub',?,true)",[$session->session_id,$session->user_id]);
-                $row=$db->selectOne('select core_auth.courier_delivery_fixture(cast(? as text),cast(? as uuid),cast(? as text)) as payload',[$data['action'],$data['delivery_id']??null,$data['code']??null]);
+                $row=$db->selectOne('select core_auth.courier_delivery_fixture(cast(? as text),cast(? as uuid),cast(? as text)) as payload',[$data['action'],$data['route_id']??$data['delivery_id']??null,$data['code']??null]);
                 $result=json_decode($row->payload,true,512,JSON_THROW_ON_ERROR);
                 if(!is_array($result))throw new UnexpectedValueException('Invalid delivery projection');
                 return $result;
