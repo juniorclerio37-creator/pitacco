@@ -55,16 +55,17 @@ export function createMerchantBoard({store,scopedFetch}){
  async function act(id,action,reason){
   if(!active)throw Error('Sessão encerrada.');
   if(writing)throw Error('Operação em andamento.');
-  if(!UUID.test(id??'')||!['accept','reject','ready','complete_pickup'].includes(action))throw Error('Ação não suportada.');
+  if(!UUID.test(id??'')||!['accept','reject','ready','complete_pickup','cancel'].includes(action))throw Error('Ação não suportada.');
   const order=last?.orders.find(o=>o.id===id);
   if(!order||order.source!=='proprio'||order.store_id!==store)throw Error('Pedido próprio não autorizado.');
   if((['accept','reject'].includes(action)&&order.status!=='pending')||
      (action==='ready'&&(order.status!=='accepted'||order.preparation_status!=='preparing'))||
+     (action==='cancel'&&(!['pending','accepted'].includes(order.status)||order.preparation_status==='completed'))||
      (action==='complete_pickup'&&(order.status!=='accepted'||order.preparation_status!=='ready'||order.receipt.logistics!=='retirada')))
    throw Error('Etapa não permitida.');
   const body={action};
-  if(action==='reject'){
-   if(typeof reason!=='string'||reason.trim().length<3||reason.trim().length>240)throw Error('Informe o motivo da recusa.');
+  if(action==='reject'||action==='cancel'){
+   if(typeof reason!=='string'||reason.trim().length<3||reason.trim().length>240)throw Error(action==='cancel'?'Informe o motivo do cancelamento.':'Informe o motivo da recusa.');
    body.reason=reason.trim();
   }else if(reason!==undefined)throw Error('Motivo não suportado.');
   writing=true;
@@ -82,6 +83,7 @@ export function createMerchantBoard({store,scopedFetch}){
    if(data?.id!==id||data.store_id!==store||
       (action==='accept'&&data.status!=='accepted')||
       (action==='reject'&&data.status!=='rejected')||
+      (action==='cancel'&&data.status!=='cancelled')||
       (action==='ready'&&(data.status!=='accepted'||data.preparation_status!=='ready'))||
       (action==='complete_pickup'&&(data.status!=='accepted'||data.preparation_status!=='completed')))
     throw Error('Resultado não confirmado. Atualize antes de tentar novamente.');

@@ -36,7 +36,7 @@ test('own actions are scoped, server confirmed, no marketplace mutation or autom
   return {ok:true,status:200,json:async()=>route==='operation-settings'?{data:{store_id:store,dispatch_mode:'manual',acceptance_settings:[],print_sectors:[]}}:{data:rows[route],limit:100,offset:0}};
  }});
  await board.read();await assert.rejects(board.act(id(2),'accept'),/não autorizado/);
- await assert.rejects(board.act(id(1),'cancel'),/não suportada/);
+ await assert.rejects(board.act(id(1),'dispatch'),/não suportada/);
  await assert.rejects(board.act(id(1),'reject','x'),/motivo/);
  fail=true;await assert.rejects(board.act(id(1),'accept'),/não confirmado/);
  assert.equal(calls.length,1);

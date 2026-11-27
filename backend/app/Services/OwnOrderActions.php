@@ -27,6 +27,7 @@ final class OwnOrderActions
                 'accept' => $db->selectOne('select public.accept_order(cast(? as uuid))',[$order]),
                 'ready' => $db->selectOne("select public.set_order_preparation(cast(? as uuid), 'ready')",[$order]),
                 'complete_pickup' => $db->selectOne("select public.set_order_preparation(cast(? as uuid), 'completed')",[$order]),
+                'cancel' => $db->selectOne('select public.pitacco_cancel_active_order(cast(? as uuid), cast(? as text))',[$order,$reason]),
                 'reject' => $db->selectOne("select public.pitacco_decide_pending_order(cast(? as uuid), 'rejected', cast(? as text))",[$order,$reason]),
             };
             return $db->selectOne('select id,store_id,status,preparation_status from public.orders where id=cast(? as uuid) and store_id=cast(? as uuid)',[$order,$store]);

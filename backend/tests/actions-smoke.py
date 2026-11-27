@@ -258,6 +258,19 @@ print('PASS: transactional order invalidation, denied transitions, replay, rollb
 assert sql("select count(*) from public.operation_audit where order_id='"+oid(2)+"' and action='order_rejected'")=='1'
 action(A,5,'ready',200,alice)
 action(A,5,'complete_pickup',409,alice)
+before_cancel=outbox_count()
+action(A,5,'cancel',422,alice)
+action(A,5,'cancel',404,bob,'Cancelamento fixture')
+action(B,5,'cancel',404,alice,'Cancelamento fixture')
+action(A,4,'cancel',409,alice,'Cancelamento fixture')
+action(A,1,'cancel',409,alice,'Cancelamento fixture')
+assert outbox_count()==before_cancel
+assert action(A,5,'cancel',200,alice,'Cancelamento fixture')['data']['status']=='cancelled'
+after_cancel=outbox_count()
+assert after_cancel>before_cancel
+action(A,5,'cancel',200,alice,'Cancelamento fixture')
+assert outbox_count()==after_cancel
+assert sql("select count(*) from public.operation_audit where order_id='"+oid(5)+"' and action='order_cancelled'")=='1'
 assert sql("select status from public.orders where id='"+oid(4)+"'")=='pending'
 fiado='/stores/'+A+'/fiado'
 call(fiado,401)

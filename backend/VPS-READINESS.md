@@ -11,6 +11,8 @@ Estado: **não contratar nesta etapa**. Branch experimental pitacco-core; não c
 - [ ] Identificar o que será testado no VPS sem acessar produção ou alterar webhooks homologados.
 
 ## Antes de migrar produção
+
+Execute a verificação física de impressão e Android na última rodada de homologação, após os ensaios automatizados, de integração, de restauração e de carga. A rodada física continua obrigatória antes do corte.
 - [ ] Aplicativo Windows e navegador equivalentes à versão atual: mesma interface, fila, modelo de cupom, logo, QR, origens, setores, cópias e impressoras reais 58/80 mm; testar falhas e duplicação.
 - [ ] Android: interface e modais originais, maquininha, troco, coleta, saída, mapa, GPS em segundo plano, notificações, cobrança, código, saldo, rotas e navegação; teste em aparelho real.
 - [ ] Cardápio e checkout equivalentes, inclusive cadastro persistente, carteira, Fiado, formas de pagamento, agendamento e acompanhamento.

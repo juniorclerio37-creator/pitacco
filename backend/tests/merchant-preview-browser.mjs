@@ -7,7 +7,7 @@ import {chromium} from 'playwright';
 const store='20000000-0000-4000-8000-000000000001';
 const order='40000000-0000-4000-8000-000000000001';
 const identity={store_id:store,name:'Loja Fixture',role:'owner'};
-const token='a'.repeat(64), attempts=[], pointWrites=[];
+const token='a'.repeat(64), attempts=[], pointWrites=[], cancellations=[];
 let point={id:store,name:identity.name,address:'Rua Fixture',address_number:'10',neighborhood:'Centro',city:'Nova Iguaçu',state:'RJ',postal_code:'26000-000',latitude:null,longitude:null};
 const server=createServer(async(req,res)=>{
  const {pathname}=new URL(req.url,'http://127.0.0.1');
@@ -29,13 +29,18 @@ const server=createServer(async(req,res)=>{
  }
  if(pathname.endsWith('/map-origin'))return reply({data:{latitude:-22.85,longitude:-43.45,approximate:true,saved:false,requires_confirmation:true}});
  if(pathname.endsWith('/fleet-map')){res.statusCode=503;return reply({});}
+ if(pathname.endsWith('/actions')){
+  const chunks=[];for await(const chunk of req)chunks.push(chunk);
+  cancellations.push(JSON.parse(Buffer.concat(chunks)));
+  return reply({data:{id:order,store_id:store,status:'cancelled',preparation_status:'ready'}});
+ }
  if(pathname.endsWith('/reprint')){
   const data=[];for await(const chunk of req)data.push(chunk);
   attempts.push(JSON.parse(Buffer.concat(data)));
   if(attempts.length===1){res.statusCode=503;return reply({});}
   return reply({data:{queued:true}});
  }
- const data=pathname.endsWith('/own-board')?[{id:order,store_id:store,source:'proprio',status:'accepted',preparation_status:'ready',created_at:new Date().toISOString(),receipt:{logistics:'retirada',items:[]}}]:[];
+ const data=pathname.endsWith('/own-board')?[{id:order,store_id:store,source:'proprio',status:cancellations.length?'cancelled':'accepted',preparation_status:'ready',created_at:new Date().toISOString(),receipt:{logistics:'retirada',items:[]}}]:[];
  reply({data,limit:100,offset:0});
 });
 server.listen(8080,'127.0.0.1');
@@ -65,8 +70,13 @@ try{
   await page.getByRole('button',{name:'Salvar ponto da loja',exact:true}).click();
   await page.getByText('Ponto exato da loja salvo.',{exact:false}).waitFor();
   assert.deepEqual(pointWrites,[{latitude:-22.85,longitude:-43.45,confirmed:true}]);
+  await page.getByRole('button',{name:'Cancelar',exact:true}).click();
+  await page.getByLabel('Motivo do cancelamento').fill('Cancelamento fixture');
+  await page.getByRole('button',{name:'Confirmar cancelamento',exact:true}).click();
+  await page.getByRole('button',{name:'Confirmar cancelamento',exact:true}).waitFor({state:'hidden'});
+  assert.deepEqual(cancellations,[{action:'cancel',reason:'Cancelamento fixture'}]);
   assert.deepEqual(errors,[]);
-  console.log('Chromium: reimpressão, falha HTTP, nova tentativa idempotente e confirmação da fila e do marcador aprovadas com API simulada.');
+  console.log('Chromium: reimpressão, falha HTTP, nova tentativa idempotente e confirmação da fila e do marcador, além do cancelamento, aprovados com API simulada.');
 }finally{
  try{await browser?.close();}
  finally{server.close();}

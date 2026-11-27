@@ -10,8 +10,8 @@ final class OwnOrderActionsController
     {
         abort_unless(config('pitacco.actions_enabled'),404);
         $data=$request->validate([
-            'action'=>['required','string','in:accept,ready,complete_pickup,reject'],
-            'reason'=>['required_if:action,reject','nullable','string','min:3','max:240'],
+            'action'=>['required','string','in:accept,ready,complete_pickup,reject,cancel'],
+            'reason'=>['required_if:action,reject,cancel','nullable','string','min:3','max:240'],
         ]);
         try {
             $result=$actions->run($request->attributes->get('core_session'),$store,$order,$data['action'],$data['reason']??null);

@@ -16,7 +16,7 @@ grant usage on schema core_auth,auth to pitacco_core_actions;
 grant execute on function core_auth.can_act(uuid),auth.uid() to pitacco_core_actions;
 -- The existing legacy functions remain unchanged. Restrict this fixture role to explicit operations.
 revoke execute on all functions in schema public from public;
-grant execute on function public.accept_order(uuid),public.set_order_preparation(uuid,text),public.pitacco_decide_pending_order(uuid,text,text) to pitacco_core_actions;
+grant execute on function public.accept_order(uuid),public.set_order_preparation(uuid,text),public.pitacco_decide_pending_order(uuid,text,text),public.pitacco_cancel_active_order(uuid,text) to pitacco_core_actions;
 grant select(id,store_id,source,status,preparation_status) on public.orders to pitacco_core_actions;
 create policy core_actions_read on public.orders for select to pitacco_core_actions using (core_auth.can_act(store_id));
 -- Synthetic accounts mirrored to the legacy identity schema. No password migration.

@@ -39,7 +39,6 @@ def build(target):
     # Optional guard for the isolated board. Default original behavior unchanged.
     f=target/'Pedidos.jsx';s=f.read_text()
     s=replace(s,"dispatchMode='manual'})","dispatchMode='manual',experimentalOwnOnly=false})")
-    s=replace(s,"const canCancelOwnOrder=o=>o?.source","const canCancelOwnOrder=o=>!experimentalOwnOnly&&o?.source")
     for old,new in [
         ("disabled={busy} onClick={()=>onReady(o.id)}","disabled={busy||(experimentalOwnOnly&&o.source!=='proprio')} onClick={()=>onReady(o.id)}"),
         ("disabled={busy} onClick={()=>onReady(current.id)}","disabled={busy||(experimentalOwnOnly&&current.source!=='proprio')} onClick={()=>onReady(current.id)}"),
