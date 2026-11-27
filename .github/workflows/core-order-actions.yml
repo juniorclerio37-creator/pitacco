@@ -167,7 +167,10 @@ jobs:
           server=$!
           CORE_REDIS_PREFIX=pitacco_core_earnings_ci: php artisan serve --host=127.0.0.1 --port=8097 >/tmp/core-earnings.log 2>&1 &
           earnings_server=$!
-          trap 'kill "$server" "$earnings_server" 2>/dev/null || true; cat /tmp/core-shift.log /tmp/core-earnings.log' EXIT
+          CORE_REDIS_PREFIX=pitacco_core_shift_push_ci: php artisan serve --host=127.0.0.1 --port=8098 >/tmp/core-shift-push.log 2>&1 &
+          push_server=$!
+          trap 'kill "$server" "$earnings_server" "$push_server" 2>/dev/null || true; cat /tmp/core-shift.log /tmp/core-earnings.log /tmp/core-shift-push.log' EXIT
+          for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8098/up >/dev/null && break; sleep 1; done
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8097/up >/dev/null && break; sleep 1; done
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8089/up >/dev/null && break; sleep 1; done
           python3 tests/courier-shift-smoke.py
@@ -197,7 +200,10 @@ jobs:
           logistics_server=$!
           CORE_REDIS_PREFIX=pitacco_core_mixed_driver_ci: php artisan serve --host=127.0.0.1 --port=8095 >/tmp/core-mixed-driver.log 2>&1 &
           mixed_driver_server=$!
-          trap 'kill "$server" "$logistics_server" "$mixed_driver_server" 2>/dev/null || true; cat /tmp/core-group.log /tmp/core-own-logistics.log /tmp/core-mixed-driver.log' EXIT
+          CORE_REDIS_PREFIX=pitacco_core_fleet_map_ci: php artisan serve --host=127.0.0.1 --port=8099 >/tmp/core-fleet-map.log 2>&1 &
+          fleet_map_server=$!
+          trap 'kill "$server" "$logistics_server" "$mixed_driver_server" "$fleet_map_server" 2>/dev/null || true; cat /tmp/core-group.log /tmp/core-own-logistics.log /tmp/core-mixed-driver.log /tmp/core-fleet-map.log' EXIT
+          for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8099/up >/dev/null && break; sleep 1; done
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8095/up >/dev/null && break; sleep 1; done
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8094/up >/dev/null && break; sleep 1; done
           if PGPASSWORD=ci-own-logistics-only psql -h 127.0.0.1 -U pitacco_core_own_logistics -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.deliveries'; then exit 1; fi

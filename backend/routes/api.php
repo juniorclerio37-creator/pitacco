@@ -69,6 +69,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/realtime/auth',RealtimeAuthorizationController::class);
             Route::get('/auth/me',[CoreAuthController::class,'me']);
             Route::post('/auth/logout',[CoreAuthController::class,'logout']);
+            Route::match(['GET','PUT'],'/stores/{store}/map-point',[OwnBoardLogisticsController::class,'point'])->whereUuid('store');
+            Route::get('/stores/{store}/fleet-map',[OwnBoardLogisticsController::class,'fleet'])->whereUuid('store');
             Route::get('/stores/{store}/own-logistics/{resource}',OwnBoardLogisticsController::class)->whereUuid('store')->whereIn('resource',['deliveries','couriers','positions','ifood-deliveries']);
             Route::post('/stores/{store}/print-device/{operation}',OwnPrintDeviceController::class)->whereUuid('store')->whereIn('operation',['status','ping','switch','unbind']);
             Route::match(['GET','PUT'],'/stores/{store}/print-preferences',[OwnPrintQueueController::class,'preferences'])->whereUuid('store');

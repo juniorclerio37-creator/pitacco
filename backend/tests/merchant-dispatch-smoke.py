@@ -55,6 +55,36 @@ positions=read_logistics('positions',token=owner)['data']
 assert any(row['courier_id']==cid for row in positions)
 assert all(set(row)=={'courier_id','latitude','longitude','observed_at','accuracy_m'} for row in positions)
 print('PASS: own board logistics read, original scoped courier and GPS queries, minimal fields, pagination and tenant isolation')
+# Independent map server avoids changing production request limits.
+def merchant_map(resource,expected=200,token=None,store=s,body=None):
+    headers={'Accept':'application/json','Content-Type':'application/json'}
+    if token:headers['Authorization']='Bearer '+token
+    req=urllib.request.Request('http://127.0.0.1:8099/api/v1/stores/'+store+'/'+resource,method='PUT' if body is not None else 'GET',headers=headers,data=json.dumps(body).encode() if body is not None else None)
+    try:res=urllib.request.urlopen(req,timeout=12)
+    except urllib.error.HTTPError as e:res=e
+    with res:
+        raw=res.read()
+        assert res.status==expected,(resource,res.status,expected,raw[:250])
+        return json.loads(raw)
+b='20000000-0000-4000-8000-000000000002'
+merchant_map('fleet-map',401)
+merchant_map('fleet-map',404,courier)
+merchant_map('fleet-map',404,owner,b)
+merchant_map('map-point',422,owner,body={'latitude':-22.85,'longitude':-43.45,'confirmed':False})
+merchant_map('map-point',422,owner,body={'latitude':60,'longitude':-43.45,'confirmed':True})
+other_point=sql("select jsonb_build_array(latitude,longitude)::text from public.stores where id='"+b+"'")
+previous=json.loads(sql("select jsonb_build_object('address',address,'city',city,'state',state,'latitude',latitude,'longitude',longitude)::text from public.stores where id='"+s+"'"))
+sql("update public.stores set address='Rua Fixture',city='Nova Iguacu',state='RJ' where id='"+s+"'")
+saved=merchant_map('map-point',token=owner,body={'latitude':-22.8512345,'longitude':-43.4512345,'confirmed':True})['data']
+assert saved['saved'] is True and float(saved['latitude'])==-22.851235
+snap=merchant_map('fleet-map',token=owner)['data']
+assert snap['store']['id']==s and snap['store']['latitude']==saved['latitude']
+assert all(x['store_id']==s for x in snap['couriers']+snap['deliveries'])
+assert sql("select jsonb_build_array(latitude,longitude)::text from public.stores where id='"+b+"'")==other_point
+# Restore fixture fields without touching another store.
+def literal(x):return 'null' if x is None else "'"+str(x).replace("'","''")+"'"
+sql("update public.stores set "+','.join(k+'='+literal(v) for k,v in previous.items())+" where id='"+s+"'")
+print('PASS: merchant confirmed store point, same canonical fleet origin, independent tenant marker and denied unauthorized access')
 # Exercise the separate iFood own-fleet path before the original grouping suite.
 market_order='98000000-0000-0000-0000-000000000071'
 market_delivery='98000000-0000-0000-0000-000000000072'

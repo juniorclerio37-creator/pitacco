@@ -1,7 +1,7 @@
 # CI only, login via Laravel; no synthetic identity accepted from HTTP input.
 import json,urllib.request,urllib.error,subprocess,os,re
 assert os.environ.get('APP_ENV')=='testing' and os.environ.get('GITHUB_ACTIONS')=='true'
-base='http://127.0.0.1:8089/api/v1'
+base='http://127.0.0.1:8098/api/v1'
 def call(path,expected,body=None,token=None):
     headers={'Accept':'application/json','Content-Type':'application/json'}
     if token:headers['Authorization']='Bearer '+token
