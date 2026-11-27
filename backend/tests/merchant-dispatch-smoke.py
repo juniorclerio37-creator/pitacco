@@ -59,3 +59,9 @@ call(d,409,{'action':'collect','delivery_id':one},courier)
 print('PASS: original grouped departure requires every collection and commits both deliveries together')
 call('/auth/logout',200,{},courier)
 call(d,401,group,courier)
+
+# Restore the revoked fixture state and prove the dispatch endpoint respects it.
+sql("update core_auth.memberships set active=false where user_id='10000000-0000-4000-8000-000000000001' and store_id='"+s+"' and role='owner'")
+call(p,404,body,owner)
+assert sql("select count(*) from public.deliveries where batch_id='"+route+"' and status='retirada'")=='2'
+print('PASS: merchant dispatch rejects revoked membership without modifying the existing route')

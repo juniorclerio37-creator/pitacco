@@ -14,6 +14,13 @@ revoke all on function core_auth.merchant_dispatch_fixture(uuid,uuid,uuid[]) fro
 create role pitacco_core_merchant_dispatch login password 'ci-merchant-dispatch-only' nosuperuser nocreatedb nocreaterole nobypassrls;
 grant usage on schema core_auth to pitacco_core_merchant_dispatch;
 grant execute on function core_auth.can_act(uuid),core_auth.merchant_dispatch_fixture(uuid,uuid,uuid[]) to pitacco_core_merchant_dispatch;
+-- Previous administrative regression intentionally revokes this fixture membership.
+-- Restore only the known synthetic owner for this independent CI scenario.
+do $fixture$
+begin
+ assert exists(select 1 from core_auth.memberships where user_id='10000000-0000-4000-8000-000000000001' and store_id='20000000-0000-4000-8000-000000000001' and role='owner' and not active), 'Expected revoked synthetic owner from preceding regression';
+ update core_auth.memberships set active=true where user_id='10000000-0000-4000-8000-000000000001' and store_id='20000000-0000-4000-8000-000000000001' and role='owner';
+end $fixture$;
 -- The earlier test deliberately left a locked synthetic delivery open. End that
 -- fixture via the original order cancellation trigger, not by bypassing PIN.
 update public.orders set status='cancelled' where id='98000000-0000-0000-0000-000000000012';
