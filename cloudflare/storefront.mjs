@@ -1,4 +1,5 @@
 import {handleSalesCoach} from './sales-coach.mjs';
+import {isShareCrawler,serveSharePreview,shareSlug} from './storefront-share.mjs';
 const storefrontHosts = new Set(['pitacco.com.br', 'www.pitacco.com.br']);
 const reserved = new Set([
   'www', 'app', 'entregador', 'pitacco', 'admin', 'api', 'mail', 'cadastro',
@@ -11,6 +12,11 @@ export default {
     const {ASSETS}=env;
     if(new URL(request.url).pathname==='/api/intelligence/sales')return handleSalesCoach(request,env);
     const url = new URL(request.url);
+    // Social crawlers need metadata in the initial HTML, without executing JS.
+    // Ordinary customer visits keep the existing fast static path.
+    const socialSlug=storefrontHosts.has(url.hostname)&&request.method==='GET'&&isShareCrawler(request)
+      ?shareSlug(url,reserved):null;
+    if(socialSlug)return serveSharePreview(request,env,socialSlug);
     const slug = url.pathname.match(/^\/([a-z0-9][a-z0-9-]{2,59})\/?$/)?.[1];
     if (storefrontHosts.has(url.hostname) && slug && !reserved.has(slug) &&
         (request.method === 'GET' || request.method === 'HEAD')) {
