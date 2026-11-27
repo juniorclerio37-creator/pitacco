@@ -28,8 +28,9 @@ try{
   const device=await page.evaluate(async()=>{
     const device=crypto.randomUUID();
     const slug='core-checkout-fixture';
-    const r=await fetch('/api/v1/public/menus/'+slug+'/profile',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({phone:'21988887777',device,action:'save',name:'Cliente Sessao Fixture',addresses:[]})});
-    if(!r.ok)throw Error('Synthetic profile creation failed');
+    const {customerProfileRpc}=await import('/core-homologacao/customer-session.mjs');
+    const r=await customerProfileRpc('pitacco_v2_customer_profile',{p_slug:slug,p_phone:'21988887777',p_device:device,p_action:'save',p_name:'Cliente Sessao Fixture',p_addresses:[{label:'Casa',street:'Rua Fixture',number:'10',neighborhood:'Centro',city:'Cidade Fixture',state:'RJ',is_default:true}]});
+    if(r.error||!r.data?.session_active)throw Error('Synthetic profile creation failed');
     localStorage.setItem('pitacco-v2-customer-device:'+slug,device);
     return device;
   });
@@ -37,8 +38,27 @@ try{
   const resumed=await page.evaluate(async()=>{const {customerSession}=await import('/core-homologacao/customer-session.mjs');return customerSession('core-checkout-fixture').resume()});
   assert.equal(resumed.state,'active');
   assert.equal(resumed.data.name,'Cliente Sessao Fixture');
+  assert.equal(resumed.data.addresses[0].street,'Rua Fixture');
+  const legacy=await page.evaluate(async(device)=>{
+    const {customerProfileRpc}=await import('/core-homologacao/customer-session.mjs');
+    const base={p_slug:'core-checkout-fixture',p_device:device};
+    const session=await customerProfileRpc('pitacco_customer_device_session',{...base,p_action:'resume'});
+    const history=await customerProfileRpc('pitacco_customer_device_orders',{...base,p_action:'list'});
+    return {session,history};
+  },device);
+  assert.equal(legacy.session.error,null);
+  assert.equal(legacy.session.data.name,'Cliente Sessao Fixture');
+  assert.equal(legacy.history.error,null);
+  assert.deepEqual(legacy.history.data.orders,[]);
   await page.route('**/profile/session',r=>r.abort('failed'));
   assert.equal(await page.evaluate(async()=>{const {customerSession}=await import('/core-homologacao/customer-session.mjs');return (await customerSession('core-checkout-fixture').resume()).state}),'retry');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-v2-customer-device:core-checkout-fixture')),device);
+  const lost=await page.evaluate(async(device)=>{
+    const {customerProfileRpc}=await import('/core-homologacao/customer-session.mjs');
+    return customerProfileRpc('pitacco_customer_device_session',{p_slug:'core-checkout-fixture',p_device:device,p_action:'resume'});
+  },device);
+  assert.equal(lost.status,503);
+  assert.equal(lost.data,null);
   assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-v2-customer-device:core-checkout-fixture')),device);
   await page.unroute('**/profile/session');
   assert.equal(await page.evaluate(async()=>{const {customerSession}=await import('/core-homologacao/customer-session.mjs');return (await customerSession('core-checkout-fixture').logout()).state}),'inactive');
