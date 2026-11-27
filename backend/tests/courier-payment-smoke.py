@@ -35,6 +35,17 @@ assert len(pin)==6
 wrong='0'*6 if pin!='0'*6 else '1'*6
 def operate(action,expected=200,**extra):
     return call(d,expected,{'action':action,'delivery_id':delivery}|extra,courier)
+# Detail endpoint uses separate read limiter and original public label.
+def detail(did,expected=200,token=None):
+    headers={'Accept':'application/json'}
+    if token:headers['Authorization']='Bearer '+token
+    req=urllib.request.Request('http://127.0.0.1:8097/api/v1/courier/deliveries/'+did+'/detail',headers=headers)
+    try:res=urllib.request.urlopen(req,timeout=12)
+    except urllib.error.HTTPError as e:res=e
+    with res:
+        raw=res.read()
+        assert res.status==expected,(res.status,expected,raw[:250])
+        return json.loads(raw)
 # Original payment projection for the original pickup reminder, including iFood.
 s='20000000-0000-4000-8000-000000000001'
 market_order='98000000-0000-0000-0000-000000000091'
@@ -48,12 +59,24 @@ call(p,401,unified,gps)
 call(p,422,unified|{'delivery_id':market_delivery},courier)
 assert market_delivery not in {x['delivery_id'] for x in call(p,200,cards,courier)['data']}
 summaries={x['delivery_id']:x['payment'] for x in call(p,200,unified,courier)['data']}
+sql("update public.orders set receipt=receipt||'{\"display_number\":\"4321\",\"items\":[{\"name\":\"Açaí\",\"quantity\":2,\"modifiers\":[\"Leite em pó\"]}],\"tracking_token\":\"PRIVATE-FIXTURE\"}'::jsonb where id='"+market_order+"'")
+sql("insert into public.pitacco_delivery_customer_contacts(delivery_id,store_id,phone_number,phone_localizer,phone_expires_at) values('"+market_delivery+"','"+s+"','08001234567','123456',now()+interval '5 minutes')")
+detail(market_delivery,401)
+detail(market_delivery,403,owner)
+detail(market_delivery,401,gps)
+view=detail(market_delivery,token=courier)['data']
+assert view['display_number']=='4321' and view['contact']['localizer']=='123456' and view['contact']['kind']=='intermediary'
+assert view['items'][0]['options']==[{'name':'Leite em pó','quantity':'1'}] and 'PRIVATE-FIXTURE' not in json.dumps(view)
+sql("update public.pitacco_delivery_customer_contacts set phone_expires_at=now()-interval '1 second' where delivery_id='"+market_delivery+"'")
+assert detail(market_delivery,token=courier)['data']['contact']['kind']=='expired'
+assert detail(market_delivery,token=courier)['data']['contact']['number'] is None
 assert summaries[market_delivery]['method']=='Cartão na entrega' and summaries[market_delivery]['state']=='collect' and float(summaries[market_delivery]['amount'])==28
 assert summaries[delivery]['method']=='Dinheiro' and float(summaries[delivery]['change_for'])==50 and float(summaries[delivery]['change_due'])==16
 sql("update public.orders set receipt=receipt||'{\"payment_status\":\"paid\"}'::jsonb where id='"+market_order+"'")
 assert {x['delivery_id']:x['payment'] for x in call(p,200,unified,courier)['data']}[market_delivery]['state']=='paid'
 assert sql("select count(*) from public.operation_audit where order_id='"+market_order+"' and action='courier_payment_received'")=='0'
 sql("delete from public.deliveries where id='"+market_delivery+"';delete from public.orders where id='"+market_order+"'")
+detail(market_delivery,403,courier)
 print('PASS: original courier payment summaries, mixed source, card terminal, cash change, prepaid and scoped session')
 # Start at actual assignment; do not synthesize collected_at or departure.
 operate('depart',409)
@@ -102,6 +125,7 @@ assert operate('verify',200,code=pin)['data']=={'verified':True,'delivered':True
 assert sql("select status from public.deliveries where id='"+delivery+"'")=='entregue'
 assert sql("select count(*) from public.operation_audit where order_id='98000000-0000-0000-0000-000000000011' and action='courier_delivery_verified'")=='1'
 operate('verify',403,code=pin)
+detail(delivery,403,courier)
 other='98000000-0000-0000-0000-000000000022'
 other_pin=sql("select code from public.pitacco_own_delivery_codes where delivery_id='"+other+"'")
 other_wrong='0'*len(other_pin) if other_pin!='0'*len(other_pin) else '1'*len(other_pin)

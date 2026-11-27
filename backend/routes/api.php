@@ -58,6 +58,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/login',[CoreAuthController::class,'login'])->middleware('throttle:core-login');
         Route::middleware(['throttle:60,1',CoreBearerSession::class])->group(function () {
             Route::post('/courier/shift',CourierShiftController::class);
+            Route::get('/courier/deliveries/{delivery}/detail',[CourierPaymentController::class,'detail'])->whereUuid('delivery');
             Route::get('/courier/history',[CourierPaymentController::class,'history']);
             Route::get('/courier/earnings',[CourierPaymentController::class,'earnings']);
             Route::post('/courier/payments',CourierPaymentController::class);

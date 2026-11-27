@@ -319,3 +319,6 @@ GET `/courier/earnings?period=hoje|semana|mes` usa a função original `pitacco_
 
 ## Histórico protegido do entregador
 GET `/courier/history?limit=30` (1–50) implementa projeção de leitura compatível com o painel original, inclui concluídas e canceladas, remuneração zero para cancelada, inicial do cliente e endereço resumido. Acesso somente ao entregador próprio com vínculo ativo na mesma loja. Não retorna recibo, telefone, PIN, nome completo, endereço completo, ID interno da entrega ou contato expirado. Testes CI pendentes. A interface publicada não foi alterada.
+
+## Detalhes protegidos do pedido — experimental
+A dependência original `pitacco_order_public_label` (docs/sql/order-card-public-number-localizer.sql) agora é instalada no fixture CI, corrigindo o erro 42883 dos ganhos e histórico sem mudar a função original. GET `/courier/deliveries/{delivery}/detail` retorna a forma compatível com o app original, somente entrega ativa atribuída na mesma loja, pedido próprio/iFood confirmado. Contato iFood exclusivamente da tabela privada, expiração respeitada; Fiado mascarado como sem cobrança; sem receipt bruto ou PIN. Ainda falta validar a projeção de contatos próprios cadastrados fora do checkout, formas de pagamento e paridade completa com o original. Testes pendentes, nenhuma alteração na interface publicada.
