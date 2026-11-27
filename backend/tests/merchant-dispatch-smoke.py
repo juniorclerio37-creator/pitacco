@@ -106,10 +106,13 @@ sql("update public.orders set preparation_status='ready' where id='"+market_orde
 sql("update public.deliveries set external_delivery_status='SHIPPING_UNCERTAIN' where id='"+market_delivery+"'")
 call(mixed_path,409,mixed_body,owner)
 sql("update public.deliveries set external_delivery_status=null where id='"+market_delivery+"'")
+# The latest production rule explicitly permits a manual override of the
+# automatic capacity target (20261126181849). Verify that audit records it.
 sql("update public.stores set max_orders_per_trip=1 where id='"+s+"'")
-call(mixed_path,409,mixed_body,owner)
-sql("update public.stores set max_orders_per_trip=2 where id='"+s+"'")
 mixed_route=call(mixed_path,200,mixed_body,owner)['data']['route_id']
+assert sql("select count(*) from public.operation_audit where action='route_manual_assigned' and details->>'route'='"+mixed_route+"' and details->>'manual_override'='true' and details->>'configured_capacity'='1'")=='2'
+assert sql("select max((details->>'route_load')::int) from public.operation_audit where action='route_manual_assigned' and details->>'route'='"+mixed_route+"'")=='2'
+sql("update public.stores set max_orders_per_trip=2 where id='"+s+"'")
 assert sql("select count(*) from public.deliveries where batch_id='"+mixed_route+"' and courier_id='"+second+"' and status='atribuida'")=='2'
 assert sql("select receipt->>'ifood_status' from public.orders where id='"+market_order+"'")=='CONFIRMED'
 assert sql("select count(*) from pitacco_private.ifood_courier_dispatch where delivery_id='"+market_delivery+"'")=='0'
@@ -120,7 +123,7 @@ call(market_path,200,{'action':'remove','expected_courier_id':second},owner)
 call('/stores/'+s+'/dispatch/deliveries/'+mixed_delivery,200,{'action':'remove','expected_courier_id':second},owner)
 assert sql("select (completed_at is not null)::text from public.delivery_batches where id='"+mixed_route+"'")=='true'
 sql("update public.orders set status='cancelled' where id='"+mixed_order+"'")
-print('PASS: mixed local route, readiness, stale GPS, capacity, Shipping hold, atomic rejection, no official dispatch')
+print('PASS: mixed local route, readiness, stale GPS, audited manual capacity override, Shipping hold, atomic rejection, no official dispatch')
 # End this independent synthetic fixture so the original scheduler's fail-closed
 # marketplace scope and the own-order grouping tests are unaffected.
 sql("update public.orders set status='cancelled' where id='"+market_order+"'")
