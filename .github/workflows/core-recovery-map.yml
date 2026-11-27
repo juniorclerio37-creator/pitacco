@@ -1,0 +1,30 @@
+name: Pitacco Core — localizar SQL legado
+on:
+  push:
+    branches: [pitacco-core]
+    paths:
+      - '.github/workflows/core-recovery-map.yml'
+      - 'scripts/core-recovery-map.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  map:
+    if: github.ref == 'refs/heads/pitacco-core'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: core-schema-parity
+          run-id: 46004214401
+          github-token: ${{ github.token }}
+          path: /tmp/pitacco-parity
+      - name: Localizar definições já versionadas
+        run: python3 scripts/core-recovery-map.py /tmp/pitacco-parity/core-schema-parity.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-recovery-map
+          path: core-recovery-map.json
