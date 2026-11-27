@@ -5,11 +5,11 @@ import {spawnSync} from 'node:child_process';
 const html=readFileSync(new URL('../marketing/cardapio.html',import.meta.url),'utf8');
 test('persistent session is server checked and isolated from sandbox and editor',()=>{
  assert.match(html,/if\(pagbankPreviewMode\|\|studioPreviewActive\|\|customerSessionBusy\|\|!menu\)return/);
- assert.match(html,/client\.rpc\('pitacco_customer_device_session',\{p_slug:slug,p_device:device,p_action:'resume'\}\)/);
+ assert.match(html,/menuStartupRpc\('pitacco_customer_device_session',\{p_slug:slug,p_device:device,p_action:'resume'\}\)/);
  assert.match(html,/p_action:'logout'/);
  assert.match(html,/device!==rememberedDevice\(\)/);
  assert.match(html,/customerSessionActive&&Date\.now\(\)<customerSessionExpiry\?'address':'identify'/);
- assert.match(html,/const restoring=restoreCustomerSession\(\);\s*await menuStartupDeadline\(restoring,MENU_STARTUP_SESSION_LIMIT_MS\)/);
+ assert.match(html,/\$\('menuStartup'\)\.hidden=true;\s*void restoreCustomerSession\(\)/);
 });
 test('history requires device and confirmed order tracking proof',()=>{
  assert.match(html,/p_action:'link',p_tracking:token/);

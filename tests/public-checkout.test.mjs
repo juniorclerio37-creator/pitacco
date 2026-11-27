@@ -82,20 +82,14 @@ test('V2 principal integra banner ao cabeçalho e recupera carrinho sem aviso na
  assert.match(html,/const restored=reconcileCartDraft\(draft\.items,menu\.products\)/);
 });
 
-test('primeira exibição estável: Fideliza+ e destaques antes do cardápio visível',()=>{
+test('catálogo e opções essenciais são montados antes das consultas secundárias',()=>{
  assert.match(html,/id="menuStartup"/);
- assert.match(html,/MENU_STARTUP_RPC_LIMIT_MS=1000/);
- assert.match(html,/Promise\.all\(\[\s*menuStartupRpc\('pitacco_loyalty_program'/);
- assert.match(html,/menuStartupRpc\('pitacco_public_top_sellers'/);
+ assert.match(html,/MENU_STARTUP_RPC_LIMIT_MS=2500/);
+ assert.match(html,/loadMenuExtra\('pitacco_loyalty_program'/);
+ assert.match(html,/loadMenuExtra\('pitacco_public_top_sellers'/);
  assert.doesNotMatch(html,/pitacco_public_store_region|v2HeroLocation/);
- assert.match(html,/const startupData=prepareMenuStartup\(\);\s*const data=await fetchPublicMenuWithRetry\(\)/);
- assert.match(html,/const prepared=await startupData/);
- assert.match(html,/applyMenuStartupData\(prepared\)/);
- assert.match(html,/initOptions\(\);\s*void warmMenuStartupImages\(\)/);
- assert.match(html,/await menuStartupDeadline\(waitForMenuIdentityPaint\(\),120\)/);
- assert.match(html,/await menuStartupDeadline\(restoring,MENU_STARTUP_SESSION_LIMIT_MS\)/);
- assert.match(html,/\$\('menuStartup'\)\.hidden=true/);
- assert.doesNotMatch(html,/renderCategories\(\);renderProducts\(\);void loadLoyalty\(\)/);
+ const startup=html.slice(html.indexOf('async function startPublicMenu()'));
+ assert.match(startup,/await fetchPublicMenuWithRetry\(\)[\s\S]*?initOptions\(\)[\s\S]*?\$\('menuStartup'\)\.hidden=true;\s*void restoreCustomerSession\(\);\s*loadMenuExtras\(\)/);
  assert.match(html,/cartRestoreWarning/);
 });
 
@@ -207,9 +201,9 @@ test('principal hero uses the approved centered medallion without replacing stor
 test('store-branded loading and bounded transient retry never expose raw database failures',()=>{
  assert.match(html,/id="menuStartupLogo"/);
  assert.match(html,/pitacco-public-brand:/);
- assert.match(html,/client\.rpc\('pitacco_public_menu_identity'/);
- assert.match(html,/attempt<3/);
- assert.match(html,/error\.code==='57014'/);
+ assert.match(html,/menuStartupRpc\('pitacco_public_menu_identity'/);
+ assert.match(html,/MENU_CATALOG_RPC_LIMIT_MS=5000/);
+ assert.match(html,/error\?\.code==='57014'/);
  assert.match(html,/id="menuStartupRetry"/);
  assert.doesNotMatch(html,/msg\('Cardápio indisponível: '\+\(err/);
  const refresh=html.slice(html.indexOf('async function refreshPublicStoreIdentity()'),html.indexOf('async function fetchPublicMenuWithRetry()'));

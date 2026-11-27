@@ -40,6 +40,11 @@ if [[ -d marketing/assets/brendi-acai-do-linho ]]; then
   mkdir -p "$dist_dir"/assets/brendi-acai-do-linho
   cp marketing/assets/brendi-acai-do-linho/*.webp "$dist_dir"/assets/brendi-acai-do-linho/
 fi
+# Serve the locked Supabase SDK from Pitacco so startup needs no external JavaScript CDN.
+printf '%s\n' 'export {createClient} from "@supabase/supabase-js";' | (
+  cd web
+  ./node_modules/.bin/esbuild --bundle --format=esm --platform=browser --target=es2022 --minify --outfile="${dist_dir#web/}/assets/menu-supabase.mjs"
+)
 # Public HTML is not a Vite entrypoint: bundle Leaflet and its CSS explicitly.
 # Do not ship raw bare npm imports to the browser.
 ./web/node_modules/.bin/esbuild web/deliveryMap.mjs --bundle --format=esm --platform=browser --target=es2022 --loader:.png=dataurl --outfile="$dist_dir/assets/delivery-map.mjs"

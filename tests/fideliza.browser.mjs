@@ -18,7 +18,8 @@ try{
   const page=await browser.newPage({viewport:{width,height:1000}}),errors=[],sent=[];
   let linkGenerated=false;
   const slowImageScenario=template==='pitacco-v2'&&width===375;
-  let imageReleased=false;
+  let imageReleased=false,releaseExtras;
+  const extraResponses=new Promise(resolve=>{releaseExtras=resolve});
   page.on('pageerror',e=>errors.push(e.stack||e.message));page.setDefaultTimeout(30000);page.setDefaultNavigationTimeout(30000);
   await page.route('**/*',async route=>{
    const url=new URL(route.request().url()),name=url.pathname.split('/').pop();
@@ -26,9 +27,10 @@ try{
     if(slowImageScenario&&!imageReleased)await new Promise(resolve=>setTimeout(resolve,2500));
     return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="600" height="500" viewBox="0 0 600 500"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="#f5e8dc"/><stop offset="1" stop-color="#d6bba5"/></linearGradient></defs><rect width="600" height="500" fill="url(#g)"/><ellipse cx="300" cy="430" rx="165" ry="20" fill="#4b075e" opacity=".15"/><path d="M175 160H425L395 425H205Z" fill="#4b075e"/><path d="M190 230H415L410 270H195Z" fill="#e9c6a1"/><ellipse cx="300" cy="160" rx="135" ry="48" fill="#751079"/><g fill="#dd3442"><circle cx="242" cy="132" r="35"/><circle cx="306" cy="118" r="35"/><circle cx="364" cy="140" r="35"/></g><g fill="#edbd60"><circle cx="209" cy="165" r="12"/><circle cx="284" cy="166" r="12"/><circle cx="343" cy="174" r="12"/><circle cx="390" cy="167" r="12"/></g></svg>'});}
    if(url.origin===origin&&url.pathname==='/loyalty-test')return route.fulfill({contentType:'text/html',body:source});
-   if(url.origin==='https://esm.sh')return route.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:`export function createClient(){return {rpc:async(name,payload)=>{const r=await fetch('/fixture/'+name,{method:'POST',body:JSON.stringify(payload)});const data=await r.json();return {data:r.ok?data:null,error:r.ok?null:data,status:r.status}}}}`});
+   if(url.origin===origin&&url.pathname==='/assets/menu-supabase.mjs')return route.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:`export function createClient(){return {rpc:async(name,payload)=>{const r=await fetch('/fixture/'+name,{method:'POST',body:JSON.stringify(payload)});const data=await r.json();return {data:r.ok?data:null,error:r.ok?null:data,status:r.status}}}}`});
    if(!url.pathname.startsWith('/fixture/'))return route.abort();
    const p=route.request().postDataJSON();
+   if(slowImageScenario&&['pitacco_public_top_sellers','pitacco_loyalty_program'].includes(name))await extraResponses;
    if(name==='get_public_menu')return route.fulfill({json:{store:{appearance:{template,...templatePalettes[template],...(template==='editorial'?{featured_colors:{background:'#7320c5',border:'#edb600',price:'#ffff00',badge:'#ffffff',button:'#123456'}}:{})},name:'Loja Fideliza',delivery_enabled:false,pickup_enabled:true,payment_methods:['pix_manual'],opening_hours:{open:true,reason:'open'}},products:[{id:'p1',name:'Açaí',category:'Açaí',price:50,image_url:'https://fixtures.pitacco.test/acai.svg',option_groups:[]},{id:'p2',name:'Creme de cupuaçu',category:'Açaí',price:50,option_groups:[]},{id:'p3',name:'Combo da casa',category:'Açaí',price:50,option_groups:[]},{id:'p4',name:'Açaí especial',category:'Açaí',price:50,option_groups:[]}]}});
    if(name==='pitacco_public_top_sellers')return route.fulfill({json:['p1','p3','p2','p4']});
    if(name==='pitacco_public_store_open')return route.fulfill({json:{open:true,reason:'open'}});
@@ -63,10 +65,11 @@ try{
   await page.locator('#menuStartup').waitFor({state:'hidden'});
   if(slowImageScenario){
    assert.equal(await page.locator('#v2TopProducts img').first().evaluate(img=>img.complete&&img.naturalWidth>0),false,'Slow product photos must not block the menu');
+   assert.equal(await page.locator('#v2HomeLoyalty').isVisible(),false,'Pending benefits do not block the catalogue');
    imageReleased=true;
   }
-  assert.equal(await page.locator('#v2HomeLoyalty').isVisible(),true,
-    'Fideliza+ deve estar presente desde a primeira exibição, sem empurrar categorias');
+  releaseExtras();
+  await page.locator('#v2HomeLoyalty').waitFor({state:'visible'});
   {
    const compact=await page.locator('#v2HomeLoyalty').evaluate(card=>{
     const r=card.getBoundingClientRect(),button=card.querySelector('#v2HomeLoyaltyGo').getBoundingClientRect(),brand=card.querySelector('.v2-loyalty-brand').getBoundingClientRect(),copy=card.querySelector('.v2-loyalty-compact-copy').getBoundingClientRect();
@@ -94,6 +97,7 @@ try{
   await page.locator('.product-open').first().waitFor();
   await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
   {
+   await page.locator('#v2TopProducts .v2-top-badge').filter({hasText:'Mais vendido'}).nth(1).waitFor();
    assert.deepEqual(await page.locator('#v2TopProducts .v2-top-name').allTextContents(),['Açaí','Combo da casa']);
    assert.equal(await page.locator('#v2TopProducts .v2-top-badge').filter({hasText:'Mais vendido'}).count(),2);
    const showcase=await page.locator('#v2TopProducts').evaluate(grid=>({
