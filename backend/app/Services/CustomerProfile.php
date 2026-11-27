@@ -4,6 +4,18 @@ use Illuminate\Support\Facades\DB;
 use UnexpectedValueException;
 final class CustomerProfile
 {
+    public function orders(string $slug,array $data): array
+    {
+        $db=DB::connection('core_profile');
+        return $db->transaction(function() use($db,$slug,$data) {
+            $db->statement("set local statement_timeout = '3s'");
+            $db->statement("set local lock_timeout = '1s'");
+            $row=$db->selectOne('select public.pitacco_customer_device_orders(cast(? as text),cast(? as text),cast(? as text),cast(? as uuid)) as payload',[$slug,$data['device'],$data['action'],$data['tracking']??null]);
+            $result=json_decode($row->payload,true,512,JSON_THROW_ON_ERROR);
+            if(!is_array($result)||!array_key_exists('active',$result)) throw new UnexpectedValueException('Invalid order history contract');
+            return $result;
+        });
+    }
     public function session(string $slug,array $data): array
     {
         $db=DB::connection('core_profile');

@@ -42,3 +42,6 @@ grant usage on schema public to pitacco_core_profile;
 grant execute on function public.pitacco_v2_customer_profile(text,text,text,text,text,jsonb) to pitacco_core_profile;
 
 grant execute on function public.pitacco_customer_device_session(text,text,text) to pitacco_core_profile;
+
+-- Original device-bound history function; no direct table access.
+grant execute on function public.pitacco_customer_device_orders(text,text,text,uuid) to pitacco_core_profile;

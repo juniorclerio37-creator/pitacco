@@ -8,6 +8,16 @@ use JsonException;
 use UnexpectedValueException;
 final class CustomerProfileController
 {
+    public function orders(Request $request,string $slug,CustomerProfile $profile): JsonResponse
+    {
+        abort_unless(app()->environment('testing') && config('pitacco.profile_enabled'),404);
+        $data=$request->validate(['device'=>['required','uuid'],'action'=>['required','in:list,link'],'tracking'=>['required_if:action,link','prohibited_if:action,list','nullable','uuid']]);
+        try {
+            return response()->json(['data'=>$profile->orders($slug,$data)])->header('Cache-Control','no-store');
+        } catch(QueryException|JsonException|UnexpectedValueException $e) {
+            return response()->json(['error'=>'temporarily_unavailable'],503)->header('Cache-Control','no-store');
+        }
+    }
     public function session(Request $request,string $slug,CustomerProfile $profile): JsonResponse
     {
         abort_unless(app()->environment('testing') && config('pitacco.profile_enabled'),404);

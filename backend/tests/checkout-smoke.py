@@ -100,7 +100,7 @@ print('PASS: private tracking, correct order, scheduled and priority fields, no 
 
 # Original V2 device-scoped profile, synthetic customer only.
 device=str(uuid.uuid4())
-identity={'phone':'21988881111','device':device,'action':'load'}
+identity={'phone':loyalty['phone'],'device':device,'action':'load'}
 assert call(SLUG+'/profile',200,identity)['data']=={'found':False,'addresses':[]}
 address={'label':'Casa','street':'Rua Fixture','number':'10','neighborhood':'Centro','city':'Cidade Fixture','state':'RJ','postal':'','extra':'','is_default':True}
 saved=call(SLUG+'/profile',200,identity|{'action':'save','name':'Cliente fictício','addresses':[address]})['data']
@@ -125,7 +125,30 @@ resumed=call(session_path,200,{'device':device,'action':'resume'})['data']
 assert resumed['active'] is True and resumed['phone']==identity['phone']
 assert resumed['addresses']==saved['addresses'] and resumed['name']==saved['name']
 assert call(session_path,200,{'device':str(uuid.uuid4()),'action':'resume'})['data']=={'active':False}
+history=SLUG+'/profile/orders'
+history_request={'device':device,'action':'list'}
+assert call(history,200,history_request)['data']=={'active':True,'orders':[]}
+link={'device':device,'action':'link','tracking':l['tracking_token']}
+assert call(history,200,link)['data']=={'active':True,'linked':True}
+assert call(history,200,link)['data']=={'active':True,'linked':True}
+assert call(history,200,link|{'tracking':q['tracking_token']})['data']=={'active':True,'linked':False}
+assert call(history,200,link|{'tracking':first['tracking_token']})['data']=={'active':True,'linked':False}
+assert call(history,200,link|{'tracking':l['order_id']})['data']=={'active':True,'linked':False}
+history_data=call(history,200,history_request)['data']
+assert history_data['active'] is True and len(history_data['orders'])==1
+entry=history_data['orders'][0]
+assert entry['id']==l['order_id'] and float(entry['total'])==20
+assert entry['items'][0]['product_id']==loyalty['items'][0]['product_id']
+assert 'phone' not in entry and 'address' not in entry
+assert call(history,200,history_request|{'device':str(uuid.uuid4())})['data']=={'active':False}
+assert call('other-store/profile/orders',200,history_request)['data']=={'active':False}
+call(history,422,{'device':device,'action':'link'})
+sql("update public.public_checkouts set expires_at=now()-interval '1 second' where order_id='"+str(uuid.UUID(l['order_id']))+"'")
+expired=call(history,200,history_request)['data']['orders'][0]
+assert expired['id']==l['order_id'] and expired['tracking_token'] is None and expired['items']==entry['items']
 assert call(session_path,200,{'device':device,'action':'logout'})['data']=={'active':False,'reset':True}
 assert call(session_path,200,{'device':device,'action':'resume'})['data']=={'active':False,'reset':True}
 assert call(SLUG+'/profile',409,identity)['session_reset'] is True
+assert call(history,200,history_request)['data']=={'active':False}
+print('PASS: device-bound order history, duplicate prevention, other phone and store denial, expired tracking, reorder items and logout')
 print('PASS: original device session resume and logout, revoked profile denial')
