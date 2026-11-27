@@ -42,3 +42,6 @@ Fontes: marketing/cardapio.html; backend/app/Http/Controllers/PublicCheckoutCont
 5. Nenhuma troca de backend até aprovação dos gates de migração.
 
 Este documento é uma matriz de requisitos, não uma certificação de funcionamento. Os testes aprovados até aqui são experimentais, com dados fictícios. Nenhuma alteração em produção.
+
+## Evidência de conciliação necessária
+O diagnóstico temporário `backend/tests/payment-reconciliation.sql` testa comparações por pedido sem somar confirmação manual, declaração do entregador e lançamento de caixa. Valores coincidentes não provam liquidação independente; sobreposição, ausência de lançamento, valor divergente e múltiplos lançamentos exigem revisão. Confirmar a fonte canônica e os gatilhos no esquema real restaurado antes de definir um escritor único de recebimentos. Não importar histórico a partir de suposições do harness.

@@ -135,6 +135,8 @@ jobs:
           trap 'kill "$server" 2>/dev/null || true; cat /tmp/core-delivery.log' EXIT
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8082/up >/dev/null && break; sleep 1; done
           python3 tests/offline-delivery-smoke.py
+      - name: Auditar divergências de recebimentos em dados fictícios
+        run: PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/tests/payment-reconciliation.sql
       - uses: actions/upload-artifact@v4
         if: success()
         with:
