@@ -81,6 +81,7 @@ Route::prefix('v1')->group(function () {
             Route::match(['get','put'],'/stores/{store}/delivery/settings',DeliverySettingsController::class)->whereUuid('store');
             Route::post('/stores/{store}/dispatch/ifood-deliveries/{delivery}',[MerchantDeliveryController::class,'ifood'])->whereUuid(['store','delivery']);
             Route::post('/stores/{store}/dispatch/deliveries/{delivery}',MerchantDeliveryController::class)->whereUuid(['store','delivery']);
+            Route::post('/stores/{store}/dispatch/mixed-group',[MerchantDispatchController::class,'mixed'])->whereUuid('store');
             Route::post('/stores/{store}/dispatch/group',MerchantDispatchController::class)->whereUuid('store');
             Route::post('/stores/{store}/checkout',MerchantCheckoutController::class)->whereUuid('store');
             Route::get('/stores/{store}/reports/financial',FinancialReportController::class)->whereUuid('store');

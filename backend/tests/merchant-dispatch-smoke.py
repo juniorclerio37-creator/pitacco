@@ -83,6 +83,44 @@ assert sql("select receipt->>'ifood_status' from public.orders where id='"+marke
 assert sql("select count(*) from pitacco_private.ifood_courier_dispatch where delivery_id='"+market_delivery+"'")=='0'
 call(market_path,200,{'action':'remove','expected_courier_id':second},owner)
 assert sql("select (courier_id is null and manual_dispatch_hold)::text from public.deliveries where id='"+market_delivery+"'")=='true'
+# Mixed route: distinct own fixture, same courier, no outbound provider calls.
+mixed_order='98000000-0000-0000-0000-000000000073'
+mixed_delivery='98000000-0000-0000-0000-000000000074'
+mixed_path='/stores/'+s+'/dispatch/mixed-group'
+mixed_body={'courier_id':second,'delivery_ids':[mixed_delivery,market_delivery]}
+sql("insert into public.orders(id,store_id,channel,gross,source,status,preparation_status,receipt) values('"+mixed_order+"','"+s+"','Delivery próprio',25,'proprio','accepted','ready','{}')")
+sql("insert into public.deliveries(id,store_id,order_id,customer_name,address,status,source,logistics_provider) values('"+mixed_delivery+"','"+s+"','"+mixed_order+"','Cliente Fixture','Rua Fixture','pendente','proprio','loja')")
+call(mixed_path,401,mixed_body)
+call(mixed_path,404,mixed_body,courier)
+call(mixed_path.replace(s,'20000000-0000-4000-8000-000000000002'),404,mixed_body,owner)
+call(mixed_path,422,mixed_body|{'delivery_ids':[mixed_delivery,mixed_delivery]},owner)
+call(mixed_path,403,mixed_body|{'delivery_ids':[mixed_delivery,str(uuid.uuid4())]},owner)
+call(mixed_path,409,mixed_body|{'delivery_ids':[mixed_delivery,one]},owner)
+sql("insert into public.courier_positions(courier_id,latitude,longitude,accuracy_m,observed_at) values('"+second+"',-22.85,-43.45,15,now()-interval '3 minutes') on conflict(courier_id) do update set observed_at=excluded.observed_at")
+call(mixed_path,409,mixed_body,owner)
+sql("update public.courier_positions set observed_at=now() where courier_id='"+second+"'")
+sql("update public.orders set preparation_status='preparing' where id='"+market_order+"'")
+call(mixed_path,409,mixed_body,owner)
+assert sql("select count(*) from public.deliveries where id in ('"+mixed_delivery+"','"+market_delivery+"') and courier_id is null and batch_id is null and status='pendente'")=='2'
+sql("update public.orders set preparation_status='ready' where id='"+market_order+"'")
+sql("update public.deliveries set external_delivery_status='SHIPPING_UNCERTAIN' where id='"+market_delivery+"'")
+call(mixed_path,409,mixed_body,owner)
+sql("update public.deliveries set external_delivery_status=null where id='"+market_delivery+"'")
+sql("update public.stores set max_orders_per_trip=1 where id='"+s+"'")
+call(mixed_path,409,mixed_body,owner)
+sql("update public.stores set max_orders_per_trip=2 where id='"+s+"'")
+mixed_route=call(mixed_path,200,mixed_body,owner)['data']['route_id']
+assert sql("select count(*) from public.deliveries where batch_id='"+mixed_route+"' and courier_id='"+second+"' and status='atribuida'")=='2'
+assert sql("select receipt->>'ifood_status' from public.orders where id='"+market_order+"'")=='CONFIRMED'
+assert sql("select count(*) from pitacco_private.ifood_courier_dispatch where delivery_id='"+market_delivery+"'")=='0'
+call(mixed_path,409,mixed_body,owner)
+assert sql("select (departed_at is null)::text from public.delivery_batches where id='"+mixed_route+"'")=='true'
+# Release the synthetic mixed route using the already validated removal RPCs.
+call(market_path,200,{'action':'remove','expected_courier_id':second},owner)
+call('/stores/'+s+'/dispatch/deliveries/'+mixed_delivery,200,{'action':'remove','expected_courier_id':second},owner)
+assert sql("select (completed_at is not null)::text from public.delivery_batches where id='"+mixed_route+"'")=='true'
+sql("update public.orders set status='cancelled' where id='"+mixed_order+"'")
+print('PASS: mixed local route, readiness, stale GPS, capacity, Shipping hold, atomic rejection, no official dispatch')
 # End this independent synthetic fixture so the original scheduler's fail-closed
 # marketplace scope and the own-order grouping tests are unaffected.
 sql("update public.orders set status='cancelled' where id='"+market_order+"'")
@@ -198,6 +236,7 @@ read_logistics('positions',404,owner)
 read_logistics('ifood-deliveries',404,owner)
 base='http://127.0.0.1:8094/api/v1'
 call(market_path,404,market_assign,owner)
+call(mixed_path,404,mixed_body,owner)
 base=saved_base
 print('PASS: merchant dispatch rejects revoked membership without modifying the existing route')
 

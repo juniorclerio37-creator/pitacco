@@ -115,3 +115,28 @@ begin
 end $fn$;
 revoke all on function core_auth.ifood_delivery_fixture(uuid,uuid,text,uuid,uuid,boolean) from public,anon,authenticated;
 grant execute on function core_auth.ifood_delivery_fixture(uuid,uuid,text,uuid,uuid,boolean) to pitacco_core_merchant_dispatch;
+
+-- CI only: atomic manual mixed grouping. No departure/provider command.
+-- Start from an empty courier route until mixed departure is migrated.
+create function core_auth.mixed_dispatch_fixture(s uuid,c uuid,ids uuid[]) returns uuid
+language plpgsql security definer set search_path='' as $fn$
+begin
+ if not core_auth.can_act(s) then raise exception 'Sem permissão' using errcode='42501';end if;
+ if ids is null or cardinality(ids)<2 or cardinality(ids)>15 or cardinality(ids)<>(select count(distinct u) from unnest(ids) u) then raise exception 'Seleção inválida' using errcode='22023';end if;
+ perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(s::text,13));
+ if not exists(select 1 from public.couriers x where x.id=c and x.store_id=s and x.fleet_type='propria' and x.active) then raise exception 'Entregador não autorizado' using errcode='42501';end if;
+ if cardinality(ids)<>(select count(*) from public.deliveries d join public.orders o on o.id=d.order_id and o.store_id=d.store_id where d.id=any(ids) and d.store_id=s and d.source in ('proprio','ifood') and o.source=d.source and d.logistics_provider='loja') then raise exception 'Entrega não autorizada' using errcode='42501';end if;
+ -- Lock rows and orders before validating the provider state, in deterministic order.
+ perform 1 from public.deliveries d join public.orders o on o.id=d.order_id and o.store_id=d.store_id where d.id=any(ids) order by d.id for update of d,o;
+ if (select count(distinct d.source) from public.deliveries d where d.id=any(ids))<>2 then raise exception 'Selecione pedidos próprios e iFood' using errcode='22023';end if;
+ if exists(select 1 from public.deliveries d where d.courier_id=c and d.status not in ('entregue','cancelada')) then raise exception 'Entregador já possui rota aberta' using errcode='22023';end if;
+ if exists(select 1 from public.deliveries d join public.orders o on o.id=d.order_id and o.store_id=d.store_id where d.id=any(ids) and (
+  d.status<>'pendente' or d.courier_id is not null or d.batch_id is not null or d.collected_at is not null or d.capacity_released_at is not null
+  or o.status<>'accepted' or o.preparation_status<>'ready'
+  or coalesce(d.external_delivery_status,'') in ('SHIPPING_REQUESTING','SHIPPING_SUBMITTED','SHIPPING_UNCERTAIN')
+  or (d.source='ifood' and (coalesce(o.receipt->>'ifood_status','') not in ('CONFIRMED','READY_TO_PICKUP') or coalesce(o.receipt->>'ifood_manual_cancel','')='requested' or exists(select 1 from pitacco_private.ifood_courier_dispatch x where x.delivery_id=d.id and x.state in ('claimed','submitted','uncertain'))))
+ )) then raise exception 'Pedido indisponível para agrupamento' using errcode='22023';end if;
+ return public.assign_delivery_batch(s,c,ids);
+end $fn$;
+revoke all on function core_auth.mixed_dispatch_fixture(uuid,uuid,uuid[]) from public,anon,authenticated;
+grant execute on function core_auth.mixed_dispatch_fixture(uuid,uuid,uuid[]) to pitacco_core_merchant_dispatch;
