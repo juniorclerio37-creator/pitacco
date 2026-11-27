@@ -11,7 +11,7 @@ const reserved=new Set(['app','cardapio','admin']);
 function rpcFixture(data,calls){
  return async(url,opts)=>{
   assert.equal(opts.headers.apikey,key);assert.deepEqual(JSON.parse(opts.body),{p_slug:slug});
-  assert.equal(opts.redirect,'error');assert.ok(opts.signal);
+  assert.equal(opts.redirect,'manual');assert.ok(opts.signal);
   const rpc=url.split('/').pop();calls.push(rpc);
   return Response.json(data[rpc]??null);
  };
@@ -60,4 +60,16 @@ test('normal customer visits stay on static assets without backend lookups',()=>
  const fake={ASSETS:{fetch:r=>new URL(r.url).pathname}};
  assert.equal(worker.fetch(request('https://pitacco.com.br/acai-loja','Mozilla/5.0'),fake),'/cardapio/');
  assert.equal(worker.fetch(request('https://app.pitacco.com.br/assets/x.js','WhatsApp'),fake),'/assets/x.js');
+});
+
+test('Cloudflare-compatible request rejects redirects without forwarding the public key',async()=>{
+ let calls=0;
+ const meta=await shareMetadata(env,slug,async(url,opts)=>{
+  calls++;
+  // Workerd rejects the Fetch standard "error" mode at request construction.
+  if(opts.redirect==='error')throw new TypeError('Unsupported redirect mode');
+  assert.equal(opts.redirect,'manual');
+  return new Response(null,{status:302,headers:{location:'https://other.example/'}});
+ });
+ assert.equal(meta,null);assert.equal(calls,1);
 });

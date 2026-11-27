@@ -27,7 +27,9 @@ async function publicRpc(env,name,slug,fetcher,signal){
   const base=String(env.PITACCO_SUPABASE_URL||'').replace(/\/$/,'');
   const key=env.PITACCO_SUPABASE_PUBLISHABLE_KEY;
   if(!base.startsWith('https://')||!key)return null;
-  const r=await fetcher(base+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:key,'content-type':'application/json',accept:'application/json'},body:JSON.stringify({p_slug:slug}),signal,redirect:'error'});
+  // Workers do not implement redirect:'error'. Manual mode keeps the public key
+  // on the configured Supabase origin; the existing r.ok check rejects all 3xx.
+  const r=await fetcher(base+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:key,'content-type':'application/json',accept:'application/json'},body:JSON.stringify({p_slug:slug}),signal,redirect:'manual'});
   return r.ok?await r.json():null;
  }catch{return null}
 }

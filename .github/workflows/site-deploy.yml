@@ -17,6 +17,8 @@ on:
       - 'entregador/*.css'
       - 'entregador/*.svg'
       - 'cloudflare/storefront.mjs'
+      - 'cloudflare/storefront-share.mjs'
+      - 'scripts/verify-storefront-share.mjs'
       - 'cloudflare/sales-coach.mjs'
       - 'wrangler.jsonc'
       - '.github/workflows/site-deploy.yml'
@@ -158,3 +160,6 @@ jobs:
             exit 1
           fi
           echo "Painel publicado com o módulo exato da versão atual e V2 único. A validação de login permanece separada."
+
+      - name: Verificar prévia real do WhatsApp e Facebook por loja
+        run: node scripts/verify-storefront-share.mjs
