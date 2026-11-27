@@ -109,6 +109,7 @@ jobs:
         env:
           PITACCO_ORDER_OUTBOX_ENABLED: 'true'
           PITACCO_OWN_BOARD_ENABLED: 'true'
+          PITACCO_SHIPPING_SIMULATION_ENABLED: 'true'
           PITACCO_OWN_PRINT_ENABLED: 'true'
           CORE_OWN_PRINT_DB_USERNAME: pitacco_core_own_print
           CORE_OWN_PRINT_DB_PASSWORD: ci-own-print-only

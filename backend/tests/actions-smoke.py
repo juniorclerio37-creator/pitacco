@@ -150,6 +150,25 @@ assert 'PRIVATE-' not in json.dumps(market)
 assert call(ifood+'?limit=1&offset=1',200,token=alice)['data']==[]
 sql("update public.orders set receipt='{}'::jsonb where id='"+oid(4)+"'")
 print('PASS: normalized iFood operational order, provider status, deadlines, schedule, payment, no private contact or raw events, store isolation')
+shipping='/stores/'+A+'/orders/'+oid(4)+'/shipping-simulation'
+call(shipping,401)
+call(shipping,404,token=bob)
+call(shipping,404,token=alice)
+call(shipping.replace(A,B),404,token=alice)
+ship_merchant='38100000-0000-4000-8000-000000000001'
+ship_external='38100000-0000-4000-8000-000000000002'
+sql("insert into pitacco_private.ifood_merchants(merchant_id,store_id,test_only,enabled) values('"+ship_merchant+"','"+A+"',true,true)")
+sql("insert into pitacco_private.ifood_order_links(external_id,order_id,merchant_id,state_rank,event_at) values('"+ship_external+"','"+oid(4)+"','"+ship_merchant+"',1,now())")
+sql("update public.orders set receipt='{\"ifood_test\":true,\"logistics\":\"loja\"}'::jsonb where id='"+oid(4)+"'")
+sim=call(shipping,200,token=alice)['data']
+assert sim['environment']=='simulation' and sim['homologated'] is False and sim['request_enabled'] is False and sim['order_id']==oid(4)
+assert sim['quote']['simulated'] is True and sim['quote']['net_value_cents']==1200 and 'id' not in sim['quote']
+assert ship_merchant not in json.dumps(sim) and ship_external not in json.dumps(sim)
+call(shipping+'?action=request_driver',422,token=alice)
+sql("update pitacco_private.ifood_merchants set test_only=false where merchant_id='"+ship_merchant+"'")
+call(shipping,404,token=alice)
+sql("delete from pitacco_private.ifood_order_links where external_id='"+ship_external+"';delete from pitacco_private.ifood_merchants where merchant_id='"+ship_merchant+"';update public.orders set receipt='{}'::jsonb where id='"+oid(4)+"'")
+print('PASS: Shipping simulation only, test merchant and linked order, no provider quote ID, no booking or production access')
 call(dp+'status',401,'POST',{})
 call(dp+'status',404,'POST',{},bob)
 call(dp.replace(A,B)+'status',404,'POST',{},alice)

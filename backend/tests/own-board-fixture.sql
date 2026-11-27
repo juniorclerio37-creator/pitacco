@@ -101,3 +101,23 @@ begin
 end $$;
 revoke all on function core_auth.ifood_ready_fixture(uuid,uuid) from public,anon,authenticated;
 grant execute on function core_auth.ifood_ready_fixture(uuid,uuid) to pitacco_core_actions;
+
+-- CI ONLY. No network, booking, real quote token or production mutation.
+create function core_auth.shipping_simulation_fixture(s uuid,oid uuid) returns jsonb
+language plpgsql stable security definer set search_path='' as $$
+begin
+ if not core_auth.can_act(s) then return null;end if;
+ if not exists(select 1 from public.orders o
+ join pitacco_private.ifood_order_links l on l.order_id=o.id
+ join pitacco_private.ifood_merchants m on m.merchant_id=l.merchant_id and m.store_id=o.store_id
+ where o.id=oid and o.store_id=s and o.source='ifood' and o.status in ('pending','accepted')
+ and o.receipt->>'ifood_test'='true' and o.receipt->>'logistics'='loja'
+ and m.test_only and m.enabled and m.credential is null
+ and (select count(*) from pitacco_private.ifood_merchants x where x.store_id=s and x.test_only and x.enabled and x.credential is null)=1
+ and not exists(select 1 from public.deliveries d where d.order_id=o.id and (d.store_id<>s or d.logistics_provider<>'loja' or d.status<>'pendente' or d.courier_id is not null or d.batch_id is not null or coalesce(d.external_delivery_status,'') in ('SHIPPING_REQUESTING','SHIPPING_SUBMITTED','SHIPPING_UNCERTAIN')))
+ ) then return null;end if;
+ return jsonb_build_object('environment','simulation','homologated',false,'request_enabled',false,'available',true,
+ 'order_id',oid,'quote',jsonb_build_object('simulated',true,'currency','BRL','net_value_cents',1200,'delivery_time_min',25,'delivery_time_max',45,'expires_at',now()+interval '5 minutes'));
+end $$;
+revoke all on function core_auth.shipping_simulation_fixture(uuid,uuid) from public,anon,authenticated;
+grant execute on function core_auth.shipping_simulation_fixture(uuid,uuid) to pitacco_core_own_board;
