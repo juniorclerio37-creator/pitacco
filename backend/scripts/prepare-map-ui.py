@@ -44,6 +44,15 @@ def build(target):
     s=replace(s,"<StoreProfile key={selected} client={supabase}","<StoreProfile key={selected} experimentalMap={experimentalMap} client={supabase}")
     f.write_text(s)
     shutil.copy2(ROOT/'backend'/'clients'/'merchant-map.mjs',target/'coreMerchantMap.mjs')
+    # Compile a separate preview entry; original entry remains untouched.
+    clients=target/'core-clients'
+    clients.mkdir()
+    for name in ('core-session.mjs','merchant-map.mjs','windows-print.mjs','windows-device.mjs','merchant-runtime.mjs'):
+        shutil.copy2(ROOT/'backend'/'clients'/name,clients/name)
+    runtime=clients/'merchant-runtime.mjs'
+    runtime.write_text(replace(runtime.read_text(),"../../core-source/web/printBridge.mjs","../printBridge.mjs"))
+    shutil.copy2(ROOT/'backend'/'ui'/'CoreMerchantHost.jsx',target/'CoreMerchantHost.jsx')
+    shutil.copy2(ROOT/'backend'/'ui'/'core-preview.jsx',target/'core-preview.jsx')
     # No default activation. Keep identical frontend entry point and Tauri assets.
     print("Prepared isolated original React/Tauri map overlay:",target)
 if __name__=='__main__':

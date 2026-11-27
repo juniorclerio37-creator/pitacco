@@ -32,4 +32,8 @@ jobs:
           npm ci --no-audit --no-fund
           npm run build
           test -s dist/index.html
+          # Separate build exercises actual React imports; never publish it.
+          python3 -c "from pathlib import Path; p=Path('index.html'); p.write_text(p.read_text().replace('/src.jsx','/core-preview.jsx'))"
+          npm run build -- --outDir dist-core-preview
+          test -s dist-core-preview/index.html
           node -e "const t=require('./src-tauri/tauri.conf.json'); if(t.build.frontendDist!=='../dist')process.exit(1)"
