@@ -37,7 +37,7 @@ final class CustomerProfileController
             'action'=>['required','in:load,save'],
             'name'=>['required_if:action,save','prohibited_if:action,load','nullable','string','min:2','max:120'],
             'addresses'=>['prohibited_if:action,load','nullable','array','max:8'],
-            'addresses.*'=>['array:id,label,street,number,neighborhood,city,state,postal,extra,is_default'],
+            'addresses.*'=>['array:id,label,street,number,neighborhood,city,state,postal,extra,is_default,quote_id,location'],
             'addresses.*.id'=>['nullable','uuid'],
             'addresses.*.label'=>['nullable','string','max:24'],
             'addresses.*.street'=>['required','string','max:100'],
@@ -48,8 +48,18 @@ final class CustomerProfileController
             'addresses.*.postal'=>['nullable','string','max:9'],
             'addresses.*.extra'=>['nullable','string','max:100'],
             'addresses.*.is_default'=>['sometimes','boolean'],
+            'addresses.*.quote_id'=>['nullable','uuid'],
+            'addresses.*.location'=>['nullable','array:latitude,longitude'],
+            'addresses.*.location.latitude'=>['required_with:addresses.*.location','numeric','between:-34,6'],
+            'addresses.*.location.longitude'=>['required_with:addresses.*.location','numeric','between:-75,-32'],
         ]);
         try {
+            // A V2 round trip can carry a previously returned point. Never trust it as a new point.
+            // Original SQL accepts a valid matching quote or preserves the stored unchanged address.
+            if(isset($data['addresses'])){
+                foreach($data['addresses'] as &$address) unset($address['location']);
+                unset($address);
+            }
             $result=$profile->run($slug,$data);
             if(isset($result['error'])) return response()->json(['error'=>'profile_unavailable','session_reset'=>($result['session_reset']??false)===true],409)->header('Cache-Control','no-store');
             return response()->json(['data'=>$result])->header('Cache-Control','no-store');

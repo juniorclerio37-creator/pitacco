@@ -114,6 +114,16 @@ jobs:
           node tests/storefront-browser.mjs
           node tests/template-v2-schedule-browser.mjs
           python3 tests/wallet-smoke.py
+      - name: Validar pontos de endereço do perfil V2
+        working-directory: backend
+        env:
+          CORE_REDIS_PREFIX: 'pitacco_core_address_points_ci:'
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8087 >/tmp/core-address-points.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true; cat /tmp/core-address-points.log' EXIT
+          for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8087/up >/dev/null && break; sleep 1; done
+          python3 tests/customer-address-points-smoke.py
       - name: Validar modalidades presenciais em sessão isolada
         working-directory: backend
         env:
