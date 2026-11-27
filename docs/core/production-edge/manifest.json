@@ -1,0 +1,72 @@
+{
+  "purpose": "Read-only archival snapshot of deployed functions; not a deployable directory. No credentials exported. Revalidate authorization and dependencies before porting.",
+  "functions": [
+    {
+      "slug": "whatsapp-connect-finish",
+      "version": 14,
+      "verify_jwt": true,
+      "status": "ACTIVE",
+      "sha256": "5750f7af1cfe8345d2ccc7b8c599e14ad81eafe7c36d21c3572515bc3ff05448",
+      "entrypoint": "index.ts"
+    },
+    {
+      "slug": "push-public-config",
+      "version": 13,
+      "verify_jwt": false,
+      "status": "ACTIVE",
+      "sha256": "d1c3e4eb7363a97f394b2ce16bf00d7f298896072906b869f1632f14d2cd86e9",
+      "entrypoint": "index.ts"
+    },
+    {
+      "slug": "whatsapp-webhook",
+      "version": 17,
+      "verify_jwt": false,
+      "status": "ACTIVE",
+      "sha256": "cb1be2454d22fdca00aaf3cf990c8201d1b74c29f6a82e09a40e9d61b5988ad0",
+      "entrypoint": "index.ts"
+    },
+    {
+      "slug": "push-send-queued",
+      "version": 15,
+      "verify_jwt": false,
+      "status": "ACTIVE",
+      "sha256": "c2a71e0dea0a549abb95a8e4643fcaea6f70f9d559c53ca9d3f257402af9e1e6",
+      "entrypoint": "index.ts"
+    },
+    {
+      "slug": "pitacco-ifood-production-probe",
+      "version": 18,
+      "verify_jwt": true,
+      "status": "ACTIVE",
+      "sha256": "c3d9590fc7332359c6140fc5726a639e6b4794548d740301baf0a34218f9c81f",
+      "entrypoint": "index.ts",
+      "note": "Disabled HTTP 410 stub; preserve disabled behavior."
+    },
+    {
+      "slug": "pitacco-pagbank-sandbox-probe",
+      "version": 7,
+      "verify_jwt": true,
+      "status": "ACTIVE",
+      "sha256": "6458c9c799bd011f62efbaf61bc785d0fac1f81b0b731b9c965ad587901ffa21",
+      "entrypoint": "index.ts",
+      "note": "Disabled HTTP 410 stub; preserve disabled behavior."
+    },
+    {
+      "slug": "pitacco-asaas-connection-probe",
+      "version": 13,
+      "verify_jwt": true,
+      "status": "ACTIVE",
+      "sha256": "7d34093b33ebcf914e42d4853afe8fae14aa461947648f1eb7c2a1e9212016d1",
+      "entrypoint": "index.ts",
+      "note": "Disabled HTTP 410 stub; preserve disabled behavior."
+    },
+    {
+      "slug": "whatsapp-connect-start",
+      "version": 16,
+      "verify_jwt": true,
+      "status": "ACTIVE",
+      "sha256": "2f19a384693d328bee52a78e86d381400dad248ec4ce660536e2625699f4b801",
+      "entrypoint": "index.ts"
+    }
+  ]
+}
