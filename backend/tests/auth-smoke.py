@@ -51,15 +51,11 @@ alice=rotated
 request('/auth/logout',200,'POST',token=alice)
 request('/auth/me',401,token=alice)
 # Verify a synthetic legacy hash through the actual HTTP login path.
-# Existing fixture password stays identical; no migration of real hashes.
-sql("update core_auth.users set password_hash='$2a bearer sessions, live store membership, cross-store denial, expiry and revocation')
-||substring(password_hash from 5) where email='alice@example.test'")
+sql("update core_auth.users set password_hash=chr(36)||'2a'||chr(36)||substring(password_hash from 5) where email='alice@example.test'")
 legacy=login('alice@example.test')['access_token']
 assert request('/auth/me',200,token=legacy)['id']=='10000000-0000-4000-8000-000000000001'
 request('/auth/logout',200,'POST',token=legacy)
-sql("update core_auth.users set password_hash='$2y bearer sessions, live store membership, cross-store denial, expiry and revocation')
-||substring(password_hash from 5) where email='alice@example.test'")
-# A separate synthetic account avoids the per-identity login limit.
+sql("update core_auth.users set password_hash=chr(36)||'2y'||chr(36)||substring(password_hash from 5) where email='alice@example.test'")
 sql("insert into core_auth.users(id,email,password_hash,active) values('10000000-0000-4000-8000-000000000099','invalid-hash@example.test','unsupported',true)")
 login('invalid-hash@example.test',401)
 print('PASS: credential rejection, bearer sessions, live store membership, cross-store denial, expiry and revocation')

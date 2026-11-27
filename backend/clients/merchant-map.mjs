@@ -2,14 +2,14 @@
 // data contracts. Host must explicitly inject this adapter; no global client swap.
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const valid=(p)=>typeof p?.latitude==='number'&&typeof p?.longitude==='number'&&Number.isFinite(p.latitude)&&Number.isFinite(p.longitude)&&p.latitude>=-34&&p.latitude<=6&&p.longitude>=-75&&p.longitude<=-32;
-export function createMerchantMap({store,token,fetcher=globalThis.fetch}){
- if(!UUID.test(store??'')||typeof token!=='string'||!token)throw Error('Sessão inválida.');
+export function createMerchantMap({store,token,scopedFetch,fetcher=globalThis.fetch}){
+ if(!UUID.test(store??'')||(typeof scopedFetch!=='function'&&(typeof token!=='string'||!token)))throw Error('Sessão inválida.');
  let active=true,flight=null,writing=false;const controller=new AbortController();
  const base='/api/v1/stores/'+store+'/';
  function stop(){active=false;token='';controller.abort();}
  async function request(path,body,method=body?'PUT':'GET'){
   if(!active)throw Error('Sessão encerrada.');
-  const res=await fetcher(base+path,{method,headers:{Accept:'application/json',Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',signal:AbortSignal.any([controller.signal,AbortSignal.timeout(8000)])});
+  const res=await (scopedFetch??fetcher)(base+path,{method,headers:{Accept:'application/json',...(scopedFetch?{}:{Authorization:'Bearer '+token}),...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',signal:AbortSignal.any([controller.signal,AbortSignal.timeout(8000)])});
   if(!active)throw Error('Sessão encerrada.');
   if([401,403,404].includes(res.status)){stop();throw Error('Mapa não autorizado.');}
   if(!res.ok){const e=Error(res.status===429?'Aguarde antes de salvar outro ponto da loja.':'Mapa indisponível.');e.status=res.status;throw e;}

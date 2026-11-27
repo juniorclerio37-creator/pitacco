@@ -13,11 +13,11 @@ function identity(v){
 }
 export function createCoreSession({fetcher=globalThis.fetch,onState=()=>{},now=Date.now}={}){
  let token='',expires=0,person=null,selected=null,version=0,scopeVersion=0,scope=null,busy=false,controller=new AbortController();
- const resources=new Set();let renewal=null;
+ const resources=new Set();let renewal=null,scopeAbort=new AbortController();
  const snapshot=()=>({identity:person?{...person,stores:person.stores.map(s=>({...s}))}:null,selected:selected?{...selected}:null,expires_at:expires||null});
  function emit(){onState(snapshot());}
  function clearScope(){
-  scopeVersion++;selected=null;scope=null;
+  scopeVersion++;scopeAbort.abort();scopeAbort=new AbortController();selected=null;scope=null;
   for(const resource of resources){try{resource.stop();}catch{}}
   resources.clear();
  }
@@ -108,7 +108,7 @@ export function createCoreSession({fetcher=globalThis.fetch,onState=()=>{},now=D
    if(renewal)await renewal;
    if(v!==version||sv!==scopeVersion||!token)throw Error('Seleção encerrada.');
    const credential=token;const headers=new Headers(opts.headers);headers.set('Authorization','Bearer '+credential);
-   const signal=opts.signal?AbortSignal.any([opts.signal,controller.signal]):controller.signal;
+   const signal=AbortSignal.any([controller.signal,scopeAbort.signal,AbortSignal.timeout(8000),...(opts.signal?[opts.signal]:[])]);
    const res=await fetcher(path,{...opts,headers,signal,credentials:'omit',cache:'no-store',redirect:'error',referrerPolicy:'no-referrer'});
    if(v!==version||sv!==scopeVersion)throw Error('Seleção encerrada.');
    if(res.status===401){if(credential===token)clear();throw Error('Sessão encerrada.');}

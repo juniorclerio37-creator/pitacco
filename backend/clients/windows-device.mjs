@@ -1,16 +1,16 @@
 // Experimental Windows lifecycle; host provides the matching same-store print client.
 // No automatic binding, transfer, unbinding, or fallback to a legacy database.
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export function createWindowsDevice({store,device,token,printClient,fetcher=globalThis.fetch,onState=()=>{},schedule=setTimeout,cancel=clearTimeout}){
- if(!UUID.test(store??'')||!UUID.test(device??'')||typeof token!=='string'||!token||typeof printClient?.syncAndReconcile!=='function'||typeof printClient?.stop!=='function')throw new TypeError('Sessão Windows inválida.');
+export function createWindowsDevice({store,device,token,scopedFetch,printClient,fetcher=globalThis.fetch,onState=()=>{},schedule=setTimeout,cancel=clearTimeout}){
+ if(!UUID.test(store??'')||!UUID.test(device??'')||(typeof scopedFetch!=='function'&&(typeof token!=='string'||!token))||typeof printClient?.syncAndReconcile!=='function'||typeof printClient?.stop!=='function')throw new TypeError('Sessão Windows inválida.');
  let active=true,started=false,timer=null,chain=Promise.resolve(),snapshot=null;
  const abort=new AbortController();
  function emit(state,extra={}){if(active)onState({state,snapshot,...extra});}
  function stop(){if(!active)return;active=false;token='';snapshot=null;abort.abort();if(timer!==null)cancel(timer);timer=null;printClient.stop();}
  async function post(op,data={}){
   if(!active)throw Error('Sessão encerrada.');
-  const res=await fetcher('/api/v1/stores/'+store+'/print-device/'+op,{method:'POST',
-   headers:{Accept:'application/json','Content-Type':'application/json',Authorization:'Bearer '+token},
+  const res=await (scopedFetch??fetcher)('/api/v1/stores/'+store+'/print-device/'+op,{method:'POST',
+   headers:{Accept:'application/json','Content-Type':'application/json',...(scopedFetch?{}:{Authorization:'Bearer '+token})},
    body:JSON.stringify(data),cache:'no-store',credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',
    signal:AbortSignal.any([abort.signal,AbortSignal.timeout(8000)])});
   if(!active)throw Error('Sessão encerrada.');

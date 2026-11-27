@@ -2,15 +2,15 @@
 // The host supplies the existing native bridge. Server IDs remain authoritative.
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const states=new Set(['claimed','saved','uncertain','error']);
-export function createWindowsPrintClient({store,device,token,fetcher=globalThis.fetch,nativeCall,ingestJobs,storeName,client,storeLogoPath,unified=false}){
- if(!UUID.test(store??'')||!UUID.test(device??'')||typeof token!=='string'||!token||typeof nativeCall!=='function'||typeof ingestJobs!=='function')throw new TypeError('Sessão de impressão inválida.');
+export function createWindowsPrintClient({store,device,token,scopedFetch,fetcher=globalThis.fetch,nativeCall,ingestJobs,storeName,client,storeLogoPath,unified=false}){
+ if(!UUID.test(store??'')||!UUID.test(device??'')||(typeof scopedFetch!=='function'&&(typeof token!=='string'||!token))||typeof nativeCall!=='function'||typeof ingestJobs!=='function')throw new TypeError('Sessão de impressão inválida.');
  let active=true,flight=null,cycle=null,abort=new AbortController();
  let remoteIds=new Set();
  const confirmed=new Map();
  async function post(op,data={}){
   if(!active)throw Error('Sessão encerrada.');
-  const res=await fetcher('/api/v1/stores/'+store+(unified?'/unified-print/':'/own-print/')+op,{
-   method:'POST',headers:{Accept:'application/json','Content-Type':'application/json',Authorization:'Bearer '+token},
+  const res=await (scopedFetch??fetcher)('/api/v1/stores/'+store+(unified?'/unified-print/':'/own-print/')+op,{
+   method:'POST',headers:{Accept:'application/json','Content-Type':'application/json',...(scopedFetch?{}:{Authorization:'Bearer '+token})},
    body:JSON.stringify({device_id:device,...data}),cache:'no-store',credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',
    signal:AbortSignal.any([abort.signal,AbortSignal.timeout(8000)])});
   if(!active)throw Error('Sessão encerrada.');
