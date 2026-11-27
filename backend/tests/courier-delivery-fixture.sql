@@ -105,12 +105,3 @@ create role pitacco_core_courier_delivery login password 'ci-courier-delivery-on
 grant usage on schema core_auth to pitacco_core_courier_delivery;
 grant execute on function core_auth.courier_delivery_fixture(text,uuid,text) to pitacco_core_courier_delivery;
 
--- Separate synthetic grouped route, no provider calls.
-insert into public.delivery_batches(id,store_id,courier_id,created_by)
-values('98000000-0000-0000-0000-000000000030','20000000-0000-4000-8000-000000000001','98000000-0000-0000-0000-000000000002','10000000-0000-4000-8000-000000000001');
-insert into public.orders(id,store_id,channel,gross,source,status,preparation_status,receipt) values
-('98000000-0000-0000-0000-000000000031','20000000-0000-4000-8000-000000000001','Delivery próprio',25,'proprio','accepted','ready','{"payment":"pix_manual","logistics":"loja"}'),
-('98000000-0000-0000-0000-000000000032','20000000-0000-4000-8000-000000000001','Delivery próprio',25,'proprio','accepted','ready','{"payment":"pix_manual","logistics":"loja"}');
-insert into public.deliveries(id,store_id,order_id,courier_id,batch_id,customer_name,address,status,source,logistics_provider) values
-('98000000-0000-0000-0000-000000000041','20000000-0000-4000-8000-000000000001','98000000-0000-0000-0000-000000000031','98000000-0000-0000-0000-000000000002','98000000-0000-0000-0000-000000000030','Cliente Fixture','Rua Fixture','atribuida','proprio','loja'),
-('98000000-0000-0000-0000-000000000042','20000000-0000-4000-8000-000000000001','98000000-0000-0000-0000-000000000032','98000000-0000-0000-0000-000000000002','98000000-0000-0000-0000-000000000030','Cliente Fixture','Rua Fixture','atribuida','proprio','loja');
