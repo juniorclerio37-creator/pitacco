@@ -9,5 +9,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('public-menu', fn(Request $request) => Limit::perMinute(60)->by($request->ip()));
+        RateLimiter::for('core-login', fn(Request $request) => [
+            Limit::perMinute(10)->by('ip:'.$request->ip()),
+            Limit::perMinute(5)->by('identity:'.hash('sha256',strtolower(trim(is_string($request->input('email'))?$request->input('email'):''))).':'.$request->ip()),
+        ]);
     }
 }
