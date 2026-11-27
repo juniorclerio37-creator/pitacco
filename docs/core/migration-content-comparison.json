@@ -1,0 +1,4614 @@
+{
+  "source": "Production migration statements compared with Git blob hashes; exact byte equivalence or terminal line break equivalence only. A non-match is not evidence of missing behavior; do not replay blindly.",
+  "production_count": 365,
+  "repository_count": 279,
+  "production_matched": 196,
+  "repository_matched": 195,
+  "production_unmatched": 169,
+  "repository_unmatched": 84,
+  "production": [
+    {
+      "version": "20261110144157",
+      "name": "pitacco_whatsapp_delivery_events",
+      "bytes": 895,
+      "exact_sha": "8ffb433a03f169a6b25a70f40e8bd191e9d08e5b",
+      "newline_sha": "2e580221d775566c8c100d5298421a2b88d41e72",
+      "no_newline_sha": "8ffb433a03f169a6b25a70f40e8bd191e9d08e5b",
+      "matched": []
+    },
+    {
+      "version": "20261110144307",
+      "name": "pitacco_whatsapp_store_scoped_onboarding",
+      "bytes": 8543,
+      "exact_sha": "00897b0d017509ea6ae5f58272018fe5b876cb0c",
+      "newline_sha": "53f174dccd23a8724c7d039af8c343d00b26a939",
+      "no_newline_sha": "00897b0d017509ea6ae5f58272018fe5b876cb0c",
+      "matched": []
+    },
+    {
+      "version": "20261110163453",
+      "name": "pitacco_whatsapp_encrypted_store_credentials",
+      "bytes": 726,
+      "exact_sha": "f17b4dd7ec47b1bb22d4f758a8d2244998ee312d",
+      "newline_sha": "233ccafcde939e1bd07ba8b87c498aeb39261e1d",
+      "no_newline_sha": "f17b4dd7ec47b1bb22d4f758a8d2244998ee312d",
+      "matched": []
+    },
+    {
+      "version": "20261110171112",
+      "name": "pitacco_self_service_store_signup_trial",
+      "bytes": 2105,
+      "exact_sha": "129946a285ae632187480e4321c9b2677f431938",
+      "newline_sha": "129946a285ae632187480e4321c9b2677f431938",
+      "no_newline_sha": "572ee2de06821284f6ec00b538878460a677c6f0",
+      "matched": []
+    },
+    {
+      "version": "20261110175332",
+      "name": "pitacco_verified_identity_30_day_signup",
+      "bytes": 3871,
+      "exact_sha": "0f011e00610a42315be1c581f899b2d2770f7746",
+      "newline_sha": "0f011e00610a42315be1c581f899b2d2770f7746",
+      "no_newline_sha": "3ad578752b7fe810b504a85166ef77460146ad11",
+      "matched": []
+    },
+    {
+      "version": "20261110182424",
+      "name": "restrict_legacy_trial_signup_rpc",
+      "bytes": 268,
+      "exact_sha": "d8e577a5dc7901fc68332696373d88e42785c3f5",
+      "newline_sha": "c2e4b6fb856ea16ed0234722fa3a5df516ffe382",
+      "no_newline_sha": "d8e577a5dc7901fc68332696373d88e42785c3f5",
+      "matched": []
+    },
+    {
+      "version": "20261110182712",
+      "name": "secure_store_self_service_configuration",
+      "bytes": 2629,
+      "exact_sha": "2ebf1f916121783d9bb54f8155b1fd26cc6d5530",
+      "newline_sha": "ea4f03fae73cc4386ed43e74e59265bab56f5fba",
+      "no_newline_sha": "2ebf1f916121783d9bb54f8155b1fd26cc6d5530",
+      "matched": []
+    },
+    {
+      "version": "20261110183009",
+      "name": "secure_product_catalog_management",
+      "bytes": 2536,
+      "exact_sha": "bcf1ad62f6c48baed40b54aab2117740fb0853db",
+      "newline_sha": "cdb7adbea6e32d817d9129cdf65e4d8902983314",
+      "no_newline_sha": "bcf1ad62f6c48baed40b54aab2117740fb0853db",
+      "matched": []
+    },
+    {
+      "version": "20261110183219",
+      "name": "product_complement_groups_and_options",
+      "bytes": 5588,
+      "exact_sha": "e195087f2e02fbf496185f9138650bebcf76cb31",
+      "newline_sha": "5d32c944aa0714064eea4e52a716745df5d87927",
+      "no_newline_sha": "e195087f2e02fbf496185f9138650bebcf76cb31",
+      "matched": []
+    },
+    {
+      "version": "20261110183437",
+      "name": "allow_required_complement_groups_before_options",
+      "bytes": 1297,
+      "exact_sha": "f69f842a3059a427f72c7a118a8a60d241d47570",
+      "newline_sha": "fa3a26cf7e180241c7896b7bce6a0f0f8c4cd5d4",
+      "no_newline_sha": "f69f842a3059a427f72c7a118a8a60d241d47570",
+      "matched": []
+    },
+    {
+      "version": "20261110183548",
+      "name": "validate_complements_and_prices_in_public_checkout",
+      "bytes": 8671,
+      "exact_sha": "36a475016aa71bc8a368f828645adf35c4d06616",
+      "newline_sha": "c26967eb9a555134aeee5db5e10661b7b5381891",
+      "no_newline_sha": "36a475016aa71bc8a368f828645adf35c4d06616",
+      "matched": []
+    },
+    {
+      "version": "20261110183600",
+      "name": "expose_complement_groups_on_public_menu",
+      "bytes": 1490,
+      "exact_sha": "a1fca0a939df2ced2d53bf06d26c7a31846d701c",
+      "newline_sha": "8b4086c52a8dd47d7eeac0eb3f26280e29aa52a0",
+      "no_newline_sha": "a1fca0a939df2ced2d53bf06d26c7a31846d701c",
+      "matched": []
+    },
+    {
+      "version": "20261110184035",
+      "name": "secure_per_platform_acceptance_preferences",
+      "bytes": 1536,
+      "exact_sha": "a5b545cbbfd7b13b9371c31c830de893655e550b",
+      "newline_sha": "77fe029a2b90e1aa9e0fea2b86da1dfae6472ce5",
+      "no_newline_sha": "a5b545cbbfd7b13b9371c31c830de893655e550b",
+      "matched": []
+    },
+    {
+      "version": "20261110184230",
+      "name": "marketplace_acceptance_confirmation_state_machine",
+      "bytes": 6165,
+      "exact_sha": "33165ea4c23d2db5bc075df879682cafdbb6ed8c",
+      "newline_sha": "33165ea4c23d2db5bc075df879682cafdbb6ed8c",
+      "no_newline_sha": "27793da9651511f8aad462013bbf44ab2496dc33",
+      "matched": []
+    },
+    {
+      "version": "20261110184240",
+      "name": "secure_marketplace_acceptance_status_for_store",
+      "bytes": 731,
+      "exact_sha": "535d2dd8df789a77b61f61b103ad96aab40006c9",
+      "newline_sha": "56a96d0767243c4099bacca331fb10901265226a",
+      "no_newline_sha": "535d2dd8df789a77b61f61b103ad96aab40006c9",
+      "matched": []
+    },
+    {
+      "version": "20261110184419",
+      "name": "whatsapp_store_permission_rpc",
+      "bytes": 485,
+      "exact_sha": "cdb087738149dd980fae0f472de940b2853eac30",
+      "newline_sha": "680fb425963cf9888ffda6c19cf3db0d9f1c9055",
+      "no_newline_sha": "cdb087738149dd980fae0f472de940b2853eac30",
+      "matched": []
+    },
+    {
+      "version": "20261110185114",
+      "name": "pause_whatsapp_automation_for_now",
+      "bytes": 193,
+      "exact_sha": "4e6047a0898ab9b147b336b7108ea72b84e2bb9f",
+      "newline_sha": "fcae0614ba05febd94b71117df98e2ba5a546c8b",
+      "no_newline_sha": "4e6047a0898ab9b147b336b7108ea72b84e2bb9f",
+      "matched": []
+    },
+    {
+      "version": "20261110185159",
+      "name": "public_order_tracking_by_private_token",
+      "bytes": 1012,
+      "exact_sha": "28652eb5f52ed19a3a3296d31406afe548056f07",
+      "newline_sha": "2bb078d3b61bd13cee803fbf0786aa66b44d8d26",
+      "no_newline_sha": "28652eb5f52ed19a3a3296d31406afe548056f07",
+      "matched": []
+    },
+    {
+      "version": "20261110185345",
+      "name": "public_tracking_private_token_readonly",
+      "bytes": 890,
+      "exact_sha": "c09067caabd37d0cf456959c49e353e254a6a554",
+      "newline_sha": "50cbb80b5bac01672a21718ff0ccd9018234abcf",
+      "no_newline_sha": "c09067caabd37d0cf456959c49e353e254a6a554",
+      "matched": []
+    },
+    {
+      "version": "20261110185523",
+      "name": "secure_customer_webpush_subscriptions",
+      "bytes": 1739,
+      "exact_sha": "21e5104c4fcd544c89d6c995d178136e197588cd",
+      "newline_sha": "6eb5a24cdd39f263fb8ee0b589c664e72214405d",
+      "no_newline_sha": "21e5104c4fcd544c89d6c995d178136e197588cd",
+      "matched": []
+    },
+    {
+      "version": "20261110185716",
+      "name": "queue_order_and_delivery_push_events",
+      "bytes": 3205,
+      "exact_sha": "c47561068af15336e7736167b88a606e12e676f0",
+      "newline_sha": "c47561068af15336e7736167b88a606e12e676f0",
+      "no_newline_sha": "c9b5b5635ce6edf27fbb58b46079ac6ec8ab5cab",
+      "matched": []
+    },
+    {
+      "version": "20261110185725",
+      "name": "claim_and_acknowledge_webpush_jobs",
+      "bytes": 1659,
+      "exact_sha": "2d7b0b34dc9d99dadfd8cbf81cec7b84e1f22833",
+      "newline_sha": "2d7b0b34dc9d99dadfd8cbf81cec7b84e1f22833",
+      "no_newline_sha": "dcedc2c651ffb04d1896a06d41c73618feba44c1",
+      "matched": []
+    },
+    {
+      "version": "20261110191027",
+      "name": "service_only_push_key_validation_rpc",
+      "bytes": 339,
+      "exact_sha": "31395cd6aa557b142e0e09ecf71e87f65a07d480",
+      "newline_sha": "93d70b4f9bdc48b36e833c5458a4770d6e868263",
+      "no_newline_sha": "31395cd6aa557b142e0e09ecf71e87f65a07d480",
+      "matched": []
+    },
+    {
+      "version": "20261110191122",
+      "name": "schedule_pitacco_push_worker_every_minute",
+      "bytes": 917,
+      "exact_sha": "30c4407075d00d3367ada1061ed5f317048d3273",
+      "newline_sha": "f968dd98960106ecfebe6f1d5c12b9d98654f273",
+      "no_newline_sha": "30c4407075d00d3367ada1061ed5f317048d3273",
+      "matched": []
+    },
+    {
+      "version": "20261110191552",
+      "name": "store_branded_customer_order_tracking",
+      "bytes": 2826,
+      "exact_sha": "286f50bccf479d11f73f60269dabe1ef5bdc606e",
+      "newline_sha": "6243a470103d19d326f42e65981161b33d674804",
+      "no_newline_sha": "286f50bccf479d11f73f60269dabe1ef5bdc606e",
+      "matched": []
+    },
+    {
+      "version": "20261110191658",
+      "name": "sync_public_menu_branding_and_pickup_tracking",
+      "bytes": 1668,
+      "exact_sha": "0719e3a969f459188f7ded8bb50963bd6933f826",
+      "newline_sha": "77c4548ccf6614f60760bc7b0a5b59d9ef1ebbfc",
+      "no_newline_sha": "0719e3a969f459188f7ded8bb50963bd6933f826",
+      "matched": []
+    },
+    {
+      "version": "20261110191828",
+      "name": "store_identity_list_for_authenticated_manager",
+      "bytes": 648,
+      "exact_sha": "08e9eebd4faa96a7b9905106589ca376891d2a12",
+      "newline_sha": "e0cfaeb0b9c29a645196b0028992289c8ba87978",
+      "no_newline_sha": "08e9eebd4faa96a7b9905106589ca376891d2a12",
+      "matched": []
+    },
+    {
+      "version": "20261110193149",
+      "name": "safe_operational_payment_receipts_ledger",
+      "bytes": 3957,
+      "exact_sha": "85758b3729a5499c87668b96e4edb83c5949e834",
+      "newline_sha": "85758b3729a5499c87668b96e4edb83c5949e834",
+      "no_newline_sha": "e8ab34020024630cf94c1fc4559f7d1e3f9fb6c8",
+      "matched": []
+    },
+    {
+      "version": "20261110193341",
+      "name": "operational_cash_sessions_and_movements",
+      "bytes": 6841,
+      "exact_sha": "5efa0d9340999941802ad22bf8f42abcb373e7f0",
+      "newline_sha": "5efa0d9340999941802ad22bf8f42abcb373e7f0",
+      "no_newline_sha": "a885925fe8d7d0f8a965751efbd6194a9aeb3a1c",
+      "matched": []
+    },
+    {
+      "version": "20261110205257",
+      "name": "pitacco_order_display_numbers_027",
+      "bytes": 5163,
+      "exact_sha": "444427573a9c0e4bf69d03bc52d3d5109f4044cb",
+      "newline_sha": "444427573a9c0e4bf69d03bc52d3d5109f4044cb",
+      "no_newline_sha": "31a6e5aa7b42a2a282b895f944a7c0400e62c55d",
+      "matched": []
+    },
+    {
+      "version": "20261110210721",
+      "name": "pitacco_courier_payouts_028",
+      "bytes": 3097,
+      "exact_sha": "e737b44af4e42afa89c360af9b40c6d0f54ae50c",
+      "newline_sha": "e737b44af4e42afa89c360af9b40c6d0f54ae50c",
+      "no_newline_sha": "3c366fb2f4c01c084746611cb0bbf4ab31bf5095",
+      "matched": []
+    },
+    {
+      "version": "20261110212515",
+      "name": "pitacco_single_print_computer_032",
+      "bytes": 2166,
+      "exact_sha": "ba86655ff4b7b35cb3fbf4dde92ba76c5ee4c7f7",
+      "newline_sha": "992db5284c2dc26f8dfb599fe39c48d231a283da",
+      "no_newline_sha": "ba86655ff4b7b35cb3fbf4dde92ba76c5ee4c7f7",
+      "matched": []
+    },
+    {
+      "version": "20261110213622",
+      "name": "pitacco_courier_pay_rules_034",
+      "bytes": 3514,
+      "exact_sha": "1b6e645da0ca3631b344dc515e039208b0582291",
+      "newline_sha": "1b6e645da0ca3631b344dc515e039208b0582291",
+      "no_newline_sha": "a012468690d79ccba6d42fd0c2c7fe1344e64158",
+      "matched": []
+    },
+    {
+      "version": "20261110214045",
+      "name": "pitacco_order_costs_035",
+      "bytes": 1439,
+      "exact_sha": "82508956d5e8ba67af3c1b28df28d91079289687",
+      "newline_sha": "5f0b5c569a0418881fccad800529bdfb5366bb8c",
+      "no_newline_sha": "82508956d5e8ba67af3c1b28df28d91079289687",
+      "matched": []
+    },
+    {
+      "version": "20261110215000",
+      "name": "pitacco_customer_blocks_037",
+      "bytes": 4303,
+      "exact_sha": "7fdfeea2c9cf173c1b4593677cd846a9fdedeeb1",
+      "newline_sha": "c7997ccd5dcec912596a3fad51c6a5728381ebfd",
+      "no_newline_sha": "7fdfeea2c9cf173c1b4593677cd846a9fdedeeb1",
+      "matched": []
+    },
+    {
+      "version": "20261110224406",
+      "name": "customer_blocks_individual_store_scoped",
+      "bytes": 989,
+      "exact_sha": "18a3a2d1953a0ca09e9bf44370a6a31a08dde9e5",
+      "newline_sha": "5a592623a64acdbf24c7b06b3faecb64a41d4d94",
+      "no_newline_sha": "18a3a2d1953a0ca09e9bf44370a6a31a08dde9e5",
+      "matched": []
+    },
+    {
+      "version": "20261110224522",
+      "name": "customer_block_checkout_message",
+      "bytes": 857,
+      "exact_sha": "18a89e8e1815e3cb8ec02f1745d22effba58613a",
+      "newline_sha": "1f132b5f9a79c2076a64efaf866c998f290d0f45",
+      "no_newline_sha": "18a89e8e1815e3cb8ec02f1745d22effba58613a",
+      "matched": []
+    },
+    {
+      "version": "20261111033443",
+      "name": "pitacco_store_receipt_html_templates",
+      "bytes": 1703,
+      "exact_sha": "9d73f9a797b091c4fe58cf6f9ae10cd5b4b47fc3",
+      "newline_sha": "9d73f9a797b091c4fe58cf6f9ae10cd5b4b47fc3",
+      "no_newline_sha": "2ebfba2d7d9851c14fcb158f9b5b6ced3469058d",
+      "matched": []
+    },
+    {
+      "version": "20261111140655",
+      "name": "pitacco_web_modifier_manager_read_20261111",
+      "bytes": 295,
+      "exact_sha": "3c35b92178688b4332e97350089ec68c5097cc88",
+      "newline_sha": "1ad648ec598e65eef44f86c04ba302cd50184328",
+      "no_newline_sha": "3c35b92178688b4332e97350089ec68c5097cc88",
+      "matched": []
+    },
+    {
+      "version": "20261111155829",
+      "name": "pitacco_checkout_coupon_server_validation_v3",
+      "bytes": 2463,
+      "exact_sha": "b416610d7bca01cca46559417de993a8f7225146",
+      "newline_sha": "f4100dcc1cf58c0a41bdf3aff617181bdc4a7cb3",
+      "no_newline_sha": "b416610d7bca01cca46559417de993a8f7225146",
+      "matched": []
+    },
+    {
+      "version": "20261111160739",
+      "name": "pitacco_loyalty_coupon_discount_bounds",
+      "bytes": 142,
+      "exact_sha": "22bc4e48f12e5d8c8736f4f19eec1fdf6482798d",
+      "newline_sha": "ac372e17a3d4113c1a13193df8f10560feb8e976",
+      "no_newline_sha": "22bc4e48f12e5d8c8736f4f19eec1fdf6482798d",
+      "matched": []
+    },
+    {
+      "version": "20261111160847",
+      "name": "pitacco_checkout_coupon_return_breakdown",
+      "bytes": 918,
+      "exact_sha": "0bcd332848867460b7d2da3457a4dfe529543bc3",
+      "newline_sha": "2a345fcf2cb97ad4a6a77a21ef2d43501c9ba3ec",
+      "no_newline_sha": "0bcd332848867460b7d2da3457a4dfe529543bc3",
+      "matched": []
+    },
+    {
+      "version": "20261111161020",
+      "name": "pitacco_public_menu_protect_reserved_paths",
+      "bytes": 701,
+      "exact_sha": "c45822bdf7840846a85756bf4a9bb43fc67cbe54",
+      "newline_sha": "76f798330ec9ed1afe37df5f2d4786253bc4c1d1",
+      "no_newline_sha": "c45822bdf7840846a85756bf4a9bb43fc67cbe54",
+      "matched": []
+    },
+    {
+      "version": "20261111161757",
+      "name": "pitacco_seed_acai_do_linho_fictional_demo_menu",
+      "bytes": 1695,
+      "exact_sha": "811a8a01ebd596d7cfd136f2601709ec56b281c7",
+      "newline_sha": "88454d4c70682a2b35d39696d879540a42d3c258",
+      "no_newline_sha": "811a8a01ebd596d7cfd136f2601709ec56b281c7",
+      "matched": []
+    },
+    {
+      "version": "20261111161924",
+      "name": "pitacco_fix_option_validation_ambiguous_record_names",
+      "bytes": 1383,
+      "exact_sha": "97f50ec6be1d489a9c255c1cf8fe4e9818c9f828",
+      "newline_sha": "59eb4387d805ac1c34cc8b04be89ecd6a0c70b9e",
+      "no_newline_sha": "97f50ec6be1d489a9c255c1cf8fe4e9818c9f828",
+      "matched": []
+    },
+    {
+      "version": "20261111162031",
+      "name": "pitacco_receipt_brand_discount_and_modifier_fix",
+      "bytes": 1794,
+      "exact_sha": "37e755d804f2b84edb5be863a9b8ce4371be4c80",
+      "newline_sha": "9f45aff76e3abc24bd0cf7c4fbf8a3f9132e27b8",
+      "no_newline_sha": "37e755d804f2b84edb5be863a9b8ce4371be4c80",
+      "matched": []
+    },
+    {
+      "version": "20261111172826",
+      "name": "delivery_area_public_status_for_checkout",
+      "bytes": 584,
+      "exact_sha": "e7379218d74de93bd0e9c1251809cbf47e24ba37",
+      "newline_sha": "62098a7d1e01a8d7276792293b98c8bbf2604fe9",
+      "no_newline_sha": "e7379218d74de93bd0e9c1251809cbf47e24ba37",
+      "matched": []
+    },
+    {
+      "version": "20261111173112",
+      "name": "guard_public_delivery_polygon_until_trusted_geocoding",
+      "bytes": 1064,
+      "exact_sha": "075960ecbe1b525ac29c33012842ecb90ff131c8",
+      "newline_sha": "2a08d401ea0850181356f38071a9218318d7b0c4",
+      "no_newline_sha": "075960ecbe1b525ac29c33012842ecb90ff131c8",
+      "matched": []
+    },
+    {
+      "version": "20261111173240",
+      "name": "protect_polygon_delivery_on_order_route_updates",
+      "bytes": 1213,
+      "exact_sha": "9bf85d8915a5eee86d77acd1d605b7f2598a847b",
+      "newline_sha": "007285250911e76c76248008b94f3210a016e08e",
+      "no_newline_sha": "9bf85d8915a5eee86d77acd1d605b7f2598a847b",
+      "matched": []
+    },
+    {
+      "version": "20261111174550",
+      "name": "store_preparation_minutes_settings",
+      "bytes": 954,
+      "exact_sha": "8a0626e0002f9c0782415d36935866116c2146da",
+      "newline_sha": "73db608f68857510742091c7e4af54dab43bda0f",
+      "no_newline_sha": "8a0626e0002f9c0782415d36935866116c2146da",
+      "matched": []
+    },
+    {
+      "version": "20261111222543",
+      "name": "store_order_sound_preferences",
+      "bytes": 1949,
+      "exact_sha": "b5e9057d792e0909cb8a4f638c9f78d1a013716e",
+      "newline_sha": "fc8723bd67fb646ae68b9425c25308f0467089cf",
+      "no_newline_sha": "b5e9057d792e0909cb8a4f638c9f78d1a013716e",
+      "matched": []
+    },
+    {
+      "version": "20261116041534",
+      "name": "pitacco_owner_and_features",
+      "bytes": 5175,
+      "exact_sha": "824d135e3a88bef86f3e4e8e6af6e9e0c7c07c83",
+      "newline_sha": "824d135e3a88bef86f3e4e8e6af6e9e0c7c07c83",
+      "no_newline_sha": "0cfa8224de25ffe72d326b8ae2e60bc3d810640a",
+      "matched": []
+    },
+    {
+      "version": "20261116041549",
+      "name": "pitacco_platform_owner_access",
+      "bytes": 567,
+      "exact_sha": "36094ec31e9c1e0c55b4ce3d0bd5bfd3ba8e022c",
+      "newline_sha": "36094ec31e9c1e0c55b4ce3d0bd5bfd3ba8e022c",
+      "no_newline_sha": "6eddaba0143a1794792dfd160abf2416aeafaf74",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261115194246_pitacco_platform_owner_access.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261116043752",
+      "name": "pitacco_owner_store_catalog",
+      "bytes": 7597,
+      "exact_sha": "a664cf22b4c2dda58302ad6aadaf8ba0851ebe4a",
+      "newline_sha": "a664cf22b4c2dda58302ad6aadaf8ba0851ebe4a",
+      "no_newline_sha": "a9ef2b768c194fa5b11987ab01072185c6ada580",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261115135520_pitacco_owner_store_catalog.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261116044234",
+      "name": "pitacco_platform_owner_username",
+      "bytes": 849,
+      "exact_sha": "51cbded60c6b45d503d43670c293535d2e05097d",
+      "newline_sha": "51cbded60c6b45d503d43670c293535d2e05097d",
+      "no_newline_sha": "90c3e499f043a1396f1442137ca523703af9ba52",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261116043953_pitacco_platform_owner_username.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261116044633",
+      "name": "pitacco_checkout_product_variants",
+      "bytes": 1980,
+      "exact_sha": "a0e8d619d82c72a91f13ad13bee2dc9e194ce71a",
+      "newline_sha": "a0e8d619d82c72a91f13ad13bee2dc9e194ce71a",
+      "no_newline_sha": "b11ca08b32b2edd86842c8dc6381304b56731b7e",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261114225402_pitacco_checkout_product_variants.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261116045237",
+      "name": "pitacco_new_store_seven_day_trial",
+      "bytes": 920,
+      "exact_sha": "f025cf450c58f2d160925233a9f683cc57cb3d8c",
+      "newline_sha": "f025cf450c58f2d160925233a9f683cc57cb3d8c",
+      "no_newline_sha": "24af0c474a5e66112642ea11273db9c9fe1bbcfe",
+      "matched": []
+    },
+    {
+      "version": "20261116045239",
+      "name": "pitacco_inventory",
+      "bytes": 7311,
+      "exact_sha": "86d72cd863400d2c508991184f477bbe60aabf99",
+      "newline_sha": "86d72cd863400d2c508991184f477bbe60aabf99",
+      "no_newline_sha": "80f0b3ec9dd9c780ee4ce3f49db3a5fb5192f148",
+      "matched": []
+    },
+    {
+      "version": "20261116045241",
+      "name": "pitacco_self_service_store_manager",
+      "bytes": 734,
+      "exact_sha": "cb20d593a8a8b4c0bd3fc9e34e8d7531413dab81",
+      "newline_sha": "cb20d593a8a8b4c0bd3fc9e34e8d7531413dab81",
+      "no_newline_sha": "0765664a488110841719f01c01dcdaa9610f333a",
+      "matched": []
+    },
+    {
+      "version": "20261116045243",
+      "name": "pitacco_pending_order_decisions",
+      "bytes": 2243,
+      "exact_sha": "14ce13255d607c89a53c31f9210a8140d139a8ea",
+      "newline_sha": "14ce13255d607c89a53c31f9210a8140d139a8ea",
+      "no_newline_sha": "55c62f437f8f6b3a8593e3c0abf13a8055350767",
+      "matched": []
+    },
+    {
+      "version": "20261116045245",
+      "name": "pitacco_period_financial_report",
+      "bytes": 2741,
+      "exact_sha": "b98c23d4b8761e95ce711aba9a0e19327837a3e8",
+      "newline_sha": "b98c23d4b8761e95ce711aba9a0e19327837a3e8",
+      "no_newline_sha": "64df698f76cb72f8c055dd096315ffcdd9746837",
+      "matched": []
+    },
+    {
+      "version": "20261116045247",
+      "name": "pitacco_scheduled_orders",
+      "bytes": 8249,
+      "exact_sha": "7357700ebdacc4e3966f1aadd135a592d8e634c6",
+      "newline_sha": "7357700ebdacc4e3966f1aadd135a592d8e634c6",
+      "no_newline_sha": "778e8c8a683e49289b2ed2973b1906fa78f35673",
+      "matched": []
+    },
+    {
+      "version": "20261116045249",
+      "name": "pitacco_operational_alerts",
+      "bytes": 4890,
+      "exact_sha": "ecd5e46f3707e624c10d0a891986e5ef2eea05a7",
+      "newline_sha": "ecd5e46f3707e624c10d0a891986e5ef2eea05a7",
+      "no_newline_sha": "77fa6cd4ed2ee9d3fbc0722da85c64c99461a9e4",
+      "matched": []
+    },
+    {
+      "version": "20261116045251",
+      "name": "pitacco_subscription_entitlement",
+      "bytes": 7437,
+      "exact_sha": "9a942c6e205ca03a3575b460c12bad662115b3a0",
+      "newline_sha": "9a942c6e205ca03a3575b460c12bad662115b3a0",
+      "no_newline_sha": "e40b92b1a24205df1d96e73633157659ac107ae7",
+      "matched": []
+    },
+    {
+      "version": "20261116045252",
+      "name": "pitacco_asaas_subscription_binding",
+      "bytes": 1928,
+      "exact_sha": "e06598227765b2ff9ab098c9b9c221538905051c",
+      "newline_sha": "e06598227765b2ff9ab098c9b9c221538905051c",
+      "no_newline_sha": "9cfa2ddaef484ecba82498c9e944d31394e35779",
+      "matched": []
+    },
+    {
+      "version": "20261116045255",
+      "name": "pitacco_private_delivery_tracking",
+      "bytes": 2541,
+      "exact_sha": "8337f8fc187fd66a8b775a9ec56fac480036ab31",
+      "newline_sha": "8337f8fc187fd66a8b775a9ec56fac480036ab31",
+      "no_newline_sha": "bd2e8f0898dc465fd4d3415c323209803c33fb2e",
+      "matched": []
+    },
+    {
+      "version": "20261116045257",
+      "name": "pitacco_marketplace_settlements",
+      "bytes": 6331,
+      "exact_sha": "805c29a8f956eb45f7771856d3c7ed82782a7b47",
+      "newline_sha": "805c29a8f956eb45f7771856d3c7ed82782a7b47",
+      "no_newline_sha": "067ff66645363b84a309e53bad18a50ae198c498",
+      "matched": []
+    },
+    {
+      "version": "20261116045259",
+      "name": "pitacco_admin_homologation",
+      "bytes": 5035,
+      "exact_sha": "459665cf70532290dc038e9f4d29ac50c0f5a849",
+      "newline_sha": "459665cf70532290dc038e9f4d29ac50c0f5a849",
+      "no_newline_sha": "297318e0b31ce7a525f59232b9842450e1c1788e",
+      "matched": []
+    },
+    {
+      "version": "20261116045510",
+      "name": "pitacco_financial_report_period_bounds",
+      "bytes": 2694,
+      "exact_sha": "108ce5a73987d2b76500cae0876ffbafb5e4b821",
+      "newline_sha": "108ce5a73987d2b76500cae0876ffbafb5e4b821",
+      "no_newline_sha": "1185729b29edd5364b71b4c0fcd3590794f939c9",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261116045406_pitacco_financial_report_period_bounds.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261116112941",
+      "name": "pitacco_order_profit_report",
+      "bytes": 1964,
+      "exact_sha": "5b2b514b92d10c3596006b8cb2a75e38cc2c6b10",
+      "newline_sha": "5b2b514b92d10c3596006b8cb2a75e38cc2c6b10",
+      "no_newline_sha": "e75dd5013ae10f579a90e2edd5b23cefc623b482",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261116112605_pitacco_order_profit_report.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261116175522",
+      "name": "pitacco_storefront_delivery_settings",
+      "bytes": 8822,
+      "exact_sha": "3b477b36745ca8ef3659d89792d8d11885cc6483",
+      "newline_sha": "3b477b36745ca8ef3659d89792d8d11885cc6483",
+      "no_newline_sha": "ca296e08afb91305c4e9c83b2d3aea7436ad8c6c",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261116174111_pitacco_storefront_delivery_settings.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261116175531",
+      "name": "pitacco_store_payment_providers",
+      "bytes": 1620,
+      "exact_sha": "55e48e9b983a7df5e2739a40d7c5a054dd0b259a",
+      "newline_sha": "55e48e9b983a7df5e2739a40d7c5a054dd0b259a",
+      "no_newline_sha": "298f9b1b0a43d71c9b1e171aea28144114d81221",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261116174534_pitacco_store_payment_providers.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261116183515",
+      "name": "pitacco_ifood_order_events",
+      "bytes": 17207,
+      "exact_sha": "8d067edc6300771134f788234801f8b60944cca3",
+      "newline_sha": "8d067edc6300771134f788234801f8b60944cca3",
+      "no_newline_sha": "d3a46a31110b4ce68046e1c29dc50f3b68ce1c2b",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261116181731_pitacco_ifood_order_events.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261116184556",
+      "name": "pitacco_owner_platform_dashboard",
+      "bytes": 5167,
+      "exact_sha": "e0a5748cf7ec63389904ab837e0afdced93a5474",
+      "newline_sha": "e0a5748cf7ec63389904ab837e0afdced93a5474",
+      "no_newline_sha": "27630ee8e8e77500ea3e39954ff244e42f932960",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261116183940_pitacco_owner_platform_dashboard.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261116194102",
+      "name": "pitacco_owner_subscription_details",
+      "bytes": 1645,
+      "exact_sha": "6acf4acdc628b61697e79eab77c135e83aa0e9cb",
+      "newline_sha": "6acf4acdc628b61697e79eab77c135e83aa0e9cb",
+      "no_newline_sha": "9607b35cd908edc2bfcfc9d147ee3af898348d86",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261116194500_pitacco_owner_subscription_details.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261116194738",
+      "name": "owner_subscription_actions",
+      "bytes": 9314,
+      "exact_sha": "908550576ca652725cd7987f94041a08ca86443e",
+      "newline_sha": "908550576ca652725cd7987f94041a08ca86443e",
+      "no_newline_sha": "6ffe7028fb4ee36992b2a2c136d30f8467f52161",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261116205500_owner_subscription_actions.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261116231052",
+      "name": "pitacco_owner_operations",
+      "bytes": 4829,
+      "exact_sha": "2dd8a6712aa79fd6fdec142c4ea2a9ca307ae58b",
+      "newline_sha": "2dd8a6712aa79fd6fdec142c4ea2a9ca307ae58b",
+      "no_newline_sha": "05170e743ad5dbe1ac11a97c3e8e495a48036097",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261116231100_pitacco_owner_operations.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261116231414",
+      "name": "pitacco_commercial_plan_catalog",
+      "bytes": 3201,
+      "exact_sha": "b6fcb1996e58a197fd30322ba0d3ed016fa119fb",
+      "newline_sha": "b6fcb1996e58a197fd30322ba0d3ed016fa119fb",
+      "no_newline_sha": "fe6496daac4d6fee0c886d31648585450979cf60",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261116233900_pitacco_commercial_plan_catalog.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261116232024",
+      "name": "pitacco_owner_finance_report",
+      "bytes": 2495,
+      "exact_sha": "b69f4a57109e30566f6276300b7c3474a91a9592",
+      "newline_sha": "b69f4a57109e30566f6276300b7c3474a91a9592",
+      "no_newline_sha": "7f0df7c065399549b49d39b91f67dbd1b44be73d",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261116235700_pitacco_owner_finance_report.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261116235306",
+      "name": "pitacco_single_monthly_plan",
+      "bytes": 3123,
+      "exact_sha": "a9052b4582696b84fa88582b982801aa3639a747",
+      "newline_sha": "a9052b4582696b84fa88582b982801aa3639a747",
+      "no_newline_sha": "b36d892a94703e1d0769bc797f20493a4c8cff52",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117003000_pitacco_single_monthly_plan.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117000145",
+      "name": "pitacco_owner_99food_homologation",
+      "bytes": 4481,
+      "exact_sha": "a6894feeba5fa512d9fda0d9dfebdc274b547a7c",
+      "newline_sha": "a6894feeba5fa512d9fda0d9dfebdc274b547a7c",
+      "no_newline_sha": "f6709e435a7b19b72c63bfba477556c13fc6b174",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117004500_pitacco_owner_99food_homologation.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117001627",
+      "name": "pitacco_ifood_auto_confirm",
+      "bytes": 7694,
+      "exact_sha": "557fc47ea698ab74393d1134fadc7a53d694358f",
+      "newline_sha": "557fc47ea698ab74393d1134fadc7a53d694358f",
+      "no_newline_sha": "c4c306c15c4df003a9fc8cf1c5b35dece697b4aa",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117010000_pitacco_ifood_auto_confirm.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117031316",
+      "name": "scope_delivery_read_to_managers_and_assigned_couriers",
+      "bytes": 491,
+      "exact_sha": "3332e22abb9eaffd55c436cf6dce71e94fc7fab3",
+      "newline_sha": "867905ae2bcc0b8875e822c755f56f50f2dd142c",
+      "no_newline_sha": "3332e22abb9eaffd55c436cf6dce71e94fc7fab3",
+      "matched": []
+    },
+    {
+      "version": "20261117031526",
+      "name": "revoke_public_truncate_from_delivery_tables",
+      "bytes": 144,
+      "exact_sha": "41ed7d29a5551780461da17d01695759911aacd0",
+      "newline_sha": "61250efe4fc3249d2287a85b09934e4d76be4095",
+      "no_newline_sha": "41ed7d29a5551780461da17d01695759911aacd0",
+      "matched": []
+    },
+    {
+      "version": "20261117031821",
+      "name": "pitacco_courier_session_gate",
+      "bytes": 2453,
+      "exact_sha": "34c5ef56480f172af6b28817eebc8659e7e5f1d2",
+      "newline_sha": "34c5ef56480f172af6b28817eebc8659e7e5f1d2",
+      "no_newline_sha": "65047e8e7c8b18faf5e39da0ed61183266de8a91",
+      "matched": []
+    },
+    {
+      "version": "20261117032326",
+      "name": "pitacco_driver_collect_depart_online",
+      "bytes": 2946,
+      "exact_sha": "0f40a090efdf419b1932e04b36069f610005113b",
+      "newline_sha": "0f40a090efdf419b1932e04b36069f610005113b",
+      "no_newline_sha": "48169d48b078404872bc476967b1df52151f8824",
+      "matched": []
+    },
+    {
+      "version": "20261117032359",
+      "name": "pitacco_driver_collect_legacy_accepted",
+      "bytes": 1499,
+      "exact_sha": "f80edd7a4866ff962c363ee78dc78281ab1f2b62",
+      "newline_sha": "2a9e5ec0c83274d20be17c2b3d25e72bfc631f7e",
+      "no_newline_sha": "c9a8c376cc96bb595deaf7c2d4aa98902be793c8",
+      "matched": []
+    },
+    {
+      "version": "20261117032915",
+      "name": "secure_legacy_delivery_order_rpcs",
+      "bytes": 5763,
+      "exact_sha": "cab79d04ab13df36c2f9091c834408f1996487ec",
+      "newline_sha": "cab79d04ab13df36c2f9091c834408f1996487ec",
+      "no_newline_sha": "006bfe32e22ba402290ad370482ade44845f0cce",
+      "matched": []
+    },
+    {
+      "version": "20261117034554",
+      "name": "fix_courier_store_platform_owner_access",
+      "bytes": 1095,
+      "exact_sha": "541258c1ffa5844d421b56e19d250827775130b1",
+      "newline_sha": "541258c1ffa5844d421b56e19d250827775130b1",
+      "no_newline_sha": "7e6aa3ddc442e20db5f93a00f3b00c09d4b601fa",
+      "matched": []
+    },
+    {
+      "version": "20261117041024",
+      "name": "pitacco_driver_earnings_dashboard",
+      "bytes": 4306,
+      "exact_sha": "f5d03a63a9a8b736c08cd8b6b10efbf3dad8f199",
+      "newline_sha": "f5d03a63a9a8b736c08cd8b6b10efbf3dad8f199",
+      "no_newline_sha": "e30d30a2d3cb9f4741defc510842de546b450ad5",
+      "matched": []
+    },
+    {
+      "version": "20261117041740",
+      "name": "pitacco_driver_earnings_daily_breakdown",
+      "bytes": 4564,
+      "exact_sha": "a2a02884cfbaed9a7ddabd06f610adfda61ca05e",
+      "newline_sha": "578aea6d054b081f3a6d95d051b22c58202e30a3",
+      "no_newline_sha": "3efccd5b290e2ea6b9e6f5a1f0623af68930982a",
+      "matched": []
+    },
+    {
+      "version": "20261117043123",
+      "name": "pitacco_driver_order_details_contact",
+      "bytes": 6903,
+      "exact_sha": "3c820d64854ad7ab78d67e34224e958aad4e2bbc",
+      "newline_sha": "3c820d64854ad7ab78d67e34224e958aad4e2bbc",
+      "no_newline_sha": "ec3cc174a884746217d9f16f478983b796c07980",
+      "matched": []
+    },
+    {
+      "version": "20261117043254",
+      "name": "pitacco_driver_contact_private_storage",
+      "bytes": 7874,
+      "exact_sha": "61d3ebc67dd777286a140d6d52ca51082e32ecd0",
+      "newline_sha": "61d3ebc67dd777286a140d6d52ca51082e32ecd0",
+      "no_newline_sha": "41e4cd2624f6c03b25a7a1d7caebdd62e4af298b",
+      "matched": []
+    },
+    {
+      "version": "20261117043548",
+      "name": "pitacco_driver_order_detail_item_whitelist",
+      "bytes": 6790,
+      "exact_sha": "eb3ad4439524d01b64d02bf0429cd82de288099e",
+      "newline_sha": "eb3ad4439524d01b64d02bf0429cd82de288099e",
+      "no_newline_sha": "930591cec18ccf56b7d544f9e7a2ba058841e0c2",
+      "matched": []
+    },
+    {
+      "version": "20261117044917",
+      "name": "pitacco_order_card_public_numbers_and_locators",
+      "bytes": 6681,
+      "exact_sha": "584ffd2daf75d976be3a4919b2e00f886a7f4135",
+      "newline_sha": "584ffd2daf75d976be3a4919b2e00f886a7f4135",
+      "no_newline_sha": "8c09c3cbd8ed5f467ab3e32be46a7fd00fc77a50",
+      "matched": []
+    },
+    {
+      "version": "20261117044941",
+      "name": "pitacco_driver_order_detail_public_label",
+      "bytes": 6733,
+      "exact_sha": "a04ea0441ffda8fa19d53c281aaac1fea97b5303",
+      "newline_sha": "a04ea0441ffda8fa19d53c281aaac1fea97b5303",
+      "no_newline_sha": "7c2d4490baa595e21a78f184cae4ad5231f772d2",
+      "matched": []
+    },
+    {
+      "version": "20261117045208",
+      "name": "pitacco_driver_earnings_public_order_labels",
+      "bytes": 4758,
+      "exact_sha": "85ddc085c147442498968694a2cd8c6db090631f",
+      "newline_sha": "3abecd7beef43a4a2b626a9f24ab2fd25482a0ab",
+      "no_newline_sha": "3f662f08f1766c93bd1a2ca060a95b4dcea6315a",
+      "matched": []
+    },
+    {
+      "version": "20261117045231",
+      "name": "pitacco_99food_public_order_number_only",
+      "bytes": 1376,
+      "exact_sha": "05a009a59643d71b85efb715022eb39454955f85",
+      "newline_sha": "05a009a59643d71b85efb715022eb39454955f85",
+      "no_newline_sha": "3fd3a2abe48e3794ebe50e0027bb34452a60b849",
+      "matched": []
+    },
+    {
+      "version": "20261117045427",
+      "name": "pitacco_ifood_contact_locator_private_ingestion",
+      "bytes": 6252,
+      "exact_sha": "ce0c8a02059be620d0e68f2c0ec9e278cb424737",
+      "newline_sha": "ce0c8a02059be620d0e68f2c0ec9e278cb424737",
+      "no_newline_sha": "8e26dc177fbc739d06f5462b9955da95b49756d4",
+      "matched": []
+    },
+    {
+      "version": "20261117050440",
+      "name": "pitacco_driver_arrival_privacy_proof",
+      "bytes": 11372,
+      "exact_sha": "6f317b5065b473feaeffe23b6e89073e656ae23e",
+      "newline_sha": "6f317b5065b473feaeffe23b6e89073e656ae23e",
+      "no_newline_sha": "e10df488dd107b71633f57a26bcea929dc73f690",
+      "matched": []
+    },
+    {
+      "version": "20261117050507",
+      "name": "pitacco_driver_earnings_masked_completed_records",
+      "bytes": 4727,
+      "exact_sha": "798f73ef19f8d49e564bc7d08819c4eeee966974",
+      "newline_sha": "e162e61297248fa178e80b58ee142cb59c45bb80",
+      "no_newline_sha": "801b36ea1eff878471c14db2dbf6e22fe8a25ae5",
+      "matched": []
+    },
+    {
+      "version": "20261117050520",
+      "name": "pitacco_customer_tracking_arrival_delivery_code",
+      "bytes": 1574,
+      "exact_sha": "3a7aeddeec26d1664149cb5310977e5877dc7ff4",
+      "newline_sha": "3a7aeddeec26d1664149cb5310977e5877dc7ff4",
+      "no_newline_sha": "e27469cd400dbb65d2b7e6f830d9bcd7c063d3df",
+      "matched": []
+    },
+    {
+      "version": "20261117050608",
+      "name": "pitacco_ifood_courier_arrival_verify_bridge",
+      "bytes": 4283,
+      "exact_sha": "c2c53ffa1e5be2fc6b183cdc9c8823f94a88354d",
+      "newline_sha": "c2c53ffa1e5be2fc6b183cdc9c8823f94a88354d",
+      "no_newline_sha": "22c2c3adeba6be2ee9124c7f6e3d01657b3c7cd8",
+      "matched": []
+    },
+    {
+      "version": "20261117050707",
+      "name": "pitacco_customer_tracking_public_number",
+      "bytes": 1644,
+      "exact_sha": "2131b51b66a7e7baf0485386b579ea9f33ec0144",
+      "newline_sha": "2131b51b66a7e7baf0485386b579ea9f33ec0144",
+      "no_newline_sha": "298cc5e34aef01e38f212f24de13c893183d564c",
+      "matched": []
+    },
+    {
+      "version": "20261117051240",
+      "name": "pitacco_driver_terminal_rls_role_guard",
+      "bytes": 715,
+      "exact_sha": "f1656aaf9ea28d4177293eb3179250a21d0e299e",
+      "newline_sha": "a4297293eb474fc615f0d2de30a8fd113575f6a5",
+      "no_newline_sha": "59da8ebe1fbc3d837e7d9afcddc188eb47360e43",
+      "matched": []
+    },
+    {
+      "version": "20261117054144",
+      "name": "fix_driver_arrival_rpc_aliases",
+      "bytes": 8264,
+      "exact_sha": "16277e3b2318e94d545fcbe2b87d916ba06153e4",
+      "newline_sha": "16277e3b2318e94d545fcbe2b87d916ba06153e4",
+      "no_newline_sha": "52b3f4927f1d5a2001dbb9101bbc6ae66a77dc8e",
+      "matched": []
+    },
+    {
+      "version": "20261117123311",
+      "name": "pitacco_app_releases",
+      "bytes": 7408,
+      "exact_sha": "8d021f4636a8d8b4f8016d2bf9fde583faabd92f",
+      "newline_sha": "8d021f4636a8d8b4f8016d2bf9fde583faabd92f",
+      "no_newline_sha": "81c4c09416ed97abdf2fb00bbd219dd48c29c3a2",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117060000_pitacco_app_releases.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117130417",
+      "name": "pitacco_public_courier_download",
+      "bytes": 819,
+      "exact_sha": "8dd38255935f176ab57937e0b62aaf306306876a",
+      "newline_sha": "8dd38255935f176ab57937e0b62aaf306306876a",
+      "no_newline_sha": "8df645a1c7727b5795b6ec4eb752f6d18cc063cb",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117130500_pitacco_public_courier_download.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117131648",
+      "name": "pitacco_courier_push",
+      "bytes": 6437,
+      "exact_sha": "0681421825989c4e80e5f92049cf9d461a074a0a",
+      "newline_sha": "0681421825989c4e80e5f92049cf9d461a074a0a",
+      "no_newline_sha": "e2ea5b881dd3700f3113ead528a19b75ccb21f2e",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117140000_pitacco_courier_push.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117143900",
+      "name": "pitacco_delivery_pricing_draft",
+      "bytes": 5015,
+      "exact_sha": "0628123d5dcef369e10a62589e122fd73231ce96",
+      "newline_sha": "0628123d5dcef369e10a62589e122fd73231ce96",
+      "no_newline_sha": "2e814b78f6ccdf996f7086a5b9306b27f437ef46",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117154500_pitacco_delivery_pricing_draft.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117143903",
+      "name": "pitacco_store_readiness",
+      "bytes": 1573,
+      "exact_sha": "671572d1917886ebbcf471add38a1c89e68d3481",
+      "newline_sha": "671572d1917886ebbcf471add38a1c89e68d3481",
+      "no_newline_sha": "3d29acca5152bfa8acb654c020c24280f45a2150",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117155000_pitacco_store_readiness.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117143908",
+      "name": "pitacco_delivery_quoted_checkout",
+      "bytes": 5948,
+      "exact_sha": "b5c7407c1551b856cafe32d1203770731d242b07",
+      "newline_sha": "b5c7407c1551b856cafe32d1203770731d242b07",
+      "no_newline_sha": "ee7e9a033d742e780c4f0e20417fdf53819f83b8",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117155500_pitacco_delivery_quoted_checkout.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117143911",
+      "name": "pitacco_delivery_quote_limits",
+      "bytes": 1614,
+      "exact_sha": "5e7750da0706b541656e85d1474117e32a5ebe6d",
+      "newline_sha": "5e7750da0706b541656e85d1474117e32a5ebe6d",
+      "no_newline_sha": "a837a34b62f8f656cce7c37b1c13ec4b884557d7",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117155800_pitacco_delivery_quote_limits.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117145739",
+      "name": "pitacco_support_center",
+      "bytes": 9442,
+      "exact_sha": "ad0bb059cb14b7c85fb74c7eea2d62dd4eba6175",
+      "newline_sha": "ad0bb059cb14b7c85fb74c7eea2d62dd4eba6175",
+      "no_newline_sha": "ba9037c41964d213aacc36ef884c37216949e3b6",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117162500_pitacco_support_center.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117145742",
+      "name": "pitacco_operational_incident_monitor",
+      "bytes": 8071,
+      "exact_sha": "09259e05712a8fa64c5780dbf808f588ec4b6cdb",
+      "newline_sha": "09259e05712a8fa64c5780dbf808f588ec4b6cdb",
+      "no_newline_sha": "77b026494eb117f14353cf02439e51a2eb12958f",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117163000_pitacco_operational_incident_monitor.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117154446",
+      "name": "pitacco_storefront_design_studio",
+      "bytes": 13432,
+      "exact_sha": "aab8d2d7ea9a8067ffde553b15d3da679017542d",
+      "newline_sha": "aab8d2d7ea9a8067ffde553b15d3da679017542d",
+      "no_newline_sha": "a6afc10d623b772be1ca35fc26f54a09b3154c0f",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117180000_pitacco_storefront_design_studio.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117160805",
+      "name": "pitacco_self_service_onboarding_preflight",
+      "bytes": 6496,
+      "exact_sha": "44e77ce0f281f0f95815614d54a91bbdd86d8a08",
+      "newline_sha": "44e77ce0f281f0f95815614d54a91bbdd86d8a08",
+      "no_newline_sha": "d23f995d9402910bc3c58dfab5821d7e50ddaa8c",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117190000_pitacco_self_service_onboarding_preflight.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117162645",
+      "name": "pitacco_windows_presence",
+      "bytes": 3718,
+      "exact_sha": "12023bfb7d8d771e4c652978305f5c966c3b30c8",
+      "newline_sha": "12023bfb7d8d771e4c652978305f5c966c3b30c8",
+      "no_newline_sha": "0a44a71136d453efe0890a0ac5ed30182a6c6c35",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117193000_pitacco_windows_presence.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117164334",
+      "name": "pitacco_windows_print_confirmation",
+      "bytes": 6730,
+      "exact_sha": "2cbdb4fa01214f5ef9f8c41a051d8de487a1f3fa",
+      "newline_sha": "2cbdb4fa01214f5ef9f8c41a051d8de487a1f3fa",
+      "no_newline_sha": "8504e9b15465743777ca1199808b6612f54398cb",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117195000_pitacco_windows_print_confirmation.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117173611",
+      "name": "pitacco_store_opening_hours",
+      "bytes": 12719,
+      "exact_sha": "3b9d59f15344611617b10a2a1b615f68027713dc",
+      "newline_sha": "3b9d59f15344611617b10a2a1b615f68027713dc",
+      "no_newline_sha": "56ba535bfa70ad8c47babbb1d6e7bb0718022f1f",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117180001_pitacco_store_opening_hours.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117173623",
+      "name": "pitacco_hours_readiness",
+      "bytes": 810,
+      "exact_sha": "fd92fe904a51a64b084dc06e9f19217a02d102c1",
+      "newline_sha": "fd92fe904a51a64b084dc06e9f19217a02d102c1",
+      "no_newline_sha": "e22d21fdd74b94468ec3148d426b8434a3d2bf5d",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117201000_pitacco_hours_readiness.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117174737",
+      "name": "stage_courier_push_schedule_disabled",
+      "bytes": 808,
+      "exact_sha": "276f6402d7a7913d3c0cb4613f3f81b5fc4191c2",
+      "newline_sha": "26144e2eda3b159dfbee4af4a15dffc576760e6c",
+      "no_newline_sha": "276f6402d7a7913d3c0cb4613f3f81b5fc4191c2",
+      "matched": []
+    },
+    {
+      "version": "20261117203114",
+      "name": "pitacco_ifood_manual_accept_cancel",
+      "bytes": 15427,
+      "exact_sha": "52e6e00caff9abcfa7710a12602afa51a3f26c56",
+      "newline_sha": "52e6e00caff9abcfa7710a12602afa51a3f26c56",
+      "no_newline_sha": "81a4e2794ca1984bf96c8f457a53c00eb00068c2",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117210000_pitacco_ifood_manual_accept_cancel.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117210139",
+      "name": "pitacco_print_sectors_source_category_fields",
+      "bytes": 833,
+      "exact_sha": "d7c1ed75a838ff13f8572a6fb27e221978dab9e4",
+      "newline_sha": "e7dc84e2bc535d78d090290b961c4db8a08ab1d0",
+      "no_newline_sha": "d7c1ed75a838ff13f8572a6fb27e221978dab9e4",
+      "matched": []
+    },
+    {
+      "version": "20261117212228",
+      "name": "pitacco_one_courier_test_store",
+      "bytes": 6996,
+      "exact_sha": "c183364ac8ec6c02362e5ab567b5b56c2b95dd86",
+      "newline_sha": "c183364ac8ec6c02362e5ab567b5b56c2b95dd86",
+      "no_newline_sha": "c23deef350581db07fe7345994b7927505815322",
+      "matched": []
+    },
+    {
+      "version": "20261117213414",
+      "name": "pitacco_courier_app_second_test_store",
+      "bytes": 3846,
+      "exact_sha": "4d73b1c1dea78c3341704546e9682b3473397712",
+      "newline_sha": "4d73b1c1dea78c3341704546e9682b3473397712",
+      "no_newline_sha": "16a6ee7a9e82ae710ebdd41429142b07bf3ce6e9",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117231000_pitacco_courier_app_second_test_store.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117220013",
+      "name": "ifood_prepared_not_delivered",
+      "bytes": 3104,
+      "exact_sha": "558975899da4546dcc1b0ab1c485aa3a97ea071e",
+      "newline_sha": "558975899da4546dcc1b0ab1c485aa3a97ea071e",
+      "no_newline_sha": "cbc5cafa5d7bdedb2690b832305933e405826891",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261117233000_ifood_prepared_not_delivered.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261117221421",
+      "name": "windows_print_order_queue",
+      "bytes": 6620,
+      "exact_sha": "521b934e69a876822eed3c165fa1880878667560",
+      "newline_sha": "521b934e69a876822eed3c165fa1880878667560",
+      "no_newline_sha": "b030f0907187832ebf25e83678337d90ae0a4698",
+      "matched": []
+    },
+    {
+      "version": "20261118001833",
+      "name": "pitacco_cross_store_push_assignments",
+      "bytes": 1258,
+      "exact_sha": "bd014839ada9276e4b06a8b523ea59140f731d85",
+      "newline_sha": "bd014839ada9276e4b06a8b523ea59140f731d85",
+      "no_newline_sha": "5c7efb22f65580449e5e1ebb4c9c45b44a2e38ec",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118001500_pitacco_cross_store_push_assignments.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118004507",
+      "name": "courier_push_readiness",
+      "bytes": 1330,
+      "exact_sha": "affea9d39a6950ee4e7b901e32c381387c4000b8",
+      "newline_sha": "affea9d39a6950ee4e7b901e32c381387c4000b8",
+      "no_newline_sha": "6580c28b58157db50f01ef43ee08568dd89388b2",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118004500_courier_push_readiness.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118012514",
+      "name": "pitacco_owner_incident_pulse_and_immediate_failure_capture",
+      "bytes": 6304,
+      "exact_sha": "a697fc3b5820a3914c1460e19cd11250c58044bd",
+      "newline_sha": "a697fc3b5820a3914c1460e19cd11250c58044bd",
+      "no_newline_sha": "c5fe8ca2b32fb435454fbdf81d6f2e2688733ee0",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118020000_pitacco_owner_incident_pulse.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118033903",
+      "name": "pitacco_owner_diagnostic_snapshot",
+      "bytes": 5288,
+      "exact_sha": "d704f1113ca3358f4dc1e38cdc4314c5e82ba704",
+      "newline_sha": "d704f1113ca3358f4dc1e38cdc4314c5e82ba704",
+      "no_newline_sha": "6eb96086639910695fc3e22bd05b49a98efc298c",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118032000_pitacco_owner_diagnostic_snapshot.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118040500",
+      "name": "pitacco_owner_repair_approvals",
+      "bytes": 9163,
+      "exact_sha": "b681e1cf0fb9a04c987df155faf127e6ea0b3426",
+      "newline_sha": "b681e1cf0fb9a04c987df155faf127e6ea0b3426",
+      "no_newline_sha": "c51ce736f6e5955f00c8601cde875186fa80fc97",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118043000_pitacco_owner_repair_approvals.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118041708",
+      "name": "pitacco_courier_native_voice_push",
+      "bytes": 2943,
+      "exact_sha": "13b86a749165cf66348fa5417940ea4bdaf9ff27",
+      "newline_sha": "13b86a749165cf66348fa5417940ea4bdaf9ff27",
+      "no_newline_sha": "f8f01402afbaffba494c13fb86d98592b473932c",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118040000_pitacco_courier_native_voice_push.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118042552",
+      "name": "pitacco_owner_recovery_preflight",
+      "bytes": 5181,
+      "exact_sha": "9350320315dfeb21520f99214f91ec882afd773a",
+      "newline_sha": "9350320315dfeb21520f99214f91ec882afd773a",
+      "no_newline_sha": "9af47b3bfcbdf0aadf34c5341d4e46cfe3640ee5",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118053000_pitacco_owner_recovery_preflight.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118130553",
+      "name": "pitacco_driver_route_ifood_reconcile_20261118",
+      "bytes": 5655,
+      "exact_sha": "9fbc0d127762f59b790fab3ba56658d9dc02ddc1",
+      "newline_sha": "9fbc0d127762f59b790fab3ba56658d9dc02ddc1",
+      "no_newline_sha": "df01d09c0e3aae122564fe721ef5a8a1e470dd0c",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118130000_pitacco_driver_route_ifood_reconcile.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118130915",
+      "name": "pitacco_ifood_external_proof_20261118",
+      "bytes": 1475,
+      "exact_sha": "d05fb320a190b938cc237a55f10e3852e33e712d",
+      "newline_sha": "d05fb320a190b938cc237a55f10e3852e33e712d",
+      "no_newline_sha": "b9aae042b185dce64313f5b1acf1d88236710bd2",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118141000_ifood_external_delivery_proof.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118135802",
+      "name": "pitacco_courier_terminal_status_sync_20261118",
+      "bytes": 8255,
+      "exact_sha": "b6acb2b252bd48887aa03f1526fdb1a623836354",
+      "newline_sha": "b6acb2b252bd48887aa03f1526fdb1a623836354",
+      "no_newline_sha": "f0af3640d706619a2f6b8e3d13aed6e8fa0137da",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118171000_pitacco_courier_terminal_status_sync.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118141451",
+      "name": "pitacco_courier_completion_earnings_20261118",
+      "bytes": 2986,
+      "exact_sha": "a7ce5eec2ac5a6de3470c16412440fefa364a0a7",
+      "newline_sha": "a7ce5eec2ac5a6de3470c16412440fefa364a0a7",
+      "no_newline_sha": "5d0b4930b557f80282f994f7a113749d081d038a",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118174000_pitacco_courier_completion_earnings.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118145246",
+      "name": "pitacco_courier_finance_schema_compat_20261118",
+      "bytes": 2755,
+      "exact_sha": "6916b0093fc4987953ecd4124f3ded93df18649f",
+      "newline_sha": "6916b0093fc4987953ecd4124f3ded93df18649f",
+      "no_newline_sha": "3b2fe70d4926ed648245b652222ef4de32842d3e",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118173500_courier_finance_schema_compat.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118145249",
+      "name": "pitacco_courier_original_freight_workday_20261118",
+      "bytes": 7666,
+      "exact_sha": "66161e468fb8e22ccc59342a7f193fd31d4d77a3",
+      "newline_sha": "66161e468fb8e22ccc59342a7f193fd31d4d77a3",
+      "no_newline_sha": "54b2b1f2c498cc03713a81836a81a3885bccd8e4",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118201000_courier_original_freight_and_workday.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118145252",
+      "name": "pitacco_checkout_original_freight_receipt_20261118",
+      "bytes": 1183,
+      "exact_sha": "95fb0cd9f01f28a1fad1d0ae5a302147bf684f3b",
+      "newline_sha": "95fb0cd9f01f28a1fad1d0ae5a302147bf684f3b",
+      "no_newline_sha": "e156f981c98c359652424f156e12504066c5feb7",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118201100_checkout_original_freight_receipt.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118145256",
+      "name": "pitacco_courier_daily_financial_reports_20261118",
+      "bytes": 8978,
+      "exact_sha": "0a42c9c2ff60eeb7bc0b348aaf2caae197666f4e",
+      "newline_sha": "0a42c9c2ff60eeb7bc0b348aaf2caae197666f4e",
+      "no_newline_sha": "939167f1941ca38f90d34486584eb56fdd349d04",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118201200_courier_daily_financial_reports.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118145947",
+      "name": "pitacco_courier_shared_test_pay_rule_20261118",
+      "bytes": 4946,
+      "exact_sha": "8c4d63cc5d5ff697a1bd0ce8c6e22aff83fe59c2",
+      "newline_sha": "8c4d63cc5d5ff697a1bd0ce8c6e22aff83fe59c2",
+      "no_newline_sha": "4bbc306fbf0eada8359f29ec8d482c4d5db3212d",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118201500_courier_shared_test_pay_rule.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118155926",
+      "name": "pitacco_official_android_external_release_20261118",
+      "bytes": 2548,
+      "exact_sha": "2a7d68ead7c42381e764ba38d4eabdadc6889752",
+      "newline_sha": "2a7d68ead7c42381e764ba38d4eabdadc6889752",
+      "no_newline_sha": "9fbc4a694bcdd554d5e06a17c751dad4b4028984",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118160000_link_official_android_github_release.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118155930",
+      "name": "pitacco_register_official_android_206_20261118",
+      "bytes": 1934,
+      "exact_sha": "e36e13f2d8925fd493ffd9393fb00140c989e13d",
+      "newline_sha": "e36e13f2d8925fd493ffd9393fb00140c989e13d",
+      "no_newline_sha": "1e85432832446737f198d0bdc4ce5e54e8da323a",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118161000_register_official_android_206.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118185344",
+      "name": "fix_stale_completed_courier_route_assignment",
+      "bytes": 4700,
+      "exact_sha": "a79f5902429eb0680a6f59d17ed58b755f8d4905",
+      "newline_sha": "d8befc19010c19e42d66d1a77d986f533e7dbc45",
+      "no_newline_sha": "a79f5902429eb0680a6f59d17ed58b755f8d4905",
+      "matched": []
+    },
+    {
+      "version": "20261118190755",
+      "name": "courier_authenticated_server_timestamped_gps_reporting",
+      "bytes": 1806,
+      "exact_sha": "83c2cb7d24a8ef61711b4a8c3f925b08205f5557",
+      "newline_sha": "30d01b76c5f3b62aa7a9399d94522e17339c20ff",
+      "no_newline_sha": "83c2cb7d24a8ef61711b4a8c3f925b08205f5557",
+      "matched": []
+    },
+    {
+      "version": "20261118192044",
+      "name": "register_official_android_207_gps",
+      "bytes": 2267,
+      "exact_sha": "2e998756e492ff7dc4e0f8bab6064b12015940ab",
+      "newline_sha": "a48ff8df3adaac8f2012d0c01311e36ca7a9cca1",
+      "no_newline_sha": "2e998756e492ff7dc4e0f8bab6064b12015940ab",
+      "matched": []
+    },
+    {
+      "version": "20261118193812",
+      "name": "order_stage_controls_require_ready_before_route_assignment",
+      "bytes": 5773,
+      "exact_sha": "21c641227e13baf8b1d7e7c566954ace9434894c",
+      "newline_sha": "543150093d3510696438b86156ad872802b0b732",
+      "no_newline_sha": "21c641227e13baf8b1d7e7c566954ace9434894c",
+      "matched": []
+    },
+    {
+      "version": "20261118194546",
+      "name": "manager_conclude_only_preverified_own_delivery",
+      "bytes": 1931,
+      "exact_sha": "46461d9e25d24fc5be93d5c7d1b815e12e692469",
+      "newline_sha": "de878cb3158478e8a7fd23bb6e3c458a83a2020b",
+      "no_newline_sha": "46461d9e25d24fc5be93d5c7d1b815e12e692469",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118194600_manager_conclude_only_preverified_own_delivery.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118205444",
+      "name": "ifood_dispatch_only_after_own_courier_collection",
+      "bytes": 6035,
+      "exact_sha": "db47dac7c2c38434e241944272dbed6f266aca67",
+      "newline_sha": "db47dac7c2c38434e241944272dbed6f266aca67",
+      "no_newline_sha": "47b6fe7e7c866fe36aafff7af0e6d51677e9da63",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118213000_ifood_dispatch_only_after_courier_collection.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118232242",
+      "name": "register_official_android_209_gps_permissions",
+      "bytes": 2247,
+      "exact_sha": "c9c677e933adb394993dacf0c9f4663e8be8f512",
+      "newline_sha": "4d3526ed0cea859abdad38515053433abd6779ab",
+      "no_newline_sha": "c9c677e933adb394993dacf0c9f4663e8be8f512",
+      "matched": []
+    },
+    {
+      "version": "20261118234931",
+      "name": "native_courier_background_gps_scoped_capabilities",
+      "bytes": 5790,
+      "exact_sha": "b7cce9141460605b7c082291700633afc18d31a5",
+      "newline_sha": "b7cce9141460605b7c082291700633afc18d31a5",
+      "no_newline_sha": "e890fb951b02cd79cad52eb066f46fd5ddc4144c",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118234500_native_courier_background_gps_capabilities.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118235404",
+      "name": "register_official_android_210_background_gps",
+      "bytes": 2480,
+      "exact_sha": "209c4b57fef8273bc313deddcf5919ecc0648573",
+      "newline_sha": "5134043812606270c0b0213a4e081bb5eb274cb3",
+      "no_newline_sha": "209c4b57fef8273bc313deddcf5919ecc0648573",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118235400_register_official_android_210_background_gps.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261118235513",
+      "name": "fix_android_210_official_download_url",
+      "bytes": 678,
+      "exact_sha": "2945be01cb2a241dff16e746edf73e67dba3c8bd",
+      "newline_sha": "badaa5c6e68a09a7a47b0a0ee2d01606e7fdd4e8",
+      "no_newline_sha": "2945be01cb2a241dff16e746edf73e67dba3c8bd",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261118235800_fix_android_210_official_download_url.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261119002411",
+      "name": "windows_native_background_order_watcher",
+      "bytes": 4248,
+      "exact_sha": "2bf25aecc0e59475a167b511b1d69da28e56c132",
+      "newline_sha": "2bf25aecc0e59475a167b511b1d69da28e56c132",
+      "no_newline_sha": "c8cf7c6418c2d697c7177d1f5eb2406db3c7ed65",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261119001000_windows_native_background_watch.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261119002444",
+      "name": "courier_native_background_assignment_alert_fallback",
+      "bytes": 2018,
+      "exact_sha": "ee4e78a7eb373fddc48ffbf4dcaa1f5a2574aeaf",
+      "newline_sha": "ee4e78a7eb373fddc48ffbf4dcaa1f5a2574aeaf",
+      "no_newline_sha": "07145698a42e08c7b225002a21347ee2b14d0160",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261119002000_courier_native_shift_assignment_watch.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261119002806",
+      "name": "register_official_android_211_native_shift_alerts",
+      "bytes": 2218,
+      "exact_sha": "6d4c286fa0ee7877be4f83968b42afde58e53391",
+      "newline_sha": "bd75dff13059605fec4791056381b8c1d7fbda1a",
+      "no_newline_sha": "6d4c286fa0ee7877be4f83968b42afde58e53391",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261119002800_register_official_android_211_native_shift_alerts.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261119010145",
+      "name": "vault_backed_courier_push_cron_authorization",
+      "bytes": 1573,
+      "exact_sha": "109c2676af82035700f2bcb32d9e0186b5a31054",
+      "newline_sha": "109c2676af82035700f2bcb32d9e0186b5a31054",
+      "no_newline_sha": "6dc774a0f945c2f46beef34939e5084b7bfca400",
+      "matched": []
+    },
+    {
+      "version": "20261120134156",
+      "name": "20261120120000_invalidate_store_pin_on_address_update",
+      "bytes": 1068,
+      "exact_sha": "4649dfb16640979952bdce190426a56fb42cc950",
+      "newline_sha": "4649dfb16640979952bdce190426a56fb42cc950",
+      "no_newline_sha": "ea75b805eab6620bd144a557840adfa2c5d79bd0",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261120120000_invalidate_store_pin_on_address_update.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261120134159",
+      "name": "20261120120500_store_scoped_shared_courier_map",
+      "bytes": 1938,
+      "exact_sha": "a5da11e74776ac913f4466edd75191db2b730390",
+      "newline_sha": "a5da11e74776ac913f4466edd75191db2b730390",
+      "no_newline_sha": "64e7605878dee4242eb88f22eedb77c0aa6a63f2",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261120120500_store_scoped_shared_courier_map.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261120184106",
+      "name": "20261120143000_visual_delivery_zone_pricing",
+      "bytes": 6214,
+      "exact_sha": "ffc554ec8c8513f592d4b249383e3615bec5c63c",
+      "newline_sha": "ffc554ec8c8513f592d4b249383e3615bec5c63c",
+      "no_newline_sha": "860c9ce38b07020e6cdef4cc0e0cbb2f5951ac07",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261120143000_visual_delivery_zone_pricing.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261120184110",
+      "name": "20261120143500_checkout_delivery_quote_and_public_menu",
+      "bytes": 5544,
+      "exact_sha": "c67cf148a802333becd481590a9881e560662ab8",
+      "newline_sha": "c67cf148a802333becd481590a9881e560662ab8",
+      "no_newline_sha": "acaa0f5171fe636bda5e59cc00d5299135632118",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261120143500_checkout_delivery_quote_and_public_menu.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261120215835",
+      "name": "fix_service_role_geocode_rate_limit_for_secret_keys",
+      "bytes": 1606,
+      "exact_sha": "48c6e9c64b83dac84f84ce15679adae94b01012b",
+      "newline_sha": "e09056f81b5b5ff89996a1b2daf05fb86a48800b",
+      "no_newline_sha": "48c6e9c64b83dac84f84ce15679adae94b01012b",
+      "matched": []
+    },
+    {
+      "version": "20261120221255",
+      "name": "limit_nominatim_at_one_request_per_second_globally",
+      "bytes": 1140,
+      "exact_sha": "514b977eebca02e95d9a6c5f7ee3cdb5620fa7bc",
+      "newline_sha": "f2b6b068982fcb8e2153af374d67acb2d0e04ea7",
+      "no_newline_sha": "514b977eebca02e95d9a6c5f7ee3cdb5620fa7bc",
+      "matched": []
+    },
+    {
+      "version": "20261120225941",
+      "name": "enable_up_to_twelve_independent_delivery_polygons",
+      "bytes": 5853,
+      "exact_sha": "dcd272db48611086918f8d413efdeef713abc81b",
+      "newline_sha": "dcd272db48611086918f8d413efdeef713abc81b",
+      "no_newline_sha": "e7bba73747a0b9aa49469f87e1d5e4ee7de5362c",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261120233000_enable_up_to_twelve_delivery_polygons.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261120230246",
+      "name": "expose_delivery_region_shapes_to_public_map",
+      "bytes": 3002,
+      "exact_sha": "a19688151fafc3369b38c9418bd162ee96590356",
+      "newline_sha": "a19688151fafc3369b38c9418bd162ee96590356",
+      "no_newline_sha": "fd98d70d493fc216333f0e486dffce6945c9ba78",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261120233500_public_map_multiple_regions.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261120230732",
+      "name": "fix_courier_visibility_shared_test_store_and_payments",
+      "bytes": 5424,
+      "exact_sha": "93d6a03e8339f004f9490bb24a85a7b11bcbce6d",
+      "newline_sha": "a2d564291d23dae558a9095a3f5354f7d1d04c89",
+      "no_newline_sha": "93d6a03e8339f004f9490bb24a85a7b11bcbce6d",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261121000000_fix_courier_visibility_and_pay_rules.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261120231431",
+      "name": "driver_map_shop_origins_for_all_active_assigned_orders",
+      "bytes": 1359,
+      "exact_sha": "3016c3150fa0d371cc78d0b5045d584e179b6ab8",
+      "newline_sha": "3016c3150fa0d371cc78d0b5045d584e179b6ab8",
+      "no_newline_sha": "113cbb70d61de28eff7c18f0f386ab3888f91ac0",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261121002500_driver_map_shop_origins_for_active_orders.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261120231554",
+      "name": "driver_map_own_and_authorized_store_origins_even_when_idle",
+      "bytes": 1167,
+      "exact_sha": "d076b1ee1c07be767e829237364abbfabb3999d7",
+      "newline_sha": "d076b1ee1c07be767e829237364abbfabb3999d7",
+      "no_newline_sha": "60adfbe60eee623c3b65cd8a3e683525a0594e59",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261121002800_driver_map_authorized_stores_even_when_idle.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261121013235",
+      "name": "courier_push_readiness_reports_scheduler_without_secrets",
+      "bytes": 1781,
+      "exact_sha": "0673891b73fc7d8581eff589fcf08b9a817f41ec",
+      "newline_sha": "ae8bc6ac86094c148c6c3045dbabadf3328e2dd4",
+      "no_newline_sha": "0673891b73fc7d8581eff589fcf08b9a817f41ec",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261121004500_courier_push_readiness_scheduler.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261121013438",
+      "name": "prepare_guarded_courier_push_scheduler_disabled_until_firebase",
+      "bytes": 1071,
+      "exact_sha": "4369d6e4203f6c4bf839a244e3bc9bd6865df393",
+      "newline_sha": "a2cbdc0f3337fc60b75d371dbc9facdb5a6b33db",
+      "no_newline_sha": "4369d6e4203f6c4bf839a244e3bc9bd6865df393",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261121005000_prepare_guarded_courier_push_scheduler.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261121042841",
+      "name": "courier_physical_activity_shift_motion_telemetry",
+      "bytes": 3936,
+      "exact_sha": "ae46f586fc4fb9969d041ea2dcbec6035614599b",
+      "newline_sha": "ae46f586fc4fb9969d041ea2dcbec6035614599b",
+      "no_newline_sha": "b7f186392ea27458f8fb9c2e2161205dad5ea13f",
+      "matched": []
+    },
+    {
+      "version": "20261121042908",
+      "name": "fix_courier_motion_float_validation",
+      "bytes": 1554,
+      "exact_sha": "8122aaa88a14cd7085989c441361c9307f01b21d",
+      "newline_sha": "ef74a9e9efe4e03e76e200fb3dc2c26dc92402d8",
+      "no_newline_sha": "8122aaa88a14cd7085989c441361c9307f01b21d",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261121013100_fix_courier_motion_float_validation.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261121133522",
+      "name": "admin_broadcast_silent_notifications_for_all_couriers",
+      "bytes": 10469,
+      "exact_sha": "d01ed7e17656d6a17ddcbe17924358583c5b6c24",
+      "newline_sha": "d01ed7e17656d6a17ddcbe17924358583c5b6c24",
+      "no_newline_sha": "a75103fd7db55865b784fab6ee4cb59398d0e305",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261121020000_admin_courier_silent_campaigns.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261121133552",
+      "name": "restrict_loud_courier_assignment_alerts_to_home_store_only",
+      "bytes": 1070,
+      "exact_sha": "ab5f6c6f6a22653c9cc481915b15b33639ef9d52",
+      "newline_sha": "92bf155996666e9542cf0506d3bb32aeaca13f62",
+      "no_newline_sha": "ab5f6c6f6a22653c9cc481915b15b33639ef9d52",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261121020100_restrict_order_push_to_courier_home_store.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261121133704",
+      "name": "courier_authenticated_silent_admin_inbox",
+      "bytes": 1023,
+      "exact_sha": "252cdd27b6afca4c7e93dc18dad1f315c200deac",
+      "newline_sha": "cb60625f2eafc648d1541b5daf711dd56a430349",
+      "no_newline_sha": "252cdd27b6afca4c7e93dc18dad1f315c200deac",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261121020200_courier_admin_inbox.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261121133946",
+      "name": "restrict_admin_campaigns_to_silent_capable_android_devices",
+      "bytes": 2199,
+      "exact_sha": "e3c502fd715e59acd5d0b298d01ee133fc27195a",
+      "newline_sha": "c726869ac09963432f6f93db7ae513ade133a39f",
+      "no_newline_sha": "e3c502fd715e59acd5d0b298d01ee133fc27195a",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261121020300_silent_admin_capability_negotiation.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261121160450",
+      "name": "authenticated_courier_firebase_registration_diagnostics_no_secrets",
+      "bytes": 2627,
+      "exact_sha": "f75f3f2dc7cca17d69ed5e2b547003850e0580e7",
+      "newline_sha": "f75f3f2dc7cca17d69ed5e2b547003850e0580e7",
+      "no_newline_sha": "16261107ff0353f3eb6329e7de48be6d702b8aad",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261121133000_courier_push_registration_diagnostics.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122144807",
+      "name": "courier_payment_receipt_collection",
+      "bytes": 8110,
+      "exact_sha": "f7196f1ae45abae0bd438663b61231341d9203b8",
+      "newline_sha": "f7196f1ae45abae0bd438663b61231341d9203b8",
+      "no_newline_sha": "51fa2dca037f03c45bfc9015ddd5eb0886a5a1a8",
+      "matched": []
+    },
+    {
+      "version": "20261122145343",
+      "name": "courier_card_payment_on_delivery",
+      "bytes": 3178,
+      "exact_sha": "f4a849bda002fa8f80d4c74d35349692c3387cde",
+      "newline_sha": "f4a849bda002fa8f80d4c74d35349692c3387cde",
+      "no_newline_sha": "fd33a72ecc1db22e5f57fb86e51234abaf248f83",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122175000_courier_card_payment_on_delivery.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122172641",
+      "name": "store_delivery_code_digits_ifood_four",
+      "bytes": 7493,
+      "exact_sha": "f05fc061777c98944192729235f1d835c6ccabc1",
+      "newline_sha": "f05fc061777c98944192729235f1d835c6ccabc1",
+      "no_newline_sha": "037277bd0da04e798dc970b6cdc3192fac53d96d",
+      "matched": []
+    },
+    {
+      "version": "20261122173311",
+      "name": "own_delivery_codes_constraint_compat",
+      "bytes": 860,
+      "exact_sha": "f7498fe683245bb3528983f7f730a145efee714d",
+      "newline_sha": "f7498fe683245bb3528983f7f730a145efee714d",
+      "no_newline_sha": "830bd595f4c5180a9ecbad53cdc077ee28f290ba",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122184900_own_delivery_codes_constraint_compat.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122173325",
+      "name": "own_delivery_pin_trigger",
+      "bytes": 368,
+      "exact_sha": "df1520a72b76ab3204567681bfd982a0ef647f92",
+      "newline_sha": "b5ca8996ed1fc54b6142e95ec2b88e54d666d60b",
+      "no_newline_sha": "df1520a72b76ab3204567681bfd982a0ef647f92",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122185100_own_delivery_pin_trigger.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122173447",
+      "name": "own_delivery_code_secure_random",
+      "bytes": 978,
+      "exact_sha": "337f2b05c4f48d436f852b3c613b859381e41dfa",
+      "newline_sha": "337f2b05c4f48d436f852b3c613b859381e41dfa",
+      "no_newline_sha": "ee1f7036ddb9079cd9a7749ac8868dad203f11d4",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122185200_own_delivery_code_secure_random.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122190757",
+      "name": "ifood_dispatch_requires_departed",
+      "bytes": 4125,
+      "exact_sha": "1e9050a50f1e30079a3c65b8a13402c3f5558c72",
+      "newline_sha": "1e9050a50f1e30079a3c65b8a13402c3f5558c72",
+      "no_newline_sha": "24ccb45ec67d88bc5e7d4bdbbe21a16f9e47b3d1",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122213000_ifood_dispatch_requires_departed.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122200034",
+      "name": "fiado_schema",
+      "bytes": 4106,
+      "exact_sha": "87103978bd5453dbe3c6e34faf0e5e92277917fa",
+      "newline_sha": "87103978bd5453dbe3c6e34faf0e5e92277917fa",
+      "no_newline_sha": "0bcd18ed2974972c0cd534071aee2618b1bc1b61",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122224000_fiado_schema.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122200038",
+      "name": "fiado_manager_api",
+      "bytes": 11661,
+      "exact_sha": "204aee3eb6e13a0c3b638185cfab83f40ddb2d3c",
+      "newline_sha": "204aee3eb6e13a0c3b638185cfab83f40ddb2d3c",
+      "no_newline_sha": "e78d75dc0bc6a31896a39e994ed4b6835db5a463",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122224100_fiado_manager_api.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122200041",
+      "name": "fiado_credit_engine",
+      "bytes": 10566,
+      "exact_sha": "bc11c7aaa305c9459e537e4db83009193fc04f6c",
+      "newline_sha": "bc11c7aaa305c9459e537e4db83009193fc04f6c",
+      "no_newline_sha": "a54bc8fba81bc46e1275649d4a005e5233626b63",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122224200_fiado_credit_engine.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122200047",
+      "name": "fiado_public_checkout",
+      "bytes": 17479,
+      "exact_sha": "aee4e14a85c1e182460c8cdf31de0c43b844e4ca",
+      "newline_sha": "aee4e14a85c1e182460c8cdf31de0c43b844e4ca",
+      "no_newline_sha": "6c53eb8d72a668f3a0439b13fb3205333cad3bc1",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122224300_fiado_public_checkout.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122200050",
+      "name": "fiado_courier_privacy",
+      "bytes": 3609,
+      "exact_sha": "17bb78e294e4a8f1630e1697cc916c10b52b33e8",
+      "newline_sha": "98680693da723afd1d41696aaac1a9c2151c657a",
+      "no_newline_sha": "7b99d22cf164be035c7567ba83a6c06712fa5ea7",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122224400_fiado_courier_privacy.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122200053",
+      "name": "fiado_balcao",
+      "bytes": 4256,
+      "exact_sha": "f17afc68c7296594ad06d25af5bb9ebd472cab62",
+      "newline_sha": "f17afc68c7296594ad06d25af5bb9ebd472cab62",
+      "no_newline_sha": "664ea28c447843d8859afead2c1d131659d5de81",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122224500_fiado_balcao.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122200057",
+      "name": "fiado_courier_detail_privacy",
+      "bytes": 7339,
+      "exact_sha": "ffaa7ef64fcec841aaf41593aac0ecb49289b43a",
+      "newline_sha": "ffaa7ef64fcec841aaf41593aac0ecb49289b43a",
+      "no_newline_sha": "16aa179437745a10ec4ce10f4f0a402e79751f42",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122224600_fiado_courier_detail_privacy.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122203122",
+      "name": "fiado_financial_report",
+      "bytes": 3949,
+      "exact_sha": "467b760d983e20f0462ea2615437d4c975b20a1a",
+      "newline_sha": "467b760d983e20f0462ea2615437d4c975b20a1a",
+      "no_newline_sha": "9d0226cf2828ed9b3dd8d273b9161764f0fdea24",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122224601_fiado_financial_report.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122203338",
+      "name": "coupon_start_date_guard",
+      "bytes": 992,
+      "exact_sha": "73dd8f5b8fa9703caf2c328d9ac65188a8f7a77c",
+      "newline_sha": "73dd8f5b8fa9703caf2c328d9ac65188a8f7a77c",
+      "no_newline_sha": "240f7739d53b127f653777cef4ad98f396b103d1",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122224602_coupon_start_date_guard.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122205113",
+      "name": "ifood_arrival_official_dispatch_backend",
+      "bytes": 4905,
+      "exact_sha": "347e371239a9f9827c618228f1c67f0829a65500",
+      "newline_sha": "347e371239a9f9827c618228f1c67f0829a65500",
+      "no_newline_sha": "b15e08c345a088c7b25191467a510346ac2d5f46",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122232000_ifood_arrival_official_dispatch_backend.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122210148",
+      "name": "inventory_option_recipe_consumption",
+      "bytes": 6389,
+      "exact_sha": "984fab41f86ee0bbcdeaf020aa202697a1d3c6bf",
+      "newline_sha": "984fab41f86ee0bbcdeaf020aa202697a1d3c6bf",
+      "no_newline_sha": "e769974f8279741b8ea303dbae33a8a3723e8592",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122233500_inventory_option_recipe_consumption.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122211939",
+      "name": "inventory_unit_cost_profit_snapshot",
+      "bytes": 13839,
+      "exact_sha": "ce315528b0d1bea80cea8d52a04ef0893560491c",
+      "newline_sha": "ce315528b0d1bea80cea8d52a04ef0893560491c",
+      "no_newline_sha": "7fbc3a0e3855c1f58cb4329810364cffcb88dcce",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122235000_inventory_unit_cost_profit_snapshot.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122212215",
+      "name": "fideliza_runtime_schema",
+      "bytes": 15180,
+      "exact_sha": "005a699b32f2dfbbd438fb25fcee98edb1d46a21",
+      "newline_sha": "005a699b32f2dfbbd438fb25fcee98edb1d46a21",
+      "no_newline_sha": "38a93b589bedbe3ee1d2d01cb152a7f9b017939c",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122224603_fideliza_runtime_schema.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122212226",
+      "name": "fideliza_rewards_engine",
+      "bytes": 9034,
+      "exact_sha": "5063215703329557eed8f7403bee55c89a5ab2c9",
+      "newline_sha": "5063215703329557eed8f7403bee55c89a5ab2c9",
+      "no_newline_sha": "d6a069da9b6e4e2cdfe5ca1843d45624aa5d44b7",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122224604_fideliza_rewards_engine.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122212235",
+      "name": "fideliza_checkout",
+      "bytes": 14615,
+      "exact_sha": "6ac48c4f6a97118bcdd564699c2b33c6afb55e42",
+      "newline_sha": "6ac48c4f6a97118bcdd564699c2b33c6afb55e42",
+      "no_newline_sha": "13fe8a48361e1e0830d1fd0633d44b78b424bb05",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122224605_fideliza_checkout.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122220358",
+      "name": "sealed_beverage_recovery_and_cancellation_losses",
+      "bytes": 18155,
+      "exact_sha": "4e7cd059e5b9d34cd414503059e7b3965ca5207c",
+      "newline_sha": "4e7cd059e5b9d34cd414503059e7b3965ca5207c",
+      "no_newline_sha": "ce9afd081361df05c12b0901bbbd83bc8d2b65ef",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122235500_sealed_beverage_recovery_and_cancellation_losses.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261122234416",
+      "name": "fideliza_manager_rls_allow_platform_owner_20261122",
+      "bytes": 401,
+      "exact_sha": "6aab92c94c4f6a623ab6d1942cc8fcad04d48633",
+      "newline_sha": "f4ace386cb9a8794cfdae1ffa81001373dcc7d88",
+      "no_newline_sha": "6aab92c94c4f6a623ab6d1942cc8fcad04d48633",
+      "matched": []
+    },
+    {
+      "version": "20261123000029",
+      "name": "fideliza_phone_identity_no_key_20261122",
+      "bytes": 8291,
+      "exact_sha": "bedff9150010b0536c9473c76a67af0b434be763",
+      "newline_sha": "bedff9150010b0536c9473c76a67af0b434be763",
+      "no_newline_sha": "115f6967df560c0dfc446fa02a0bbee633fe85a3",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261122234500_fideliza_phone_identity.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123021546",
+      "name": "fiado_phone_payment_eligibility_20261122",
+      "bytes": 1814,
+      "exact_sha": "6a377e721b3ec788d0ec6a5addd0d636a4f6a682",
+      "newline_sha": "6a377e721b3ec788d0ec6a5addd0d636a4f6a682",
+      "no_newline_sha": "9754bfd194e2c46054b5214ef42159ac9bcd9825",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123022000_fiado_phone_payment_eligibility.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123025031",
+      "name": "fiado_private_credit_status_20261122",
+      "bytes": 3449,
+      "exact_sha": "646696dd6f3ff98ded90411596d6781ddeb4ba27",
+      "newline_sha": "646696dd6f3ff98ded90411596d6781ddeb4ba27",
+      "no_newline_sha": "ecfe034469466495dc309c8da2b29a8d228a5d5c",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123025500_fiado_private_credit_status.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123042452",
+      "name": "menu_templates_current_engine",
+      "bytes": 1179,
+      "exact_sha": "843f9d27f65ef9d21f9bddfb3bc792dedbba19cf",
+      "newline_sha": "843f9d27f65ef9d21f9bddfb3bc792dedbba19cf",
+      "no_newline_sha": "6507a622d186c40de8007c3bd3800061f1ce0ff2",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123041507_menu_templates_current_engine.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123042610",
+      "name": "cardapio_v2_top_sellers_public_20261123",
+      "bytes": 2285,
+      "exact_sha": "44dba38154a2e797866ceadd9b0a69a4680d8afc",
+      "newline_sha": "44dba38154a2e797866ceadd9b0a69a4680d8afc",
+      "no_newline_sha": "f4534408a2427f6d94131480ec9b422e9574e2b0",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123062000_cardapio_public_top_sellers.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123102431",
+      "name": "fiado_store_approval_without_code_20261123",
+      "bytes": 10659,
+      "exact_sha": "843750ab7349f8fc7aa19757cfedd7a6beedd9cb",
+      "newline_sha": "843750ab7349f8fc7aa19757cfedd7a6beedd9cb",
+      "no_newline_sha": "1a4cd51453a85654c54c5d424a63b546fc37f211",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123082500_fiado_store_approval_without_code.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123104606",
+      "name": "fiado_birthdate_verification_20261123",
+      "bytes": 16825,
+      "exact_sha": "8ce19ed822a7a590bf190b7e2970c8c113c270d3",
+      "newline_sha": "8ce19ed822a7a590bf190b7e2970c8c113c270d3",
+      "no_newline_sha": "f460f5630dca37f80df5ccfd735501d4ef682943",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123090500_fiado_birthdate_verification.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123111924",
+      "name": "fiado_pin_six_digits_secure_20261123",
+      "bytes": 15830,
+      "exact_sha": "58d717deda736e88fed155cbfb5ebe3ef9fe4980",
+      "newline_sha": "58d717deda736e88fed155cbfb5ebe3ef9fe4980",
+      "no_newline_sha": "60ac98839aa17b1409d05cc916d9476bfcdff247",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123110000_fiado_pin_six_digits.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123113746",
+      "name": "public_cart_recovery",
+      "bytes": 1009,
+      "exact_sha": "26371c0612854e9241436690b82822bca2861224",
+      "newline_sha": "26371c0612854e9241436690b82822bca2861224",
+      "no_newline_sha": "ebb8f6e41877e57a80a71a0a15207fa90ef03dfb",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123112640_public_cart_recovery.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123123311",
+      "name": "fideliza_referral_links",
+      "bytes": 4567,
+      "exact_sha": "723b5ff46c9a18f62474d12127c89456517c726c",
+      "newline_sha": "723b5ff46c9a18f62474d12127c89456517c726c",
+      "no_newline_sha": "91cc8a800215ee2daa82ec8cc5c3cf6a9fce2cfc",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123122655_fideliza_referral_links.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123134134",
+      "name": "v2_customer_profile_and_fiado_statement_20261123",
+      "bytes": 8173,
+      "exact_sha": "9a971f703abad77bfa53325cf207155a869b582b",
+      "newline_sha": "9a971f703abad77bfa53325cf207155a869b582b",
+      "no_newline_sha": "0e579cb00a724fbc98e9170d5613979873856032",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123220000_v2_customer_profile_and_fiado_statement.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123142621",
+      "name": "v2_customer_profiles_and_fiado_statement_20261123",
+      "bytes": 8173,
+      "exact_sha": "9a971f703abad77bfa53325cf207155a869b582b",
+      "newline_sha": "9a971f703abad77bfa53325cf207155a869b582b",
+      "no_newline_sha": "0e579cb00a724fbc98e9170d5613979873856032",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123220000_v2_customer_profile_and_fiado_statement.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123154627",
+      "name": "studio_media_bucket_and_image_validator_20261123",
+      "bytes": 6069,
+      "exact_sha": "d36468401ab1e582d78aead95206f05e1ed8d8fd",
+      "newline_sha": "d36468401ab1e582d78aead95206f05e1ed8d8fd",
+      "no_newline_sha": "a61601918d9bb1fadca8e42fc7d3ab1f9b41c49b",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123161000_studio_media_bucket_fix.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123164854",
+      "name": "studio_save_and_publish_atomic_20261123",
+      "bytes": 2354,
+      "exact_sha": "ba1aac4eaff4c1f2cddd074bde40b7768dab438d",
+      "newline_sha": "ba1aac4eaff4c1f2cddd074bde40b7768dab438d",
+      "no_newline_sha": "3afb855aaf1c926967958febfa5c03beb3eded87",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123170000_studio_save_and_publish_atomic.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123171923",
+      "name": "menu_category_icons_per_store_20261123",
+      "bytes": 5867,
+      "exact_sha": "2150a5abf631f56aec599d5eac65d80aece1bd53",
+      "newline_sha": "2150a5abf631f56aec599d5eac65d80aece1bd53",
+      "no_newline_sha": "5b4edf754e3d8e0f72f91f2f95bb413c2e97f45a",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123182000_menu_category_icons_per_store.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123182839",
+      "name": "studio_existing_branding_and_image_only_banners",
+      "bytes": 6117,
+      "exact_sha": "1e8d609ab40330923228e170c119a4683834ea1c",
+      "newline_sha": "1e8d609ab40330923228e170c119a4683834ea1c",
+      "no_newline_sha": "9a00d6bef86b3782f92cef094236e9d74d5934f1",
+      "matched": []
+    },
+    {
+      "version": "20261123205757",
+      "name": "menu_import_universal",
+      "bytes": 10819,
+      "exact_sha": "7dd83e46499de773b29beb3a6ee52dfabc832645",
+      "newline_sha": "7dd83e46499de773b29beb3a6ee52dfabc832645",
+      "no_newline_sha": "7ce5de83b925f6a34349fbc8107e48c876dbe886",
+      "matched": []
+    },
+    {
+      "version": "20261123205836",
+      "name": "menu_import_empty_image_fix",
+      "bytes": 8294,
+      "exact_sha": "709e4673f45e935fae806f42a1467a67808a3b2d",
+      "newline_sha": "709e4673f45e935fae806f42a1467a67808a3b2d",
+      "no_newline_sha": "1c40b28abfa759e2ef1ddbe8e5119a817620623a",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123213100_menu_import_empty_image_fix.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123225347",
+      "name": "catalog_studio_shared_groups_stock",
+      "bytes": 11602,
+      "exact_sha": "a02d78245baf1cad8acbe931be91bf029e149c84",
+      "newline_sha": "a02d78245baf1cad8acbe931be91bf029e149c84",
+      "no_newline_sha": "50d3663167e2eb451cb615154ebe03f134f4c098",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123225500_catalog_studio_shared_groups_stock.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123225444",
+      "name": "catalog_template_read_permission",
+      "bytes": 365,
+      "exact_sha": "5b518cf1794873237030b54b173f361507c211d9",
+      "newline_sha": "5b518cf1794873237030b54b173f361507c211d9",
+      "no_newline_sha": "fa0bef78e8ddbbb8a42635feab80f54f20469f91",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123230000_catalog_template_read_permission.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123232657",
+      "name": "menu_catalog_order",
+      "bytes": 10041,
+      "exact_sha": "02bf7ae7682a65fe9661a93746f0541d13b8fd10",
+      "newline_sha": "02bf7ae7682a65fe9661a93746f0541d13b8fd10",
+      "no_newline_sha": "14146c6ebd32c560290d1687fbfb59ea558683c8",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123235500_menu_catalog_order.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123232959",
+      "name": "sync_shared_template_option_order",
+      "bytes": 5605,
+      "exact_sha": "942fe60b0cec8db4292a41c9d3ca7db8e80084a9",
+      "newline_sha": "942fe60b0cec8db4292a41c9d3ca7db8e80084a9",
+      "no_newline_sha": "31f936b2d9767d4409b11896c28f32dbb9beabfa",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123235600_sync_shared_template_option_order.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123233516",
+      "name": "shared_template_sort_sync",
+      "bytes": 5286,
+      "exact_sha": "626f0fee3580d8326403910047c9146173ad603f",
+      "newline_sha": "626f0fee3580d8326403910047c9146173ad603f",
+      "no_newline_sha": "e9f921d170292ec93494951f3b948fc15dddd7fc",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261123235700_shared_template_sort_sync.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261123234219",
+      "name": "linho_test_centralize_complements",
+      "bytes": 9757,
+      "exact_sha": "7d29500b0ec72406ae7ea67dbcbb89317b8aadaf",
+      "newline_sha": "7d29500b0ec72406ae7ea67dbcbb89317b8aadaf",
+      "no_newline_sha": "054685d7e0502e1be2da829038316a906c480863",
+      "matched": []
+    },
+    {
+      "version": "20261124002958",
+      "name": "cash_change_structured_checkout",
+      "bytes": 6399,
+      "exact_sha": "24a3c650f36b7445e85d886120a8988a54cae48a",
+      "newline_sha": "24a3c650f36b7445e85d886120a8988a54cae48a",
+      "no_newline_sha": "148d4c038c739b1565efabd62820f56bf96d7a2b",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124003000_cash_change_structured_checkout.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124003206",
+      "name": "cash_change_trigger_security",
+      "bytes": 406,
+      "exact_sha": "2031f0ac3c79c921f5a32e332c2985f079a54cde",
+      "newline_sha": "2031f0ac3c79c921f5a32e332c2985f079a54cde",
+      "no_newline_sha": "9da270dd432a1e5d9d6737912273737221b6507a",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124003100_cash_change_trigger_security.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124005310",
+      "name": "publish_official_courier_2_0_15",
+      "bytes": 3506,
+      "exact_sha": "04a605936fcbbbc32e140691779020642c6b7152",
+      "newline_sha": "04a605936fcbbbc32e140691779020642c6b7152",
+      "no_newline_sha": "aee5ad7e3cc416a9ad108b03ae5aa54a04993956",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124011500_publish_official_courier_2_0_15.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124011223",
+      "name": "publish_official_courier_2_0_16",
+      "bytes": 3506,
+      "exact_sha": "29d5ff5870b4c740e8bb287a65c721a271bd77ed",
+      "newline_sha": "29d5ff5870b4c740e8bb287a65c721a271bd77ed",
+      "no_newline_sha": "e9c6c194334906cc388c36614cd091f4a330a408",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124013000_publish_official_courier_2_0_16.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124022600",
+      "name": "fiado_manual_customer_block",
+      "bytes": 1564,
+      "exact_sha": "8340ea5eec7f0726d6ec43e6f3cd503742849905",
+      "newline_sha": "8340ea5eec7f0726d6ec43e6f3cd503742849905",
+      "no_newline_sha": "8b17420fb513a41f20710aa327009ff289640059",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124022600_fiado_manual_customer_block.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124032627",
+      "name": "active_order_cancellation",
+      "bytes": 7370,
+      "exact_sha": "dd418007853d2c8b2a86d7728f51820dcb96eec3",
+      "newline_sha": "dd418007853d2c8b2a86d7728f51820dcb96eec3",
+      "no_newline_sha": "965b3dc22dc7be35a5f693c79aed4bbc7b9d09c6",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124031000_active_order_cancellation.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124032812",
+      "name": "delivery_incidents_and_capacity",
+      "bytes": 16332,
+      "exact_sha": "40eb3145dc74ddd6a944837a444986536475263d",
+      "newline_sha": "40eb3145dc74ddd6a944837a444986536475263d",
+      "no_newline_sha": "6831500a319c962dcf32ecf291b93d64cd66984a",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124033000_delivery_incidents_and_capacity.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124033040",
+      "name": "delivery_incidents_realtime",
+      "bytes": 426,
+      "exact_sha": "101b452dfb0184fc5b87e38e19d8d2fe8e4f1b20",
+      "newline_sha": "101b452dfb0184fc5b87e38e19d8d2fe8e4f1b20",
+      "no_newline_sha": "f061dec505867add78d5566d6d94cde93236dc46",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124034000_delivery_incidents_realtime.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124033610",
+      "name": "incident_whatsapp",
+      "bytes": 3667,
+      "exact_sha": "0726d880a8ce54f7db681393fc045907dfeb9ab0",
+      "newline_sha": "0726d880a8ce54f7db681393fc045907dfeb9ab0",
+      "no_newline_sha": "b9b1868e8d1e969659e2706e420e98c823a17dd3",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124035000_incident_whatsapp.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124034346",
+      "name": "windows_incident_poll",
+      "bytes": 1459,
+      "exact_sha": "96ba73944390e7aaa1ba09e7a42d260220cdbb44",
+      "newline_sha": "96ba73944390e7aaa1ba09e7a42d260220cdbb44",
+      "no_newline_sha": "f0423fbc5b43886a6066a046ee574f19c0dad698",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124040000_windows_incident_poll.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124035818",
+      "name": "merchant_modern_customer_dossier",
+      "bytes": 8497,
+      "exact_sha": "d31052b87550caf0b164ced501baf07795e3113e",
+      "newline_sha": "d31052b87550caf0b164ced501baf07795e3113e",
+      "no_newline_sha": "fa82d827ae24622f71f662c9524458776068fbe1",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124041000_merchant_modern_customer_dossier.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124041955",
+      "name": "pitacco_auto_print_preferences",
+      "bytes": 3089,
+      "exact_sha": "ef0f25fac2459bb32229672b3011fd76d8601899",
+      "newline_sha": "c8b2074524f8efbcf68c9332f9d2496c33a7b2f4",
+      "no_newline_sha": "ef0f25fac2459bb32229672b3011fd76d8601899",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124041955_pitacco_auto_print_preferences.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124042122",
+      "name": "pitacco_merchant_subscription_details",
+      "bytes": 1217,
+      "exact_sha": "a57b1cfde9dc2688a5465f8696151fe356570450",
+      "newline_sha": "56b984a337ea2197bb2ab3309cc34c71bd76ceec",
+      "no_newline_sha": "a57b1cfde9dc2688a5465f8696151fe356570450",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124042122_pitacco_merchant_subscription_details.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124042229",
+      "name": "pitacco_operational_shortcut_modes",
+      "bytes": 1734,
+      "exact_sha": "f2894d693ce4ed4eedacdcb3a3dae81d49aba62a",
+      "newline_sha": "4435da87a485a9c3f061073b7cd7ea7ab8f6affe",
+      "no_newline_sha": "f2894d693ce4ed4eedacdcb3a3dae81d49aba62a",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124042229_pitacco_operational_shortcut_modes.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124042554",
+      "name": "pitacco_merchant_create_checkout",
+      "bytes": 3608,
+      "exact_sha": "8d41659166d867df8035867ae2bf3c8f54f9dfe2",
+      "newline_sha": "5cb79897982e64d1ea740ba70323886d695209c2",
+      "no_newline_sha": "8d41659166d867df8035867ae2bf3c8f54f9dfe2",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124042554_pitacco_merchant_create_checkout.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124042834",
+      "name": "pitacco_plan_change_requests",
+      "bytes": 6274,
+      "exact_sha": "c6eb683c3cdc404c0c5ab1ed6c3dd44ff4db5aaa",
+      "newline_sha": "f4793f349f1a49eee6012be43e20d8979c6d2427",
+      "no_newline_sha": "c6eb683c3cdc404c0c5ab1ed6c3dd44ff4db5aaa",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124042834_pitacco_plan_change_requests.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261124100523",
+      "name": "pitacco_pizza_drafts",
+      "bytes": 780,
+      "exact_sha": "0fdc5442f9cdd014f680cc3e585ae6ddb6447e7c",
+      "newline_sha": "ff220ba7f5ed0b74708becbd09bcff8866d4de4e",
+      "no_newline_sha": "0fdc5442f9cdd014f680cc3e585ae6ddb6447e7c",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124100523_pitacco_pizza_drafts.sql",
+          "mode": "terminal_newline_only"
+        }
+      ]
+    },
+    {
+      "version": "20261124101129",
+      "name": "pitacco_validate_pizza_registration",
+      "bytes": 4998,
+      "exact_sha": "610cee593f1a0ddcdfc69632a8c189c3be29b078",
+      "newline_sha": "610cee593f1a0ddcdfc69632a8c189c3be29b078",
+      "no_newline_sha": "9f5f32a4f0f96b37b43d98749bb277db340d666e",
+      "matched": []
+    },
+    {
+      "version": "20261124101252",
+      "name": "pitacco_pizza_server_quote",
+      "bytes": 4105,
+      "exact_sha": "cfcde50f0cd42cb9cecd119d53c086cb7c45ce6e",
+      "newline_sha": "cfcde50f0cd42cb9cecd119d53c086cb7c45ce6e",
+      "no_newline_sha": "8953f5bf1152fe62cafaba4aefb38eafa17e60bb",
+      "matched": []
+    },
+    {
+      "version": "20261124101513",
+      "name": "pitacco_pizza_catalog_checkout_bridge",
+      "bytes": 8889,
+      "exact_sha": "17ffd8ef4ed2364ab0c89eb5e0f398a3fe583c42",
+      "newline_sha": "17ffd8ef4ed2364ab0c89eb5e0f398a3fe583c42",
+      "no_newline_sha": "f3811792da9a3c236b7c1a25c2d3722069f28920",
+      "matched": []
+    },
+    {
+      "version": "20261124101652",
+      "name": "pitacco_pizza_publish_catalog",
+      "bytes": 6669,
+      "exact_sha": "1eeb6f23110ee81e9a199e44d79ef69c4ba6d003",
+      "newline_sha": "1eeb6f23110ee81e9a199e44d79ef69c4ba6d003",
+      "no_newline_sha": "22476b9c5a44112a44cb68a706c32df5175f549c",
+      "matched": []
+    },
+    {
+      "version": "20261124101957",
+      "name": "pitacco_pizza_flavor_library",
+      "bytes": 1261,
+      "exact_sha": "4572e923a5573fd53752425b9a802d4cc98ffc41",
+      "newline_sha": "4572e923a5573fd53752425b9a802d4cc98ffc41",
+      "no_newline_sha": "632cf1a11740e323ac0305aceff5ec4d66c1813d",
+      "matched": []
+    },
+    {
+      "version": "20261124102124",
+      "name": "pitacco_pizza_proportional_stock_recipes",
+      "bytes": 10087,
+      "exact_sha": "5440de11dcb6d9876be91f0b779b737440be75f9",
+      "newline_sha": "5440de11dcb6d9876be91f0b779b737440be75f9",
+      "no_newline_sha": "a4ef7c4baa27df604a5233e38078eab379278e98",
+      "matched": []
+    },
+    {
+      "version": "20261124125232",
+      "name": "pitacco_pizza_combo_drafts",
+      "bytes": 5677,
+      "exact_sha": "20b0bcd343a1a7679296586f8fea2f96023f376f",
+      "newline_sha": "20b0bcd343a1a7679296586f8fea2f96023f376f",
+      "no_newline_sha": "ecc8780b984851857ebf8f18b2ff8fe3fa4bf30f",
+      "matched": []
+    },
+    {
+      "version": "20261124125707",
+      "name": "pitacco_combo_checkout_stock_bridge",
+      "bytes": 18848,
+      "exact_sha": "e9615b889cca18a4b9a112ccd8e3a08a34405853",
+      "newline_sha": "e9615b889cca18a4b9a112ccd8e3a08a34405853",
+      "no_newline_sha": "c3728e563388d39f285fe745ea0631f868b71605",
+      "matched": []
+    },
+    {
+      "version": "20261124125828",
+      "name": "pitacco_combo_publication_fixed_composition",
+      "bytes": 7435,
+      "exact_sha": "4e63e4cccc6e2dbc80f4eead2eacb017d8dca835",
+      "newline_sha": "4e63e4cccc6e2dbc80f4eead2eacb017d8dca835",
+      "no_newline_sha": "9fdcdd6f15189a1313673f21d8154a7de47bb782",
+      "matched": []
+    },
+    {
+      "version": "20261124143259",
+      "name": "pitacco_commercial_catalog_and_billing_guarded",
+      "bytes": 64773,
+      "exact_sha": "8f43eb63db9fcbf49a82fd88c10c4e13601f4373",
+      "newline_sha": "8f43eb63db9fcbf49a82fd88c10c4e13601f4373",
+      "no_newline_sha": "9cfe2d5c5275df421f2cfedb073e1a6f5366f1be",
+      "matched": []
+    },
+    {
+      "version": "20261124143629",
+      "name": "pitacco_owner_payment_claims_inbox",
+      "bytes": 2091,
+      "exact_sha": "1ef7b4070213c744b21067c793a0d3c0016eaffc",
+      "newline_sha": "1ef7b4070213c744b21067c793a0d3c0016eaffc",
+      "no_newline_sha": "40cd202a2bd6b907131eaf6e65312b118bc41db5",
+      "matched": []
+    },
+    {
+      "version": "20261124161014",
+      "name": "ifood_reconcile_confirmed_accept_marker",
+      "bytes": 1559,
+      "exact_sha": "2661aa11fafedacd8174bb1da7025d379c859245",
+      "newline_sha": "2347de2a8e657cf42844f4e6f3f3b957431e6c43",
+      "no_newline_sha": "2661aa11fafedacd8174bb1da7025d379c859245",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124161014_ifood_reconcile_confirmed_accept_marker.sql",
+          "mode": "terminal_newline_only"
+        }
+      ]
+    },
+    {
+      "version": "20261124163038",
+      "name": "exclude_homologation_from_driver_earnings",
+      "bytes": 1396,
+      "exact_sha": "4c927b5d52a90df43347a42ce2e494182870dd15",
+      "newline_sha": "10e696147bc8224b8175a537fed82c33617240bd",
+      "no_newline_sha": "4c927b5d52a90df43347a42ce2e494182870dd15",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261124163038_exclude_homologation_from_driver_earnings.sql",
+          "mode": "terminal_newline_only"
+        }
+      ]
+    },
+    {
+      "version": "20261124164038",
+      "name": "commercial_catalog_flex_fixo_fifteen_day_trial",
+      "bytes": 2011,
+      "exact_sha": "8a98eedba823a6be0e501f19d3199297008cbd1e",
+      "newline_sha": "e9a81aec57ca1581c3433af5970edaf634901406",
+      "no_newline_sha": "8a98eedba823a6be0e501f19d3199297008cbd1e",
+      "matched": []
+    },
+    {
+      "version": "20261124164500",
+      "name": "fixo_prepaid_first_invoice_and_manual_coverage",
+      "bytes": 11243,
+      "exact_sha": "1d42b9d0afdf53af3b279e1313e9e85fc9e3c510",
+      "newline_sha": "1d42b9d0afdf53af3b279e1313e9e85fc9e3c510",
+      "no_newline_sha": "46737ee05311c3a734dceb3eaebd2123676154bc",
+      "matched": []
+    },
+    {
+      "version": "20261124165020",
+      "name": "first_fixo_trial_payment_grace_48h",
+      "bytes": 3829,
+      "exact_sha": "123fe474d1b7898fbf37260b4aaff8634164eb77",
+      "newline_sha": "123fe474d1b7898fbf37260b4aaff8634164eb77",
+      "no_newline_sha": "dd7c60b45b504cccf8739cad2cf8c1a18d9fab89",
+      "matched": []
+    },
+    {
+      "version": "20261124165612",
+      "name": "asaas_commercial_invoice_reconciliation",
+      "bytes": 5020,
+      "exact_sha": "4dfe3f07a23bc58eb230736fca061d8b46fe3886",
+      "newline_sha": "4dfe3f07a23bc58eb230736fca061d8b46fe3886",
+      "no_newline_sha": "914ca75ce196ec66a39c4d84d7d0e83c307e2810",
+      "matched": []
+    },
+    {
+      "version": "20261124165710",
+      "name": "asaas_customer_and_pix_charge_reservations",
+      "bytes": 6083,
+      "exact_sha": "ffc09de930a6774dbb61b8b91e9489b1749d252a",
+      "newline_sha": "ffc09de930a6774dbb61b8b91e9489b1749d252a",
+      "no_newline_sha": "d7e71cba1b49c63b321888c267ade12b3ef20af0",
+      "matched": []
+    },
+    {
+      "version": "20261124170103",
+      "name": "asaas_signup_customer_and_single_payment_guard",
+      "bytes": 3634,
+      "exact_sha": "87198f428bc8a3fe189e5c2cc5baee9c90fd84c9",
+      "newline_sha": "87198f428bc8a3fe189e5c2cc5baee9c90fd84c9",
+      "no_newline_sha": "97d6f6c8c2a8d3db0f7048ff5825c0a2db93a44c",
+      "matched": []
+    },
+    {
+      "version": "20261124171106",
+      "name": "commercial_signup_plan_and_first_invoice_schedule",
+      "bytes": 6471,
+      "exact_sha": "09050d06d85b26d0687f57d3d2e1085ccd28b97a",
+      "newline_sha": "09050d06d85b26d0687f57d3d2e1085ccd28b97a",
+      "no_newline_sha": "ce65f0cc22091a74b909845a3848a2324e8afd49",
+      "matched": []
+    },
+    {
+      "version": "20261124190539",
+      "name": "flex_to_fixo_paid_cutover_and_final_commission",
+      "bytes": 8599,
+      "exact_sha": "3fbc0ebd7f77e34da207d9122daaa95ff91e9f18",
+      "newline_sha": "3fbc0ebd7f77e34da207d9122daaa95ff91e9f18",
+      "no_newline_sha": "2217ec50277d151ebe3b400142b036c88508aea8",
+      "matched": []
+    },
+    {
+      "version": "20261124190619",
+      "name": "flex_commission_require_accepted_order",
+      "bytes": 1232,
+      "exact_sha": "51fe22a2232223cd382faf7167fb8ccf191095ec",
+      "newline_sha": "51fe22a2232223cd382faf7167fb8ccf191095ec",
+      "no_newline_sha": "75fe790437eb6077ff291a0a3a8809c37f125700",
+      "matched": []
+    },
+    {
+      "version": "20261124190823",
+      "name": "fixo_to_flex_paid_coverage_cutover",
+      "bytes": 6995,
+      "exact_sha": "a34a2e45c2e80f71bd6aa5961934b12315807b82",
+      "newline_sha": "a34a2e45c2e80f71bd6aa5961934b12315807b82",
+      "no_newline_sha": "83327fbb88521eb568281cb7ab4d668cff13dc97",
+      "matched": []
+    },
+    {
+      "version": "20261124191022",
+      "name": "commercial_first_trial_block_after_48h",
+      "bytes": 1564,
+      "exact_sha": "f520ff3ac0870658daf75ed26a386c110d8a856f",
+      "newline_sha": "f520ff3ac0870658daf75ed26a386c110d8a856f",
+      "no_newline_sha": "8fe24e7cb7c75b260db9c39065ff0e90fa48bc41",
+      "matched": []
+    },
+    {
+      "version": "20261124191325",
+      "name": "asaas_commercial_refund_chargeback_review",
+      "bytes": 4305,
+      "exact_sha": "5051c52b15c67c68e467dab83e512adbde0baeb7",
+      "newline_sha": "5051c52b15c67c68e467dab83e512adbde0baeb7",
+      "no_newline_sha": "80b5c978aa8def2dbde6ac8dd2eb2ab978607d0b",
+      "matched": []
+    },
+    {
+      "version": "20261124191722",
+      "name": "asaas_incident_admin_resolution_and_recovery",
+      "bytes": 13521,
+      "exact_sha": "75410d579e583c4fd4d45abd6ed0fbd67d5651ce",
+      "newline_sha": "75410d579e583c4fd4d45abd6ed0fbd67d5651ce",
+      "no_newline_sha": "7ac4ce7b4f332d424604bb11a30464086e17f22e",
+      "matched": []
+    },
+    {
+      "version": "20261124191841",
+      "name": "commercial_recovery_notice_and_reference_guard",
+      "bytes": 2075,
+      "exact_sha": "b674e6982f4ac4dfcda937360c22ce90bdf3cd69",
+      "newline_sha": "b674e6982f4ac4dfcda937360c22ce90bdf3cd69",
+      "no_newline_sha": "4beb4b73c6f1d190ab8a6deff1df3983dc75524f",
+      "matched": []
+    },
+    {
+      "version": "20261124192920",
+      "name": "flex_two_percent_all_sales_catalog_v4",
+      "bytes": 2332,
+      "exact_sha": "7cc886323b716ac742995049586bd10e6038f9f1",
+      "newline_sha": "7cc886323b716ac742995049586bd10e6038f9f1",
+      "no_newline_sha": "ef5e6733dafb6b407cf5e8c1ba80ef75067d1087",
+      "matched": []
+    },
+    {
+      "version": "20261125014038",
+      "name": "pagbank_connect_sandbox_registration",
+      "bytes": 2844,
+      "exact_sha": "b3f922997e99ccec51b4007625688ae4d88f7bb5",
+      "newline_sha": "0ab7a7e1c6149a512698881adcea1929d9dd0e36",
+      "no_newline_sha": "b3f922997e99ccec51b4007625688ae4d88f7bb5",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125014038_pagbank_connect_sandbox_registration.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261125014303",
+      "name": "pagbank_connect_sandbox_flow",
+      "bytes": 6402,
+      "exact_sha": "c9cbc23e38a9f88753b676218bf31c0306f17e67",
+      "newline_sha": "38e310be103da0bd5635e3f3718acbf05743fa6d",
+      "no_newline_sha": "c9cbc23e38a9f88753b676218bf31c0306f17e67",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125014303_pagbank_connect_sandbox_flow.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261125015153",
+      "name": "pagbank_sandbox_isolate_seller_identity",
+      "bytes": 4309,
+      "exact_sha": "cee7bc20acbc7e6b85126845b126b93a023e8dce",
+      "newline_sha": "ecf703fde1d603a1a53c9836d06baeb370b42795",
+      "no_newline_sha": "cee7bc20acbc7e6b85126845b126b93a023e8dce",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125015153_pagbank_sandbox_isolate_seller_identity.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261125015445",
+      "name": "pagbank_sandbox_checkout_server_pricing",
+      "bytes": 7620,
+      "exact_sha": "06c92d9fa675c60da847b314fd4b829466edec6f",
+      "newline_sha": "9ce2e7e1a95c709e5a240b0f192cf00392ca16b6",
+      "no_newline_sha": "06c92d9fa675c60da847b314fd4b829466edec6f",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125015445_pagbank_sandbox_checkout_server_pricing.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261125015516",
+      "name": "pagbank_sandbox_refresh_rotation",
+      "bytes": 3143,
+      "exact_sha": "e5caa34c30eaafb25f9ece9f9eeb0e807f3e8251",
+      "newline_sha": "a3d5dba80824df45eb656e7a4ec2fe9ee136b0a2",
+      "no_newline_sha": "e5caa34c30eaafb25f9ece9f9eeb0e807f3e8251",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125015516_pagbank_sandbox_refresh_rotation.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261125015529",
+      "name": "pagbank_sandbox_checkout_catalog",
+      "bytes": 833,
+      "exact_sha": "c821f8b408554a3d4a583d87ff6fa7627faaa1a9",
+      "newline_sha": "cf6c29196ad2ad7935bc69db9994e172f90b8491",
+      "no_newline_sha": "c821f8b408554a3d4a583d87ff6fa7627faaa1a9",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125015529_pagbank_sandbox_checkout_catalog.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261125015650",
+      "name": "pagbank_protected_sandbox_storefront_preview",
+      "bytes": 2840,
+      "exact_sha": "3dc73b4bbdb7566951379ca134a4e99cb1c47857",
+      "newline_sha": "1d50344120d621637f0ce65541603cfa3c65cec3",
+      "no_newline_sha": "3dc73b4bbdb7566951379ca134a4e99cb1c47857",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125015650_pagbank_protected_sandbox_storefront_preview.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261125020654",
+      "name": "pagbank_sandbox_upgrade_seller_permissions",
+      "bytes": 7149,
+      "exact_sha": "2c66d85c4ea577393d30bca7d3ae799bc00a6cc5",
+      "newline_sha": "3f5142c89fb567c1165eaeb035d73cace2a512b3",
+      "no_newline_sha": "2c66d85c4ea577393d30bca7d3ae799bc00a6cc5",
+      "matched": []
+    },
+    {
+      "version": "20261125020704",
+      "name": "pagbank_sandbox_refund_once",
+      "bytes": 2301,
+      "exact_sha": "89a828b0a6a4f391d0fecbffa104fb5da90e1e7b",
+      "newline_sha": "3a88864e876ebe3fe8dd7b21ef8a333ac719267a",
+      "no_newline_sha": "89a828b0a6a4f391d0fecbffa104fb5da90e1e7b",
+      "matched": []
+    },
+    {
+      "version": "20261125022644",
+      "name": "storefront_persistent_device_sessions",
+      "bytes": 7642,
+      "exact_sha": "fb66d89da2f551871594e6400316249de2db2e90",
+      "newline_sha": "a39fa3c5abb2fccc642c66bdb279f444ad403f50",
+      "no_newline_sha": "fb66d89da2f551871594e6400316249de2db2e90",
+      "matched": []
+    },
+    {
+      "version": "20261125022803",
+      "name": "storefront_device_order_history",
+      "bytes": 3635,
+      "exact_sha": "5a084ca6192f30d8b7c823d3ddc79d46787a2cad",
+      "newline_sha": "7d09f049c8ed5e7e1521d13a060c3afdc5ad07f1",
+      "no_newline_sha": "5a084ca6192f30d8b7c823d3ddc79d46787a2cad",
+      "matched": []
+    },
+    {
+      "version": "20261125143136",
+      "name": "ifood_shipping_test_context",
+      "bytes": 2988,
+      "exact_sha": "4c176072da539091b08490dc4d33d8e8e0b50c03",
+      "newline_sha": "1ff5f1167d9404e60083f3c5a6f5186b8c98f971",
+      "no_newline_sha": "4c176072da539091b08490dc4d33d8e8e0b50c03",
+      "matched": []
+    },
+    {
+      "version": "20261125143153",
+      "name": "ifood_shipping_test_context_aliases",
+      "bytes": 2849,
+      "exact_sha": "f7d02dcc7650b7635cd4acd4122fb59b963f8001",
+      "newline_sha": "f7d02dcc7650b7635cd4acd4122fb59b963f8001",
+      "no_newline_sha": "7ea71c85b01be8fda56916ea4b8fc6ecd02aaa5f",
+      "matched": []
+    },
+    {
+      "version": "20261125143415",
+      "name": "ifood_shipping_test_booking",
+      "bytes": 6123,
+      "exact_sha": "49028a166e5caba9644d92900b3d9c25c0ed9ca7",
+      "newline_sha": "0c54d51bdc2520dc29ef8856c686f2630fb2153c",
+      "no_newline_sha": "49028a166e5caba9644d92900b3d9c25c0ed9ca7",
+      "matched": []
+    },
+    {
+      "version": "20261125143500",
+      "name": "ifood_shipping_booking_preserve_operator_until_confirmation",
+      "bytes": 5053,
+      "exact_sha": "aaf2445fb60f5d7d8a19dcd6dcac60b222f9542a",
+      "newline_sha": "20c867877f1491ab7b99da431763590d993dfdb2",
+      "no_newline_sha": "aaf2445fb60f5d7d8a19dcd6dcac60b222f9542a",
+      "matched": []
+    },
+    {
+      "version": "20261125143559",
+      "name": "ifood_shipping_test_event_reconciliation",
+      "bytes": 5751,
+      "exact_sha": "901b3bea9a154f62052b3dedf38ef414e1cdd2f4",
+      "newline_sha": "675acb6b7c3b337db2ae77d45668f71ab280a739",
+      "no_newline_sha": "901b3bea9a154f62052b3dedf38ef414e1cdd2f4",
+      "matched": []
+    },
+    {
+      "version": "20261125143645",
+      "name": "ifood_shipping_test_poll_lease_and_evidence",
+      "bytes": 2474,
+      "exact_sha": "c716400c7a1e98cd3048ec175181599d9de5d11f",
+      "newline_sha": "95d34bad98c6268dfdf306311666809c9ab804ac",
+      "no_newline_sha": "c716400c7a1e98cd3048ec175181599d9de5d11f",
+      "matched": []
+    },
+    {
+      "version": "20261125143700",
+      "name": "ifood_shipping_test_event_discard_pos_order_duplicates",
+      "bytes": 4898,
+      "exact_sha": "a6794a26bcd89ed8ea58b66462c9fb873d976a0d",
+      "newline_sha": "a6794a26bcd89ed8ea58b66462c9fb873d976a0d",
+      "no_newline_sha": "2a7e9f22681d758dc171b48822c83065d099f7d4",
+      "matched": []
+    },
+    {
+      "version": "20261125152647",
+      "name": "ifood_shipping_ack_after_durable_processing",
+      "bytes": 710,
+      "exact_sha": "df76d0a9f6924183f46d4516bc5465dc3b1a3db5",
+      "newline_sha": "9b6525ae42dd68e4951ae14d9f760cf8c17bddd9",
+      "no_newline_sha": "df76d0a9f6924183f46d4516bc5465dc3b1a3db5",
+      "matched": []
+    },
+    {
+      "version": "20261125152810",
+      "name": "ifood_shipping_poll_clock_slots",
+      "bytes": 1505,
+      "exact_sha": "6a7444a323818af7a0dc649e6824665d0b910d1b",
+      "newline_sha": "c53adf86dfd5bd6634d42f056c43f664c0a3d36c",
+      "no_newline_sha": "6a7444a323818af7a0dc649e6824665d0b910d1b",
+      "matched": []
+    },
+    {
+      "version": "20261125171311",
+      "name": "ifood_shipping_external_test_quote_claim",
+      "bytes": 4804,
+      "exact_sha": "cd27cb7f9c7212789073923db1126e309a92fc14",
+      "newline_sha": "32e0dc59245384e701aa04bf6d55f1aa98803ae0",
+      "no_newline_sha": "cd27cb7f9c7212789073923db1126e309a92fc14",
+      "matched": []
+    },
+    {
+      "version": "20261125171834",
+      "name": "ifood_shipping_external_address_and_cancel",
+      "bytes": 8013,
+      "exact_sha": "e2e65b530288a0b558d9ffc7de8cdc79ebdca61e",
+      "newline_sha": "da068744c0e907592b67a0e6a6344777fb943f78",
+      "no_newline_sha": "e2e65b530288a0b558d9ffc7de8cdc79ebdca61e",
+      "matched": []
+    },
+    {
+      "version": "20261125175000",
+      "name": "ifood_isolated_central_production_routing",
+      "bytes": 11803,
+      "exact_sha": "fa83d32677d2accf01ee72a097cc6328a4713bfe",
+      "newline_sha": "9de65860a9f92b0446c0d1273104ec7b955fda4e",
+      "no_newline_sha": "fa83d32677d2accf01ee72a097cc6328a4713bfe",
+      "matched": []
+    },
+    {
+      "version": "20261125180335",
+      "name": "ifood_central_merchant_requests",
+      "bytes": 8339,
+      "exact_sha": "a387e00c93ec698244475720c33c4b8dcbe359f7",
+      "newline_sha": "a387e00c93ec698244475720c33c4b8dcbe359f7",
+      "no_newline_sha": "4c7255ec5d59659f27bed81b10c1bcee67cd5a83",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125180335_ifood_central_merchant_requests.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261125180813",
+      "name": "ifood_central_automatic_check",
+      "bytes": 1683,
+      "exact_sha": "5b9ce0609aa9ee6ac8cecb11bf62f04f6432c8d4",
+      "newline_sha": "5b9ce0609aa9ee6ac8cecb11bf62f04f6432c8d4",
+      "no_newline_sha": "0ffde9c41cab2dda00258b2502fbd4f0052ff134",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125180813_ifood_central_automatic_check.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261125181308",
+      "name": "fix_admin_courier_campaign_store_audit",
+      "bytes": 4110,
+      "exact_sha": "d6444cd601169c4123902e5d338a032f6c7b0f20",
+      "newline_sha": "28aaf8202c960b4efedb864714cacec9a3cd4125",
+      "no_newline_sha": "824930cf11f6cb3cf78254e8612129b87d63436c",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125181308_fix_admin_courier_campaign_store_audit.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261125222344",
+      "name": "daily_operational_orders",
+      "bytes": 1222,
+      "exact_sha": "9bc1e46261a2c0e788cc1e6ee636ddb67b694021",
+      "newline_sha": "dc9054c6453817f1c9fd8aa3e8e5f5c17283f8f0",
+      "no_newline_sha": "9bc1e46261a2c0e788cc1e6ee636ddb67b694021",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125222344_daily_operational_orders.sql",
+          "mode": "terminal_newline_only"
+        }
+      ]
+    },
+    {
+      "version": "20261125222445",
+      "name": "merchant_order_history_filters",
+      "bytes": 2846,
+      "exact_sha": "507c83289476b1dec89b605c1343482da3876018",
+      "newline_sha": "3af46591dcfd9c8777768fa606e79c644f124c36",
+      "no_newline_sha": "507c83289476b1dec89b605c1343482da3876018",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125222445_merchant_order_history_filters.sql",
+          "mode": "terminal_newline_only"
+        }
+      ]
+    },
+    {
+      "version": "20261125223023",
+      "name": "merchant_history_terminal_only",
+      "bytes": 2900,
+      "exact_sha": "4e7dbbd2747200f6d3caae8e07a12c0bdecfbc1c",
+      "newline_sha": "4e7dbbd2747200f6d3caae8e07a12c0bdecfbc1c",
+      "no_newline_sha": "6f58c6c75d66fd9c6a034c62e9f7c4f1f5672465",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125223023_merchant_history_terminal_only.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261125223948",
+      "name": "manual_scheduled_acceptance_and_preparation_gate",
+      "bytes": 5220,
+      "exact_sha": "9da859eb829b15b8a4477e2d4577373d76796c3c",
+      "newline_sha": "a3f5db6adc49edf35620fba3c36437bf68b27b17",
+      "no_newline_sha": "9da859eb829b15b8a4477e2d4577373d76796c3c",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125223948_manual_scheduled_acceptance_and_preparation_gate.sql",
+          "mode": "terminal_newline_only"
+        }
+      ]
+    },
+    {
+      "version": "20261125224112",
+      "name": "ifood_scheduled_manual_acceptance",
+      "bytes": 1346,
+      "exact_sha": "d65cf885359ff9bf98e6c3dbeb54f98a4a42820c",
+      "newline_sha": "f0b4934fc8d991478ecc8d9a8f8bc5d7803c66a7",
+      "no_newline_sha": "d65cf885359ff9bf98e6c3dbeb54f98a4a42820c",
+      "matched": []
+    },
+    {
+      "version": "20261125224913",
+      "name": "unify_scheduling_with_store_opening_hours",
+      "bytes": 4464,
+      "exact_sha": "723e02446778a7024fec42aca9588899296bf39a",
+      "newline_sha": "becdb11136e6c0ab132bb6580021aba075328367",
+      "no_newline_sha": "723e02446778a7024fec42aca9588899296bf39a",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125224913_unify_scheduling_with_store_opening_hours.sql",
+          "mode": "terminal_newline_only"
+        }
+      ]
+    },
+    {
+      "version": "20261125225411",
+      "name": "unified_published_store_logo",
+      "bytes": 3048,
+      "exact_sha": "5827260bb05b720ce79eea0b130cb8ac535e0010",
+      "newline_sha": "9f1cb5936c3e38d2871dc9df1130f2cfa1127f75",
+      "no_newline_sha": "5827260bb05b720ce79eea0b130cb8ac535e0010",
+      "matched": []
+    },
+    {
+      "version": "20261125230636",
+      "name": "exclude_fiado_from_all_fideliza_benefits",
+      "bytes": 2132,
+      "exact_sha": "a9acea8a4166eabc088f836fd7c7cb4ec217bc9a",
+      "newline_sha": "d264668e73d57e474b35dc30b20033dc4ed13ed2",
+      "no_newline_sha": "a9acea8a4166eabc088f836fd7c7cb4ec217bc9a",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125230636_exclude_fiado_from_all_fideliza_benefits.sql",
+          "mode": "terminal_newline_only"
+        }
+      ]
+    },
+    {
+      "version": "20261125230753",
+      "name": "fiado_manual_counter_discount_and_referral_eligibility",
+      "bytes": 3987,
+      "exact_sha": "617bddee15e66ece6cbf5f9910a9d1bb023c900e",
+      "newline_sha": "683dfbc117ef70c936a7685d4254dfee00c12e2c",
+      "no_newline_sha": "617bddee15e66ece6cbf5f9910a9d1bb023c900e",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125230753_fiado_manual_counter_discount_and_referral_eligibility.sql",
+          "mode": "terminal_newline_only"
+        }
+      ]
+    },
+    {
+      "version": "20261125233025",
+      "name": "manual_and_geographic_delivery_grouping",
+      "bytes": 10365,
+      "exact_sha": "681d1ae52c43907223ae3bd58a813a1a2ae11aa9",
+      "newline_sha": "681d1ae52c43907223ae3bd58a813a1a2ae11aa9",
+      "no_newline_sha": "fdcef7d8884f83b77f34c5f1695f1b994b918c5a",
+      "matched": []
+    },
+    {
+      "version": "20261125233043",
+      "name": "geographic_grouping_internal_permissions_and_empty_routes",
+      "bytes": 834,
+      "exact_sha": "577577e9db14d02650841df27540038df6a49d38",
+      "newline_sha": "577577e9db14d02650841df27540038df6a49d38",
+      "no_newline_sha": "f61c61aa8a8d864117da1540dd7c0840983c945f",
+      "matched": []
+    },
+    {
+      "version": "20261125234138",
+      "name": "delivery_area_eta_snapshot",
+      "bytes": 6844,
+      "exact_sha": "3e046462337385ba3779283dc673d4af1bc66b61",
+      "newline_sha": "3e046462337385ba3779283dc673d4af1bc66b61",
+      "no_newline_sha": "3aedb950dcd02cc0d845feb998896283bff32df1",
+      "matched": []
+    },
+    {
+      "version": "20261125234454",
+      "name": "ifood_official_preparation_estimate",
+      "bytes": 3924,
+      "exact_sha": "d3ec31734edd9525475592eb9b22bb64c6d85a56",
+      "newline_sha": "d3ec31734edd9525475592eb9b22bb64c6d85a56",
+      "no_newline_sha": "21c8ce6389abbb2ecdfad5f7938e24ce2977a172",
+      "matched": []
+    },
+    {
+      "version": "20261125234626",
+      "name": "public_tracking_delivery_estimate",
+      "bytes": 501,
+      "exact_sha": "58739bd9cf296f6e942bfe08060b0dc6aaecb662",
+      "newline_sha": "dcbc020a1c14e2e381ac62ed4673ad7071f58eca",
+      "no_newline_sha": "58739bd9cf296f6e942bfe08060b0dc6aaecb662",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261125234626_public_tracking_delivery_estimate.sql",
+          "mode": "terminal_newline_only"
+        }
+      ]
+    },
+    {
+      "version": "20261125235203",
+      "name": "priority_delivery_quote_and_dispatch",
+      "bytes": 5268,
+      "exact_sha": "0568283950adc11ae3dd4dcc5a85cae48b666811",
+      "newline_sha": "0568283950adc11ae3dd4dcc5a85cae48b666811",
+      "no_newline_sha": "9024b71a3527fd22330799495fa0d875182caf25",
+      "matched": []
+    },
+    {
+      "version": "20261125235433",
+      "name": "priority_tracking_and_geographic_dispatch_schedule",
+      "bytes": 863,
+      "exact_sha": "b89c5a46a2e7b6076b8dae283a2bdb6571c7a976",
+      "newline_sha": "b89c5a46a2e7b6076b8dae283a2bdb6571c7a976",
+      "no_newline_sha": "702410b63368f75ba1b2b2d081c1b3c43220418a",
+      "matched": []
+    },
+    {
+      "version": "20261126000700",
+      "name": "own_delivery_reassignment_and_manual_hold",
+      "bytes": 4531,
+      "exact_sha": "c90291408ffde3703e260f0d0c7393d18adb4014",
+      "newline_sha": "c90291408ffde3703e260f0d0c7393d18adb4014",
+      "no_newline_sha": "80b32597cab78ef2cd7b71297741cf0d4f42fc79",
+      "matched": []
+    },
+    {
+      "version": "20261126000828",
+      "name": "ifood_test_cancel_driver_preserve_sale",
+      "bytes": 7515,
+      "exact_sha": "2fb1c66121dad5d6f87ba50956c978c49ad599fb",
+      "newline_sha": "2fb1c66121dad5d6f87ba50956c978c49ad599fb",
+      "no_newline_sha": "bad8f20f5aad11223e9d0176f3ae020d67aba110",
+      "matched": []
+    },
+    {
+      "version": "20261126002920",
+      "name": "checkout_committed_quote_recovery",
+      "bytes": 1431,
+      "exact_sha": "821bc59c9b25f6808c607df59fd4a9eda79406ff",
+      "newline_sha": "821bc59c9b25f6808c607df59fd4a9eda79406ff",
+      "no_newline_sha": "b6bac0290f5a1cda98c39915b5f1d792f33265a4",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126002920_checkout_committed_quote_recovery.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126015356",
+      "name": "self_service_commercial_plan_migration",
+      "bytes": 5739,
+      "exact_sha": "7184349b64c5fb0ccd353c6f862000efebe971b8",
+      "newline_sha": "7184349b64c5fb0ccd353c6f862000efebe971b8",
+      "no_newline_sha": "dd2a92be4f762c492ae0236002cf6e67de4c3996",
+      "matched": []
+    },
+    {
+      "version": "20261126021611",
+      "name": "manual_proof_identity_and_pending_activation_status",
+      "bytes": 6067,
+      "exact_sha": "fa31475634df952c202f9e8c045975934b1d3048",
+      "newline_sha": "fa31475634df952c202f9e8c045975934b1d3048",
+      "no_newline_sha": "f71bde0ea61145ef7f27e35e8aa16c09b0915dae",
+      "matched": []
+    },
+    {
+      "version": "20261126022129",
+      "name": "owner_legacy_payer_registration",
+      "bytes": 4507,
+      "exact_sha": "80a73de2a7eead61377be2c59584691f44fccdfc",
+      "newline_sha": "d7231906aaeefc3551bf9e95b1252c8cb099d6ef",
+      "no_newline_sha": "80a73de2a7eead61377be2c59584691f44fccdfc",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126022129_owner_legacy_payer_registration.sql",
+          "mode": "terminal_newline_only"
+        }
+      ]
+    },
+    {
+      "version": "20261126023353",
+      "name": "unified_store_registration",
+      "bytes": 11402,
+      "exact_sha": "c2e99340d36ae11d1c0332c0db17c01753aba1f0",
+      "newline_sha": "0b7fd4670e9929272b0e6dfd9a5957d8ce17d23d",
+      "no_newline_sha": "c2e99340d36ae11d1c0332c0db17c01753aba1f0",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126023353_unified_store_registration.sql",
+          "mode": "terminal_newline_only"
+        }
+      ]
+    },
+    {
+      "version": "20261126024727",
+      "name": "customer_tracking_social_contacts",
+      "bytes": 5490,
+      "exact_sha": "10ca05eb1020a03eada35d30e7bd858bffa4ccc3",
+      "newline_sha": "3a31c38bf5a1b1f1d3ac6b7a7f4664f444375608",
+      "no_newline_sha": "10ca05eb1020a03eada35d30e7bd858bffa4ccc3",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126024727_customer_tracking_social_contacts.sql",
+          "mode": "terminal_newline_only"
+        }
+      ]
+    },
+    {
+      "version": "20261126025900",
+      "name": "canonical_store_profile_logo",
+      "bytes": 3112,
+      "exact_sha": "34e60af4db0394acf058f8d7e1d3aee50f465ed3",
+      "newline_sha": "34e60af4db0394acf058f8d7e1d3aee50f465ed3",
+      "no_newline_sha": "dd54e052214afe726c1eb44ec3c21b89120df1ad",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126025900_canonical_store_profile_logo.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126030506",
+      "name": "fix_signup_store_registration_conflict",
+      "bytes": 404,
+      "exact_sha": "370efca5b1c450b0932694b1bff8eddb507314b1",
+      "newline_sha": "370efca5b1c450b0932694b1bff8eddb507314b1",
+      "no_newline_sha": "34e0d8d73df4dfba47bae25ee03c85582a057e91",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126030506_fix_signup_store_registration_conflict.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126032658",
+      "name": "owner_copy_store_catalog",
+      "bytes": 14376,
+      "exact_sha": "ce46621758e1051e2e6b13e3fc70309cfd38e0a2",
+      "newline_sha": "ce46621758e1051e2e6b13e3fc70309cfd38e0a2",
+      "no_newline_sha": "99b08240f68a791f8e2b078c5d48fbbacccf2802",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126032658_owner_copy_store_catalog.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126034557",
+      "name": "intelligence_business_insights",
+      "bytes": 6031,
+      "exact_sha": "fd289cabacc49f3177b10136f63356255c884e79",
+      "newline_sha": "fd289cabacc49f3177b10136f63356255c884e79",
+      "no_newline_sha": "5f0e27061aeaf94099bc357dc5eadb819b79ae94",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126034557_intelligence_business_insights.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126095940",
+      "name": "intelligence_admin_only",
+      "bytes": 6002,
+      "exact_sha": "7eb083d17bca5be74caf7f62f0308c7a083be2b8",
+      "newline_sha": "7eb083d17bca5be74caf7f62f0308c7a083be2b8",
+      "no_newline_sha": "3759ca89d2bb130ea511a6502d82ddd9b6edd5bc",
+      "matched": []
+    },
+    {
+      "version": "20261126103331",
+      "name": "merchant_customers_own_channels_only",
+      "bytes": 3800,
+      "exact_sha": "44dadb69833aa812aaa56e705ac985a6c15e9aac",
+      "newline_sha": "4f164df120676b01276b60589550ac30a3556df0",
+      "no_newline_sha": "2c982d8f327cdd8973bd8e2362b1bf3185e58740",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126103331_merchant_customers_own_channels_only.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126105458",
+      "name": "channel_payment_methods",
+      "bytes": 9495,
+      "exact_sha": "fd5d7093481240776965f046f5e66951a38c0b50",
+      "newline_sha": "fd5d7093481240776965f046f5e66951a38c0b50",
+      "no_newline_sha": "f1f01773eba9bcc184e5c5256f6bec157ba60161",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126105458_channel_payment_methods.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126113011",
+      "name": "split_payment_settings",
+      "bytes": 3643,
+      "exact_sha": "217f8ac64f16f20a578202b589f2952229e20436",
+      "newline_sha": "217f8ac64f16f20a578202b589f2952229e20436",
+      "no_newline_sha": "b200b1175603d887e84d58a718d7fb2b29adad76",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126113011_split_payment_settings.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126113336",
+      "name": "payment_pricing_drafts",
+      "bytes": 6292,
+      "exact_sha": "6f6c40d768cf77a4d3f2e7871bbb4bc87289358e",
+      "newline_sha": "6f6c40d768cf77a4d3f2e7871bbb4bc87289358e",
+      "no_newline_sha": "5a15774aae108723bd373fb6e05bf344fcd9db96",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126113336_payment_pricing_drafts.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126113339",
+      "name": "confirmed_payment_prices",
+      "bytes": 11796,
+      "exact_sha": "abb1744764c8132ceb30d6b2ac87b78afee42c04",
+      "newline_sha": "abb1744764c8132ceb30d6b2ac87b78afee42c04",
+      "no_newline_sha": "85d0ea17c9bb8584d668b4986ce278f7ce81a0f6",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126113339_confirmed_payment_prices.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126113342",
+      "name": "payment_price_financial_report",
+      "bytes": 1712,
+      "exact_sha": "ea3ec788d987441d79f488f9698d1095f0e8fcc9",
+      "newline_sha": "ea3ec788d987441d79f488f9698d1095f0e8fcc9",
+      "no_newline_sha": "4c0096abc685fcee9ed7a69002122d81b45c4232",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126113342_payment_price_financial_report.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126113345",
+      "name": "payment_price_publication",
+      "bytes": 4071,
+      "exact_sha": "a61a29dd0b94efa94b6ca9c30bdc26bef1770fde",
+      "newline_sha": "a61a29dd0b94efa94b6ca9c30bdc26bef1770fde",
+      "no_newline_sha": "f5cab6bd36df866bb7c8533593004d49c2b5300e",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126113345_payment_price_publication.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126115817",
+      "name": "verified_delivery_addresses",
+      "bytes": 9173,
+      "exact_sha": "bf6380d5ef750350d56dd99e804d20ebb5315f4b",
+      "newline_sha": "bf6380d5ef750350d56dd99e804d20ebb5315f4b",
+      "no_newline_sha": "1f148ac4ea0364016dbecc941240f112dbfb045d",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126115817_verified_delivery_addresses.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126122251",
+      "name": "registration_email_identity_sync",
+      "bytes": 776,
+      "exact_sha": "061b6c59e8505a0e3798106bebd8d4747fc43280",
+      "newline_sha": "061b6c59e8505a0e3798106bebd8d4747fc43280",
+      "no_newline_sha": "51bd9dda4557382494b3bbd2109cd2be76c3662d",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126122051_registration_email_identity_sync.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126135333",
+      "name": "control_center_core",
+      "bytes": 60038,
+      "exact_sha": "88ce255da17fb7d01bdd380c5b6a40499604e649",
+      "newline_sha": "88ce255da17fb7d01bdd380c5b6a40499604e649",
+      "no_newline_sha": "866cfd4754efbfc21d0ca034fd05e4e4b8ac475a",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126123616_control_center_core.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126143328",
+      "name": "control_center_stabilization",
+      "bytes": 3845,
+      "exact_sha": "cc78c21c436b3576e962f2c1b57024b8a69736a5",
+      "newline_sha": "cc78c21c436b3576e962f2c1b57024b8a69736a5",
+      "no_newline_sha": "47761368d291e4ae52e8a256f7cf3993343b6fb3",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126143328_control_center_stabilization.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126143429",
+      "name": "control_center_database_heartbeat",
+      "bytes": 895,
+      "exact_sha": "9bb284b12c277668826aeff23468e2c6d839b6e7",
+      "newline_sha": "9bb284b12c277668826aeff23468e2c6d839b6e7",
+      "no_newline_sha": "471d5a095e114496587a1d84780cdec5795a1750",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126143429_control_center_database_heartbeat.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126143838",
+      "name": "control_legacy_rpc_least_privilege",
+      "bytes": 5394,
+      "exact_sha": "786db95aa0d6f10d5137f54e320c41a06b314989",
+      "newline_sha": "786db95aa0d6f10d5137f54e320c41a06b314989",
+      "no_newline_sha": "f9db79fe55aa64fa6b8a974e89355c6ea9f67cda",
+      "matched": []
+    },
+    {
+      "version": "20261126144503",
+      "name": "control_center_current_commercial_plans",
+      "bytes": 2341,
+      "exact_sha": "bc349f183ee0a3249ebfab026c02b636530db00b",
+      "newline_sha": "bc349f183ee0a3249ebfab026c02b636530db00b",
+      "no_newline_sha": "577529a2ffb9db5e2ec4f0ec2dfeefb05d94dcdb",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126144503_control_center_current_commercial_plans.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126145032",
+      "name": "control_center_store_block_visibility",
+      "bytes": 3801,
+      "exact_sha": "0b2c53fbba713000abc78e688f92f5ec5d8a542a",
+      "newline_sha": "0b2c53fbba713000abc78e688f92f5ec5d8a542a",
+      "no_newline_sha": "6571f16f45de2e7cf1c4d1b26c5e6a2ea4020920",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126145032_control_center_store_block_visibility.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126145550",
+      "name": "public_store_effective_order_availability",
+      "bytes": 2327,
+      "exact_sha": "e341dfa99dc9a96b109dd8d4befe3fb3c159f96b",
+      "newline_sha": "e341dfa99dc9a96b109dd8d4befe3fb3c159f96b",
+      "no_newline_sha": "a83a3f5a9cadf3420c4c5dbaa6107eb86cefa6d8",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126145550_public_store_effective_order_availability.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126150324",
+      "name": "ifood_suppress_new_orders_during_pitacco_block",
+      "bytes": 3493,
+      "exact_sha": "c4977dff6182fc29cb3e432895539cdcc2e4546c",
+      "newline_sha": "c4977dff6182fc29cb3e432895539cdcc2e4546c",
+      "no_newline_sha": "40861241de0013860621aa435c4c7599c4d487bc",
+      "matched": []
+    },
+    {
+      "version": "20261126150534",
+      "name": "marketplace_admission_cutoff_after_pitacco_block",
+      "bytes": 3906,
+      "exact_sha": "06a0077038200fffa63f1fc5daabd471406efc32",
+      "newline_sha": "06a0077038200fffa63f1fc5daabd471406efc32",
+      "no_newline_sha": "bc1b058547bb7576046027769b96f96a60ad7028",
+      "matched": []
+    },
+    {
+      "version": "20261126161807",
+      "name": "merchant_membership_scope_and_verified_invites",
+      "bytes": 2020,
+      "exact_sha": "08ca91b52abec935b9c17ba4109d6076c14efc39",
+      "newline_sha": "08ca91b52abec935b9c17ba4109d6076c14efc39",
+      "no_newline_sha": "906ed7b774ba315008634f3a792cb554387e9866",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126161807_merchant_membership_scope_and_verified_invites.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126175045",
+      "name": "ifood_dispatch_recover_unstarted_claim",
+      "bytes": 6377,
+      "exact_sha": "febb47c1dbb9b6205b5c25fd48fff67059e1a34e",
+      "newline_sha": "febb47c1dbb9b6205b5c25fd48fff67059e1a34e",
+      "no_newline_sha": "2cc1cc40f3d5779102120892738e624cc43fbf46",
+      "matched": []
+    },
+    {
+      "version": "20261126175229",
+      "name": "ifood_verify_concluded_webhook_race",
+      "bytes": 3248,
+      "exact_sha": "f14697429bb4c678887233f4f5e24f300880c3e1",
+      "newline_sha": "6985358838249addccabc52a3eeba0d4c58abbaf",
+      "no_newline_sha": "f14697429bb4c678887233f4f5e24f300880c3e1",
+      "matched": []
+    },
+    {
+      "version": "20261126181716",
+      "name": "group_same_destination_before_bearing",
+      "bytes": 1100,
+      "exact_sha": "60b22488b199175544b02506db2790b05f1c2836",
+      "newline_sha": "60b22488b199175544b02506db2790b05f1c2836",
+      "no_newline_sha": "69324361d6bd3b73d1c15b6cd7c337b200120e44",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126181716_group_same_destination_before_bearing.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126181849",
+      "name": "manual_grouping_override_auto_rules",
+      "bytes": 7295,
+      "exact_sha": "05c3733982ab29b4afe26690d4281f678928d00b",
+      "newline_sha": "05c3733982ab29b4afe26690d4281f678928d00b",
+      "no_newline_sha": "918b5b73a0b948e27ff2f94f1e3e514f5a30fc8d",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126181849_manual_grouping_override_auto_rules.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126182243",
+      "name": "reconcile_courier_collect_depart_entrypoints",
+      "bytes": 2469,
+      "exact_sha": "821828f4612b902889b07ffc5535c01faeede4ea",
+      "newline_sha": "821828f4612b902889b07ffc5535c01faeede4ea",
+      "no_newline_sha": "973e29a0b32113bc7523c32fdc311814c474ff70",
+      "matched": []
+    },
+    {
+      "version": "20261126182517",
+      "name": "reconcile_courier_arrival_entrypoint",
+      "bytes": 2527,
+      "exact_sha": "8f1b3fe06e11b2dadc247d85978e716c62cc9dd1",
+      "newline_sha": "8f1b3fe06e11b2dadc247d85978e716c62cc9dd1",
+      "no_newline_sha": "f5f7831fc82f6dad0babaaa288050aff103cb273",
+      "matched": []
+    },
+    {
+      "version": "20261126184601",
+      "name": "central_individual_complements",
+      "bytes": 9119,
+      "exact_sha": "114d7f842e40396414aa0ee588f34f29e22dd363",
+      "newline_sha": "114d7f842e40396414aa0ee588f34f29e22dd363",
+      "no_newline_sha": "7d51a62b5d628e19b42c9847a207b8d57f71f44e",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126184601_central_individual_complements.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126190823",
+      "name": "require_commercial_plan_for_all_stores",
+      "bytes": 11829,
+      "exact_sha": "c8e64fd6d40c7bd8d00c4644c1c7e9d87767a931",
+      "newline_sha": "c8e64fd6d40c7bd8d00c4644c1c7e9d87767a931",
+      "no_newline_sha": "b732d5d706c759cfc47894898ca07bf1d0aea97a",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126190823_require_commercial_plan_for_all_stores.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126191013",
+      "name": "centralize_equivalent_groups_for_every_import",
+      "bytes": 12104,
+      "exact_sha": "c90a457068f6f3829bdf94c72e525ab773f7c36c",
+      "newline_sha": "c90a457068f6f3829bdf94c72e525ab773f7c36c",
+      "no_newline_sha": "58768fd8326ec3b1d2d9a18351569c3ccb71a4d0",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126191013_centralize_equivalent_groups_for_every_import.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126210557",
+      "name": "ifood_authorized_print_contact",
+      "bytes": 2977,
+      "exact_sha": "b4f22632b5860b950b54d1af158aa3a4a02ab662",
+      "newline_sha": "b4f22632b5860b950b54d1af158aa3a4a02ab662",
+      "no_newline_sha": "6411ee7965bc706f0f9bd16bd2d2c2a855b4155a",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126210000_ifood_authorized_print_contact.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126211531",
+      "name": "ifood_ready_outbox",
+      "bytes": 4634,
+      "exact_sha": "0cde0f22ca2146220a4540504b5aad3c4727c945",
+      "newline_sha": "0cde0f22ca2146220a4540504b5aad3c4727c945",
+      "no_newline_sha": "e438ea6669cce2fb752a673f0b0339d945e01278",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126211500_ifood_ready_outbox.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126223836",
+      "name": "persist_customer_delivery_points",
+      "bytes": 6754,
+      "exact_sha": "e25bf2051dff2f1c037578eeae83ed3d8fc2807a",
+      "newline_sha": "e25bf2051dff2f1c037578eeae83ed3d8fc2807a",
+      "no_newline_sha": "4356a8bdbc0978c70a62b67dd0e0212d54166180",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126223500_persist_customer_delivery_points.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126231529",
+      "name": "public_menu_identity",
+      "bytes": 926,
+      "exact_sha": "1cade21e241aae659ed8a92258f317ecb53fe353",
+      "newline_sha": "1cade21e241aae659ed8a92258f317ecb53fe353",
+      "no_newline_sha": "ecea09d2fc5755f77fa4b68c7a787f33011a5527",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126231000_public_menu_identity.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126231533",
+      "name": "storefront_logo_framing",
+      "bytes": 1988,
+      "exact_sha": "f4ecbe15b7de8d72bbed76f6c0637bb52ef3b203",
+      "newline_sha": "f4ecbe15b7de8d72bbed76f6c0637bb52ef3b203",
+      "no_newline_sha": "a33ad28c2f1af6f5bb7c28b852925a4f33641704",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126231500_storefront_logo_framing.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261126234459",
+      "name": "public_weekly_opening_hours",
+      "bytes": 1220,
+      "exact_sha": "7ef6e2897b580c761155c5685314fbdeeda7dd84",
+      "newline_sha": "7ef6e2897b580c761155c5685314fbdeeda7dd84",
+      "no_newline_sha": "85a0ba1748ade50662f32d98b0f5485759795142",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126234000_public_weekly_opening_hours.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261127002200",
+      "name": "public_top_four_sellers",
+      "bytes": 1658,
+      "exact_sha": "e813b9ecd793518d0efedc097a79de8cb47f978f",
+      "newline_sha": "a9310dbd06ad19d6dff8587f94b28bf25855d183",
+      "no_newline_sha": "fe5d3d8cc54ce81d6e7134376cfe55467420fb9c",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261126235500_public_top_four_sellers.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261127010700",
+      "name": "storefront_featured_colors",
+      "bytes": 1492,
+      "exact_sha": "cab63ef3b4d81b33a49bf36cb14f4e75750711a5",
+      "newline_sha": "cab63ef3b4d81b33a49bf36cb14f4e75750711a5",
+      "no_newline_sha": "ce801b86a76553ea95519e45c8bfa3374145cb4e",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261127010000_storefront_featured_colors.sql",
+          "mode": "exact"
+        }
+      ]
+    },
+    {
+      "version": "20261127035046",
+      "name": "public_checkout_private_auto_accept",
+      "bytes": 2982,
+      "exact_sha": "c292eaae5bf7753a3566d9b1586505ac7bc9af70",
+      "newline_sha": "c292eaae5bf7753a3566d9b1586505ac7bc9af70",
+      "no_newline_sha": "bbd9cdc0db7d79f8865bb60dc37067937ab433d5",
+      "matched": [
+        {
+          "path": "supabase/migrations/20261127035046_public_checkout_private_auto_accept.sql",
+          "mode": "exact"
+        }
+      ]
+    }
+  ],
+  "repository_unmatched_paths": [
+    {
+      "path": "supabase/migrations/20261114225409_pitacco_new_store_seven_day_trial.sql",
+      "sha": "4b5ad56dce9b4d0baa6c57777b55edae1e65486a"
+    },
+    {
+      "path": "supabase/migrations/20261114230238_pitacco_inventory.sql",
+      "sha": "c0fb534e590b2f1210fe885fe6464a7a993d4114"
+    },
+    {
+      "path": "supabase/migrations/20261114230712_pitacco_self_service_store_manager.sql",
+      "sha": "9b6a4abb9163654bda7d5c9e125f39c3f10d4099"
+    },
+    {
+      "path": "supabase/migrations/20261114230902_pitacco_pending_order_decisions.sql",
+      "sha": "3c53598ac044197960e9d4a2c1196f38c99393ac"
+    },
+    {
+      "path": "supabase/migrations/20261114231258_pitacco_period_financial_report.sql",
+      "sha": "df28419e962239d370bce03520d1daf3ca224c43"
+    },
+    {
+      "path": "supabase/migrations/20261114232304_pitacco_scheduled_orders.sql",
+      "sha": "eeaa59fd6a90812875964c46694b300e320096f9"
+    },
+    {
+      "path": "supabase/migrations/20261114232953_pitacco_operational_alerts.sql",
+      "sha": "a3b0f400dac414c95587a8e9104205f763578c60"
+    },
+    {
+      "path": "supabase/migrations/20261114233413_pitacco_subscription_entitlement.sql",
+      "sha": "9e372f22fe96c11c4b9f38266ca3def7d2f7d2dd"
+    },
+    {
+      "path": "supabase/migrations/20261114233828_pitacco_asaas_subscription_binding.sql",
+      "sha": "e6d59ec91a5949460919dfe9e4e649fe8b456590"
+    },
+    {
+      "path": "supabase/migrations/20261114234147_pitacco_private_delivery_tracking.sql",
+      "sha": "a317069e7764829d66f265d3ad7cf820ce179456"
+    },
+    {
+      "path": "supabase/migrations/20261114234541_pitacco_marketplace_settlements.sql",
+      "sha": "6f71f4bf3c2da15c48c33c0766c798ee3eaec0bc"
+    },
+    {
+      "path": "supabase/migrations/20261115000506_pitacco_admin_homologation.sql",
+      "sha": "d7030f30b3acfbf90b3a0d4b31ed55c35f7f7c23"
+    },
+    {
+      "path": "supabase/migrations/20261115002000_pitacco_owner_and_features.sql",
+      "sha": "8c893efcbe2129d7bd625bbe9293bda21f48bf12"
+    },
+    {
+      "path": "supabase/migrations/20261117220000_pitacco_one_courier_test_store.sql",
+      "sha": "5b16d253bfb43de2e16f10592ec3390e2b89dd20"
+    },
+    {
+      "path": "supabase/migrations/20261117235000_windows_print_order_queue.sql",
+      "sha": "56da5f294226928c0f5c43b049885f57ffd76d58"
+    },
+    {
+      "path": "supabase/migrations/20261118192500_register_official_android_207_gps.sql",
+      "sha": "3bc7b910da8a8b01c4e0549ace57d939df3909e9"
+    },
+    {
+      "path": "supabase/migrations/20261118194500_order_stage_progression_and_dispatch_gate.sql",
+      "sha": "3830fdf8a08bffd04c091346cdc94b59c7a5b74d"
+    },
+    {
+      "path": "supabase/migrations/20261118232200_register_official_android_209_gps_permissions.sql",
+      "sha": "ceef119f8f6ac4055287886d2cf663bfc276ab31"
+    },
+    {
+      "path": "supabase/migrations/20261119003200_vault_cron_secret_for_courier_push.sql",
+      "sha": "6886ce2a88239699f2bdf01284d5e8a903924749"
+    },
+    {
+      "path": "supabase/migrations/20261120220000_fix_geocode_service_role_rate_limit.sql",
+      "sha": "7c4b7266e098a0df5e4881b029384b693f118640"
+    },
+    {
+      "path": "supabase/migrations/20261120223000_limit_nominatim_at_one_request_per_second.sql",
+      "sha": "55972b821b20d037b00c36999152b6cf47ff37f0"
+    },
+    {
+      "path": "supabase/migrations/20261121013000_courier_motion_telemetry.sql",
+      "sha": "5caa3fdf7e40ffd9db965d757d38bcd1a8610a39"
+    },
+    {
+      "path": "supabase/migrations/20261122143000_pitacco_driver_depart_single.sql",
+      "sha": "022f2d97cc69266ed61e5e85d34b86bb76678ecf"
+    },
+    {
+      "path": "supabase/migrations/20261122174000_courier_payment_receipt_collection.sql",
+      "sha": "396f9ed6177fc510abf0bdb6a623d46844bf15e9"
+    },
+    {
+      "path": "supabase/migrations/20261122185000_store_delivery_code_digits_ifood_four.sql",
+      "sha": "a0f08843942fb47cfb318fb3102e0f7bdea448f4"
+    },
+    {
+      "path": "supabase/migrations/20261123182839_studio_existing_branding_and_image_only_banners.sql",
+      "sha": "0a58c70ce00f3ba1d1db6977d79f95e124972c9b"
+    },
+    {
+      "path": "supabase/migrations/20261123213000_menu_import_universal.sql",
+      "sha": "0d2c9140afe85640c65d2a29d722afa477f33c9d"
+    },
+    {
+      "path": "supabase/migrations/20261124001000_linho_test_centralize_complements.sql",
+      "sha": "c8cd95c4f50dc2d26968bea03d092bca322b9ea3"
+    },
+    {
+      "path": "supabase/migrations/20261124101129_pitacco_validate_pizza_registration.sql",
+      "sha": "9fc46a504057539f02f5ef599a69cdfe20b918fe"
+    },
+    {
+      "path": "supabase/migrations/20261124101252_pitacco_pizza_server_quote.sql",
+      "sha": "1f0f1ae4f599fc364928d367273273e60593bdc6"
+    },
+    {
+      "path": "supabase/migrations/20261124101513_pitacco_pizza_catalog_checkout_bridge.sql",
+      "sha": "7745aecf8937ef1db9ec5286f646f48c9de3252b"
+    },
+    {
+      "path": "supabase/migrations/20261124101652_pitacco_pizza_publish_catalog.sql",
+      "sha": "3b8d431a98905d16b32cc6eadce307a60e25aca1"
+    },
+    {
+      "path": "supabase/migrations/20261124101957_pitacco_pizza_flavor_library.sql",
+      "sha": "dc586aa21c2e678ebb2a09292b33b6d2ff4bc83a"
+    },
+    {
+      "path": "supabase/migrations/20261124102124_pitacco_pizza_proportional_stock_recipes.sql",
+      "sha": "3cdeaffe68b888da385c3dbae685d4a19fc289b4"
+    },
+    {
+      "path": "supabase/migrations/20261124125232_pitacco_pizza_combo_drafts.sql",
+      "sha": "77b1ee2e41320f0b02cea2a45885c6057348d0f8"
+    },
+    {
+      "path": "supabase/migrations/20261124125707_pitacco_combo_checkout_stock_bridge.sql",
+      "sha": "377e152f961436388a74ac8ed0695eeef145bce5"
+    },
+    {
+      "path": "supabase/migrations/20261124125828_pitacco_combo_publication_fixed_composition.sql",
+      "sha": "df16cfc4b1371cb523ebbf16efe38d5a0d1e8c96"
+    },
+    {
+      "path": "supabase/migrations/20261124143259_pitacco_commercial_catalog_and_billing_guarded.sql",
+      "sha": "b55ef590b1be77ae4ee1578e7de9642ab212d3f4"
+    },
+    {
+      "path": "supabase/migrations/20261124143629_pitacco_owner_payment_claims_inbox.sql",
+      "sha": "edadd004c0dc1b27180bba18687547d256dfa1c1"
+    },
+    {
+      "path": "supabase/migrations/20261124164038_commercial_catalog_flex_fixo_fifteen_day_trial.sql",
+      "sha": "e87de28738909227be71ff69a648fbbfad23fed1"
+    },
+    {
+      "path": "supabase/migrations/20261124164500_fixo_prepaid_first_invoice_and_manual_coverage.sql",
+      "sha": "3a3389fca8bf972ba155e1e6927083cc202581ee"
+    },
+    {
+      "path": "supabase/migrations/20261124165020_first_fixo_trial_payment_grace_48h.sql",
+      "sha": "257a55b490d5a0f298032110ab2f27f922824aff"
+    },
+    {
+      "path": "supabase/migrations/20261124165612_asaas_commercial_invoice_reconciliation.sql",
+      "sha": "dcffca3f6911d49de3ee77324f9d9de188523d77"
+    },
+    {
+      "path": "supabase/migrations/20261124165710_asaas_customer_and_pix_charge_reservations.sql",
+      "sha": "dfc39e75d21db873181fc2a32f5d3a984469ba40"
+    },
+    {
+      "path": "supabase/migrations/20261124170103_asaas_signup_customer_and_single_payment_guard.sql",
+      "sha": "6b6918b02a4ebc7a13e15acbd9587581c4b00fda"
+    },
+    {
+      "path": "supabase/migrations/20261124171106_commercial_signup_plan_and_first_invoice_schedule.sql",
+      "sha": "91d7a9d2e4f9d779ac9f118fb991cdd59c9625af"
+    },
+    {
+      "path": "supabase/migrations/20261124190539_flex_to_fixo_paid_cutover_and_final_commission.sql",
+      "sha": "fb7027733e0b9c94df8558330ae701ecf6b711af"
+    },
+    {
+      "path": "supabase/migrations/20261124190619_flex_commission_require_accepted_order.sql",
+      "sha": "65d91a6b16a24dcce016aadf3d202c65681e2612"
+    },
+    {
+      "path": "supabase/migrations/20261124190823_fixo_to_flex_paid_coverage_cutover.sql",
+      "sha": "26f1a9c318c678c0b2da97978720859b315d1b81"
+    },
+    {
+      "path": "supabase/migrations/20261124191022_commercial_first_trial_block_after_48h.sql",
+      "sha": "4873fb57711d48ed9089e5810f5b31df2e7c7f91"
+    },
+    {
+      "path": "supabase/migrations/20261124191325_asaas_commercial_refund_chargeback_review.sql",
+      "sha": "473d871e17fb7cdec39045011f1a581515c861e4"
+    },
+    {
+      "path": "supabase/migrations/20261124191722_asaas_incident_admin_resolution_and_recovery.sql",
+      "sha": "2461fd8646a31cea37584d96e55938df3e52745f"
+    },
+    {
+      "path": "supabase/migrations/20261124191841_commercial_recovery_notice_and_reference_guard.sql",
+      "sha": "7d4b705ebb3894e3b150765fe6c90d4a9c6e0338"
+    },
+    {
+      "path": "supabase/migrations/20261124192920_flex_two_percent_all_sales_catalog_v4.sql",
+      "sha": "dc40b9a72e6f11cfd600be3b6696ac2c63dbfa22"
+    },
+    {
+      "path": "supabase/migrations/20261125022644_storefront_persistent_device_sessions.sql",
+      "sha": "560d780d9502276697ec601d485c4004b603ab5e"
+    },
+    {
+      "path": "supabase/migrations/20261125022803_storefront_device_order_history.sql",
+      "sha": "4a54be167758e2fe10d8c95c8744f7e45f8491be"
+    },
+    {
+      "path": "supabase/migrations/20261125143136_ifood_shipping_test_context.sql",
+      "sha": "bbb9ec9fbe1686bc5bad6e6b7b2c8fdd000e18e2"
+    },
+    {
+      "path": "supabase/migrations/20261125143153_ifood_shipping_test_context_aliases.sql",
+      "sha": "89f0af724fb5c4a7419cee43293e57d1806878ca"
+    },
+    {
+      "path": "supabase/migrations/20261125143415_ifood_shipping_test_booking.sql",
+      "sha": "7439431dd731864a260526d601835beec5b994d0"
+    },
+    {
+      "path": "supabase/migrations/20261125143500_ifood_shipping_booking_preserve_operator_until_confirmation.sql",
+      "sha": "f48b28238ffbc7b210675c879aa4815a4a1cdc89"
+    },
+    {
+      "path": "supabase/migrations/20261125143559_ifood_shipping_test_event_reconciliation.sql",
+      "sha": "f1e5a68f26c7f291d566553f2e2289a021ec8233"
+    },
+    {
+      "path": "supabase/migrations/20261125143645_ifood_shipping_test_poll_lease_and_evidence.sql",
+      "sha": "cea06231b5fc27e964ca8658a606be64d0cf62c4"
+    },
+    {
+      "path": "supabase/migrations/20261125143700_ifood_shipping_test_event_discard_pos_order_duplicates.sql",
+      "sha": "2d76c0b0595d9e59e92906114e517daaff2de3b7"
+    },
+    {
+      "path": "supabase/migrations/20261125152647_ifood_shipping_ack_after_durable_processing.sql",
+      "sha": "aeb85c7871f3750d31f098eeb39becb7b32e64f5"
+    },
+    {
+      "path": "supabase/migrations/20261125152810_ifood_shipping_poll_clock_slots.sql",
+      "sha": "5b354c87982568cb668c853ccaec29ebaac40cbf"
+    },
+    {
+      "path": "supabase/migrations/20261125171311_ifood_shipping_external_test_quote_claim.sql",
+      "sha": "bb5b75ecb6ebd8257882f47b11c38431ba7366b0"
+    },
+    {
+      "path": "supabase/migrations/20261125171834_ifood_shipping_external_address_and_cancel.sql",
+      "sha": "38a64b7a576ca81450dfc63da8662c8a0bdfbfbf"
+    },
+    {
+      "path": "supabase/migrations/20261125175000_ifood_isolated_central_production_routing.sql",
+      "sha": "c4e676be1e3cc0b53784af50e446e9f81aeb94d2"
+    },
+    {
+      "path": "supabase/migrations/20261125224112_ifood_scheduled_manual_acceptance.sql",
+      "sha": "52fda82927e663653cb6590153f3a336b07bd955"
+    },
+    {
+      "path": "supabase/migrations/20261125225411_unified_published_store_logo.sql",
+      "sha": "f3093fff64094db11d841c3d6fe70a991d114ede"
+    },
+    {
+      "path": "supabase/migrations/20261125233025_manual_and_geographic_delivery_grouping.sql",
+      "sha": "e7a411e7fcd97e6871c64949fc6c436bc949923b"
+    },
+    {
+      "path": "supabase/migrations/20261125233043_geographic_grouping_internal_permissions_and_empty_routes.sql",
+      "sha": "91b56e0b17026879cc863a72ef6d99807aff5128"
+    },
+    {
+      "path": "supabase/migrations/20261125234138_delivery_area_eta_snapshot.sql",
+      "sha": "e1085cea34120f5d9e1dedcd2a0ef618330c2c5a"
+    },
+    {
+      "path": "supabase/migrations/20261125234454_ifood_official_preparation_estimate.sql",
+      "sha": "1d0ccca405b30da6a188158ef1e3a8df509a3828"
+    },
+    {
+      "path": "supabase/migrations/20261125235203_priority_delivery_quote_and_dispatch.sql",
+      "sha": "dc490d0a8833b616efb9040c9f7105215f9cd123"
+    },
+    {
+      "path": "supabase/migrations/20261125235433_priority_tracking_and_geographic_dispatch_schedule.sql",
+      "sha": "3a509cf582fdeb29b4a2c91f2156cd8dfa60f76a"
+    },
+    {
+      "path": "supabase/migrations/20261126000700_own_delivery_reassignment_and_manual_hold.sql",
+      "sha": "cc1c5bd1592e58262477d8c191655568b0abbd57"
+    },
+    {
+      "path": "supabase/migrations/20261126000828_ifood_test_cancel_driver_preserve_sale.sql",
+      "sha": "60638186a7df59867cdc7cc4afdcc4ae4edf39f9"
+    },
+    {
+      "path": "supabase/migrations/20261126015356_self_service_commercial_plan_migration.sql",
+      "sha": "6f35c55831357051fc00f781ecde15895e40c172"
+    },
+    {
+      "path": "supabase/migrations/20261126021611_manual_proof_identity_and_pending_activation_status.sql",
+      "sha": "a91c77a40cd58124b62ada4ec6f69d926c811314"
+    },
+    {
+      "path": "supabase/migrations/20261126031000_restore_store_identity_rpc.sql",
+      "sha": "e9251f61c1d5d334f1f1aacba7474db205ee5fdb"
+    },
+    {
+      "path": "supabase/migrations/20261126143838_control_legacy_rpc_least_privilege.sql",
+      "sha": "cd53f7702f1ae96ab414db7fee13f85cada2bf19"
+    },
+    {
+      "path": "supabase/migrations/20261126150324_ifood_suppress_new_orders_during_pitacco_block.sql",
+      "sha": "a23ee6170b1e074dd1bca1b9b4e3ffcf220fa15d"
+    },
+    {
+      "path": "supabase/migrations/20261126150534_marketplace_admission_cutoff_after_pitacco_block.sql",
+      "sha": "bde9f479211bf127cfbf630f1bd7d981b3b04560"
+    }
+  ]
+}
