@@ -1216,7 +1216,7 @@ try {
         assert.ok(layout.gap<=24,'No large blank space above preview');
       }
       await page.setViewportSize({width,height:900});
-      await studio.getByRole('button',{name:/Urbano Blocos/}).click();
+      assert.equal(await studio.getByRole('button',{name:/Urbano Blocos|Essencial Cabeçalho|Editorial Capa/}).count(),0,'Only V2 is offered');
       await studio.getByLabel('Cor Principal').fill('#b43e24');
       await studio.getByLabel('Slogan').fill('O melhor da cidade');
       await studio.getByRole('button',{name:'Computador'}).click();
@@ -1239,9 +1239,9 @@ try {
       await studio.getByText('Alterações salvas e publicadas!',{exact:false}).waitFor();
       assert.equal(studioDraftVersion,1);
       assert.equal(studioPublishedVersion,1);
-      assert.equal(studioPublished.template,'urbano');
+      assert.equal(studioPublished.template,'pitacco-v2');
       assert.equal(studioPublished.primary,'#b43e24');
-      assert.equal(studioDraft.theme,'premium');
+      assert.equal(studioDraft.theme,studioPublished.theme,'Existing theme is preserved');
       assert.equal(studioDraft.primary,'#b43e24');
       assert.equal(await studio.getByRole('button',{name:'Salvar e publicar',exact:true}).isDisabled(),false,
         'O botão continua acessível sem novas alterações');

@@ -59,42 +59,6 @@ try{
   });
   await page.goto(origin+'/loyalty-test?indicacao=INDICADOR');
 
-  if(template==='classic'){
-   await page.getByRole('button',{name:'Personalizar Açaí',exact:true}).click();
-   await page.getByRole('button',{name:/Adicionar à sacola/}).click();
-   await page.locator('#openCart').click();
-   await page.locator('#cart input').fill('2');
-   await page.locator('#cart input').dispatchEvent('change');
-   await page.locator('#continueCheckout').click();
-   linkGenerated=true; // Existing eligible customer, shared wallet fixture.
-   await page.locator('#phone').fill('21999990001');
-   await page.locator('#v2CheckoutNext').click();
-   await page.locator('#customer').fill('Cliente');
-   await page.locator('#v2CheckoutNext').click();
-   await page.locator('#v2CheckoutNext').click();
-   await page.locator('#cartDialog[data-v2-stage="payment"]').waitFor();
-   await page.locator('#v2PaymentCards [data-kind="pix_manual"]').click();
-   await page.locator('#loyaltyReward option[value="cashback"]').waitFor({state:'attached'});
-   assert.equal(await page.locator('#loyaltyReward option').count(),4);
-   assert.equal(await page.locator('#loyaltyCardContent').isVisible(),false);
-   if(width!==1440)await page.locator('.loyalty-redeem-button[data-reward="'+(width===375?'points':'cashback')+'"]').click();
-   else await page.locator('.loyalty-redeem-button[data-coupon="SEMANA5"]').click();
-   await page.locator('#total').getByText('Desconto Fideliza+',{exact:true}).waitFor({state:'attached'});
-   await page.locator('#v2CheckoutNext').click();
-   await page.locator('#send').click();
-   await page.getByRole('button',{name:'Tentar novamente',exact:true}).waitFor();
-   assert.equal(await page.locator('#loyaltyBox').evaluate(e=>e.inert),true);
-   await page.locator('#send').click();
-   await page.getByRole('heading',{name:'✓ Pedido confirmado!',exact:true}).waitFor();
-   assert.equal(sent.length,2);
-   assert.deepEqual(sent[0],sent[1]);
-   assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-cart:loyalty-test')),null);
-   assert.deepEqual(errors,[]);
-   console.log('PASS Classic pickup, benefits and immutable retry',width);
-   await page.close();
-   continue;
-  }
-
   await page.waitForFunction(()=>document.body.dataset.menuSkin);
   await page.locator('#menuStartup').waitFor({state:'hidden'});
   if(slowImageScenario){
@@ -103,14 +67,12 @@ try{
   }
   assert.equal(await page.locator('#v2HomeLoyalty').isVisible(),true,
     'Fideliza+ deve estar presente desde a primeira exibição, sem empurrar categorias');
-  if(template==='pitacco-v2'){
+  {
    const compact=await page.locator('#v2HomeLoyalty').evaluate(card=>{
     const r=card.getBoundingClientRect(),button=card.querySelector('#v2HomeLoyaltyGo').getBoundingClientRect(),brand=card.querySelector('.v2-loyalty-brand').getBoundingClientRect(),copy=card.querySelector('.v2-loyalty-compact-copy').getBoundingClientRect();
     return {height:r.height,overflow:card.scrollWidth>card.clientWidth+1,progress:getComputedStyle(card.querySelector('.v2-progress-card')).display,buttonHeight:button.height,inline:brand.right<=copy.left&&copy.right<=button.left&&button.right<=r.right+1};
    });
    assert.ok(compact.height<=84&&!compact.overflow&&compact.progress==='none'&&compact.buttonHeight>=44&&compact.inline,'Compact Fideliza+ row: '+JSON.stringify(compact));
-  }else{
-   assert.equal(await page.locator('#v2HomeLoyalty .v2-progress-card').isVisible(),true,'Other templates keep their existing loyalty design');
   }
   assert.equal(await page.locator('#v2HeroLocation').count(),0,'Store location is not displayed under availability');
   assert.equal(await page.locator('#hero').getByText('Localidade de teste com nome comprido · Nova Iguaçu',{exact:false}).count(),0);
@@ -131,7 +93,7 @@ try{
     'Categorias não podem mudar de posição depois que o carregamento desaparece');
   await page.locator('.product-open').first().waitFor();
   await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
-  if(template==='pitacco-v2'){
+  {
    assert.deepEqual(await page.locator('#v2TopProducts .v2-top-name').allTextContents(),['Açaí','Combo da casa','Creme de cupuaçu','Açaí especial']);
    assert.equal(await page.locator('#v2TopProducts .v2-top-badge').filter({hasText:'Mais pedido'}).count(),4);
    const compactGrid=await page.locator('#v2TopProducts').evaluate(grid=>({
@@ -141,22 +103,20 @@ try{
    }));
    assert.equal(compactGrid.columns,width<=600?2:4);
    assert.ok(compactGrid.photos.every(height=>height<=149)&&!compactGrid.overflow,'Four compact cards fit without overflow: '+JSON.stringify(compactGrid));
-  }else assert.equal(await page.locator('#v2TopProducts .v2-top-product').count(),2);
+  }
   await page.evaluate(()=>{for(const image of document.images)if(image.src.includes('fixtures.pitacco.test'))image.loading='eager';});
   await page.waitForFunction(()=>[...document.images].filter(i=>i.src.includes('fixtures.pitacco.test')).every(i=>i.complete&&i.naturalWidth>0),null,{timeout:10000});
   assert.equal(await page.locator('.product').first().evaluate(card=>{const photo=card.querySelector('.product-visual').getBoundingClientRect(),image=card.querySelector('.product-visual img').getBoundingClientRect();return image.bottom<=photo.bottom+1&&image.height<=photo.height+1;}),true,'Foto real limitada à área visual sem cobrir texto');
   assert.equal(await page.locator('#v2HeaderBack,#v2HeaderSearch,#v2HeaderAbout,#v2HeaderCart').count(),0,'No redundant banner controls');
   assert.ok(await page.locator('.store-mark').evaluate(e=>e.getBoundingClientRect().width>=76),'Larger storefront logo');
-  if(template==='pitacco-v2'){
+  {
    const hero=await page.locator('#hero').evaluate(e=>{
     const mark=e.querySelector('.store-mark'),m=mark.getBoundingClientRect(),name=e.querySelector('#storeName').getBoundingClientRect(),bounds=e.getBoundingClientRect();
     return {size:m.width,square:Math.abs(m.width-m.height)<1,radius:getComputedStyle(mark).borderRadius,centered:Math.abs((m.left+m.right-bounds.left-bounds.right)/2)<2,below:name.top>=m.bottom,heroWidth:bounds.width,overflow:e.scrollWidth>bounds.width+1};
    });
    assert.ok(hero.size>=146&&hero.square&&hero.radius==='50%'&&hero.centered&&hero.below&&!hero.overflow,'Approved centered logo medallion and name below: '+JSON.stringify(hero));
   }
-  if(template==='urbano')assert.equal(await page.locator('#v2HeroImage').evaluate(img=>img.getBoundingClientRect().left>=document.querySelector('.store-mark').getBoundingClientRect().right),true,'Foto decorativa não cobre o logotipo');
-  if(template==='urbano')assert.equal(await page.evaluate(()=>{const photo=document.getElementById('v2HeroImage').getBoundingClientRect();return document.getElementById('v2DeliveryText').getBoundingClientRect().right<photo.left;}),true,'Prazo legível ao lado da foto decorativa');
-  assert.equal(await page.locator('body').getAttribute('data-menu-skin'),template==='pitacco-v2'?'principal':template);
+  assert.equal(await page.locator('body').getAttribute('data-menu-skin'),'principal','All legacy IDs render Principal V2');
   await mkdir('artifacts',{recursive:true});
   await page.screenshot({path:`artifacts/menu-${template}-${width}.png`,fullPage:true});
   await page.locator('#v2HomeLoyaltyGo').click();
