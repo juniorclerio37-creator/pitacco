@@ -184,6 +184,9 @@ jobs:
           CORE_OWN_LOGISTICS_DB_PASSWORD: ci-own-logistics-only
           CORE_MERCHANT_DISPATCH_DB_USERNAME: pitacco_core_merchant_dispatch
           CORE_MERCHANT_DISPATCH_DB_PASSWORD: ci-merchant-dispatch-only
+          PITACCO_COURIER_PAYMENT_ENABLED: 'true'
+          CORE_COURIER_PAYMENT_DB_USERNAME: pitacco_core_courier_payment
+          CORE_COURIER_PAYMENT_DB_PASSWORD: ci-courier-payment-only
           PITACCO_COURIER_SHIFT_ENABLED: 'true'
           CORE_COURIER_SHIFT_DB_USERNAME: pitacco_core_courier_shift
           CORE_COURIER_SHIFT_DB_PASSWORD: ci-courier-shift-only

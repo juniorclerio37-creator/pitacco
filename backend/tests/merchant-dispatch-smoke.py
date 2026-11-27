@@ -79,6 +79,23 @@ saved=merchant_map('map-point',token=owner,body={'latitude':-22.8512345,'longitu
 assert saved['saved'] is True and float(saved['latitude'])==-22.851235
 snap=merchant_map('fleet-map',token=owner)['data']
 assert snap['store']['id']==s and snap['store']['latitude']==saved['latitude']
+# Store registration's map is a single point, not the operational fleet payload.
+point=merchant_map('map-point',token=owner)['data']
+assert set(point)=={'id','name','latitude','longitude','saved'} and point['id']==s
+assert point['latitude']==saved['latitude'] and point['longitude']==saved['longitude']
+# Same canonical coordinate from the courier's authenticated map, no second marker.
+req=urllib.request.Request('http://127.0.0.1:8099/api/v1/courier/map',headers={'Accept':'application/json','Authorization':'Bearer '+courier})
+with urllib.request.urlopen(req,timeout=12) as res:
+    courier_map=json.loads(res.read())['data']
+assert len(courier_map['origins'])==1 and courier_map['origins'][0]['store_id']==s
+assert courier_map['origins'][0]['latitude']==point['latitude'] and courier_map['origins'][0]['longitude']==point['longitude']
+assert all(x['store_id']==s for x in courier_map['deliveries'])
+# Original rate cap shared with geocoding service; denied writes keep point unchanged.
+scope='store-map-point-hour-'+s
+sql("update pitacco_private.delivery_quote_rate_limits set attempts=30 where scope='"+scope+"'")
+merchant_map('map-point',429,owner,body={'latitude':-22.81,'longitude':-43.41,'confirmed':True})
+assert merchant_map('map-point',token=owner)['data']['latitude']==point['latitude']
+sql("delete from pitacco_private.delivery_quote_rate_limits where scope='"+scope+"'")
 assert all(x['store_id']==s for x in snap['couriers']+snap['deliveries'])
 assert sql("select jsonb_build_array(latitude,longitude)::text from public.stores where id='"+b+"'")==other_point
 # Restore fixture fields without touching another store.

@@ -46,13 +46,20 @@ grant execute on function core_auth.can_act(uuid),core_auth.own_logistics_fixtur
 -- CI-only confirmed canonical marker, following the original store-point rules.
 create function core_auth.store_point_fixture(s uuid,lat numeric,lng numeric) returns jsonb
 language plpgsql security definer set search_path='' as $fn$
-declare result jsonb;
+declare result jsonb; counter integer;
 begin
  if not core_auth.can_act(s) then raise exception 'Sem permissão' using errcode='42501';end if;
  if lat is not null or lng is not null then
   if lat is null or lng is null or lat not between -34 and 6 or lng not between -75 and -32 then raise exception 'Ponto inválido' using errcode='22023';end if;
   if not exists(select 1 from public.stores x where x.id=s and nullif(trim(x.address),'') is not null and nullif(trim(x.city),'') is not null and nullif(trim(x.state),'') is not null) then raise exception 'Endereço incompleto' using errcode='22023';end if;
-  if not public.pitacco_service_delivery_quote_limit('store-map-point-hour-'||s::text,30,60) then raise exception 'Limite de ponto' using errcode='P0001';end if;
+  -- Same original fixed-hour bucket and scope, with no service_role impersonation.
+  -- No arbitrary scope, window or max can be supplied by this HTTP role.
+  insert into pitacco_private.delivery_quote_rate_limits(scope,window_start,attempts)
+  values('store-map-point-hour-'||s::text,to_timestamp(floor(extract(epoch from now())/3600)*3600),1)
+  on conflict(scope,window_start) do update set attempts=pitacco_private.delivery_quote_rate_limits.attempts+1
+    where pitacco_private.delivery_quote_rate_limits.attempts<30
+  returning attempts into counter;
+  if counter is null then raise exception 'Limite de ponto' using errcode='P0001';end if;
   update public.stores set latitude=round(lat,6),longitude=round(lng,6) where id=s;
  end if;
  select jsonb_build_object('id',x.id,'name',x.name,'latitude',x.latitude,'longitude',x.longitude,'saved',lat is not null) into result from public.stores x where x.id=s;
