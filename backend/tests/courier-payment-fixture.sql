@@ -58,3 +58,31 @@ begin
 end $fn$;
 revoke all on function core_auth.courier_earnings_fixture(text) from public,anon,authenticated;
 grant execute on function core_auth.courier_earnings_fixture(text) to pitacco_core_courier_payment;
+
+-- CI-only safe history. Preserve original masked history fields, including
+-- the current app's cancelled bucket. No direct delivery/receipt access.
+create function core_auth.courier_history_fixture(p_limit integer) returns jsonb
+language plpgsql security definer set search_path='' as $fn$
+declare result jsonb;
+begin
+ perform core_auth.courier_shift_fixture('ready');
+ if p_limit is null or p_limit not between 1 and 50 then raise exception 'Limite inválido' using errcode='22023';end if;
+ select coalesce(jsonb_agg(jsonb_build_object(
+  'number',coalesce(public.pitacco_order_public_label(o.receipt,coalesce(o.source,d.source)),'Número indisponível'),
+  'source',d.source,'status',d.status,'completed_at',d.updated_at,'finished_at',d.updated_at,
+  'arrived_at',d.arrived_at,'amount',case when d.status='cancelada' then 0 else d.courier_payment end,
+  'initial',case when nullif(btrim(d.customer_name),'') is null then 'C.' else upper(left(btrim(d.customer_name),1))||'.' end,
+  'address_hint',case when nullif(btrim(d.address),'') is null then 'Endereço resumido indisponível' else left(btrim(split_part(d.address,',',1)),8)||'…' end
+ ) order by d.updated_at desc,d.id),'[]'::jsonb) into result
+ from (
+  select x.* from public.deliveries x
+  join public.couriers c on c.id=x.courier_id and c.store_id=x.store_id and c.user_id=auth.uid() and c.active and c.fleet_type='propria'
+  join core_auth.memberships m on m.user_id=c.user_id and m.store_id=c.store_id and m.active and m.role='courier'
+  join core_auth.stores st on st.id=m.store_id and st.active
+  where x.status in ('entregue','cancelada') and x.logistics_provider='loja' and x.source in ('proprio','ifood')
+  order by x.updated_at desc,x.id limit p_limit
+ ) d left join public.orders o on o.id=d.order_id and o.store_id=d.store_id;
+ return result;
+end $fn$;
+revoke all on function core_auth.courier_history_fixture(integer) from public,anon,authenticated;
+grant execute on function core_auth.courier_history_fixture(integer) to pitacco_core_courier_payment;

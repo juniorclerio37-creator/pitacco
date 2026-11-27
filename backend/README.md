@@ -316,3 +316,6 @@ Ver `VPS-READINESS.md`. A contratação não é necessária para os testes CI at
 
 ## Paridade de ganhos do entregador
 GET `/courier/earnings?period=hoje|semana|mes` usa a função original `pitacco_driver_earnings`, com a exclusão de homologação já existente, apenas sessão Core+legado autorizada e identidade inequívoca de entregador próprio. Não recalcula remuneração nem usa o valor bruto do pedido. Projeção original para gráficos e totais, sem mudança de interface. Testes CI incluem valor recebido versus repasse, período, exclusão de teste e revogação. API experimental ainda não conectada à tela publicada.
+
+## Histórico protegido do entregador
+GET `/courier/history?limit=30` (1–50) implementa projeção de leitura compatível com o painel original, inclui concluídas e canceladas, remuneração zero para cancelada, inicial do cliente e endereço resumido. Acesso somente ao entregador próprio com vínculo ativo na mesma loja. Não retorna recibo, telefone, PIN, nome completo, endereço completo, ID interno da entrega ou contato expirado. Testes CI pendentes. A interface publicada não foi alterada.

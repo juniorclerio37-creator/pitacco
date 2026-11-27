@@ -141,7 +141,37 @@ sql("update public.orders set receipt=receipt||'{\"ifood_test\":true}'::jsonb wh
 assert float(earnings('hoje',token=courier)['data']['today']['amount'])==0
 sql("update public.orders set receipt=receipt-'ifood_test' where id='98000000-0000-0000-0000-000000000011'")
 print('PASS: original courier earnings, real remuneration, Sao Paulo calendar, test exclusion, scoped read only')
+# Protected completed/cancelled list, same fields as original UI.
+def history(expected=200,token=None,query=''):
+    headers={'Accept':'application/json'}
+    if token:headers['Authorization']='Bearer '+token
+    req=urllib.request.Request('http://127.0.0.1:8097/api/v1/courier/history'+query,headers=headers)
+    try:res=urllib.request.urlopen(req,timeout=12)
+    except urllib.error.HTTPError as e:res=e
+    with res:
+        raw=res.read()
+        assert res.status==expected,(res.status,expected,raw[:250])
+        return json.loads(raw)
+history(401)
+history(403,owner)
+history(401,gps)
+history(422,courier,'?limit=51')
+history(422,courier,'?store_id='+s)
+sql("update public.deliveries set customer_name='Cliente PRIVADO',address='Rua Teste, 999 SEGREDO' where id='"+delivery+"'")
+rows=history(token=courier)['data']
+assert len(rows)==1 and rows[0]['status']=='entregue' and float(rows[0]['amount'])==7.50
+assert rows[0]['initial']=='C.' and rows[0]['address_hint']=='Rua Test…'
+assert set(rows[0])=={'number','source','status','completed_at','finished_at','arrived_at','amount','initial','address_hint'}
+assert 'PRIVADO' not in json.dumps(rows) and 'SEGREDO' not in json.dumps(rows)
+assert len(history(token=courier,query='?limit=1')['data'])==1
+# The second synthetic delivery is cancelled only for this history test,
+# then restored for any independent regression fixture.
+sql("update public.deliveries set status='cancelada' where id='"+other+"'")
+rows=history(token=courier)['data']
+assert len(rows)==2 and any(x['status']=='cancelada' and float(x['amount'])==0 for x in rows)
+print('PASS: safe courier history, completed and cancelled, amount and privacy, no active delivery data')
 call('/auth/logout',200,{},courier)
+history(401,courier)
 earnings('hoje',401,courier)
 call(d,401,{'action':'code_lengths'},courier)
 call(p,401,confirm,courier)

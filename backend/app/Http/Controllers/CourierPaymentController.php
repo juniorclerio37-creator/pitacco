@@ -60,4 +60,28 @@ final class CourierPaymentController
             return response()->json(['error'=>$s==='42501'?'not_authorized':'temporarily_unavailable'],$s==='42501'?403:503)->header('Cache-Control','no-store');
         }catch(JsonException|UnexpectedValueException){return response()->json(['error'=>'temporarily_unavailable'],503)->header('Cache-Control','no-store');}
     }
+
+    public function history(Request $request): JsonResponse
+    {
+        abort_unless(app()->environment('testing')&&config('pitacco.courier_payment_enabled'),404);
+        $data=$request->validate(['limit'=>['sometimes','integer','min:1','max:50']]);
+        if(array_diff(array_keys($request->all()),array_keys($data)))throw ValidationException::withMessages(['request'=>'Campos não suportados.']);
+        $session=$request->attributes->get('core_session');
+        try{
+            $db=DB::connection('core_courier_payment');
+            $result=$db->transaction(function() use($db,$session,$data){
+                $db->statement('set transaction read only');
+                $db->statement("set local statement_timeout = '5s'");
+                $db->selectOne("select set_config('pitacco.core_session_id',?,true),set_config('request.jwt.claim.sub',?,true)",[$session->session_id,$session->user_id]);
+                $row=$db->selectOne('select core_auth.courier_history_fixture(cast(? as integer)) as payload',[$data['limit']??30]);
+                $result=json_decode($row->payload,true,512,JSON_THROW_ON_ERROR);
+                if(!is_array($result))throw new UnexpectedValueException('Invalid history projection');
+                return $result;
+            });
+            return response()->json(['data'=>$result])->header('Cache-Control','no-store');
+        }catch(QueryException $e){
+            $s=$e->errorInfo[0]??'';
+            return response()->json(['error'=>$s==='42501'?'not_authorized':'temporarily_unavailable'],$s==='42501'?403:503)->header('Cache-Control','no-store');
+        }catch(JsonException|UnexpectedValueException){return response()->json(['error'=>'temporarily_unavailable'],503)->header('Cache-Control','no-store');}
+    }
 }
