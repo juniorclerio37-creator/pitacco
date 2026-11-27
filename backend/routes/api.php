@@ -59,6 +59,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/auth/me',[CoreAuthController::class,'me']);
             Route::post('/auth/logout',[CoreAuthController::class,'logout']);
             Route::get('/stores/{store}/own-logistics/{resource}',OwnBoardLogisticsController::class)->whereUuid('store')->whereIn('resource',['deliveries','couriers','positions']);
+            Route::get('/stores/{store}/operation-settings',[OwnBoardOrdersController::class,'settings'])->whereUuid('store');
             Route::get('/stores/{store}/orders/own-board',OwnBoardOrdersController::class)->whereUuid('store');
             Route::get('/stores/{store}/orders',DailyOrdersController::class)->whereUuid('store');
             Route::post('/stores/{store}/orders/{order}/actions',OwnOrderActionsController::class)->whereUuid(['store','order']);

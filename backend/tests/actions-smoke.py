@@ -27,6 +27,23 @@ board='/stores/'+A+'/orders/own-board'
 board_actions_base=BASE
 board_base='http://127.0.0.1:8087/api/v1'
 BASE=board_base
+ops='/stores/'+A+'/operation-settings'
+call(ops,401)
+call(ops,404,token=bob)
+call(ops.replace(A,B),404,token=alice)
+oper=call(ops,200,token=alice)['data']
+assert set(oper)=={'store_id','dispatch_mode','acceptance_settings','print_sectors'} and oper['store_id']==A
+assert oper['dispatch_mode']=='manual'
+sector=next(x for x in oper['print_sectors'] if x['sector']=='cozinha')
+assert sector['printer']=='TEST-58' and sector['width']==58 and sector['copies']==2 and sector['enabled'] is True
+assert set(sector)=={'store_id','sector','printer','width','copies','enabled','sources','categories'}
+sql("begin; insert into public.acceptance_settings(store_id,source,mode,enabled) values ('"+A+"','proprio','automatic',true) on conflict(store_id,source) do update set mode='automatic',enabled=true; insert into public.print_sectors(store_id,sector,printer,width,copies) values ('"+B+"','fixture-other','NO-LEAK',80,1); commit;")
+oper=call(ops,200,token=alice)['data']
+assert any(x['source']=='proprio' and x['mode']=='automatic' and x['enabled'] for x in oper['acceptance_settings'])
+assert all(x['store_id']==A for x in oper['acceptance_settings']+oper['print_sectors'])
+assert 'NO-LEAK' not in json.dumps(oper)
+sql("delete from public.acceptance_settings where store_id='"+A+"' and source='proprio'; delete from public.print_sectors where store_id='"+B+"' and sector='fixture-other'")
+print('PASS: operational acceptance, dispatch and printer settings read, cross-store isolation')
 call(board,401)
 call(board,404,token=bob)
 call(board.replace(A,B),404,token=alice)
@@ -397,6 +414,7 @@ call(fiado,404,token=alice)
 print('PASS: original Fiado manager overview, role and store isolation, revoked membership')
 
 BASE=board_base
+call(ops,404,token=alice)
 call(board,404,token=alice)
 BASE=board_actions_base
 action(A,1,'accept',404,alice)

@@ -34,3 +34,19 @@ revoke all on function core_auth.board_scalars_fixture(jsonb,text[]),core_auth.b
 create role pitacco_core_own_board login password 'ci-own-board-only' nosuperuser nocreatedb nocreaterole nobypassrls;
 grant usage on schema core_auth to pitacco_core_own_board;
 grant execute on function core_auth.can_act(uuid),core_auth.own_board_fixture(uuid,integer,integer) to pitacco_core_own_board;
+
+-- Read existing settings without exposing device identifiers, jobs, or credentials.
+create function core_auth.operation_settings_fixture(s uuid) returns jsonb
+language plpgsql stable security definer set search_path='' as $$
+declare result jsonb;
+begin
+ if not core_auth.can_act(s) then raise exception 'Escopo não autorizado' using errcode='42501';end if;
+ select jsonb_build_object(
+  'store_id',st.id,'dispatch_mode',st.dispatch_mode,
+  'acceptance_settings',coalesce((select jsonb_agg(jsonb_build_object('store_id',a.store_id,'source',a.source,'mode',a.mode,'enabled',a.enabled) order by a.source) from public.acceptance_settings a where a.store_id=s),'[]'::jsonb),
+  'print_sectors',coalesce((select jsonb_agg(jsonb_build_object('store_id',p.store_id,'sector',p.sector,'printer',p.printer,'width',p.width,'copies',p.copies,'enabled',p.enabled,'sources',coalesce(to_jsonb(p)->'sources','[]'::jsonb),'categories',coalesce(to_jsonb(p)->'categories','[]'::jsonb)) order by p.sector) from public.print_sectors p where p.store_id=s),'[]'::jsonb)
+ ) into result from public.stores st where st.id=s;
+ return result;
+end $$;
+revoke all on function core_auth.operation_settings_fixture(uuid) from public,anon,authenticated;
+grant execute on function core_auth.operation_settings_fixture(uuid) to pitacco_core_own_board;
