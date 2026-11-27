@@ -81,13 +81,25 @@ jobs:
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/up >/dev/null && break; sleep 1; done
           python3 tests/checkout-smoke.py
           node --test tests/tracking-client.test.mjs tests/storefront-client.test.mjs
+      - name: Instalar Chromium para homologação
+        run: |
+          npm install --prefix web --no-save --package-lock=false playwright@1.58.2
+          (cd web && npx playwright install --with-deps chromium)
       - name: Testar transporte em sessão isolada de rate limit
         working-directory: backend
         env:
           CORE_REDIS_PREFIX: 'pitacco_core_transport_ci:'
+          PITACCO_HOMOLOGATION_ENABLED: 'true'
         run: |
           php artisan serve --host=127.0.0.1 --port=8081 >/tmp/core-transport.log 2>&1 &
           server=$!
           trap 'kill "$server" 2>/dev/null || true; cat /tmp/core-transport.log' EXIT
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8081/up >/dev/null && break; sleep 1; done
           node tests/storefront-http.mjs
+          node tests/storefront-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: core-storefront-homologation
+          path: /tmp/core-storefront-homologation.png
+          if-no-files-found: error

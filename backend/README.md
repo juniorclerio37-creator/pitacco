@@ -28,3 +28,6 @@ POST /api/v1/public/orders/tracking recebe o identificador privado no corpo JSON
 
 ## Transporte do cardápio e checkout
 `clients/storefront.mjs` usa somente a API same-origin do Laravel. O ID original da requisição é preservado pelo chamador; nenhuma tentativa automática ou fallback para outro backend é realizado. Em falha ambígua, o cliente recebe estado `uncertain` e deve consultar recuperação antes de decidir qualquer nova tentativa, mantendo o mesmo ID e carrinho. Testes unitários e HTTP de CI exercitam cardápio, pedido Pix manual e perda de resposta. Não foi integrado à interface atual; cotação, demais pagamentos, autenticação do cliente e restauração do esquema real seguem pendentes.
+
+## Homologação visual isolada
+A rota `/core-homologacao` só é servida em APP_ENV=testing e com a opção explícita PITACCO_HOMOLOGATION_ENABLED. Usa loja e produto fictícios fixos, Pix manual e retirada. Não é uma reformulação do template V2 aprovado. O teste Chromium simula confirmação perdida e recuperação, verifica acompanhamento e ausência de conexões externas. Nenhuma integração com o site publicado, nenhuma compra real. O restante das modalidades e a adaptação visual do cardápio original ficam pendentes.
