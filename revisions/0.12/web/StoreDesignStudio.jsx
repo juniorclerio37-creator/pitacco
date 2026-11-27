@@ -4,10 +4,7 @@ import './store-design-studio.css';
 import StorefrontLivePreview from './StorefrontLivePreview.jsx';
 
 const templates=[
- {id:'pitacco-v2',name:'Principal',description:'Roxo e laranja, fotos em grade e destaque para benefícios.',theme:'colorido',primary:'#ff7a08',secondary:'#6f4b80',background:'#faf7fd',paper:'#ffffff',foreground:'#261033',hero:'#4b075e',highlight:'#f4e5fb',layout:'grade',font:'sistema',radius:20},
- {id:'essencial',name:'Essencial',description:'Cabeçalho claro, categorias em pílulas e fotos à esquerda.',theme:'minimalista',primary:'#217c5a',secondary:'#53756c',background:'#f5f8f6',paper:'#ffffff',foreground:'#173a2d',hero:'#174c39',highlight:'#e5f2e9',layout:'lista',font:'sistema',radius:16},
- {id:'editorial',name:'Editorial',description:'Capa fotográfica, navegação em abas e cartões editoriais.',theme:'moderno',primary:'#bc5435',secondary:'#806551',background:'#fbf7f0',paper:'#ffffff',foreground:'#38271f',hero:'#41271f',highlight:'#f8ebdd',layout:'destaques',font:'serifada',radius:8},
- {id:'urbano',name:'Urbano',description:'Blocos em azul escuro, detalhes amarelos e cartões contrastantes.',theme:'premium',primary:'#24364a',secondary:'#66778a',background:'#f4f6f8',paper:'#ffffff',foreground:'#172330',hero:'#172330',highlight:'#f3e7d3',layout:'grade',font:'sistema',radius:12}
+ {id:'pitacco-v2',name:'Principal',description:'Roxo e laranja, fotos em grade e destaque para benefícios.',theme:'colorido',primary:'#ff7a08',secondary:'#6f4b80',background:'#faf7fd',paper:'#ffffff',foreground:'#261033',hero:'#4b075e',highlight:'#f4e5fb',layout:'grade',font:'sistema',radius:20}
 ];
 const colors=[['primary','Principal'],['secondary','Secundária'],['background','Fundo'],['paper','Cartões'],['foreground','Textos'],['hero','Cabeçalho'],['highlight','Destaques']];
 const layouts=[['lista','Lista organizada'],['grade','Grade de produtos'],['destaques','Cartões grandes']];
@@ -84,7 +81,7 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
   setLoading(true);setError('');setNotice('');
   loadStudioState(client,store.id).then(data=>{
    if(!alive)return;
-   const next={...defaultDesign,...data.draft,logo_path:store.logo_path||data.draft?.logo_path||'',banners:data.draft?.banners||[]};
+   const next={...defaultDesign,...data.draft,template:'pitacco-v2',logo_path:store.logo_path||data.draft?.logo_path||'',banners:data.draft?.banners||[]};
    setSaved(next);setDesign(structuredClone(next));setVersion(data.draft_version);
    setPublishedVersion(data.published_version);setPublishedDesign(data.published||null);setHistory(data.history||[]);
    setPublishedAt(data.published_at);
@@ -200,7 +197,7 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
    if(!data?.restored_to_draft)throw Error('A restauração não foi confirmada.');
    const state=await client.rpc('pitacco_storefront_studio_state',{p_store:store.id});
    if(state.error)throw state.error;
-   const next={...defaultDesign,...state.data.draft};
+   const next={...defaultDesign,...state.data.draft,template:'pitacco-v2'};
    setDesign(structuredClone(next));setSaved(next);setVersion(state.data.draft_version);
    setMode('editar');setNotice('Versão '+revision+' recuperada para edição. Toque em Salvar e publicar quando estiver pronto.');
   }catch(e){setError(studioError(e,'restaurar a versão'))}
@@ -224,15 +221,7 @@ export default function StoreDesignStudio({client,store,manager,products=[],focu
    <div className="design-studio-controls">
     {mode==='editar'?<>
      {focus!=='banners'&&<>
-     <section className="design-control-card"><h4>Templates do cardápio</h4><p>Quatro visuais, as mesmas funcionalidades atuais. Escolha, visualize e toque em Salvar e publicar quando estiver pronto.</p>
-      <div className="design-template-options" role="group" aria-label="Template do cardápio">{templates.map(model=><button type="button" key={model.id}
-       aria-pressed={design.template===model.id} className={'design-template-option'+(design.template===model.id?' active':'')}
-       onClick={()=>setDesign(d=>{const {id,name,description,...preset}=model;return {...d,...preset,template:id};})} disabled={!manager||working}>
-       <span className={'design-template-mini mini-'+model.id} style={{'--mini-hero':model.hero,'--mini-bg':model.background,'--mini-accent':model.primary}} aria-hidden="true"><i/><span/><div><b/><b/><b/><b/></div></span>
-       <strong>{model.name}</strong><small>{model.description}</small><span className="design-template-selected">{design.template===model.id?'Selecionado':'Escolher template'}</span></button>)}</div>
-      <p className="design-tip">Produtos, complementos, preços, pagamentos, Fiado, Fideliza+, favoritos e pedidos permanecem os mesmos em todos os templates. A troca altera apenas a apresentação.</p>
-     </section>
-     <section className="design-control-card"><h4>Paleta de cores</h4>
+     <section className="design-control-card"><h4>Personalização do Pitacco V2</h4><p>Modelo único do Pitacco. Personalize as cores da sua loja sem alterar o funcionamento do cardápio.</p>
       <div className="design-color-grid">{colors.map(([key,label])=><label className="design-color" key={key}>{label}
        <span><input aria-label={'Cor '+label} type="color" value={design[key]} disabled={!manager||working}
         onChange={e=>update(key,e.target.value)}/><small>{design[key]}</small></span>

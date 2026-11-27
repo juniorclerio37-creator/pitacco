@@ -59,10 +59,10 @@ try{
   await page.locator('#menuStartup').waitFor({state:'hidden'});
   assert.equal(await page.locator('body').getAttribute('data-menu-photo-pilot'),null,'No store-specific photo pilot');
   let top=[];
-  if(conf.template!=='classic'){
-   const expectedFeatured=conf.template==='pitacco-v2'?sample.products.length:2;
+  {
+   const expectedFeatured=Math.min(2,sample.products.length);
    await page.waitForFunction(expected=>document.querySelectorAll('.v2-top-photo img').length===expected,expectedFeatured);
-   assert.equal(await page.locator('.v2-top-product').count(),expectedFeatured,'Principal V2 shows up to four actual products; other templates retain two');
+   assert.equal(await page.locator('.v2-top-product').count(),expectedFeatured,'Legacy and new stores all show up to two actual products in V2');
    await page.waitForFunction(()=>[...document.querySelectorAll('.v2-top-photo img')].every(img=>img.complete&&img.naturalWidth>0));
    top=await page.locator('.v2-top-photo img').evaluateAll(images=>images.map(img=>({fit:getComputedStyle(img).objectFit,flag:img.dataset.photoFit})));
    assert.ok(top.every(p=>p.fit==='contain'&&p.flag==='contain'),'Featured products preserve full photos');

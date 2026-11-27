@@ -186,7 +186,7 @@ try {
         if(pricedScenario){assert.equal(payload.p_expected_cents,7455);assert.equal(payload.p_price_revision,2);assert.equal(payload.p_use_loyalty,false);}
         const saved=recordedOrders.get(payload.p_request);
         if(saved)assert.deepEqual(payload,saved.payload,'Server replay uses the original request and full checkout snapshot');
-        else recordedOrders.set(payload.p_request,{payload,receipt:{order_id:orderId,tracking_token:token,total:(template==='classic'?22:69)+quote.fee-(pricedScenario?3.45:0),payment_status:'pending'}});
+        else recordedOrders.set(payload.p_request,{payload,receipt:{order_id:orderId,tracking_token:token,total:69+quote.fee-(pricedScenario?3.45:0),payment_status:'pending'}});
         if (requests.length === 1) {
           await responseGate;
           return route.fulfill({ status: 503, json: { message: 'Resposta indisponível' } });
@@ -287,89 +287,14 @@ try {
     assert.equal(await advanceDialog.isVisible(),true);
     await page.locator('#closeProduct').click();
     await page.evaluate(()=>document.getElementById('productBody').style.removeProperty('max-height'));
-    if(template==='classic'){
-      // Classic has different navigation from V2. Test its real checkout path
-      // without asserting V2-only hero, favourites and product cards.
-      assert.equal(await page.locator('body').getAttribute('data-menu-template'),'classic');
-      await productCard.click();
-      const product=page.getByRole('dialog',{name:'Açaí'});
-      await product.getByRole('radio',{name:/Morango/}).check();
-      await product.getByRole('button',{name:/Adicionar à sacola/}).click();
-      await page.locator('#openCart').click();
-      const cart=page.getByRole('dialog',{name:'Sua sacola'});
-      assert.match(await cart.locator('#total').innerText(),/valor da entrega.*automaticamente/i);
-      await cart.getByRole('button',{name:'Continuar para entrega e pagamento'}).click();
-      await page.locator('#phone').fill('21999999999');
-      await page.locator('#v2CheckoutNext').click();
-      await page.locator('#customer').fill('Cliente Teste');
-      await page.locator('#v2CheckoutNext').click();
-      for(const [id,value] of [['addressStreet','Rua Teste'],['addressNumber','123'],['addressNeighborhood','Centro'],['addressCity','Nova Iguaçu']])
-        await page.locator('#'+id).fill(value);
-      await page.locator('#addressState').selectOption('RJ');
-      assert.equal(await page.locator('#quoteDelivery').isVisible(),false,'O Clássico também não tem botão de frete');
-      await page.locator('#routeQuoteStatus').filter({hasText:'A loja precisa revisar'}).waitFor();
-      await page.getByRole('button',{name:'Usar minha localização'}).click();
-      await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
-      assert.match(await page.locator('#total').innerText(),/Taxa de entrega/);
-      assert.equal(await page.locator('#routeQuoteStatus').getAttribute('data-state'),'success');
-      await page.locator('#addressStreet').fill('Rua Fora Entrega');
-      await page.locator('#routeQuoteStatus').filter({hasText:'Não atendemos essa região'}).waitFor();
-      assert.equal(await page.locator('#send').isDisabled(),true,'Classic bloqueia pedidos fora da cobertura');
-      await page.locator('#addressStreet').fill('Rua Teste');
-      await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00/}).waitFor();
-      assert.equal(await page.locator('#routeQuoteStatus').getAttribute('data-state'),'success');
-      await page.locator('#deliveryServices input[value="priority"]').check();
-      await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*9,00.*20–30 min/}).waitFor();
-      assert.match(await page.locator('#total').innerText(),/31,00/);
-      if(width!==1440){
-        await page.locator('#deliveryServices input[value="standard"]').check();
-        await page.locator('#routeQuoteStatus').filter({hasText:/Taxa de entrega: R\$.*5,00.*40–60 min/}).waitFor();
-      }
-      if(scheduled)await page.getByLabel('Quando deseja receber?').selectOption(scheduled);
-      await page.locator('#v2CheckoutNext').click();
-      await page.locator('#cartDialog[data-v2-stage="payment"]').waitFor();
-      await page.locator('#v2PaymentCards [data-kind="pix_manual"]').click();
-      if(width===1440){
-        for(const method of ['dinheiro','cartao_credito','cartao_debito','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket','pix_manual']){
-          await page.locator('#v2PaymentCards [data-kind="'+method+'"]').click();
-          assert.equal(await page.locator('#payment').inputValue(),method);
-        }
-      }
-      await page.locator('#v2CheckoutNext').click();
-      await page.locator('#cartDialog[data-v2-stage="review"]').waitFor();
-      await page.getByRole('button',{name:'Finalizar pedido →',exact:true}).click();
-      await page.getByRole('button',{name:'Enviando…',exact:true}).waitFor();
-      await page.locator('#checkout').evaluate(form=>form.requestSubmit());
-      releaseResponse();
-      await page.getByRole('button',{name:'Tentar novamente',exact:true}).click();
-      await page.getByRole('heading',{name:scheduled?'✓ Pedido agendado enviado com sucesso':'✓ Pedido confirmado!',exact:true}).waitFor();
-      if(scheduled)assert.match(await page.locator('#success').innerText(),/A loja ainda precisa aceitar manualmente/);
-      assert.equal(requests.length,2);
-      assert.equal(recordedOrders.size,1,'Lost confirmation and retry create one sale');
-      assert.deepEqual(requests[0],requests[1]);
-      assert.equal(requests[0].p_scheduled_for,scheduled||undefined);
-      assert.equal(requests[0].p_payment,'pix_manual');
-      assert.match(requests[0].p_address,/Rua Teste, 123, Centro/);
-      assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-cart:loja-teste')),null);
-      await page.getByRole('link',{name:'Acompanhar meu pedido'}).click();
-      await page.locator('#currentStatus').filter({hasText:tracking.label}).waitFor();
-      assert.deepEqual(errors,[]);
-      await page.close();
-      console.log('PASS classic automatic quote at '+width+'px');
-      continue;
-    }
     assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--brand')),'#217c5a','Published studio palette takes precedence over old branding');
     assert.equal(await page.locator('body').getAttribute('data-menu-template'),'pitacco-v2','Versão 2 é o template principal');
     await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
-    assert.equal(await page.locator('#v2TopProducts .v2-top-product').count(),template==='pitacco-v2'?3:2,'Início mostra até quatro destaques no V2 principal, sem inventar produtos');
+    assert.equal(await page.locator('#v2TopProducts .v2-top-product').count(),2,'Início mostra dois destaques verticais no V2 principal, sem inventar produtos');
     assert.equal(await page.locator('.v2-top-badge').first().evaluate(e=>parseFloat(getComputedStyle(e).fontSize)<20),true,'Selo de destaque não herda tamanho da imagem');
+    assert.equal(await page.locator('body').getAttribute('data-menu-skin'),'principal','Legacy saved designs render the official V2');
     const initialColor=await page.locator('#storeInitial').evaluate(e=>getComputedStyle(e).color);
-    if(['essencial','editorial'].includes(template))assert.notEqual(initialColor,'rgb(255, 255, 255)','Inicial escura no cabeçalho claro');else assert.equal(initialColor,'rgb(255, 255, 255)','Inicial clara no cabeçalho escuro');
-    const placement=await page.locator('.v2-top-product').first().evaluate(card=>{const photo=card.querySelector('.v2-top-photo').getBoundingClientRect(),details=card.querySelector('.v2-top-product-details').getBoundingClientRect();return {photoLeft:photo.left,detailsLeft:details.left,caption:getComputedStyle(card.querySelector('.v2-top-product-details')).backgroundColor,priceColor:getComputedStyle(card.querySelector('.v2-top-price')).color,addColor:getComputedStyle(card.querySelector('.v2-top-add')).backgroundColor};});
-    if(template==='essencial')assert.ok(placement.photoLeft<placement.detailsLeft,'Essencial apresenta a foto à esquerda');
-    if(template==='editorial')assert.ok(placement.photoLeft>placement.detailsLeft,'Editorial apresenta a foto à direita');
-    if(template==='urbano'){assert.equal(placement.caption,'rgb(23, 35, 48)','Urbano tem legenda escura contrastante');assert.equal(placement.priceColor,'rgb(255, 255, 255)','Preço urbano legível');assert.equal(placement.addColor,'rgb(255, 203, 50)','Controle urbano amarelo');}
-    if(template==='essencial'){const order=await productCard.evaluate(card=>({photo:card.querySelector('.product-visual').getBoundingClientRect().left,text:card.querySelector('.product-text').getBoundingClientRect().left}));assert.ok(order.photo<order.text,'Fotos do catálogo Essencial à esquerda');}
+    assert.equal(initialColor,'rgb(255, 255, 255)','Initial readable on V2 header');
     assert.equal(await page.locator('#layout #products .product').count(),3,'Todos os itens aparecem no catálogo abaixo dos destaques');
     await page.getByRole('heading',{name:'Todo o cardápio',exact:true}).waitFor();
     assert.equal(await page.locator('#v2FiadoNav').isVisible(),false,'Visitante sem telefone autorizado não vê a aba Fiado');
