@@ -1,0 +1,24 @@
+<?php
+$base = [
+    'driver' => 'pgsql',
+    'host' => env('DB_HOST', '127.0.0.1'),
+    'port' => env('DB_PORT', '5432'),
+    'database' => env('DB_DATABASE', 'pitacco_core_dev'),
+    'charset' => 'utf8',
+    'prefix' => '',
+    'search_path' => 'public',
+    'sslmode' => env('DB_SSLMODE', 'prefer'),
+];
+return [
+    'default' => 'pgsql',
+    'connections' => [
+        'pgsql' => $base + ['username'=>env('DB_USERNAME','pitacco_core_app'),'password'=>env('DB_PASSWORD')],
+        'menu' => $base + ['username'=>env('MENU_DB_USERNAME','pitacco_core_menu'),'password'=>env('MENU_DB_PASSWORD')],
+    ],
+    'redis' => [
+        'client' => 'phpredis',
+        'options' => ['prefix' => 'pitacco_core:'],
+        'default' => ['host'=>env('REDIS_HOST','127.0.0.1'),'password'=>env('REDIS_PASSWORD'),'port'=>env('REDIS_PORT',6379),'database'=>0,'timeout'=>2,'read_timeout'=>2],
+        'cache' => ['host'=>env('REDIS_HOST','127.0.0.1'),'password'=>env('REDIS_PASSWORD'),'port'=>env('REDIS_PORT',6379),'database'=>1,'timeout'=>2,'read_timeout'=>2],
+    ],
+];
