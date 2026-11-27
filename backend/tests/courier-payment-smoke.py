@@ -35,6 +35,26 @@ assert len(pin)==6
 wrong='0'*6 if pin!='0'*6 else '1'*6
 def operate(action,expected=200,**extra):
     return call(d,expected,{'action':action,'delivery_id':delivery}|extra,courier)
+# Original payment projection for the original pickup reminder, including iFood.
+s='20000000-0000-4000-8000-000000000001'
+market_order='98000000-0000-0000-0000-000000000091'
+market_delivery='98000000-0000-0000-0000-000000000092'
+cid='98000000-0000-0000-0000-000000000002'
+sql("insert into public.orders(id,store_id,channel,gross,source,status,preparation_status,receipt) values('"+market_order+"','"+s+"','iFood',28,'ifood','accepted','ready','{\"ifood_status\":\"CONFIRMED\",\"logistics\":\"loja\",\"payment\":\"cartao_entrega\",\"payment_status\":\"pending\"}')")
+sql("insert into public.deliveries(id,store_id,order_id,courier_id,customer_name,address,status,source,logistics_provider) values('"+market_delivery+"','"+s+"','"+market_order+"','"+cid+"','Cliente Fixture','Rua Fixture','atribuida','ifood','loja')")
+unified={'action':'unified_cards'}
+call(p,403,unified,owner)
+call(p,401,unified,gps)
+call(p,422,unified|{'delivery_id':market_delivery},courier)
+assert market_delivery not in {x['delivery_id'] for x in call(p,200,cards,courier)['data']}
+summaries={x['delivery_id']:x['payment'] for x in call(p,200,unified,courier)['data']}
+assert summaries[market_delivery]['method']=='Cartão na entrega' and summaries[market_delivery]['state']=='collect' and float(summaries[market_delivery]['amount'])==28
+assert summaries[delivery]['method']=='Dinheiro' and float(summaries[delivery]['change_for'])==50 and float(summaries[delivery]['change_due'])==16
+sql("update public.orders set receipt=receipt||'{\"payment_status\":\"paid\"}'::jsonb where id='"+market_order+"'")
+assert {x['delivery_id']:x['payment'] for x in call(p,200,unified,courier)['data']}[market_delivery]['state']=='paid'
+assert sql("select count(*) from public.operation_audit where order_id='"+market_order+"' and action='courier_payment_received'")=='0'
+sql("delete from public.deliveries where id='"+market_delivery+"';delete from public.orders where id='"+market_order+"'")
+print('PASS: original courier payment summaries, mixed source, card terminal, cash change, prepaid and scoped session')
 # Start at actual assignment; do not synthesize collected_at or departure.
 operate('depart',409)
 operate('arrive',409)

@@ -5,14 +5,16 @@ declare result jsonb;
 begin
  -- Reuse the previously validated session bridge, not the GPS capability.
  perform core_auth.courier_shift_fixture('ready');
- if p_action='cards' and p_delivery is null then
+ if p_action in ('cards','unified_cards') and p_delivery is null then
   select coalesce(jsonb_agg(item),'[]'::jsonb) into result
   from jsonb_array_elements(public.pitacco_driver_payment_cards()) item
   join public.deliveries d on d.id=(item->>'delivery_id')::uuid
   join public.couriers c on c.id=d.courier_id and c.user_id=auth.uid() and c.active
   join core_auth.memberships m on m.user_id=c.user_id and m.store_id=d.store_id and m.active and m.role='courier'
   join core_auth.stores st on st.id=m.store_id and st.active
-  where d.source='proprio' and d.logistics_provider='loja';
+  join public.orders o on o.id=d.order_id and o.store_id=d.store_id and o.source=d.source
+  where c.store_id=d.store_id and c.fleet_type='propria' and d.logistics_provider='loja'
+   and (d.source='proprio' or (p_action='unified_cards' and d.source='ifood' and o.status='accepted' and coalesce(o.receipt->>'ifood_status','') in ('CONFIRMED','READY_TO_PICKUP','DISPATCHED') and coalesce(o.receipt->>'ifood_manual_cancel','')<>'requested'));
   return result;
  elsif p_action='confirm' and p_delivery is not null then
   -- Restrict this test bridge to own orders; never invoke marketplace payment flows.

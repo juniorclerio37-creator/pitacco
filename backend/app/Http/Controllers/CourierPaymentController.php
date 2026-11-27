@@ -13,15 +13,15 @@ final class CourierPaymentController
     {
         abort_unless(app()->environment('testing')&&config('pitacco.courier_payment_enabled'),404);
         $data=$request->validate([
-            'action'=>['required','in:cards,confirm'],
-            'delivery_id'=>['required_if:action,confirm','prohibited_if:action,cards','nullable','uuid'],
+            'action'=>['required','in:cards,unified_cards,confirm'],
+            'delivery_id'=>['required_if:action,confirm','prohibited_if:action,cards,unified_cards','nullable','uuid'],
         ]);
         if(array_diff(array_keys($request->all()),array_keys($data)))throw ValidationException::withMessages(['request'=>'Campos não suportados.']);
         $session=$request->attributes->get('core_session');
         try{
             $db=DB::connection('core_courier_payment');
             $result=$db->transaction(function() use($db,$session,$data){
-                if($data['action']==='cards')$db->statement('set transaction read only');
+                if(in_array($data['action'],['cards','unified_cards'],true))$db->statement('set transaction read only');
                 $db->statement("set local statement_timeout = '5s'");
                 $db->statement("set local lock_timeout = '2s'");
                 $db->selectOne("select set_config('pitacco.core_session_id',?,true),set_config('request.jwt.claim.sub',?,true)",[$session->session_id,$session->user_id]);
