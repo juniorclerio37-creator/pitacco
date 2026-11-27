@@ -126,14 +126,18 @@ jobs:
         working-directory: backend
         env:
           PITACCO_COURIER_SHIFT_ENABLED: 'true'
+          PITACCO_COURIER_PAYMENT_ENABLED: 'true'
+          CORE_COURIER_PAYMENT_DB_USERNAME: pitacco_core_courier_payment
+          CORE_COURIER_PAYMENT_DB_PASSWORD: ci-courier-payment-only
           CORE_COURIER_SHIFT_DB_USERNAME: pitacco_core_courier_shift
           CORE_COURIER_SHIFT_DB_PASSWORD: ci-courier-shift-only
           CORE_REDIS_PREFIX: 'pitacco_core_shift_ci:'
         run: |
-          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f tests/courier-shift-fixture.sql
+          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f tests/courier-shift-fixture.sql -f tests/courier-payment-fixture.sql
           if PGPASSWORD=ci-courier-shift-only psql -h 127.0.0.1 -U pitacco_core_courier_shift -d postgres -v ON_ERROR_STOP=1 -c 'select * from core_auth.sessions'; then exit 1; fi
           php artisan serve --host=127.0.0.1 --port=8089 >/tmp/core-shift.log 2>&1 &
           server=$!
           trap 'kill "$server" 2>/dev/null || true; cat /tmp/core-shift.log' EXIT
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8089/up >/dev/null && break; sleep 1; done
           python3 tests/courier-shift-smoke.py
+          python3 tests/courier-payment-smoke.py

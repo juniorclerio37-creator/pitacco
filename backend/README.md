@@ -175,3 +175,6 @@ POST `/api/v1/courier/shift` exige o middleware de sessão Laravel e uma role ex
 
 ## Correção da regressão de privacidade do Fiado no entregador
 O run 46019796273 chegou ao teste de cobrança, mas a tentativa de inserir diretamente um pedido Fiado fictício foi rejeitada pelo trigger original de autorização. A fixture passa a criar a venda pelo checkout original, com PIN da conta sintética existente e cotação válida, conferindo a dívida antes de testar a projeção do entregador. Não modifica nem desativa a proteção. A transação continua com rollback. Nova CI pendente.
+
+## Confirmação de recebimentos pelo entregador — integração CI
+POST `/api/v1/courier/payments` exige sessão Laravel e role própria, com wrapper de fixture que reutiliza a validação original do entregador. Consulta cartões e confirma recebimento original apenas para pedidos próprios atribuídos, sem valor informado pelo cliente da API e sem acesso direto às tabelas. GPS não autoriza cobrança. Testes incluem valor/troco, chegada obrigatória, Pix manual sem cobrança, repetição, ausência de sessão e revogação. O run 46020029829 aprovou a sessão experimental. Nova CI pendente. A ponte de identidade é apenas sintética; integração definitiva do Android, autenticação real e conciliação do caixa ainda não concluídas. Nenhuma publicação.
