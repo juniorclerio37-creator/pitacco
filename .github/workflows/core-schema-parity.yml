@@ -1,0 +1,51 @@
+name: Pitacco Core — comparar esquema isolado
+on:
+  push:
+    branches: [pitacco-core]
+    paths:
+      - '.github/workflows/core-schema-parity.yml'
+      - 'scripts/core-schema-parity.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    if: github.ref == 'refs/heads/pitacco-core'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: isolated-ci-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:isolated-ci-password@localhost:5432/postgres
+      PITACCO_CORE_ISOLATED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Preparar fonte consolidada
+        run: |
+          test ! -e web
+          test ! -e android
+          cp -a core-source/web web
+          cp -a core-source/android android
+          npm ci --prefix web/tests/backend
+          npm install --prefix web/tests/backend --no-save --package-lock=false pg@8.16.3
+      - name: Reconstruir esquema e executar testes isolados
+        run: node web/tests/backend/run.mjs
+      - name: Comparar inventário e assinaturas com produção
+        run: node scripts/core-schema-parity.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-schema-parity
+          path: core-schema-parity.json
