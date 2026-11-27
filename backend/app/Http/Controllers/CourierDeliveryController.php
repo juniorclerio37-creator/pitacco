@@ -43,7 +43,7 @@ final class CourierDeliveryController
     {
         abort_unless(app()->environment('testing')&&config('pitacco.courier_delivery_enabled'),404);
         $data=$request->validate([
-            'action'=>['required','in:collect,depart_group,arrive,confirm_payment,verify_ready'],
+            'action'=>['required','in:collect,depart_group,arrive,confirm_payment,verify_ready,reconcile'],
             'delivery_id'=>['required_unless:action,depart_group','prohibited_if:action,depart_group','nullable','uuid'],
             'route_id'=>['required_if:action,depart_group','prohibited_unless:action,depart_group','nullable','uuid'],
         ]);

@@ -123,5 +123,17 @@ export function createIfoodRoute({actor,token,legacyClient,driverAction,fetcher=
    }
   });
  }
- return {collect,depart,arrive,confirmPayment,verify,stop};
+ function reconcile(delivery){
+  return run(async()=>{
+   if(!UUID.test(delivery??''))throw Error('Entrega inválida.');
+   const data=await core({action:'reconcile',delivery_id:delivery});
+   if(data.confirmed===true&&typeof data.already==='boolean'){
+    verificationUncertain.delete(delivery.toLowerCase());
+    return {state:'reconciled',already:data.already};
+   }
+   if(data.confirmed===false&&data.pending===true)return {state:'pending'};
+   throw Error('Confirmação oficial indisponível.');
+  });
+ }
+ return {collect,depart,arrive,confirmPayment,verify,reconcile,stop};
 }

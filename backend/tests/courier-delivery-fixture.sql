@@ -113,7 +113,7 @@ language plpgsql security definer set search_path='' as $fn$
 declare b public.delivery_batches%rowtype; result jsonb; rid uuid; d public.deliveries%rowtype; o public.orders%rowtype; payment jsonb;
 begin
  perform core_auth.courier_shift_fixture('ready');
- if a in ('arrive','confirm_payment','verify_ready') then
+ if a in ('arrive','confirm_payment','verify_ready','reconcile') then
   select x.* into d from public.deliveries x
   join public.couriers c on c.id=x.courier_id and c.active and c.user_id=auth.uid() and c.store_id=x.store_id and c.fleet_type='propria'
   join core_auth.memberships m on m.user_id=c.user_id and m.store_id=x.store_id and m.active and m.role='courier'
@@ -122,6 +122,16 @@ begin
   if not found then raise exception 'Entrega não autorizada' using errcode='42501';end if;
   select x.* into o from public.orders x where x.id=d.order_id and x.store_id=d.store_id and x.source='ifood' for update;
   if not found then raise exception 'Pedido não autorizado' using errcode='42501';end if;
+  if a='reconcile' then
+   if d.status='entregue' then return jsonb_build_object('confirmed',true,'already',true);end if;
+   if d.status<>'retirada' or d.collected_at is null or d.arrived_at is null or o.status<>'accepted' then raise exception 'Entrega não está disponível para conciliação' using errcode='22023';end if;
+   payment:=pitacco_private.courier_payment_details(o.receipt,o.gross);
+   if payment->>'state'='collect' then raise exception 'Confirme o recebimento antes da conclusão' using errcode='22023';end if;
+   -- The original RPC requires both CONCLUDED receipt and processed private
+   -- event for the linked external order and merchant after local arrival.
+   -- It never claims the customer's PIN was verified.
+   return public.pitacco_driver_reconcile_ifood(target);
+  end if;
   if a='verify_ready' and d.status='entregue' then return jsonb_build_object('eligible',false,'delivered',true);end if;
   if d.status<>'retirada' or d.collected_at is null or o.status<>'accepted' or coalesce(o.receipt->>'ifood_status','')='CANCELLED' then raise exception 'Entrega não está em rota' using errcode='22023';end if;
   if a='arrive' then

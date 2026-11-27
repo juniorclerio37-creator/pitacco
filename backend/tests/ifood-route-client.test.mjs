@@ -58,3 +58,20 @@ test('only verified and persisted delivery reports verified',async()=>{
  const x=setup();x.data({eligible:true,delivered:false});x.provider(async()=>({verified:true,delivered:true}));
  assert.deepEqual(await x.api.verify(one,'0123'),{state:'verified'});
 });
+
+test('official reconciliation does not call provider or re-submit an uncertain PIN',async()=>{
+ const x=setup(),events=[];
+ x.provider(async(id,action)=>{events.push([id,action]);throw Error('network');});
+ x.data({eligible:true,delivered:false});
+ assert.deepEqual(await x.api.verify(one,'0123'),{state:'uncertain'});
+ x.data({confirmed:false,pending:true});
+ assert.deepEqual(await x.api.reconcile(one),{state:'pending'});
+ x.data({eligible:true,delivered:false});
+ assert.deepEqual(await x.api.verify(one,'0123'),{state:'uncertain'});
+ x.data({confirmed:true,already:false});
+ assert.deepEqual(await x.api.reconcile(one),{state:'reconciled',already:false});
+ x.data({confirmed:true,already:true});
+ assert.deepEqual(await x.api.reconcile(one),{state:'reconciled',already:true});
+ assert.deepEqual(events,[[one,'verify']]);
+ assert.deepEqual(x.calls.filter(c=>c.action==='reconcile'),Array(3).fill({action:'reconcile',delivery_id:one}));
+});

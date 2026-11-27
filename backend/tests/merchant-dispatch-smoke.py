@@ -157,12 +157,15 @@ call(driver_route,403,arrival,owner)
 call(driver_route,403,arrival|{'delivery_id':mixed_delivery},courier)
 call(driver_route,409,eligibility,courier)
 call(driver_route,409,payment,courier)
+reconcile={'action':'reconcile','delivery_id':market_delivery}
+call(driver_route,409,reconcile,courier)
 sql("update public.orders set receipt=receipt||'{\"payment\":\"dinheiro\",\"payment_status\":\"pending\"}'::jsonb where id='"+market_order+"'")
 arrived=call(driver_route,200,arrival,courier)['data']
 assert arrived['arrived_at'] and arrived['provider_state']=='pending' and arrived['dispatch_confirmed'] is False
 assert call(driver_route,200,arrival,courier)['data']==arrived
 assert sql("select count(*) from public.operation_audit where action='courier_arrived' and details->>'delivery'='"+market_delivery+"'")=='1'
 call(driver_route,409,eligibility,courier)
+call(driver_route,409,reconcile,courier)
 paid=call(driver_route,200,payment,courier)['data']
 assert paid['state']=='paid' and paid['received_by_courier'] is True
 assert call(driver_route,200,payment,courier)['data']==paid
@@ -173,6 +176,37 @@ sql("update public.orders set receipt=receipt||'{\"ifood_status\":\"DISPATCHED\"
 assert call(driver_route,200,arrival,courier)['data']['dispatch_confirmed'] is True
 assert sql("select (status='retirada' and delivery_code_verified_at is null)::text from public.deliveries where id='"+market_delivery+"'")=='true'
 print('PASS: local iFood arrival, official dispatch gate, payment collection, repeat and pre-verification without PIN or provider mutation')
+# Reconciliation: synthesize evidence only in the disposable CI database.
+# The original private event table is never writable through the API.
+call(driver_route,401,reconcile)
+call(driver_route,403,reconcile,owner)
+call(driver_route,403,reconcile|{'delivery_id':mixed_delivery},courier)
+call(driver_route,422,reconcile|{'confirmed':True},courier)
+pending={'confirmed':False,'pending':True}
+assert call(driver_route,200,reconcile,courier)['data']==pending
+sql("update public.orders set receipt=receipt||'{\"ifood_status\":\"CONCLUDED\"}'::jsonb where id='"+market_order+"'")
+assert call(driver_route,200,reconcile,courier)['data']==pending
+merchant='98000000-0000-0000-0000-000000000075'
+other_merchant='98000000-0000-0000-0000-000000000076'
+external='98000000-0000-0000-0000-000000000077'
+event='98000000-0000-0000-0000-000000000078'
+sql("insert into pitacco_private.ifood_merchants(merchant_id,store_id,test_only,enabled) values ('"+merchant+"','"+s+"',true,true),('"+other_merchant+"','20000000-0000-4000-8000-000000000002',true,true)")
+sql("insert into pitacco_private.ifood_order_links(external_id,order_id,merchant_id,state_rank,event_at) values('"+external+"','"+market_order+"','"+merchant+"',5,now())")
+sql("insert into pitacco_private.ifood_events(id,merchant_id,order_id,code,event_at,done_at) values('"+event+"','"+other_merchant+"','"+external+"','CONCLUDED',now(),now())")
+assert call(driver_route,200,reconcile,courier)['data']==pending
+sql("update pitacco_private.ifood_events set merchant_id='"+merchant+"',done_at=null where id='"+event+"'")
+assert call(driver_route,200,reconcile,courier)['data']==pending
+sql("update pitacco_private.ifood_events set done_at=now(),event_at=(select arrived_at-interval '1 second' from public.deliveries where id='"+market_delivery+"') where id='"+event+"'")
+assert call(driver_route,200,reconcile,courier)['data']==pending
+assert sql("select status from public.deliveries where id='"+market_delivery+"'")=='retirada'
+sql("update pitacco_private.ifood_events set event_at=now() where id='"+event+"'")
+assert call(driver_route,200,reconcile,courier)['data']=={'confirmed':True,'already':False}
+assert call(driver_route,200,reconcile,courier)['data']=={'confirmed':True,'already':True}
+assert call(driver_route,200,eligibility,courier)['data']=={'eligible':False,'delivered':True}
+assert sql("select (status='entregue' and delivery_code_verified_at is null)::text from public.deliveries where id='"+market_delivery+"'")=='true'
+assert sql("select count(*) from public.operation_audit where action='ifood_external_delivery_reconciled' and details->>'delivery'='"+market_delivery+"'")=='1'
+assert sql("select count(*) from public.operation_audit where action='ifood_code_verified' and order_id='"+market_order+"'")=='0'
+print('PASS: original official CONCLUDED reconciliation, exact merchant, processed event, arrival timestamp, no fictitious PIN, replay and authorization')
 # Dispose of this synthetic route only, simulating official cancellation locally
 # for the independent test; no provider communication.
 sql("update public.orders set receipt=receipt||'{\"ifood_status\":\"CANCELLED\"}'::jsonb,status='cancelled' where id='"+market_order+"'")
