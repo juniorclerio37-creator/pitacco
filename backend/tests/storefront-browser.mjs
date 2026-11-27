@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {chromium} from '../../web/node_modules/playwright/index.mjs';
 const browser=await chromium.launch({headless:true});
 try{
@@ -75,9 +76,44 @@ try{
   const response=await responsePromise;
   assert.equal(response.status(),200);
   assert.equal(response.request().postDataJSON().scheduled_for,slot);
-  assert.equal((await response.json()).data.status,'pending');
+  const scheduledReceipt=(await response.json()).data;
+  assert.equal(scheduledReceipt.status,'pending');
   await page.getByRole('heading',{name:'Pedido agendado enviado com sucesso'}).waitFor();
   assert.equal(await page.locator('#scheduled-notice').isVisible(),true);
+  // Original tracking refresh, unchanged, uses a minimal DOM and real API.
+  const original=readFileSync(new URL('../../marketing/acompanhar.html',import.meta.url),'utf8');
+  const refresh=original.split('\n').find(line=>line.startsWith('async function refresh(){if(working)return;'));
+  assert.ok(refresh);
+  const base='http://127.0.0.1:8081';
+  const trackingPage=await page.context().newPage();
+  trackingPage.on('request',r=>{if(!r.url().startsWith(base+'/'))external.push(r.url());});
+  const script="import {readCoreTrackingRpc} from '/core-homologacao/tracking.mjs';\n"+
+    "let working=false,token="+JSON.stringify(scheduledReceipt.tracking_token)+";\n"+
+    "const $=id=>document.getElementById(id); const client={rpc:(name,args)=>{if(name!=='pitacco_track_public_order')throw Error('unexpected RPC');return readCoreTrackingRpc(args);}};\n"+
+    "function renderLocation(p){document.body.dataset.location=p?'shown':'cleared';} function render(d){$('content').hidden=false;document.body.dataset.status=d.status;document.body.dataset.order=d.order_id;renderLocation(d.courier_position);$('message').textContent='updated';}\n"+
+    refresh+"\nwindow.refreshTracking=refresh;";
+  await trackingPage.route(base+'/core-tracking-fixture',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><html><body><div id="content" hidden></div><a id="storeWhatsApp" href="#contact"></a><p id="message"></p><script type="module" src="/core-tracking-fixture.mjs"></script></body></html>'}));
+  await trackingPage.route(base+'/core-tracking-fixture.mjs',r=>r.fulfill({contentType:'text/javascript',body:script}));
+  await trackingPage.goto(base+'/core-tracking-fixture');
+  await trackingPage.waitForFunction(()=>typeof window.refreshTracking==='function');
+  await trackingPage.evaluate(()=>window.refreshTracking());
+  assert.equal(await trackingPage.locator('body').getAttribute('data-order'),scheduledReceipt.order_id);
+  assert.equal(await trackingPage.locator('body').getAttribute('data-status'),'pending');
+  assert.equal(await trackingPage.locator('body').getAttribute('data-location'),'cleared');
+  // Failed refresh clears a previously visible map; does not classify an outage as expired.
+  const pattern='**/api/v1/public/orders/tracking';
+  await trackingPage.evaluate(()=>{document.body.dataset.location='shown';});
+  await trackingPage.route(pattern,r=>r.fulfill({status:503,contentType:'application/json',body:'{}'}));
+  await trackingPage.evaluate(()=>window.refreshTracking());
+  assert.equal(await trackingPage.locator('body').getAttribute('data-location'),'cleared');
+  assert.match(await trackingPage.locator('#message').innerText(),/Não foi possível atualizar/);
+  await trackingPage.unroute(pattern);
+  await trackingPage.route(pattern,r=>r.fulfill({status:404,contentType:'application/json',body:'{}'}));
+  await trackingPage.evaluate(()=>window.refreshTracking());
+  assert.equal(await trackingPage.locator('#content').isVisible(),false);
+  assert.equal(await trackingPage.locator('#storeWhatsApp').getAttribute('href'),null);
+  assert.equal(await trackingPage.locator('#message').innerText(),'Link inválido ou expirado.');
+  await trackingPage.close();
   assert.deepEqual(external,[]);
   await page.screenshot({path:'/tmp/core-storefront-homologation.png',fullPage:true});
   console.log('PASS: Chromium storefront, actual Laravel checkout, lost response recovery, tracking, no external requests');

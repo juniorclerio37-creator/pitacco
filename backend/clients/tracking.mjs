@@ -21,3 +21,13 @@ export async function readCoreTracking(token,{fetcher=globalThis.fetch,signal}={
     return {state:'retry',data:null};
   }
 }
+
+// Existing tracking page expects null data for expired links, and an error for
+// temporary failures. Its refresh function clears the GPS map on both paths.
+export async function readCoreTrackingRpc(args,options={}){
+ if(!args||Object.keys(args).join(',')!=='p_token')return {data:null,error:{message:'Consulta indisponível.'}};
+ const result=await readCoreTracking(args.p_token,options);
+ if(result.state==='ready')return {data:result.data,error:null};
+ if(result.state==='unavailable')return {data:null,error:null};
+ return {data:null,error:{message:result.state==='rate_limited'?'Aguarde a próxima atualização.':'Consulta temporariamente indisponível.'}};
+}
