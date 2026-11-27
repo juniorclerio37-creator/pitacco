@@ -83,7 +83,8 @@ credit_order=sql("select id from public.orders where store_id='"+A+"' and reques
 credit_path='/stores/'+A+'/orders/'+credit_order+'/actions'
 decision={'action':'approve','order_id':credit_order,'approve':True}
 call(settings,404,'POST',decision,bob)
-call(credit_path,409,'POST',{'action':'accept'},alice)
+assert call(credit_path,409,'POST',{'action':'accept'},alice)['error']=='transition_not_allowed'
+assert sql("select status from public.orders where id='"+credit_order+"'")=='pending'
 assert call(settings,200,'POST',decision,alice)['data']['decided'] is True
 assert call(credit_path,200,'POST',{'action':'accept'},alice)['data']['status']=='accepted'
 call(credit_path,200,'POST',{'action':'ready'},alice)

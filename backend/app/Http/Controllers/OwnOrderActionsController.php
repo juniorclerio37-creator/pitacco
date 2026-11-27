@@ -17,7 +17,7 @@ final class OwnOrderActionsController
             $result=$actions->run($request->attributes->get('core_session'),$store,$order,$data['action'],$data['reason']??null);
         } catch(QueryException $error) {
             $state=$error->errorInfo[0]??'';
-            return response()->json(['error'=>$state==='P0001'?'transition_not_allowed':($state==='42501'?'forbidden':'temporarily_unavailable')],match($state){'P0001'=>409,'42501'=>403,default=>503});
+            return response()->json(['error'=>match($state){'P0001','22023'=>'transition_not_allowed','42501'=>'forbidden',default=>'temporarily_unavailable'}],match($state){'P0001','22023'=>409,'42501'=>403,default=>503})->header('Cache-Control','no-store');
         }
         return response()->json(['data'=>$result]);
     }

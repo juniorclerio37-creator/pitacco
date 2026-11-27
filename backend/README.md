@@ -43,3 +43,6 @@ A API experimental mantém o contrato original de salvamento (`session_active`) 
 
 ## Aprovação e recebimentos administrativos do Fiado
 As ações explícitas `approve` e `receive` usam as funções originais de decisão e recebimento. O teste cria uma venda de balcão fictícia pelo SQL autorizado, verifica a aprovação manual e a reserva de crédito, registra recebimento parcial e integral e testa a idempotência do pagamento e a revogação de acesso. Nenhuma cobrança externa, transferência ou alteração de dados reais. A autorização pública por PIN e o extrato do cliente não foram implementados nesta etapa.
+
+## Compatibilidade de aprovação manual
+O SQLSTATE 22023 usado pelo bloqueio de aprovação manual do Fiado é tratado como conflito de transição (HTTP 409) na API de ações do pedido, sem divulgar SQL ou aceitar o pedido indevidamente. O teste confirma que o pedido permanece pendente antes da aprovação.
