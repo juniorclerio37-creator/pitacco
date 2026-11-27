@@ -185,3 +185,33 @@ jobs:
           trap 'kill "$server" 2>/dev/null || true; cat /tmp/core-realtime.log' EXIT
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8091/up >/dev/null && break; sleep 1; done
           python3 tests/realtime-smoke.py
+
+      - name: Validar servidor Reverb real com canal privado
+        working-directory: backend
+        env:
+          PITACCO_REALTIME_ENABLED: 'true'
+          CORE_REALTIME_DB_USERNAME: pitacco_core_realtime
+          CORE_REALTIME_DB_PASSWORD: ci-realtime-only
+          PITACCO_REALTIME_KEY: fixture-realtime-key
+          PITACCO_REALTIME_SECRET: fixture-only-not-for-production-secret
+          CORE_REDIS_PREFIX: 'pitacco_core_reverb_ci:'
+        run: |
+          # Resolve and audit only in the disposable runner; no published dependency changes.
+          composer require laravel/reverb:1.14.0 --no-interaction --prefer-dist --minimal-changes
+          composer audit --locked
+          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -c "update core_auth.memberships set active=true where user_id='10000000-0000-4000-8000-000000000001' and store_id='20000000-0000-4000-8000-000000000001' and role='owner'"
+          php artisan serve --host=127.0.0.1 --port=8091 >/tmp/core-reverb-api.log 2>&1 &
+          api=$!
+          php artisan reverb:start --host=127.0.0.1 --port=8092 >/tmp/core-reverb.log 2>&1 &
+          ws=$!
+          trap 'kill "$api" "$ws" 2>/dev/null || true; cat /tmp/core-reverb-api.log /tmp/core-reverb.log' EXIT
+          for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8091/up >/dev/null && break; sleep 1; done
+          python3 tests/reverb-wire-smoke.py
+      - name: Guardar dependências experimentais auditadas
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-reverb-composer
+          path: |
+            backend/composer.json
+            backend/composer.lock
+          retention-days: 7
