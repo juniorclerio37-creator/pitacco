@@ -85,7 +85,7 @@ try{
   const refresh=original.split('\n').find(line=>line.startsWith('async function refresh(){if(working)return;'));
   assert.ok(refresh);
   const base='http://127.0.0.1:8081';
-  const trackingPage=await page.context().newPage();
+  const trackingPage=await browser.newPage();
   trackingPage.on('request',r=>{if(!r.url().startsWith(base+'/'))external.push(r.url());});
   const script="import {readCoreTrackingRpc} from '/core-homologacao/tracking.mjs';\n"+
     "let working=false,token="+JSON.stringify(scheduledReceipt.tracking_token)+";\n"+
