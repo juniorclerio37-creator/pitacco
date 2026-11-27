@@ -1256,23 +1256,26 @@ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyaltyGo
  body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyalty .v2-loyalty-compact-copy{padding-left:6px;font-size:.69rem}
  body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2HomeLoyaltyGo{padding:6px 8px;font-size:.72rem}
 }
-/* Compact four-product showcase for principal V2; keep the catalog cards unchanged. */
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-product{display:flex;flex-direction:column;border-radius:14px}
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-photo{width:100%;height:clamp(100px,12vw,148px);aspect-ratio:auto;min-height:0}
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-photo img{padding:5px}
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-photo>span:not(.v2-top-badge){font-size:2.4rem}
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-badge{top:6px;left:6px;font-size:.64rem;padding:4px 7px;max-width:calc(100% - 45px)}
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-heart{top:5px;right:5px;width:32px;height:32px;font-size:1.15rem}
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-product-details{flex:1;display:flex;flex-direction:column;gap:5px;padding:7px 9px}
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-name{font-size:.86rem;line-height:1.25;min-height:2.5em;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+/* Two portrait bestseller cards: V2 approved showcase, independent of the full catalog. */
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts{grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(9px,2vw,18px);max-width:760px;margin-inline:auto;align-items:stretch}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-product{display:flex;flex-direction:column;min-width:0;border:0;border-radius:clamp(15px,2.5vw,24px);background:radial-gradient(ellipse at 50% 45%,color-mix(in srgb,var(--featured-base,#4b075e) 85%,#dd37b9),transparent 72%),linear-gradient(145deg,color-mix(in srgb,var(--featured-base,#4b075e) 65%,#160820),color-mix(in srgb,var(--featured-base,#4b075e) 85%,#23082d));color:#fff;box-shadow:0 7px 18px #24062e25;overflow:hidden}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-head{display:flex;align-items:center;justify-content:center;gap:4px;padding:10px 6px 0;min-width:0}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-badge{position:static;display:flex;align-items:center;justify-content:center;gap:3px;min-width:0;background:#ffd52b;color:#2e1535;border-radius:999px;padding:5px 7px;font-size:clamp(.62rem,1.3vw,.91rem);line-height:1.2;font-weight:850;text-align:center}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-badge[data-ranked=false]{background:#ffffff;color:#39213d}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-heart{position:static;flex:none;width:32px;height:32px;font-size:1.15rem;background:#fff;color:#44134f}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-photo{width:100%;height:auto;aspect-ratio:1 / .88;min-height:0;background:transparent}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-photo img{padding:clamp(6px,1.3vw,12px);object-fit:contain!important}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-photo>span{font-size:clamp(2.5rem,7vw,5rem)}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-product-details{flex:1;display:flex;flex-direction:column;align-items:stretch;gap:7px;padding:8px clamp(9px,2vw,20px) clamp(12px,2vw,20px);background:transparent}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-name{border:0;background:none;color:#fff;cursor:pointer;padding:0;text-align:center;font-size:clamp(.96rem,2.3vw,1.55rem);line-height:1.2;min-height:2.4em;overflow-wrap:anywhere;font-weight:850}
 body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-description{display:none}
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-bottom{margin-top:auto;gap:4px}
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-price{font-size:clamp(.79rem,1.3vw,1.03rem);overflow-wrap:anywhere}
-body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-add{flex:none;width:36px;height:36px;border-radius:10px;font-size:1.2rem}
-@media(max-width:600px){
- body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
- body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-photo{height:clamp(86px,25vw,120px)}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-bottom{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-end;margin-top:auto;gap:9px}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-price{color:#ffd52b;font-size:clamp(1.15rem,3vw,1.95rem);line-height:1.15;font-weight:900;text-align:center;overflow-wrap:anywhere}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-add{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;height:auto;min-height:44px;border-radius:999px;background:#fff;color:#44134f;font-size:clamp(.79rem,1.6vw,1.04rem);font-weight:850;padding:6px 5px}
+body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-add svg{width:19px;height:19px;flex:none}
+@media(max-width:360px){
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-heart{width:27px;height:27px}
+ body[data-menu-template="pitacco-v2"][data-menu-skin=principal] #v2TopProducts .v2-top-badge{padding:5px 5px}
 }
 /* About contains only the shop's actual weekly hours, payment methods and scheduling. */
 body[data-menu-template="pitacco-v2"] .v2-about-block{border-top:1px solid var(--line,#eae3e7);padding:16px 0 0;margin-top:16px}
@@ -1319,7 +1322,7 @@ body[data-menu-template="pitacco-v2"]:not([data-menu-skin=editorial]) #hero:has(
   </div></div>
  </div>
  <nav id="v2HomeCategories" class="v2-home-categories" aria-label="Categorias do cardápio"></nav>
- <div class="v2-top-products-title"><h2><span id="v2HighlightsIcon" aria-hidden="true">🔥</span> Destaques da loja</h2><button type="button" id="v2AllProductsButton">Ver todos ›</button></div>
+ <div class="v2-top-products-title"><h2><span id="v2HighlightsIcon" aria-hidden="true">★</span> <span id="v2HighlightsTitle">Mais vendidos</span></h2><button type="button" id="v2AllProductsButton">Ver todos ›</button></div>
  <div id="v2TopProducts" aria-label="Produtos em destaque"></div>
 </section>
 
@@ -1940,7 +1943,7 @@ function v2SaveFavorite(id){
 // Os destaques são escolhidos por vendas registradas desta loja.
 // Na ausência de histórico, a vitrine usa itens reais do catálogo, sem inventar vendas.
 let v2TopSellerIds=[];
-const v2HighlightLimit=()=>4;
+const v2HighlightLimit=()=>2;
 const MENU_STARTUP_RPC_LIMIT_MS=1000;
 const MENU_STARTUP_SESSION_LIMIT_MS=250;
 function menuStartupDeadline(promise,ms){
@@ -2162,7 +2165,7 @@ function v2RenderHomeCategories(){
  create(null,'Destaques','flame');
  for(const key of keys)create(key,key,v2CategoryIcon(key));
  const highlighted=$('v2HighlightsIcon');
- if(highlighted)highlighted.replaceChildren(pitaccoCategoryIconNode('flame'));
+ if(highlighted)highlighted.textContent='★';
  const promoNav=document.querySelector('[data-v2-nav="promocoes"] .v2-nav-icon');
  if(promoNav)promoNav.replaceChildren(pitaccoCategoryIconNode('flame'));
 }
@@ -2190,27 +2193,33 @@ function v2Feature(){
  const products=menu.products,ranked=v2TopSellerIds.map(id=>products.find(p=>p.id===id)).filter(Boolean);
  const selected=[...ranked,...products.filter(p=>!ranked.some(r=>r.id===p.id))].slice(0,v2HighlightLimit());
  const root=$('v2TopProducts');root.replaceChildren();
+ $('v2HighlightsTitle').textContent=selected.length&&selected.every(p=>v2TopSellerIds.includes(p.id))?'Mais vendidos':'Destaques da loja';
  for(const product of selected){
   const card=el('article',undefined,'v2-top-product'),image=el('div',undefined,'v2-top-photo');
   if(imageUrl(product.image_url)){
    const img=el('img');img.alt='';img.loading='lazy';img.decoding='async';setProductPhotoFit(img);img.src=product.image_url;image.append(img);
   }else image.append(el('span','🍧'));
   const isRanked=v2TopSellerIds.includes(product.id),isCombo=/combo/i.test(product.category+' '+product.name);
-  const badge=el('span',isRanked?'Mais pedido':isCombo?'Combo':'Destaque','v2-top-badge');
-  badge.dataset.combo=String(isCombo);image.append(badge);
+  const head=el('div',undefined,'v2-top-head');
+  const badge=el('span',undefined,'v2-top-badge');
+  badge.dataset.ranked=String(isRanked);
+  if(isRanked){const crown=el('span','♛');crown.setAttribute('aria-hidden','true');badge.append(crown)}
+  badge.append(document.createTextNode(isRanked?'Mais vendido':isCombo?'Combo':'Destaque'));head.append(badge);
   const fav=button(v2Favorites.has(product.id)?'♥':'♡','v2-top-heart');
   fav.setAttribute('aria-pressed',String(v2Favorites.has(product.id)));
   fav.setAttribute('aria-label',(v2Favorites.has(product.id)?'Remover ':'Salvar ')+product.name+' nos favoritos');
-  fav.onclick=()=>{v2SaveFavorite(product.id);v2Feature()};image.append(fav);
+  fav.onclick=()=>{v2SaveFavorite(product.id);v2Feature()};head.append(fav);
   const info=el('div',undefined,'v2-top-product-details');
-  const name=button(product.name,'v2-top-name');name.style.cssText='text-align:left;border:0;padding:0;background:none;cursor:pointer';
+  const name=button(product.name,'v2-top-name');
   name.onclick=()=>openProduct(product);info.append(name);
   const description=el('p',product.description||'Personalize seu pedido do jeito que preferir.','v2-top-description');
   info.append(description);
   const bottom=el('div',undefined,'v2-top-bottom');bottom.append(el('strong',pizzaFromPrice(product),'v2-top-price'));
-  const add=button('+','v2-top-add');add.setAttribute('aria-label','Personalizar '+product.name+' em destaque');
+  const add=button(undefined,'v2-top-add');add.setAttribute('aria-label','Personalizar '+product.name+' em destaque');
+  const cartIcon=document.createElementNS('http://www.w3.org/2000/svg','svg');cartIcon.setAttribute('viewBox','0 0 24 24');cartIcon.setAttribute('fill','none');cartIcon.setAttribute('stroke','currentColor');cartIcon.setAttribute('stroke-width','2');cartIcon.setAttribute('aria-hidden','true');
+  const cartPath=document.createElementNS('http://www.w3.org/2000/svg','path');cartPath.setAttribute('d','M2 3h3l3 12h11l3-8H6m4 12h.01M18 19h.01');cartPath.setAttribute('stroke-linecap','round');cartPath.setAttribute('stroke-linejoin','round');cartIcon.append(cartPath);add.append(cartIcon,document.createTextNode('Adicionar'));
   add.onclick=()=>openProduct(product);bottom.append(add);info.append(bottom);
-  card.append(image,info);root.append(card);
+  card.append(head,image,info);root.append(card);
  }
  v2RenderHomeCategories();
  v2RenderHomeLoyaltyProgress();
@@ -2752,6 +2761,7 @@ function applyStudioDesign(shop){
  applyLogoFrame(d?.logo_frame);
  if(!d||typeof d!=='object')return;
  const root=document.documentElement;
+ root.style.setProperty('--featured-base',/^#[0-9a-fA-F]{6}$/.test(d.hero||'')?d.hero:'#4b075e');
  const palette={primary:'--brand',secondary:'--muted',background:'--surface',paper:'--paper',foreground:'--ink',hero:'--hero',highlight:'--highlight'};
  for(const [key,variable] of Object.entries(palette)){
   if(/^#[0-9a-fA-F]{6}$/.test(d[key]||''))root.style.setProperty(variable,d[key]);

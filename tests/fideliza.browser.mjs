@@ -94,15 +94,25 @@ try{
   await page.locator('.product-open').first().waitFor();
   await page.locator('#v2TopProducts .v2-top-product').first().waitFor();
   {
-   assert.deepEqual(await page.locator('#v2TopProducts .v2-top-name').allTextContents(),['Açaí','Combo da casa','Creme de cupuaçu','Açaí especial']);
-   assert.equal(await page.locator('#v2TopProducts .v2-top-badge').filter({hasText:'Mais pedido'}).count(),4);
-   const compactGrid=await page.locator('#v2TopProducts').evaluate(grid=>({
+   assert.deepEqual(await page.locator('#v2TopProducts .v2-top-name').allTextContents(),['Açaí','Combo da casa']);
+   assert.equal(await page.locator('#v2TopProducts .v2-top-badge').filter({hasText:'Mais vendido'}).count(),2);
+   const showcase=await page.locator('#v2TopProducts').evaluate(grid=>({
     columns:getComputedStyle(grid).gridTemplateColumns.split(' ').length,
-    photos:[...grid.querySelectorAll('.v2-top-photo')].map(e=>e.getBoundingClientRect().height),
+    cards:[...grid.querySelectorAll('.v2-top-product')].map(card=>{
+     const r=card.getBoundingClientRect(),photo=card.querySelector('.v2-top-photo').getBoundingClientRect(),name=card.querySelector('.v2-top-name').getBoundingClientRect(),price=card.querySelector('.v2-top-price').getBoundingClientRect(),add=card.querySelector('.v2-top-add');
+     const button=add.getBoundingClientRect();
+     return {width:r.width,height:r.height,top:r.top,photoBottom:photo.bottom,nameTop:name.top,priceTop:price.top,buttonTop:button.top,buttonHeight:button.height,background:getComputedStyle(card).backgroundImage,buttonText:add.textContent,overflow:card.scrollWidth>card.clientWidth+1};
+    }),
     overflow:grid.scrollWidth>grid.clientWidth+1
    }));
-   assert.equal(compactGrid.columns,width<=600?2:4);
-   assert.ok(compactGrid.photos.every(height=>height<=149)&&!compactGrid.overflow,'Four compact cards fit without overflow: '+JSON.stringify(compactGrid));
+   assert.equal(showcase.columns,2);
+   assert.equal(showcase.cards.length,2);
+   assert.ok(Math.abs(showcase.cards[0].top-showcase.cards[1].top)<2,'Both portrait cards are side by side');
+   assert.ok(!showcase.overflow&&showcase.cards.every(c=>c.height>c.width&&c.photoBottom<=c.nameTop&&c.nameTop<c.priceTop&&c.priceTop<c.buttonTop&&c.buttonHeight>=44&&c.background.includes('gradient')&&c.buttonText==='Adicionar'&&!c.overflow),'Portrait bestseller cards preserve photo, price and accessible CTA: '+JSON.stringify(showcase));
+   await page.locator('#v2TopProducts .v2-top-add').first().click();
+   await page.locator('#productDialog').waitFor({state:'visible'});
+   await page.locator('#closeProduct').click();
+   await page.locator('#productDialog').waitFor({state:'hidden'});
   }
   await page.evaluate(()=>{for(const image of document.images)if(image.src.includes('fixtures.pitacco.test'))image.loading='eager';});
   await page.waitForFunction(()=>[...document.images].filter(i=>i.src.includes('fixtures.pitacco.test')).every(i=>i.complete&&i.naturalWidth>0),null,{timeout:10000});
