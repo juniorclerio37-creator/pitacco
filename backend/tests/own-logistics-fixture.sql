@@ -15,6 +15,14 @@ begin
    and exists(select 1 from public.pitacco_daily_operational_orders(s) o where o.id=d.order_id and o.store_id=s and o.source='proprio')
   order by d.id limit lim offset off
  ) q;
+ when 'ifood-deliveries' then
+ select coalesce(jsonb_agg(to_jsonb(q) order by q.id),'[]'::jsonb) into result from (
+  select d.id,d.store_id,d.order_id,d.status,d.source,d.logistics_provider,d.courier_id,d.batch_id,d.manual_dispatch_hold,d.collected_at,d.arrived_at,d.capacity_released_at,d.latitude,d.longitude,d.deliver_by,d.external_delivery_status,d.arrival_provider_state
+  from public.deliveries d
+  where d.store_id=s and d.source='ifood' and d.logistics_provider='loja'
+   and exists(select 1 from public.pitacco_daily_operational_orders(s) o where o.id=d.order_id and o.store_id=s and o.source='ifood')
+  order by d.id limit lim offset off
+ ) q;
  when 'couriers' then
  select coalesce(jsonb_agg(to_jsonb(q) order by q.name,q.id),'[]'::jsonb) into result from (
   select c.id,c.store_id,c.name,c.fleet_type,c.active,c.available from public.couriers c

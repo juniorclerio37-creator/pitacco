@@ -55,6 +55,39 @@ positions=read_logistics('positions',token=owner)['data']
 assert any(row['courier_id']==cid for row in positions)
 assert all(set(row)=={'courier_id','latitude','longitude','observed_at','accuracy_m'} for row in positions)
 print('PASS: own board logistics read, original scoped courier and GPS queries, minimal fields, pagination and tenant isolation')
+# Exercise the separate iFood own-fleet path before the original grouping suite.
+market_order='98000000-0000-0000-0000-000000000071'
+market_delivery='98000000-0000-0000-0000-000000000072'
+market_path='/stores/'+s+'/dispatch/ifood-deliveries/'+market_delivery
+sql("insert into public.orders(id,store_id,channel,gross,source,status,preparation_status,receipt) values('"+market_order+"','"+s+"','iFood',25,'ifood','accepted','preparing','{\"ifood_status\":\"CONFIRMED\",\"logistics\":\"loja\"}')")
+sql("insert into public.deliveries(id,store_id,order_id,customer_name,address,status,source,logistics_provider) values('"+market_delivery+"','"+s+"','"+market_order+"','Cliente Fixture','Rua Fixture','pendente','ifood','loja')")
+saved_base=base
+base='http://127.0.0.1:8094/api/v1'
+market_assign={'action':'assign','courier_id':second}
+call(market_path,401,market_assign)
+call(market_path,404,market_assign,courier)
+call(market_path,409,market_assign,owner)
+sql("update public.orders set preparation_status='ready' where id='"+market_order+"'")
+call(market_path,403,market_assign|{'courier_id':str(uuid.uuid4())},owner)
+call(market_path.replace(market_delivery,one),403,market_assign,owner)
+sql("update public.deliveries set external_delivery_status='SHIPPING_REQUESTING' where id='"+market_delivery+"'")
+call(market_path,409,market_assign,owner)
+sql("update public.deliveries set external_delivery_status=null where id='"+market_delivery+"'")
+mr=call(market_path,200,market_assign,owner)['data']['route_id']
+assert call(market_path,200,market_assign,owner)['data']['route_id']==mr
+mrow=next(x for x in read_logistics('ifood-deliveries',token=owner)['data'] if x['id']==market_delivery)
+assert mrow['courier_id']==second and mrow['batch_id']==mr and mrow['status']=='atribuida'
+assert 'customer_name' not in mrow and 'address' not in mrow
+assert all(x['source']=='ifood' and x['store_id']==s for x in read_logistics('ifood-deliveries',token=owner)['data'])
+assert sql("select receipt->>'ifood_status' from public.orders where id='"+market_order+"'")=='CONFIRMED'
+assert sql("select count(*) from pitacco_private.ifood_courier_dispatch where delivery_id='"+market_delivery+"'")=='0'
+call(market_path,200,{'action':'remove','expected_courier_id':second},owner)
+assert sql("select (courier_id is null and manual_dispatch_hold)::text from public.deliveries where id='"+market_delivery+"'")=='true'
+# End this independent synthetic fixture so the original scheduler's fail-closed
+# marketplace scope and the own-order grouping tests are unaffected.
+sql("update public.orders set status='cancelled' where id='"+market_order+"'")
+base=saved_base
+print('PASS: iFood own-fleet assignment, readiness, provider hold, replay, scoped read and removal without provider dispatch')
 call(individual,401,assign)
 call(individual,404,assign,courier)
 call(individual.replace(s,'20000000-0000-4000-8000-000000000002'),404,assign,owner)
@@ -162,6 +195,10 @@ assert sql("select count(*) from public.deliveries where batch_id='"+route+"' an
 read_logistics('deliveries',404,owner)
 read_logistics('couriers',404,owner)
 read_logistics('positions',404,owner)
+read_logistics('ifood-deliveries',404,owner)
+base='http://127.0.0.1:8094/api/v1'
+call(market_path,404,market_assign,owner)
+base=saved_base
 print('PASS: merchant dispatch rejects revoked membership without modifying the existing route')
 
 # CLI worker: a fresh synthetic order and the second courier, independent of
