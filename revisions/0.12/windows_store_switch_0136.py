@@ -98,7 +98,7 @@ for relative in ['package.json','package-lock.json','src-tauri/tauri.conf.json',
  p=Path('web')/relative
  source=p.read_text(encoding='utf-8')
  assert '0.12.35' in source or '0.12.39' in source, relative
- p.write_text(source.replace('0.12.35','0.12.46').replace('0.12.39','0.12.46'),encoding='utf-8')
+ p.write_text(source.replace('0.12.35','0.12.47').replace('0.12.39','0.12.47'),encoding='utf-8')
 
 # The Windows installer, not the terminating process, owns the restart.
 p=Path('web/src-tauri/src/main.rs')

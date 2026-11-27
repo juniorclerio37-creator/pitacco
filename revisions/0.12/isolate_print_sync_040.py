@@ -5,6 +5,7 @@ s=p.read_text(encoding='utf-8')
 start=s.index("    if(desktop&&device){\n     const remote=await rpc('claim_print_jobs'")
 end=s.index("\n   }catch(e){if(!stopped){setStatus('Sincronização pendente",start)
 original=s[start:end]
+refresh=s.rindex("  async function refresh(){",0,start)
 assert "await ingestJobs(" in original
 assert "await rpc('ack_print_job'" in original
 replacement="""    if(desktop&&device){
@@ -16,11 +17,18 @@ replacement="""    if(desktop&&device){
       await ingestJobs({jobs:remote||[],device,call:invoke,ack:args=>rpc('ack_print_job',args)});
       const local=await invoke('list_jobs');
       if(stopped)return;
-      setJobs(local.filter(j=>j.store_id===storeId));
-      for(const job of local.filter(j=>j.store_id===storeId)){
+      const storeJobs=local.filter(j=>j.store_id===storeId);
+      setJobs(storeJobs);
+      const acknowledgedThisPoll=new Map();
+      for(const job of storeJobs){
        if(['submitted','error','uncertain'].includes(job.state)){
         try{
-         await rpc('ack_print_job',{p_job:job.id,p_device:device,p_state:job.state,p_error:job.error||null});
+         if(stopped)return;
+         const state=JSON.stringify([job.state,job.error||null]);
+         if(acknowledgedPrintStates.get(job.id)!==state){
+          await rpc('ack_print_job',{p_job:job.id,p_device:device,p_state:job.state,p_error:job.error||null});
+         }
+         acknowledgedThisPoll.set(job.id,state);
         }catch(ackError){
          setError('Confirmação de impressão pendente: '+String(ackError?.message||ackError));
         }
@@ -31,6 +39,7 @@ replacement="""    if(desktop&&device){
         }
        }
       }
+      acknowledgedPrintStates=acknowledgedThisPoll;
      }catch(printError){
       if(!stopped){
        setStatus('Pedidos sincronizados · impressão pendente');
@@ -38,5 +47,5 @@ replacement="""    if(desktop&&device){
       }
      }
     }"""
-s=s[:start]+replacement+s[end:]
+s=s[:refresh]+"  let acknowledgedPrintStates=new Map();\n"+s[refresh:start]+replacement+s[end:]
 p.write_text(s,encoding='utf-8')
