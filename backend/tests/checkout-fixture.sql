@@ -30,3 +30,8 @@ insert into public.loyalty_coupons(store_id,code,discount_type,discount_value,ma
 create role pitacco_core_tracking login password 'ci-tracking-only' nosuperuser nocreatedb nocreaterole nobypassrls;
 grant usage on schema public to pitacco_core_tracking;
 grant execute on function public.pitacco_track_public_order(uuid) to pitacco_core_tracking;
+
+-- Read-only menu role in the disposable reconstructed database.
+create role pitacco_core_menu login password 'ci-menu-only' nosuperuser nocreatedb nocreaterole nobypassrls;
+grant usage on schema public to pitacco_core_menu;
+grant execute on function public.get_public_menu(text) to pitacco_core_menu;

@@ -25,3 +25,6 @@ POST /api/v1/public/orders/tracking recebe o identificador privado no corpo JSON
 
 ## Transporte cliente experimental
 `clients/tracking.mjs` prepara o transporte same-origin para acompanhamento no Laravel, sem token na URL da API, sem credenciais/cookies, sem cache, sem fallback automático e com timeout. Testes Node verificam contrato, falhas e ausência de exposição do identificador nos erros. O arquivo não foi importado pelo cardápio atual; push, interface e publicação permanecem inalterados. A implantação requer roteamento same-origin e homologação integral.
+
+## Transporte do cardápio e checkout
+`clients/storefront.mjs` usa somente a API same-origin do Laravel. O ID original da requisição é preservado pelo chamador; nenhuma tentativa automática ou fallback para outro backend é realizado. Em falha ambígua, o cliente recebe estado `uncertain` e deve consultar recuperação antes de decidir qualquer nova tentativa, mantendo o mesmo ID e carrinho. Testes unitários e HTTP de CI exercitam cardápio, pedido Pix manual e perda de resposta. Não foi integrado à interface atual; cotação, demais pagamentos, autenticação do cliente e restauração do esquema real seguem pendentes.
