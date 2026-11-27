@@ -55,3 +55,6 @@ A API `/api/v1/public/menus/{slug}/profile/orders` encaminha somente `list` e `l
 
 ## Dependência do número público no histórico
 A reconstrução descartável não incluía `pitacco_order_public_label(jsonb,text)`. A fixture de checkout restaura exatamente a função e ACL documentadas em `docs/sql/order-card-public-number-localizer.sql`, sem criar uma nova numeração, alterar pedidos ou aplicar SQL em produção. A paridade integral ainda requer recuperação do esquema real.
+
+## Extrato Fiado experimental
+A rota POST `/api/v1/public/menus/{slug}/fiado/statement` recebe telefone e PIN pessoal e invoca a validação original, consumindo internamente a verificação descartável para consultar o extrato. Não retorna token, limite, crédito disponível ou PIN. A sessão persistente do cardápio não é suficiente para abrir o extrato. Falhas de PIN são confirmadas na transação para preservar a contagem original de tentativas; o endpoint tem limite adicional por IP. A regressão usa conta fictícia sem dívida e testa isolamento, falha, contagem, consumo e campos permitidos. Extrato com movimentações, expiração/concorrência, interface, checkout Fiado, envio SMS e homologação financeira integral permanecem pendentes. Restrito a APP_ENV=testing e flag desativada por padrão.

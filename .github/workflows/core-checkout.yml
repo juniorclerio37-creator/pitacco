@@ -43,6 +43,9 @@ jobs:
       PITACCO_MENU_ENABLED: 'true'
       MENU_DB_USERNAME: pitacco_core_menu
       MENU_DB_PASSWORD: ci-menu-only
+      PITACCO_FIADO_STATEMENT_ENABLED: 'true'
+      CORE_FIADO_STATEMENT_DB_USERNAME: pitacco_core_fiado_statement
+      CORE_FIADO_STATEMENT_DB_PASSWORD: ci-statement-only
       PITACCO_PROFILE_ENABLED: 'true'
       CORE_PROFILE_DB_USERNAME: pitacco_core_profile
       CORE_PROFILE_DB_PASSWORD: ci-profile-only
@@ -74,6 +77,7 @@ jobs:
           if PGPASSWORD=ci-tracking-only psql -h 127.0.0.1 -U pitacco_core_tracking -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.public_checkouts'; then exit 1; fi
           test "$(PGPASSWORD=ci-tracking-only psql -h 127.0.0.1 -U pitacco_core_tracking -d postgres -Atc "select has_function_privilege(current_user,'public.checkout_public_order(text,uuid,text,text,text,jsonb,text,text,text)','execute')")" = f
           if PGPASSWORD=ci-profile-only psql -h 127.0.0.1 -U pitacco_core_profile -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.pitacco_v2_customer_profiles'; then exit 1; fi
+          if PGPASSWORD=ci-statement-only psql -h 127.0.0.1 -U pitacco_core_fiado_statement -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.pitacco_fiado_customers'; then exit 1; fi
       - name: Testar checkout via Laravel
         working-directory: backend
         run: |

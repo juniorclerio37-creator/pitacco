@@ -153,3 +153,17 @@ assert call(SLUG+'/profile',409,identity)['session_reset'] is True
 assert call(history,200,history_request)['data']=={'active':False}
 print('PASS: device-bound order history, duplicate prevention, other phone and store denial, expired tracking, reorder items and logout')
 print('PASS: original device session resume and logout, revoked profile denial')
+
+# Synthetic accounts; original SQL enforces PIN validation and one-time tokens.
+sql("begin; set local role authenticated; select set_config('request.jwt.claim.sub','91000000-0000-0000-0000-000000000001',true); select public.pitacco_fiado_toggle('91000000-0000-0000-0000-000000000002',true); select public.pitacco_fiado_save_customer_pin('91000000-0000-0000-0000-000000000002','Cliente Extrato Fixture','21988889991',100,true,7,'automatic',true,'438216'); commit;")
+statement=SLUG+'/fiado/statement'
+auth={'phone':'21988889991','pin':'438216'}
+assert call(statement,403,auth|{'pin':'438217'})=={'error':'verification_failed'}
+assert sql("select pin_failed_attempts from public.pitacco_fiado_customers where phone='21988889991' and store_id='91000000-0000-0000-0000-000000000002'")=='1'
+assert call('other-store/fiado/statement',403,auth)=={'error':'verification_failed'}
+result=call(statement,200,auth)['data']
+assert float(result['outstanding'])==0 and result['charges']==[] and result['payments']==[]
+assert set(result)<= {'outstanding','next_due','charges','payments','pix_instructions'}
+assert sql("select count(*) from pitacco_private.fiado_pin_verifications where store_id='91000000-0000-0000-0000-000000000002' and used_at is null")=='0'
+call(statement,422,{'phone':auth['phone']})
+print('PASS: statement PIN validation, persistent failed attempt, store isolation, no limit disclosure and single-use verification')

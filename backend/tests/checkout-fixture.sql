@@ -83,3 +83,8 @@ end;
 $$;
 revoke all on function public.pitacco_order_public_label(jsonb,text) from public,anon;
 grant execute on function public.pitacco_order_public_label(jsonb,text) to authenticated,service_role;
+
+-- Test-only role, restricted to the original verifier and private statement.
+create role pitacco_core_fiado_statement login password 'ci-statement-only' nosuperuser nocreatedb nocreaterole nobypassrls;
+grant usage on schema public to pitacco_core_fiado_statement;
+grant execute on function public.pitacco_fiado_verify_pin(text,text,text,uuid),public.pitacco_v2_fiado_statement(text,uuid) to pitacco_core_fiado_statement;
