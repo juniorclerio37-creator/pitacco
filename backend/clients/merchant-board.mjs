@@ -3,8 +3,9 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function createMerchantBoard({store,scopedFetch}){
  if(!UUID.test(store??'')||typeof scopedFetch!=='function')throw Error('Sessão inválida.');
  let active=true,flight=null,writing=false,last=null;const abort=new AbortController();
+ const pendingReprints=new Map();
  const base='/api/v1/stores/'+store+'/';
- function stop(){active=false;last=null;abort.abort();}
+ function stop(){active=false;last=null;pendingReprints.clear();abort.abort();}
  async function get(path){
   if(!active)throw Error('Sessão encerrada.');
   const response=await scopedFetch(base+path,{headers:{Accept:'application/json'},signal:AbortSignal.any([abort.signal,AbortSignal.timeout(8000)])});
@@ -91,5 +92,28 @@ export function createMerchantBoard({store,scopedFetch}){
    last=null;writing=false;
   }
  }
- return {read,act,stop};
+ async function reprint(id){
+  if(!active)throw Error('Sessão encerrada.');
+  if(writing)throw Error('Operação em andamento.');
+  const order=last?.orders.find(o=>o.id===id);
+  if(!order||order.store_id!==store||order.status!=='accepted')throw Error('Reimpressão indisponível.');
+  const endpoint=order.source==='ifood'?'ifood-reprint':'reprint';
+  const requestId=pendingReprints.get(id)??globalThis.crypto.randomUUID();
+  pendingReprints.set(id,requestId);
+  writing=true;
+  try{
+   const response=await scopedFetch(base+'orders/'+id+'/'+endpoint,{
+    method:'POST',headers:{Accept:'application/json','Content-Type':'application/json'},
+    body:JSON.stringify({request_id:requestId,reason:'Reimpressão solicitada no painel'}),
+    signal:AbortSignal.any([abort.signal,AbortSignal.timeout(8000)])
+   });
+   if(!active)throw Error('Sessão encerrada.');
+   if(response.status===401||response.status===403){stop();throw Error('Reimpressão não autorizada.');}
+   if(response.status===404||response.status===409)throw Error('Reimpressão indisponível.');
+   if(!response.ok||(await response.json())?.data?.queued!==true)throw Error('Envio à fila não confirmado.');
+   if(!active)throw Error('Sessão encerrada.');
+   pendingReprints.delete(id);
+  }finally{writing=false;}
+ }
+ return {read,act,reprint,stop};
 }

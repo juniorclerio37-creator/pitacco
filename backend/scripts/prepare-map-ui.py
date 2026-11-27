@@ -72,6 +72,7 @@ def build(target):
     runtime.write_text(replace(runtime.read_text(),"../../core-source/web/printBridge.mjs","../printBridge.mjs"))
     shutil.copy2(ROOT/'backend'/'ui'/'CoreMerchantHost.jsx',target/'CoreMerchantHost.jsx')
     shutil.copy2(ROOT/'backend'/'ui'/'core-preview.jsx',target/'core-preview.jsx')
+    shutil.copy2(ROOT/'backend'/'ui'/'core-preview.vite.config.mjs',target/'core-preview.vite.config.mjs')
     # No default activation. Keep identical frontend entry point and Tauri assets.
     print("Prepared isolated original React/Tauri map overlay:",target)
 if __name__=='__main__':

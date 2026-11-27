@@ -45,3 +45,30 @@ test('own actions are scoped, server confirmed, no marketplace mutation or autom
  assert.equal(calls.length,2);assert.deepEqual(calls[1].body,{action:'accept'});
  assert.equal((await board.read()).orders.find(o=>o.id===id(1)).status,'accepted');
 });
+
+test('reprint queues the correct source and retains its request id after an unconfirmed response',async()=>{
+ const attempts=[];
+ const board=createMerchantBoard({store,scopedFetch:async(path,options)=>{
+  const route=path.split('/'+store+'/')[1].split('?')[0];
+  if(options.method==='POST'){
+   attempts.push({route,...JSON.parse(options.body)});
+   if(attempts.length===1)return {ok:false,status:503};
+   return {ok:true,status:200,json:async()=>({data:{queued:true}})};
+  }
+  const rows={'orders/own-board':[order(1,'proprio')],'orders/ifood-board':[order(2,'ifood')]};
+  return {ok:true,status:200,json:async()=>route==='operation-settings'
+   ?{data:{store_id:store,dispatch_mode:'manual',acceptance_settings:[],print_sectors:[]}}
+   :{data:rows[route]??[],limit:100,offset:0}};
+ }});
+ await board.read();
+ await assert.rejects(board.reprint(id(99)),/indisponível/);
+ await assert.rejects(board.reprint(id(1)),/não confirmado/);
+ assert.equal(attempts.length,1);
+ await board.reprint(id(1));
+ assert.deepEqual(attempts[0],attempts[1]);
+ assert.equal(attempts[1].route,'orders/'+id(1)+'/reprint');
+ await board.reprint(id(1));
+ assert.notEqual(attempts[2].request_id,attempts[1].request_id);
+ await board.reprint(id(2));
+ assert.equal(attempts[3].route,'orders/'+id(2)+'/ifood-reprint');
+});

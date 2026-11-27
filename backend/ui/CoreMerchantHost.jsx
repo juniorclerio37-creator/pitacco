@@ -11,7 +11,7 @@ import './style.css';
 import './merchant-reference.css';
 const noLegacy=new Proxy({}, {get(){throw Error('Transporte legado desativado neste ensaio.');}});
 function ExperimentalBoard({runtime,enableOwnActions=false}){
- const [data,setData]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[actionError,setActionError]=useState('');
+ const [data,setData]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[actionError,setActionError]=useState(''),[printFeedback,setPrintFeedback]=useState('');
  const live=useRef(false),mutating=useRef(false);
  async function refresh(){try{const value=await runtime.board.read();if(live.current){setData(value);setError('');}}catch(e){if(live.current){setData(null);setError(e.message||'Pedidos indisponíveis.');}}}
  useEffect(()=>{
@@ -28,9 +28,16 @@ function ExperimentalBoard({runtime,enableOwnActions=false}){
   finally{await refresh();mutating.current=false;if(live.current)setBusy(false);}
   return confirmed;
  }
+ async function reprint(id){
+  if(!enableOwnActions||mutating.current)return;
+  mutating.current=true;setBusy(true);setActionError('');setPrintFeedback('');
+  try{await runtime.board.reprint(id);if(live.current)setPrintFeedback('Reimpressão enviada à fila do Windows.');}
+  catch(e){if(live.current)setActionError(e.message||'Envio à fila não confirmado.');}
+  finally{mutating.current=false;if(live.current)setBusy(false);}
+ }
  if(!data)return <section className="panel" role={error?'alert':'status'}>{error||'Carregando pedidos…'}</section>;
  const byOrder=new Map(data.deliveries.map(d=>[d.order_id,d]));
- return <><p role="status">{enableOwnActions?'Ensaio local: aceite, recusa, preparo e retirada de pedidos próprios. Demais ações desativadas.':'Ensaio de leitura: pedidos próprios e iFood. Ações operacionais desativadas.'}</p><Pedidos key={runtime.store} storeId={runtime.store} orders={data.orders} deliveries={data.deliveries} couriers={data.couriers} stage={o=>orderStage(o,byOrder.get(o.id))} busy={!enableOwnActions||busy} experimentalOwnOnly={true} actionError={actionError} onAccept={id=>action(id,'accept')} onDecision={(id,status,reason)=>status==='rejected'?action(id,'reject',reason):Promise.resolve(false)} onReady={id=>action(id,'ready')} onPickup={id=>action(id,'complete_pickup')} merchantLayout={true} dispatchMode={data.settings.dispatch_mode}/></>;
+ return <><p role="status">{enableOwnActions?'Ensaio local: aceite, recusa, preparo e retirada de pedidos próprios. Reimpressão em fila de teste.':'Ensaio de leitura: pedidos próprios e iFood. Ações operacionais desativadas.'}</p>{printFeedback&&<p role="status">{printFeedback}</p>}<Pedidos key={runtime.store} storeId={runtime.store} orders={data.orders} deliveries={data.deliveries} couriers={data.couriers} stage={o=>orderStage(o,byOrder.get(o.id))} busy={!enableOwnActions||busy} experimentalOwnOnly={true} actionError={actionError} onAccept={id=>action(id,'accept')} onDecision={(id,status,reason)=>status==='rejected'?action(id,'reject',reason):Promise.resolve(false)} onReady={id=>action(id,'ready')} onPickup={id=>action(id,'complete_pickup')} onReprint={enableOwnActions?reprint:undefined} merchantLayout={true} dispatchMode={data.settings.dispatch_mode}/></>;
 }
 export default function CoreMerchantHost({fetcher=globalThis.fetch,windows=null,enableOwnActions=false}){
  const [snapshot,setSnapshot]=useState({identity:null,selected:null,expires_at:null});
