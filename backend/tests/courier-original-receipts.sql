@@ -85,6 +85,7 @@ declare
  courier constant uuid:='96000000-0000-0000-0000-000000000003';
  methods constant text[]:=array['dinheiro','cartao_credito','cartao_debito','cartao_entrega','pix_maquininha','voucher_alelo','voucher_pluxee','voucher_vr','voucher_ticket','pix_manual'];
  method text; i integer:=0; source_receipt jsonb; gross_value numeric; oid uuid; did uuid; r jsonb; card jsonb; replay jsonb;
+ rid uuid; qid uuid; verified jsonb; checkout jsonb;
 begin
  foreach method in array methods loop
   select o.receipt,o.gross into strict source_receipt,gross_value
@@ -126,11 +127,32 @@ begin
   i:=i+1;
  end loop;
  -- Fiado privacy: no amount, limit, debt or due date in the courier's payment card.
- oid:=gen_random_uuid();did:=gen_random_uuid();
- insert into public.orders(id,store_id,channel,gross,source,status,preparation_status,receipt)
- values(oid,s,'Delivery próprio',34,'proprio','accepted','ready','{"payment":"fiado","logistics":"loja"}');
- insert into public.deliveries(id,store_id,order_id,courier_id,customer_name,address,status,source,logistics_provider,collected_at,arrived_at)
- values(did,s,oid,courier,'Cliente fictício','Endereço fictício','retirada','proprio','loja',now(),now());
+ rid:=gen_random_uuid();qid:=gen_random_uuid();did:=gen_random_uuid();
+ insert into public.pitacco_delivery_route_quotes(id,store_id,request_id,destination_address,distance_m,fee,pricing_updated_at,expires_at,destination_latitude,destination_longitude,delivery_min_minutes,delivery_max_minutes,delivery_region,delivery_service)
+ select qid,s,rid,'Rua Fixture 456',500,9,updated_at,now()+interval '10 minutes',-22.91,-43.46,20,30,'Centro','priority'
+ from public.pitacco_delivery_pricing where store_id=s;
+ assert found;
+ -- The preceding checkout smoke already created this authorized fictional account.
+ verified:=public.pitacco_fiado_verify_pin('core-checkout-fixture','21988889991','438216',rid);
+ assert (verified->>'verified')::boolean;
+ checkout:=public.pitacco_checkout_fiado('core-checkout-fixture',rid,'Cliente Extrato Fixture','21988889991','Rua Fixture 456','[{"product_id":"91000000-0000-0000-0000-000000000003","quantity":1,"options":[]}]'::jsonb,'delivery','',verified->>'token',qid);
+ assert (checkout->>'total')::numeric=34;
+ oid:=(checkout->>'order_id')::uuid;
+ assert (select amount=34 from public.pitacco_fiado_charges where order_id=oid);
+ assert (select status='accepted' from public.orders where id=oid);
+ -- Use the authorized original order, not an inserted unapproved debt.
+ update public.orders set preparation_status='ready' where id=oid and store_id=s;
+ -- Auto dispatch may already have made the delivery; reuse it if present.
+ select id into did from public.deliveries where order_id=oid and store_id=s limit 1;
+ if did is null then
+  did:=gen_random_uuid();
+ end if;
+ if exists(select 1 from public.deliveries where id=did) then
+  update public.deliveries set courier_id=courier,status='retirada',collected_at=now(),arrived_at=now() where id=did;
+ else
+  insert into public.deliveries(id,store_id,order_id,courier_id,customer_name,address,status,source,logistics_provider,collected_at,arrived_at)
+  values(did,s,oid,courier,'Cliente fictício','Endereço fictício','retirada','proprio','loja',now(),now());
+ end if;
  select item->'payment' into strict card from jsonb_array_elements(public.pitacco_driver_payment_cards()) item where item->>'delivery_id'=did::text;
  assert card->>'state'='no_collect' and card->>'method'='Sem cobrança na entrega' and card->>'amount' is null;
  assert not (card ?| array['limit','outstanding','next_due','fiado']);
