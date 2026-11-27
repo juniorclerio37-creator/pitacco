@@ -1,0 +1,929 @@
+[
+  {
+    "schema": "public",
+    "table_name": "acceptance_settings",
+    "policy": "acceptance_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "courier_device_tokens",
+    "policy": "courier_token_delete",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "expression_sha256": "52d639ce85f133d54cd0fffaf1f79adef31dd290b5d32de069eeee6421c7f798"
+  },
+  {
+    "schema": "public",
+    "table_name": "courier_device_tokens",
+    "policy": "courier_token_insert",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "928c151ec9155a3e09a9ee278dfd87426170160646fc96e56f9f85a9707ee2f0"
+  },
+  {
+    "schema": "public",
+    "table_name": "courier_device_tokens",
+    "policy": "courier_token_select",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "52d639ce85f133d54cd0fffaf1f79adef31dd290b5d32de069eeee6421c7f798"
+  },
+  {
+    "schema": "public",
+    "table_name": "courier_device_tokens",
+    "policy": "courier_token_update",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "expression_sha256": "5859f5b1b5eb89bc276e54b97ddcfc34ba627b5780bd397ca01f528740c5d2cc"
+  },
+  {
+    "schema": "public",
+    "table_name": "courier_positions",
+    "policy": "courier_test_store_manager_positions",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "9274b4b8b130a048bae3800b588eac896516cfa54349aec1857c9b5f8625114f"
+  },
+  {
+    "schema": "public",
+    "table_name": "courier_positions",
+    "policy": "positions_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "fc2eefc32c4d7b82278aa0689ac1b9915646ed584a947cd47f05819461621a13"
+  },
+  {
+    "schema": "public",
+    "table_name": "couriers",
+    "policy": "courier_select",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "507094fc7fc8cb83f615098f666f8d4e6780d0e5f45488b7edcfeac5c20354a6"
+  },
+  {
+    "schema": "public",
+    "table_name": "couriers",
+    "policy": "courier_test_store_manager_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "36ffa15dfa2d881517474b69ffa9a4ea01c8b3179bd7772d22ec58c8e6e6ee33"
+  },
+  {
+    "schema": "public",
+    "table_name": "customer_blocks",
+    "policy": "Managers can block customers",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "c7aee04221e5a84ffa4168e8b87a7994006cbf23317ad6e07c86a456cd9147df"
+  },
+  {
+    "schema": "public",
+    "table_name": "customer_blocks",
+    "policy": "Managers can read customer blocks",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "customer_blocks",
+    "policy": "Managers can unblock customers",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "policy": "courier_test_store_delivery_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "4261b268a5f2f75e767792c1ae364c557786dd073c62412c404091eda6d45f13"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "policy": "delivery_select",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "3e43850c27ee2ac61f8976265bf4ce4f4fdc2a470fd58143ed7347a2bb32e521"
+  },
+  {
+    "schema": "public",
+    "table_name": "delivery_batches",
+    "policy": "batches_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "be981fdc6696379a704789da081bebd7a0b3402524850d6f716b2bfbb54d9940"
+  },
+  {
+    "schema": "public",
+    "table_name": "expenses",
+    "policy": "expense_insert",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "2204753608391c3b6a03d107bb4e250535ccdbb977c9a2f504ce9020f57ae666"
+  },
+  {
+    "schema": "public",
+    "table_name": "expenses",
+    "policy": "expense_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "50e6a865aa1d2858bed34eb70c7bab8d96217c2683eda15e4cc9f56d853641dd"
+  },
+  {
+    "schema": "public",
+    "table_name": "external_delivery_requests",
+    "policy": "external manager draft",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "19d3979d1096d6af98dc7b666129a3212de67b42ee5ac7beb72bda3a29d42b67"
+  },
+  {
+    "schema": "public",
+    "table_name": "external_delivery_requests",
+    "policy": "external manager read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "loyalty_coupon_redemptions",
+    "policy": "loyalty_redemptions_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "loyalty_coupons",
+    "policy": "loyalty_coupons_delete",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "expression_sha256": "653e29ae1fa68d63572e5fd6ac515deb3c7d3f16b55f201aaaa470ad50efd88a"
+  },
+  {
+    "schema": "public",
+    "table_name": "loyalty_coupons",
+    "policy": "loyalty_coupons_insert",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "3b5c8d82dca415f20ba49984c29a72e18e00a5163d46c5352e4b94b321bfdff6"
+  },
+  {
+    "schema": "public",
+    "table_name": "loyalty_coupons",
+    "policy": "loyalty_coupons_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "50e6a865aa1d2858bed34eb70c7bab8d96217c2683eda15e4cc9f56d853641dd"
+  },
+  {
+    "schema": "public",
+    "table_name": "loyalty_coupons",
+    "policy": "loyalty_coupons_update",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "expression_sha256": "9c010d0b49a3a9bbd7c485876d8fb90589a4eb6fa04b6004e3bd7289ceb23ba1"
+  },
+  {
+    "schema": "public",
+    "table_name": "loyalty_ledger",
+    "policy": "loyalty_ledger_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "loyalty_programs",
+    "policy": "loyalty_programs_insert",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "3b5c8d82dca415f20ba49984c29a72e18e00a5163d46c5352e4b94b321bfdff6"
+  },
+  {
+    "schema": "public",
+    "table_name": "loyalty_programs",
+    "policy": "loyalty_programs_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "50e6a865aa1d2858bed34eb70c7bab8d96217c2683eda15e4cc9f56d853641dd"
+  },
+  {
+    "schema": "public",
+    "table_name": "loyalty_programs",
+    "policy": "loyalty_programs_update",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "expression_sha256": "9c010d0b49a3a9bbd7c485876d8fb90589a4eb6fa04b6004e3bd7289ceb23ba1"
+  },
+  {
+    "schema": "public",
+    "table_name": "manual_payments",
+    "policy": "payment_manager_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "menu_import_staging",
+    "policy": "menu manager insert",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "79f9911ec616f6cb648a43ba241eee335bc9e34825daddb813db5848bed963c8"
+  },
+  {
+    "schema": "public",
+    "table_name": "menu_import_staging",
+    "policy": "menu manager read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "menu_import_staging",
+    "policy": "menu manager update",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "operation_audit",
+    "policy": "audit_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "policy": "order_insert",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "2204753608391c3b6a03d107bb4e250535ccdbb977c9a2f504ce9020f57ae666"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "policy": "order_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "88ca817ee15b4be3d848f1a5ec8447dc80c1acdb1d9ee8115e6d8ca26968cca0"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "policy": "pitacco_orders_accept_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_app_release_audit",
+    "policy": "pitacco_release_audit_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "39f1a3d717ac3f32800667d3c3646b41f18a9225f02385a2d764d506913a0e92"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_app_releases",
+    "policy": "pitacco_releases_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "db16ab2f5ec53cffd6c89b85dccbc197d7a96518300f81842b4b3ad3de0ddb0b"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_cancel_beverage_recipe",
+    "policy": "pitacco_cancel_beverage_recipe_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_cancel_beverage_returns",
+    "policy": "pitacco_cancel_beverage_returns_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_cancel_beverage_units",
+    "policy": "pitacco_cancel_beverage_units_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_cash_movements",
+    "policy": "pitacco_cash_movements_manager_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_cash_sessions",
+    "policy": "pitacco_cash_sessions_manager_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_combo_drafts",
+    "policy": "combo_drafts_manager_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_complement_templates",
+    "policy": "pitacco_complement_template_select",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "a482e6392ccb495cc2ab75808364fe2083e7fc68a226411872774d60780bf327"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_courier_daily_allowances",
+    "policy": "pitacco_courier_daily_allowances_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_courier_pay_rules",
+    "policy": "pitacco_courier_pay_rules_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_courier_payouts",
+    "policy": "pitacco_courier_payouts_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_customer_blocks",
+    "policy": "pitacco_customer_blocks_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_delivery_incidents",
+    "policy": "pitacco_incidents_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "853020e62066d64f7b29759977744179063d066c915677f033b8eb49ebd1bfcb"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_delivery_pay_snapshots",
+    "policy": "pitacco_delivery_pay_snapshots_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_delivery_pricing",
+    "policy": "pitacco_delivery_pricing_store_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_finished_product_stock",
+    "policy": "finished_stock_insert",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "e0fd7d4ea3d8ff75e5322e9c583a9896fb0100a9211126061cd3248b53b94bf0"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_finished_product_stock",
+    "policy": "finished_stock_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "50e6a865aa1d2858bed34eb70c7bab8d96217c2683eda15e4cc9f56d853641dd"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_finished_product_stock",
+    "policy": "finished_stock_update",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "expression_sha256": "0bbd843857bf1dab2ae1f076b530f4aa6b97923fac0487ee53dbef2048a6c7fc"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_ingredient_unit_costs",
+    "policy": "pitacco_ingredient_unit_costs_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_ingredients",
+    "policy": "pitacco_ingredient_insert",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "79f9911ec616f6cb648a43ba241eee335bc9e34825daddb813db5848bed963c8"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_ingredients",
+    "policy": "pitacco_ingredient_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "50e6a865aa1d2858bed34eb70c7bab8d96217c2683eda15e4cc9f56d853641dd"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_ingredients",
+    "policy": "pitacco_ingredient_update",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_marketplace_settlements",
+    "policy": "pitacco_marketplace_settlements_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_menu_category_order",
+    "policy": "pitacco_menu_category_order_select",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "a482e6392ccb495cc2ab75808364fe2083e7fc68a226411872774d60780bf327"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_menu_import_history",
+    "policy": "manager_reads_menu_import_history",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "a482e6392ccb495cc2ab75808364fe2083e7fc68a226411872774d60780bf327"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_option_recipe_lines",
+    "policy": "pitacco_option_recipe_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "50e6a865aa1d2858bed34eb70c7bab8d96217c2683eda15e4cc9f56d853641dd"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_option_recipe_lines",
+    "policy": "pitacco_option_recipe_write",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_order_costs",
+    "policy": "pitacco_order_costs_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_order_material_cost_lines",
+    "policy": "pitacco_material_lines_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_order_material_cost_summary",
+    "policy": "pitacco_material_summary_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_pizza_drafts",
+    "policy": "pizza_draft_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_pizza_flavor_library",
+    "policy": "pizza_flavor_library_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_pizza_recipe_lines",
+    "policy": "pizza_recipe_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_plan_catalog_signal",
+    "policy": "catalog_signal_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0c35143371984059f81fe4365535d6d93eca1731c378de359b73c3440d5734e3"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_recipe_lines",
+    "policy": "pitacco_recipe_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "50e6a865aa1d2858bed34eb70c7bab8d96217c2683eda15e4cc9f56d853641dd"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_recipe_lines",
+    "policy": "pitacco_recipe_write",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "expression_sha256": "1fcdc42448e270e789630e94de52a6016c2a8031e4a846edd8916d0e11163564"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_schedule_windows",
+    "policy": "pitacco_schedule_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_stock_movements",
+    "policy": "pitacco_stock_manual",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "9db2fdcf968faa7c23f056b249efa031cb1af16b6f6539c918bfbafb1bf1202d"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_stock_movements",
+    "policy": "pitacco_stock_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "50e6a865aa1d2858bed34eb70c7bab8d96217c2683eda15e4cc9f56d853641dd"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_store_delivery_areas",
+    "policy": "pitacco_store_manager_delivery_area",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_store_payment_providers",
+    "policy": "pitacco_store_manager_payment_providers",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "print_devices",
+    "policy": "devices_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "print_jobs",
+    "policy": "print_jobs_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "print_receipt_templates",
+    "policy": "print_receipt_templates_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "print_sectors",
+    "policy": "sectors_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "product_option_groups",
+    "policy": "pitacco_option_groups_read_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "product_options",
+    "policy": "pitacco_options_read_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "products",
+    "policy": "pitacco_products_update_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "products",
+    "policy": "product_insert",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "2204753608391c3b6a03d107bb4e250535ccdbb977c9a2f504ce9020f57ae666"
+  },
+  {
+    "schema": "public",
+    "table_name": "products",
+    "policy": "product_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "50e6a865aa1d2858bed34eb70c7bab8d96217c2683eda15e4cc9f56d853641dd"
+  },
+  {
+    "schema": "public",
+    "table_name": "profiles",
+    "policy": "profile_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0dcaf4bd297a94169123be6f8234cb5fcbc57104bf8a633b8a2dbb67356a2576"
+  },
+  {
+    "schema": "public",
+    "table_name": "public_menu_settings",
+    "policy": "menu_manager_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "0561fcb9e60b704cab3cabf2fb86a9c13123e912d9ec60b612deee29d7b1ba47"
+  },
+  {
+    "schema": "public",
+    "table_name": "public_menu_settings",
+    "policy": "pitacco_menu_insert_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "79f9911ec616f6cb648a43ba241eee335bc9e34825daddb813db5848bed963c8"
+  },
+  {
+    "schema": "public",
+    "table_name": "public_menu_settings",
+    "policy": "pitacco_menu_update_manager",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "expression_sha256": "10ffbda625c8d98323a86f44f583f8c45fc7738b63787cd56671c07730f426f2"
+  },
+  {
+    "schema": "public",
+    "table_name": "store_members",
+    "policy": "member_delete",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "expression_sha256": "a3485d6279e7d3bdbe5d1334d8b9f7e4db3394f8adf58752eb33944326b8ae45"
+  },
+  {
+    "schema": "public",
+    "table_name": "store_members",
+    "policy": "member_insert",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "cf61069e2b5ae5b1329aa87850730b9f2e6ddd3af1135aee56e74e0593b007de"
+  },
+  {
+    "schema": "public",
+    "table_name": "store_members",
+    "policy": "member_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "50e6a865aa1d2858bed34eb70c7bab8d96217c2683eda15e4cc9f56d853641dd"
+  },
+  {
+    "schema": "public",
+    "table_name": "store_whatsapp_connections",
+    "policy": "whatsapp_connections_manager_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "514beb1dc1634451e7c7ee2b6e845810b3eb1a7853bcb649658f51939d4c7d71"
+  },
+  {
+    "schema": "public",
+    "table_name": "store_whatsapp_outbox",
+    "policy": "whatsapp_outbox_store_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "514beb1dc1634451e7c7ee2b6e845810b3eb1a7853bcb649658f51939d4c7d71"
+  },
+  {
+    "schema": "public",
+    "table_name": "store_whatsapp_settings",
+    "policy": "whatsapp_settings_store_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "514beb1dc1634451e7c7ee2b6e845810b3eb1a7853bcb649658f51939d4c7d71"
+  },
+  {
+    "schema": "public",
+    "table_name": "stores",
+    "policy": "store_insert",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "cf61069e2b5ae5b1329aa87850730b9f2e6ddd3af1135aee56e74e0593b007de"
+  },
+  {
+    "schema": "public",
+    "table_name": "stores",
+    "policy": "store_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "fd2ee5003c39c1c0bbbcd714c6aea336bf0b62aa3a1d7dded0a504ece0e642a4"
+  },
+  {
+    "schema": "public",
+    "table_name": "stores",
+    "policy": "store_update",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "expression_sha256": "b719736088062196af7ea5bf732805567c788c3c799f7debeae4f59fc70cf60e"
+  },
+  {
+    "schema": "public",
+    "table_name": "subscriptions",
+    "policy": "subscription_insert",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "expression_sha256": "cf61069e2b5ae5b1329aa87850730b9f2e6ddd3af1135aee56e74e0593b007de"
+  },
+  {
+    "schema": "public",
+    "table_name": "subscriptions",
+    "policy": "subscription_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "expression_sha256": "50e6a865aa1d2858bed34eb70c7bab8d96217c2683eda15e4cc9f56d853641dd"
+  },
+  {
+    "schema": "public",
+    "table_name": "subscriptions",
+    "policy": "subscription_update",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "expression_sha256": "b719736088062196af7ea5bf732805567c788c3c799f7debeae4f59fc70cf60e"
+  }
+]

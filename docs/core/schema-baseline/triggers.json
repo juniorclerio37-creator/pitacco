@@ -1,0 +1,569 @@
+[
+  {
+    "schema": "pitacco_private",
+    "table_name": "asaas_commercial_incidents",
+    "trigger": "pitacco_marketplace_admission_cutoff",
+    "enabled": "O",
+    "definition_sha256": "ceb38ef1d29ad051c5823c936d75ee0c3f62efbc8595a2517e22bcc71bdd7d26"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "asaas_commercial_resolutions",
+    "trigger": "pitacco_marketplace_admission_cutoff",
+    "enabled": "O",
+    "definition_sha256": "8bc59758815c01972af0eb30c4ad074ad5df12f0cf9438699938e1338d033637"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "commercial_closings",
+    "trigger": "pitacco_marketplace_admission_cutoff",
+    "enabled": "O",
+    "definition_sha256": "2a1df1a0dd012cdbd9bb5636811f32dfbaac5292f6468fd32e217aaa47c9cfbc"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "commercial_contracts",
+    "trigger": "pitacco_marketplace_admission_cutoff",
+    "enabled": "O",
+    "definition_sha256": "9548e0f115109627854d90a95938daa9755c2ded41ed66405056853b3b578f52"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "commercial_invoices",
+    "trigger": "pitacco_marketplace_admission_cutoff",
+    "enabled": "O",
+    "definition_sha256": "78ab4a9aaedfbbd487d463625ece4989cd05fd53c67926153b676499752acb94"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "commercial_manual_payments",
+    "trigger": "guard_commercial_payment_reference",
+    "enabled": "O",
+    "definition_sha256": "0680816175009a8aa397b37a64800c3da04e12e089aaec7f28d3457ecac260ec"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "commercial_manual_payments",
+    "trigger": "pitacco_fixo_prepaid_manual_confirmed",
+    "enabled": "O",
+    "definition_sha256": "6a788cb7e8e964ab621c7f7a2ea9c80d778c78a62da252ff03e5b3652c9c9a71"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "commercial_manual_payments",
+    "trigger": "pitacco_marketplace_admission_cutoff",
+    "enabled": "O",
+    "definition_sha256": "a7231c01184c9afddf3d3aa860e1c4efe115128694fc3d83275e96cbe9392c32"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "fixo_prepaid_state",
+    "trigger": "pitacco_marketplace_admission_cutoff",
+    "enabled": "O",
+    "definition_sha256": "329558747db75ae5572f15e93ccede3a402dd8cf4646f2ee614a668f6477e549"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "ifood_events",
+    "trigger": "pitacco_ifood_courier_terminal_sync",
+    "enabled": "O",
+    "definition_sha256": "043ed2a4d317e1539a26d8d8e2668fee46a4fc75c341beb04b545b2b45da94ec"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "ifood_events",
+    "trigger": "pitacco_ifood_ignore_blocked_event",
+    "enabled": "O",
+    "definition_sha256": "85ffb5dc091e56c552e68edcbd7963f96f8a0b836b6d617bc26cf5e2b7e4c742"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "ifood_order_links",
+    "trigger": "pitacco_ifood_apply_preparation_estimate",
+    "enabled": "O",
+    "definition_sha256": "7893531fa9b699a5c2678d35415bfe0da9d3a8a5ca951b850d9b400217e62b6a"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "pagbank_sandbox_accounts",
+    "trigger": "pagbank_sandbox_account_guard",
+    "enabled": "O",
+    "definition_sha256": "2b645c3620d2a89b4c0ea3738a768d5a1656c614d25e0babc7c2e8f6ec4eaa28"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "pagbank_sandbox_pix",
+    "trigger": "pagbank_checkout_amount_guard",
+    "enabled": "O",
+    "definition_sha256": "bdcb24f9d83c0a1d6e4ebe4b9bef0bc9942012e6d802ad824f6b010bcdd220b0"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "pagbank_sandbox_pix",
+    "trigger": "pagbank_sandbox_charge_guard",
+    "enabled": "O",
+    "definition_sha256": "8e6b83e1e453d132c743078ddf12303cccef4191b9f67b336994e5efc94f81ba"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "pagbank_sandbox_states",
+    "trigger": "pagbank_sandbox_state_guard",
+    "enabled": "O",
+    "definition_sha256": "fc2c3e49a88e051720f12fc26638886038bd851edaf1a09a8bb2720362a895bd"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "plan_change_requests",
+    "trigger": "guard_prepaid_plan_request",
+    "enabled": "O",
+    "definition_sha256": "12bf687a0b3203a67c8f9b739510e34d0cdd448c7b44ada08503155bd2b94b82"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "plan_change_requests",
+    "trigger": "guard_prepaid_request_cancel",
+    "enabled": "O",
+    "definition_sha256": "b50db901d4bce53a1b2c2da350a865486d88b07bb3e8e5fed45dd7daf1625fdb"
+  },
+  {
+    "schema": "pitacco_private",
+    "table_name": "subscription_admin_controls",
+    "trigger": "pitacco_marketplace_admission_cutoff",
+    "enabled": "O",
+    "definition_sha256": "00a01859c2400265b89feaa4f3f351d732bc1460a7ff3cde2f5fdfe966589010"
+  },
+  {
+    "schema": "public",
+    "table_name": "couriers",
+    "trigger": "pitacco_revoke_offline_background_gps",
+    "enabled": "O",
+    "definition_sha256": "05019474fcdea4cf0ab68768ff4005dea34975d603604f12645d22ea7699ee84"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "checkout_delivery_fee",
+    "enabled": "O",
+    "definition_sha256": "dbd9f448ece02c94d317a69e1af7803a772f6b708a5519709c8c6b451b13b429"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "deliveries_auto_dispatch",
+    "enabled": "O",
+    "definition_sha256": "cb7c28f357327b0e230000cd83c5c5132f65b2669ce68742bcf133e6df0ce4f8"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "deliveries_marketplace_guard",
+    "enabled": "O",
+    "definition_sha256": "3bb756a8eae3e831fb388bbbd14b37da72fc44a899a69b29e84ba3203392555a"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "loyalty_on_delivery_change",
+    "enabled": "O",
+    "definition_sha256": "5ba0e46b3adc0b41292fd27764ab491cfe23bdf3ef9f3909f5601612d3e52157"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "pitacco_capture_original_delivery_fee",
+    "enabled": "O",
+    "definition_sha256": "9c1265feeb38457744ac330d5c214b6729b9cd7872991f4034f8987d5b5d4975"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "pitacco_close_incident_on_terminal_delivery",
+    "enabled": "O",
+    "definition_sha256": "ff2ad857e3dc114464f80aeb0e34faab396bd745167b4aa3d152797788ae5a59"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "pitacco_complete_batch_on_terminal_delivery",
+    "enabled": "O",
+    "definition_sha256": "b84cd464f54d207b928e750466e4e58b17e6c4119e03e94024bdc1d960963892"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "pitacco_control_delivery_version",
+    "enabled": "O",
+    "definition_sha256": "2f3ed67f7a835c327405f839af985cbc84c51272b2e23f35dae192226638797e"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "pitacco_courier_completion_earnings",
+    "enabled": "O",
+    "definition_sha256": "2314b878b0e25dec519970253cb15a28bee188a68260668465ff6da513670743"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "pitacco_courier_workday_earnings",
+    "enabled": "O",
+    "definition_sha256": "cc82ee3391f6305f02d112713ff6c16dd02c3c40e766ac33fd3abe3c4c753856"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "pitacco_deliveries_push_trigger",
+    "enabled": "O",
+    "definition_sha256": "381af0450ab1d3a560c46fc0e56f3edc2fc5af12cce8a7191b2beee1382b17a6"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "pitacco_enqueue_courier_push",
+    "enabled": "O",
+    "definition_sha256": "67f681244228318e4929d359894fdbd2fce0c2520b6685b1afd2f743fd2e7347"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "pitacco_fiado_delivery_completed",
+    "enabled": "O",
+    "definition_sha256": "de09cb285c0e7a7965fb245b0db9316c5be89e83120807b8fa1b2df0ccf66d8f"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "pitacco_group_copy_coordinates",
+    "enabled": "O",
+    "definition_sha256": "35b78ca77dde46727bdccb2b06bd48480a9bffba16d29ba93a1409f5f4da56e4"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "pitacco_guard_ifood_terminal_dispatch",
+    "enabled": "O",
+    "definition_sha256": "120f91f7016d375f83d69d7db21cc1d10f58ee57cb06ee03648c4620fb2aedba"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "pitacco_issue_own_delivery_code",
+    "enabled": "O",
+    "definition_sha256": "b767c9b8dd5ee49c9f0733392f5fde62a44ed2c636c8cf9f6b90332d62027330"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "pitacco_require_arrival_and_proof",
+    "enabled": "O",
+    "definition_sha256": "a398591356e6e70a83cefb3f8bc082f416d7694375297cfeb47e808a58215f6d"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "pitacco_shipping_test_booking_guard",
+    "enabled": "O",
+    "definition_sha256": "61a167b9d9175d0517011b43a182d4953b1bce73ec7bcaf06cc842f2fe243b3c"
+  },
+  {
+    "schema": "public",
+    "table_name": "deliveries",
+    "trigger": "trg_guard_own_delivery_cod",
+    "enabled": "O",
+    "definition_sha256": "a9eb35f7275d36109d533893c8f040ce7e882499d209a76ae868c5b9ac541192"
+  },
+  {
+    "schema": "public",
+    "table_name": "external_delivery_requests",
+    "trigger": "pitacco_capture_delivery_partner_failure",
+    "enabled": "O",
+    "definition_sha256": "5c512c011aba3fec12418ec7c4667096b2403cea20bbdf9427b8348c75a6a660"
+  },
+  {
+    "schema": "public",
+    "table_name": "loyalty_coupons",
+    "trigger": "loyalty_coupon_audit",
+    "enabled": "O",
+    "definition_sha256": "d7178222ff4cf9b1d4beca767b4f87e77b9281a310c3885c9d6ad581e016d0ae"
+  },
+  {
+    "schema": "public",
+    "table_name": "loyalty_programs",
+    "trigger": "loyalty_program_audit",
+    "enabled": "O",
+    "definition_sha256": "5f5e5889b423d115da170d3b8e0b8bd15658de05f522e6ae2ef15fecbfe2aba2"
+  },
+  {
+    "schema": "public",
+    "table_name": "manual_payments",
+    "trigger": "loyalty_on_manual_payment",
+    "enabled": "O",
+    "definition_sha256": "f4499ffaa8f687f4a917ce20ef032b3b02083351adec2f4e2bee8bd8702e12e4"
+  },
+  {
+    "schema": "public",
+    "table_name": "marketplace_acceptance_requests",
+    "trigger": "pitacco_capture_marketplace_acceptance_failure",
+    "enabled": "O",
+    "definition_sha256": "91a4a63d5763fd4ff5a11bffba9623b8af664ef9ce8a41495b6f26898f7233da"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "learn_verified_delivery_address",
+    "enabled": "O",
+    "definition_sha256": "2d4006d3bc2a648da147fae26b052eb4785e0b767ac7389aae164a602d28f1b2"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "loyalty_on_order_change",
+    "enabled": "O",
+    "definition_sha256": "0a63c391c1c82222084bf09e184d37fdce2529efb22eea122976e8d2a11b574f"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_capture_payment_failure",
+    "enabled": "O",
+    "definition_sha256": "20524515d879aafd851ae01a31e2a59a338adbd4c7962ecd1b2f7f2b2f712ded"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_cash_change_at_checkout",
+    "enabled": "O",
+    "definition_sha256": "f4cffab40ac24a2cd73b70dc05f49d17a0be5a23bfcfbada4cac1f31d8c61429"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_commercial_order_guard",
+    "enabled": "O",
+    "definition_sha256": "636bfefd9373e175c52bf7331f15fc209640874dc86748ec9e0ba2b1099ccf89"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_consume_stock_after_acceptance",
+    "enabled": "O",
+    "definition_sha256": "5dee7490ad571c79a92e5bfcb4d4decbb811d426b333505d51d0e27e926c09db"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_enforce_schedule_release",
+    "enabled": "O",
+    "definition_sha256": "5029f0758db15f20ef253adae0ae5da4d01ece106e33252ef951ebf42c403ebf"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_enforce_subscription_before_new_order",
+    "enabled": "O",
+    "definition_sha256": "75dffa7fb9cb4d7d9615b6d73e3e1c01464ae4a0426eb788643db94081e49627"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_enqueue_ifood_ready",
+    "enabled": "O",
+    "definition_sha256": "aedced55cc1d1db8335fa9ee386f7fcb93ae8f4a89f8bef546edb2e9a96b3e99"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_ensure_fresh_ifood_print_jobs",
+    "enabled": "O",
+    "definition_sha256": "8f81fbbc55534108556cf0763da1c19ddc7d4ec284aa2eb9cf1408a14dc2769d"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_fiado_after_order",
+    "enabled": "O",
+    "definition_sha256": "911743f08a48dcfcaf32fd8bf36d4ba680f5123109edac11371b46424abb25cd"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_fiado_after_order_change",
+    "enabled": "O",
+    "definition_sha256": "ec3e27413c9979dfd75f3ee62e7aa076812192027a1390d19aac45206ece6361"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_fiado_before_order",
+    "enabled": "O",
+    "definition_sha256": "bd874a67ededfc24588d1b822c127c1c18f01bdaaa63716d684cb325118cc25d"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_fiado_guard_order_update",
+    "enabled": "O",
+    "definition_sha256": "11862bca98c518bb86260ec879210e1d4540330e97881930bdf85bc4c56d22be"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_guard_own_checkout_block",
+    "enabled": "O",
+    "definition_sha256": "e57b59c1cf399335d26a7f8e702749f1fa6fcbc7af39aa46dee913b3d708d830"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_guard_polygon_delivery_insert",
+    "enabled": "O",
+    "definition_sha256": "cd5660121bc8e0810d4064b51345a05f7c2d3428988d4360f222cf5ed88b582c"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_guard_polygon_delivery_update",
+    "enabled": "O",
+    "definition_sha256": "dcec187433f9d416baeb4b7c3473bdc6f9c98d959186b8c5b9846836d53eca92"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_ifood_after_cancelled_trigger",
+    "enabled": "O",
+    "definition_sha256": "3a942e18d430c098ad108c6124765d59b3b9edc0b89e8b6f4a92a1915df887c2"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_ifood_after_confirmed_trigger",
+    "enabled": "O",
+    "definition_sha256": "3d97428e86cf901f4207e8e6bef9d09c8dfc1aaf111f1c6c94fdde3f5b49d0b2"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_ifood_normalize_confirmed_accept",
+    "enabled": "O",
+    "definition_sha256": "7e7362a6c4cc0de184d5d7ca29b47e0d8b5027ca0d32dd17c706393a2a26028b"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_order_number_before_insert",
+    "enabled": "O",
+    "definition_sha256": "2921b8be6fdd628d4f0c756a06e452356b669ccd58c1aeb42ef3fd48804e333b"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_orders_push_trigger",
+    "enabled": "O",
+    "definition_sha256": "38dbcd321d6fd7786b87df261c01f5563cbf0301a458a3034bfe5c1c41d9b917"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_own_courier_cancel_sync",
+    "enabled": "O",
+    "definition_sha256": "a7f998c956efb782530a6569c1685a749c2f624a8a2b9df30612b2567b4b2930"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_snapshot_delivery_eta",
+    "enabled": "O",
+    "definition_sha256": "d8fc65cf9ab5eec3e8f639511057f6c78ee3588098d1bafd1e9016cb1e08f767"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_snapshot_sealed_beverages_on_accept",
+    "enabled": "O",
+    "definition_sha256": "63fd0600ce94cf05a03cfd3afcb318eb43d00d16051afd91eed8c484d9046402"
+  },
+  {
+    "schema": "public",
+    "table_name": "orders",
+    "trigger": "pitacco_sync_marketplace_delivery_cancellation",
+    "enabled": "O",
+    "definition_sha256": "0a5d86aa27225d3fd2c096cef775f8cb2cfbb850f7c82264af491288985d4bfd"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_complement_templates",
+    "trigger": "central_complement_register_template",
+    "enabled": "O",
+    "definition_sha256": "e4290b3223ec2f3b146bf63667f0978c97d1970a548573aca87a5750856c6621"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_courier_pay_rules",
+    "trigger": "pitacco_validate_courier_pay_rule",
+    "enabled": "O",
+    "definition_sha256": "86284877479bf3d51970c534da9059c3a83dcd0a9759cfc4914910d9fe86f682"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_order_costs",
+    "trigger": "pitacco_order_costs_validate",
+    "enabled": "O",
+    "definition_sha256": "8338163b9d73f98693b7c2192892fdb21fdf3bf3ea7ced106e723a354d2a22f7"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_pizza_drafts",
+    "trigger": "validate_pizza_draft",
+    "enabled": "O",
+    "definition_sha256": "6de61b56256e0888fb63d52d8deae32291cf1fb63c363513e9feffb6c19655dc"
+  },
+  {
+    "schema": "public",
+    "table_name": "pitacco_stock_movements",
+    "trigger": "pitacco_update_stock_balance",
+    "enabled": "O",
+    "definition_sha256": "08eaf29a3453bc313955e02dae0ad6429ea910741b15ea14fe254943a58c07c4"
+  },
+  {
+    "schema": "public",
+    "table_name": "print_jobs",
+    "trigger": "pitacco_capture_print_failure",
+    "enabled": "O",
+    "definition_sha256": "6881564525d75772961cef091a7deedd82fffd65cccb8ff68f17fe2b0988a3c2"
+  },
+  {
+    "schema": "public",
+    "table_name": "print_jobs",
+    "trigger": "pitacco_prevent_disabled_auto_print",
+    "enabled": "O",
+    "definition_sha256": "5b8cbdff27fd103e29d9d867327d3c1c6dbcb6de48235558bd8e0b9e3fcc9399"
+  },
+  {
+    "schema": "public",
+    "table_name": "product_options",
+    "trigger": "central_complement_register_option",
+    "enabled": "O",
+    "definition_sha256": "dcc39c885b2a91a9b9e6dcec79d63f39ddd3467e7c15884c293d3c803e1b5c27"
+  },
+  {
+    "schema": "public",
+    "table_name": "stores",
+    "trigger": "pitacco_provision_storefront",
+    "enabled": "O",
+    "definition_sha256": "4e15ff777d4c110551b0e62175f031a0bb5aa3b1d6a15e234bf95a251101c6aa"
+  },
+  {
+    "schema": "public",
+    "table_name": "stores",
+    "trigger": "pitacco_store_address_invalidate_location",
+    "enabled": "O",
+    "definition_sha256": "0746c722f5a8bd937909e4ca99df22d19c899979e4cf25fe2786b15c9d249b1d"
+  },
+  {
+    "schema": "public",
+    "table_name": "stores",
+    "trigger": "pitacco_store_seed_opening_hours",
+    "enabled": "O",
+    "definition_sha256": "d91e0a277d7b304d76d67cf617a24d7049421321eed0558747eaf90d68616a27"
+  }
+]

@@ -1,0 +1,2162 @@
+[
+  {
+    "schema": "pitacco_private",
+    "name": "asaas_commercial_charges",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 5,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "asaas_commercial_customers",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 4,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "asaas_commercial_incidents",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 5,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "asaas_commercial_resolutions",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 10,
+    "constraints": 8,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "asaas_customer_provision_attempts",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 2,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "asaas_subscription_bindings",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 5,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "auto_print_preferences",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "combo_catalog",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 8,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "commercial_billing_control",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 6,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "commercial_closings",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 11,
+    "constraints": 7,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "commercial_contracts",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 10,
+    "constraints": 4,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "commercial_fiscal_identity",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "commercial_invoices",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 4,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "commercial_manual_payments",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 7,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "commercial_payment_claims",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 12,
+    "constraints": 7,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "complement_registry",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_admins",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_assistance",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 3,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_audit",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 2,
+    "indexes": 3
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_audit_id_seq",
+    "kind": "S",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 0,
+    "indexes": 0
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_cohorts",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 1,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_costs",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 6,
+    "indexes": 3
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_courier_versions",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_device_versions",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_lifecycle",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 3,
+    "indexes": 3
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_lifecycle_id_seq",
+    "kind": "S",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 0,
+    "indexes": 0
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_notices",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 11,
+    "constraints": 7,
+    "indexes": 3
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_observations",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_plan_features",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_plan_observed",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_settings",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_update_policy",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "control_windows_sessions",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 2,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "courier_admin_campaigns",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 9,
+    "indexes": 3
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "courier_admin_push_jobs",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 5,
+    "indexes": 3
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "courier_admin_recipients",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 2,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "courier_gps_capabilities",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 3,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "courier_push_device",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 5,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "courier_push_diagnostic_event",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 4,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "courier_push_diagnostic_event_id_seq",
+    "kind": "S",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 0,
+    "indexes": 0
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "courier_push_outbox",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 3,
+    "indexes": 4
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "courier_push_settings",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 2,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "courier_test_store_access",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "customer_device_orders",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "customer_device_sessions",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 5,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "delivery_address_observations",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 6,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "delivery_quote_rate_limits",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "fiado_pin_verifications",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 3,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "fixo_prepaid_state",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 6,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "homologation_results",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 6,
+    "indexes": 3
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "homologation_results_id_seq",
+    "kind": "S",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 0,
+    "indexes": 0
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "identity_secret",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 2,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_authorizations",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 4,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_central_check_ticket",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_central_requests",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 10,
+    "constraints": 4,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_control",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_courier_dispatch",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_events",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 3,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_merchants",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 2,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_order_links",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 4,
+    "indexes": 3
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_preparation_estimates",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 1,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_ready_queue",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_shipping_external_actions",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 5,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_shipping_external_tests",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 13,
+    "constraints": 8,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_shipping_test_bookings",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 16,
+    "constraints": 8,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_shipping_test_events",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 3,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_shipping_test_poll_log",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 1,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_shipping_test_poll_log_id_seq",
+    "kind": "S",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 0,
+    "indexes": 0
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "ifood_suppressed_orders",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 1,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "intelligence_repair_audit",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "intelligence_repair_audit_id_seq",
+    "kind": "S",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 0,
+    "indexes": 0
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "intelligence_repair_proposals",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 16,
+    "constraints": 10,
+    "indexes": 3
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "loyalty_customers",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 10,
+    "constraints": 11,
+    "indexes": 6
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "loyalty_order_links",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 10,
+    "constraints": 5,
+    "indexes": 3
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "marketplace_admission_cutoffs",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 2,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "menu_centralization_backups",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "owner_catalog_copy_requests",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 1,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "pagbank_sandbox_accounts",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 5,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "pagbank_sandbox_checkout",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 10,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "pagbank_sandbox_pix",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 11,
+    "constraints": 7,
+    "indexes": 3
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "pagbank_sandbox_previews",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 3,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "pagbank_sandbox_refunds",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 5,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "pagbank_sandbox_registration",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "pagbank_sandbox_states",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "payment_pricing_drafts",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 11,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "payment_pricing_release",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 2,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "pitacco_incident_actions",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 5,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "pitacco_incident_actions_id_seq",
+    "kind": "S",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 0,
+    "indexes": 0
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "pizza_catalog",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 7,
+    "indexes": 3
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "plan_catalog_versions",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 1,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "plan_change_requests",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 10,
+    "constraints": 5,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "platform_owner",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 5,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "store_feature_audit",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 1,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "store_feature_audit_id_seq",
+    "kind": "S",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 0,
+    "indexes": 0
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "store_feature_rules",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 3,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "store_feature_rules_id_seq",
+    "kind": "S",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 0,
+    "indexes": 0
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "store_member_invites",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "store_registration",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "store_registration_key",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 2,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "subscription_admin_audit",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "subscription_admin_audit_id_seq",
+    "kind": "S",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 0,
+    "indexes": 0
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "subscription_admin_controls",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "subscription_control",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 5,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "subscription_payments",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 5,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "trial_identity_registry",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 4,
+    "indexes": 2
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "verified_delivery_addresses",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 11,
+    "constraints": 5,
+    "indexes": 1
+  },
+  {
+    "schema": "pitacco_private",
+    "name": "windows_order_watch",
+    "kind": "r",
+    "rls": false,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 4,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "acceptance_settings",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "courier_device_tokens",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 3,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "courier_positions",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 6,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "couriers",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 6,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "customer_blocks",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "deliveries",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 29,
+    "constraints": 15,
+    "indexes": 8
+  },
+  {
+    "schema": "public",
+    "name": "delivery_batches",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "dispatch_checks",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "expenses",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "external_delivery_requests",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 4,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "loyalty_coupon_redemptions",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 7,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "loyalty_coupons",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 17,
+    "constraints": 15,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "loyalty_ledger",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 10,
+    "constraints": 7,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "loyalty_programs",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 18,
+    "constraints": 12,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "manual_payments",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 6,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "marketplace_acceptance_requests",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 10,
+    "constraints": 8,
+    "indexes": 4
+  },
+  {
+    "schema": "public",
+    "name": "menu_import_staging",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 13,
+    "constraints": 5,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "operation_audit",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "operation_audit_id_seq",
+    "kind": "S",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 0,
+    "indexes": 0
+  },
+  {
+    "schema": "public",
+    "name": "orders",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 15,
+    "constraints": 10,
+    "indexes": 5
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_app_release_audit",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_app_release_audit_id_seq",
+    "kind": "S",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 0,
+    "indexes": 0
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_app_releases",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 16,
+    "constraints": 15,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_cancel_beverage_recipe",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 5,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_cancel_beverage_returns",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 7,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_cancel_beverage_units",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 5,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_cash_movements",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 7,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_cash_sessions",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 5,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_combo_drafts",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 6,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_complement_templates",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 8,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_courier_auth_state",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 3,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_courier_daily_allowances",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_courier_invites",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 5,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_courier_pay_rules",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 8,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_courier_payouts",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 10,
+    "constraints": 5,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_customer_blocks",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 12,
+    "constraints": 5,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_delivery_customer_contacts",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_delivery_incidents",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 13,
+    "constraints": 7,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_delivery_pay_snapshots",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 6,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_delivery_pricing",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 11,
+    "constraints": 7,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_delivery_route_quotes",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 16,
+    "constraints": 7,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_fiado_allocations",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_fiado_charges",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 11,
+    "constraints": 7,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_fiado_customers",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 19,
+    "constraints": 10,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_fiado_payments",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 6,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_fiado_settings",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_finished_product_stock",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 5,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_ingredient_unit_costs",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_ingredients",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 6,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_marketplace_settlements",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 6,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_menu_category_order",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_menu_import_history",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 3,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_opening_periods",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 7,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_operational_incidents",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 11,
+    "constraints": 7,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_option_recipe_lines",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 4,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_order_costs",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 8,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_order_material_cost_lines",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 6,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_order_material_cost_summary",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 9,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_order_sequences",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_own_delivery_codes",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_pizza_drafts",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_pizza_flavor_library",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 7,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_pizza_recipe_lines",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_plan_catalog_signal",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 2,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_recipe_lines",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 4,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_schedule_windows",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 6,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_signup_trials",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 4,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_stock_movements",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 7,
+    "indexes": 5
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_store_delivery_areas",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 5,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_store_delivery_code_settings",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_store_hours",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_store_payment_providers",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_store_preflight_runs",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 3,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_store_sound_settings",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_storefront_design_versions",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 5,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_storefront_designs",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_support_messages",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 5,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_support_tickets",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 7,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_v2_customer_profiles",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 7,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_whatsapp_delivery_events",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 3,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_whatsapp_delivery_events_id_seq",
+    "kind": "S",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 0,
+    "indexes": 0
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_windows_presence",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 3,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "pitacco_windows_print_checks",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 10,
+    "constraints": 8,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "print_devices",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "print_jobs",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 15,
+    "constraints": 7,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "print_receipt_templates",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 7,
+    "indexes": 4
+  },
+  {
+    "schema": "public",
+    "name": "print_sectors",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 6,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "product_option_groups",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 10,
+    "constraints": 9,
+    "indexes": 4
+  },
+  {
+    "schema": "public",
+    "name": "product_options",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 6,
+    "indexes": 4
+  },
+  {
+    "schema": "public",
+    "name": "products",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 12,
+    "constraints": 4,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "profiles",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "public_checkouts",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 5,
+    "indexes": 4
+  },
+  {
+    "schema": "public",
+    "name": "public_menu_settings",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 11,
+    "constraints": 9,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "public_order_push_events",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 10,
+    "constraints": 3,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "public_order_push_events_id_seq",
+    "kind": "S",
+    "rls": false,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 0,
+    "indexes": 0
+  },
+  {
+    "schema": "public",
+    "name": "public_order_push_subscriptions",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 5,
+    "indexes": 2
+  },
+  {
+    "schema": "public",
+    "name": "store_customer_branding",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "store_delivery_coverage",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 4,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "store_delivery_polygons",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "store_members",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 3,
+    "constraints": 4,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "store_payment_receipts",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 9,
+    "constraints": 6,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "store_whatsapp_connections",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 4,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "store_whatsapp_credentials",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 6,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "store_whatsapp_onboarding_sessions",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 7,
+    "constraints": 4,
+    "indexes": 4
+  },
+  {
+    "schema": "public",
+    "name": "store_whatsapp_opt_ins",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 3,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "store_whatsapp_outbox",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 11,
+    "constraints": 5,
+    "indexes": 3
+  },
+  {
+    "schema": "public",
+    "name": "store_whatsapp_settings",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 8,
+    "constraints": 2,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "stores",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 24,
+    "constraints": 8,
+    "indexes": 1
+  },
+  {
+    "schema": "public",
+    "name": "subscriptions",
+    "kind": "r",
+    "rls": true,
+    "force_rls": false,
+    "columns": 5,
+    "constraints": 4,
+    "indexes": 1
+  }
+]
