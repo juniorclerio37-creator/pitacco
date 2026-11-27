@@ -98,15 +98,18 @@ try{
    assert.equal(await page.locator('#v2TopProducts .v2-top-badge').filter({hasText:'Mais vendido'}).count(),2);
    const showcase=await page.locator('#v2TopProducts').evaluate(grid=>({
     columns:getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+    featuredHue:getComputedStyle(grid).getPropertyValue('--featured-hue').trim(),
     cards:[...grid.querySelectorAll('.v2-top-product')].map(card=>{
      const r=card.getBoundingClientRect(),photo=card.querySelector('.v2-top-photo').getBoundingClientRect(),name=card.querySelector('.v2-top-name').getBoundingClientRect(),price=card.querySelector('.v2-top-price').getBoundingClientRect(),add=card.querySelector('.v2-top-add');
      const button=add.getBoundingClientRect();
-     return {width:r.width,height:r.height,top:r.top,photoBottom:photo.bottom,nameTop:name.top,priceTop:price.top,buttonTop:button.top,buttonHeight:button.height,background:getComputedStyle(card).backgroundImage,buttonText:add.textContent,overflow:card.scrollWidth>card.clientWidth+1};
+     return {width:r.width,height:r.height,top:r.top,photoBottom:photo.bottom,nameTop:name.top,priceTop:price.top,buttonTop:button.top,buttonHeight:button.height,background:getComputedStyle(card).backgroundImage,border:getComputedStyle(card).borderTopColor,borderWidth:getComputedStyle(card).borderTopWidth,priceColor:getComputedStyle(card.querySelector('.v2-top-price')).color,buttonText:add.textContent,overflow:card.scrollWidth>card.clientWidth+1};
     }),
     overflow:grid.scrollWidth>grid.clientWidth+1
    }));
    assert.equal(showcase.columns,2);
    assert.equal(showcase.cards.length,2);
+   assert.equal(Number(showcase.featuredHue),({"pitacco-v2":280,"essencial":158,"editorial":14,"urbano":211,"classic":280})[template],'Vivid card hue preserves custom shop colors');
+   assert.ok(showcase.cards.every(c=>c.border==='rgb(244, 200, 78)'&&c.borderWidth==='2px'&&c.priceColor==='rgb(255, 225, 107)'),'Golden frame and bright price must remain visible');
    assert.ok(Math.abs(showcase.cards[0].top-showcase.cards[1].top)<2,'Both portrait cards are side by side');
    assert.ok(!showcase.overflow&&showcase.cards.every(c=>c.height>c.width&&c.photoBottom<=c.nameTop&&c.nameTop<c.priceTop&&c.priceTop<c.buttonTop&&c.buttonHeight>=44&&c.background.includes('gradient')&&c.buttonText==='Adicionar'&&!c.overflow),'Portrait bestseller cards preserve photo, price and accessible CTA: '+JSON.stringify(showcase));
    await page.locator('#v2TopProducts .v2-top-add').first().click();
