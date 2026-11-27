@@ -12,7 +12,7 @@ return [
     ],
     'apps'=>[
         'provider'=>'config',
-        'apps'=>app()->environment('testing') && config('pitacco.realtime_enabled') ? [[
+        'apps'=>env('APP_ENV') === 'testing' && env('PITACCO_REALTIME_ENABLED', false) === true ? [[
             'key'=>env('PITACCO_REALTIME_KEY'),
             'secret'=>env('PITACCO_REALTIME_SECRET'),
             'app_id'=>'pitacco-core-ci',
