@@ -48,6 +48,8 @@ jobs:
       PITACCO_AUTH_ENABLED: 'true'
       CORE_AUTH_DB_USERNAME: pitacco_core_auth
       CORE_AUTH_DB_PASSWORD: ci-auth-only
+      CORE_ORDERS_DB_USERNAME: pitacco_core_orders
+      CORE_ORDERS_DB_PASSWORD: ci-orders-only
     steps:
       - uses: actions/checkout@v4
         with:
@@ -71,6 +73,9 @@ jobs:
           PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/tests/fixture.sql
           hash=$(php -r 'echo password_hash("fixture-only-password", PASSWORD_BCRYPT, ["cost"=>12]);')
           PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -v password_hash="$hash" -f backend/tests/auth-fixture.sql
+          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/tests/orders-fixture.sql -f supabase/migrations/20261125222344_daily_operational_orders.sql
+          test "$(PGPASSWORD=ci-orders-only psql -h 127.0.0.1 -U pitacco_core_orders -d postgres -Atc 'select count(*) from public.orders')" = 0
+          if PGPASSWORD=ci-orders-only psql -h 127.0.0.1 -U pitacco_core_orders -d postgres -v ON_ERROR_STOP=1 -c 'update public.orders set gross=0'; then exit 1; fi
           if PGPASSWORD=ci-auth-only psql -h 127.0.0.1 -U pitacco_core_auth -d postgres -v ON_ERROR_STOP=1 -c 'update core_auth.memberships set role=role'; then exit 1; fi
           if PGPASSWORD=ci-menu-only psql -h 127.0.0.1 -U pitacco_core_menu -d postgres -v ON_ERROR_STOP=1 -c 'select * from fixture_private.menus'; then
             echo 'Menu role can read private table' >&2
@@ -86,6 +91,7 @@ jobs:
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/up >/dev/null && break; sleep 1; done
           python3 tests/http-smoke.py
           python3 tests/auth-smoke.py
+          python3 tests/orders-smoke.py
       - name: Verificar bloqueio padrão de produção
         working-directory: backend
         run: |
