@@ -32,3 +32,14 @@ test('prepaid bypasses reminder, no collection when API payment missing or sessi
  const y=setup(null);await assert.rejects(y.api.pickup(delivery),/Confira/);assert.deepEqual(y.events,['cards']);
  y.api.stop();assert.equal(await y.api.pickup(delivery),false);
 });
+
+test('concurrent prepaid collection remains locked until original operation resolves',async()=>{
+ let resolve,calls=0;
+ const pending=new Promise(r=>{resolve=r;});
+ const api=createCourierPickup({token:'fixture',fetcher:async()=>({ok:true,json:async()=>({data:[{delivery_id:id,payment:{state:'paid',method:'Online',amount:28}}]})}),
+ ownCollect:async()=>{calls++;return pending;},ifoodCollect:async()=>{throw Error('wrong source');}});
+ const first=api.pickup(delivery);
+ await Promise.resolve();await Promise.resolve();await Promise.resolve();await Promise.resolve();
+ assert.equal(await api.pickup(delivery),false);
+ resolve({collected:true});assert.equal(await first,true);assert.equal(calls,1);
+});

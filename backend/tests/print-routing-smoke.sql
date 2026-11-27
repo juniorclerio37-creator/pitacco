@@ -7,9 +7,9 @@ begin;
 do $check$
 declare
  s uuid:='20000000-0000-4000-8000-000000000001';
- oid uuid:='39000000-0000-4000-8000-000000000001';
+ oid uuid:=gen_random_uuid();
  zero uuid:='00000000-0000-0000-0000-000000000000';
- manual uuid:='39000000-0000-4000-8000-000000000002';
+ manual uuid:=gen_random_uuid();
  body jsonb:='{"source":"ifood","display_number":"TESTE","items":[{"name":"Açaí","category":"Bebidas","quantity":1},{"name":"Pizza","category":"Pizzas","quantity":1}],"total":25}';
 begin
  insert into public.orders(id,store_id,channel,gross,source,status,preparation_status,receipt)

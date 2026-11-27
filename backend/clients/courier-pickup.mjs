@@ -34,7 +34,7 @@ export function createCourierPickup({token,fetcher=globalThis.fetch,ownCollect,i
     return active&&result?.collected===true;
    };
    if(pickupReminderType(payment))return (await reminder(payment,collect))===true;
-   return collect();
+   return await collect();
   }finally{busy=false;}
  }
  return {pickup,cards,stop};
