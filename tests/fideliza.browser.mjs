@@ -29,7 +29,7 @@ try{
    if(url.origin==='https://esm.sh')return route.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:`export function createClient(){return {rpc:async(name,payload)=>{const r=await fetch('/fixture/'+name,{method:'POST',body:JSON.stringify(payload)});const data=await r.json();return {data:r.ok?data:null,error:r.ok?null:data,status:r.status}}}}`});
    if(!url.pathname.startsWith('/fixture/'))return route.abort();
    const p=route.request().postDataJSON();
-   if(name==='get_public_menu')return route.fulfill({json:{store:{appearance:{template,...templatePalettes[template]},name:'Loja Fideliza',delivery_enabled:false,pickup_enabled:true,payment_methods:['pix_manual'],opening_hours:{open:true,reason:'open'}},products:[{id:'p1',name:'Açaí',category:'Açaí',price:50,image_url:'https://fixtures.pitacco.test/acai.svg',option_groups:[]},{id:'p2',name:'Creme de cupuaçu',category:'Açaí',price:50,option_groups:[]},{id:'p3',name:'Combo da casa',category:'Açaí',price:50,option_groups:[]},{id:'p4',name:'Açaí especial',category:'Açaí',price:50,option_groups:[]}]}});
+   if(name==='get_public_menu')return route.fulfill({json:{store:{appearance:{template,...templatePalettes[template],...(template==='editorial'?{featured_colors:{background:'#7320c5',border:'#edb600',price:'#ffff00',badge:'#ffffff',button:'#123456'}}:{})},name:'Loja Fideliza',delivery_enabled:false,pickup_enabled:true,payment_methods:['pix_manual'],opening_hours:{open:true,reason:'open'}},products:[{id:'p1',name:'Açaí',category:'Açaí',price:50,image_url:'https://fixtures.pitacco.test/acai.svg',option_groups:[]},{id:'p2',name:'Creme de cupuaçu',category:'Açaí',price:50,option_groups:[]},{id:'p3',name:'Combo da casa',category:'Açaí',price:50,option_groups:[]},{id:'p4',name:'Açaí especial',category:'Açaí',price:50,option_groups:[]}]}});
    if(name==='pitacco_public_top_sellers')return route.fulfill({json:['p1','p3','p2','p4']});
    if(name==='pitacco_public_store_open')return route.fulfill({json:{open:true,reason:'open'}});
    if(name==='pitacco_public_schedule_slots')return route.fulfill({json:[]});
@@ -98,15 +98,19 @@ try{
    assert.equal(await page.locator('#v2TopProducts .v2-top-badge').filter({hasText:'Mais vendido'}).count(),2);
    const showcase=await page.locator('#v2TopProducts').evaluate(grid=>({
     columns:getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+    featuredHue:getComputedStyle(grid).getPropertyValue('--featured-hue').trim(),
     cards:[...grid.querySelectorAll('.v2-top-product')].map(card=>{
      const r=card.getBoundingClientRect(),photo=card.querySelector('.v2-top-photo').getBoundingClientRect(),name=card.querySelector('.v2-top-name').getBoundingClientRect(),price=card.querySelector('.v2-top-price').getBoundingClientRect(),add=card.querySelector('.v2-top-add');
      const button=add.getBoundingClientRect();
-     return {width:r.width,height:r.height,top:r.top,photoBottom:photo.bottom,nameTop:name.top,priceTop:price.top,buttonTop:button.top,buttonHeight:button.height,background:getComputedStyle(card).backgroundImage,buttonText:add.textContent,overflow:card.scrollWidth>card.clientWidth+1};
+     return {width:r.width,height:r.height,top:r.top,photoBottom:photo.bottom,nameTop:name.top,priceTop:price.top,buttonTop:button.top,buttonHeight:button.height,background:getComputedStyle(card).backgroundImage,border:getComputedStyle(card).borderTopColor,borderWidth:getComputedStyle(card).borderTopWidth,priceColor:getComputedStyle(card.querySelector('.v2-top-price')).color,buttonBackground:getComputedStyle(add).backgroundColor,buttonColor:getComputedStyle(add).color,badgeBackground:getComputedStyle(card.querySelector('.v2-top-badge')).backgroundColor,buttonText:add.textContent,overflow:card.scrollWidth>card.clientWidth+1};
     }),
     overflow:grid.scrollWidth>grid.clientWidth+1
    }));
    assert.equal(showcase.columns,2);
    assert.equal(showcase.cards.length,2);
+   assert.equal(Number(showcase.featuredHue),({"pitacco-v2":280,"essencial":158,"editorial":14,"urbano":211,"classic":280})[template],'Vivid card hue preserves custom shop colors');
+   if(template==='editorial')assert.ok(showcase.cards.every(c=>c.border==='rgb(237, 182, 0)'&&c.priceColor==='rgb(255, 255, 0)'&&c.buttonBackground==='rgb(18, 52, 86)'&&c.buttonColor==='rgb(255, 255, 255)'&&c.badgeBackground==='rgb(255, 255, 255)'),'Published featured colors override defaults for this shop only');
+   else assert.ok(showcase.cards.every(c=>c.border==='rgb(244, 200, 78)'&&c.borderWidth==='2px'&&c.priceColor==='rgb(255, 225, 107)'),'Golden frame and bright price remain visible by default');
    assert.ok(Math.abs(showcase.cards[0].top-showcase.cards[1].top)<2,'Both portrait cards are side by side');
    assert.ok(!showcase.overflow&&showcase.cards.every(c=>c.height>c.width&&c.photoBottom<=c.nameTop&&c.nameTop<c.priceTop&&c.priceTop<c.buttonTop&&c.buttonHeight>=44&&c.background.includes('gradient')&&c.buttonText==='Adicionar'&&!c.overflow),'Portrait bestseller cards preserve photo, price and accessible CTA: '+JSON.stringify(showcase));
    await page.locator('#v2TopProducts .v2-top-add').first().click();

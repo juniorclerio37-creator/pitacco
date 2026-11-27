@@ -56,6 +56,13 @@ begin
   if sqlerrm not like 'Aparência alterada%' then raise;end if;
  end;
  d:=jsonb_set(d,'{primary}','"#d15723"'::jsonb);
+ d:=d||'{"featured_colors":{"background":"#7320c5","border":"#edb600","price":"#ffff00","badge":"#ffffff","button":"#123456"}}'::jsonb;
+ begin
+  perform public.pitacco_storefront_save_draft('92000000-0000-0000-0000-000000000001',jsonb_set(d,'{featured_colors,background}','"url(https://example.invalid)"'::jsonb),1);
+  raise exception 'Invalid featured color accepted';
+ exception when raise_exception then
+  if sqlerrm<>'Cores dos destaques inválidas' then raise;end if;
+ end;
  d:=d||'{"logo_frame":{"size":120,"zoom":180,"x":-10,"y":5,"padding":3,"fit":"cover","shape":"circle"}}'::jsonb;
  begin
   perform public.pitacco_storefront_save_draft('92000000-0000-0000-0000-000000000001',jsonb_set(d,'{logo_frame,zoom}','999'::jsonb),1);
@@ -110,6 +117,8 @@ begin
  public_design:=public.get_public_menu('estudiolojaa')->'store'->'appearance';
  assert public_design->>'primary'='#d15723';
  assert public_design->'logo_frame'->>'zoom'='180';
+ assert public_design->'featured_colors'->>'background'='#7320c5';
+ assert public_design->'featured_colors'->>'button'='#123456';
  assert public_design->'logo_frame'->>'fit'='cover';
  assert public.pitacco_public_menu_identity('estudiolojaa')->>'name'='Estúdio Loja A';
  assert public.pitacco_public_menu_identity('invalid-test-store') is null;

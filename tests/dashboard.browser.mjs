@@ -1218,6 +1218,10 @@ try {
       await page.setViewportSize({width,height:900});
       assert.equal(await studio.getByRole('button',{name:/Urbano Blocos|Essencial Cabeçalho|Editorial Capa/}).count(),0,'Only V2 is offered');
       await studio.getByLabel('Cor Principal').fill('#b43e24');
+      await studio.getByLabel('Cor Fundo do destaque',{exact:true}).fill('#7320c5');
+      await studio.getByLabel('Cor Moldura',{exact:true}).fill('#edb600');
+      await studio.getByLabel('Cor Botão Adicionar',{exact:true}).fill('#123456');
+      await studio.getByRole('button',{name:'Restaurar cor Moldura',exact:true}).click();
       await studio.getByLabel('Slogan').fill('O melhor da cidade');
       await studio.getByRole('button',{name:'Computador'}).click();
       await studio.getByRole('button',{name:'Produto',exact:true}).click();
@@ -1241,6 +1245,7 @@ try {
       assert.equal(studioPublishedVersion,1);
       assert.equal(studioPublished.template,'pitacco-v2');
       assert.equal(studioPublished.primary,'#b43e24');
+      assert.deepEqual(studioPublished.featured_colors,{background:'#7320c5',button:'#123456'});
       assert.equal(studioDraft.theme,studioPublished.theme,'Existing theme is preserved');
       assert.equal(studioDraft.primary,'#b43e24');
       assert.equal(await studio.getByRole('button',{name:'Salvar e publicar',exact:true}).isDisabled(),false,
