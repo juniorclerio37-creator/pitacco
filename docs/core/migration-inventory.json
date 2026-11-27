@@ -1,0 +1,2550 @@
+{
+  "classification": "Inventory only; no SQL executed except SELECT metadata. Version or name matches do not prove identical SQL. Never replay unmatched migrations on production.",
+  "production_migrations": 365,
+  "repo_migrations": 279,
+  "matching_versions": 111,
+  "only_production_versions": [
+    {
+      "version": "20261110144157",
+      "name": "pitacco_whatsapp_delivery_events",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110144307",
+      "name": "pitacco_whatsapp_store_scoped_onboarding",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110163453",
+      "name": "pitacco_whatsapp_encrypted_store_credentials",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110171112",
+      "name": "pitacco_self_service_store_signup_trial",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110175332",
+      "name": "pitacco_verified_identity_30_day_signup",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110182424",
+      "name": "restrict_legacy_trial_signup_rpc",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110182712",
+      "name": "secure_store_self_service_configuration",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110183009",
+      "name": "secure_product_catalog_management",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110183219",
+      "name": "product_complement_groups_and_options",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110183437",
+      "name": "allow_required_complement_groups_before_options",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110183548",
+      "name": "validate_complements_and_prices_in_public_checkout",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110183600",
+      "name": "expose_complement_groups_on_public_menu",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110184035",
+      "name": "secure_per_platform_acceptance_preferences",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110184230",
+      "name": "marketplace_acceptance_confirmation_state_machine",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110184240",
+      "name": "secure_marketplace_acceptance_status_for_store",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110184419",
+      "name": "whatsapp_store_permission_rpc",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110185114",
+      "name": "pause_whatsapp_automation_for_now",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110185159",
+      "name": "public_order_tracking_by_private_token",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110185345",
+      "name": "public_tracking_private_token_readonly",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110185523",
+      "name": "secure_customer_webpush_subscriptions",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110185716",
+      "name": "queue_order_and_delivery_push_events",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110185725",
+      "name": "claim_and_acknowledge_webpush_jobs",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110191027",
+      "name": "service_only_push_key_validation_rpc",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110191122",
+      "name": "schedule_pitacco_push_worker_every_minute",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110191552",
+      "name": "store_branded_customer_order_tracking",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110191658",
+      "name": "sync_public_menu_branding_and_pickup_tracking",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110191828",
+      "name": "store_identity_list_for_authenticated_manager",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110193149",
+      "name": "safe_operational_payment_receipts_ledger",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110193341",
+      "name": "operational_cash_sessions_and_movements",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110205257",
+      "name": "pitacco_order_display_numbers_027",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110210721",
+      "name": "pitacco_courier_payouts_028",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110212515",
+      "name": "pitacco_single_print_computer_032",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110213622",
+      "name": "pitacco_courier_pay_rules_034",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110214045",
+      "name": "pitacco_order_costs_035",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110215000",
+      "name": "pitacco_customer_blocks_037",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110224406",
+      "name": "customer_blocks_individual_store_scoped",
+      "name_candidates": []
+    },
+    {
+      "version": "20261110224522",
+      "name": "customer_block_checkout_message",
+      "name_candidates": []
+    },
+    {
+      "version": "20261111033443",
+      "name": "pitacco_store_receipt_html_templates",
+      "name_candidates": []
+    },
+    {
+      "version": "20261111140655",
+      "name": "pitacco_web_modifier_manager_read_20261111",
+      "name_candidates": []
+    },
+    {
+      "version": "20261111155829",
+      "name": "pitacco_checkout_coupon_server_validation_v3",
+      "name_candidates": []
+    },
+    {
+      "version": "20261111160739",
+      "name": "pitacco_loyalty_coupon_discount_bounds",
+      "name_candidates": []
+    },
+    {
+      "version": "20261111160847",
+      "name": "pitacco_checkout_coupon_return_breakdown",
+      "name_candidates": []
+    },
+    {
+      "version": "20261111161020",
+      "name": "pitacco_public_menu_protect_reserved_paths",
+      "name_candidates": []
+    },
+    {
+      "version": "20261111161757",
+      "name": "pitacco_seed_acai_do_linho_fictional_demo_menu",
+      "name_candidates": []
+    },
+    {
+      "version": "20261111161924",
+      "name": "pitacco_fix_option_validation_ambiguous_record_names",
+      "name_candidates": []
+    },
+    {
+      "version": "20261111162031",
+      "name": "pitacco_receipt_brand_discount_and_modifier_fix",
+      "name_candidates": []
+    },
+    {
+      "version": "20261111172826",
+      "name": "delivery_area_public_status_for_checkout",
+      "name_candidates": []
+    },
+    {
+      "version": "20261111173112",
+      "name": "guard_public_delivery_polygon_until_trusted_geocoding",
+      "name_candidates": []
+    },
+    {
+      "version": "20261111173240",
+      "name": "protect_polygon_delivery_on_order_route_updates",
+      "name_candidates": []
+    },
+    {
+      "version": "20261111174550",
+      "name": "store_preparation_minutes_settings",
+      "name_candidates": []
+    },
+    {
+      "version": "20261111222543",
+      "name": "store_order_sound_preferences",
+      "name_candidates": []
+    },
+    {
+      "version": "20261116041534",
+      "name": "pitacco_owner_and_features",
+      "name_candidates": [
+        "supabase/migrations/20261115002000_pitacco_owner_and_features.sql"
+      ]
+    },
+    {
+      "version": "20261116041549",
+      "name": "pitacco_platform_owner_access",
+      "name_candidates": [
+        "supabase/migrations/20261115194246_pitacco_platform_owner_access.sql"
+      ]
+    },
+    {
+      "version": "20261116043752",
+      "name": "pitacco_owner_store_catalog",
+      "name_candidates": [
+        "supabase/migrations/20261115135520_pitacco_owner_store_catalog.sql"
+      ]
+    },
+    {
+      "version": "20261116044234",
+      "name": "pitacco_platform_owner_username",
+      "name_candidates": [
+        "supabase/migrations/20261116043953_pitacco_platform_owner_username.sql"
+      ]
+    },
+    {
+      "version": "20261116044633",
+      "name": "pitacco_checkout_product_variants",
+      "name_candidates": [
+        "supabase/migrations/20261114225402_pitacco_checkout_product_variants.sql"
+      ]
+    },
+    {
+      "version": "20261116045237",
+      "name": "pitacco_new_store_seven_day_trial",
+      "name_candidates": [
+        "supabase/migrations/20261114225409_pitacco_new_store_seven_day_trial.sql"
+      ]
+    },
+    {
+      "version": "20261116045239",
+      "name": "pitacco_inventory",
+      "name_candidates": [
+        "supabase/migrations/20261114230238_pitacco_inventory.sql"
+      ]
+    },
+    {
+      "version": "20261116045241",
+      "name": "pitacco_self_service_store_manager",
+      "name_candidates": [
+        "supabase/migrations/20261114230712_pitacco_self_service_store_manager.sql"
+      ]
+    },
+    {
+      "version": "20261116045243",
+      "name": "pitacco_pending_order_decisions",
+      "name_candidates": [
+        "supabase/migrations/20261114230902_pitacco_pending_order_decisions.sql"
+      ]
+    },
+    {
+      "version": "20261116045245",
+      "name": "pitacco_period_financial_report",
+      "name_candidates": [
+        "supabase/migrations/20261114231258_pitacco_period_financial_report.sql"
+      ]
+    },
+    {
+      "version": "20261116045247",
+      "name": "pitacco_scheduled_orders",
+      "name_candidates": [
+        "supabase/migrations/20261114232304_pitacco_scheduled_orders.sql"
+      ]
+    },
+    {
+      "version": "20261116045249",
+      "name": "pitacco_operational_alerts",
+      "name_candidates": [
+        "supabase/migrations/20261114232953_pitacco_operational_alerts.sql"
+      ]
+    },
+    {
+      "version": "20261116045251",
+      "name": "pitacco_subscription_entitlement",
+      "name_candidates": [
+        "supabase/migrations/20261114233413_pitacco_subscription_entitlement.sql"
+      ]
+    },
+    {
+      "version": "20261116045252",
+      "name": "pitacco_asaas_subscription_binding",
+      "name_candidates": [
+        "supabase/migrations/20261114233828_pitacco_asaas_subscription_binding.sql"
+      ]
+    },
+    {
+      "version": "20261116045255",
+      "name": "pitacco_private_delivery_tracking",
+      "name_candidates": [
+        "supabase/migrations/20261114234147_pitacco_private_delivery_tracking.sql"
+      ]
+    },
+    {
+      "version": "20261116045257",
+      "name": "pitacco_marketplace_settlements",
+      "name_candidates": [
+        "supabase/migrations/20261114234541_pitacco_marketplace_settlements.sql"
+      ]
+    },
+    {
+      "version": "20261116045259",
+      "name": "pitacco_admin_homologation",
+      "name_candidates": [
+        "supabase/migrations/20261115000506_pitacco_admin_homologation.sql"
+      ]
+    },
+    {
+      "version": "20261116045510",
+      "name": "pitacco_financial_report_period_bounds",
+      "name_candidates": [
+        "supabase/migrations/20261116045406_pitacco_financial_report_period_bounds.sql"
+      ]
+    },
+    {
+      "version": "20261116112941",
+      "name": "pitacco_order_profit_report",
+      "name_candidates": [
+        "supabase/migrations/20261116112605_pitacco_order_profit_report.sql"
+      ]
+    },
+    {
+      "version": "20261116175522",
+      "name": "pitacco_storefront_delivery_settings",
+      "name_candidates": [
+        "supabase/migrations/20261116174111_pitacco_storefront_delivery_settings.sql"
+      ]
+    },
+    {
+      "version": "20261116175531",
+      "name": "pitacco_store_payment_providers",
+      "name_candidates": [
+        "supabase/migrations/20261116174534_pitacco_store_payment_providers.sql"
+      ]
+    },
+    {
+      "version": "20261116183515",
+      "name": "pitacco_ifood_order_events",
+      "name_candidates": [
+        "supabase/migrations/20261116181731_pitacco_ifood_order_events.sql"
+      ]
+    },
+    {
+      "version": "20261116184556",
+      "name": "pitacco_owner_platform_dashboard",
+      "name_candidates": [
+        "supabase/migrations/20261116183940_pitacco_owner_platform_dashboard.sql"
+      ]
+    },
+    {
+      "version": "20261116194102",
+      "name": "pitacco_owner_subscription_details",
+      "name_candidates": [
+        "supabase/migrations/20261116194500_pitacco_owner_subscription_details.sql"
+      ]
+    },
+    {
+      "version": "20261116194738",
+      "name": "owner_subscription_actions",
+      "name_candidates": [
+        "supabase/migrations/20261116205500_owner_subscription_actions.sql"
+      ]
+    },
+    {
+      "version": "20261116231052",
+      "name": "pitacco_owner_operations",
+      "name_candidates": [
+        "supabase/migrations/20261116231100_pitacco_owner_operations.sql"
+      ]
+    },
+    {
+      "version": "20261116231414",
+      "name": "pitacco_commercial_plan_catalog",
+      "name_candidates": [
+        "supabase/migrations/20261116233900_pitacco_commercial_plan_catalog.sql"
+      ]
+    },
+    {
+      "version": "20261116232024",
+      "name": "pitacco_owner_finance_report",
+      "name_candidates": [
+        "supabase/migrations/20261116235700_pitacco_owner_finance_report.sql"
+      ]
+    },
+    {
+      "version": "20261116235306",
+      "name": "pitacco_single_monthly_plan",
+      "name_candidates": [
+        "supabase/migrations/20261117003000_pitacco_single_monthly_plan.sql"
+      ]
+    },
+    {
+      "version": "20261117000145",
+      "name": "pitacco_owner_99food_homologation",
+      "name_candidates": [
+        "supabase/migrations/20261117004500_pitacco_owner_99food_homologation.sql"
+      ]
+    },
+    {
+      "version": "20261117001627",
+      "name": "pitacco_ifood_auto_confirm",
+      "name_candidates": [
+        "supabase/migrations/20261117010000_pitacco_ifood_auto_confirm.sql"
+      ]
+    },
+    {
+      "version": "20261117031316",
+      "name": "scope_delivery_read_to_managers_and_assigned_couriers",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117031526",
+      "name": "revoke_public_truncate_from_delivery_tables",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117031821",
+      "name": "pitacco_courier_session_gate",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117032326",
+      "name": "pitacco_driver_collect_depart_online",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117032359",
+      "name": "pitacco_driver_collect_legacy_accepted",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117032915",
+      "name": "secure_legacy_delivery_order_rpcs",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117034554",
+      "name": "fix_courier_store_platform_owner_access",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117041024",
+      "name": "pitacco_driver_earnings_dashboard",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117041740",
+      "name": "pitacco_driver_earnings_daily_breakdown",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117043123",
+      "name": "pitacco_driver_order_details_contact",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117043254",
+      "name": "pitacco_driver_contact_private_storage",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117043548",
+      "name": "pitacco_driver_order_detail_item_whitelist",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117044917",
+      "name": "pitacco_order_card_public_numbers_and_locators",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117044941",
+      "name": "pitacco_driver_order_detail_public_label",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117045208",
+      "name": "pitacco_driver_earnings_public_order_labels",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117045231",
+      "name": "pitacco_99food_public_order_number_only",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117045427",
+      "name": "pitacco_ifood_contact_locator_private_ingestion",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117050440",
+      "name": "pitacco_driver_arrival_privacy_proof",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117050507",
+      "name": "pitacco_driver_earnings_masked_completed_records",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117050520",
+      "name": "pitacco_customer_tracking_arrival_delivery_code",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117050608",
+      "name": "pitacco_ifood_courier_arrival_verify_bridge",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117050707",
+      "name": "pitacco_customer_tracking_public_number",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117051240",
+      "name": "pitacco_driver_terminal_rls_role_guard",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117054144",
+      "name": "fix_driver_arrival_rpc_aliases",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117123311",
+      "name": "pitacco_app_releases",
+      "name_candidates": [
+        "supabase/migrations/20261117060000_pitacco_app_releases.sql"
+      ]
+    },
+    {
+      "version": "20261117130417",
+      "name": "pitacco_public_courier_download",
+      "name_candidates": [
+        "supabase/migrations/20261117130500_pitacco_public_courier_download.sql"
+      ]
+    },
+    {
+      "version": "20261117131648",
+      "name": "pitacco_courier_push",
+      "name_candidates": [
+        "supabase/migrations/20261117140000_pitacco_courier_push.sql"
+      ]
+    },
+    {
+      "version": "20261117143900",
+      "name": "pitacco_delivery_pricing_draft",
+      "name_candidates": [
+        "supabase/migrations/20261117154500_pitacco_delivery_pricing_draft.sql"
+      ]
+    },
+    {
+      "version": "20261117143903",
+      "name": "pitacco_store_readiness",
+      "name_candidates": [
+        "supabase/migrations/20261117155000_pitacco_store_readiness.sql"
+      ]
+    },
+    {
+      "version": "20261117143908",
+      "name": "pitacco_delivery_quoted_checkout",
+      "name_candidates": [
+        "supabase/migrations/20261117155500_pitacco_delivery_quoted_checkout.sql"
+      ]
+    },
+    {
+      "version": "20261117143911",
+      "name": "pitacco_delivery_quote_limits",
+      "name_candidates": [
+        "supabase/migrations/20261117155800_pitacco_delivery_quote_limits.sql"
+      ]
+    },
+    {
+      "version": "20261117145739",
+      "name": "pitacco_support_center",
+      "name_candidates": [
+        "supabase/migrations/20261117162500_pitacco_support_center.sql"
+      ]
+    },
+    {
+      "version": "20261117145742",
+      "name": "pitacco_operational_incident_monitor",
+      "name_candidates": [
+        "supabase/migrations/20261117163000_pitacco_operational_incident_monitor.sql"
+      ]
+    },
+    {
+      "version": "20261117154446",
+      "name": "pitacco_storefront_design_studio",
+      "name_candidates": [
+        "supabase/migrations/20261117180000_pitacco_storefront_design_studio.sql"
+      ]
+    },
+    {
+      "version": "20261117160805",
+      "name": "pitacco_self_service_onboarding_preflight",
+      "name_candidates": [
+        "supabase/migrations/20261117190000_pitacco_self_service_onboarding_preflight.sql"
+      ]
+    },
+    {
+      "version": "20261117162645",
+      "name": "pitacco_windows_presence",
+      "name_candidates": [
+        "supabase/migrations/20261117193000_pitacco_windows_presence.sql"
+      ]
+    },
+    {
+      "version": "20261117164334",
+      "name": "pitacco_windows_print_confirmation",
+      "name_candidates": [
+        "supabase/migrations/20261117195000_pitacco_windows_print_confirmation.sql"
+      ]
+    },
+    {
+      "version": "20261117173611",
+      "name": "pitacco_store_opening_hours",
+      "name_candidates": [
+        "supabase/migrations/20261117180001_pitacco_store_opening_hours.sql"
+      ]
+    },
+    {
+      "version": "20261117173623",
+      "name": "pitacco_hours_readiness",
+      "name_candidates": [
+        "supabase/migrations/20261117201000_pitacco_hours_readiness.sql"
+      ]
+    },
+    {
+      "version": "20261117174737",
+      "name": "stage_courier_push_schedule_disabled",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117203114",
+      "name": "pitacco_ifood_manual_accept_cancel",
+      "name_candidates": [
+        "supabase/migrations/20261117210000_pitacco_ifood_manual_accept_cancel.sql"
+      ]
+    },
+    {
+      "version": "20261117210139",
+      "name": "pitacco_print_sectors_source_category_fields",
+      "name_candidates": []
+    },
+    {
+      "version": "20261117212228",
+      "name": "pitacco_one_courier_test_store",
+      "name_candidates": [
+        "supabase/migrations/20261117220000_pitacco_one_courier_test_store.sql"
+      ]
+    },
+    {
+      "version": "20261117213414",
+      "name": "pitacco_courier_app_second_test_store",
+      "name_candidates": [
+        "supabase/migrations/20261117231000_pitacco_courier_app_second_test_store.sql"
+      ]
+    },
+    {
+      "version": "20261117220013",
+      "name": "ifood_prepared_not_delivered",
+      "name_candidates": [
+        "supabase/migrations/20261117233000_ifood_prepared_not_delivered.sql"
+      ]
+    },
+    {
+      "version": "20261117221421",
+      "name": "windows_print_order_queue",
+      "name_candidates": [
+        "supabase/migrations/20261117235000_windows_print_order_queue.sql"
+      ]
+    },
+    {
+      "version": "20261118001833",
+      "name": "pitacco_cross_store_push_assignments",
+      "name_candidates": [
+        "supabase/migrations/20261118001500_pitacco_cross_store_push_assignments.sql"
+      ]
+    },
+    {
+      "version": "20261118004507",
+      "name": "courier_push_readiness",
+      "name_candidates": [
+        "supabase/migrations/20261118004500_courier_push_readiness.sql"
+      ]
+    },
+    {
+      "version": "20261118012514",
+      "name": "pitacco_owner_incident_pulse_and_immediate_failure_capture",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118033903",
+      "name": "pitacco_owner_diagnostic_snapshot",
+      "name_candidates": [
+        "supabase/migrations/20261118032000_pitacco_owner_diagnostic_snapshot.sql"
+      ]
+    },
+    {
+      "version": "20261118040500",
+      "name": "pitacco_owner_repair_approvals",
+      "name_candidates": [
+        "supabase/migrations/20261118043000_pitacco_owner_repair_approvals.sql"
+      ]
+    },
+    {
+      "version": "20261118041708",
+      "name": "pitacco_courier_native_voice_push",
+      "name_candidates": [
+        "supabase/migrations/20261118040000_pitacco_courier_native_voice_push.sql"
+      ]
+    },
+    {
+      "version": "20261118042552",
+      "name": "pitacco_owner_recovery_preflight",
+      "name_candidates": [
+        "supabase/migrations/20261118053000_pitacco_owner_recovery_preflight.sql"
+      ]
+    },
+    {
+      "version": "20261118130553",
+      "name": "pitacco_driver_route_ifood_reconcile_20261118",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118130915",
+      "name": "pitacco_ifood_external_proof_20261118",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118135802",
+      "name": "pitacco_courier_terminal_status_sync_20261118",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118141451",
+      "name": "pitacco_courier_completion_earnings_20261118",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118145246",
+      "name": "pitacco_courier_finance_schema_compat_20261118",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118145249",
+      "name": "pitacco_courier_original_freight_workday_20261118",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118145252",
+      "name": "pitacco_checkout_original_freight_receipt_20261118",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118145256",
+      "name": "pitacco_courier_daily_financial_reports_20261118",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118145947",
+      "name": "pitacco_courier_shared_test_pay_rule_20261118",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118155926",
+      "name": "pitacco_official_android_external_release_20261118",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118155930",
+      "name": "pitacco_register_official_android_206_20261118",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118185344",
+      "name": "fix_stale_completed_courier_route_assignment",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118190755",
+      "name": "courier_authenticated_server_timestamped_gps_reporting",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118192044",
+      "name": "register_official_android_207_gps",
+      "name_candidates": [
+        "supabase/migrations/20261118192500_register_official_android_207_gps.sql"
+      ]
+    },
+    {
+      "version": "20261118193812",
+      "name": "order_stage_controls_require_ready_before_route_assignment",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118194546",
+      "name": "manager_conclude_only_preverified_own_delivery",
+      "name_candidates": [
+        "supabase/migrations/20261118194600_manager_conclude_only_preverified_own_delivery.sql"
+      ]
+    },
+    {
+      "version": "20261118205444",
+      "name": "ifood_dispatch_only_after_own_courier_collection",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118232242",
+      "name": "register_official_android_209_gps_permissions",
+      "name_candidates": [
+        "supabase/migrations/20261118232200_register_official_android_209_gps_permissions.sql"
+      ]
+    },
+    {
+      "version": "20261118234931",
+      "name": "native_courier_background_gps_scoped_capabilities",
+      "name_candidates": []
+    },
+    {
+      "version": "20261118235404",
+      "name": "register_official_android_210_background_gps",
+      "name_candidates": [
+        "supabase/migrations/20261118235400_register_official_android_210_background_gps.sql"
+      ]
+    },
+    {
+      "version": "20261118235513",
+      "name": "fix_android_210_official_download_url",
+      "name_candidates": [
+        "supabase/migrations/20261118235800_fix_android_210_official_download_url.sql"
+      ]
+    },
+    {
+      "version": "20261119002411",
+      "name": "windows_native_background_order_watcher",
+      "name_candidates": []
+    },
+    {
+      "version": "20261119002444",
+      "name": "courier_native_background_assignment_alert_fallback",
+      "name_candidates": []
+    },
+    {
+      "version": "20261119002806",
+      "name": "register_official_android_211_native_shift_alerts",
+      "name_candidates": [
+        "supabase/migrations/20261119002800_register_official_android_211_native_shift_alerts.sql"
+      ]
+    },
+    {
+      "version": "20261119010145",
+      "name": "vault_backed_courier_push_cron_authorization",
+      "name_candidates": []
+    },
+    {
+      "version": "20261120134156",
+      "name": "20261120120000_invalidate_store_pin_on_address_update",
+      "name_candidates": []
+    },
+    {
+      "version": "20261120134159",
+      "name": "20261120120500_store_scoped_shared_courier_map",
+      "name_candidates": []
+    },
+    {
+      "version": "20261120184106",
+      "name": "20261120143000_visual_delivery_zone_pricing",
+      "name_candidates": []
+    },
+    {
+      "version": "20261120184110",
+      "name": "20261120143500_checkout_delivery_quote_and_public_menu",
+      "name_candidates": []
+    },
+    {
+      "version": "20261120215835",
+      "name": "fix_service_role_geocode_rate_limit_for_secret_keys",
+      "name_candidates": []
+    },
+    {
+      "version": "20261120221255",
+      "name": "limit_nominatim_at_one_request_per_second_globally",
+      "name_candidates": []
+    },
+    {
+      "version": "20261120225941",
+      "name": "enable_up_to_twelve_independent_delivery_polygons",
+      "name_candidates": []
+    },
+    {
+      "version": "20261120230246",
+      "name": "expose_delivery_region_shapes_to_public_map",
+      "name_candidates": []
+    },
+    {
+      "version": "20261120230732",
+      "name": "fix_courier_visibility_shared_test_store_and_payments",
+      "name_candidates": []
+    },
+    {
+      "version": "20261120231431",
+      "name": "driver_map_shop_origins_for_all_active_assigned_orders",
+      "name_candidates": []
+    },
+    {
+      "version": "20261120231554",
+      "name": "driver_map_own_and_authorized_store_origins_even_when_idle",
+      "name_candidates": []
+    },
+    {
+      "version": "20261121013235",
+      "name": "courier_push_readiness_reports_scheduler_without_secrets",
+      "name_candidates": []
+    },
+    {
+      "version": "20261121013438",
+      "name": "prepare_guarded_courier_push_scheduler_disabled_until_firebase",
+      "name_candidates": []
+    },
+    {
+      "version": "20261121042841",
+      "name": "courier_physical_activity_shift_motion_telemetry",
+      "name_candidates": []
+    },
+    {
+      "version": "20261121042908",
+      "name": "fix_courier_motion_float_validation",
+      "name_candidates": [
+        "supabase/migrations/20261121013100_fix_courier_motion_float_validation.sql"
+      ]
+    },
+    {
+      "version": "20261121133522",
+      "name": "admin_broadcast_silent_notifications_for_all_couriers",
+      "name_candidates": []
+    },
+    {
+      "version": "20261121133552",
+      "name": "restrict_loud_courier_assignment_alerts_to_home_store_only",
+      "name_candidates": []
+    },
+    {
+      "version": "20261121133704",
+      "name": "courier_authenticated_silent_admin_inbox",
+      "name_candidates": []
+    },
+    {
+      "version": "20261121133946",
+      "name": "restrict_admin_campaigns_to_silent_capable_android_devices",
+      "name_candidates": []
+    },
+    {
+      "version": "20261121160450",
+      "name": "authenticated_courier_firebase_registration_diagnostics_no_secrets",
+      "name_candidates": []
+    },
+    {
+      "version": "20261122144807",
+      "name": "courier_payment_receipt_collection",
+      "name_candidates": [
+        "supabase/migrations/20261122174000_courier_payment_receipt_collection.sql"
+      ]
+    },
+    {
+      "version": "20261122145343",
+      "name": "courier_card_payment_on_delivery",
+      "name_candidates": [
+        "supabase/migrations/20261122175000_courier_card_payment_on_delivery.sql"
+      ]
+    },
+    {
+      "version": "20261122172641",
+      "name": "store_delivery_code_digits_ifood_four",
+      "name_candidates": [
+        "supabase/migrations/20261122185000_store_delivery_code_digits_ifood_four.sql"
+      ]
+    },
+    {
+      "version": "20261122173311",
+      "name": "own_delivery_codes_constraint_compat",
+      "name_candidates": [
+        "supabase/migrations/20261122184900_own_delivery_codes_constraint_compat.sql"
+      ]
+    },
+    {
+      "version": "20261122173325",
+      "name": "own_delivery_pin_trigger",
+      "name_candidates": [
+        "supabase/migrations/20261122185100_own_delivery_pin_trigger.sql"
+      ]
+    },
+    {
+      "version": "20261122173447",
+      "name": "own_delivery_code_secure_random",
+      "name_candidates": [
+        "supabase/migrations/20261122185200_own_delivery_code_secure_random.sql"
+      ]
+    },
+    {
+      "version": "20261122190757",
+      "name": "ifood_dispatch_requires_departed",
+      "name_candidates": [
+        "supabase/migrations/20261122213000_ifood_dispatch_requires_departed.sql"
+      ]
+    },
+    {
+      "version": "20261122200034",
+      "name": "fiado_schema",
+      "name_candidates": [
+        "supabase/migrations/20261122224000_fiado_schema.sql"
+      ]
+    },
+    {
+      "version": "20261122200038",
+      "name": "fiado_manager_api",
+      "name_candidates": [
+        "supabase/migrations/20261122224100_fiado_manager_api.sql"
+      ]
+    },
+    {
+      "version": "20261122200041",
+      "name": "fiado_credit_engine",
+      "name_candidates": [
+        "supabase/migrations/20261122224200_fiado_credit_engine.sql"
+      ]
+    },
+    {
+      "version": "20261122200047",
+      "name": "fiado_public_checkout",
+      "name_candidates": [
+        "supabase/migrations/20261122224300_fiado_public_checkout.sql"
+      ]
+    },
+    {
+      "version": "20261122200050",
+      "name": "fiado_courier_privacy",
+      "name_candidates": [
+        "supabase/migrations/20261122224400_fiado_courier_privacy.sql"
+      ]
+    },
+    {
+      "version": "20261122200053",
+      "name": "fiado_balcao",
+      "name_candidates": [
+        "supabase/migrations/20261122224500_fiado_balcao.sql"
+      ]
+    },
+    {
+      "version": "20261122200057",
+      "name": "fiado_courier_detail_privacy",
+      "name_candidates": [
+        "supabase/migrations/20261122224600_fiado_courier_detail_privacy.sql"
+      ]
+    },
+    {
+      "version": "20261122203122",
+      "name": "fiado_financial_report",
+      "name_candidates": [
+        "supabase/migrations/20261122224601_fiado_financial_report.sql"
+      ]
+    },
+    {
+      "version": "20261122203338",
+      "name": "coupon_start_date_guard",
+      "name_candidates": [
+        "supabase/migrations/20261122224602_coupon_start_date_guard.sql"
+      ]
+    },
+    {
+      "version": "20261122205113",
+      "name": "ifood_arrival_official_dispatch_backend",
+      "name_candidates": [
+        "supabase/migrations/20261122232000_ifood_arrival_official_dispatch_backend.sql"
+      ]
+    },
+    {
+      "version": "20261122210148",
+      "name": "inventory_option_recipe_consumption",
+      "name_candidates": [
+        "supabase/migrations/20261122233500_inventory_option_recipe_consumption.sql"
+      ]
+    },
+    {
+      "version": "20261122211939",
+      "name": "inventory_unit_cost_profit_snapshot",
+      "name_candidates": [
+        "supabase/migrations/20261122235000_inventory_unit_cost_profit_snapshot.sql"
+      ]
+    },
+    {
+      "version": "20261122212215",
+      "name": "fideliza_runtime_schema",
+      "name_candidates": [
+        "supabase/migrations/20261122224603_fideliza_runtime_schema.sql"
+      ]
+    },
+    {
+      "version": "20261122212226",
+      "name": "fideliza_rewards_engine",
+      "name_candidates": [
+        "supabase/migrations/20261122224604_fideliza_rewards_engine.sql"
+      ]
+    },
+    {
+      "version": "20261122212235",
+      "name": "fideliza_checkout",
+      "name_candidates": [
+        "supabase/migrations/20261122224605_fideliza_checkout.sql"
+      ]
+    },
+    {
+      "version": "20261122220358",
+      "name": "sealed_beverage_recovery_and_cancellation_losses",
+      "name_candidates": [
+        "supabase/migrations/20261122235500_sealed_beverage_recovery_and_cancellation_losses.sql"
+      ]
+    },
+    {
+      "version": "20261122234416",
+      "name": "fideliza_manager_rls_allow_platform_owner_20261122",
+      "name_candidates": []
+    },
+    {
+      "version": "20261123000029",
+      "name": "fideliza_phone_identity_no_key_20261122",
+      "name_candidates": []
+    },
+    {
+      "version": "20261123021546",
+      "name": "fiado_phone_payment_eligibility_20261122",
+      "name_candidates": []
+    },
+    {
+      "version": "20261123025031",
+      "name": "fiado_private_credit_status_20261122",
+      "name_candidates": []
+    },
+    {
+      "version": "20261123042452",
+      "name": "menu_templates_current_engine",
+      "name_candidates": [
+        "supabase/migrations/20261123041507_menu_templates_current_engine.sql"
+      ]
+    },
+    {
+      "version": "20261123042610",
+      "name": "cardapio_v2_top_sellers_public_20261123",
+      "name_candidates": []
+    },
+    {
+      "version": "20261123102431",
+      "name": "fiado_store_approval_without_code_20261123",
+      "name_candidates": []
+    },
+    {
+      "version": "20261123104606",
+      "name": "fiado_birthdate_verification_20261123",
+      "name_candidates": []
+    },
+    {
+      "version": "20261123111924",
+      "name": "fiado_pin_six_digits_secure_20261123",
+      "name_candidates": []
+    },
+    {
+      "version": "20261123113746",
+      "name": "public_cart_recovery",
+      "name_candidates": [
+        "supabase/migrations/20261123112640_public_cart_recovery.sql"
+      ]
+    },
+    {
+      "version": "20261123123311",
+      "name": "fideliza_referral_links",
+      "name_candidates": [
+        "supabase/migrations/20261123122655_fideliza_referral_links.sql"
+      ]
+    },
+    {
+      "version": "20261123134134",
+      "name": "v2_customer_profile_and_fiado_statement_20261123",
+      "name_candidates": []
+    },
+    {
+      "version": "20261123142621",
+      "name": "v2_customer_profiles_and_fiado_statement_20261123",
+      "name_candidates": []
+    },
+    {
+      "version": "20261123154627",
+      "name": "studio_media_bucket_and_image_validator_20261123",
+      "name_candidates": []
+    },
+    {
+      "version": "20261123164854",
+      "name": "studio_save_and_publish_atomic_20261123",
+      "name_candidates": []
+    },
+    {
+      "version": "20261123171923",
+      "name": "menu_category_icons_per_store_20261123",
+      "name_candidates": []
+    },
+    {
+      "version": "20261123205757",
+      "name": "menu_import_universal",
+      "name_candidates": [
+        "supabase/migrations/20261123213000_menu_import_universal.sql"
+      ]
+    },
+    {
+      "version": "20261123205836",
+      "name": "menu_import_empty_image_fix",
+      "name_candidates": [
+        "supabase/migrations/20261123213100_menu_import_empty_image_fix.sql"
+      ]
+    },
+    {
+      "version": "20261123225347",
+      "name": "catalog_studio_shared_groups_stock",
+      "name_candidates": [
+        "supabase/migrations/20261123225500_catalog_studio_shared_groups_stock.sql"
+      ]
+    },
+    {
+      "version": "20261123225444",
+      "name": "catalog_template_read_permission",
+      "name_candidates": [
+        "supabase/migrations/20261123230000_catalog_template_read_permission.sql"
+      ]
+    },
+    {
+      "version": "20261123232657",
+      "name": "menu_catalog_order",
+      "name_candidates": [
+        "supabase/migrations/20261123235500_menu_catalog_order.sql"
+      ]
+    },
+    {
+      "version": "20261123232959",
+      "name": "sync_shared_template_option_order",
+      "name_candidates": [
+        "supabase/migrations/20261123235600_sync_shared_template_option_order.sql"
+      ]
+    },
+    {
+      "version": "20261123233516",
+      "name": "shared_template_sort_sync",
+      "name_candidates": [
+        "supabase/migrations/20261123235700_shared_template_sort_sync.sql"
+      ]
+    },
+    {
+      "version": "20261123234219",
+      "name": "linho_test_centralize_complements",
+      "name_candidates": [
+        "supabase/migrations/20261124001000_linho_test_centralize_complements.sql"
+      ]
+    },
+    {
+      "version": "20261124002958",
+      "name": "cash_change_structured_checkout",
+      "name_candidates": [
+        "supabase/migrations/20261124003000_cash_change_structured_checkout.sql"
+      ]
+    },
+    {
+      "version": "20261124003206",
+      "name": "cash_change_trigger_security",
+      "name_candidates": [
+        "supabase/migrations/20261124003100_cash_change_trigger_security.sql"
+      ]
+    },
+    {
+      "version": "20261124005310",
+      "name": "publish_official_courier_2_0_15",
+      "name_candidates": [
+        "supabase/migrations/20261124011500_publish_official_courier_2_0_15.sql"
+      ]
+    },
+    {
+      "version": "20261124011223",
+      "name": "publish_official_courier_2_0_16",
+      "name_candidates": [
+        "supabase/migrations/20261124013000_publish_official_courier_2_0_16.sql"
+      ]
+    },
+    {
+      "version": "20261124032627",
+      "name": "active_order_cancellation",
+      "name_candidates": [
+        "supabase/migrations/20261124031000_active_order_cancellation.sql"
+      ]
+    },
+    {
+      "version": "20261124032812",
+      "name": "delivery_incidents_and_capacity",
+      "name_candidates": [
+        "supabase/migrations/20261124033000_delivery_incidents_and_capacity.sql"
+      ]
+    },
+    {
+      "version": "20261124033040",
+      "name": "delivery_incidents_realtime",
+      "name_candidates": [
+        "supabase/migrations/20261124034000_delivery_incidents_realtime.sql"
+      ]
+    },
+    {
+      "version": "20261124033610",
+      "name": "incident_whatsapp",
+      "name_candidates": [
+        "supabase/migrations/20261124035000_incident_whatsapp.sql"
+      ]
+    },
+    {
+      "version": "20261124034346",
+      "name": "windows_incident_poll",
+      "name_candidates": [
+        "supabase/migrations/20261124040000_windows_incident_poll.sql"
+      ]
+    },
+    {
+      "version": "20261124035818",
+      "name": "merchant_modern_customer_dossier",
+      "name_candidates": [
+        "supabase/migrations/20261124041000_merchant_modern_customer_dossier.sql"
+      ]
+    },
+    {
+      "version": "20261125020654",
+      "name": "pagbank_sandbox_upgrade_seller_permissions",
+      "name_candidates": []
+    },
+    {
+      "version": "20261125020704",
+      "name": "pagbank_sandbox_refund_once",
+      "name_candidates": []
+    },
+    {
+      "version": "20261126095940",
+      "name": "intelligence_admin_only",
+      "name_candidates": []
+    },
+    {
+      "version": "20261126122251",
+      "name": "registration_email_identity_sync",
+      "name_candidates": [
+        "supabase/migrations/20261126122051_registration_email_identity_sync.sql"
+      ]
+    },
+    {
+      "version": "20261126135333",
+      "name": "control_center_core",
+      "name_candidates": [
+        "supabase/migrations/20261126123616_control_center_core.sql"
+      ]
+    },
+    {
+      "version": "20261126175045",
+      "name": "ifood_dispatch_recover_unstarted_claim",
+      "name_candidates": []
+    },
+    {
+      "version": "20261126175229",
+      "name": "ifood_verify_concluded_webhook_race",
+      "name_candidates": []
+    },
+    {
+      "version": "20261126182243",
+      "name": "reconcile_courier_collect_depart_entrypoints",
+      "name_candidates": []
+    },
+    {
+      "version": "20261126182517",
+      "name": "reconcile_courier_arrival_entrypoint",
+      "name_candidates": []
+    },
+    {
+      "version": "20261126210557",
+      "name": "ifood_authorized_print_contact",
+      "name_candidates": [
+        "supabase/migrations/20261126210000_ifood_authorized_print_contact.sql"
+      ]
+    },
+    {
+      "version": "20261126211531",
+      "name": "ifood_ready_outbox",
+      "name_candidates": [
+        "supabase/migrations/20261126211500_ifood_ready_outbox.sql"
+      ]
+    },
+    {
+      "version": "20261126223836",
+      "name": "persist_customer_delivery_points",
+      "name_candidates": [
+        "supabase/migrations/20261126223500_persist_customer_delivery_points.sql"
+      ]
+    },
+    {
+      "version": "20261126231529",
+      "name": "public_menu_identity",
+      "name_candidates": [
+        "supabase/migrations/20261126231000_public_menu_identity.sql"
+      ]
+    },
+    {
+      "version": "20261126231533",
+      "name": "storefront_logo_framing",
+      "name_candidates": [
+        "supabase/migrations/20261126231500_storefront_logo_framing.sql"
+      ]
+    },
+    {
+      "version": "20261126234459",
+      "name": "public_weekly_opening_hours",
+      "name_candidates": [
+        "supabase/migrations/20261126234000_public_weekly_opening_hours.sql"
+      ]
+    },
+    {
+      "version": "20261127002200",
+      "name": "public_top_four_sellers",
+      "name_candidates": [
+        "supabase/migrations/20261126235500_public_top_four_sellers.sql"
+      ]
+    },
+    {
+      "version": "20261127010700",
+      "name": "storefront_featured_colors",
+      "name_candidates": [
+        "supabase/migrations/20261127010000_storefront_featured_colors.sql"
+      ]
+    }
+  ],
+  "only_repository_versions": [
+    {
+      "version": "20261114225402",
+      "name": "pitacco_checkout_product_variants",
+      "path": "supabase/migrations/20261114225402_pitacco_checkout_product_variants.sql"
+    },
+    {
+      "version": "20261114225409",
+      "name": "pitacco_new_store_seven_day_trial",
+      "path": "supabase/migrations/20261114225409_pitacco_new_store_seven_day_trial.sql"
+    },
+    {
+      "version": "20261114230238",
+      "name": "pitacco_inventory",
+      "path": "supabase/migrations/20261114230238_pitacco_inventory.sql"
+    },
+    {
+      "version": "20261114230712",
+      "name": "pitacco_self_service_store_manager",
+      "path": "supabase/migrations/20261114230712_pitacco_self_service_store_manager.sql"
+    },
+    {
+      "version": "20261114230902",
+      "name": "pitacco_pending_order_decisions",
+      "path": "supabase/migrations/20261114230902_pitacco_pending_order_decisions.sql"
+    },
+    {
+      "version": "20261114231258",
+      "name": "pitacco_period_financial_report",
+      "path": "supabase/migrations/20261114231258_pitacco_period_financial_report.sql"
+    },
+    {
+      "version": "20261114232304",
+      "name": "pitacco_scheduled_orders",
+      "path": "supabase/migrations/20261114232304_pitacco_scheduled_orders.sql"
+    },
+    {
+      "version": "20261114232953",
+      "name": "pitacco_operational_alerts",
+      "path": "supabase/migrations/20261114232953_pitacco_operational_alerts.sql"
+    },
+    {
+      "version": "20261114233413",
+      "name": "pitacco_subscription_entitlement",
+      "path": "supabase/migrations/20261114233413_pitacco_subscription_entitlement.sql"
+    },
+    {
+      "version": "20261114233828",
+      "name": "pitacco_asaas_subscription_binding",
+      "path": "supabase/migrations/20261114233828_pitacco_asaas_subscription_binding.sql"
+    },
+    {
+      "version": "20261114234147",
+      "name": "pitacco_private_delivery_tracking",
+      "path": "supabase/migrations/20261114234147_pitacco_private_delivery_tracking.sql"
+    },
+    {
+      "version": "20261114234541",
+      "name": "pitacco_marketplace_settlements",
+      "path": "supabase/migrations/20261114234541_pitacco_marketplace_settlements.sql"
+    },
+    {
+      "version": "20261115000506",
+      "name": "pitacco_admin_homologation",
+      "path": "supabase/migrations/20261115000506_pitacco_admin_homologation.sql"
+    },
+    {
+      "version": "20261115002000",
+      "name": "pitacco_owner_and_features",
+      "path": "supabase/migrations/20261115002000_pitacco_owner_and_features.sql"
+    },
+    {
+      "version": "20261115135520",
+      "name": "pitacco_owner_store_catalog",
+      "path": "supabase/migrations/20261115135520_pitacco_owner_store_catalog.sql"
+    },
+    {
+      "version": "20261115194246",
+      "name": "pitacco_platform_owner_access",
+      "path": "supabase/migrations/20261115194246_pitacco_platform_owner_access.sql"
+    },
+    {
+      "version": "20261116043953",
+      "name": "pitacco_platform_owner_username",
+      "path": "supabase/migrations/20261116043953_pitacco_platform_owner_username.sql"
+    },
+    {
+      "version": "20261116045406",
+      "name": "pitacco_financial_report_period_bounds",
+      "path": "supabase/migrations/20261116045406_pitacco_financial_report_period_bounds.sql"
+    },
+    {
+      "version": "20261116112605",
+      "name": "pitacco_order_profit_report",
+      "path": "supabase/migrations/20261116112605_pitacco_order_profit_report.sql"
+    },
+    {
+      "version": "20261116174111",
+      "name": "pitacco_storefront_delivery_settings",
+      "path": "supabase/migrations/20261116174111_pitacco_storefront_delivery_settings.sql"
+    },
+    {
+      "version": "20261116174534",
+      "name": "pitacco_store_payment_providers",
+      "path": "supabase/migrations/20261116174534_pitacco_store_payment_providers.sql"
+    },
+    {
+      "version": "20261116181731",
+      "name": "pitacco_ifood_order_events",
+      "path": "supabase/migrations/20261116181731_pitacco_ifood_order_events.sql"
+    },
+    {
+      "version": "20261116183940",
+      "name": "pitacco_owner_platform_dashboard",
+      "path": "supabase/migrations/20261116183940_pitacco_owner_platform_dashboard.sql"
+    },
+    {
+      "version": "20261116194500",
+      "name": "pitacco_owner_subscription_details",
+      "path": "supabase/migrations/20261116194500_pitacco_owner_subscription_details.sql"
+    },
+    {
+      "version": "20261116205500",
+      "name": "owner_subscription_actions",
+      "path": "supabase/migrations/20261116205500_owner_subscription_actions.sql"
+    },
+    {
+      "version": "20261116231100",
+      "name": "pitacco_owner_operations",
+      "path": "supabase/migrations/20261116231100_pitacco_owner_operations.sql"
+    },
+    {
+      "version": "20261116233900",
+      "name": "pitacco_commercial_plan_catalog",
+      "path": "supabase/migrations/20261116233900_pitacco_commercial_plan_catalog.sql"
+    },
+    {
+      "version": "20261116235700",
+      "name": "pitacco_owner_finance_report",
+      "path": "supabase/migrations/20261116235700_pitacco_owner_finance_report.sql"
+    },
+    {
+      "version": "20261117003000",
+      "name": "pitacco_single_monthly_plan",
+      "path": "supabase/migrations/20261117003000_pitacco_single_monthly_plan.sql"
+    },
+    {
+      "version": "20261117004500",
+      "name": "pitacco_owner_99food_homologation",
+      "path": "supabase/migrations/20261117004500_pitacco_owner_99food_homologation.sql"
+    },
+    {
+      "version": "20261117010000",
+      "name": "pitacco_ifood_auto_confirm",
+      "path": "supabase/migrations/20261117010000_pitacco_ifood_auto_confirm.sql"
+    },
+    {
+      "version": "20261117060000",
+      "name": "pitacco_app_releases",
+      "path": "supabase/migrations/20261117060000_pitacco_app_releases.sql"
+    },
+    {
+      "version": "20261117130500",
+      "name": "pitacco_public_courier_download",
+      "path": "supabase/migrations/20261117130500_pitacco_public_courier_download.sql"
+    },
+    {
+      "version": "20261117140000",
+      "name": "pitacco_courier_push",
+      "path": "supabase/migrations/20261117140000_pitacco_courier_push.sql"
+    },
+    {
+      "version": "20261117154500",
+      "name": "pitacco_delivery_pricing_draft",
+      "path": "supabase/migrations/20261117154500_pitacco_delivery_pricing_draft.sql"
+    },
+    {
+      "version": "20261117155000",
+      "name": "pitacco_store_readiness",
+      "path": "supabase/migrations/20261117155000_pitacco_store_readiness.sql"
+    },
+    {
+      "version": "20261117155500",
+      "name": "pitacco_delivery_quoted_checkout",
+      "path": "supabase/migrations/20261117155500_pitacco_delivery_quoted_checkout.sql"
+    },
+    {
+      "version": "20261117155800",
+      "name": "pitacco_delivery_quote_limits",
+      "path": "supabase/migrations/20261117155800_pitacco_delivery_quote_limits.sql"
+    },
+    {
+      "version": "20261117162500",
+      "name": "pitacco_support_center",
+      "path": "supabase/migrations/20261117162500_pitacco_support_center.sql"
+    },
+    {
+      "version": "20261117163000",
+      "name": "pitacco_operational_incident_monitor",
+      "path": "supabase/migrations/20261117163000_pitacco_operational_incident_monitor.sql"
+    },
+    {
+      "version": "20261117180000",
+      "name": "pitacco_storefront_design_studio",
+      "path": "supabase/migrations/20261117180000_pitacco_storefront_design_studio.sql"
+    },
+    {
+      "version": "20261117180001",
+      "name": "pitacco_store_opening_hours",
+      "path": "supabase/migrations/20261117180001_pitacco_store_opening_hours.sql"
+    },
+    {
+      "version": "20261117190000",
+      "name": "pitacco_self_service_onboarding_preflight",
+      "path": "supabase/migrations/20261117190000_pitacco_self_service_onboarding_preflight.sql"
+    },
+    {
+      "version": "20261117193000",
+      "name": "pitacco_windows_presence",
+      "path": "supabase/migrations/20261117193000_pitacco_windows_presence.sql"
+    },
+    {
+      "version": "20261117195000",
+      "name": "pitacco_windows_print_confirmation",
+      "path": "supabase/migrations/20261117195000_pitacco_windows_print_confirmation.sql"
+    },
+    {
+      "version": "20261117201000",
+      "name": "pitacco_hours_readiness",
+      "path": "supabase/migrations/20261117201000_pitacco_hours_readiness.sql"
+    },
+    {
+      "version": "20261117210000",
+      "name": "pitacco_ifood_manual_accept_cancel",
+      "path": "supabase/migrations/20261117210000_pitacco_ifood_manual_accept_cancel.sql"
+    },
+    {
+      "version": "20261117220000",
+      "name": "pitacco_one_courier_test_store",
+      "path": "supabase/migrations/20261117220000_pitacco_one_courier_test_store.sql"
+    },
+    {
+      "version": "20261117231000",
+      "name": "pitacco_courier_app_second_test_store",
+      "path": "supabase/migrations/20261117231000_pitacco_courier_app_second_test_store.sql"
+    },
+    {
+      "version": "20261117233000",
+      "name": "ifood_prepared_not_delivered",
+      "path": "supabase/migrations/20261117233000_ifood_prepared_not_delivered.sql"
+    },
+    {
+      "version": "20261117235000",
+      "name": "windows_print_order_queue",
+      "path": "supabase/migrations/20261117235000_windows_print_order_queue.sql"
+    },
+    {
+      "version": "20261118001500",
+      "name": "pitacco_cross_store_push_assignments",
+      "path": "supabase/migrations/20261118001500_pitacco_cross_store_push_assignments.sql"
+    },
+    {
+      "version": "20261118004500",
+      "name": "courier_push_readiness",
+      "path": "supabase/migrations/20261118004500_courier_push_readiness.sql"
+    },
+    {
+      "version": "20261118020000",
+      "name": "pitacco_owner_incident_pulse",
+      "path": "supabase/migrations/20261118020000_pitacco_owner_incident_pulse.sql"
+    },
+    {
+      "version": "20261118032000",
+      "name": "pitacco_owner_diagnostic_snapshot",
+      "path": "supabase/migrations/20261118032000_pitacco_owner_diagnostic_snapshot.sql"
+    },
+    {
+      "version": "20261118040000",
+      "name": "pitacco_courier_native_voice_push",
+      "path": "supabase/migrations/20261118040000_pitacco_courier_native_voice_push.sql"
+    },
+    {
+      "version": "20261118043000",
+      "name": "pitacco_owner_repair_approvals",
+      "path": "supabase/migrations/20261118043000_pitacco_owner_repair_approvals.sql"
+    },
+    {
+      "version": "20261118053000",
+      "name": "pitacco_owner_recovery_preflight",
+      "path": "supabase/migrations/20261118053000_pitacco_owner_recovery_preflight.sql"
+    },
+    {
+      "version": "20261118130000",
+      "name": "pitacco_driver_route_ifood_reconcile",
+      "path": "supabase/migrations/20261118130000_pitacco_driver_route_ifood_reconcile.sql"
+    },
+    {
+      "version": "20261118141000",
+      "name": "ifood_external_delivery_proof",
+      "path": "supabase/migrations/20261118141000_ifood_external_delivery_proof.sql"
+    },
+    {
+      "version": "20261118160000",
+      "name": "link_official_android_github_release",
+      "path": "supabase/migrations/20261118160000_link_official_android_github_release.sql"
+    },
+    {
+      "version": "20261118161000",
+      "name": "register_official_android_206",
+      "path": "supabase/migrations/20261118161000_register_official_android_206.sql"
+    },
+    {
+      "version": "20261118171000",
+      "name": "pitacco_courier_terminal_status_sync",
+      "path": "supabase/migrations/20261118171000_pitacco_courier_terminal_status_sync.sql"
+    },
+    {
+      "version": "20261118173500",
+      "name": "courier_finance_schema_compat",
+      "path": "supabase/migrations/20261118173500_courier_finance_schema_compat.sql"
+    },
+    {
+      "version": "20261118174000",
+      "name": "pitacco_courier_completion_earnings",
+      "path": "supabase/migrations/20261118174000_pitacco_courier_completion_earnings.sql"
+    },
+    {
+      "version": "20261118192500",
+      "name": "register_official_android_207_gps",
+      "path": "supabase/migrations/20261118192500_register_official_android_207_gps.sql"
+    },
+    {
+      "version": "20261118194500",
+      "name": "order_stage_progression_and_dispatch_gate",
+      "path": "supabase/migrations/20261118194500_order_stage_progression_and_dispatch_gate.sql"
+    },
+    {
+      "version": "20261118194600",
+      "name": "manager_conclude_only_preverified_own_delivery",
+      "path": "supabase/migrations/20261118194600_manager_conclude_only_preverified_own_delivery.sql"
+    },
+    {
+      "version": "20261118201000",
+      "name": "courier_original_freight_and_workday",
+      "path": "supabase/migrations/20261118201000_courier_original_freight_and_workday.sql"
+    },
+    {
+      "version": "20261118201100",
+      "name": "checkout_original_freight_receipt",
+      "path": "supabase/migrations/20261118201100_checkout_original_freight_receipt.sql"
+    },
+    {
+      "version": "20261118201200",
+      "name": "courier_daily_financial_reports",
+      "path": "supabase/migrations/20261118201200_courier_daily_financial_reports.sql"
+    },
+    {
+      "version": "20261118201500",
+      "name": "courier_shared_test_pay_rule",
+      "path": "supabase/migrations/20261118201500_courier_shared_test_pay_rule.sql"
+    },
+    {
+      "version": "20261118213000",
+      "name": "ifood_dispatch_only_after_courier_collection",
+      "path": "supabase/migrations/20261118213000_ifood_dispatch_only_after_courier_collection.sql"
+    },
+    {
+      "version": "20261118232200",
+      "name": "register_official_android_209_gps_permissions",
+      "path": "supabase/migrations/20261118232200_register_official_android_209_gps_permissions.sql"
+    },
+    {
+      "version": "20261118234500",
+      "name": "native_courier_background_gps_capabilities",
+      "path": "supabase/migrations/20261118234500_native_courier_background_gps_capabilities.sql"
+    },
+    {
+      "version": "20261118235400",
+      "name": "register_official_android_210_background_gps",
+      "path": "supabase/migrations/20261118235400_register_official_android_210_background_gps.sql"
+    },
+    {
+      "version": "20261118235800",
+      "name": "fix_android_210_official_download_url",
+      "path": "supabase/migrations/20261118235800_fix_android_210_official_download_url.sql"
+    },
+    {
+      "version": "20261119001000",
+      "name": "windows_native_background_watch",
+      "path": "supabase/migrations/20261119001000_windows_native_background_watch.sql"
+    },
+    {
+      "version": "20261119002000",
+      "name": "courier_native_shift_assignment_watch",
+      "path": "supabase/migrations/20261119002000_courier_native_shift_assignment_watch.sql"
+    },
+    {
+      "version": "20261119002800",
+      "name": "register_official_android_211_native_shift_alerts",
+      "path": "supabase/migrations/20261119002800_register_official_android_211_native_shift_alerts.sql"
+    },
+    {
+      "version": "20261119003200",
+      "name": "vault_cron_secret_for_courier_push",
+      "path": "supabase/migrations/20261119003200_vault_cron_secret_for_courier_push.sql"
+    },
+    {
+      "version": "20261120120000",
+      "name": "invalidate_store_pin_on_address_update",
+      "path": "supabase/migrations/20261120120000_invalidate_store_pin_on_address_update.sql"
+    },
+    {
+      "version": "20261120120500",
+      "name": "store_scoped_shared_courier_map",
+      "path": "supabase/migrations/20261120120500_store_scoped_shared_courier_map.sql"
+    },
+    {
+      "version": "20261120143000",
+      "name": "visual_delivery_zone_pricing",
+      "path": "supabase/migrations/20261120143000_visual_delivery_zone_pricing.sql"
+    },
+    {
+      "version": "20261120143500",
+      "name": "checkout_delivery_quote_and_public_menu",
+      "path": "supabase/migrations/20261120143500_checkout_delivery_quote_and_public_menu.sql"
+    },
+    {
+      "version": "20261120220000",
+      "name": "fix_geocode_service_role_rate_limit",
+      "path": "supabase/migrations/20261120220000_fix_geocode_service_role_rate_limit.sql"
+    },
+    {
+      "version": "20261120223000",
+      "name": "limit_nominatim_at_one_request_per_second",
+      "path": "supabase/migrations/20261120223000_limit_nominatim_at_one_request_per_second.sql"
+    },
+    {
+      "version": "20261120233000",
+      "name": "enable_up_to_twelve_delivery_polygons",
+      "path": "supabase/migrations/20261120233000_enable_up_to_twelve_delivery_polygons.sql"
+    },
+    {
+      "version": "20261120233500",
+      "name": "public_map_multiple_regions",
+      "path": "supabase/migrations/20261120233500_public_map_multiple_regions.sql"
+    },
+    {
+      "version": "20261121000000",
+      "name": "fix_courier_visibility_and_pay_rules",
+      "path": "supabase/migrations/20261121000000_fix_courier_visibility_and_pay_rules.sql"
+    },
+    {
+      "version": "20261121002500",
+      "name": "driver_map_shop_origins_for_active_orders",
+      "path": "supabase/migrations/20261121002500_driver_map_shop_origins_for_active_orders.sql"
+    },
+    {
+      "version": "20261121002800",
+      "name": "driver_map_authorized_stores_even_when_idle",
+      "path": "supabase/migrations/20261121002800_driver_map_authorized_stores_even_when_idle.sql"
+    },
+    {
+      "version": "20261121004500",
+      "name": "courier_push_readiness_scheduler",
+      "path": "supabase/migrations/20261121004500_courier_push_readiness_scheduler.sql"
+    },
+    {
+      "version": "20261121005000",
+      "name": "prepare_guarded_courier_push_scheduler",
+      "path": "supabase/migrations/20261121005000_prepare_guarded_courier_push_scheduler.sql"
+    },
+    {
+      "version": "20261121013000",
+      "name": "courier_motion_telemetry",
+      "path": "supabase/migrations/20261121013000_courier_motion_telemetry.sql"
+    },
+    {
+      "version": "20261121013100",
+      "name": "fix_courier_motion_float_validation",
+      "path": "supabase/migrations/20261121013100_fix_courier_motion_float_validation.sql"
+    },
+    {
+      "version": "20261121020000",
+      "name": "admin_courier_silent_campaigns",
+      "path": "supabase/migrations/20261121020000_admin_courier_silent_campaigns.sql"
+    },
+    {
+      "version": "20261121020100",
+      "name": "restrict_order_push_to_courier_home_store",
+      "path": "supabase/migrations/20261121020100_restrict_order_push_to_courier_home_store.sql"
+    },
+    {
+      "version": "20261121020200",
+      "name": "courier_admin_inbox",
+      "path": "supabase/migrations/20261121020200_courier_admin_inbox.sql"
+    },
+    {
+      "version": "20261121020300",
+      "name": "silent_admin_capability_negotiation",
+      "path": "supabase/migrations/20261121020300_silent_admin_capability_negotiation.sql"
+    },
+    {
+      "version": "20261121133000",
+      "name": "courier_push_registration_diagnostics",
+      "path": "supabase/migrations/20261121133000_courier_push_registration_diagnostics.sql"
+    },
+    {
+      "version": "20261122143000",
+      "name": "pitacco_driver_depart_single",
+      "path": "supabase/migrations/20261122143000_pitacco_driver_depart_single.sql"
+    },
+    {
+      "version": "20261122174000",
+      "name": "courier_payment_receipt_collection",
+      "path": "supabase/migrations/20261122174000_courier_payment_receipt_collection.sql"
+    },
+    {
+      "version": "20261122175000",
+      "name": "courier_card_payment_on_delivery",
+      "path": "supabase/migrations/20261122175000_courier_card_payment_on_delivery.sql"
+    },
+    {
+      "version": "20261122184900",
+      "name": "own_delivery_codes_constraint_compat",
+      "path": "supabase/migrations/20261122184900_own_delivery_codes_constraint_compat.sql"
+    },
+    {
+      "version": "20261122185000",
+      "name": "store_delivery_code_digits_ifood_four",
+      "path": "supabase/migrations/20261122185000_store_delivery_code_digits_ifood_four.sql"
+    },
+    {
+      "version": "20261122185100",
+      "name": "own_delivery_pin_trigger",
+      "path": "supabase/migrations/20261122185100_own_delivery_pin_trigger.sql"
+    },
+    {
+      "version": "20261122185200",
+      "name": "own_delivery_code_secure_random",
+      "path": "supabase/migrations/20261122185200_own_delivery_code_secure_random.sql"
+    },
+    {
+      "version": "20261122213000",
+      "name": "ifood_dispatch_requires_departed",
+      "path": "supabase/migrations/20261122213000_ifood_dispatch_requires_departed.sql"
+    },
+    {
+      "version": "20261122224000",
+      "name": "fiado_schema",
+      "path": "supabase/migrations/20261122224000_fiado_schema.sql"
+    },
+    {
+      "version": "20261122224100",
+      "name": "fiado_manager_api",
+      "path": "supabase/migrations/20261122224100_fiado_manager_api.sql"
+    },
+    {
+      "version": "20261122224200",
+      "name": "fiado_credit_engine",
+      "path": "supabase/migrations/20261122224200_fiado_credit_engine.sql"
+    },
+    {
+      "version": "20261122224300",
+      "name": "fiado_public_checkout",
+      "path": "supabase/migrations/20261122224300_fiado_public_checkout.sql"
+    },
+    {
+      "version": "20261122224400",
+      "name": "fiado_courier_privacy",
+      "path": "supabase/migrations/20261122224400_fiado_courier_privacy.sql"
+    },
+    {
+      "version": "20261122224500",
+      "name": "fiado_balcao",
+      "path": "supabase/migrations/20261122224500_fiado_balcao.sql"
+    },
+    {
+      "version": "20261122224600",
+      "name": "fiado_courier_detail_privacy",
+      "path": "supabase/migrations/20261122224600_fiado_courier_detail_privacy.sql"
+    },
+    {
+      "version": "20261122224601",
+      "name": "fiado_financial_report",
+      "path": "supabase/migrations/20261122224601_fiado_financial_report.sql"
+    },
+    {
+      "version": "20261122224602",
+      "name": "coupon_start_date_guard",
+      "path": "supabase/migrations/20261122224602_coupon_start_date_guard.sql"
+    },
+    {
+      "version": "20261122224603",
+      "name": "fideliza_runtime_schema",
+      "path": "supabase/migrations/20261122224603_fideliza_runtime_schema.sql"
+    },
+    {
+      "version": "20261122224604",
+      "name": "fideliza_rewards_engine",
+      "path": "supabase/migrations/20261122224604_fideliza_rewards_engine.sql"
+    },
+    {
+      "version": "20261122224605",
+      "name": "fideliza_checkout",
+      "path": "supabase/migrations/20261122224605_fideliza_checkout.sql"
+    },
+    {
+      "version": "20261122232000",
+      "name": "ifood_arrival_official_dispatch_backend",
+      "path": "supabase/migrations/20261122232000_ifood_arrival_official_dispatch_backend.sql"
+    },
+    {
+      "version": "20261122233500",
+      "name": "inventory_option_recipe_consumption",
+      "path": "supabase/migrations/20261122233500_inventory_option_recipe_consumption.sql"
+    },
+    {
+      "version": "20261122234500",
+      "name": "fideliza_phone_identity",
+      "path": "supabase/migrations/20261122234500_fideliza_phone_identity.sql"
+    },
+    {
+      "version": "20261122235000",
+      "name": "inventory_unit_cost_profit_snapshot",
+      "path": "supabase/migrations/20261122235000_inventory_unit_cost_profit_snapshot.sql"
+    },
+    {
+      "version": "20261122235500",
+      "name": "sealed_beverage_recovery_and_cancellation_losses",
+      "path": "supabase/migrations/20261122235500_sealed_beverage_recovery_and_cancellation_losses.sql"
+    },
+    {
+      "version": "20261123022000",
+      "name": "fiado_phone_payment_eligibility",
+      "path": "supabase/migrations/20261123022000_fiado_phone_payment_eligibility.sql"
+    },
+    {
+      "version": "20261123025500",
+      "name": "fiado_private_credit_status",
+      "path": "supabase/migrations/20261123025500_fiado_private_credit_status.sql"
+    },
+    {
+      "version": "20261123041507",
+      "name": "menu_templates_current_engine",
+      "path": "supabase/migrations/20261123041507_menu_templates_current_engine.sql"
+    },
+    {
+      "version": "20261123062000",
+      "name": "cardapio_public_top_sellers",
+      "path": "supabase/migrations/20261123062000_cardapio_public_top_sellers.sql"
+    },
+    {
+      "version": "20261123082500",
+      "name": "fiado_store_approval_without_code",
+      "path": "supabase/migrations/20261123082500_fiado_store_approval_without_code.sql"
+    },
+    {
+      "version": "20261123090500",
+      "name": "fiado_birthdate_verification",
+      "path": "supabase/migrations/20261123090500_fiado_birthdate_verification.sql"
+    },
+    {
+      "version": "20261123110000",
+      "name": "fiado_pin_six_digits",
+      "path": "supabase/migrations/20261123110000_fiado_pin_six_digits.sql"
+    },
+    {
+      "version": "20261123112640",
+      "name": "public_cart_recovery",
+      "path": "supabase/migrations/20261123112640_public_cart_recovery.sql"
+    },
+    {
+      "version": "20261123122655",
+      "name": "fideliza_referral_links",
+      "path": "supabase/migrations/20261123122655_fideliza_referral_links.sql"
+    },
+    {
+      "version": "20261123161000",
+      "name": "studio_media_bucket_fix",
+      "path": "supabase/migrations/20261123161000_studio_media_bucket_fix.sql"
+    },
+    {
+      "version": "20261123170000",
+      "name": "studio_save_and_publish_atomic",
+      "path": "supabase/migrations/20261123170000_studio_save_and_publish_atomic.sql"
+    },
+    {
+      "version": "20261123182000",
+      "name": "menu_category_icons_per_store",
+      "path": "supabase/migrations/20261123182000_menu_category_icons_per_store.sql"
+    },
+    {
+      "version": "20261123213000",
+      "name": "menu_import_universal",
+      "path": "supabase/migrations/20261123213000_menu_import_universal.sql"
+    },
+    {
+      "version": "20261123213100",
+      "name": "menu_import_empty_image_fix",
+      "path": "supabase/migrations/20261123213100_menu_import_empty_image_fix.sql"
+    },
+    {
+      "version": "20261123220000",
+      "name": "v2_customer_profile_and_fiado_statement",
+      "path": "supabase/migrations/20261123220000_v2_customer_profile_and_fiado_statement.sql"
+    },
+    {
+      "version": "20261123225500",
+      "name": "catalog_studio_shared_groups_stock",
+      "path": "supabase/migrations/20261123225500_catalog_studio_shared_groups_stock.sql"
+    },
+    {
+      "version": "20261123230000",
+      "name": "catalog_template_read_permission",
+      "path": "supabase/migrations/20261123230000_catalog_template_read_permission.sql"
+    },
+    {
+      "version": "20261123235500",
+      "name": "menu_catalog_order",
+      "path": "supabase/migrations/20261123235500_menu_catalog_order.sql"
+    },
+    {
+      "version": "20261123235600",
+      "name": "sync_shared_template_option_order",
+      "path": "supabase/migrations/20261123235600_sync_shared_template_option_order.sql"
+    },
+    {
+      "version": "20261123235700",
+      "name": "shared_template_sort_sync",
+      "path": "supabase/migrations/20261123235700_shared_template_sort_sync.sql"
+    },
+    {
+      "version": "20261124001000",
+      "name": "linho_test_centralize_complements",
+      "path": "supabase/migrations/20261124001000_linho_test_centralize_complements.sql"
+    },
+    {
+      "version": "20261124003000",
+      "name": "cash_change_structured_checkout",
+      "path": "supabase/migrations/20261124003000_cash_change_structured_checkout.sql"
+    },
+    {
+      "version": "20261124003100",
+      "name": "cash_change_trigger_security",
+      "path": "supabase/migrations/20261124003100_cash_change_trigger_security.sql"
+    },
+    {
+      "version": "20261124011500",
+      "name": "publish_official_courier_2_0_15",
+      "path": "supabase/migrations/20261124011500_publish_official_courier_2_0_15.sql"
+    },
+    {
+      "version": "20261124013000",
+      "name": "publish_official_courier_2_0_16",
+      "path": "supabase/migrations/20261124013000_publish_official_courier_2_0_16.sql"
+    },
+    {
+      "version": "20261124031000",
+      "name": "active_order_cancellation",
+      "path": "supabase/migrations/20261124031000_active_order_cancellation.sql"
+    },
+    {
+      "version": "20261124033000",
+      "name": "delivery_incidents_and_capacity",
+      "path": "supabase/migrations/20261124033000_delivery_incidents_and_capacity.sql"
+    },
+    {
+      "version": "20261124034000",
+      "name": "delivery_incidents_realtime",
+      "path": "supabase/migrations/20261124034000_delivery_incidents_realtime.sql"
+    },
+    {
+      "version": "20261124035000",
+      "name": "incident_whatsapp",
+      "path": "supabase/migrations/20261124035000_incident_whatsapp.sql"
+    },
+    {
+      "version": "20261124040000",
+      "name": "windows_incident_poll",
+      "path": "supabase/migrations/20261124040000_windows_incident_poll.sql"
+    },
+    {
+      "version": "20261124041000",
+      "name": "merchant_modern_customer_dossier",
+      "path": "supabase/migrations/20261124041000_merchant_modern_customer_dossier.sql"
+    },
+    {
+      "version": "20261126031000",
+      "name": "restore_store_identity_rpc",
+      "path": "supabase/migrations/20261126031000_restore_store_identity_rpc.sql"
+    },
+    {
+      "version": "20261126122051",
+      "name": "registration_email_identity_sync",
+      "path": "supabase/migrations/20261126122051_registration_email_identity_sync.sql"
+    },
+    {
+      "version": "20261126123616",
+      "name": "control_center_core",
+      "path": "supabase/migrations/20261126123616_control_center_core.sql"
+    },
+    {
+      "version": "20261126210000",
+      "name": "ifood_authorized_print_contact",
+      "path": "supabase/migrations/20261126210000_ifood_authorized_print_contact.sql"
+    },
+    {
+      "version": "20261126211500",
+      "name": "ifood_ready_outbox",
+      "path": "supabase/migrations/20261126211500_ifood_ready_outbox.sql"
+    },
+    {
+      "version": "20261126223500",
+      "name": "persist_customer_delivery_points",
+      "path": "supabase/migrations/20261126223500_persist_customer_delivery_points.sql"
+    },
+    {
+      "version": "20261126231000",
+      "name": "public_menu_identity",
+      "path": "supabase/migrations/20261126231000_public_menu_identity.sql"
+    },
+    {
+      "version": "20261126231500",
+      "name": "storefront_logo_framing",
+      "path": "supabase/migrations/20261126231500_storefront_logo_framing.sql"
+    },
+    {
+      "version": "20261126234000",
+      "name": "public_weekly_opening_hours",
+      "path": "supabase/migrations/20261126234000_public_weekly_opening_hours.sql"
+    },
+    {
+      "version": "20261126235500",
+      "name": "public_top_four_sellers",
+      "path": "supabase/migrations/20261126235500_public_top_four_sellers.sql"
+    },
+    {
+      "version": "20261127010000",
+      "name": "storefront_featured_colors",
+      "path": "supabase/migrations/20261127010000_storefront_featured_colors.sql"
+    }
+  ],
+  "edge_functions": [
+    {
+      "slug": "whatsapp-connect-finish",
+      "status": "ACTIVE",
+      "source_candidates": []
+    },
+    {
+      "slug": "store-postal-lookup",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/store-postal-lookup/index.ts",
+        "supabase/functions/store-postal-lookup/postal-provider.mjs"
+      ]
+    },
+    {
+      "slug": "pitacco-owner-push-readiness",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/pitacco-owner-push-readiness/handler.mjs",
+        "supabase/functions/pitacco-owner-push-readiness/index.ts"
+      ]
+    },
+    {
+      "slug": "pitacco-asaas-commercial-pix",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/pitacco-asaas-commercial-pix/index.ts"
+      ]
+    },
+    {
+      "slug": "push-public-config",
+      "status": "ACTIVE",
+      "source_candidates": []
+    },
+    {
+      "slug": "delivery-quote",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/delivery-quote/coverage-geometry.mjs",
+        "supabase/functions/delivery-quote/index.ts"
+      ]
+    },
+    {
+      "slug": "whatsapp-webhook",
+      "status": "ACTIVE",
+      "source_candidates": []
+    },
+    {
+      "slug": "push-send-queued",
+      "status": "ACTIVE",
+      "source_candidates": []
+    },
+    {
+      "slug": "ifood-central-link",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/ifood-central-link/index.ts"
+      ]
+    },
+    {
+      "slug": "asaas-homologation",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/asaas-homologation/handler.mjs",
+        "supabase/functions/asaas-homologation/index.ts"
+      ]
+    },
+    {
+      "slug": "ifood-orders",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/ifood-orders/distributed.mjs",
+        "supabase/functions/ifood-orders/handler.mjs",
+        "supabase/functions/ifood-orders/index.ts",
+        "supabase/functions/ifood-orders/shipping-events.mjs"
+      ]
+    },
+    {
+      "slug": "menu-import",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/menu-import/index.ts",
+        "supabase/functions/menu-import/parser.mjs",
+        "supabase/functions/menu-import/source-link.mjs"
+      ]
+    },
+    {
+      "slug": "ifood-manual-action",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/ifood-manual-action/index.ts"
+      ]
+    },
+    {
+      "slug": "app-release-integrity",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/app-release-integrity/handler.mjs",
+        "supabase/functions/app-release-integrity/index.ts"
+      ]
+    },
+    {
+      "slug": "merchant-payment-test",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/merchant-payment-test/handler.mjs",
+        "supabase/functions/merchant-payment-test/index.ts"
+      ]
+    },
+    {
+      "slug": "pitacco-courier-access",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/pitacco-courier-access/identity.mjs",
+        "supabase/functions/pitacco-courier-access/index.ts"
+      ]
+    },
+    {
+      "slug": "pagbank-connect",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/pagbank-connect/index.ts"
+      ]
+    },
+    {
+      "slug": "asaas-subscription-webhook",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/asaas-subscription-webhook/handler.mjs",
+        "supabase/functions/asaas-subscription-webhook/index.ts"
+      ]
+    },
+    {
+      "slug": "payment-homologation",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/payment-homologation/handler.mjs",
+        "supabase/functions/payment-homologation/index.ts"
+      ]
+    },
+    {
+      "slug": "ifood-shipping",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/ifood-shipping/index.ts",
+        "supabase/functions/ifood-shipping/requests.mjs"
+      ]
+    },
+    {
+      "slug": "courier-push",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/courier-push/handler.mjs",
+        "supabase/functions/courier-push/index.ts"
+      ]
+    },
+    {
+      "slug": "pitacco-ifood-production-probe",
+      "status": "ACTIVE",
+      "source_candidates": []
+    },
+    {
+      "slug": "platform-owner-login",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/platform-owner-login/handler.mjs",
+        "supabase/functions/platform-owner-login/index.ts"
+      ]
+    },
+    {
+      "slug": "whatsapp-connect-start",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "revisions/0.12/web/supabase/functions/whatsapp-connect-start/index.ts"
+      ]
+    },
+    {
+      "slug": "ifood-central-check",
+      "status": "ACTIVE",
+      "source_candidates": [
+        "supabase/functions/ifood-central-check/index.ts"
+      ]
+    },
+    {
+      "slug": "pitacco-pagbank-sandbox-probe",
+      "status": "ACTIVE",
+      "source_candidates": []
+    },
+    {
+      "slug": "pitacco-asaas-connection-probe",
+      "status": "ACTIVE",
+      "source_candidates": []
+    }
+  ]
+}
