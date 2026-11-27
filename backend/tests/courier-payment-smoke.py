@@ -32,7 +32,19 @@ call(p,422,confirm|{'amount':1},courier)
 call(p,403,confirm|{'delivery_id':str(uuid.uuid4())},courier)
 call(p,409,confirm,courier)
 call(p,409,confirm|{'delivery_id':'98000000-0000-0000-0000-000000000022'},courier)
-sql("update public.deliveries set arrived_at=now() where id='"+delivery+"'")
+# Exercise documented arrival SQL under the actual synthetic authenticated session.
+# Do not print the bearer, session id, or code. SQL is only a CI harness.
+sid=str(uuid.UUID(sql("select id from core_auth.sessions where user_id='98000000-0000-0000-0000-000000000001' and revoked_at is null order by expires_at desc limit 1")))
+prefix="begin; set local role authenticated; select set_config('request.jwt.claim.sub','98000000-0000-0000-0000-000000000001',true); select set_config('request.jwt.claims','"+json.dumps({'sub':'98000000-0000-0000-0000-000000000001','role':'authenticated','session_id':sid})+"',true); "
+def arrive():
+    out=sql(prefix+"select public.pitacco_driver_arrive('"+delivery+"')::text; commit;")
+    return next(json.loads(line) for line in out.splitlines() if line.startswith('{') and 'arrived_at' in line)
+arrival=arrive()
+assert arrival['arrived_at'] and arrival['provider_state']=='local'
+assert arrive()==arrival
+assert sql("select count(*) from public.operation_audit where order_id='98000000-0000-0000-0000-000000000011' and action='courier_arrived'")=='1'
+assert sql("select count(*) from public.public_order_push_events where order_id='98000000-0000-0000-0000-000000000011' and event_key='courier_arrived'")=='1'
+assert sql("select status from public.deliveries where id='"+delivery+"'")=='retirada'
 paid=call(p,200,confirm,courier)['data']
 assert paid['state']=='paid' and paid['received_by_courier'] is True and float(paid['amount'])==34
 assert call(p,200,confirm,courier)['data']==paid
