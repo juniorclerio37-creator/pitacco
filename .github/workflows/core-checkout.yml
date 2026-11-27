@@ -94,6 +94,8 @@ jobs:
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/up >/dev/null && break; sleep 1; done
           python3 tests/checkout-smoke.py
           node --test tests/tracking-client.test.mjs tests/storefront-client.test.mjs
+      - name: Regressão original do Fiado em entrega e agendamento
+        run: PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/tests/fiado-original-fulfillment.sql
       - name: Instalar Chromium para homologação
         run: |
           npm install --prefix web --no-save --package-lock=false playwright@1.58.2

@@ -64,3 +64,6 @@ A API experimental usa exclusivamente uma função de fixture CI que exige sess�
 
 ## Extrato com movimentação
 A regressão adicional cria uma compra fictícia por meio da função de balcão original, sob gestor autorizado do ambiente descartável, completa a retirada, registra recebimento parcial e consulta o extrato existente. Verifica dívida, histórico e ausência do limite disponível. Não adiciona checkout público Fiado nem substitui a verificação original de PIN.
+
+## Regressão adicional do SQL original do Fiado
+`tests/fiado-original-fulfillment.sql` amplia os testes do mecanismo original, em transação descartada, para entrega prioritária, reserva incluindo frete, repetição de confirmação, cancelamento e retirada agendada. Não cria endpoint, não concede permissões novas e não habilita o checkout Laravel. Resultado pendente de CI. A liberação definitiva continua condicionada ao gate Fiado e carteira em `docs/core/migration-gates.md`.

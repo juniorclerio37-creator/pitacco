@@ -16,3 +16,6 @@
 7. Planejar janela de corte, congelamento de escritas ou replicação comprovada, reconciliação de pedidos, webhooks e rollback. Não executar sem aprovação da transferência de produção.
 ## Estado
 Não houve backup integral nem restauração dos dados reais nesta fase. Nenhum SQL foi aplicado ao Supabase. A branch principal e as publicações atuais ficam fora do escopo. A construção do backend pode avançar em ambiente de testes, mas a migração de dados reais depende dos gates acima.
+
+## Gate obrigatório: Fiado e carteira
+Não autorizar a troca do backend enquanto a finalização pública de pedidos Fiado no Laravel e a interface definitiva não passarem por homologação de retirada, entrega padrão/prioritária, agendamento, aprovação manual/automática, recuperação idempotente, cancelamento, limite, vencimento e exclusão de benefícios. A consulta do extrato e a gestão administrativa aprovadas não substituem esse gate. Preservar UUIDs, saldos, sessões de dispositivo, histórico e PINs originais. A carteira precisa de titularidade real comprovada e autorização de resgates; a fixture `core_wallet_test` não é solução de produção. O usuário informou que os cadastros Fiado atuais são de teste; não usar essa informação como autorização para alterar ou excluir registros de produção. Nenhum cutover ou liberação real nesta etapa.
