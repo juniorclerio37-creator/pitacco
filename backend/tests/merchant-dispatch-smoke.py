@@ -92,7 +92,35 @@ sql("update public.stores set address='Rua Fixture' where id='"+s+"';update core
 exact=merchant_map('map-origin',token=owner)['data']
 assert exact['saved'] is True and exact['approximate'] is False and float(exact['latitude'])==-22.86
 assert merchant_map('map-origin',token=owner)['data']['cached'] is True
+# Exercise the committed provider boundary directly using the same authenticated
+# DB claims; this permits deterministic address/manual-marker races.
+actor='10000000-0000-4000-8000-000000000001'
+session=sql("select id from core_auth.sessions where user_id='"+actor+"' and revoked_at is null order by expires_at desc limit 1")
+def phase(expr):
+    prefix="begin;set local role pitacco_core_own_logistics;set local request.jwt.claim.sub='"+actor+"';set local pitacco.core_session_id='"+session+"';set local request.jwt.claims='{\"sub\":\""+actor+"\",\"role\":\"authenticated\"}';"
+    raw=sql(prefix+"select "+expr+";commit;")
+    return json.loads(next(line for line in raw.splitlines() if line.startswith('{')))
+def reserve():
+    return phase("core_auth.store_origin_reserve('"+s+"')")['reservation']
+def finish(t):
+    return phase("core_auth.store_origin_finish('"+s+"','"+t+"')")
+sql("update public.stores set latitude=null,longitude=null where id='"+s+"'")
+ticket=reserve()
+sql("update public.stores set address='Rua Outra Fixture' where id='"+s+"'")
+assert finish(ticket)=={'unavailable':True}
+assert sql("select (latitude is null)::text from public.stores where id='"+s+"'")=='true'
+sql("update public.stores set address='Rua Fixture' where id='"+s+"'")
+ticket=reserve()
+sql("update public.stores set latitude=-22.87,longitude=-43.47 where id='"+s+"'")
+assert float(finish(ticket)['latitude'])==-22.87
+sql("update public.stores set latitude=null,longitude=null where id='"+s+"'")
+# Quota exhausted globally: no new reservation or write.
+sql("update pitacco_private.delivery_quote_rate_limits set attempts=100 where scope='core-origin-global-hour'")
+merchant_map('map-origin',429,owner)
+assert sql("select (latitude is null)::text from public.stores where id='"+s+"'")=='true'
+sql("delete from pitacco_private.delivery_quote_rate_limits where scope in ('core-origin-global-hour','core-origin-global-day')")
 sql("delete from core_auth.store_geocode_fixture where store_id='"+s+"'")
+print('PASS: committed geocode reservation, stale address rejected, concurrent manual marker preserved and global cap')
 saved=merchant_map('map-point',token=owner,body={'latitude':-22.8512345,'longitude':-43.4512345,'confirmed':True})['data']
 assert float(merchant_map('map-origin',token=owner)['data']['latitude'])==-22.851235
 print('PASS: automatic origin rehearsal, approximate not saved, changed address rejected, verified fixture persisted, manual point wins')

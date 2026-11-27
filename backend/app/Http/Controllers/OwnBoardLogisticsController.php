@@ -69,14 +69,19 @@ final class OwnBoardLogisticsController
         $session=$request->attributes->get('core_session');
         try{
             $db=DB::connection('core_own_logistics');
-            $result=$db->transaction(function()use($db,$session,$store){
+            $phase=function(?string $reservation=null)use($db,$session,$store){
+            return $db->transaction(function()use($db,$session,$store,$reservation){
                 $db->statement("set local statement_timeout = '5s'");
                 $db->statement("set local lock_timeout = '2s'");
                 $db->selectOne("select set_config('request.jwt.claim.sub',?,true),set_config('pitacco.core_session_id',?,true),set_config('request.jwt.claims',?,true)",[$session->user_id,$session->session_id,json_encode(['sub'=>$session->user_id,'role'=>'authenticated'],JSON_THROW_ON_ERROR)]);
                 abort_unless($db->selectOne('select core_auth.can_act(cast(? as uuid)) as allowed',[$store])?->allowed===true,404);
-                $row=$db->selectOne('select core_auth.store_origin_fixture(cast(? as uuid)) as payload',[$store]);
+                $row=$reservation===null?$db->selectOne('select core_auth.store_origin_reserve(cast(? as uuid)) as payload',[$store]):$db->selectOne('select core_auth.store_origin_finish(cast(? as uuid),cast(? as uuid)) as payload',[$store,$reservation]);
                 return json_decode($row->payload,true,512,JSON_THROW_ON_ERROR);
-            });
+            });};
+            $result=$phase();
+            // The provider boundary is between committed transactions. Only
+            // synthetic responses are supported by this testing-only endpoint.
+            if(isset($result['reservation']))$result=$phase($result['reservation']);
             if(($result['unavailable']??false)===true)return response()->json(['error'=>'address_not_located'],422)->header('Cache-Control','no-store');
             return response()->json(['data'=>$result])->header('Cache-Control','no-store');
         }catch(QueryException $e){

@@ -105,33 +105,74 @@ create table core_auth.store_geocode_fixture (
  precise boolean not null
 );
 revoke all on core_auth.store_geocode_fixture from public,anon,authenticated,pitacco_core_own_logistics;
-create function core_auth.store_origin_fixture(s uuid) returns jsonb
+-- Two-phase rehearsal. Network work must never hold the canonical store lock.
+create table core_auth.store_origin_reservations(
+ id uuid primary key default gen_random_uuid(), store_id uuid not null references public.stores(id),
+ session_id uuid not null references core_auth.sessions(id), address jsonb not null,
+ expires_at timestamptz not null, consumed boolean not null default false
+);
+revoke all on core_auth.store_origin_reservations from public,anon,authenticated,pitacco_core_own_logistics;
+
+create function core_auth.store_origin_reserve(s uuid) returns jsonb
 language plpgsql security definer set search_path='' as $fn$
-declare shop public.stores%rowtype; result core_auth.store_geocode_fixture%rowtype; counter integer;
+declare shop public.stores%rowtype; sid uuid:=nullif(current_setting('pitacco.core_session_id',true),'')::uuid;
+ addr jsonb; counter integer; ticket uuid; bucket timestamptz;
 begin
- if not core_auth.can_act(s) then raise exception 'Sem permissão' using errcode='42501';end if;
- -- Lock the canonical row so that a manual marker or new address cannot
- -- be overwritten by a stale fixture response during this transaction.
+ if not core_auth.can_act(s) or not exists(select 1 from core_auth.sessions where id=sid and user_id=auth.uid() and revoked_at is null and expires_at>now()) then raise exception 'Sem permissão' using errcode='42501';end if;
  select * into shop from public.stores where id=s for update;
  if not found or nullif(trim(shop.address),'') is null or nullif(trim(shop.city),'') is null or nullif(trim(shop.state),'') is null then raise exception 'Endereço incompleto' using errcode='22023';end if;
  if shop.latitude between -34 and 6 and shop.longitude between -75 and -32 then
   return jsonb_build_object('latitude',shop.latitude,'longitude',shop.longitude,'approximate',false,'cached',true,'saved',true,'requires_confirmation',false);
  end if;
+ bucket:=to_timestamp(floor(extract(epoch from now())/3600)*3600);
+ -- Fixed conservative simulation limits, not a provider plan or production config.
+ -- All reservations take the global locks in the same order. A rejected reservation
+ -- rolls back every increment; a provider failure after commit consumes the budget.
  insert into pitacco_private.delivery_quote_rate_limits(scope,window_start,attempts)
- values('origin-hour-'||s::text,to_timestamp(floor(extract(epoch from now())/3600)*3600),1)
+ values('core-origin-global-day',to_timestamp(floor(extract(epoch from now())/86400)*86400),1)
+ on conflict(scope,window_start) do update set attempts=pitacco_private.delivery_quote_rate_limits.attempts+1
+ where pitacco_private.delivery_quote_rate_limits.attempts<500 returning attempts into counter;
+ if counter is null then raise exception 'Limite diário' using errcode='P0001';end if;
+ insert into pitacco_private.delivery_quote_rate_limits(scope,window_start,attempts)
+ values('core-origin-global-hour',bucket,1)
+ on conflict(scope,window_start) do update set attempts=pitacco_private.delivery_quote_rate_limits.attempts+1
+ where pitacco_private.delivery_quote_rate_limits.attempts<100 returning attempts into counter;
+ if counter is null then raise exception 'Limite global' using errcode='P0001';end if;
+ insert into pitacco_private.delivery_quote_rate_limits(scope,window_start,attempts)
+ values('origin-hour-'||s::text,bucket,1)
  on conflict(scope,window_start) do update set attempts=pitacco_private.delivery_quote_rate_limits.attempts+1
  where pitacco_private.delivery_quote_rate_limits.attempts<24 returning attempts into counter;
  if counter is null then raise exception 'Limite de origem' using errcode='P0001';end if;
+ addr:=jsonb_build_object('address',shop.address,'address_number',shop.address_number,'neighborhood',shop.neighborhood,'city',shop.city,'state',shop.state,'postal_code',shop.postal_code);
+ insert into core_auth.store_origin_reservations(store_id,session_id,address,expires_at) values(s,sid,addr,now()+interval '30 seconds') returning id into ticket;
+ return jsonb_build_object('reservation',ticket);
+end $fn$;
+
+-- CI only: use a private synthetic response instead of external Geoapify.
+-- Ticket is never exposed to the browser. Recheck session and scope after the
+-- simulated provider step; compare all six address fields, preserve manual point.
+create function core_auth.store_origin_finish(s uuid,ticket uuid) returns jsonb
+language plpgsql security definer set search_path='' as $fn$
+declare shop public.stores%rowtype; res core_auth.store_origin_reservations%rowtype;
+ result core_auth.store_geocode_fixture%rowtype; sid uuid:=nullif(current_setting('pitacco.core_session_id',true),'')::uuid;
+ addr jsonb;
+begin
+ if not core_auth.can_act(s) or not exists(select 1 from core_auth.sessions where id=sid and user_id=auth.uid() and revoked_at is null and expires_at>now()) then raise exception 'Sem permissão' using errcode='42501';end if;
+ select * into shop from public.stores where id=s for update;
+ select * into res from core_auth.store_origin_reservations where id=ticket and store_id=s and session_id=sid and expires_at>now() and not consumed for update;
+ if not found then raise exception 'Reserva indisponível' using errcode='42501';end if;
+ update core_auth.store_origin_reservations set consumed=true where id=ticket;
+ addr:=jsonb_build_object('address',shop.address,'address_number',shop.address_number,'neighborhood',shop.neighborhood,'city',shop.city,'state',shop.state,'postal_code',shop.postal_code);
+ if addr is distinct from res.address then return jsonb_build_object('unavailable',true);end if;
+ if shop.latitude between -34 and 6 and shop.longitude between -75 and -32 then
+  return jsonb_build_object('latitude',shop.latitude,'longitude',shop.longitude,'approximate',false,'cached',true,'saved',true,'requires_confirmation',false);
+ end if;
  select * into result from core_auth.store_geocode_fixture f where f.store_id=s
  and (f.address,f.address_number,f.neighborhood,f.city,f.state,f.postal_code)
  is not distinct from (shop.address,shop.address_number,shop.neighborhood,shop.city,shop.state,shop.postal_code);
- if not found then
-  -- Return a normal outcome (rather than rollback) so failed lookups consume
-  -- the same rate budget as successful lookups.
-  return jsonb_build_object('unavailable',true);
- end if;
+ if not found then return jsonb_build_object('unavailable',true);end if;
  if result.precise then update public.stores set latitude=round(result.latitude,6),longitude=round(result.longitude,6) where id=s;end if;
  return jsonb_build_object('latitude',round(result.latitude,6),'longitude',round(result.longitude,6),'approximate',not result.precise,'cached',false,'saved',result.precise,'requires_confirmation',not result.precise,'environment','simulation');
 end $fn$;
-revoke all on function core_auth.store_origin_fixture(uuid) from public,anon,authenticated;
-grant execute on function core_auth.store_origin_fixture(uuid) to pitacco_core_own_logistics;
+revoke all on function core_auth.store_origin_reserve(uuid),core_auth.store_origin_finish(uuid,uuid) from public,anon,authenticated;
+grant execute on function core_auth.store_origin_reserve(uuid),core_auth.store_origin_finish(uuid,uuid) to pitacco_core_own_logistics;
