@@ -144,4 +144,17 @@ jobs:
           curl --fail --silent --show-error --location --retry 3 --retry-all-errors --retry-delay 2 \
             --output /tmp/pitacco-app.html https://app.pitacco.com.br/app/
           grep -Eq '/assets/|type="module"' /tmp/pitacco-app.html
-          echo "Página principal e painel responderam. A validação de login e dados GPS permanece separada."
+          # Verify the exact dashboard module in the current build, not merely HTTP 200.
+          module="$(python3 -c 'import re,pathlib; s=pathlib.Path("web/dist/app/index.html").read_text(); print(re.search(r"<script[^>]+src=\"(/assets/[^\"]+\.js)\"",s).group(1))')"
+          test -n "$module"
+          grep -Fq "$module" /tmp/pitacco-app.html
+          curl --fail --silent --show-error --location --retry 3 --retry-all-errors --retry-delay 2 \
+            --output /tmp/pitacco-app-module.js "https://app.pitacco.com.br${module}"
+          cmp "web/dist${module}" /tmp/pitacco-app-module.js
+          grep -Fq "Personalização do Pitacco V2" /tmp/pitacco-app-module.js
+          grep -Fq "Cores dos cards em destaque" /tmp/pitacco-app-module.js
+          if grep -Fq "Quatro visuais, as mesmas funcionalidades atuais" /tmp/pitacco-app-module.js; then
+            echo "::error::A versão publicada ainda contém o seletor de templates antigo."
+            exit 1
+          fi
+          echo "Painel publicado com o módulo exato da versão atual e V2 único. A validação de login permanece separada."
