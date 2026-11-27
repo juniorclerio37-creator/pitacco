@@ -203,7 +203,7 @@ sql("update pitacco_private.ifood_events set event_at=now() where id='"+event+"'
 assert call(driver_route,200,reconcile,courier)['data']=={'confirmed':True,'already':False}
 assert call(driver_route,200,reconcile,courier)['data']=={'confirmed':True,'already':True}
 assert call(driver_route,200,eligibility,courier)['data']=={'eligible':False,'delivered':True}
-assert sql("select (status='entregue' and delivery_code_verified_at is null)::text from public.deliveries where id='"+market_delivery+"'")=='true'
+assert sql("select (d.status='entregue' and d.delivery_code_verified_at=e.event_at)::text from public.deliveries d join pitacco_private.ifood_events e on e.id='"+event+"' where d.id='"+market_delivery+"'")=='true'
 assert sql("select count(*) from public.operation_audit where action='ifood_external_delivery_reconciled' and details->>'delivery'='"+market_delivery+"'")=='1'
 assert sql("select count(*) from public.operation_audit where action='ifood_code_verified' and order_id='"+market_order+"'")=='0'
 print('PASS: original official CONCLUDED reconciliation, exact merchant, processed event, arrival timestamp, no fictitious PIN, replay and authorization')

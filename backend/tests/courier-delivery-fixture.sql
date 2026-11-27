@@ -130,6 +130,14 @@ begin
    -- The original RPC requires both CONCLUDED receipt and processed private
    -- event for the linked external order and merchant after local arrival.
    -- It never claims the customer's PIN was verified.
+   -- Explicitly require post-arrival evidence at the Core boundary, regardless
+   -- of historical compatibility tolerances in the legacy function.
+   if v_order.receipt->>'ifood_status' is distinct from 'CONCLUDED' or not exists(
+    select 1 from pitacco_private.ifood_order_links l
+    join pitacco_private.ifood_merchants m on m.merchant_id=l.merchant_id and m.store_id=v_order.store_id
+    join pitacco_private.ifood_events e on e.order_id=l.external_id and e.merchant_id=l.merchant_id
+    where l.order_id=v_order.id and e.code='CONCLUDED' and e.done_at is not null and e.event_at>=v_delivery.arrived_at
+   ) then return jsonb_build_object('confirmed',false,'pending',true);end if;
    return public.pitacco_driver_reconcile_ifood(target);
   end if;
   if a='verify_ready' and v_delivery.status='entregue' then return jsonb_build_object('eligible',false,'delivered',true);end if;
