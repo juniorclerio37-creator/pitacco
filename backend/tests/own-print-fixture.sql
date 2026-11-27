@@ -84,3 +84,23 @@ begin
 end $fn$;
 revoke all on function core_auth.own_print_device_fixture(uuid,text,uuid,uuid) from public,anon,authenticated;
 grant execute on function core_auth.own_print_device_fixture(uuid,text,uuid,uuid) to pitacco_core_own_print;
+
+-- CI only. Original reprint for officially accepted iFood orders.
+-- Queue claim stays isolated until authorized mixed print projection is migrated.
+create function core_auth.ifood_reprint_fixture(s uuid,o uuid,r uuid,reason text) returns boolean
+language plpgsql security definer set search_path='' as $$
+declare current_order public.orders%rowtype;
+begin
+ if not core_auth.can_act(s) then return false;end if;
+ select x.* into current_order from public.orders x where x.id=o and x.store_id=s and x.source='ifood' for update;
+ if not found then return false;end if;
+ if current_order.status<>'accepted' or coalesce(current_order.receipt->>'ifood_status','') not in ('CONFIRMED','READY_TO_PICKUP','DISPATCHED','CONCLUDED')
+ or coalesce(current_order.receipt->>'ifood_manual_cancel','')='requested'
+ or r is null or r='00000000-0000-0000-0000-000000000000' or length(trim(coalesce(reason,''))) not between 5 and 240 then
+  raise exception 'Reimpressão indisponível' using errcode='22023';
+ end if;
+ perform public.reprint_order(o,r,reason);
+ return true;
+end $$;
+revoke all on function core_auth.ifood_reprint_fixture(uuid,uuid,uuid,text) from public,anon,authenticated;
+grant execute on function core_auth.ifood_reprint_fixture(uuid,uuid,uuid,text) to pitacco_core_own_print;

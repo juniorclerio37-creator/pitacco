@@ -555,6 +555,29 @@ assert sql("select count(*) from public.operation_audit where order_id='"+ready_
 assert sql("select count(*) from public.print_jobs where order_id='"+ready_id+"'")=='0'
 assert sql("select count(*) from pitacco_private.ifood_courier_dispatch f join public.deliveries d on d.id=f.delivery_id where d.order_id='"+ready_id+"'")=='0'
 print('PASS: local iFood readiness, official state preserved, repeat, pending cancellation, no dispatch or print jobs')
+# Separate reprint command: no provider call or status mutation.
+market_print='/stores/'+A+'/orders/'+ready_id+'/ifood-reprint'
+market_rp={'request_id':'38000000-0000-4000-8000-000000000003','reason':'Reimpressao de teste iFood'}
+call(market_print,401,'POST',market_rp)
+call(market_print,404,'POST',market_rp,bob)
+call(market_print.replace(A,B),404,'POST',market_rp,alice)
+call(market_print.replace(ready_id,oid(1)),404,'POST',market_rp,alice)
+call(market_print.replace(ready_id,oid(4)),409,'POST',market_rp,alice)
+call(market_print,422,'POST',market_rp|{'phone':'PRIVATE'},alice)
+sql("update public.orders set receipt=receipt||'{\"ifood_manual_cancel\":\"requested\"}'::jsonb where id='"+ready_id+"'")
+call(market_print,409,'POST',market_rp,alice)
+sql("update public.orders set receipt=receipt-'ifood_manual_cancel' where id='"+ready_id+"'")
+assert call(market_print,200,'POST',market_rp,alice)['data']=={'queued':True}
+assert call(market_print,200,'POST',market_rp,alice)['data']=={'queued':True}
+assert sql("select count(*) from public.print_jobs where order_id='"+ready_id+"' and request_id='"+market_rp['request_id']+"'")==sql("select coalesce(sum(copies),0) from public.print_sectors where store_id='"+A+"' and enabled")
+assert sql("select count(*) from public.operation_audit where order_id='"+ready_id+"' and action='reprint_requested'")=='1'
+assert sql("select receipt->>'ifood_status' from public.orders where id='"+ready_id+"'")=='CONFIRMED'
+# The still own-only claim must fail closed; do not consume the marketplace job.
+call(queue+'claim',409,'POST',{'device_id':dev},alice)
+assert sql("select count(*) from public.print_jobs where order_id='"+ready_id+"' and device_id is not null")=='0'
+# Remove only the synthetic print records to preserve the independent tests.
+sql("delete from public.print_jobs where order_id='"+ready_id+"'")
+print('PASS: official iFood reprint, original sectors and copies, idempotent audit, isolated queue and no provider mutation')
 BASE=actions_base
 sql("update core_auth.memberships set active=false where store_id='"+A+"'")
 call(hours,404,token=alice)
@@ -580,6 +603,7 @@ print('PASS: original Fiado manager overview, role and store isolation, revoked 
 
 BASE=device_base
 call(ready_path,404,'POST',{},alice)
+call(market_print,404,'POST',market_rp,alice)
 call(ifood,404,token=alice)
 call(dp+'status',404,'POST',{},alice)
 call(dp+'ping',404,'POST',{'device_id':dev},alice)
