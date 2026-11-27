@@ -36,6 +36,7 @@ return [
         'core_tracking' => $base + ['username'=>env('CORE_TRACKING_DB_USERNAME','pitacco_core_tracking'),'password'=>env('CORE_TRACKING_DB_PASSWORD')],
         'core_checkout' => $base + ['username'=>env('CORE_CHECKOUT_DB_USERNAME','pitacco_core_checkout'),'password'=>env('CORE_CHECKOUT_DB_PASSWORD')],
         'core_actions' => $base + ['username'=>env('CORE_ACTIONS_DB_USERNAME','pitacco_core_actions'),'password'=>env('CORE_ACTIONS_DB_PASSWORD')],
+        'core_own_logistics' => $base + ['username'=>env('CORE_OWN_LOGISTICS_DB_USERNAME','pitacco_core_own_logistics'),'password'=>env('CORE_OWN_LOGISTICS_DB_PASSWORD')],
         'core_own_board' => $base + ['username'=>env('CORE_OWN_BOARD_DB_USERNAME','pitacco_core_own_board'),'password'=>env('CORE_OWN_BOARD_DB_PASSWORD')],
         'core_orders' => $base + ['username'=>env('CORE_ORDERS_DB_USERNAME','pitacco_core_orders'),'password'=>env('CORE_ORDERS_DB_PASSWORD')],
         'core_auth' => $base + ['username'=>env('CORE_AUTH_DB_USERNAME','pitacco_core_auth'),'password'=>env('CORE_AUTH_DB_PASSWORD')],

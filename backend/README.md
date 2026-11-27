@@ -232,3 +232,6 @@ O componente existente `core-source/web/Operations.jsx` (painel de pedidos e mod
 
 ## Isolamento de limites dos testes HTTP
 O run 46026417555 passou pelas verificações de projeção do quadro próprio e demais operações até a última requisição, que recebeu 429 por acumular as consultas do quadro no mesmo limite de 60/min da suíte de ações. As consultas own-board agora usam um processo CI separado na porta 8087 e prefixo Redis exclusivo, preservando o limite real, os mesmos tokens, banco, verificações de autorização e revogação. Não há alteração do throttle de produção. Revalidação pendente.
+
+## Leitura de logística própria — experimental
+`GET /api/v1/stores/{store}/own-logistics/{deliveries|couriers|positions}`: paginação limitada, sessão e gestor revalidados no banco, role exclusiva sem SELECT nas tabelas originais. Entregas próprias vinculadas à consulta operacional original, campos necessários à alocação/status/endereço e rota; entregadores ativos e posições via RPCs originais, restritos à frota própria da loja. Não há credenciais, PIN de entrega, tokens GPS ou histórico de localização. Testes com atribuição, realocação e revogação. Não inclui logística de terceiros, frota compartilhada, remuneração ou interface conectada. CI pendente.

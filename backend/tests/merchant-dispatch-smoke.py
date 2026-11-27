@@ -29,6 +29,32 @@ body={'courier_id':cid,'delivery_ids':[one,two]}
 individual='/stores/'+s+'/dispatch/deliveries/'+one
 second='98000000-0000-0000-0000-000000000052'
 assign={'action':'assign','courier_id':cid}
+def read_logistics(resource,status=200,token=None,store=s,query=''):
+    headers={'Accept':'application/json'}
+    if token:headers['Authorization']='Bearer '+token
+    req=urllib.request.Request('http://127.0.0.1:8094/api/v1/stores/'+store+'/own-logistics/'+resource+query,headers=headers)
+    try:res=urllib.request.urlopen(req,timeout=10)
+    except urllib.error.HTTPError as e:res=e
+    with res:
+        assert res.status==status,(resource,res.status,status)
+        return json.loads(res.read())
+read_logistics('deliveries',401)
+read_logistics('deliveries',404,courier)
+read_logistics('couriers',404,owner,'20000000-0000-4000-8000-000000000002')
+read_logistics('positions',404,courier)
+read_logistics('deliveries',422,owner,query='?limit=101')
+rows=read_logistics('deliveries',token=owner)['data']
+assert all(row['store_id']==s and row['source']=='proprio' and row['logistics_provider']=='loja' for row in rows)
+assert {one,two} <= {row['id'] for row in rows}
+assert all(set(row)<={'id','store_id','order_id','customer_name','address','status','source','logistics_provider','courier_id','batch_id','manual_dispatch_hold','collected_at','arrived_at','capacity_released_at','latitude','longitude','deliver_by'} for row in rows)
+assert len(read_logistics('deliveries',token=owner,query='?limit=1')['data'])==1
+fleet=read_logistics('couriers',token=owner)['data']
+assert {cid,second} <= {row['id'] for row in fleet}
+assert all(set(row)=={'id','store_id','name','fleet_type','active','available'} and row['store_id']==s and row['fleet_type']=='propria' for row in fleet)
+positions=read_logistics('positions',token=owner)['data']
+assert any(row['courier_id']==cid for row in positions)
+assert all(set(row)=={'courier_id','latitude','longitude','observed_at','accuracy_m'} for row in positions)
+print('PASS: own board logistics read, original scoped courier and GPS queries, minimal fields, pagination and tenant isolation')
 call(individual,401,assign)
 call(individual,404,assign,courier)
 call(individual.replace(s,'20000000-0000-4000-8000-000000000002'),404,assign,owner)
@@ -42,6 +68,7 @@ new=str(uuid.UUID(call(individual,200,{'action':'reassign','expected_courier_id'
 assert new!=old
 assert sql("select (completed_at is not null)::text from public.delivery_batches where id='"+old+"'")=='true'
 assert sql("select courier_id::text from public.deliveries where id='"+one+"'")==second
+assert next(row for row in read_logistics('deliveries',token=owner)['data'] if row['id']==one)['courier_id']==second
 assert call(individual,200,{'action':'remove','expected_courier_id':second},owner)['data']['route_id'] is None
 assert sql("select (manual_dispatch_hold and courier_id is null and batch_id is null and status='pendente')::text from public.deliveries where id='"+one+"'")=='true'
 assert sql("select (completed_at is not null)::text from public.delivery_batches where id='"+new+"'")=='true'
@@ -132,6 +159,9 @@ sql("update core_auth.memberships set active=false where user_id='10000000-0000-
 call(p,404,body,owner)
 call(individual,404,{'action':'remove','expected_courier_id':cid},owner)
 assert sql("select count(*) from public.deliveries where batch_id='"+route+"' and status='retirada'")=='2'
+read_logistics('deliveries',404,owner)
+read_logistics('couriers',404,owner)
+read_logistics('positions',404,owner)
 print('PASS: merchant dispatch rejects revoked membership without modifying the existing route')
 
 # CLI worker: a fresh synthetic order and the second courier, independent of

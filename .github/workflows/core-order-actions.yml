@@ -159,6 +159,9 @@ jobs:
         working-directory: backend
         env:
           PITACCO_MERCHANT_DISPATCH_ENABLED: 'true'
+          PITACCO_OWN_LOGISTICS_ENABLED: 'true'
+          CORE_OWN_LOGISTICS_DB_USERNAME: pitacco_core_own_logistics
+          CORE_OWN_LOGISTICS_DB_PASSWORD: ci-own-logistics-only
           CORE_MERCHANT_DISPATCH_DB_USERNAME: pitacco_core_merchant_dispatch
           CORE_MERCHANT_DISPATCH_DB_PASSWORD: ci-merchant-dispatch-only
           PITACCO_COURIER_SHIFT_ENABLED: 'true'
@@ -169,11 +172,16 @@ jobs:
           CORE_COURIER_DELIVERY_DB_PASSWORD: ci-courier-delivery-only
           CORE_REDIS_PREFIX: 'pitacco_core_group_ci:'
         run: |
-          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f tests/merchant-dispatch-fixture.sql
+          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -f tests/merchant-dispatch-fixture.sql -f tests/own-logistics-fixture.sql
           if PGPASSWORD=ci-merchant-dispatch-only psql -h 127.0.0.1 -U pitacco_core_merchant_dispatch -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.deliveries'; then exit 1; fi
           php artisan serve --host=127.0.0.1 --port=8090 >/tmp/core-group.log 2>&1 &
           server=$!
-          trap 'kill "$server" 2>/dev/null || true; cat /tmp/core-group.log' EXIT
+          CORE_REDIS_PREFIX=pitacco_core_own_logistics_ci: php artisan serve --host=127.0.0.1 --port=8094 >/tmp/core-own-logistics.log 2>&1 &
+          logistics_server=$!
+          trap 'kill "$server" "$logistics_server" 2>/dev/null || true; cat /tmp/core-group.log /tmp/core-own-logistics.log' EXIT
+          for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8094/up >/dev/null && break; sleep 1; done
+          if PGPASSWORD=ci-own-logistics-only psql -h 127.0.0.1 -U pitacco_core_own_logistics -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.deliveries'; then exit 1; fi
+          if PGPASSWORD=ci-own-logistics-only psql -h 127.0.0.1 -U pitacco_core_own_logistics -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.couriers'; then exit 1; fi
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8090/up >/dev/null && break; sleep 1; done
           python3 tests/merchant-dispatch-smoke.py
 
