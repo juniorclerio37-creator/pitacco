@@ -1,0 +1,35 @@
+name: Pitacco Core — interface de mapa compartilhada
+on:
+  push:
+    branches: [pitacco-core]
+    paths:
+      - 'backend/**'
+      - 'core-source/web/**'
+      - '.github/workflows/core-map-ui.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-map-ui:
+    if: github.ref == 'refs/heads/pitacco-core'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Preparar interface original isolada
+        run: |
+          python3 backend/scripts/prepare-map-ui.py "$RUNNER_TEMP/pitacco-map-ui"
+          git diff --exit-code -- core-source
+          node --test backend/tests/merchant-map-client.test.mjs
+      - name: Compilar o mesmo frontend usado por navegador e Windows
+        working-directory: ${{ runner.temp }}/pitacco-map-ui
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          test -s dist/index.html
+          node -e "const t=require('./src-tauri/tauri.conf.json'); if(t.build.frontendDist!=='../dist')process.exit(1)"
