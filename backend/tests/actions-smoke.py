@@ -31,17 +31,47 @@ action(A,3,'accept',404,alice)
 action(A,4,'accept',409,alice)
 action(A,1,'complete_pickup',409,alice)
 action(A,1,'ready',409,alice)
+def outbox_count():
+    return int(sql("select count(*) from core_auth.order_invalidation_fixture"))
+assert outbox_count()==0 # denied/invalid transitions must not emit
 assert action(A,1,'accept',200,alice)['data']['status']=='accepted'
+accepted_events=outbox_count()
+assert accepted_events>0
 action(A,1,'accept',200,alice)
+assert outbox_count()==accepted_events # idempotent replay
 assert sql("select count(*) from public.print_jobs where order_id='"+oid(1)+"'")=='2'
 assert sql("select count(*) from public.operation_audit where order_id='"+oid(1)+"' and action='accepted'")=='1'
 assert action(A,1,'ready',200,alice)['data']['preparation_status']=='ready'
+ready_events=outbox_count()
+assert ready_events>accepted_events
 action(A,1,'ready',200,alice)
+assert outbox_count()==ready_events
 assert action(A,1,'complete_pickup',200,alice)['data']['preparation_status']=='completed'
+completed_events=outbox_count()
+assert completed_events>ready_events
 action(A,1,'complete_pickup',200,alice)
+assert outbox_count()==completed_events
+# Exercise a real state change and rollback under the same synthetic manager
+# context. The event exists inside the transaction, but cannot escape it.
+rollback_counts=sql("""begin;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
+select set_config('pitacco.core_session_id',(select id::text from core_auth.sessions where user_id='10000000-0000-4000-8000-000000000001' and revoked_at is null order by expires_at desc limit 1),true);
+select set_config('pitacco.core_order_outbox','on',true);
+select public.accept_order('30000000-0000-4000-8000-000000000002');
+select count(*) from core_auth.order_invalidation_fixture;
+rollback;""")
+assert int(rollback_counts.splitlines()[-2])>completed_events,rollback_counts
+assert outbox_count()==completed_events
+assert sql("select status from public.orders where id='"+oid(2)+"'")=='pending'
 action(A,2,'reject',422,alice)
+assert outbox_count()==completed_events
 assert action(A,2,'reject',200,alice,'Sem estoque')['data']['status']=='rejected'
+reject_events=outbox_count()
+assert reject_events>completed_events
 action(A,2,'reject',200,alice,'Sem estoque')
+assert outbox_count()==reject_events
+assert sql("select count(*) from core_auth.order_invalidation_fixture where store_id<>'"+A+"' or resource<>'orders'")=='0'
+print('PASS: transactional order invalidation, denied transitions, replay, rollback and store scope')
 assert sql("select count(*) from public.operation_audit where order_id='"+oid(2)+"' and action='order_rejected'")=='1'
 action(A,5,'ready',200,alice)
 action(A,5,'complete_pickup',409,alice)

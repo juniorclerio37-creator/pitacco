@@ -18,6 +18,10 @@ final class OwnOrderActions
             $target=$db->selectOne('select source from public.orders where id=cast(? as uuid) and store_id=cast(? as uuid)',[$order,$store]);
             abort_unless($target,404);
             abort_if($target->source!=='proprio',409,'Use a integração oficial do marketplace.');
+            // Enable only the disposable transactional outbox; never send on the request path.
+            if (app()->environment('testing') && config('pitacco.order_outbox_enabled')) {
+                $db->selectOne("select set_config('pitacco.core_order_outbox','on',true)");
+            }
             // Fixed allowlist; original SQL functions perform locks, transition checks and audit.
             match($action) {
                 'accept' => $db->selectOne('select public.accept_order(cast(? as uuid))',[$order]),

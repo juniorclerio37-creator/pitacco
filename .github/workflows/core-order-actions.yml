@@ -91,7 +91,7 @@ jobs:
       - name: Preparar cadastros fictícios e permissões específicas
         run: |
           hash=$(php -r 'echo password_hash("fixture-only-password", PASSWORD_BCRYPT, ["cost"=>12]);')
-          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -v password_hash="$hash" -f backend/tests/auth-fixture.sql -f backend/tests/actions-fixture.sql
+          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -v password_hash="$hash" -f backend/tests/auth-fixture.sql -f backend/tests/actions-fixture.sql -f backend/tests/order-outbox-fixture.sql
           test "$(PGPASSWORD=ci-actions-only psql -h 127.0.0.1 -U pitacco_core_actions -d postgres -Atc 'select count(id) from public.orders')" = 0
           if PGPASSWORD=ci-actions-only psql -h 127.0.0.1 -U pitacco_core_actions -d postgres -v ON_ERROR_STOP=1 -c "update public.orders set status='accepted'"; then exit 1; fi
           if PGPASSWORD=ci-fiado-read-only psql -h 127.0.0.1 -U pitacco_core_fiado_read -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.pitacco_fiado_customers'; then exit 1; fi
@@ -105,9 +105,12 @@ jobs:
           if PGPASSWORD=ci-opening-hours-only psql -h 127.0.0.1 -U pitacco_core_opening_hours -d postgres -v ON_ERROR_STOP=1 -c 'update public.pitacco_store_hours set paused=false'; then exit 1; fi
       - name: Testar operações via Laravel
         working-directory: backend
+        env:
+          PITACCO_ORDER_OUTBOX_ENABLED: 'true'
         run: |
           composer install --no-interaction --prefer-dist
           composer audit --locked
+          if PGPASSWORD=ci-actions-only psql -h 127.0.0.1 -U pitacco_core_actions -d postgres -v ON_ERROR_STOP=1 -c 'select * from core_auth.order_invalidation_fixture'; then exit 1; fi
           php artisan serve --host=127.0.0.1 --port=8080 >/tmp/core-actions.log 2>&1 &
           server=$!
           CORE_REDIS_PREFIX=pitacco_core_report_ci: php artisan serve --host=127.0.0.1 --port=8084 >/tmp/core-report.log 2>&1 &
