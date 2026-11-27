@@ -1,4 +1,5 @@
 -- CI ONLY; no raw delivery/courier table access for the HTTP role.
+-- Own fleet only: reuse original row scope, not the unavailable shared-fleet helper.
 create function core_auth.own_logistics_fixture(s uuid,r text,lim integer,off integer) returns jsonb
 language plpgsql stable security definer set search_path='' as $$
 declare result jsonb;
@@ -16,12 +17,12 @@ begin
  ) q;
  when 'couriers' then
  select coalesce(jsonb_agg(to_jsonb(q) order by q.name,q.id),'[]'::jsonb) into result from (
-  select c.id,c.store_id,c.name,c.fleet_type,c.active,c.available from public.pitacco_store_couriers(s) c
+  select c.id,c.store_id,c.name,c.fleet_type,c.active,c.available from public.couriers c
   where c.store_id=s and c.active and c.fleet_type='propria' order by c.name,c.id limit lim offset off
  ) q;
  when 'positions' then
  select coalesce(jsonb_agg(to_jsonb(q) order by q.courier_id),'[]'::jsonb) into result from (
-  select p.courier_id,p.latitude,p.longitude,p.observed_at,p.accuracy_m from public.pitacco_store_courier_positions(s) p
+  select p.courier_id,p.latitude,p.longitude,p.observed_at,p.accuracy_m from public.courier_positions p
   join public.couriers c on c.id=p.courier_id and c.store_id=s and c.active and c.fleet_type='propria'
   order by p.courier_id limit lim offset off
  ) q;

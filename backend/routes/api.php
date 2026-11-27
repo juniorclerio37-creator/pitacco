@@ -27,6 +27,7 @@ use App\Http\Controllers\FiadoManagementController;
 use App\Http\Controllers\CoreAuthController;
 use App\Http\Controllers\DailyOrdersController;
 use App\Http\Controllers\OwnBoardOrdersController;
+use App\Http\Controllers\OwnPrintController;
 use App\Http\Controllers\OwnBoardLogisticsController;
 use App\Http\Controllers\OwnOrderActionsController;
 use App\Http\Middleware\ExperimentalAuthGate;
@@ -59,6 +60,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/auth/me',[CoreAuthController::class,'me']);
             Route::post('/auth/logout',[CoreAuthController::class,'logout']);
             Route::get('/stores/{store}/own-logistics/{resource}',OwnBoardLogisticsController::class)->whereUuid('store')->whereIn('resource',['deliveries','couriers','positions']);
+            Route::post('/stores/{store}/orders/{order}/reprint',OwnPrintController::class)->whereUuid(['store','order']);
             Route::get('/stores/{store}/operation-settings',[OwnBoardOrdersController::class,'settings'])->whereUuid('store');
             Route::get('/stores/{store}/orders/own-board',OwnBoardOrdersController::class)->whereUuid('store');
             Route::get('/stores/{store}/orders',DailyOrdersController::class)->whereUuid('store');

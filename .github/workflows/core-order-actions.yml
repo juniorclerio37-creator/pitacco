@@ -91,7 +91,7 @@ jobs:
       - name: Preparar cadastros fictícios e permissões específicas
         run: |
           hash=$(php -r 'echo password_hash("fixture-only-password", PASSWORD_BCRYPT, ["cost"=>12]);')
-          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -v password_hash="$hash" -f backend/tests/auth-fixture.sql -f backend/tests/actions-fixture.sql -f backend/tests/order-outbox-fixture.sql -f backend/tests/own-board-fixture.sql
+          PGPASSWORD=isolated-ci-password psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -v password_hash="$hash" -f backend/tests/auth-fixture.sql -f backend/tests/actions-fixture.sql -f backend/tests/order-outbox-fixture.sql -f backend/tests/own-board-fixture.sql -f backend/tests/own-print-fixture.sql
           test "$(PGPASSWORD=ci-actions-only psql -h 127.0.0.1 -U pitacco_core_actions -d postgres -Atc 'select count(id) from public.orders')" = 0
           if PGPASSWORD=ci-actions-only psql -h 127.0.0.1 -U pitacco_core_actions -d postgres -v ON_ERROR_STOP=1 -c "update public.orders set status='accepted'"; then exit 1; fi
           if PGPASSWORD=ci-fiado-read-only psql -h 127.0.0.1 -U pitacco_core_fiado_read -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.pitacco_fiado_customers'; then exit 1; fi
@@ -108,6 +108,9 @@ jobs:
         env:
           PITACCO_ORDER_OUTBOX_ENABLED: 'true'
           PITACCO_OWN_BOARD_ENABLED: 'true'
+          PITACCO_OWN_PRINT_ENABLED: 'true'
+          CORE_OWN_PRINT_DB_USERNAME: pitacco_core_own_print
+          CORE_OWN_PRINT_DB_PASSWORD: ci-own-print-only
           CORE_OWN_BOARD_DB_USERNAME: pitacco_core_own_board
           CORE_OWN_BOARD_DB_PASSWORD: ci-own-board-only
         run: |
@@ -131,6 +134,7 @@ jobs:
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8084/up >/dev/null && break; sleep 1; done
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/up >/dev/null && break; sleep 1; done
           if PGPASSWORD=ci-own-board-only psql -h 127.0.0.1 -U pitacco_core_own_board -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.orders'; then exit 1; fi
+          if PGPASSWORD=ci-own-print-only psql -h 127.0.0.1 -U pitacco_core_own_print -d postgres -v ON_ERROR_STOP=1 -c 'select * from public.print_jobs'; then exit 1; fi
           python3 tests/actions-smoke.py
       - name: Validar sessão autenticada do entregador e autorização GPS
         working-directory: backend

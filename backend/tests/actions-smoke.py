@@ -80,6 +80,24 @@ assert accepted_events>0
 action(A,1,'accept',200,alice)
 assert outbox_count()==accepted_events # idempotent replay
 assert sql("select count(*) from public.print_jobs where order_id='"+oid(1)+"'")=='2'
+# Reprint uses a separate HTTP quota; never creates a second job on replay.
+BASE=board_base
+import uuid
+reprint='/stores/'+A+'/orders/'+oid(1)+'/reprint'
+rp={'request_id':str(uuid.uuid4()),'reason':'Teste de reimpressão'}
+call(reprint,401,'POST',rp)
+call(reprint,404,'POST',rp,bob)
+call(reprint.replace(A,B),404,'POST',rp,alice)
+call(reprint.replace(oid(1),oid(4)),404,'POST',rp,alice)
+call(reprint.replace(oid(1),oid(2)),409,'POST',rp,alice)
+call(reprint,422,'POST',rp|{'reason':'abc'},alice)
+assert call(reprint,200,'POST',rp,alice)['data']['queued'] is True
+assert call(reprint,200,'POST',rp,alice)['data']['queued'] is True
+assert sql("select count(*) from public.print_jobs where order_id='"+oid(1)+"' and request_id='"+rp['request_id']+"'")=='2'
+assert sql("select count(*) from public.print_jobs where order_id='"+oid(1)+"'")=='4'
+assert sql("select count(*) from public.operation_audit where order_id='"+oid(1)+"' and action='reprint_requested' and details->>'request_id'='"+rp['request_id']+"'")=='1'
+BASE=board_actions_base
+print('PASS: original own-order reprint queue, fixed request id, two copies, role and tenant isolation')
 assert sql("select count(*) from public.operation_audit where order_id='"+oid(1)+"' and action='accepted'")=='1'
 assert action(A,1,'ready',200,alice)['data']['preparation_status']=='ready'
 ready_events=outbox_count()
@@ -414,6 +432,7 @@ call(fiado,404,token=alice)
 print('PASS: original Fiado manager overview, role and store isolation, revoked membership')
 
 BASE=board_base
+call(reprint,404,'POST',rp,alice)
 call(ops,404,token=alice)
 call(board,404,token=alice)
 BASE=board_actions_base
