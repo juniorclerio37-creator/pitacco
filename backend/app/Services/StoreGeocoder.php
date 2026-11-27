@@ -19,6 +19,11 @@ final class StoreGeocoder
         if (!app()->environment('testing', 'staging')) {
             throw new RuntimeException('Geocodificação experimental indisponível.');
         }
+        // CI must always inject a transport. Staging requires a separate
+        // explicit opt-in and production is rejected above, even with a key.
+        if ($transport === null && (!app()->environment('staging') || config('pitacco.store_geocoder_live_enabled') !== true)) {
+            throw new RuntimeException('Consulta externa desativada.');
+        }
         if (trim($key) === '') throw new RuntimeException('Provedor de localização não configurado.');
         $query = self::query($store);
         $query['apiKey'] = $key;
@@ -78,6 +83,22 @@ final class StoreGeocoder
         foreach ($values as $v) if (self::norm($v) === $wanted) return true;
         return false;
     }
+    private static function stateCode(mixed $value): string
+    {
+        $value = self::norm($value);
+        $value = preg_replace('/^br-/', '', $value);
+        $states = ['ac'=>'acre','al'=>'alagoas','ap'=>'amapa','am'=>'amazonas',
+            'ba'=>'bahia','ce'=>'ceara','df'=>'distrito federal','es'=>'espirito santo',
+            'go'=>'goias','ma'=>'maranhao','mt'=>'mato grosso','ms'=>'mato grosso do sul',
+            'mg'=>'minas gerais','pa'=>'para','pb'=>'paraiba','pr'=>'parana',
+            'pe'=>'pernambuco','pi'=>'piaui','rj'=>'rio de janeiro','rn'=>'rio grande do norte',
+            'rs'=>'rio grande do sul','ro'=>'rondonia','rr'=>'roraima','sc'=>'santa catarina',
+            'sp'=>'sao paulo','se'=>'sergipe','to'=>'tocantins'];
+        if (isset($states[$value])) return $value;
+        $code = array_search($value, $states, true);
+        return $code === false ? '' : $code;
+    }
+
     public static function match(array $store, array $payload): ?array
     {
         self::query($store);
@@ -85,8 +106,16 @@ final class StoreGeocoder
         $district = self::norm($store['neighborhood'] ?? '');
         $number = trim((string)($store['address_number'] ?? ''));
         $road = self::road($store['address']);
+        $state = self::stateCode($store['state']);
+        if ($state === '') return null;
+        $approximate = null;
         foreach (array_slice(is_array($payload['results'] ?? null) ? $payload['results'] : [],0,5) as $item) {
             if (!is_array($item) || self::norm($item['country_code'] ?? '') !== 'br') continue;
+            $stateCode = self::stateCode($item['state_code'] ?? '');
+            $stateName = self::stateCode($item['state'] ?? '');
+            if (($stateCode === '' && $stateName === '') ||
+                ($stateCode !== '' && $stateCode !== $state) ||
+                ($stateName !== '' && $stateName !== $state)) continue;
             if (!is_numeric($item['lat'] ?? null) || !is_numeric($item['lon'] ?? null)) continue;
             $lat = (float)$item['lat']; $lng = (float)$item['lon'];
             if (!is_finite($lat) || !is_finite($lng) || $lat < -34 || $lat > 6 || $lng < -75 || $lng > -32) continue;
@@ -101,9 +130,11 @@ final class StoreGeocoder
             $confidence = is_numeric($confidence) ? (float)$confidence : null;
             if ($confidence !== null && (!is_finite($confidence) || $confidence < .70 || $confidence > 1)) continue;
             $precise = $incoming !== '' && $incoming === $number && in_array(self::norm($item['result_type']??''),['building','amenity','house'],true) && $confidence !== null && $confidence >= .85;
-            return ['latitude'=>round($lat,6),'longitude'=>round($lng,6),
+            $candidate = ['latitude'=>round($lat,6),'longitude'=>round($lng,6),
                 'approximate'=>!$precise,'requires_confirmation'=>!$precise,'provider'=>'geoapify'];
+            if ($precise) return $candidate;
+            $approximate ??= $candidate;
         }
-        return null;
+        return $approximate;
     }
 }

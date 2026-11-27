@@ -150,7 +150,7 @@ begin
  -- Capture a Geoapify-shaped synthetic result from the private fixture. The
  -- server-side matcher, not the HTTP client, decides whether it is acceptable.
  select jsonb_build_object('country_code','br','lat',f.latitude,'lon',f.longitude,
- 'street',f.address,'city',f.city,'suburb',f.neighborhood,'postcode',f.postal_code,
+ 'street',f.address,'city',f.city,'state_code',f.state,'suburb',f.neighborhood,'postcode',f.postal_code,
  'housenumber',case when f.precise then f.address_number else null end,
  'result_type',case when f.precise then 'building' else 'street' end,
  'rank',jsonb_build_object('confidence',case when f.precise then 0.92 else 0.80 end))
