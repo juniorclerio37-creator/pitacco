@@ -36,7 +36,7 @@ begin
   if exists(select 1 from public.print_jobs j left join public.orders o on o.id=j.order_id and o.store_id=j.store_id where j.store_id=s and j.state<>'submitted' and o.source is distinct from 'proprio') then
    raise exception 'Fila exige integração específica' using errcode='22023';
   end if;
-  select coalesce(jsonb_agg(jsonb_build_object('id',j.id,'store_id',j.store_id,'order_id',j.order_id,'sector',j.sector,'printer',j.printer,'width',j.width,'copy_no',j.copy_no,'request_id',j.request_id,'state',j.state,'receipt',core_auth.board_receipt_fixture(j.receipt)||jsonb_build_object('source','proprio')) order by j.created_at,j.id),'[]'::jsonb)
+  select coalesce(jsonb_agg(jsonb_build_object('id',j.id,'store_id',j.store_id,'order_id',j.order_id,'sector',j.sector,'printer',j.printer,'width',j.width,'copy_no',j.copy_no,'request_id',j.request_id,'state',j.state,'created_at',j.created_at,'receipt',core_auth.board_receipt_fixture(j.receipt)||jsonb_build_object('source','proprio')) order by j.created_at,j.id),'[]'::jsonb)
   into result from public.claim_print_jobs(s,device) j;
   return jsonb_build_object('jobs',result);
  elsif op='ack' then

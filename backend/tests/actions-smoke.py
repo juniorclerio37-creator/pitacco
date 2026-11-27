@@ -49,7 +49,7 @@ call(board,404,token=bob)
 call(board.replace(A,B),404,token=alice)
 call(board+'?limit=101',422,token=alice)
 # Synthetic forbidden fields at every nested level must be stripped.
-sql("""update public.orders set receipt=receipt||'{"tracking_token":"private-fixture","address":{"street":"Rua Fixture","number":"10","private_token":"secret"},"items":[{"name":"Açaí","quantity":1,"unit_price":20,"modifiers":[{"name":"Leite em pó","quantity":2,"private_token":"secret"}],"private_token":"secret"}],"payment_method":"dinheiro","notes":"Sem gelo"}'::jsonb where id='30000000-0000-4000-8000-000000000001'""")
+sql("""update public.orders set receipt=receipt||'{"tracking_token":"private-fixture","address":{"street":"Rua Fixture","number":"10","private_token":"secret"},"items":[{"name":"Açaí","quantity":1,"unit_price":20,"modifiers":[{"name":"Leite em pó","quantity":2,"private_token":"secret"}],"private_token":"secret"}],"payment_method":"dinheiro","notes":"Sem gelo","delivery_service":"priority","payment_price":{"adjustment_cents":150,"private_token":"secret"},"reference":"Portão azul"}'::jsonb where id='30000000-0000-4000-8000-000000000001'""")
 rows=call(board,200,token=alice)['data']
 assert rows and all(row['store_id']==A and row['source']=='proprio' for row in rows)
 assert all(row['id']!=oid(4) for row in rows)
@@ -57,6 +57,11 @@ one=next(row for row in rows if row['id']==oid(1))
 assert one['receipt']['items'][0]['modifiers']==[{'name':'Leite em pó','quantity':2}]
 assert one['receipt']['address']=={'street':'Rua Fixture','number':'10'}
 assert one['receipt']['payment_method']=='dinheiro' and one['receipt']['notes']=='Sem gelo'
+assert one['receipt']['delivery_service']=='priority' and one['receipt']['payment_price']=={'adjustment_cents':150}
+assert one['receipt']['reference']=='Portão azul'
+# Validate nested pizza/combo projection without modifying the operational fixtures.
+projected=json.loads(sql("""select core_auth.board_receipt_fixture('{"items":[{"name":"Combo pizza","modifiers":[{"name":"Pizza","group":"Combo","options":[{"name":"Calabresa","group":"Sabor","numerator":1,"denominator":2,"private_token":"secret"}]}]}]}'::jsonb)"""))
+assert projected['items'][0]['modifiers'][0]['options']==[{'name':'Calabresa','group':'Sabor','numerator':1,'denominator':2}]
 assert 'private_token' not in json.dumps(rows) and 'tracking_token' not in json.dumps(rows)
 assert len(call(board+'?limit=1',200,token=alice)['data'])==1
 # Restore original fixture receipt before all existing action/printing assertions.
