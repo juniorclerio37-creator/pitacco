@@ -69,6 +69,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/realtime/auth',RealtimeAuthorizationController::class);
             Route::get('/auth/me',[CoreAuthController::class,'me']);
             Route::post('/auth/logout',[CoreAuthController::class,'logout']);
+            Route::post('/stores/{store}/map-origin',[OwnBoardLogisticsController::class,'origin'])->whereUuid('store');
             Route::match(['GET','PUT'],'/stores/{store}/map-point',[OwnBoardLogisticsController::class,'point'])->whereUuid('store');
             Route::get('/stores/{store}/fleet-map',[OwnBoardLogisticsController::class,'fleet'])->whereUuid('store');
             Route::get('/stores/{store}/own-logistics/{resource}',OwnBoardLogisticsController::class)->whereUuid('store')->whereIn('resource',['deliveries','couriers','positions','ifood-deliveries']);

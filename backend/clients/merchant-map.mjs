@@ -7,9 +7,9 @@ export function createMerchantMap({store,token,fetcher=globalThis.fetch}){
  let active=true,flight=null,writing=false;const controller=new AbortController();
  const base='/api/v1/stores/'+store+'/';
  function stop(){active=false;token='';controller.abort();}
- async function request(path,body){
+ async function request(path,body,method=body?'PUT':'GET'){
   if(!active)throw Error('Sessão encerrada.');
-  const res=await fetcher(base+path,{method:body?'PUT':'GET',headers:{Accept:'application/json',Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',signal:AbortSignal.any([controller.signal,AbortSignal.timeout(8000)])});
+  const res=await fetcher(base+path,{method,headers:{Accept:'application/json',Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',signal:AbortSignal.any([controller.signal,AbortSignal.timeout(8000)])});
   if(!active)throw Error('Sessão encerrada.');
   if([401,403,404].includes(res.status)){stop();throw Error('Mapa não autorizado.');}
   if(!res.ok){const e=Error(res.status===429?'Aguarde antes de salvar outro ponto da loja.':'Mapa indisponível.');e.status=res.status;throw e;}
@@ -41,15 +41,17 @@ export function createMerchantMap({store,token,fetcher=globalThis.fetch}){
   })().finally(()=>{flight=null;});return flight;
  }
  // Exact bridge for the existing StorePointPicker "delivery-quote" invocation.
- // Geocoding is not yet migrated; an absent point never becomes a fabricated
- // confirmed point. Legacy geocoder must be explicitly integrated separately.
+ // Lookup is server-side; an approximate result never becomes a confirmed point.
  async function invoke(name,{body}={}){
   try{
    if(name!=='delivery-quote'||body?.store_id!==store)throw Error('Operação não autorizada.');
    if(body.action==='store-point'&&Object.keys(body).sort().join(',')==='action,latitude,longitude,store_id')return {data:await savePoint(body.latitude,body.longitude),error:null};
    if(body.action==='store-origin'&&Object.keys(body).sort().join(',')==='action,store_id'){
-    const p=await readPoint();if(!valid(p))throw Error('Endereço ainda não localizado. Marque a entrada da loja no mapa.');
-    return {data:{latitude:p.latitude,longitude:p.longitude,approximate:false,cached:true},error:null};
+    const p=await readPoint();
+    if(valid(p))return {data:{latitude:p.latitude,longitude:p.longitude,approximate:false,cached:true},error:null};
+    const v=await request('map-origin',{},'POST');
+    if(!valid(v)||typeof v.approximate!=='boolean'||(v.approximate&&(v.saved!==false||v.requires_confirmation!==true))||(!v.approximate&&v.saved!==true))throw Error('Endereço ainda não localizado. Marque a entrada da loja no mapa.');
+    return {data:{latitude:v.latitude,longitude:v.longitude,approximate:v.approximate,cached:v.cached===true},error:null};
    }
    throw Error('Operação não autorizada.');
   }catch(e){return {data:null,error:{message:e.message||'Mapa indisponível.',context:{status:e.status||0}}};}

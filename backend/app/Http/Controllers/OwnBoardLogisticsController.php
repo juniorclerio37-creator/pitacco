@@ -61,4 +61,27 @@ final class OwnBoardLogisticsController
             return response()->json(['error'=>match($s){'42501'=>'not_authorized','22023'=>'invalid_store_point','P0001'=>'point_limit',default=>'temporarily_unavailable'}],match($s){'42501'=>404,'22023'=>422,'P0001'=>429,default=>503})->header('Cache-Control','no-store');
         }
     }
+
+    public function origin(Request $request,string $store): JsonResponse
+    {
+        abort_unless(app()->environment('testing') && config('pitacco.own_logistics_enabled'),404);
+        if($request->query()||$request->all())throw \Illuminate\Validation\ValidationException::withMessages(['request'=>'Use o endereço já cadastrado da loja.']);
+        $session=$request->attributes->get('core_session');
+        try{
+            $db=DB::connection('core_own_logistics');
+            $result=$db->transaction(function()use($db,$session,$store){
+                $db->statement("set local statement_timeout = '5s'");
+                $db->statement("set local lock_timeout = '2s'");
+                $db->selectOne("select set_config('request.jwt.claim.sub',?,true),set_config('pitacco.core_session_id',?,true),set_config('request.jwt.claims',?,true)",[$session->user_id,$session->session_id,json_encode(['sub'=>$session->user_id,'role'=>'authenticated'],JSON_THROW_ON_ERROR)]);
+                abort_unless($db->selectOne('select core_auth.can_act(cast(? as uuid)) as allowed',[$store])?->allowed===true,404);
+                $row=$db->selectOne('select core_auth.store_origin_fixture(cast(? as uuid)) as payload',[$store]);
+                return json_decode($row->payload,true,512,JSON_THROW_ON_ERROR);
+            });
+            if(($result['unavailable']??false)===true)return response()->json(['error'=>'address_not_located'],422)->header('Cache-Control','no-store');
+            return response()->json(['data'=>$result])->header('Cache-Control','no-store');
+        }catch(QueryException $e){
+            $s=$e->errorInfo[0]??'';
+            return response()->json(['error'=>match($s){'42501'=>'not_authorized','22023'=>'address_not_located','P0001'=>'origin_limit',default=>'temporarily_unavailable'}],match($s){'42501'=>404,'22023'=>422,'P0001'=>429,default=>503})->header('Cache-Control','no-store');
+        }
+    }
 }

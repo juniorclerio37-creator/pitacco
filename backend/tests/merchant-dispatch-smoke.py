@@ -59,7 +59,7 @@ print('PASS: own board logistics read, original scoped courier and GPS queries, 
 def merchant_map(resource,expected=200,token=None,store=s,body=None):
     headers={'Accept':'application/json','Content-Type':'application/json'}
     if token:headers['Authorization']='Bearer '+token
-    req=urllib.request.Request('http://127.0.0.1:8099/api/v1/stores/'+store+'/'+resource,method='PUT' if body is not None else 'GET',headers=headers,data=json.dumps(body).encode() if body is not None else None)
+    req=urllib.request.Request('http://127.0.0.1:8099/api/v1/stores/'+store+'/'+resource,method='POST' if resource=='map-origin' else 'PUT' if body is not None else 'GET',headers=headers,data=json.dumps(body).encode() if body is not None else None)
     try:res=urllib.request.urlopen(req,timeout=12)
     except urllib.error.HTTPError as e:res=e
     with res:
@@ -75,7 +75,27 @@ merchant_map('map-point',422,owner,body={'latitude':60,'longitude':-43.45,'confi
 other_point=sql("select jsonb_build_array(latitude,longitude)::text from public.stores where id='"+b+"'")
 previous=json.loads(sql("select jsonb_build_object('address',address,'city',city,'state',state,'latitude',latitude,'longitude',longitude)::text from public.stores where id='"+s+"'"))
 sql("update public.stores set address='Rua Fixture',city='Nova Iguacu',state='RJ' where id='"+s+"'")
+# Geocoding replay uses only a server-side synthetic provider response.
+merchant_map('map-origin',401)
+merchant_map('map-origin',404,courier)
+merchant_map('map-origin',404,owner,b)
+merchant_map('map-origin',422,owner,body={'latitude':-22.85,'longitude':-43.45})
+sql("update public.stores set latitude=null,longitude=null where id='"+s+"'")
+merchant_map('map-origin',422,owner)
+sql("insert into core_auth.store_geocode_fixture(store_id,address,address_number,neighborhood,city,state,postal_code,latitude,longitude,precise) select id,address,address_number,neighborhood,city,state,postal_code,-22.86,-43.46,false from public.stores where id='"+s+"'")
+proposal=merchant_map('map-origin',token=owner)['data']
+assert proposal['approximate'] is True and proposal['saved'] is False and proposal['requires_confirmation'] is True
+assert merchant_map('map-point',token=owner)['data']['latitude'] is None
+sql("update public.stores set address='Rua Fixture Alterada' where id='"+s+"'")
+merchant_map('map-origin',422,owner)
+sql("update public.stores set address='Rua Fixture' where id='"+s+"';update core_auth.store_geocode_fixture set precise=true where store_id='"+s+"'")
+exact=merchant_map('map-origin',token=owner)['data']
+assert exact['saved'] is True and exact['approximate'] is False and float(exact['latitude'])==-22.86
+assert merchant_map('map-origin',token=owner)['data']['cached'] is True
+sql("delete from core_auth.store_geocode_fixture where store_id='"+s+"'")
 saved=merchant_map('map-point',token=owner,body={'latitude':-22.8512345,'longitude':-43.4512345,'confirmed':True})['data']
+assert float(merchant_map('map-origin',token=owner)['data']['latitude'])==-22.851235
+print('PASS: automatic origin rehearsal, approximate not saved, changed address rejected, verified fixture persisted, manual point wins')
 assert saved['saved'] is True and float(saved['latitude'])==-22.851235
 snap=merchant_map('fleet-map',token=owner)['data']
 assert snap['store']['id']==s and snap['store']['latitude']==saved['latitude']

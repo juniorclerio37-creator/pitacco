@@ -93,3 +93,45 @@ begin
 end $fn$;
 revoke all on function core_auth.fleet_map_fixture(uuid) from public,anon,authenticated;
 grant execute on function core_auth.fleet_map_fixture(uuid) to pitacco_core_own_logistics;
+
+-- CI only: deterministic, server-side geocoding responses. No external calls.
+-- This table is not accessible to the HTTP role and never ships to production.
+create table core_auth.store_geocode_fixture (
+ store_id uuid primary key references public.stores(id),
+ address text not null, address_number text, neighborhood text, city text not null,
+ state text not null, postal_code text,
+ latitude numeric not null check(latitude between -34 and 6),
+ longitude numeric not null check(longitude between -75 and -32),
+ precise boolean not null
+);
+revoke all on core_auth.store_geocode_fixture from public,anon,authenticated,pitacco_core_own_logistics;
+create function core_auth.store_origin_fixture(s uuid) returns jsonb
+language plpgsql security definer set search_path='' as $fn$
+declare shop public.stores%rowtype; result core_auth.store_geocode_fixture%rowtype; counter integer;
+begin
+ if not core_auth.can_act(s) then raise exception 'Sem permissão' using errcode='42501';end if;
+ -- Lock the canonical row so that a manual marker or new address cannot
+ -- be overwritten by a stale fixture response during this transaction.
+ select * into shop from public.stores where id=s for update;
+ if not found or nullif(trim(shop.address),'') is null or nullif(trim(shop.city),'') is null or nullif(trim(shop.state),'') is null then raise exception 'Endereço incompleto' using errcode='22023';end if;
+ if shop.latitude between -34 and 6 and shop.longitude between -75 and -32 then
+  return jsonb_build_object('latitude',shop.latitude,'longitude',shop.longitude,'approximate',false,'cached',true,'saved',true,'requires_confirmation',false);
+ end if;
+ insert into pitacco_private.delivery_quote_rate_limits(scope,window_start,attempts)
+ values('origin-hour-'||s::text,to_timestamp(floor(extract(epoch from now())/3600)*3600),1)
+ on conflict(scope,window_start) do update set attempts=pitacco_private.delivery_quote_rate_limits.attempts+1
+ where pitacco_private.delivery_quote_rate_limits.attempts<24 returning attempts into counter;
+ if counter is null then raise exception 'Limite de origem' using errcode='P0001';end if;
+ select * into result from core_auth.store_geocode_fixture f where f.store_id=s
+ and (f.address,f.address_number,f.neighborhood,f.city,f.state,f.postal_code)
+ is not distinct from (shop.address,shop.address_number,shop.neighborhood,shop.city,shop.state,shop.postal_code);
+ if not found then
+  -- Return a normal outcome (rather than rollback) so failed lookups consume
+  -- the same rate budget as successful lookups.
+  return jsonb_build_object('unavailable',true);
+ end if;
+ if result.precise then update public.stores set latitude=round(result.latitude,6),longitude=round(result.longitude,6) where id=s;end if;
+ return jsonb_build_object('latitude',round(result.latitude,6),'longitude',round(result.longitude,6),'approximate',not result.precise,'cached',false,'saved',result.precise,'requires_confirmation',not result.precise,'environment','simulation');
+end $fn$;
+revoke all on function core_auth.store_origin_fixture(uuid) from public,anon,authenticated;
+grant execute on function core_auth.store_origin_fixture(uuid) to pitacco_core_own_logistics;

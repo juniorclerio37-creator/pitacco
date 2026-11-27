@@ -39,3 +39,14 @@ test('absent canonical point cannot be returned as confirmed',async()=>{
  const client={functions:{invoke:map.invoke}};
  await assert.rejects(locateStoreByAddress(client,store),/ainda não localizado/);
 });
+
+test('missing point uses server-side lookup; approximate results remain proposals',async()=>{
+ const calls=[];
+ const map=createMerchantMap({store,token:'fixture',fetcher:async(url,opts)=>{
+  calls.push([url,opts.method]);
+  return {ok:true,json:async()=>({data:url.endsWith('/map-origin')?{latitude:-22.86,longitude:-43.46,approximate:true,saved:false,requires_confirmation:true}:{...p,latitude:null,longitude:null}})};
+ }});
+ const result=await locateStoreByAddress({functions:{invoke:map.invoke}},store);
+ assert.deepEqual(result,{point:[-22.86,-43.46],approximate:true});
+ assert.deepEqual(calls.map(x=>x[1]),['GET','POST']);
+});
