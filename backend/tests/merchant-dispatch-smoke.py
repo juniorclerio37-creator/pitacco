@@ -25,6 +25,30 @@ two='98000000-0000-0000-0000-000000000042'
 cid='98000000-0000-0000-0000-000000000002'
 p='/stores/'+s+'/dispatch/group'
 body={'courier_id':cid,'delivery_ids':[one,two]}
+# Exercise individual assignment, safe reassignment and the automatic hold before grouping.
+individual='/stores/'+s+'/dispatch/deliveries/'+one
+second='98000000-0000-0000-0000-000000000052'
+assign={'action':'assign','courier_id':cid}
+call(individual,401,assign)
+call(individual,404,assign,courier)
+call(individual.replace(s,'20000000-0000-4000-8000-000000000002'),404,assign,owner)
+call(individual,403,assign|{'courier_id':str(uuid.uuid4())},owner)
+call(individual,422,{'action':'remove'},owner)
+old=str(uuid.UUID(call(individual,200,assign,owner)['data']['route_id']))
+assert call(individual,200,assign,owner)['data']['route_id']==old
+assert sql("select count(*) from public.operation_audit where action='route_manual_assigned' and details->>'delivery'='"+one+"'")=='1'
+call(individual,409,{'action':'remove','expected_courier_id':second},owner)
+new=str(uuid.UUID(call(individual,200,{'action':'reassign','expected_courier_id':cid,'courier_id':second},owner)['data']['route_id']))
+assert new!=old
+assert sql("select (completed_at is not null)::text from public.delivery_batches where id='"+old+"'")=='true'
+assert sql("select courier_id::text from public.deliveries where id='"+one+"'")==second
+assert call(individual,200,{'action':'remove','expected_courier_id':second},owner)['data']['route_id'] is None
+assert sql("select (manual_dispatch_hold and courier_id is null and batch_id is null and status='pendente')::text from public.deliveries where id='"+one+"'")=='true'
+assert sql("select (completed_at is not null)::text from public.delivery_batches where id='"+new+"'")=='true'
+call(individual,200,{'action':'resume'},owner)
+assert sql("select manual_dispatch_hold::text from public.deliveries where id='"+one+"'")=='false'
+assert sql("select status from public.orders where id='98000000-0000-0000-0000-000000000031'")=='accepted'
+print('PASS: original individual assignment, repeated request, stale expected courier, reassignment, remove and automatic resume')
 call(p,401,body)
 call(p,404,body,courier)
 call(p.replace(s,'20000000-0000-4000-8000-000000000002'),404,body,owner)
@@ -56,6 +80,7 @@ assert call(d,200,group,courier)['data']=={'departed':True}
 assert sql("select count(*) from public.deliveries where batch_id='"+route+"' and status='retirada'")=='2'
 assert sql("select count(*) from public.operation_audit where action='route_departed' and details->>'route'='"+route+"'")=='1'
 call(d,409,{'action':'collect','delivery_id':one},courier)
+call(individual,409,{'action':'remove','expected_courier_id':cid},owner)
 print('PASS: original grouped departure requires every collection and commits both deliveries together')
 call('/auth/logout',200,{},courier)
 call(d,401,group,courier)
@@ -63,5 +88,6 @@ call(d,401,group,courier)
 # Restore the revoked fixture state and prove the dispatch endpoint respects it.
 sql("update core_auth.memberships set active=false where user_id='10000000-0000-4000-8000-000000000001' and store_id='"+s+"' and role='owner'")
 call(p,404,body,owner)
+call(individual,404,{'action':'remove','expected_courier_id':cid},owner)
 assert sql("select count(*) from public.deliveries where batch_id='"+route+"' and status='retirada'")=='2'
 print('PASS: merchant dispatch rejects revoked membership without modifying the existing route')

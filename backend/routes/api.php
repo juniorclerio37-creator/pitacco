@@ -11,6 +11,7 @@ use App\Http\Controllers\CourierShiftController;
 use App\Http\Controllers\CourierPaymentController;
 use App\Http\Controllers\CourierDeliveryController;
 use App\Http\Controllers\MerchantDispatchController;
+use App\Http\Controllers\MerchantDeliveryController;
 use App\Http\Controllers\CustomerProfileController;
 use App\Http\Controllers\CustomerWalletController;
 use App\Http\Controllers\FiadoOverviewController;
@@ -62,6 +63,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/stores/{store}/payments/pricing/publish',[PaymentPricingController::class,'publish'])->whereUuid('store');
             Route::match(['get','put'],'/stores/{store}/opening-hours',OpeningHoursController::class)->whereUuid('store');
             Route::match(['get','put'],'/stores/{store}/delivery/settings',DeliverySettingsController::class)->whereUuid('store');
+            Route::post('/stores/{store}/dispatch/deliveries/{delivery}',MerchantDeliveryController::class)->whereUuid(['store','delivery']);
             Route::post('/stores/{store}/dispatch/group',MerchantDispatchController::class)->whereUuid('store');
             Route::post('/stores/{store}/checkout',MerchantCheckoutController::class)->whereUuid('store');
             Route::get('/stores/{store}/reports/financial',FinancialReportController::class)->whereUuid('store');
