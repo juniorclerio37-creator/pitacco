@@ -22,3 +22,6 @@ Não autorizar a troca do backend enquanto a finalização pública de pedidos F
 
 ## Gate obrigatório: todas as formas de pagamento
 Além do Fiado e da carteira, cumprir a matriz em [payment-acceptance.md](payment-acceptance.md). Preservar dinheiro/troco, crédito e débito na maquininha, Pix na maquininha, Pix manual, vouchers Alelo/Pluxee/VR/Ticket, compatibilidade cartao_entrega, pagamentos online conforme homologação, e cobranças de assinatura separadas. Validar configurações por canal, preço confirmado, interfaces e conciliação. Métodos que ainda aguardam homologação externa não podem ser anunciados como ativos nem habilitados em produção; preservar os existentes e sua disponibilidade. A migração não é autorizada por aprovação isolada do Pix manual, do Fiado ou da carteira.
+
+## Gate obrigatório: preservar iFood existente
+Seguir [ifood-preservation.md](ifood-preservation.md), mantendo o consumidor atual até a validação do novo backend e confirmação do provedor sobre necessidade de nova homologação. Preservar aplicação, vínculos, credenciais e contratos originais de forma segura. Não executar consumidores de produção em paralelo, não trocar credenciais automaticamente, não criar pedidos duplicados. O CI de regressão iFood é obrigatório, mas não equivale à homologação oficial.

@@ -103,3 +103,6 @@ POST `/api/v1/stores/{store}/payments/pricing/publish` encaminha somente canal, 
 
 ## Confirmação original do entregador — regressão
 `tests/courier-original-receipts.sql` exercita a função original com dois entregadores fictícios e a validação de sessão já presente no harness, sem substituir a função de autenticação. Testa autorização por atribuição, exigência de chegada, valor integral, repetição sem auditoria duplicada e preservação da etapa da entrega. Tudo é revertido; não integra a autenticação real nem cria rota de recebimento Laravel. A investigação somente de leitura do catálogo de produção identificou uma operação de lançamento de caixa distinta da confirmação manual e da declaração do entregador. A escrita financeira permanece condicionada à recuperação segura dos contratos e à validação de conciliação, sem copiar definições inéditas ou dados de produção para este repositório público.
+
+## Preservação iFood
+O novo workflow `core-ifood-preservation.yml` executa a suíte original de eventos, pedidos, Shipping e entregador na branch isolada. A estratégia é reaproveitar os componentes existentes e adaptar a comunicação interna somente depois de recuperar os contratos e validar a transição. Ver `../docs/core/ifood-preservation.md`. Nenhuma integração de produção foi modificada.

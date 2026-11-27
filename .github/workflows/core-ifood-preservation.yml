@@ -1,0 +1,29 @@
+name: Pitacco Core — preservar integração iFood
+on:
+  push:
+    branches: [pitacco-core]
+    paths:
+      - 'backend/**'
+      - 'supabase/functions/ifood-*/**'
+      - 'supabase/migrations/**'
+      - 'entregador/**'
+      - 'tests/ifood-*.test.mjs'
+      - '.github/workflows/core-ifood-preservation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-ifood:
+    if: github.ref == 'refs/heads/pitacco-core'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Regressão dos componentes originais, sem credenciais de produção
+        run: |
+          node --test tests/ifood-orders.test.mjs tests/ifood-driver-arrival.test.mjs tests/ifood-shipping-events.test.mjs tests/ifood-shipping-requests.test.mjs entregador/ifood-departure.test.mjs
