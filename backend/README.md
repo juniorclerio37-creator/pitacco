@@ -46,3 +46,6 @@ As ações explícitas `approve` e `receive` usam as funções originais de deci
 
 ## Compatibilidade de aprovação manual
 O SQLSTATE 22023 usado pelo bloqueio de aprovação manual do Fiado é tratado como conflito de transição (HTTP 409) na API de ações do pedido, sem divulgar SQL ou aceitar o pedido indevidamente. O teste confirma que o pedido permanece pendente antes da aprovação.
+
+## Continuidade da sessão no navegador
+O adaptador experimental `clients/customer-session.mjs` reutiliza literalmente `pitacco-v2-customer-device:<slug>`, sem criar nova identificação durante retomada. Não apaga a credencial por erro transitório; remove somente após resposta explícita de reset/encerramento, e não apaga credencial trocada durante a requisição. O teste Chromium cria perfil fictício, recarrega a página, retoma via chave original, simula falha de rede e encerra sessão. A integração ao cardápio publicado continua pendente; a preservação de sessões reais requer mesmo domínio/origem, slug, hash e registros de perfil/sessão restaurados. Não é autenticação financeira.

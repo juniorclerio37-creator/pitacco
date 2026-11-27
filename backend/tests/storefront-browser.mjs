@@ -23,6 +23,25 @@ try{
   await page.locator('#track').click();
   await page.getByText('Status: accepted',{exact:true}).waitFor();
   assert.equal(writes,1);
+  // Legacy storage key is populated before the Laravel adapter is first used.
+  const device=await page.evaluate(async()=>{
+    const device=crypto.randomUUID();
+    const slug='core-checkout-fixture';
+    const r=await fetch('/api/v1/public/menus/'+slug+'/profile',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({phone:'21988887777',device,action:'save',name:'Cliente Sessao Fixture',addresses:[]})});
+    if(!r.ok)throw Error('Synthetic profile creation failed');
+    localStorage.setItem('pitacco-v2-customer-device:'+slug,device);
+    return device;
+  });
+  await page.reload();
+  const resumed=await page.evaluate(async()=>{const {customerSession}=await import('/core-homologacao/customer-session.mjs');return customerSession('core-checkout-fixture').resume()});
+  assert.equal(resumed.state,'active');
+  assert.equal(resumed.data.name,'Cliente Sessao Fixture');
+  await page.route('**/profile/session',r=>r.abort('failed'));
+  assert.equal(await page.evaluate(async()=>{const {customerSession}=await import('/core-homologacao/customer-session.mjs');return (await customerSession('core-checkout-fixture').resume()).state}),'retry');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-v2-customer-device:core-checkout-fixture')),device);
+  await page.unroute('**/profile/session');
+  assert.equal(await page.evaluate(async()=>{const {customerSession}=await import('/core-homologacao/customer-session.mjs');return (await customerSession('core-checkout-fixture').logout()).state}),'inactive');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('pitacco-v2-customer-device:core-checkout-fixture')),null);
   assert.deepEqual(external,[]);
   await page.screenshot({path:'/tmp/core-storefront-homologation.png',fullPage:true});
   console.log('PASS: Chromium storefront, actual Laravel checkout, lost response recovery, tracking, no external requests');

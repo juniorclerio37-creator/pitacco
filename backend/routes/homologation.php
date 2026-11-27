@@ -7,6 +7,7 @@ Route::get('/core-homologacao/{asset?}',function (?string $asset=null) {
         ''=>[base_path('homologation/storefront.html'),'text/html; charset=utf-8'],
         'app.mjs'=>[base_path('homologation/app.mjs'),'text/javascript; charset=utf-8'],
         'storefront.mjs'=>[base_path('clients/storefront.mjs'),'text/javascript; charset=utf-8'],
+        'customer-session.mjs'=>[base_path('clients/customer-session.mjs'),'text/javascript; charset=utf-8'],
         'tracking.mjs'=>[base_path('clients/tracking.mjs'),'text/javascript; charset=utf-8'],
     ];
     abort_unless(isset($files[$asset??'']),404);
